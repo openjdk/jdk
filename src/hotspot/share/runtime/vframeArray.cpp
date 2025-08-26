@@ -23,6 +23,7 @@
  */
 
 #include "classfile/vmSymbols.hpp"
+#include "code/scopeDesc.hpp"
 #include "code/vmreg.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecode.inline.hpp"
@@ -61,7 +62,10 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
   _method = vf->method();
   _bci    = vf->raw_bci();
-  _reexecute = vf->should_reexecute();
+  _reexecute = vf->should_reexecute(); // initial value, updated in unpack_on_stack
+#if INCLUDE_JVMCI
+  _rethrow = vf->scope()->rethrow_exception();
+#endif
 #ifdef ASSERT
   _removed_monitors = false;
 #endif
@@ -171,7 +175,34 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   }
 }
 
-int unpack_counter = 0;
+static int unpack_counter = 0;
+
+bool vframeArrayElement::should_reexecute(bool is_top_frame, int exec_mode) const {
+  if (is_top_frame) {
+    switch (exec_mode) {
+    case Deoptimization::Unpack_uncommon_trap:
+    case Deoptimization::Unpack_reexecute:
+      return true;
+    case Deoptimization::Unpack_exception:
+      assert(raw_bci() >= 0, "bad bci %d for Unpack_exception", raw_bci());
+    default:
+      break;
+    }
+  }
+  if (raw_bci() == SynchronizationEntryBCI) {
+    return true;
+  }
+  bool reexec = should_reexecute();
+  assert(is_top_frame || reexec == false, "unexepected should_reexecute()");
+#ifdef ASSERT
+  if (!reexec) {
+    address bcp = method()->bcp_from(bci());
+    Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
+    assert(!Interpreter::bytecode_should_reexecute(code), "should_reexecute mismatch");
+  }
+#endif
+  return reexec;
+}
 
 void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          int callee_parameters,
@@ -189,20 +220,37 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   // C++ interpreter doesn't need a pc since it will figure out what to do when it
   // begins execution
   address pc;
-  bool use_next_mdp = false; // true if we should use the mdp associated with the next bci
-                             // rather than the one associated with bcp
-  if (raw_bci() == SynchronizationEntryBCI) {
+  bool reexecute = should_reexecute(is_top_frame, exec_mode);
+  if (is_top_frame && exec_mode == Deoptimization::Unpack_exception) {
+    assert(raw_bci() >= 0, "bad bci %d for Unpack_exception", raw_bci());
+    bcp = method()->bcp_from(bci());
+    // exception is pending
+    pc = Interpreter::rethrow_exception_entry();
+    // [phh] We're going to end up in some handler or other, so it doesn't
+    // matter what mdp we point to.  See exception_handler_for_exception()
+    // in interpreterRuntime.cpp.
+  } else if (raw_bci() == SynchronizationEntryBCI) {
     // We are deoptimizing while hanging in prologue code for synchronized method
     bcp = method()->bcp_from(0); // first byte code
     pc  = Interpreter::deopt_entry(vtos, 0); // step = 0 since we don't skip current bytecode
-  } else if (should_reexecute()) { //reexecute this bytecode
+    assert(reexecute, "must be");
+  } else if (reexecute) { //reexecute this bytecode
     assert(is_top_frame, "reexecute allowed only for the top frame");
     bcp = method()->bcp_from(bci());
-    pc  = Interpreter::deopt_reexecute_entry(method(), bcp);
+    switch (exec_mode) {
+    case Deoptimization::Unpack_uncommon_trap:
+    case Deoptimization::Unpack_reexecute:
+      // Do not special-case _athrow or _return_register_finalizer
+      pc = Interpreter::deopt_entry(vtos, 0);
+      break;
+    default:
+      // Yes, special-case _athrow and _return_register_finalizer
+      pc = Interpreter::deopt_reexecute_entry(method(), bcp);
+    }
   } else {
     bcp = method()->bcp_from(bci());
+    assert(!reexecute, "must be");
     pc  = Interpreter::deopt_continue_after_entry(method(), bcp, callee_parameters, is_top_frame);
-    use_next_mdp = true;
   }
   assert(Bytecodes::is_defined(*bcp), "must be a valid bytecode");
 
@@ -239,44 +287,32 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       } else {
         // Reexecute invoke in top frame
         pc = Interpreter::deopt_entry(vtos, 0);
-        use_next_mdp = false;
+#ifdef ASSERT
+        Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
+        assert(Bytecodes::is_invoke(code), "must be");
+        assert(!reexecute, "must be");
+#endif
+        // It would be nice if the VerifyStack logic in unpack_frames() was refactored so
+        // we could check the stack before and after changing the reexecute mode, but
+        // it should pass either way because an invoke uses the same stack state for both modes,
+        // which is: args popped but result not yet pushed.
+        reexecute = true;
         popframe_preserved_args_size_in_bytes = in_bytes(thread->popframe_preserved_args_size());
         // Note: the PopFrame-related extension of the expression stack size is done in
         // Deoptimization::fetch_unroll_info_helper
         popframe_preserved_args_size_in_words = in_words(thread->popframe_preserved_args_size_in_words());
       }
-    } else if (!realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr &&
-               state->is_earlyret_pending()) {
-      // Force early return from top frame after deoptimization
-      pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
-    } else {
-      if (realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
+    } else if (JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
+      if (!realloc_failure_exception) {
+        // Force early return from top frame after deoptimization
+        pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
+      } else {
         state->clr_earlyret_pending();
         state->set_earlyret_oop(nullptr);
         state->clr_earlyret_value();
       }
-      // Possibly override the previous pc computation of the top (youngest) frame
-      switch (exec_mode) {
-      case Deoptimization::Unpack_deopt:
-        // use what we've got
-        break;
-      case Deoptimization::Unpack_exception:
-        // exception is pending
-        pc = SharedRuntime::raw_exception_handler_for_return_address(thread, pc);
-        // [phh] We're going to end up in some handler or other, so it doesn't
-        // matter what mdp we point to.  See exception_handler_for_exception()
-        // in interpreterRuntime.cpp.
-        break;
-      case Deoptimization::Unpack_uncommon_trap:
-      case Deoptimization::Unpack_reexecute:
-        // redo last byte code
-        pc  = Interpreter::deopt_entry(vtos, 0);
-        use_next_mdp = false;
-        break;
-      default:
-        ShouldNotReachHere();
-      }
     }
+    _reexecute = reexecute;
   }
 
   // Setup the interpreter frame
@@ -317,17 +353,16 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
            "should be held, after move_to");
   }
-  if (ProfileInterpreter) {
-    iframe()->interpreter_frame_set_mdp(nullptr); // clear out the mdp.
-  }
   iframe()->interpreter_frame_set_bcp(bcp);
   if (ProfileInterpreter) {
     MethodData* mdo = method()->method_data();
-    if (mdo != nullptr) {
+    if (mdo != nullptr && exec_mode != Deoptimization::Unpack_exception) {
       int bci = iframe()->interpreter_frame_bci();
-      if (use_next_mdp) ++bci;
+      if (!reexecute) ++bci;
       address mdp = mdo->bci_to_dp(bci);
       iframe()->interpreter_frame_set_mdp(mdp);
+    } else {
+      iframe()->interpreter_frame_set_mdp(nullptr); // clear out the mdp.
     }
   }
 
