@@ -199,8 +199,8 @@ class VM_Version : public Abstract_VM_Version {
   union ExtCpuid8Ecx {
     uint32_t value;
     struct {
-      uint32_t cores_per_cpu : 8,
-                             : 24;
+      uint32_t threads_per_cpu : 8,
+                               : 24;
     } bits;
   };
 
