@@ -582,6 +582,12 @@
       <setting name="period">1000 ms</setting>
     </event>
 
+    <event name="jdk.UnsafeAllocateMemory">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="throttle">25/s</setting>
+    </event>
+
     <event name="jdk.CompilerConfiguration">
       <setting name="enabled" control="compiler-enabled">true</setting>
       <setting name="period">beginChunk</setting>

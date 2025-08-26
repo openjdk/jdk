@@ -89,6 +89,7 @@ public class EventNames {
     public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
     public static final String NativeMemoryUsage = PREFIX + "NativeMemoryUsage";
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
+    public static final String UnsafeAllocateMemory = PREFIX + "UnsafeAllocateMemory";
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
     public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
