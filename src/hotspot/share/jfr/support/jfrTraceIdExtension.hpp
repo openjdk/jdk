@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,13 @@ class JfrTraceFlag {
   uint8_t* trace_flags_addr() const {              \
     return _trace_flags.flags_addr();              \
   }                                                \
-  uint8_t* trace_meta_addr() const {               \
+  uint8_t* trace_flags_meta_addr() const {         \
     return _trace_flags.meta_addr();               \
   }                                                \
-  void copy_trace_flags(uint16_t rhs_flags) const { \
-    _trace_flags.set_flags(_trace_flags.flags() | rhs_flags); \
+  void copy_trace_flags(const Method* rhm) const { \
+    assert(rhm != nullptr, "invariant");           \
+    set_trace_flags(rhm->trace_flags());           \
+    assert(trace_flags()==rhm->trace_flags(), ""); \
   }
 
 #endif // SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP

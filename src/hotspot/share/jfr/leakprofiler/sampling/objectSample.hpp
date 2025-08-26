@@ -59,6 +59,7 @@ class ObjectSample : public JfrCHeapObj {
   size_t _heap_used_at_last_gc;
   int _index;
   bool _virtual_thread;
+  mutable bool _thread_exited;
 
   void release_references() {
     _stacktrace.~JfrBlobHandle();
@@ -82,7 +83,8 @@ class ObjectSample : public JfrCHeapObj {
                    _allocated(0),
                    _heap_used_at_last_gc(0),
                    _index(0),
-                   _virtual_thread(false) {}
+                   _virtual_thread(false),
+                   _thread_exited(false) {}
 
   ObjectSample* next() const {
     return _next;
@@ -223,6 +225,15 @@ class ObjectSample : public JfrCHeapObj {
   void set_thread_is_virtual() {
     assert(!_virtual_thread, "invariant");
     _virtual_thread = true;
+  }
+
+  bool thread_exited() const {
+    return _thread_exited;
+  }
+
+  void set_thread_exited() const {
+    assert(!_thread_exited, "invariant");
+    _thread_exited = true;
   }
 
   const JfrBlobHandle& type_set() const {
