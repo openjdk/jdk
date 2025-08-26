@@ -63,6 +63,14 @@ import sun.awt.AppContext;
  * of the image.
  *
  * <p>
+ * If the image source parameter to a constructor or method is non-null,
+ * but does not reference valid accessible image data,
+ * no exceptions will be thrown but no image will be rendered
+ * even though {@link #getImage()} will return a non-null value,
+ * as the image will have no dimensions
+ * and {@link #getImageLoadStatus()} will report {@code MediaTracker.ERRORED}.
+ *
+ * <p>
  * For further information and examples of using image icons, see
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/icon.html">How to Use Icons</a>
  * in <em>The Java Tutorial.</em>
@@ -178,6 +186,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * of the image.
      * @param location the URL for the image
      * @param description a brief textual description of the image
+     * @throws NullPointerException if {@code location} is {@code null}
      * @see #ImageIcon(String)
      */
     public ImageIcon(URL location, String description) {
@@ -197,6 +206,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * The icon's description is initialized to be
      * a string representation of the URL.
      * @param location the URL for the image
+     * @throws NullPointerException if {@code location} is {@code null}
      * @see #getDescription
      */
     public ImageIcon (URL location) {
@@ -207,6 +217,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from the image.
      * @param image the image
      * @param description a brief textual description of the image
+     * @throws NullPointerException if {@code image} is {@code null}
      */
     public ImageIcon(Image image, String description) {
         this.image = image;
@@ -220,6 +231,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
+     * @throws NullPointerException if {@code image} is {@code null}
      * @see #getDescription
      * @see java.awt.Image#getProperty
      */
@@ -248,6 +260,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param  imageData an array of pixels in an image format supported
      *         by the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
      * @param  description a brief textual description of the image
+     * @throws NullPointerException if {@code imageData} is {@code null}
      * @see    java.awt.Toolkit#createImage
      */
     public ImageIcon (byte[] imageData, String description) {
@@ -271,6 +284,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      *
      * @param  imageData an array of pixels in an image format supported by
      *             the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
+     * @throws NullPointerException if {@code imageData} is {@code null}
      * @see    java.awt.Toolkit#createImage
      * @see #getDescription
      * @see java.awt.Image#getProperty
@@ -375,6 +389,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     /**
      * Sets the image displayed by this icon.
      * @param image the image
+     * @throws NullPointerException if {@code image} is {@code null}
      */
     public void setImage(Image image) {
         this.image = image;
