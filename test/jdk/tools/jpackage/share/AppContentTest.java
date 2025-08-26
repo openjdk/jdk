@@ -33,12 +33,12 @@ import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 
 
 /**
@@ -114,6 +114,20 @@ public class AppContentTest {
             })
             .setExpectedExitCode(expectedJPackageExitCode)
             .run();
+    }
+
+    @Test(ifOS = MACOS)
+    @Parameter({TEST_DIR, "warning.non.standard.contents.sub.dir"})
+    @Parameter({TEST_DUKE, "warning.app.content.is.not.dir"})
+    public void testWarnings(String testPath, String warningId) throws Exception {
+        final var appContentValue = TKit.TEST_SRC_ROOT.resolve(testPath);
+        final var expectedWarning = JPackageStringBundle.MAIN.cannedFormattedString(
+                warningId, appContentValue);
+
+        JPackageCommand.helloAppImage()
+            .addArguments("--app-content", appContentValue)
+            .validateOutput(expectedWarning)
+            .executeIgnoreExitCode();
     }
 
     private static Path getAppContentRoot(JPackageCommand cmd) {
