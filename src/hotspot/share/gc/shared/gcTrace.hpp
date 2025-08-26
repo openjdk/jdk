@@ -104,7 +104,9 @@ class GCTracer {
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
 
-  // Sends event data to the ObjectCount and/or ObjectCountAfterGC event.
+  // Report object count by not performing a heap inspection. This method will
+  // only work if there's a global KlassInfoTable that is already filled with
+  // entries prior to calling this method.
   template <typename T>
   void report_object_count() NOT_SERVICES_RETURN;
 

@@ -13,11 +13,11 @@ private:
   
   template <class T>
   inline void do_oop_work(T* p) {
-    assert(p != nullptr, "Object is null.");
+    assert(p != nullptr, "Object is null");
     T o = RawAccess<>::oop_load(p);
-    assert(!CompressedOops::is_null(o), "CompressOops is null.");
+    assert(!CompressedOops::is_null(o), "CompressOops is null");
     oop obj = CompressedOops::decode_not_null(o);
-    assert(_cit != nullptr, "KlassInfoTable is null.");
+    assert(_cit != nullptr, "KlassInfoTable is null");
     _cit->record_instance(obj);
   }
 
