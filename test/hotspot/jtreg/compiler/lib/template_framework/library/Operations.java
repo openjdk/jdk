@@ -39,7 +39,8 @@ public final class Operations {
     private static List<Expression> generatePrimitiveOperations() {
         List<Expression> ops = new ArrayList<>();
 
-        ops.add(Expression.make(INTS, "(", LONGS, ")"));
+        ops.add(Expression.make(INTS, "(int)(", LONGS, ")"));
+        ops.add(Expression.make(LONGS, "(", INTS, ")"));
 
         return ops;
     }

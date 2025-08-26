@@ -23,15 +23,20 @@
 
 package compiler.lib.template_framework.library;
 
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
+
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * TODO: desc
  */
 public class Expression {
 
-    private CodeGenerationDataNameType returnType;
-    private List<CodeGenerationDataNameType> argumentTypes;
+    public CodeGenerationDataNameType returnType;
+    public List<CodeGenerationDataNameType> argumentTypes;
     private List<String> strings;
 
     private Expression(CodeGenerationDataNameType returnType,
@@ -54,5 +59,29 @@ public class Expression {
                                   CodeGenerationDataNameType t0,
                                   String s1) {
         return new Expression(returnType, List.of(t0), List.of(s0, s1));
+    }
+
+    /**
+     * TODO: desc
+     */
+    public TemplateToken asToken(List<Object> arguments) {
+        if (arguments.size() != argumentTypes.size()) {
+            throw new IllegalArgumentException("Wrong number of arguments:" +
+                                               " expected: " + argumentTypes.size() +
+                                               " but got: " + arguments.size());
+        }
+
+        // List of tokens: interleave strings and arguments.
+        List<Object> tokens = new ArrayList<>();
+        for (int i = 0; i < argumentTypes.size(); i++) {
+            tokens.add(strings.get(i));
+            tokens.add(arguments.get(i));
+        }
+        tokens.add(strings.get(strings.size()-1));
+
+        var template = Template.make(() -> body(
+            tokens
+        ));
+        return template.asToken();
     }
 }
