@@ -26,6 +26,7 @@
  * @bug 6240151
  * @key headful
  * @summary XToolkit: Dragging the List scrollbar initiates DnD
+ * @requires os.family == "linux"
  * @run main MouseDraggedOriginatedByScrollBarTest
 */
 
@@ -36,7 +37,6 @@ import java.awt.List;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -49,21 +49,15 @@ public class MouseDraggedOriginatedByScrollBarTest {
     static volatile int width;
 
     public static void main(String[] args) throws Exception {
-        // Restrict test to XToolkit
-        boolean isXToolkit = Toolkit.getDefaultToolkit()
-                .getClass().getName().equals("sun.awt.X11.XToolkit");
-        if (!isXToolkit) {
-            System.out.println("The test is XAWT-only.");
-            return;
-        }
-
         try {
             createUI();
             test();
         } finally {
-            if (frame != null) {
-                EventQueue.invokeAndWait(() -> frame.dispose());
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
