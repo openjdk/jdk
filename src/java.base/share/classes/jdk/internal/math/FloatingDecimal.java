@@ -1926,12 +1926,12 @@ public class FloatingDecimal {
             if (ep < Q_MIN[ix] - bl) {
                 return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
             }
-            if (ep > QE_MAX[ix] - bl) {
+            if (ep > QP_MAX[ix] - bl) {
                 return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
             }
             int q = (int) ep;  // narrowing conversion is safe
             int shr;  // (sh)ift to (r)ight iff shr > 0
-            if (q >= QE_MIN[ix] - bl) {
+            if (q >= QP_MIN[ix] - bl) {
                 shr = bl - P[ix];
                 q += shr;
             } else {
@@ -2167,12 +2167,12 @@ public class FloatingDecimal {
      *      c = b_1...b_P  (b_i in [0, 2))
      *
      * Equivalently, the floating-point value can be (uniquely) expressed as
-     *      m 2^qe
-     * where integer qe and real f meet
-     *      qe = q + P
+     *      m 2^qp
+     * where integer qp and real m meet
+     *      qp = q + P
      *      m = c 2^(-P)
      * Hence,
-     *      QE_MIN = Q_MIN + P, QE_MAX = Q_MAX + P,
+     *      QP_MIN = Q_MIN + P, QP_MAX = Q_MAX + P,
      *      2^(-1) <= m < 1     (normal)
      *      m < 2^(-1)          (subnormal)
      *      m = 0.b_1...b_P
@@ -2212,13 +2212,14 @@ public class FloatingDecimal {
             -24,  // Float16ToDecimal.Q_MIN,
             FloatToDecimal.Q_MIN,
             DoubleToDecimal.Q_MIN,
-//            QE_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
-//            QE_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
+            // TODO magic constants here
+//            QP_MIN[BINARY_128_IX] - P[BINARY_128_IX],
+//            QP_MIN[BINARY_256_IX] - P[BINARY_256_IX],
     };
 
-    /* Minimum exponent in the m 2^qe representation. */
+    /* Minimum exponent in the m 2^qp representation. */
     @Stable
-    private static final int[] QE_MIN = {
+    private static final int[] QP_MIN = {
             Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
             FloatToDecimal.Q_MIN + FloatToDecimal.P,
             DoubleToDecimal.Q_MIN + DoubleToDecimal.P,
@@ -2226,14 +2227,14 @@ public class FloatingDecimal {
 //            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
     };
 
-    /* Maximum exponent in the m 2^qe representation. */
+    /* Maximum exponent in the m 2^qp representation. */
     @Stable
-    private static final int[] QE_MAX = {
-            3 - QE_MIN[BINARY_16_IX],
+    private static final int[] QP_MAX = {
+            3 - QP_MIN[BINARY_16_IX],
             FloatToDecimal.Q_MAX + FloatToDecimal.P,
             DoubleToDecimal.Q_MAX + DoubleToDecimal.P,
-//            3 - QE_MIN[BINARY_128_IX],
-//            3 - QE_MIN[BINARY_256_IX],
+//            3 - QP_MIN[BINARY_128_IX],
+//            3 - QP_MIN[BINARY_256_IX],
     };
 
     @Stable
