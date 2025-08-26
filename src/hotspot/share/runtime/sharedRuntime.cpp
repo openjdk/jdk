@@ -265,6 +265,7 @@ void SharedRuntime::print_ic_miss_histogram() {
   }
 }
 
+#ifdef COMPILER2
 // Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
 void SharedRuntime::debug_print_value(jboolean x) {
   tty->print_cr("boolean %d", x);
@@ -301,6 +302,7 @@ void SharedRuntime::debug_print_value(jdouble x) {
 void SharedRuntime::debug_print_value(oopDesc* x) {
   x->print();
 }
+#endif // COMPILER2
 
 #endif // PRODUCT
 
