@@ -8,26 +8,21 @@
 
 #if INCLUDE_SERVICES
 
-// The ObjectCountEventSenderClosure will decide whether to delete
-// the entry and/or emit the ObjectCount event separately. Only set
-// the delete entry flag to true if the same KlassInfoTable is being
-// reused for this closure. The SeparateEventEmissios determines if
-// only the ObjectCount event will be emitted instead of ObjectCountAfterGC.
-// If false, then both events will be emitted.
+// The ObjectCountEventSenderClosure will determine if only the ObjectCount
+// event will be emitted instead of ObjectCountAfterGC. If false, then both
+// events will be emitted.
 
-template <bool DeleteEntry, bool SeparateEventEmission>
+template <bool SeparateEventEmission>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   size_t _total_size_in_words;
   const Ticks _timestamp;
-  KlassInfoTable* _cit;
 
  public:
-  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp, KlassInfoTable* cit=nullptr) :
+  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp) :
     _size_threshold_percentage(ObjectCountCutOffPercent / 100),
     _total_size_in_words(total_size_in_words),
-    _timestamp(timestamp),
-    _cit(cit)
+    _timestamp(timestamp)
   {}
   
   virtual void do_cinfo(KlassInfoEntry* entry) {
@@ -37,14 +32,6 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
       } else {
         ObjectCountEventSender::send<false>(entry, _timestamp);
       }
-    }
-
-    // If the same KlassInfoTable is being used for every event emission,
-    // delete the entry even if we don't send it. This ensure live objects that
-    // weren't sent in a previous event emission are not monotonically increasing.
-    if (DeleteEntry) {
-      assert(_cit != nullptr, "KlassInfoTable should be initialized");
-      _cit->delete_entry(entry);
     }
   }
 
@@ -68,9 +55,8 @@ void GCTracer::report_object_count() {
     // Delete the entry of the KlassInfoTable since the table is local to the
     // heap and will be reused again. Allow for separate event emission because
     // to distinguish what event triggered this method.
-    ObjectCountEventSenderClosure<true, true> event_sender(cit->size_of_instances_in_words(), Ticks::now(), cit);
+    ObjectCountEventSenderClosure<true> event_sender(cit->size_of_instances_in_words(), Ticks::now());
     cit->iterate(&event_sender);
-    assert(cit->size_of_instances_in_words() == 0, "KlassInfoTable should be empty");
   }
 }
 

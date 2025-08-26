@@ -650,8 +650,7 @@ inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
 
 inline void ShenandoahHeap::set_cit(KlassInfoTable* cit) {
   assert((_cit == nullptr && cit != nullptr) ||
-    (_cit != nullptr && cit == nullptr),
-    "Initialize once & clear once");
+    (_cit != nullptr && cit == nullptr), "Initialize once & clear once");
   _cit = cit;
 }
 

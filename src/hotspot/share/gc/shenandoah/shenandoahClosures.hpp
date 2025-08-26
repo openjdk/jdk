@@ -116,7 +116,7 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     // Count newly marked strong references to avoid double counting.
-    bool newly_marked_strong = work<T, GENERATION>(p);
+    const bool newly_marked_strong = work<T, GENERATION>(p);
     if (newly_marked_strong) {
       _count->do_oop(p);
     }

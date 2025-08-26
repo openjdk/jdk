@@ -140,11 +140,8 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
 void KlassInfoBucket::iterate(KlassInfoClosure* cic) {
   KlassInfoEntry* elt = _list;
   while (elt != nullptr) {
-    // The remove_from_list method will delete elt if ObjectCountEventSenderClosure decides to send the event
-    // If the event is sent, we should save the next entry of the bucket and define elt as that next entry, since could be deleted
-    KlassInfoEntry* next = elt->next();
     cic->do_cinfo(elt);
-    elt = next;
+    elt = elt->next();
   }
 }
 
@@ -156,30 +153,6 @@ void KlassInfoBucket::empty() {
     delete elt;
     elt = next;
   }
-}
-
-void KlassInfoBucket::remove_from_list(KlassInfoEntry*& entry) {
-  if (_list == entry) {
-    KlassInfoEntry* next = _list->next();
-    _list = next;
-    delete entry;
-    entry = nullptr;
-    return;
-  }
-
-  KlassInfoEntry* current = _list;
-  while (current != nullptr && current->next() != entry) {
-    current = current->next();
-  }
-  
-  if (current != nullptr && current->next() == entry) {
-    KlassInfoEntry* next = entry->next();
-    current->set_next(next);
-    delete entry;
-    entry = nullptr;
-  }
-
-  guarantee(false, "Entry not found.");
 }
 
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
@@ -264,10 +237,6 @@ size_t KlassInfoTable::size_of_instances_in_words() const {
   return _size_of_instances_in_words;
 }
 
-void KlassInfoTable::subtract_total_size(size_t instance_words) {
-  _size_of_instances_in_words -= instance_words;
-}
-
 // Return false if the entry could not be recorded on account
 // of running out of space required to create a new entry.
 bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
@@ -282,13 +251,6 @@ bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
     return true;
   }
   return false;
-}
-
-void KlassInfoTable::delete_entry(KlassInfoEntry* entry) {
-  uint idx = hash(entry->klass()) % _num_buckets;
-  size_t words = entry->words();
-  _buckets[idx].remove_from_list(entry);
-  _size_of_instances_in_words -= words;
 }
 
 class KlassInfoTableMergeClosure : public KlassInfoClosure {

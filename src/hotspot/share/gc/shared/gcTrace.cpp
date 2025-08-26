@@ -85,11 +85,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      // Do not delete the KlassInfoTable's entry since it will be
-      // deconstructed automatically once it goes out of scope.
-      // No separate event emission is needed because both events
-      // will be sent together.
-      ObjectCountEventSenderClosure<false, false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
