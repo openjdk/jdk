@@ -5,9 +5,9 @@ import jdk.internal.vm.annotation.ForceInline;
 
 
 /**
- * This class is thread safe. Any thread can create and use an instance of this class
- * at any time. The `function` field is only accessed if `counter` is positive so
- * the setting of function to `null` is safe.
+ * This class is thread safe. Any thread can create and use an instance of this class at
+ * any time. The `function` field is only accessed if `counter` is positive so the setting
+ * of function to `null` is safe.
  *
  * @param <U> the underlying function type
  */
@@ -23,7 +23,7 @@ public final class FunctionHolder<U> {
     private int counter;
 
     public FunctionHolder(U function, int counter) {
-        this.function = function;
+        this.function = (counter == 0) ? null : function;
         this.counter = counter;
         // Safe publication
         UNSAFE.storeStoreFence();

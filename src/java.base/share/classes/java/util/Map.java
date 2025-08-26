@@ -1797,12 +1797,12 @@ public interface Map<K, V> {
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
     static <K, V> Map<K, V> ofLazy(Set<K> keys,
                                    Function<? super K, ? extends V> mapper) {
-        Objects.requireNonNull(keys);
-        // Checking that the Set of keys does not contain a `null` value is made in the
-        // implementing class.
+        // Protect against TOC-TOU attacks.
+        // Also, implicit null check of `keys` and all its elements
+        final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(mapper);
         // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-        return new StableCollections.StableMap<>(keys, mapper);
+        return new StableCollections.StableMap<>(keyCopies, mapper);
     }
 
 }
