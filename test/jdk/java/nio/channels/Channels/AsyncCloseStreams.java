@@ -46,24 +46,17 @@ public class AsyncCloseStreams {
 
     private static Thread startCloseThread(LinkedTransferQueue<Closeable> q) {
         return Thread.ofPlatform().start(() -> {
-            do {
                 try {
                     Closeable c;
-                    if ((c = q.take()) != null) {
-                        if (c == STOP) {
-                            break;
-                        } else {
-                            try {
-                                c.close();
-                            } catch (IOException ignored) {
-                            }
+                    while((c = q.take()) != STOP) {
+                        try {
+                            c.close();
+                        } catch (IOException ignored) {
                         }
                     }
                 } catch (InterruptedException ignored) {
-                    break;
                 }
-            } while (true);
-        });
+            });
     }
 
     @Test
@@ -82,21 +75,19 @@ public class AsyncCloseStreams {
                 try {
                     available = in.available();
                 } catch (AsynchronousCloseException ace) {
-                    System.out.println("AsynchronousCloseException caught");
-                    close.offer(STOP);
+                    System.err.println("AsynchronousCloseException caught");
                     break;
                 } catch (ClosedChannelException ignored) {
                     continue;
                 } catch (Throwable t) {
-                    close.offer(STOP);
                     fail("Unexpected error", t);
                 }
                 if (available < 0) {
-                    close.offer(STOP);
                     fail("FAILED: available < 0");
                 }
             } while (true);
         } finally {
+            close.offer(STOP);
             closeThread.join();
         }
     }
@@ -120,21 +111,19 @@ public class AsyncCloseStreams {
                 try {
                     value = in.read();
                 } catch (AsynchronousCloseException ace) {
-                    System.out.println("AsynchronousCloseException caught");
-                    close.offer(STOP);
+                    System.err.println("AsynchronousCloseException caught");
                     break;
                 } catch (ClosedChannelException ignored) {
                     continue;
                 } catch (Throwable t) {
-                    close.offer(STOP);
                     fail("Unexpected error", t);
                 }
                 if (value < 0) {
-                    close.offer(STOP);
                     fail("FAILED: value < 0");
                 }
             } while (true);
         } finally {
+            close.offer(STOP);
             closeThread.join();
         }
     }
@@ -154,16 +143,15 @@ public class AsyncCloseStreams {
                 try {
                     out.write(27);
                 } catch (AsynchronousCloseException ace) {
-                    System.out.println("AsynchronousCloseException caught");
-                    close.offer(STOP);
+                    System.err.println("AsynchronousCloseException caught");
                     break;
                 } catch (ClosedChannelException ignored) {
                 } catch (Throwable t) {
-                    close.offer(STOP);
                     fail("Write error", t);
                 }
             } while (true);
         } finally {
+            close.offer(STOP);
             closeThread.join();
         }
     }
