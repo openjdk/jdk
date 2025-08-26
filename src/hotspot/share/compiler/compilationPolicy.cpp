@@ -138,13 +138,6 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
- void CompilationPolicy::wait_replay_training_to_finish(JavaThread* current) {
-    MonitorLocker locker(current, TrainingReplayQueue_lock);
-    while (!_training_replay_queue.is_empty_unlocked() || _training_replay_queue.is_processing_unlocked()) {
-      locker.wait(); // let the replay training thread drain the queue
-    }
- }
-
 void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current) {
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
@@ -189,11 +182,10 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
 }
 
 void CompilationPolicy::replay_training_at_init_loop(JavaThread* current) {
-  while (!CompileBroker::is_compilation_disabled_forever() || AOTVerifyTrainingData) {
+  while (!CompileBroker::is_compilation_disabled_forever()) {
     InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, current);
     if (ik != nullptr) {
       replay_training_at_init_impl(ik, current);
-      _training_replay_queue.processing_done(TrainingReplayQueue_lock, current);
     }
   }
 }

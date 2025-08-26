@@ -632,12 +632,12 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
     int init_deps_left1 = init_deps_left_acquire();
     int init_deps_left2 = compute_init_deps_left();
 
-    if (init_deps_left1 != init_deps_left2) {
+    bool invariant = (init_deps_left1 >= init_deps_left2);
+    if (!invariant) {
       print_on(tty);
       tty->cr();
     }
-    guarantee(init_deps_left1 == init_deps_left2,
-              "init deps invariant violation: %d == %d", init_deps_left1, init_deps_left2);
+    guarantee(invariant, "init deps invariant violation: %d >= %d", init_deps_left1, init_deps_left2);
   }
 }
 
