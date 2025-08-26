@@ -39,6 +39,7 @@ class CompilerToVM {
    static const int DECLARED_ANNOTATIONS = 0;
    static const int PARAMETER_ANNOTATIONS = 1;
    static const int TYPE_ANNOTATIONS = 2;
+   static const int ANNOTATION_MEMBER_VALUE = 3;
 
   class Data {
     friend class JVMCIVMStructs;

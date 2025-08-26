@@ -42,6 +42,9 @@ import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -74,7 +77,13 @@ public class TestAnnotationEncodingDecoding {
             return;
         }
 
-        byte[] encoded = VMSupport.encodeAnnotations(List.of(annotations));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+        try (DataOutputStream dos = new DataOutputStream(baos)) {
+            VMSupport.encodeAnnotations(dos, List.of(annotations));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        byte[] encoded = baos.toByteArray();
         MyDecoder decoder = new MyDecoder();
         List<AnnotationConst> decoded = VMSupport.decodeAnnotations(encoded, decoder);
         int i = 0;

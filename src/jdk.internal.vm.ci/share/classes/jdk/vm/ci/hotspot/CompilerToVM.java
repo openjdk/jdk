@@ -23,7 +23,6 @@
 
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
@@ -61,7 +60,7 @@ final class CompilerToVM {
     /**
      * Initializes the native part of the JVMCI runtime.
      */
-    private static native void registerNatives(int declaredAnnotations, int parameterAnnotations, int typeAnnotations);
+    private static native void registerNatives();
 
     /**
      * These values mirror the equivalent values from {@code Unsafe} but are appropriate for the JVM
@@ -88,8 +87,8 @@ final class CompilerToVM {
 
     @SuppressWarnings("try")
     CompilerToVM() {
-        try (InitTimer t = timer("CompilerToVM.registerNatives")) {
-            registerNatives(VMSupport.DECLARED_ANNOTATIONS, VMSupport.PARAMETER_ANNOTATIONS, VMSupport.TYPE_ANNOTATIONS);
+        try (InitTimer _ = timer("CompilerToVM.registerNatives")) {
+            registerNatives();
             ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(JavaKind.Boolean.getTypeChar());
             ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(JavaKind.Byte.getTypeChar());
             ARRAY_SHORT_BASE_OFFSET = arrayBaseOffset(JavaKind.Short.getTypeChar());
@@ -1459,11 +1458,14 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, int category) {
-            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(), category);
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, HotSpotResolvedObjectTypeImpl memberType, int category) {
+        long memberTypePointer = memberType == null ? 0L: memberType.getKlassPointer();
+        return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
+                                                        memberType, memberTypePointer, category);
     }
 
-    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer, int category);
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                                                       HotSpotResolvedObjectTypeImpl memberType, long klassPointer, int category);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and
