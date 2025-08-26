@@ -141,8 +141,6 @@ public final class LWCToolkit extends LWToolkit {
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
     static {
-        System.err.flush();
-
         ResourceBundle platformResources = null;
         try {
             platformResources = ResourceBundle.getBundle("sun.awt.resources.awtosx");
