@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ final class LCMSTransform implements ColorTransform {
         lcmsProfiles = new LCMSProfile[profiles.length];
         for (int i = 0; i < profiles.length; i++) {
             lcmsProfiles[i] = LCMS.getLcmsProfile(acc.cmmProfile(profiles[i]));
-            profiles[i].getNumComponents(); // force header initialization
+            profiles[i].getMajorVersion(); // force header initialization
         }
         this.renderingIntent = (renderingIntent == ColorTransform.Any) ?
                 ICC_Profile.icPerceptual : renderingIntent;

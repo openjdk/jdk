@@ -229,11 +229,7 @@ int LIR_Assembler::emit_unwind_handler() {
     LIR_Opr lock = FrameMap::as_opr(Z_R1_scratch);
     monitor_address(0, lock);
     stub = new MonitorExitStub(lock, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-    } else {
-      __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
-    }
+    __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -2714,13 +2710,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // May not be an oop.
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ branch_optimized(Assembler::bcondAlways, *op->stub()->entry());
-  } else if (op->code() == lir_lock) {
+  if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // Add debug info for NullPointerException only if one is possible.
     if (op->info() != nullptr) {
