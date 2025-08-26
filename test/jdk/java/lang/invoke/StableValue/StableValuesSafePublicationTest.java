@@ -24,6 +24,7 @@
 /* @test
  * @summary Basic tests for making sure StableValue publishes values safely
  * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.invoke.stable
  * @enablePreview
  * @compile StableTestUtil.java
  * @run junit StableValuesSafePublicationTest

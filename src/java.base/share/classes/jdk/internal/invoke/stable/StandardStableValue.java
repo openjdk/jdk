@@ -31,6 +31,8 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -92,7 +94,7 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     boolean trySetSlowPath(T contents) {
         // Prevent reentry via an orElseSet(supplier)
-        preventReentry();
+        preventReentry(this);
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify `this.contents`
         synchronized (this) {
@@ -137,23 +139,35 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
         if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
             return (T) t;
         }
-        return orElseSetSlowPath(supplier);
+        return orElseSetSlowPath(this, supplier, null);
     }
 
     @SuppressWarnings("unchecked")
-    private T orElseSetSlowPath(Supplier<? extends T> supplier) {
-        preventReentry();
-        synchronized (this) {
-            final Object t = contents;  // Plain semantics suffice here
-            if (t == null) {
-                final T newValue = supplier.get();
-                Objects.requireNonNull(newValue);
-                // The mutex is not reentrant so we know newValue should be returned
-                set(newValue);
-                return newValue;
-            }
+    @ForceInline
+    @Override
+    public T orElseSet(final int input,
+                       final FunctionHolder<?> functionHolder) {
+        Object t = contentsPlain;
+        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
             return (T) t;
         }
+        return orElseSetSlowPath(this, input, functionHolder);
+    }
+
+    @SuppressWarnings("unchecked")
+    @ForceInline
+    public T orElseSet(final Object input,
+                       final FunctionHolder<?> functionHolder) {
+        Object t = contentsPlain;
+        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
+            return (T) t;
+        }
+        return orElseSetSlowPath(this, input, functionHolder);
+    }
+
+    @Override
+    public Object contentsPlain() {
+        return contents;
     }
 
     // The methods equals() and hashCode() should be based on identity (defaults from Object)
@@ -179,13 +193,6 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     // Private methods
 
-    // This method is not annotated with @ForceInline as it is always called
-    // in a slow path.
-    private void preventReentry() {
-        if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursive initialization of a stable value is illegal");
-        }
-    }
 
     /**
      * Tries to set the contents to {@code newValue}.
@@ -196,7 +203,7 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
      * @return if the contents was set
      */
     @ForceInline
-    private boolean set(T newValue) {
+    public boolean set(T newValue) {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
         if (contents == null) {

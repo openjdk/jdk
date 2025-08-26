@@ -26,6 +26,7 @@
 package java.util;
 
 import jdk.internal.ValueBased;
+import jdk.internal.invoke.stable.FunctionHolder;
 import jdk.internal.invoke.stable.InternalStableValue;
 import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
@@ -171,14 +172,14 @@ final class StableCollections {
             }
 
             boolean trySetSlowPath(T contents) {
-                // Prevent reentry via orElseSet(supplier)
-                preventReentry();
                 // Mutual exclusion is required here as `orElseSet` might also
                 // attempt to modify `this.elements`
                 final Object mutex = acquireMutex();
                 if (mutex == Mutexes.TOMB_STONE) {
                     return false;
                 }
+                // Prevent reentry via orElseSet(supplier)
+                preventReentry(mutex);
                 synchronized (mutex) {
                     // Maybe we were not the winner?
                     if (acquireMutex() == Mutexes.TOMB_STONE) {
@@ -222,11 +223,11 @@ final class StableCollections {
             }
 
             private T orElseSetSlowPath(Supplier<? extends T> supplier) {
-                preventReentry();
                 final Object mutex = acquireMutex();
                 if (mutex == Mutexes.TOMB_STONE) {
                     return contentsAcquire();
                 }
+                preventReentry(mutex);
                 synchronized (mutex) {
                     // If there was another winner that succeeded,
                     // the contents is guaranteed to be set
@@ -240,6 +241,15 @@ final class StableCollections {
                     }
                     return t;
                 }
+            }
+
+            @Override
+            public T orElseSet(int input, FunctionHolder<?> functionHolder) {
+                final Object mutex = acquireMutex();
+                if (mutex == Mutexes.TOMB_STONE) {
+                    return contentsAcquire();
+                }
+                return orElseSetSlowPath(mutex, input, functionHolder);
             }
 
             // Object methods
@@ -275,7 +285,8 @@ final class StableCollections {
             }
 
             @SuppressWarnings("unchecked")
-            private T contentsPlain() {
+            @Override
+            public T contentsPlain() {
                 return (T) UNSAFE.getReference(elements, offset);
             }
 
@@ -294,15 +305,6 @@ final class StableCollections {
                 return list.mutexes().mutexVolatile(offset);
             }
 
-            private void preventReentry() {
-                final Object mutex = mutexVolatile();
-                if (mutex == null || mutex == Mutexes.TOMB_STONE || !Thread.holdsLock(mutex)) {
-                    // No reentry attempted
-                    return;
-                }
-                throw new IllegalStateException("Recursive initialization of a stable value is illegal. Index: " + indexFor(offset));
-            }
-
             /**
              * Tries to set the contents at the provided {@code index} to
              * {@code newValue}.
@@ -313,7 +315,8 @@ final class StableCollections {
              * @return if the contents was set
              */
             @ForceInline
-            private boolean set(T newValue) {
+            @Override
+            public boolean set(T newValue) {
                 Object mutex;
                 assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@ offset " + offset + ") didn't hold " + mutex;
                 // We know we hold the monitor here so plain semantic is enough
@@ -337,14 +340,14 @@ final class StableCollections {
             implements LenientList<E> {
 
         @Stable
-        private final IntFunction<? extends E> mapper;
+        private final FunctionHolder<IntFunction<? extends E>> mapperHolder;
         @Stable
         private final E[] elements;
         @Stable
         private final Mutexes mutexes;
 
         private StableList(int size, IntFunction<? extends E> mapper) {
-            this.mapper = mapper;
+            this.mapperHolder = new FunctionHolder<>(mapper, size);
             this.elements = newGenericArray(size);
             this.mutexes = new Mutexes(size);
             super();
@@ -363,8 +366,7 @@ final class StableCollections {
             if (e != null) {
                 return e;
             }
-            return asStableValue(i).orElseSet(new Supplier<E>() {
-                @Override  public E get() { return mapper.apply(i); }});
+            return asStableValue(i).orElseSet(i, mapperHolder);
         }
 
         @Override
@@ -548,12 +550,12 @@ final class StableCollections {
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         @Stable
-        private final Function<? super K, ? extends V> mapper;
+        private final FunctionHolder<Function<? super K, ? extends V>> mapperHolder;
         @Stable
         private final Map<K, StandardStableValue<V>> delegate;
 
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-            this.mapper = mapper;
+            this.mapperHolder = new FunctionHolder<>(mapper, keys.size());
             this.delegate = StableUtil.map(keys);
             super();
         }
@@ -572,16 +574,9 @@ final class StableCollections {
         @Override
         public V getOrDefault(Object key, V defaultValue) {
             final StandardStableValue<V> stable = delegate.get(key);
-            if (stable == null) {
-                return defaultValue;
-            }
-            @SuppressWarnings("unchecked") final K k = (K) key;
-            return stable.orElseSet(new Supplier<V>() {
-                @Override
-                public V get() {
-                    return mapper.apply(k);
-                }
-            });
+            return (stable == null)
+                    ? null
+                    : stable.orElseSet(key, mapperHolder);
         }
 
         @jdk.internal.ValueBased
@@ -638,8 +633,7 @@ final class StableCollections {
                 public Entry<K, V> next() {
                     final Entry<K, StandardStableValue<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
-                    return new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                        @Override public V get() { return outer.outer.mapper.apply(k); }});
+                    return new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder);
                 }
 
                 @Override
@@ -649,8 +643,7 @@ final class StableCollections {
                                 @Override
                                 public void accept(Entry<K, StandardStableValue<V>> inner) {
                                     final K k = inner.getKey();
-                                    action.accept(new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                                        @Override public V get() { return outer.outer.mapper.apply(k); }}));
+                                    action.accept(new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
@@ -666,10 +659,10 @@ final class StableCollections {
 
         private record StableEntry<K, V>(K getKey, // trick
                                          StandardStableValue<V> stableValue,
-                                         Supplier<? extends V> supplier) implements Entry<K, V> {
+                                         FunctionHolder<Function<? super K, ? extends V>> mapperHolder) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
-            @Override public V      getValue() { return stableValue.orElseSet(supplier); }
+            @Override public V      getValue() { return stableValue.orElseSet(getKey(), mapperHolder); }
             @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
             @Override public String toString() { return getKey() + "=" + stableValue.toString(); }
 

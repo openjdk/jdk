@@ -25,9 +25,10 @@
  * @summary Basic tests for StableMap methods
  * @modules java.base/jdk.internal.invoke.stable
  * @enablePreview
- * @run junit StableMapTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableMapTest
  */
 
+import jdk.internal.invoke.stable.FunctionHolder;
 import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -338,6 +340,63 @@ final class StableMapTest {
         inputs.add(0);
         inputs.add(null);
         assertThrows(NullPointerException.class, () -> Map.ofLazy(inputs, IDENTITY));
+    }
+
+    @Test
+    void functionHolder() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = Map.ofLazy(KEYS, cif);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+
+        int i = 0;
+        for (Integer input : KEYS) {
+            assertEquals(KEYS.size() - i, holder.counter());
+            assertSame(cif, holder.function());
+            int v = f1.get(input);
+            int v2 = f1.get(input);
+            i++;
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.function());
+    }
+
+    @Test
+    void functionHolderViaEntrySet() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = Map.ofLazy(KEYS, cif);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+
+        int i = 0;
+        for (Map.Entry<Integer, Integer> e : f1.entrySet()) {
+            assertEquals(KEYS.size() - i, holder.counter());
+            assertSame(cif, holder.function());
+            int v = e.getValue();
+            int v2 = e.getValue();
+            i++;
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.function());
+    }
+
+    @Test
+    void underlyingRefViaEntrySetForEach() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = Map.ofLazy(KEYS, cif);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+
+        final AtomicInteger i = new AtomicInteger();
+        f1.entrySet().forEach(e -> {
+            assertEquals(KEYS.size() - i.get(), holder.counter());
+            assertSame(cif, holder.function());
+            Integer val = e.getValue();
+            Integer val2 = e.getValue();
+            i.incrementAndGet();
+        });
+        assertEquals(0, holder.counter());
+        assertNull(holder.function());
     }
 
     // Support constructs

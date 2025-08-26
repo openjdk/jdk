@@ -38,10 +38,10 @@ import java.util.function.Supplier;
  * @param <T> the return type
  */
 public record StableSupplier<T>(StandardStableValue<T> delegate,
-                                Supplier<? extends T> original) implements Supplier<T> {
+                                FunctionHolder<Supplier<? extends T>> mapperHolder) implements Supplier<T> {
 
     @ForceInline
-    @Override public T get() { return delegate.orElseSet(original); }
+    @Override public T get() { return delegate.orElseSet(null, mapperHolder); }
 
     // Object methods
     @Override public int     hashCode() { return System.identityHashCode(this); }
@@ -55,8 +55,8 @@ public record StableSupplier<T>(StandardStableValue<T> delegate,
     @SuppressWarnings("unchecked")
     public static <T> StableSupplier<T> of(Supplier<? extends T> original) {
         return original instanceof StableSupplier<? extends T> stableSupplier
-                ? (StableSupplier<T>) stableSupplier
-                : new StableSupplier<>(StandardStableValue.of(), original);
+                ? (StableSupplier<T>) stableSupplier // We are already stable
+                : new StableSupplier<>(StandardStableValue.of(), new FunctionHolder<>(original, 1));
     }
 
 }

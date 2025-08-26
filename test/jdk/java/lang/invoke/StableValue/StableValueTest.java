@@ -24,7 +24,7 @@
 /* @test
  * @summary Basic tests for StableValue implementations
  * @enablePreview
- * @compile StableTestUtil.java
+ * @modules java.base/jdk.internal.invoke.stable
  * @run junit StableValueTest
  */
 

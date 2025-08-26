@@ -24,10 +24,12 @@
 /* @test
  * @summary Basic tests for StableSupplier methods
  * @enablePreview
+ * @modules java.base/jdk.internal.invoke.stable
  * @compile StableTestUtil.java
- * @run junit StableSupplierTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.invoke.stable=ALL-UNNAMED StableSupplierTest
  */
 
+import jdk.internal.invoke.stable.FunctionHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
@@ -105,6 +107,39 @@ final class StableSupplierTest {
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());
+    }
+
+    @Test
+    void functionHolder() {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        var f1 = Supplier.ofCaching(cs);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.function());
+        int v = f1.get();
+        int v2 = f1.get();
+        assertEquals(0, holder.counter());
+        assertNull(holder.function(), holder.toString());
+    }
+
+    @Test
+    void functionHolderException() {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+            throw new UnsupportedOperationException();
+        });
+        var f1 = Supplier.ofCaching(cs);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.function());
+        try {
+            int v = f1.get();
+        } catch (UnsupportedOperationException _) {
+            // Expected
+        }
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.function());
     }
 
 }

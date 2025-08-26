@@ -25,9 +25,10 @@
  * @summary Basic tests for StableList methods
  * @modules java.base/jdk.internal.invoke.stable
  * @enablePreview
- * @run junit StableListTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableListTest
  */
 
+import jdk.internal.invoke.stable.FunctionHolder;
 import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
 import org.junit.jupiter.api.Test;
@@ -314,7 +315,7 @@ final class StableListTest {
         var lazy = List.ofLazy(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
-        assertEquals("Recursive initialization of a stable value is illegal. Index: " + INDEX, x.getMessage());
+        assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
     }
 
     // Immutability
@@ -416,6 +417,22 @@ final class StableListTest {
                 });
             });
         });
+    }
+
+    @Test
+    void functionHolder() {
+        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
+        List<Integer> f1 = List.ofLazy(SIZE, cif);
+
+        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(SIZE - i, holder.counter());
+            assertSame(cif, holder.function());
+            int v = f1.get(i);
+            int v2 = f1.get(i);
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.function());
     }
 
     // Support constructs
