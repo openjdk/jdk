@@ -29,7 +29,7 @@
  *          "signature_algorithms_cert" extension is not being sent.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13
+ * @run main/othervm DisableCertSignAlgsExtForClientTLS13
  */
 
 import static jdk.test.lib.Asserts.assertFalse;
@@ -39,10 +39,10 @@ import java.util.List;
 
 // Test disabled signature_algorithms_cert extension on the client side
 // for TLSv1.3.
-public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13 extends
-        DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 {
+public class DisableCertSignAlgsExtForClientTLS13 extends
+        DisableCertSignAlgsExtForClientTLS12 {
 
-    protected DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13()
+    protected DisableCertSignAlgsExtForClientTLS13()
             throws Exception {
         super();
     }
@@ -53,7 +53,7 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13 extends
         // Disable signature_algorithms_cert extension for the client.
         System.setProperty("jdk.tls.client.disableExtensions",
                 "signature_algorithms_cert");
-        new DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS13().run();
+        new DisableCertSignAlgsExtForClientTLS13().run();
     }
 
     @Override

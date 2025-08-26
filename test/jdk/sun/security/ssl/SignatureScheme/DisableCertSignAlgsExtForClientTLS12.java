@@ -29,7 +29,7 @@
  *          "signature_algorithms_cert" extension is not being sent.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12
+ * @run main/othervm DisableCertSignAlgsExtForClientTLS12
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
@@ -40,10 +40,10 @@ import java.util.List;
 
 // Test disabled signature_algorithms_cert extension on the client side
 // for TLSv1.2.
-public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 extends
+public class DisableCertSignAlgsExtForClientTLS12 extends
         DisableSignatureSchemePerScopeTLS12 {
 
-    protected DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12()
+    protected DisableCertSignAlgsExtForClientTLS12()
             throws Exception {
         super();
     }
@@ -54,7 +54,7 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 extends
         // Disable signature_algorithms_cert extension for the client.
         System.setProperty("jdk.tls.client.disableExtensions",
                 "signature_algorithms_cert");
-        new DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12().run();
+        new DisableCertSignAlgsExtForClientTLS12().run();
     }
 
     @Override
@@ -70,13 +70,13 @@ public class DisableSignatureSchemePerScopeNoClientCertSignAlgsExtTLS12 extends
         // handshake signature scheme.
         assertFalse(sigAlgsSS.contains(HANDSHAKE_DISABLED_SIG),
                 "Signature Scheme " + HANDSHAKE_DISABLED_SIG
-                + " present in ClientHello's signature_algorithms extension");
+                        + " present in ClientHello's signature_algorithms extension");
 
         // signature_algorithms extension MUST NOT contain disabled
         // certificate signature scheme.
         assertFalse(sigAlgsSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
-                + " present in ClientHello's signature_algorithms extension");
+                        + " present in ClientHello's signature_algorithms extension");
 
         // signature_algorithms_cert extension MUST NOT be present.
         assertEquals(getSigSchemesCliHello(extractHandshakeMsg(
