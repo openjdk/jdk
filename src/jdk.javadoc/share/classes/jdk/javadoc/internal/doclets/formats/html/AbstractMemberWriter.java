@@ -28,7 +28,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -45,6 +47,7 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -52,6 +55,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -206,16 +210,18 @@ public abstract class AbstractMemberWriter {
     public void buildSummary(Content target)
     {
         var summaryTreeList = new ArrayList<Content>();
-
-        buildMainSummary(summaryTreeList);
+        var inheritedTocEntries = new LinkedHashMap<HtmlId, Content>();
+        var ownMemberCount = buildMainSummary(summaryTreeList);
+        var inheritedSummaries = 0;
 
         var showInherited = switch (kind) {
             case FIELDS, METHODS, NESTED_CLASSES, PROPERTIES -> true;
             case ANNOTATION_TYPE_MEMBER, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED,
                     CONSTRUCTORS, ENUM_CONSTANTS -> false;
         };
-        if (showInherited)
-            buildInheritedSummary(summaryTreeList);
+        if (showInherited) {
+            inheritedSummaries = buildInheritedSummary(summaryTreeList, inheritedTocEntries);
+        }
 
         if (!summaryTreeList.isEmpty()) {
             Content member = getMemberSummaryHeader(target);
@@ -223,6 +229,12 @@ public abstract class AbstractMemberWriter {
             buildSummary(target, member);
             writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel(),
                     TableOfContents.Level.FIRST);
+
+            // Omit TOC entries for inherited members unless there's a substantial number of own members.
+            if (!inheritedTocEntries.isEmpty() && ownMemberCount > 8 && inheritedSummaries > 0) {
+                inheritedTocEntries.forEach((key, value)
+                        -> writer.tableOfContents.addLink(key, value, TableOfContents.Level.SECOND));
+            }
         }
     }
 
@@ -230,30 +242,47 @@ public abstract class AbstractMemberWriter {
      * Builds the main summary table for the members of this kind.
      *
      * @param summaryTreeList the list of contents to which the documentation will be added
+     * @return the number of documented members
      */
-    private void buildMainSummary(List<Content> summaryTreeList) {
+    private int buildMainSummary(List<Content> summaryTreeList) {
         Set<? extends Element> members = asSortedSet(visibleMemberTable.getVisibleMembers(kind));
         if (!members.isEmpty()) {
             var pHelper = writer.getPropertyHelper();
+            var table = getSummaryTable();
             for (Element member : members) {
-                final Element property = pHelper.getPropertyElement(member);
-                if (property != null && member instanceof ExecutableElement ee) {
-                    configuration.cmtUtils.updatePropertyMethodComment(ee, property);
-                }
-                if (utils.isMethod(member)) {
-                    var docFinder = utils.docFinder();
-                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
-                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
-                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
-                        return DocFinder.Result.fromOptional(optional);
-                    })).toOptional();
-                    // The fact that we use `member` for possibly unrelated tags is suspicious
-                    addMemberSummary(typeElement, member, r.orElse(List.of()));
-                } else {
-                    addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
-                }
+                addMemberSummaryTableRow(typeElement, member, table, pHelper);
             }
             summaryTreeList.add(getSummaryTable(typeElement));
+        }
+        return members.size();
+    }
+
+    /**
+     * Adds the summary table row for a member.
+     * @param enclosingType the enclosing type of the member
+     * @param member the member
+     * @param table the summary table
+     * @param propertyHelper property helper to patch doctree
+     */
+    private void addMemberSummaryTableRow(TypeElement enclosingType, Element member, Table<Element> table,
+                                          PropertyUtils.PropertyHelper propertyHelper) {
+        final Element property = propertyHelper.getPropertyElement(member);
+        if (property != null && member instanceof ExecutableElement ee) {
+            configuration.cmtUtils.updatePropertyMethodComment(ee, property);
+        }
+
+        if (utils.isMethod(member)) {
+            var docFinder = utils.docFinder();
+            Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
+                var firstSentenceTrees = utils.getFirstSentenceTrees(m);
+                Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty()
+                        ? Optional.empty() : Optional.of(firstSentenceTrees);
+                return DocFinder.Result.fromOptional(optional);
+            })).toOptional();
+            // The fact that we use `member` for possibly unrelated tags is suspicious
+            addMemberSummary(enclosingType, member, r.orElse(List.of()), table);
+        } else {
+            addMemberSummary(enclosingType, member, utils.getFirstSentenceTrees(member), table);
         }
     }
 
@@ -261,9 +290,13 @@ public abstract class AbstractMemberWriter {
      * Builds the inherited member summary for the members of this kind.
      *
      * @param targets the list of contents to which the documentation will be added
+     * @param tocEntries map of TOC entries for added summaries
+     * @return the number of added summary lists, excluding methods from java.lang.Object
      */
-    private void buildInheritedSummary(List<Content> targets) {
+    private int buildInheritedSummary(List<Content> targets, Map<HtmlId, Content> tocEntries) {
         var inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
+        // Avoid showing TOC entry if it's just methods inherited from java.lang.Object
+        var summaryCount = kind == METHODS && utils.isClass(typeElement) ? -1 : 0;
 
         for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
             if (!utils.isVisible(inheritedClass)) {
@@ -284,9 +317,27 @@ public abstract class AbstractMemberWriter {
                 Content links = getInheritedSummaryLinks();
                 addSummaryFootNote(inheritedClass, inheritedMembers, links);
                 inheritedHeader.add(links);
+
+                if (utils.isIncluded(inheritedClass)) {
+                    var pHelper = writer.getPropertyHelper();
+                    Table<Element> table = createInheritedSummaryTable(inheritedClass);
+
+                    for (Element member : inheritedMembers) {
+                        addMemberSummaryTableRow(inheritedClass, member, table, pHelper);
+                    }
+
+                    inheritedHeader.add(table);
+                }
                 targets.add(inheritedHeader);
+
+                summaryCount++;
+                var label = new ContentBuilder();
+                addInheritedSummaryLabel(inheritedClass, label);
+                tocEntries.put(getInheritedSummaryId(inheritedClass), label.stripTags());
             }
         }
+
+        return summaryCount;
     }
 
     private void addSummaryFootNote(TypeElement inheritedClass, Iterable<Element> inheritedMembers,
@@ -328,6 +379,7 @@ public abstract class AbstractMemberWriter {
      * @return the member summary header
      */
     public abstract Content getMemberSummaryHeader(Content content);
+
     /**
      * Adds the given summary to the list of summaries.
      *
@@ -384,12 +436,36 @@ public abstract class AbstractMemberWriter {
     protected abstract Table<Element> createSummaryTable();
 
     /**
+     * Creates a summary table for members of the kind supported by this writer inherited
+     * from {@code typeElement}.
+     *
+     * @param typeElement the superclass or interface
+     * @return a summary table
+     */
+    protected Table<Element> createInheritedSummaryTable(TypeElement typeElement) {
+        throw new UnsupportedOperationException("Inherited summary not supported for " + kind);
+    }
+
+    /**
+     * Creates an id for a summary table for members of the kind supported by this writer
+     * inherited from {@code typeElement}.
+     *
+     * @param typeElement the superclass or interface
+     * @return the id for the summary table
+     */
+    protected HtmlId getInheritedSummaryId(TypeElement typeElement) {
+        throw new UnsupportedOperationException("Inherited summary not supported for " + kind);
+    }
+
+    /**
      * Adds inherited summary label for the member.
      *
      * @param typeElement the type element to which to link to
      * @param content     the content to which the inherited summary label will be added
      */
-    public abstract void addInheritedSummaryLabel(TypeElement typeElement, Content content);
+    public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
+        throw new UnsupportedOperationException("Inherited summary not supported for " + kind);
+    }
 
     /**
      * Adds the summary type for the member.
@@ -428,8 +504,9 @@ public abstract class AbstractMemberWriter {
      * @param member      the member to be documented
      * @param target      the content to which the inherited summary link will be added
      */
-    protected abstract void addInheritedSummaryLink(TypeElement typeElement,
-            Element member, Content target);
+    protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
+        throw new UnsupportedOperationException("Inherited summary not supported for " + kind);
+    }
 
     /**
      * Returns a link for summary (deprecated, preview) pages.
@@ -616,11 +693,7 @@ public abstract class AbstractMemberWriter {
      * @param firstSentenceTrees the tags for the sentence being documented
      */
     public void addMemberSummary(TypeElement tElement, Element member,
-            List<? extends DocTree> firstSentenceTrees) {
-        if (tElement != typeElement) {
-            throw new IllegalStateException(getClass() + ": " + tElement + ", " + typeElement);
-        }
-        var table = getSummaryTable();
+            List<? extends DocTree> firstSentenceTrees, Table<Element> table) {
         List<Content> rowContents = new ArrayList<>();
         Content summaryType = new ContentBuilder();
         addSummaryType(member, summaryType);
