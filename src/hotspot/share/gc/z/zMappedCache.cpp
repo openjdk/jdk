@@ -118,14 +118,11 @@ static ZMappedCacheEntry* create_entry(const ZVirtualMemory& vmem) {
   return entry;
 }
 
-int ZMappedCache::EntryCompare::cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
+bool ZMappedCache::EntryCompare::cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
   const ZVirtualMemory vmem_a = ZMappedCacheEntry::cast_to_entry(a)->vmem();
   const ZVirtualMemory vmem_b = ZMappedCacheEntry::cast_to_entry(b)->vmem();
 
-  if (vmem_a.end() < vmem_b.start()) { return -1; }
-  if (vmem_b.end() < vmem_a.start()) { return 1; }
-
-  return 0; // Overlapping
+  return vmem_a.end() < vmem_b.start();
 }
 
 int ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
@@ -171,12 +168,12 @@ void ZMappedCache::Tree::insert(TreeNode* node, const TreeCursor& cursor) {
   // Insert in tree
   TreeImpl::insert_at_cursor(node, cursor);
 
-  if (_left_most == nullptr || EntryCompare::cmp(node, _left_most) < 0) {
+  if (_left_most == nullptr || EntryCompare::cmp(node, _left_most)) {
     // Keep track of left most node
     _left_most = node;
   }
 
-  if (_right_most == nullptr || EntryCompare::cmp(_right_most, node) < 0) {
+  if (_right_most == nullptr || EntryCompare::cmp(_right_most, node)) {
     // Keep track of right most node
     _right_most = node;
   }

@@ -41,7 +41,7 @@ class ZMappedCache {
 private:
   struct EntryCompare {
     static int cmp(zoffset a, const IntrusiveRBNode* b);
-    static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
+    static bool cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
   };
 
   struct ZSizeClassListNode {
