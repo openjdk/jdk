@@ -1088,7 +1088,7 @@ private:
   ZRelocateSmallAllocator                   _small_allocator;
   ZRelocateMediumAllocator                  _medium_allocator;
   const size_t                              _total_forwardings;
-  size_t                                    _numa_local_forwardings;
+  volatile size_t                           _numa_local_forwardings;
 
 public:
   ZRelocateTask(ZRelocationSet* relocation_set,
