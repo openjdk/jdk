@@ -49,7 +49,7 @@ public class TestScenariosCrossProduct {
         // Test argument handling
         try {
             TestFramework t = new TestFramework();
-            t.addCrossProductScenarios(null);
+            t.addCrossProductScenarios((Set<String>[]) null);
             Asserts.fail("Should have thrown exception");
         } catch (TestFormatException e) {}
         try {

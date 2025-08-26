@@ -377,7 +377,7 @@ public class TestFramework {
         Stream<List<String>> crossProduct = Arrays.stream(flagSets)
             .reduce(
                 Stream.of(Collections.<String>emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
-                (acc, set) ->  // (Stream<List<String>>, Stream<List<String>>) -> Stream<List<String>>
+                (Stream<List<String>> acc, Set<String> set) ->
                     acc.flatMap(lAcc -> // For each List<String>> lAcc in acc...
                         set.stream().map(flag -> { // ...and each flag in the current set...
                             List<String> newList = new ArrayList<>(lAcc); // ...create a new list containing lAcc...
@@ -394,7 +394,6 @@ public class TestFramework {
                      .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
                      .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
                      .filter(s -> !s.isEmpty()) // Remove empty string flags.
-                     .distinct()
                      .collect(Collectors.toList())
                      .toArray(new String[0])))
             .collect(Collectors.toList()).toArray(new Scenario[0]);
