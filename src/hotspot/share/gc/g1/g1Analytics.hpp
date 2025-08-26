@@ -193,7 +193,7 @@ public:
   size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.
-  void update_recent_gc_times(double end_time_sec, double elapsed_ms);
+  void update_recent_gc_times(double end_time_sec, double gc_time_ms);
   void update_gc_time_ratios(double end_time_sec, double pause_time_ms);
 };
 

@@ -319,8 +319,8 @@ double G1Analytics::most_recent_gc_end_time_sec() const {
 }
 
 void G1Analytics::update_recent_gc_times(double end_time_sec,
-                                         double elapsed_ms) {
-  _recent_gc_times_ms.add(elapsed_ms);
+                                         double gc_time_ms) {
+  _recent_gc_times_ms.add(gc_time_ms);
   _recent_prev_end_times_for_all_gcs_sec.add(end_time_sec);
 }
 
