@@ -403,7 +403,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
   GET_JNI_CONSTRUCTOR(className, signature)
 
 extern "C" {
-  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass, jint declaredAnnotations, jint parameterAnnotations, jint typeAnnotations);
+  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
   jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
   jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle);
 }
@@ -564,7 +564,7 @@ static void register_natives_for_class(JNIEnv* env, jclass clazz, const char* na
 
 void JNIJVMCI::register_natives(JNIEnv* env) {
   if (env != JavaThread::current()->jni_environment()) {
-    JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"(III)V", FN_PTR(JVM_RegisterJVMCINatives) }};
+    JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"()V", FN_PTR(JVM_RegisterJVMCINatives) }};
     JNINativeMethod JVMCI_nmethods[] = {{ CC"initializeRuntime", CC"()Ljdk/vm/ci/runtime/JVMCIRuntime;", FN_PTR(JVM_GetJVMCIRuntime) }};
     JNINativeMethod Services_nmethods[] = {{ CC"readSystemPropertiesInfo", CC"([I)J", FN_PTR(JVM_ReadSystemPropertiesInfo) }};
 

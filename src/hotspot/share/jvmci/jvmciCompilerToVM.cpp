@@ -3014,8 +3014,9 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JNIHandles::make_local(THREAD, reflected);
 C2V_END
 
-static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, AnnotationArray* annotations_array, jint category,
-                                              JavaThread* THREAD, JVMCI_TRAPS) {
+static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, AnnotationArray* annotations_array,
+                                                jint category, Klass* memberType,
+                                                JavaThread* THREAD, JVMCI_TRAPS) {
   // Get a ConstantPool object for annotation parsing
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
   reflect_ConstantPool::set_cp(jcp(), holder->constants());
@@ -3031,6 +3032,10 @@ static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, Annotatio
 
   typeArrayOop annotations_oop = Annotations::make_java_array(annotations_array, CHECK_NULL);
   typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
+  Handle memberTypeMirror;
+  if (memberType != nullptr) {
+    memberTypeMirror = Handle(THREAD, memberType->java_mirror());
+  }
 
   // invoke VMSupport.encodeAnnotations
   JavaValue result(T_OBJECT);
@@ -3039,6 +3044,7 @@ static jbyteArray get_encoded_annotation_values(InstanceKlass* holder, Annotatio
   args.push_int(category);
   args.push_oop(Handle(THREAD, holder->java_mirror()));
   args.push_oop(jcp);
+  args.push_oop(memberTypeMirror);
   Symbol* signature = vmSymbols::encodeAnnotations_signature();
   JavaCalls::call_static(&result,
                          vm_support,
@@ -3078,23 +3084,27 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationValues, (JNIEnv* env, jobj
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                   err_msg("%d", category));
   }
-  return get_encoded_annotation_values(holder, raw_annotations, category, THREAD, JVMCIENV);
+  return get_encoded_annotation_values(holder, raw_annotations, category, nullptr, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), jint category))
+C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), ARGUMENT_PAIR(memberTypeKlass), jint category))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   AnnotationArray* raw_annotations;
+  Klass* memberType = nullptr;
   if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
     raw_annotations = method->annotations();
   } else if (category == CompilerToVM::PARAMETER_ANNOTATIONS) {
     raw_annotations = method->parameter_annotations();
   } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
     raw_annotations = method->type_annotations();
+  } else if (category == CompilerToVM::ANNOTATION_MEMBER_VALUE) {
+    raw_annotations = method->annotation_default();
+    memberType = UNPACK_PAIR(Klass, memberTypeKlass);
   } else {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), err_msg("%d", category));
   }
-  return get_encoded_annotation_values(method->method_holder(), raw_annotations, category, THREAD, JVMCIENV);
+  return get_encoded_annotation_values(method->method_holder(), raw_annotations, category, memberType, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index, jint category))
@@ -3110,7 +3120,7 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobj
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                   err_msg("%d", category));
   }
-  return get_encoded_annotation_values(holder, raw_annotations, category, THREAD, JVMCIENV);
+  return get_encoded_annotation_values(holder, raw_annotations, category, nullptr, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
@@ -3455,7 +3465,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" REFLECTION_EXECUTABLE,                                          FN_PTR(asReflectionExecutable)},
   {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" REFLECTION_FIELD,                                               FN_PTR(asReflectionField)},
   {CC "getEncodedClassAnnotationValues",              CC "(" HS_KLASS2 "I)[B",                                                              FN_PTR(getEncodedClassAnnotationValues)},
-  {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 "I)[B",                                                             FN_PTR(getEncodedExecutableAnnotationValues)},
+  {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 HS_KLASS2 "I)[B",                                                   FN_PTR(getEncodedExecutableAnnotationValues)},
   {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "II)[B",                                                             FN_PTR(getEncodedFieldAnnotationValues)},
   {CC "getFailedSpeculations",                        CC "(J[[B)[[B",                                                                       FN_PTR(getFailedSpeculations)},
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getFailedSpeculationsAddress)},

@@ -710,6 +710,7 @@
   declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
   declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
   declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_has_default_annotations)       \
   declare_constant(ConstMethodFlags::_misc_caller_sensitive)              \
   declare_constant(ConstMethodFlags::_misc_is_hidden)                     \
   declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \

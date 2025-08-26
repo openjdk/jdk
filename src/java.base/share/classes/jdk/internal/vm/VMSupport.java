@@ -42,6 +42,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationTypeMismatchException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
@@ -201,14 +202,21 @@ public class VMSupport {
     public static final int TYPE_ANNOTATIONS = 2;
 
     /**
+     * Denotes a byte array that is parsed into an {@code Object} by
+     * {@link AnnotationParser#parseMemberValue}.
+     */
+    public static final int ANNOTATION_MEMBER_VALUE = 3;
+
+    /**
      * Parses {@code rawAnnotations} according to {@code category} and returns the parse
      * result encoded as a byte array.
      * <pre>
-     *     category              | parse result type   | decoding method
-     *     ----------------------|--------------------|------------------------------------------
-     *     DECLARED_ANNOTATIONS  | Annotation[]        | {@link #decodeAnnotations(byte[], AnnotationDecoder)}
-     *     PARAMETER_ANNOTATIONS | Annotation[][]      | {@link #decodeAnnotations(byte[], AnnotationDecoder)}
-     *     TYPE_ANNOTATIONS      | TypeAnnotation[]    | {@link #decodeTypeAnnotations(byte[], AnnotationDecoder)}
+     *     category                | parse result type   | decoding method
+     *     ------------------------|---------------------|------------------------------------------
+     *     DECLARED_ANNOTATIONS    | Annotation[]        | {@link #decodeAnnotations(byte[], AnnotationDecoder)}
+     *     PARAMETER_ANNOTATIONS   | Annotation[][]      | {@link #decodeParameterAnnotations(byte[], AnnotationDecoder)}
+     *     TYPE_ANNOTATIONS        | TypeAnnotation[]    | {@link #decodeTypeAnnotations(byte[], AnnotationDecoder)}
+     *     ANNOTATION_MEMBER_VALUE | Object              | {@link #decodeAnnotationMemberValue(byte[], AnnotationDecoder)}
      * </pre>
      *
      * @param category {@link #DECLARED_ANNOTATIONS}, {@link #PARAMETER_ANNOTATIONS} or {@link #TYPE_ANNOTATIONS}
@@ -216,58 +224,57 @@ public class VMSupport {
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
                                            int category,
                                            Class<?> declaringClass,
-                                           ConstantPool cp) {
-        return switch (category) {
-            case DECLARED_ANNOTATIONS ->
-                    encodeAnnotations(AnnotationParser.parseAnnotations(rawAnnotations, cp, declaringClass, false).values());
-            case PARAMETER_ANNOTATIONS ->
-                    encodeParameterAnnotations(AnnotationParser.parseParameterAnnotations(rawAnnotations, cp, declaringClass));
-            case TYPE_ANNOTATIONS ->
-                    encodeTypeAnnotations(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, declaringClass));
-            default -> throw new IllegalArgumentException("illegal category: " + category);
-        };
-    }
-
-    /**
-     * Encodes annotations to a byte array. The byte array can be decoded with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
-     */
-    public static byte[] encodeAnnotations(Collection<Annotation> annotations) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
-            try (DataOutputStream dos = new DataOutputStream(baos)) {
-                writeLength(dos, annotations.size());
-                for (Annotation a : annotations) {
-                    encodeAnnotation(dos, a);
-                }
-            }
+                                           ConstantPool cp,
+                                           Class<?> memberType) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+        try (DataOutputStream dos = new DataOutputStream(baos)) {
+            switch (category) {
+                case DECLARED_ANNOTATIONS ->
+                        encodeAnnotations(dos, AnnotationParser.parseAnnotations(rawAnnotations, cp, declaringClass, false).values());
+                case PARAMETER_ANNOTATIONS ->
+                        encodeParameterAnnotations(dos, AnnotationParser.parseParameterAnnotations(rawAnnotations, cp, declaringClass));
+                case TYPE_ANNOTATIONS ->
+                        encodeTypeAnnotations(dos, TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, declaringClass));
+                case ANNOTATION_MEMBER_VALUE ->
+                        encodeMemberValue(dos, AnnotationParser.parseMemberValue(memberType, ByteBuffer.wrap(rawAnnotations), cp, declaringClass, false));
+                default -> throw new IllegalArgumentException("illegal category: " + category);
+            };
             return baos.toByteArray();
-        } catch (Exception e) {
-            throw new InternalError(e);
+        } catch (IOException ioe) {
+            throw new InternalError(ioe);
         }
     }
 
     /**
-     * Encodes parameter annotations to a byte array. The byte array can be decoded with {@link #decodeParameterAnnotations(byte[], AnnotationDecoder)}.
+     * Encodes {@code annotations} to a byte array. The byte array can be decoded
+     * with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
+     *
+     * @param dos stream for assembling the byte array
      */
-    public static byte[] encodeParameterAnnotations(Annotation[][] parameterAnnotations) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
-            try (DataOutputStream dos = new DataOutputStream(baos)) {
-                writeLength(dos, parameterAnnotations.length);
-                for (Annotation[] annotations : parameterAnnotations) {
-                    writeLength(dos, annotations.length);
-                    for (Annotation a : annotations) {
-                        encodeAnnotation(dos, a);
-                    }
-                }
-            }
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new InternalError(e);
+    public static void encodeAnnotations(DataOutputStream dos, Collection<Annotation> annotations) throws IOException {
+        writeLength(dos, annotations.size());
+        for (Annotation a : annotations) {
+            encodeAnnotation(dos, a);
         }
     }
 
-    private static void encodeAnnotation(DataOutputStream dos, Annotation a) throws Exception {
+    /**
+     * Encodes {@code parameterAnnotations} to a byte array. The byte array can be decoded
+     * with {@link #decodeParameterAnnotations(byte[], AnnotationDecoder)}.
+     *
+     * @param dos stream for assembling the byte array
+     */
+    public static void encodeParameterAnnotations(DataOutputStream dos, Annotation[][] parameterAnnotations) throws IOException {
+        writeLength(dos, parameterAnnotations.length);
+        for (Annotation[] annotations : parameterAnnotations) {
+            writeLength(dos, annotations.length);
+            for (Annotation a : annotations) {
+                encodeAnnotation(dos, a);
+            }
+        }
+    }
+
+    private static void encodeAnnotation(DataOutputStream dos, Annotation a) throws IOException {
         Class<? extends Annotation> type = a.annotationType();
         Map<String, Object> values = AnnotationSupport.memberValues(a);
         dos.writeUTF(type.getName());
@@ -278,191 +285,196 @@ public class VMSupport {
                 // IncompleteAnnotationException
                 continue;
             }
-            Class<?> valueType = value.getClass();
             dos.writeUTF(e.getKey());
-            if (valueType == Byte.class) {
-                dos.writeByte('B');
-                dos.writeByte((byte) value);
-            } else if (valueType == Character.class) {
-                dos.writeByte('C');
-                dos.writeChar((char) value);
-            } else if (valueType == Double.class) {
-                dos.writeByte('D');
-                dos.writeDouble((double) value);
-            } else if (valueType == Float.class) {
-                dos.writeByte('F');
-                dos.writeFloat((float) value);
-            } else if (valueType == Integer.class) {
-                dos.writeByte('I');
-                dos.writeInt((int) value);
-            } else if (valueType == Long.class) {
-                dos.writeByte('J');
-                dos.writeLong((long) value);
-            } else if (valueType == Short.class) {
-                dos.writeByte('S');
-                dos.writeShort((short) value);
-            } else if (valueType == Boolean.class) {
-                dos.writeByte('Z');
-                dos.writeBoolean((boolean) value);
-            } else if (valueType == String.class) {
-                dos.writeByte('s');
-                dos.writeUTF((String) value);
-            } else if (valueType == Class.class) {
-                dos.writeByte('c');
-                dos.writeUTF(((Class<?>) value).getName());
-            } else if (valueType == EnumValue.class) {
-                EnumValue enumValue = (EnumValue) value;
-                dos.writeByte('e');
-                dos.writeUTF(enumValue.enumType.getName());
-                dos.writeUTF(enumValue.constName);
-            } else if (valueType == EnumValueArray.class) {
-                EnumValueArray enumValueArray = (EnumValueArray) value;
-                List<String> array = enumValueArray.constNames;
-                dos.writeByte('[');
-                dos.writeByte('e');
-                dos.writeUTF(enumValueArray.enumType.getName());
-                writeLength(dos, array.size());
-                for (String s : array) {
-                    dos.writeUTF(s);
-                }
-            } else if (valueType.isEnum()) {
-                dos.writeByte('e');
-                dos.writeUTF(valueType.getName());
-                dos.writeUTF(((Enum<?>) value).name());
-            } else if (value instanceof Annotation) {
-                dos.writeByte('@');
-                encodeAnnotation(dos, (Annotation) value);
-            } else if (valueType.isArray()) {
-                Class<?> componentType = valueType.getComponentType();
-                if (componentType == byte.class) {
-                    byte[] array = (byte[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('B');
-                    writeLength(dos, array.length);
-                    dos.write(array);
-                } else if (componentType == char.class) {
-                    char[] array = (char[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('C');
-                    writeLength(dos, array.length);
-                    for (char c : array) {
-                        dos.writeChar(c);
-                    }
-                } else if (componentType == double.class) {
-                    double[] array = (double[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('D');
-                    writeLength(dos, array.length);
-                    for (double v : array) {
-                        dos.writeDouble(v);
-                    }
-                } else if (componentType == float.class) {
-                    float[] array = (float[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('F');
-                    writeLength(dos, array.length);
-                    for (float v : array) {
-                        dos.writeFloat(v);
-                    }
-                } else if (componentType == int.class) {
-                    int[] array = (int[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('I');
-                    writeLength(dos, array.length);
-                    for (int j : array) {
-                        dos.writeInt(j);
-                    }
-                } else if (componentType == long.class) {
-                    long[] array = (long[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('J');
-                    writeLength(dos, array.length);
-                    for (long l : array) {
-                        dos.writeLong(l);
-                    }
-                } else if (componentType == short.class) {
-                    short[] array = (short[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('S');
-                    writeLength(dos, array.length);
-                    for (short item : array) {
-                        dos.writeShort(item);
-                    }
-                } else if (componentType == boolean.class) {
-                    boolean[] array = (boolean[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('Z');
-                    writeLength(dos, array.length);
-                    for (boolean b : array) {
-                        dos.writeBoolean(b);
-                    }
-                } else if (componentType == String.class) {
-                    String[] array = (String[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('s');
-                    writeLength(dos, array.length);
-                    for (String s : array) {
-                        dos.writeUTF(s);
-                    }
-                } else if (componentType == Class.class) {
-                    Class<?>[] array = (Class<?>[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('c');
-                    writeLength(dos, array.length);
-                    for (Class<?> aClass : array) {
-                        dos.writeUTF(aClass.getName());
-                    }
-                } else if (componentType.isEnum()) {
-                    Enum<?>[] array = (Enum<?>[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('e');
-                    dos.writeUTF(componentType.getName());
-                    writeLength(dos, array.length);
-                    for (Enum<?> anEnum : array) {
-                        dos.writeUTF(anEnum.name());
-                    }
-                } else if (componentType.isAnnotation()) {
-                    Annotation[] array = (Annotation[]) value;
-                    dos.writeByte('[');
-                    dos.writeByte('@');
-                    writeLength(dos, array.length);
-                    for (Annotation annotation : array) {
-                        encodeAnnotation(dos, annotation);
-                    }
-                } else {
-                    throw new InternalError("Unsupported annotation element component type " + componentType);
-                }
-            } else if (value instanceof TypeNotPresentExceptionProxy proxy) {
-                dos.writeByte('x');
-                dos.writeUTF(proxy.typeName());
-            } else if (value instanceof AnnotationTypeMismatchExceptionProxy proxy) {
-                dos.writeByte('y');
-                dos.writeUTF(proxy.foundType());
-            } else {
-                throw new InternalError("Unsupported annotation element type " + valueType);
-            }
+            encodeMemberValue(dos, value);
         }
     }
 
     /**
-     * Encodes typeAnnotations to a byte array. The byte array can be decoded with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
+     * Encodes {@code value} to a byte array. The byte array can be decoded
+     * with {@link #decodeAnnotationMemberValue(byte[], AnnotationDecoder)}.
+     *
+     * @param dos stream for assembling the byte array
      */
-    public static byte[] encodeTypeAnnotations(TypeAnnotation[] typeAnnotations) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
-            try (DataOutputStream dos = new DataOutputStream(baos)) {
-                writeLength(dos, typeAnnotations.length);
-                for (TypeAnnotation ta : typeAnnotations) {
-                    encodeTypeAnnotation(dos, ta);
-                }
+    private static void encodeMemberValue(DataOutputStream dos, Object value) throws IOException {
+        Class<?> valueType = value.getClass();
+        if (valueType == Byte.class) {
+            dos.writeByte('B');
+            dos.writeByte((byte) value);
+        } else if (valueType == Character.class) {
+            dos.writeByte('C');
+            dos.writeChar((char) value);
+        } else if (valueType == Double.class) {
+            dos.writeByte('D');
+            dos.writeDouble((double) value);
+        } else if (valueType == Float.class) {
+            dos.writeByte('F');
+            dos.writeFloat((float) value);
+        } else if (valueType == Integer.class) {
+            dos.writeByte('I');
+            dos.writeInt((int) value);
+        } else if (valueType == Long.class) {
+            dos.writeByte('J');
+            dos.writeLong((long) value);
+        } else if (valueType == Short.class) {
+            dos.writeByte('S');
+            dos.writeShort((short) value);
+        } else if (valueType == Boolean.class) {
+            dos.writeByte('Z');
+            dos.writeBoolean((boolean) value);
+        } else if (valueType == String.class) {
+            dos.writeByte('s');
+            dos.writeUTF((String) value);
+        } else if (valueType == Class.class) {
+            dos.writeByte('c');
+            dos.writeUTF(((Class<?>) value).getName());
+        } else if (valueType == EnumValue.class) {
+            EnumValue enumValue = (EnumValue) value;
+            dos.writeByte('e');
+            dos.writeUTF(enumValue.enumType.getName());
+            dos.writeUTF(enumValue.constName);
+        } else if (valueType == EnumValueArray.class) {
+            EnumValueArray enumValueArray = (EnumValueArray) value;
+            List<String> array = enumValueArray.constNames;
+            dos.writeByte('[');
+            dos.writeByte('e');
+            dos.writeUTF(enumValueArray.enumType.getName());
+            writeLength(dos, array.size());
+            for (String s : array) {
+                dos.writeUTF(s);
             }
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new InternalError(e);
+        } else if (valueType.isEnum()) {
+            dos.writeByte('e');
+            dos.writeUTF(valueType.getName());
+            dos.writeUTF(((Enum<?>) value).name());
+        } else if (value instanceof Annotation) {
+            dos.writeByte('@');
+            encodeAnnotation(dos, (Annotation) value);
+        } else if (valueType.isArray()) {
+            Class<?> componentType = valueType.getComponentType();
+            if (componentType == byte.class) {
+                byte[] array = (byte[]) value;
+                dos.writeByte('[');
+                dos.writeByte('B');
+                writeLength(dos, array.length);
+                dos.write(array);
+            } else if (componentType == char.class) {
+                char[] array = (char[]) value;
+                dos.writeByte('[');
+                dos.writeByte('C');
+                writeLength(dos, array.length);
+                for (char c : array) {
+                    dos.writeChar(c);
+                }
+            } else if (componentType == double.class) {
+                double[] array = (double[]) value;
+                dos.writeByte('[');
+                dos.writeByte('D');
+                writeLength(dos, array.length);
+                for (double v : array) {
+                    dos.writeDouble(v);
+                }
+            } else if (componentType == float.class) {
+                float[] array = (float[]) value;
+                dos.writeByte('[');
+                dos.writeByte('F');
+                writeLength(dos, array.length);
+                for (float v : array) {
+                    dos.writeFloat(v);
+                }
+            } else if (componentType == int.class) {
+                int[] array = (int[]) value;
+                dos.writeByte('[');
+                dos.writeByte('I');
+                writeLength(dos, array.length);
+                for (int j : array) {
+                    dos.writeInt(j);
+                }
+            } else if (componentType == long.class) {
+                long[] array = (long[]) value;
+                dos.writeByte('[');
+                dos.writeByte('J');
+                writeLength(dos, array.length);
+                for (long l : array) {
+                    dos.writeLong(l);
+                }
+            } else if (componentType == short.class) {
+                short[] array = (short[]) value;
+                dos.writeByte('[');
+                dos.writeByte('S');
+                writeLength(dos, array.length);
+                for (short item : array) {
+                    dos.writeShort(item);
+                }
+            } else if (componentType == boolean.class) {
+                boolean[] array = (boolean[]) value;
+                dos.writeByte('[');
+                dos.writeByte('Z');
+                writeLength(dos, array.length);
+                for (boolean b : array) {
+                    dos.writeBoolean(b);
+                }
+            } else if (componentType == String.class) {
+                String[] array = (String[]) value;
+                dos.writeByte('[');
+                dos.writeByte('s');
+                writeLength(dos, array.length);
+                for (String s : array) {
+                    dos.writeUTF(s);
+                }
+            } else if (componentType == Class.class) {
+                Class<?>[] array = (Class<?>[]) value;
+                dos.writeByte('[');
+                dos.writeByte('c');
+                writeLength(dos, array.length);
+                for (Class<?> aClass : array) {
+                    dos.writeUTF(aClass.getName());
+                }
+            } else if (componentType.isEnum()) {
+                Enum<?>[] array = (Enum<?>[]) value;
+                dos.writeByte('[');
+                dos.writeByte('e');
+                dos.writeUTF(componentType.getName());
+                writeLength(dos, array.length);
+                for (Enum<?> anEnum : array) {
+                    dos.writeUTF(anEnum.name());
+                }
+            } else if (componentType.isAnnotation()) {
+                Annotation[] array = (Annotation[]) value;
+                dos.writeByte('[');
+                dos.writeByte('@');
+                writeLength(dos, array.length);
+                for (Annotation annotation : array) {
+                    encodeAnnotation(dos, annotation);
+                }
+            } else {
+                throw new InternalError("Unsupported annotation element component type " + componentType);
+            }
+        } else if (value instanceof TypeNotPresentExceptionProxy proxy) {
+            dos.writeByte('x');
+            dos.writeUTF(proxy.typeName());
+        } else if (value instanceof AnnotationTypeMismatchExceptionProxy proxy) {
+            dos.writeByte('y');
+            dos.writeUTF(proxy.foundType());
+        } else {
+            throw new InternalError("Unsupported annotation element type " + valueType);
         }
     }
 
-    private static void encodeTypeAnnotation(DataOutputStream dos, TypeAnnotation ta) throws Exception {
+    /**
+     * Encodes {@code typeAnnotations} to a byte array. The byte array can be decoded
+     * with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
+     *
+     * @param dos stream for assembling the byte array
+     */
+    public static void encodeTypeAnnotations(DataOutputStream dos, TypeAnnotation[] typeAnnotations) throws IOException {
+        writeLength(dos, typeAnnotations.length);
+        for (TypeAnnotation ta : typeAnnotations) {
+            encodeTypeAnnotation(dos, ta);
+        }
+    }
+
+    private static void encodeTypeAnnotation(DataOutputStream dos, TypeAnnotation ta) throws IOException {
         TypeAnnotation.TypeAnnotationTargetInfo ti = ta.getTargetInfo();
         TypeAnnotation.TypeAnnotationTarget target = ti.getTarget();
         dos.writeUTF(target.name());
@@ -564,6 +576,26 @@ public class VMSupport {
     }
 
     /**
+     * Decodes an annotation member value serialized in {@code encoded} to an object.
+     *
+     * @param <T> type to which a type name is resolved
+     * @param <A> type of the object representing a decoded annotation
+     * @param <E> type of the object representing a decoded enum constant
+     * @param <MT> type of the object representing a missing type
+     * @param <ETM> type of the object representing a decoded element type mismatch
+     * @return the decoded object value of a type matching the objects returned by {@link jdk.vm.ci.meta.annotation.AnnotationValue#get(String, Class)}
+     */
+    public static <T, A, TA, E, EA, MT, ETM> Object decodeAnnotationMemberValue(byte[] encoded, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
+            DataInputStream dis = new DataInputStream(bais);
+            return decodeMemberValue(dis, decoder);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    /**
      * Decodes parameter annotations serialized in {@code encoded} to objects.
      *
      * @param <T> type to which a type name is resolved
@@ -599,27 +631,32 @@ public class VMSupport {
         Map.Entry[] elements = n == 0 ? NO_ELEMENTS : new Map.Entry[n];
         for (int i = 0; i < n; i++) {
             String name = dis.readUTF();
-            byte tag = dis.readByte();
-            elements[i] = Map.entry(name, switch (tag) {
-                case 'B' -> dis.readByte();
-                case 'C' -> dis.readChar();
-                case 'D' -> dis.readDouble();
-                case 'F' -> dis.readFloat();
-                case 'I' -> dis.readInt();
-                case 'J' -> dis.readLong();
-                case 'S' -> dis.readShort();
-                case 'Z' -> dis.readBoolean();
-                case 's' -> dis.readUTF();
-                case 'c' -> decoder.resolveType(dis.readUTF());
-                case 'e' -> decoder.newEnum(decoder.resolveType(dis.readUTF()), dis.readUTF());
-                case '@' -> decodeAnnotation(dis, decoder);
-                case '[' -> decodeArray(dis, decoder);
-                case 'x' -> decoder.newMissingType(dis.readUTF());
-                case 'y' -> decoder.newElementTypeMismatch(dis.readUTF());
-                default -> throw new InternalError("Unsupported tag: " + tag);
-            });
+            Object value = decodeMemberValue(dis, decoder);
+            elements[i] = Map.entry(name, value);
         }
         return decoder.newAnnotation(type, (Map.Entry<String, Object>[]) elements);
+    }
+
+    private static <T, A, TA, E, EA, MT, ETM> Object decodeMemberValue(DataInputStream dis, AnnotationDecoder<T, A, TA, E, EA, MT, ETM> decoder) throws IOException {
+        byte tag = dis.readByte();
+        return switch (tag) {
+            case 'B' -> dis.readByte();
+            case 'C' -> dis.readChar();
+            case 'D' -> dis.readDouble();
+            case 'F' -> dis.readFloat();
+            case 'I' -> dis.readInt();
+            case 'J' -> dis.readLong();
+            case 'S' -> dis.readShort();
+            case 'Z' -> dis.readBoolean();
+            case 's' -> dis.readUTF();
+            case 'c' -> decoder.resolveType(dis.readUTF());
+            case 'e' -> decoder.newEnum(decoder.resolveType(dis.readUTF()), dis.readUTF());
+            case '@' -> decodeAnnotation(dis, decoder);
+            case '[' -> decodeArray(dis, decoder);
+            case 'x' -> decoder.newMissingType(dis.readUTF());
+            case 'y' -> decoder.newElementTypeMismatch(dis.readUTF());
+            default -> throw new InternalError("Unsupported tag: " + tag);
+        };
     }
 
     @FunctionalInterface
