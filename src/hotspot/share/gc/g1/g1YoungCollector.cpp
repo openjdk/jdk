@@ -820,9 +820,9 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
     double time_left_ms;
-    if(EvacuateAllOptionalRegions){
+    if (EvacuateAllOptionalRegions) {
       time_left_ms = DBL_MAX;
-    }else{
+    } else {
       double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
       time_left_ms = MaxGCPauseMillis - time_used_ms;
     }
