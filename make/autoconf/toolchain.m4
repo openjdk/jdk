@@ -655,8 +655,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assembler is "ml64.exe"
+    if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+      # On Windows aarch64, the assembler is "armasm64.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, armasm64)
+    elif test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      # On Windows x64, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
       # otherwise, the assembler is "ml.exe"

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,11 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
     # Force preprocessor to run, just to make sure
     BASIC_ASFLAGS="-x assembler-with-cpp"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    BASIC_ASFLAGS="-nologo -c"
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      BASIC_ASFLAGS="-nologo"
+    else
+      BASIC_ASFLAGS="-nologo -c"
+    fi
   fi
   AC_SUBST(BASIC_ASFLAGS)
 
