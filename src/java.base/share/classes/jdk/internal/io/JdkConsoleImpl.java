@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
@@ -109,16 +110,24 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     // Dedicated entry for sun.security.util.Password.
-    private static final StableValue<JdkConsoleImpl> INSTANCE = StableValue.of();
-    public static JdkConsoleImpl passwordConsole() {
+    private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
+    public static Optional<JdkConsoleImpl> passwordConsole() {
         return INSTANCE.orElseSet(() ->
-            // If stdin is NOT redirected, return a JdkConsoleImpl instance,
-            // otherwise null
-            (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
-            new JdkConsoleImpl(
-                Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE)) :
-            null);
+            {
+                var jia = SharedSecrets.getJavaIOAccess();
+                if (jia.getJdkConsole() instanceof JdkConsoleImpl jci) {
+                    return Optional.of(jci);
+                } else {
+                    // If stdin is NOT redirected, return a JdkConsoleImpl instance,
+                    // otherwise null
+                    return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
+                        Optional.of(
+                            new JdkConsoleImpl(
+                                Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                                Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                        Optional.empty();
+                }
+            });
     }
 
     public char[] readPasswordNoNewLine() {

@@ -29,6 +29,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
@@ -574,6 +575,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             }
             public int istty() {
                 return istty;
+            }
+            public JdkConsole getJdkConsole() {
+                return cons instanceof ProxyingConsole pc ? pc.getDelegate() : null;
             }
         });
     }
