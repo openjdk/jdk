@@ -157,6 +157,14 @@ public final class AnnotationValue {
         return elementType.cast(val);
     }
 
+    /**
+     * Gets an unmodifiable view of the elements in this annotation value.
+     * The type for each value in the returned map is specified by {@link #get(String, Class)}.
+     */
+    public Map<String, Object> getElements() {
+        return elements;
+    }
+
     @Override
     public String toString() {
         return "@" + type.toClassName() + "(" + elements + ")";

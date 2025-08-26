@@ -125,12 +125,12 @@ public class AnnotationType {
 
                 byte[] annotationDefault = SharedSecrets.getJavaLangReflectAccess().getAnnotationDefaultBytes(method);
                 if (annotationDefault != null) {
-                    // Pass eagerResolution==false to support the
-                    // context where eager resolution is not desired.
-                    // All uses of defaultValue will use
+                    // Pass allowEnumClinit == false to avoid
+                    // enum class initialization.
+                    // All accesses of defaultValue use
                     // sun.reflect.annotation.ResolvableValue.resolved
-                    // to ensure only resolved values are seen by
-                    // users of the standard annotation API.
+                    // to ensure enum constants values are seen via
+                    // the standard annotation API.
                     Object defaultValue = AnnotationParser.parseAnnotationDefault(method, annotationDefault, false);
                     if (defaultValue != null) {
                         memberDefaults.put(name, defaultValue);

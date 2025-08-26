@@ -345,11 +345,15 @@ public final class TypeAnnotationParser {
                                     decl, false, container);
     }
 
-    /* Parse type annotations encoded as an array of bytes */
+    /**
+     * Parses types annotations encoded as an array of bytes.
+     *
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     public static TypeAnnotation[] parseTypeAnnotations(byte[] rawAnnotations,
            ConstantPool cp,
            AnnotatedElement baseDecl,
-           boolean eagerResolution,
+           boolean allowEnumClinit,
            Class<?> container) {
         if (rawAnnotations == null)
             return EMPTY_TYPE_ANNOTATION_ARRAY;
@@ -360,7 +364,7 @@ public final class TypeAnnotationParser {
 
         // Parse each TypeAnnotation
         for (int i = 0; i < annotationCount; i++) {
-             TypeAnnotation ta = parseTypeAnnotation(buf, cp, baseDecl, eagerResolution, container);
+             TypeAnnotation ta = parseTypeAnnotation(buf, cp, baseDecl, allowEnumClinit, container);
              if (ta != null)
                  typeAnnotations.add(ta);
         }
@@ -414,15 +418,18 @@ public final class TypeAnnotationParser {
     private static final byte CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = (byte)0x4A;
     private static final byte METHOD_REFERENCE_TYPE_ARGUMENT = (byte)0x4B;
 
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     public static TypeAnnotation parseTypeAnnotation(ByteBuffer buf,
            ConstantPool cp,
            AnnotatedElement baseDecl,
-           boolean eagerResolution,
+           boolean allowEnumClinit,
            Class<?> container) {
         try {
             TypeAnnotationTargetInfo ti = parseTargetInfo(buf);
             LocationInfo locationInfo = LocationInfo.parseLocationInfo(buf);
-            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, eagerResolution, false);
+            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, allowEnumClinit, false);
             if (ti == null) // Inside a method for example
                 return null;
             return new TypeAnnotation(ti, locationInfo, a, baseDecl);

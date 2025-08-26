@@ -29,6 +29,9 @@ package sun.reflect.annotation;
  * An instance of this class is stored in an AnnotationInvocationHandler's
  * "memberValues" map to defer reification of an enum constant until the
  * dynamic proxy is queried for the enum member.
+ * <p>
+ * Instances of this object are created when the {@code allowEnumClinit}
+ * argument to {@link AnnotationParser#parseEnumValue} is {@code false}.
  */
 public final class EnumValue implements java.io.Serializable, ResolvableValue {
 
@@ -44,7 +47,7 @@ public final class EnumValue implements java.io.Serializable, ResolvableValue {
     public final String constName;
 
     /**
-     * The lazily retrived value of the enum constant.
+     * The lazily resolved value of the enum constant.
      */
     transient Object constValue;
 

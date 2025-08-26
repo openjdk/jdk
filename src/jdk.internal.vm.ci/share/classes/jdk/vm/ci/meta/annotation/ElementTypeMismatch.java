@@ -30,7 +30,7 @@ import java.lang.annotation.AnnotationTypeMismatchException;
  * <p>
  * Similar to {@code AnnotationTypeMismatchExceptionProxy}.
  */
-public final class ElementTypeMismatch {
+public final class ElementTypeMismatch extends ErrorElement {
     private final String foundType;
 
     /**

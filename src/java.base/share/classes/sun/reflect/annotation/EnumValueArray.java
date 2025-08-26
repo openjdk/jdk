@@ -27,14 +27,15 @@ package sun.reflect.annotation;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * An instance of this class is stored in an AnnotationInvocationHandler's
  * "memberValues" map to defer reification of an enum constant until the
  * dynamic proxy is queried for the enum member.
+ * <p>
+ * Instances of this object are created when the {@code allowEnumClinit}
+ * argument to {@link AnnotationParser#parseEnumArray} is {@code false}.
  */
 public final class EnumValueArray implements java.io.Serializable, ResolvableValue {
 
