@@ -45,6 +45,11 @@ import sun.reflect.generics.scope.ClassScope;
 /**
  * Parser for Java programming language annotations.  Translates
  * annotation byte streams emitted by compiler into annotation objects.
+ * <p>
+ * Standard annotation parsing will trigger class initialization for
+ * enum classes when {@linkplain #parseEnumValue parsing enum member values}.
+ * This can be avoided by passing {@code false} for the
+ * {@code allowEnumClinit} parameter to the methods that define it.
  *
  * @author  Josh Bloch
  * @since   1.5
@@ -59,6 +64,7 @@ public class AnnotationParser {
      *   u2 num_annotations;
      *   annotation annotations[num_annotations];
      *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      * @throws AnnotationFormatError if an annotation is found to be
      *         malformed.
      */
@@ -66,12 +72,12 @@ public class AnnotationParser {
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
-                boolean eagerResolution) {
+                boolean allowEnumClinit) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 
         try {
-            return parseAnnotations2(rawAnnotations, constPool, container, eagerResolution, null);
+            return parseAnnotations2(rawAnnotations, constPool, container, allowEnumClinit, null);
         } catch(BufferUnderflowException e) {
             throw new AnnotationFormatError("Unexpected end of annotations.");
         } catch(IllegalArgumentException e) {
@@ -87,6 +93,7 @@ public class AnnotationParser {
      * This method is used to parse select meta annotations in the construction
      * phase of {@link AnnotationType} instances to prevent infinite recursion.
      *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
     @SafeVarargs
@@ -95,13 +102,13 @@ public class AnnotationParser {
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
-                boolean eagerResolution,
+                boolean allowEnumClinit,
                 Class<? extends Annotation> ... selectAnnotationClasses) {
         if (rawAnnotations == null)
             return Collections.emptyMap();
 
         try {
-            return parseAnnotations2(rawAnnotations, constPool, container, eagerResolution, selectAnnotationClasses);
+            return parseAnnotations2(rawAnnotations, constPool, container, allowEnumClinit, selectAnnotationClasses);
         } catch(BufferUnderflowException e) {
             throw new AnnotationFormatError("Unexpected end of annotations.");
         } catch(IllegalArgumentException e) {
@@ -110,17 +117,20 @@ public class AnnotationParser {
         }
     }
 
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     private static Map<Class<? extends Annotation>, Annotation> parseAnnotations2(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
-                boolean eagerResolution,
+                boolean allowEnumClinit,
                 Class<? extends Annotation>[] selectAnnotationClasses) {
         Map<Class<? extends Annotation>, Annotation> result = new LinkedHashMap<>();
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
-            Annotation a = parseAnnotation2(buf, constPool, container, eagerResolution, false, selectAnnotationClasses);
+            Annotation a = parseAnnotation2(buf, constPool, container, allowEnumClinit, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
                 if (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &&
@@ -174,15 +184,17 @@ public class AnnotationParser {
     /**
      * Parses the annotation member value in {@code annotationDefault} which is
      * the default value for the annotation member represented by {@code method}.
+     *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      */
-    public static Object parseAnnotationDefault(Method method, byte[] annotationDefault, boolean eagerResolution) {
+    public static Object parseAnnotationDefault(Method method, byte[] annotationDefault, boolean allowEnumClinit) {
         Class<?> memberType = AnnotationType.invocationHandlerReturnType(method.getReturnType());
         Object result = parseMemberValue(
             memberType, ByteBuffer.wrap(annotationDefault),
             SharedSecrets.getJavaLangAccess().
                 getConstantPool(method.getDeclaringClass()),
             method.getDeclaringClass(),
-            eagerResolution);
+            allowEnumClinit);
         if (result instanceof ExceptionProxy) {
             if (result instanceof TypeNotPresentExceptionProxy proxy) {
                 throw new TypeNotPresentException(proxy.typeName(), proxy.getCause());
@@ -192,11 +204,14 @@ public class AnnotationParser {
         return result;
     }
 
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     private static Annotation[][] parseParameterAnnotations2(
                     byte[] rawAnnotations,
                     ConstantPool constPool,
                     Class<?> container,
-                    boolean eagerResolution) {
+                    boolean allowEnumClinit) {
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numParameters = buf.get() & 0xFF;
         Annotation[][] result = new Annotation[numParameters][];
@@ -206,7 +221,7 @@ public class AnnotationParser {
             List<Annotation> annotations =
                 new ArrayList<Annotation>(numAnnotations);
             for (int j = 0; j < numAnnotations; j++) {
-                Annotation a = parseAnnotation(buf, constPool, container, eagerResolution, false);
+                Annotation a = parseAnnotation(buf, constPool, container, allowEnumClinit, false);
                 if (a != null) {
                     AnnotationType type = AnnotationType.getInstance(
                                               a.annotationType());
@@ -240,6 +255,7 @@ public class AnnotationParser {
      * Returns the annotation, or null if the annotation's type cannot
      * be found by the VM, or is not a valid annotation type.
      *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      * @param exceptionOnMissingAnnotationClass if true, throw
      * TypeNotPresentException if a referenced annotation type is not
      * available at runtime
@@ -247,16 +263,19 @@ public class AnnotationParser {
     static Annotation parseAnnotation(ByteBuffer buf,
                                               ConstantPool constPool,
                                               Class<?> container,
-                                              boolean eagerResolution,
+                                              boolean allowEnumClinit,
                                               boolean exceptionOnMissingAnnotationClass) {
-       return parseAnnotation2(buf, constPool, container, eagerResolution, exceptionOnMissingAnnotationClass, null);
+       return parseAnnotation2(buf, constPool, container, allowEnumClinit, exceptionOnMissingAnnotationClass, null);
     }
 
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     @SuppressWarnings("unchecked")
     private static Annotation parseAnnotation2(ByteBuffer buf,
                                               ConstantPool constPool,
                                               Class<?> container,
-                                              boolean eagerResolution,
+                                              boolean allowEnumClinit,
                                               boolean exceptionOnMissingAnnotationClass,
                                               Class<? extends Annotation>[] selectAnnotationClasses) {
         int typeIndex = buf.getShort() & 0xFFFF;
@@ -295,7 +314,7 @@ public class AnnotationParser {
         Map<String, Object> memberValues = new LinkedHashMap<>();
         for (var e : type.memberDefaults().entrySet()) {
             Object value = e.getValue();
-            memberValues.put(e.getKey(), eagerResolution ? ResolvableValue.resolved(value) : value);
+            memberValues.put(e.getKey(), allowEnumClinit ? ResolvableValue.resolved(value) : value);
         }
 
         int numMembers = buf.getShort() & 0xFFFF;
@@ -308,7 +327,7 @@ public class AnnotationParser {
                 // Member is no longer present in annotation type; ignore it
                 skipMemberValue(buf);
             } else {
-                Object value = parseMemberValue(memberType, buf, constPool, container, eagerResolution);
+                Object value = parseMemberValue(memberType, buf, constPool, container, allowEnumClinit);
                 if (value instanceof AnnotationTypeMismatchExceptionProxy exceptProxy)
                     exceptProxy.setMember(type.members().get(memberName));
                 memberValues.put(memberName, value);
@@ -355,13 +374,15 @@ public class AnnotationParser {
      *
      * The member must be of the indicated type. If it is not, this
      * method returns an AnnotationTypeMismatchExceptionProxy.
+     *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static Object parseMemberValue(Class<?> memberType,
                                           ByteBuffer buf,
                                           ConstantPool constPool,
                                           Class<?> container,
-                                          boolean eagerResolution) {
+                                          boolean allowEnumClinit) {
         // Note that VMSupport.encodeAnnotation (used by JVMCI) may need to
         // be updated if new annotation member types are added.
         Object result = null;
@@ -369,15 +390,15 @@ public class AnnotationParser {
         switch(tag) {
           case 'e':
               Class<? extends Enum> enumType = (Class<? extends Enum<?>>) memberType;
-              return parseEnumValue(enumType, buf, constPool, container, eagerResolution);
+              return parseEnumValue(enumType, buf, constPool, container, allowEnumClinit);
           case 'c':
               result = parseClassValue(buf, constPool, container);
               break;
           case '@':
-              result = parseAnnotation(buf, constPool, container, eagerResolution, true);
+              result = parseAnnotation(buf, constPool, container, allowEnumClinit, true);
               break;
           case '[':
-              return parseArray(memberType, buf, constPool, container, eagerResolution);
+              return parseArray(memberType, buf, constPool, container, allowEnumClinit);
           default:
               result = parseConst(tag, buf, constPool);
         }
@@ -488,14 +509,14 @@ public class AnnotationParser {
      *           u2   const_name_index;
      *       } enum_const_value;
      *
-     * @param resolve if false, the name of the enum constant is returned
+     * @param allowEnumClinit if false, an {@link EnumValue} is returned
      *                instead of a resolved enum constant
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object parseEnumValue(Class<? extends Enum> enumType, ByteBuffer buf,
+    static Object parseEnumValue(Class<? extends Enum> enumType, ByteBuffer buf,
                                          ConstantPool constPool,
                                          Class<?> container,
-                                         boolean resolve) {
+                                         boolean allowEnumClinit) {
         int typeNameIndex = buf.getShort() & 0xFFFF;
         String typeName  = constPool.getUTF8At(typeNameIndex);
         int constNameIndex = buf.getShort() & 0xFFFF;
@@ -504,7 +525,7 @@ public class AnnotationParser {
             return new AnnotationTypeMismatchExceptionProxy(
                     typeName.substring(1, typeName.length() - 1).replace('/', '.') + "." + constName);
         }
-        if (!resolve) {
+        if (!allowEnumClinit) {
             return new EnumValue(enumType, constName);
         }
         try {
@@ -528,13 +549,15 @@ public class AnnotationParser {
      *
      * If the array values do not match arrayType, an
      * AnnotationTypeMismatchExceptionProxy will be returned.
+     *
+     * @param allowEnumClinit described in {@link AnnotationParser}
      */
     @SuppressWarnings("unchecked")
     private static Object parseArray(Class<?> arrayType,
                                      ByteBuffer buf,
                                      ConstantPool constPool,
                                      Class<?> container,
-                                     boolean eagerResolution) {
+                                     boolean allowEnumClinit) {
         int length = buf.getShort() & 0xFFFF;  // Number of array components
         if (!arrayType.isArray()) {
             return parseUnknownArray(length, buf);
@@ -563,10 +586,10 @@ public class AnnotationParser {
             return parseClassArray(length, buf, constPool, container);
         } else if (componentType.isEnum()) {
             return parseEnumArray(length, (Class<? extends Enum<?>>)componentType, buf,
-                                  constPool, container, eagerResolution);
+                                  constPool, container, allowEnumClinit);
         } else if (componentType.isAnnotation()) {
             return parseAnnotationArray(length, (Class <? extends Annotation>)componentType, buf,
-                                        constPool, container, eagerResolution);
+                                        constPool, container, allowEnumClinit);
         } else {
             return parseUnknownArray(length, buf);
         }
@@ -751,12 +774,15 @@ public class AnnotationParser {
                 buf, 'c', () -> parseClassValue(buf, constPool, container));
     }
 
-    private static Object parseEnumArray(int length, Class<? extends Enum<?>> enumType,
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
+    static Object parseEnumArray(int length, Class<? extends Enum<?>> enumType,
                                          ByteBuffer buf,
                                          ConstantPool constPool,
                                          Class<?> container,
-                                         boolean resolve) {
-        if (resolve) {
+                                         boolean allowEnumClinit) {
+        if (allowEnumClinit) {
             return parseArrayElements((Object[]) Array.newInstance(enumType, length),
                     buf, 'e', () -> parseEnumValue(enumType, buf, constPool, container, true));
         }
@@ -766,14 +792,17 @@ public class AnnotationParser {
         return new EnumValueArray(enumType, Collections.unmodifiableList(Arrays.asList(constNames)));
     }
 
+    /**
+     * @param allowEnumClinit described in {@link AnnotationParser}
+     */
     private static Object parseAnnotationArray(int length,
                                                Class<? extends Annotation> annotationType,
                                                ByteBuffer buf,
                                                ConstantPool constPool,
                                                Class<?> container,
-                                               boolean eagerResolution) {
+                                               boolean allowEnumClinit) {
         return parseArrayElements((Object[]) Array.newInstance(annotationType, length),
-                buf, '@', () -> parseAnnotation(buf, constPool, container, eagerResolution, true));
+                buf, '@', () -> parseAnnotation(buf, constPool, container, allowEnumClinit, true));
     }
 
     private static Object parseArrayElements(Object[] result,
