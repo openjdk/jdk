@@ -1516,13 +1516,7 @@ public final class ModuleDescriptor
     }
 
     /**
-     * Returns the set of all packages in the module.
-     *
-     * <p> The set of packages includes all exported and open packages, as well
-     * as the packages of any service providers, and the package for the main
-     * class. </p>
-     *
-     * @return A possibly-empty unmodifiable set of the packages in the module
+     * {@return a possibly-empty unmodifiable set of all packages in the module}
      */
     public Set<String> packages() {
         return packages;
