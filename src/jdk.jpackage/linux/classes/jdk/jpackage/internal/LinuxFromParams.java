@@ -109,12 +109,8 @@ final class LinuxFromParams {
     static final BundlerParamInfo<LinuxPackage> DEB_PACKAGE = createPackageBundlerParam(
             LinuxFromParams::createLinuxDebPackage);
 
-    private static final BundlerParamInfo<Boolean> LINUX_SHORTCUT_HINT = new BundlerParamInfo<>(
-            Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
-            Boolean.class,
-            params -> false,
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s)
-    );
+    private static final BundlerParamInfo<String> LINUX_SHORTCUT_HINT = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId());
 
     private static final BundlerParamInfo<String> LINUX_CATEGORY = createStringBundlerParam(
             Arguments.CLIOptions.LINUX_CATEGORY.getId());

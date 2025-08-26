@@ -268,44 +268,39 @@ public:
     return false;
   }
 
-  void do_cset_groups() {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    G1CSetCandidateGroup* young_only_cset_group = g1h->young_regions_cset_group();
-
+  void accumulate_stats_for_group(G1CSetCandidateGroup* group, G1PerRegionTypeRemSetCounters* gen_counter) {
     // If the group has only a single region, then stats were accumulated
-    // during region iteration.
-    if (young_only_cset_group->length() > 1) {
-      G1CardSet* young_only_card_set = young_only_cset_group->card_set();
-      size_t rs_mem_sz = young_only_card_set->mem_size();
-      size_t rs_unused_mem_sz = young_only_card_set->unused_mem_size();
-      size_t occupied_cards = young_only_card_set->occupied();
+    // during region iteration. Skip these.
+    if (group->length() > 1) {
+      G1CardSet* card_set = group->card_set();
 
-      _max_group_cardset_mem_sz = rs_mem_sz;
-      _max_cardset_mem_sz_group = young_only_cset_group;
+      size_t rs_mem_sz = card_set->mem_size();
+      size_t rs_unused_mem_sz = card_set->unused_mem_size();
+      size_t occupied_cards = card_set->occupied();
 
-      // Only update cardset details
-      _young.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
+      if (rs_mem_sz > _max_group_cardset_mem_sz) {
+        _max_group_cardset_mem_sz = rs_mem_sz;
+        _max_cardset_mem_sz_group = group;
+      }
+
+      gen_counter->add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
       _all.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
     }
+  }
 
+  void do_cset_groups() {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    G1PerRegionTypeRemSetCounters* current = &_old;
-    for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
-      if (group->length() > 1) {
-        G1CardSet* group_card_set = group->card_set();
-        size_t rs_mem_sz = group_card_set->mem_size();
-        size_t rs_unused_mem_sz = group_card_set->unused_mem_size();
-        size_t occupied_cards = group_card_set->occupied();
+    accumulate_stats_for_group(g1h->young_regions_cset_group(), &_young);
 
-        if (rs_mem_sz > _max_group_cardset_mem_sz) {
-          _max_group_cardset_mem_sz = rs_mem_sz;
-          _max_cardset_mem_sz_group = group;
-        }
-
-        // Only update cardset details
-        _old.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
-        _all.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
-      }
+    G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+    for (G1CSetCandidateGroup* group : candidates->from_marking_groups()) {
+      accumulate_stats_for_group(group, &_old);
+    }
+    // Skip gathering statistics for retained regions. Just verify that they have
+    // the expected amount of regions.
+    for (G1CSetCandidateGroup* group : candidates->retained_groups()) {
+      assert(group->length() == 1, "must be");
     }
   }
 

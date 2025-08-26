@@ -146,13 +146,6 @@ final class ChunkStream extends ImageOutputStreamImpl {
         stream.seek(pos);
         stream.flushBefore(pos);
     }
-
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer (for improved performance; no need to call
-        // super.finalize() in this case)
-    }
 }
 
 // Compress output and write as a series of 'IDAT' chunks of
@@ -282,13 +275,6 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
         } finally {
             def.end();
         }
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer (for improved performance; no need to call
-        // super.finalize() in this case)
     }
 }
 
