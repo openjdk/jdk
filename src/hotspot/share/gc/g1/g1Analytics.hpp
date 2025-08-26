@@ -136,10 +136,6 @@ public:
     _concurrent_gc_cpu_time_ms = ms;
   }
 
-  double concurrent_gc_cpu_time_ms() const {
-    return _concurrent_gc_cpu_time_ms;
-  }
-
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
   void report_alloc_rate_ms(double alloc_rate);
