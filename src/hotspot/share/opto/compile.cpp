@@ -5429,7 +5429,12 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   /* close each nested if ===> */  } } } } } } }
 
   find_candidate_control_inputs(worklist, candidates);
-  Node* control = pick_control(candidates);
+  Node* control = nullptr;
+  if (candidates.size() == 0) {
+    control = C->start()->proj_out(TypeFunc::Control);
+  } else {
+    control = pick_control(candidates);
+  }
 
   Node* frame_ptr = C->start()->proj_out(TypeFunc::FramePtr);
 
