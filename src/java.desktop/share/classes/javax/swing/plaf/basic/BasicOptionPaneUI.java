@@ -466,12 +466,12 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                     str = s.substring(index2 + "</html>".length());
                     s = s.substring(index1, index2 + + "</html>".length());
                 }
-                JLabel label;
-                label = new JLabel(s, JLabel.LEADING);
+                JLabel label = new JLabel();
                 if (Boolean.TRUE.equals(
                     this.optionPane.getClientProperty("html.disable"))) {
                     label.putClientProperty("html.disable", true);
                 }
+                label.setText(s);
                 label.setName("OptionPane.label");
                 configureMessageLabel(label);
                 addMessageComponents(container, cons, label, maxll, true);
