@@ -304,8 +304,7 @@ TEST(globalDefinitions, jlong_from) {
   EXPECT_EQ(val, 0x00000000000000FF);
 
   val = jlong_from(0xFFFFFFFF, 0);
-  EXPECT_EQ(                    val, (signed long long)0xFFFFFFFF00000000);
-  EXPECT_EQ((unsigned long long)val,                   0xFFFFFFFF00000000);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFF00000000));
 
   val = jlong_from(0, 0xFFFFFFFF);
   EXPECT_EQ(val, 0x00000000FFFFFFFF);
@@ -314,10 +313,10 @@ TEST(globalDefinitions, jlong_from) {
   EXPECT_EQ(val, 0x00000000FFFFFFFF);
 
   val = jlong_from(-1, 0);
-  EXPECT_EQ(val, (signed long long)0xFFFFFFFF00000000);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFF00000000));
 
   val = jlong_from(-1, -1);
-  EXPECT_EQ(val, (signed long long)0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFFFFFFFFFF));
   EXPECT_EQ(val, -1);
 
   val = jlong_from(0xABCD, 0xEFEF);
