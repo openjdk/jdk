@@ -182,7 +182,7 @@ public class Stresser implements ExecutionController {
      */
     public void printExecutionInfo(PrintStream out) {
         println(out, "Completed iterations: " + iterations);
-        println(out, "Execution time: " + (currentTime - startTime)/1_000_000_000.0 + " seconds");
+        println(out, "Execution time: " + (currentTime - startTime) / 1_000_000_000.0 + " seconds");
         if (!finished) {
             println(out, "Execution is not finished yet");
         } else if (forceFinish) {
