@@ -59,6 +59,9 @@ public interface Annotated {
      * @throws UnsupportedOperationException if this operation is not supported
      */
     default AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
-        throw new UnsupportedOperationException(this.getClass().getName());
+        if (!type.isAnnotation()) {
+            throw new IllegalArgumentException(type.toJavaName() + " is not an annotation interface");
+        }
+        return getDeclaredAnnotationValues().get(type);
     }
 }

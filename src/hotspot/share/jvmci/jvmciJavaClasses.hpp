@@ -233,6 +233,10 @@
   start_class(VMSupport, jdk_internal_vm_VMSupport)                                                           \
     jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature) \
     jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, decodeAndThrowThrowable_signature) \
+    static_int_field(VMSupport, DECLARED_ANNOTATIONS)                                                         \
+    static_int_field(VMSupport, PARAMETER_ANNOTATIONS)                                                        \
+    static_int_field(VMSupport, TYPE_ANNOTATIONS)                                                             \
+    static_int_field(VMSupport, ANNOTATION_MEMBER_VALUE)                                                      \
   end_class                                                                                                   \
   start_class(ArrayIndexOutOfBoundsException, java_lang_ArrayIndexOutOfBoundsException)                       \
     jvmci_constructor(ArrayIndexOutOfBoundsException, "(Ljava/lang/String;)V")                                \

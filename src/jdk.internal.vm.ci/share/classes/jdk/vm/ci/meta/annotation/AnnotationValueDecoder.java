@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
+package jdk.vm.ci.meta.annotation;
 
 import jdk.internal.vm.VMSupport;
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
@@ -28,12 +28,6 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.ElementTypeMismatch;
-import jdk.vm.ci.meta.annotation.EnumArrayElement;
-import jdk.vm.ci.meta.annotation.EnumElement;
-import jdk.vm.ci.meta.annotation.MissingType;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 import sun.reflect.annotation.TypeAnnotation;
 
 import java.util.List;
@@ -46,16 +40,16 @@ import java.util.stream.Collectors;
  * and employs {@link AnnotationValue} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, TypeAnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
+public final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationValue, TypeAnnotationValue, EnumElement, EnumArrayElement, MissingType, ElementTypeMismatch> {
 
-    private final HotSpotResolvedJavaType accessingClass;
+    private final ResolvedJavaType accessingClass;
 
-    Map<ResolvedJavaType, AnnotationValue> decode(byte[] encoded) {
+    public Map<ResolvedJavaType, AnnotationValue> decode(byte[] encoded) {
         List<AnnotationValue> annotationValues = VMSupport.decodeAnnotations(encoded, this);
         return annotationValues.stream().collect(Collectors.toMap(AnnotationValue::getAnnotationType, Function.identity()));
     }
 
-    AnnotationValueDecoder(HotSpotResolvedJavaType accessingClass) {
+    public AnnotationValueDecoder(ResolvedJavaType accessingClass) {
         this.accessingClass = accessingClass;
     }
 

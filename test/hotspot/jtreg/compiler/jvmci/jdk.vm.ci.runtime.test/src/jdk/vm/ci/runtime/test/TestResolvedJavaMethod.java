@@ -67,6 +67,7 @@ import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotat
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.NumbersDE;
 import org.junit.Assert;
 import org.junit.Test;
+
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
 
@@ -106,6 +107,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -371,9 +373,11 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)
     @interface Special {
+        String elementWithDefault() default "NO_NAME";
+        long elementWithoutDefault();
     }
 
-    private static native void methodWithAnnotatedParameters(@NonNull HashMap<String, String> p1, @Special @NonNull Class<? extends Annotation> p2);
+    private static native void methodWithAnnotatedParameters(@NonNull HashMap<String, String> p1, @Special(elementWithoutDefault = 42) @NonNull Class<? extends Annotation> p2);
 
     @Test
     public void getParameterAnnotationsTest() throws NoSuchMethodException {
@@ -559,6 +563,10 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         public enum NumbersDE {
             Eins,
             Zwei;
+
+            static {
+                Assert.fail("NumbersDE.<clinit> should not be called");
+            }
         }
 
         public enum NumbersUA {
@@ -622,6 +630,30 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
+    @Test
+    public void getAnnotationDefaultValueTest() throws NoSuchMethodException {
+        getAnnotationDefaultValueTest(getClass().getDeclaredMethod("methodWithAnnotatedParameters", HashMap.class, Class.class));
+        getAnnotationDefaultValueTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        for (Method m : methods.keySet()) {
+            getAnnotationDefaultValueTest(m);
+        }
+    }
+
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
+     */
+    private static void getAnnotationDefaultValueTest(Method executable) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
+        Object defaultValue = executable.getDefaultValue();
+        Object annotationDefaultValue = method.getAnnotationDefaultValue();
+        if (defaultValue == null) {
+            assertNull(annotationDefaultValue);
+        } else {
+            TestResolvedJavaType.assertAnnotationElementsEqual(defaultValue, annotationDefaultValue);
+        }
+    }
+
     public static void assertParameterAnnotationsEquals(
             Annotation[][] parameterAnnotations,
             List<List<AnnotationValue>> parameterAnnotationValues) throws AssertionError {
@@ -666,6 +698,12 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     public void getAnnotationValuesTest() throws Exception {
         TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
         TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
+        try {
+            TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingElementTypeAnnotation"));
+            throw new AssertionError("expected " + TypeNotPresentException.class.getName());
+        } catch (TypeNotPresentException e) {
+            Assert.assertEquals("Type jdk.internal.vm.test.AnnotationTestInput$Missing not present", e.getMessage());
+        }
         try {
             TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"));
             throw new AssertionError("expected " + NoClassDefFoundError.class.getName());

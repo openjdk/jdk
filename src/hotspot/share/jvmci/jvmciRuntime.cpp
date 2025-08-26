@@ -1510,15 +1510,22 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
   return _HotSpotJVMCIRuntime_instance;
 }
 
+#ifdef ASSERT
+static void assert_equals(const char* desc, int expect, int actual) {
+  assert(expect == actual, "%s: %d != %d", desc, expect, actual);
+
+}
+#endif
+
 // Implementation of CompilerToVM.registerNatives()
 // When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
-JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass,
-                                                jint declaredAnnotations, jint parameterAnnotations, jint typeAnnotations))
+JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
-  assert(CompilerToVM::DECLARED_ANNOTATIONS == declaredAnnotations, "%d != %d", CompilerToVM::DECLARED_ANNOTATIONS, declaredAnnotations);
-  assert(CompilerToVM::PARAMETER_ANNOTATIONS == parameterAnnotations, "%d != %d", CompilerToVM::PARAMETER_ANNOTATIONS, parameterAnnotations);
-  assert(CompilerToVM::TYPE_ANNOTATIONS == typeAnnotations, "%d != %d", CompilerToVM::TYPE_ANNOTATIONS, typeAnnotations);
+  DEBUG_ONLY(assert_equals("DECLARED_ANNOTATIONS", CompilerToVM::DECLARED_ANNOTATIONS, JVMCIENV->get_VMSupport_DECLARED_ANNOTATIONS()));
+  DEBUG_ONLY(assert_equals("PARAMETER_ANNOTATIONS", CompilerToVM::PARAMETER_ANNOTATIONS, JVMCIENV->get_VMSupport_PARAMETER_ANNOTATIONS()));
+  DEBUG_ONLY(assert_equals("TYPE_ANNOTATIONS", CompilerToVM::TYPE_ANNOTATIONS, JVMCIENV->get_VMSupport_TYPE_ANNOTATIONS()));
+  DEBUG_ONLY(assert_equals("ANNOTATION_MEMBER_VALUE", CompilerToVM::ANNOTATION_MEMBER_VALUE, JVMCIENV->get_VMSupport_ANNOTATION_MEMBER_VALUE()));
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);

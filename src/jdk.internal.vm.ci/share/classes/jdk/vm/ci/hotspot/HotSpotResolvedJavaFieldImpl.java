@@ -28,6 +28,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
@@ -234,23 +235,10 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
-    public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType annotationType) {
-        checkIsAnnotation(annotationType);
-        if (!hasAnnotations()) {
-            return null;
-        }
-        return getAnnotationValues0().get(annotationType);
-    }
-
-    @Override
     public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
         if (!hasAnnotations()) {
             return Map.of();
         }
-        return getAnnotationValues0();
-    }
-
-    private Map<ResolvedJavaType, AnnotationValue> getAnnotationValues0() {
         byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, VMSupport.DECLARED_ANNOTATIONS);
         return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
     }

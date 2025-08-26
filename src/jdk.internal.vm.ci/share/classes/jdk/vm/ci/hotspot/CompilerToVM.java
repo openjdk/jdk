@@ -23,7 +23,6 @@
 
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
@@ -1459,11 +1458,14 @@ final class CompilerToVM {
      * Gets the serialized annotation info for {@code method} by calling
      * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, int category) {
-            return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(), category);
+    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, HotSpotResolvedObjectTypeImpl memberType, int category) {
+        long memberTypePointer = memberType == null ? 0L: memberType.getKlassPointer();
+        return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
+                                                        memberType, memberTypePointer, category);
     }
 
-    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer, int category);
+    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                                                       HotSpotResolvedObjectTypeImpl memberType, long klassPointer, int category);
 
     /**
      * Gets the serialized annotation info for the field denoted by {@code holder} and

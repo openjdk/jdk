@@ -564,7 +564,7 @@ static void register_natives_for_class(JNIEnv* env, jclass clazz, const char* na
 
 void JNIJVMCI::register_natives(JNIEnv* env) {
   if (env != JavaThread::current()->jni_environment()) {
-    JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"(III)V", FN_PTR(JVM_RegisterJVMCINatives) }};
+    JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"()V", FN_PTR(JVM_RegisterJVMCINatives) }};
     JNINativeMethod JVMCI_nmethods[] = {{ CC"initializeRuntime", CC"()Ljdk/vm/ci/runtime/JVMCIRuntime;", FN_PTR(JVM_GetJVMCIRuntime) }};
     JNINativeMethod Services_nmethods[] = {{ CC"readSystemPropertiesInfo", CC"([I)J", FN_PTR(JVM_ReadSystemPropertiesInfo) }};
 

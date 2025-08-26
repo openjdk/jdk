@@ -355,6 +355,21 @@ public class AnnotationTestInput {
     }
 
     /**
+     * Annotation with an element of type {@link Class} whose default
+     * value is {@link Missing}.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MissingElementType {
+        Class<?> classValueOfMissingType() default Missing.class;
+    }
+
+    /**
+     * Method with a directly missing annotation.
+     */
+    @MissingElementType
+    public void missingElementTypeAnnotation() {}
+
+    /**
      * Method with a directly missing annotation.
      */
     @Missing

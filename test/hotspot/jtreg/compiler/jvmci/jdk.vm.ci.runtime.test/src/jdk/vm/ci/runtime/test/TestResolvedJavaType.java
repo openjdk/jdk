@@ -1362,7 +1362,6 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     private static List<AnnotationValue> testGetAnnotationValues(Annotated annotated, List<Annotation> annotations) throws AssertionError {
-        ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         List<AnnotationValue> res = new ArrayList<>(annotations.size());
 
         Map<ResolvedJavaType, AnnotationValue> allAnnotationValues = annotated.getDeclaredAnnotationValues();
@@ -1449,7 +1448,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         return type;
     }
 
-    private static void assertAnnotationElementsEqual(Object aElement, Object avElement) {
+    public static void assertAnnotationElementsEqual(Object aElement, Object avElement) {
         Class<?> valueType = aElement.getClass();
         if (valueType.isEnum()) {
             String avEnumName = ((EnumElement) avElement).name;

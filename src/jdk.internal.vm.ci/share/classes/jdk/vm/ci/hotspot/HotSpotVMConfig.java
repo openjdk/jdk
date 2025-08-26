@@ -203,6 +203,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodHasLocalVariableTable = getConstant("ConstMethodFlags::_misc_has_localvariable_table", Integer.class);
     final int constMethodHasMethodAnnotations = getConstant("ConstMethodFlags::_misc_has_method_annotations", Integer.class);
     final int constMethodHasParameterAnnotations = getConstant("ConstMethodFlags::_misc_has_parameter_annotations", Integer.class);
+    final int constMethodHasDefaultAnnotations = getConstant("ConstMethodFlags::_misc_has_default_annotations", Integer.class);
     final int constMethodHasExceptionTable = getConstant("ConstMethodFlags::_misc_has_exception_table", Integer.class);
 
     final int exceptionTableElementSize = getFieldValue("CompilerToVM::Data::sizeof_ExceptionTableElement", Integer.class, "int");
