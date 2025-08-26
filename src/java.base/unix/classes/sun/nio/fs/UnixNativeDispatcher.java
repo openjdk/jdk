@@ -288,7 +288,7 @@ class UnixNativeDispatcher {
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
      */
-    static void  fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
+    static void fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
@@ -302,8 +302,7 @@ class UnixNativeDispatcher {
         UnixFileAttributes attrs);
 
     // Variant of fstatat() returning errno instead of throwing UnixException
-    static int fstatat2(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
-    {
+    static int fstatat2(int dfd, UnixPath path, int flag, UnixFileAttributes attrs) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return fstatat0(dfd, buffer.address(), flag, attrs);
         }

@@ -83,8 +83,7 @@ class UnixFileAttributes
 
     // get the UnixFileAttributes for a given file.
     // Returns null if the file does not exist.
-    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException
-    {
+    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException {
         return getIfExists(path, true);
     }
 
