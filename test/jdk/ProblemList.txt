@@ -617,7 +617,7 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
-
+java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       8365398 generic-all
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
 java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
 
@@ -749,11 +749,6 @@ java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
 # svc_tools
 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
-
-sun/tools/jstat/jstatLineCounts1.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts2.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts3.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
 
 ############################################################################
 

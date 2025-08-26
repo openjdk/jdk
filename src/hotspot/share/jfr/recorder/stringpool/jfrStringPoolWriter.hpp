@@ -25,11 +25,11 @@
 #ifndef SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLWRITER_HPP
 #define SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLWRITER_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
 #include "jfr/writers/jfrEventWriterHost.hpp"
 #include "jfr/writers/jfrMemoryWriterHost.hpp"
 #include "jfr/writers/jfrStorageAdapter.hpp"
+#include "memory/allocation.hpp"
 
 class Thread;
 

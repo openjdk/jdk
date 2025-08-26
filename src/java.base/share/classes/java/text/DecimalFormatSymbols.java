@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * of these symbols, you can get the {@code DecimalFormatSymbols} object from
  * your {@code DecimalFormat} and modify it.
  *
- * <p>If the locale contains "rg" (region override)
- * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
- * the symbols are overridden for the designated region.
+ * <p>The "rg" (region override), "nu" (numbering system), and "cu" (currency)
+ * {@code Locale} <a href="../util/Locale.html#def_locale_extension">Unicode
+ * extensions</a> are supported which may override values within the symbols.
+ * For both "nu" and "cu", if they are specified in addition to "rg" by the
+ * backing {@code Locale}, the respective values from the "nu" and "cu" extension
+ * supersede the implicit ones from the "rg" extension.
  *
  * @see          java.util.Locale
  * @see          DecimalFormat
@@ -88,7 +91,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see java.util.Locale.Category#FORMAT
      */
     public DecimalFormatSymbols() {
-        initialize( Locale.getDefault(Locale.Category.FORMAT) );
+        initialize(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -111,8 +114,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param locale the desired locale
      * @throws    NullPointerException if {@code locale} is null
      */
-    public DecimalFormatSymbols( Locale locale ) {
-        initialize( locale );
+    public DecimalFormatSymbols(Locale locale) {
+        initialize(locale);
     }
 
     /**
@@ -812,7 +815,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Initializes the symbols from the FormatData resource bundle.
      */
-    private void initialize( Locale locale ) {
+    private void initialize(Locale locale) {
         this.locale = locale;
 
         // check for region override
