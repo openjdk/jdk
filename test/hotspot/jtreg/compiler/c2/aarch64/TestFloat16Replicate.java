@@ -33,9 +33,12 @@
 package compiler.c2.aarch64;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 import java.util.Arrays;
+import java.util.Random;
 import jdk.incubator.vector.Float16;
 import jdk.test.lib.*;
+import jdk.test.lib.Utils;
 
 import static java.lang.Float.*;
 import static jdk.incubator.vector.Float16.*;
@@ -43,22 +46,35 @@ import static jdk.incubator.vector.Float16.*;
 public class TestFloat16Replicate {
     private static short[] input;
     private static short[] output;
+    private static short[] expected;
+    private static Random rnd;
 
-    // Choose FP16_IN_RANGE which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
-    private static final Float16 FP16_IN_RANGE = Float16.shortBitsToFloat16((short)512);
+    // Choose FP16_IMM8 which is within the range of [-128 << 8, 127 << 8] and a multiple of 256
+    private static final Float16 FP16_IMM8;
 
-    // Choose a value out of the range of [-128 << 8, 127 << 8] or a non multiple of 256 for FP16_OUT_OF_RANGE
-    private static final Float16 FP16_OUT_OF_RANGE = Float16.shortBitsToFloat16((short)1035);
+    // Choose a value in the range [-128 << 8, 127 << 8] and a non multiple of 256 for FP16_NON_IMM8
+    private static final Float16 FP16_NON_IMM8;
 
     private static final int LEN = 1024;
 
     public static void main(String args[]) {
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation");
     }
 
     static {
+        rnd = Utils.getRandomInstance();
+        int k = rnd.nextInt(-128, 128);
+        int b = rnd.nextInt(1, 256);
+        short bits_imm8     = (short) (k << 8);
+        short bits_non_imm8 = (short) ((k << 8) + b);
+
+        FP16_IMM8     = Float16.shortBitsToFloat16(bits_imm8);
+        FP16_NON_IMM8 = Float16.shortBitsToFloat16(bits_non_imm8);
+
         input  = new short[LEN];
         output = new short[LEN];
+        expected = new short[LEN];
 
         for (int i = 0; i < LEN; i++) {
             input[i] = (short) i;
@@ -78,18 +94,16 @@ public class TestFloat16Replicate {
         applyIfCPUFeature = {"sve", "true"})
     public void TestFloat16AddInRange() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(Float16.add(shortBitsToFloat16(input[i]), FP16_IN_RANGE));
+            output[i] = float16ToRawShortBits(Float16.add(shortBitsToFloat16(input[i]), FP16_IMM8));
         }
     }
 
     @Check(test="TestFloat16AddInRange")
     public void checkResultFloat16AddInRange() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_IN_RANGE.floatValue());
-            if (expected != output[i]) {
-                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_IN_RANGE + " actual = " + output[i] +  " expected = " + expected);
-            }
+            expected[i] = floatToFloat16(float16ToFloat(input[i]) + FP16_IMM8.floatValue());
         }
+        Verify.checkEQWithRawBits(output, expected);
     }
 
     // For vectorizable loops containing FP16 operations with an FP16 constant as one of the inputs, the IR
@@ -108,17 +122,15 @@ public class TestFloat16Replicate {
         applyIfCPUFeature = {"sve", "true"})
     public void TestFloat16AddOutOfRange() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input[i]), FP16_OUT_OF_RANGE));
+            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input[i]), FP16_NON_IMM8));
         }
     }
 
     @Check(test="TestFloat16AddOutOfRange")
     public void checkResultFloat16AddOutOfRange() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(float16ToFloat(input[i]) + FP16_OUT_OF_RANGE.floatValue());
-            if (expected != output[i]) {
-                throw new AssertionError("Result Mismatch!, input = " + input[i] + " constant = " + FP16_OUT_OF_RANGE + " actual = " + output[i] +  " expected = " + expected);
-            }
+            expected[i] = floatToFloat16(float16ToFloat(input[i]) + FP16_NON_IMM8.floatValue());
         }
+        Verify.checkEQWithRawBits(output, expected);
     }
 }
