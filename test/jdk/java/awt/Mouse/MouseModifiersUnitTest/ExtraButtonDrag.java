@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,110 +22,120 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 6315717
-  @summary verifies that drag events are coming for every button if the property is set to true
-  @author Andrei Dmitriev : area=awt.mouse
-  @run main ExtraButtonDrag
+ * @test
+ * @key headful
+ * @bug 6315717
+ * @summary Verifies that the mouse drag events received for every button if the property is set to true
+ * @run main ExtraButtonDrag
  */
 
-//events from standard should also come
+import java.awt.AWTException;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
 
-import java.awt.*;
-import java.awt.event.*;
+public class ExtraButtonDrag {
 
-public class ExtraButtonDrag extends Frame {
-    static String tk = Toolkit.getDefaultToolkit().getClass().getName();
-    static Robot robot;
-    static int [] buttonsPressed;
-    static int [] buttonsReleased;
-    static int [] buttonsClicked;
-    volatile static boolean dragged = false;
-    volatile static boolean moved = false;
+    private static Frame frame;
+    private static Robot robot;
+    private static volatile boolean dragged = false;
+    private static volatile boolean moved = false;
+    private static volatile Point centerFrame;
+    private static volatile Point outboundsFrame;
+    private static final String OS_NAME = System.getProperty("os.name");
+    private static MouseAdapter mAdapter = new MouseAdapter() {
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            dragged = true;
+        }
 
-    public ExtraButtonDrag(){
-        super("ExtraButtonDrag");
-    }
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            moved = true;
+        }
+    };
 
-    public static void main(String []s){
-        Frame frame = new ExtraButtonDrag();
-
-        MouseAdapter ma = new MouseAdapter() {
-                public void mouseDragged(MouseEvent e) {
-                    System.out.println("Dragged "+e);// +" : "+ e.getButton() + " : " +e.getButtonState(e.getButton()));
-                    dragged = true;
-                }
-                public void mouseMoved(MouseEvent e) {
-                    System.out.println("Moved "+e);
-                    moved = true;
-                }
-                public void mousePressed(MouseEvent e) {
-                    System.out.println(">>> "+e);
-                }
-                public void mouseReleased(MouseEvent e) {
-                    System.out.println(">>> "+e);
-                }
-
-            };
-
-        frame.addMouseMotionListener(ma);
-        frame.addMouseListener(ma);
+    public static void initializeGUI() {
+        frame = new Frame("ExtraButtonDrag");
+        frame.addMouseMotionListener(mAdapter);
+        frame.addMouseListener(mAdapter);
 
         frame.setSize(300, 300);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
 
-        int [] buttonMask = new int [MouseInfo.getNumberOfButtons()]; //InputEvent.getButtonMasks();
+    public static void doTest()
+        throws InvocationTargetException, InterruptedException {
 
-        for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++){
-            buttonMask[i] = InputEvent.getMaskForButton(i+1);
-            //            System.out.println("TEST: "+tmp[i]);
+        int[] buttonMask = new int[MouseInfo.getNumberOfButtons()];
+
+        for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++) {
+            buttonMask[i] = InputEvent.getMaskForButton(i + 1);
         }
 
-        try {
-            robot = new Robot();
-            robot.delay(1000);
-            Point centerFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
-            Point outboundsFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()*3/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
+        EventQueue.invokeAndWait(() -> {
+            Point location = frame.getLocationOnScreen();
+            Dimension size = frame.getSize();
+            centerFrame = new Point(location.x + size.width / 2,
+                location.y + size.height / 2);
+            outboundsFrame = new Point(location.x + size.width * 3 / 2,
+                location.y + size.height / 2);
+        });
 
-            System.out.println("areExtraMouseButtonsEnabled() == " + Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled() );
+        System.out.println("areExtraMouseButtonsEnabled() == "
+            + Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled());
 
-            for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++){
-                System.out.println("button to drag = " +(i+1) + " : value passed to robot = " +buttonMask[i]);
+        for (int i = 0; i < MouseInfo.getNumberOfButtons(); i++) {
+            System.out.println("button to drag = " + (i + 1)
+                + " : value passed to robot = " + buttonMask[i]);
 
-                try {
-                    dragMouse(buttonMask[i], centerFrame.x, centerFrame.y, outboundsFrame.x, outboundsFrame.y);
-                } catch (IllegalArgumentException e){
-                    throw new RuntimeException("Test failed. Exception occured.", e);
+            try {
+                dragMouse(buttonMask[i], centerFrame.x, centerFrame.y,
+                    outboundsFrame.x, outboundsFrame.y);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Test failed. Exception occured.",
+                    e);
+            }
+
+            // this is a choice-case for X protocol issue: native events from
+            // extra buttons doesn't contain
+            // the correct state so it's unable to decide if there is a drag or
+            // move. By default we send MOVED event.
+            // XToolkit: extra buttons should report MOVED events only
+            // WToolkit: extra buttons should report DRAGGED events only
+            if (i > 2) { // extra buttons only
+                if (OS_NAME.equals("Linux")) {
+                    if (!moved || dragged) {
+                        throw new RuntimeException("Test failed." + OS_NAME
+                            + " Button = " + (i + 1) + " moved = " + moved
+                            + " : dragged = " + dragged);
+                    }
+                } else { // WToolkit
+                    if (moved || !dragged) {
+                        throw new RuntimeException("Test failed." + OS_NAME
+                            + " Button = " + (i + 1) + " moved = " + moved
+                            + " : dragged = " + dragged);
+                    }
                 }
-
-                robot.delay(500);
-                //this is a choice-case for X protocol issue: native events from extra buttons doesn't contain
-                // the correct state so it's unable to decide if there is a drag or move. By default we send MOVED event.
-                //XToolkit: extra buttons should report MOVED events only
-                //WToolkit: extra buttons should report DRAGGED events only
-                if (i > 2){ //extra buttons only
-                    if (tk.equals("sun.awt.X11.XToolkit")) {
-                        if (!moved || dragged) {
-                            throw new RuntimeException("Test failed."+ tk +" Button = " +(i+1) + " moved = "+moved +" : dragged = " +dragged);
-                        }
-                    } else { //WToolkit
-                        if (moved || !dragged) {
-                            throw new RuntimeException("Test failed."+ tk +" Button = " +(i+1) + " moved = "+moved +" : dragged = " +dragged);
-                        }
-                    }
-                } else {
-                    if (moved || !dragged){
-                        throw new RuntimeException("Test failed. Button = " +(i+1) + " not dragged.");
-                    }
+            } else {
+                if (moved || !dragged) {
+                    throw new RuntimeException(
+                        "Test failed. Button = " + (i + 1) + " not dragged.");
                 }
             }
-        } catch (Exception e){
-            throw new RuntimeException("", e);
         }
     }
 
-    public static void dragMouse(int button, int x0, int y0, int x1, int y1){
+    public static void dragMouse(int button, int x0, int y0, int x1, int y1) {
         int curX = x0;
         int curY = y0;
         int dx = x0 < x1 ? 1 : -1;
@@ -138,17 +148,43 @@ public class ExtraButtonDrag extends Frame {
 
         robot.mousePress(button);
 
-        while (curX != x1){
+        while (curX != x1) {
             curX += dx;
             robot.mouseMove(curX, curY);
             robot.delay(5);
         }
-        while (curY != y1 ){
+        while (curY != y1) {
             curY += dy;
             robot.mouseMove(curX, curY);
             robot.delay(5);
         }
         robot.mouseRelease(button);
+    }
+
+    public static void main(String[] s)
+        throws InvocationTargetException, InterruptedException, AWTException {
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(10);
+            robot.setAutoWaitForIdle(true);
+
+            EventQueue.invokeAndWait(ExtraButtonDrag::initializeGUI);
+            robot.waitForIdle();
+            robot.delay(100);
+
+            doTest();
+
+            System.out.println("Test Passed");
+        } finally {
+            EventQueue.invokeAndWait(ExtraButtonDrag::disposeFrame);
+        }
+    }
+
+    public static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+            frame = null;
+        }
     }
 
 }
