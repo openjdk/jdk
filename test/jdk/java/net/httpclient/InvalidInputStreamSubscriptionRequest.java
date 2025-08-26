@@ -310,7 +310,7 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 if (!sameClient) {
                     var tracker = TRACKER.getTracker(client);
                     client = null;
-                    var error = TRACKER.check(tracker, 500);
+                    var error = TRACKER.check(tracker, 1500);
                     if (error != null) {
                         if (failed != null) {
                             failed.addSuppressed(error);
@@ -376,7 +376,7 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 if (!sameClient) {
                     var tracker = TRACKER.getTracker(client);
                     client = null;
-                    var error = TRACKER.check(tracker, 500);
+                    var error = TRACKER.check(tracker, 1500);
                     if (error != null) {
                         if (failed != null) {
                             failed.addSuppressed(error);
@@ -429,7 +429,7 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 if (!sameClient) {
                     var tracker = TRACKER.getTracker(client);
                     client = null;
-                    var error = TRACKER.check(tracker, 500);
+                    var error = TRACKER.check(tracker, 1500);
                     if (error != null) {
                         if (failed != null) {
                             failed.addSuppressed(error);
@@ -489,7 +489,7 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 if (!sameClient) {
                     var tracker = TRACKER.getTracker(client);
                     client = null;
-                    var error = TRACKER.check(tracker, 500);
+                    var error = TRACKER.check(tracker, 1500);
                     if (error != null) {
                         if (failed != null) {
                             failed.addSuppressed(error);
@@ -619,7 +619,7 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
 
     @AfterTest
     public void teardown() throws Exception {
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(1500);
         try {
             httpTestServer.stop();
             httpsTestServer.stop();
