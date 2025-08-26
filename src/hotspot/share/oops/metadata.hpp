@@ -41,13 +41,13 @@ protected:
   void set_metadata_token(uint32_t v) { _token = v; }
 
 public:
-  static constexpr uint32_t common_prefix        = 0x3E7A0000;
-  static constexpr uint32_t common_prefix_mask   = 0xFFFF0000;
-  static constexpr uint32_t instance_klass_token = 0x3E7A0101;
-  static constexpr uint32_t array_klass_token    = 0x3E7A0102;
+  static constexpr uint32_t common_prefix        = 0x3E7A'0000;
+  static constexpr uint32_t common_prefix_mask   = 0xFFFF'0000;
+  static constexpr uint32_t instance_klass_token = 0x3E7A'0101;
+  static constexpr uint32_t array_klass_token    = 0x3E7A'0102;
 
   unsigned get_metadata_token() const { return _token; }
-  bool is_valid() const { return (get_metadata_token() & common_prefix) == common_prefix; }
+  bool is_valid() const { return (get_metadata_token() & common_prefix_mask) == common_prefix; }
 
   // Return token via SafeFetch. Returns true if token could be read, false if not.
   bool get_metadata_token_safely(unsigned* out) const;
