@@ -37,7 +37,6 @@ class ZWorkers;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
-  friend class ZRelocateTask;
 
 private:
   ZGeneration*         _generation;
@@ -52,6 +51,8 @@ private:
 
 public:
   ZRelocationSet(ZGeneration* generation);
+
+  size_t nforwardings() const;
 
   void install(const ZRelocationSetSelector* selector);
   void reset(ZPageAllocator* page_allocator);

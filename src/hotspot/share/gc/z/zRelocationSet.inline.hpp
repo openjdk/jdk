@@ -28,6 +28,10 @@
 
 #include "gc/z/zArray.inline.hpp"
 
+inline size_t ZRelocationSet::nforwardings() const {
+  return _nforwardings;
+}
+
 template <bool Parallel>
 inline ZRelocationSetIteratorImpl<Parallel>::ZRelocationSetIteratorImpl()
   : ZArrayIteratorImpl<ZForwarding*, Parallel>(nullptr, 0) {}

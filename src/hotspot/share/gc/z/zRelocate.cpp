@@ -1105,7 +1105,7 @@ public:
       _medium_targets(medium_targets),
       _small_allocator(_generation),
       _medium_allocator(_generation, shared_medium_targets),
-      _total_forwardings(relocation_set->_nforwardings),
+      _total_forwardings(relocation_set->nforwardings()),
       _numa_local_forwardings(0) {
 
     for (uint32_t i = 0; i < ZNUMA::count(); i++) {
