@@ -758,7 +758,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                     writeMethod("target", method);
                     writeBoolean("direct", call.direct);
                     if (call.direct) {
-                        writeBoolean("bind", call.bind);
+                        writeBoolean("bind", ((HotSpotCall) call).bind);
                     }
                     writeDebugInfo(debugInfo, true);
                 }

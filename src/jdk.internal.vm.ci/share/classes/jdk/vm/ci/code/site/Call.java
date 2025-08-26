@@ -30,7 +30,7 @@ import jdk.vm.ci.meta.InvokeTarget;
 /**
  * Represents a call in the code.
  */
-public final class Call extends Infopoint {
+public class Call extends Infopoint {
 
     /**
      * The target of the call.
@@ -49,24 +49,11 @@ public final class Call extends Infopoint {
      */
     public final boolean direct;
 
-    /**
-     * Specifies if the target method should be attached to the call site.
-     * This permits the compiler to override the bytecode based call site resolution for cases were special semantics are needed.
-     * If the call does not originate from the associated bci, {@link jdk.vm.ci.code.BytecodeFrame#duringCall} must not be set.
-     */
-    public final boolean bind;
-
-
     public Call(InvokeTarget target, int pcOffset, int size, boolean direct, DebugInfo debugInfo) {
-        this(target, pcOffset, size, direct, debugInfo, false);
-    }
-
-    public Call(InvokeTarget target, int pcOffset, int size, boolean direct, DebugInfo debugInfo, boolean bind) {
         super(pcOffset, debugInfo, InfopointReason.CALL);
         this.size = size;
         this.target = target;
         this.direct = direct;
-        this.bind = bind;
     }
 
     @Override
