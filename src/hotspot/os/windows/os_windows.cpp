@@ -4817,6 +4817,7 @@ int os::stat(const char *path, struct stat *sbuf) {
 
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
+    errno = ENOENT;
     DWORD errcode = ::GetLastError();
     log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
     os::free(wide_path);
