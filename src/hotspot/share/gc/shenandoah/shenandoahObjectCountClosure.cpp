@@ -11,4 +11,4 @@ void ShenandoahObjectCountClosure::merge_table(KlassInfoTable* global_cit) {
   // Clear the _cit in the closure to ensure it won't be used again.
   _cit = nullptr;
   assert(success, "Failed to merge thread-local table");
-}∂
+}
