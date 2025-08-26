@@ -1516,7 +1516,9 @@ public final class ModuleDescriptor
     }
 
     /**
-     * {@return a possibly-empty unmodifiable set of all packages in the module}
+     * Returns the set of all packages in the module.
+     *
+     * @return A possibly-empty unmodifiable set of the packages in the module
      */
     public Set<String> packages() {
         return packages;
