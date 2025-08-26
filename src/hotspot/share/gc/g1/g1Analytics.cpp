@@ -73,7 +73,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _concurrent_mark_cleanup_times_ms(NumPrevPausesForHeuristics),
     _alloc_rate_ms_seq(TruncatedSeqLength),
     _prev_collection_pause_end_ms(0.0),
-    _gc_cpu_time_pause_end_ms(),
+    _gc_cpu_time_at_pause_end_ms(),
     _concurrent_gc_cpu_time_ms(),
     _concurrent_refine_rate_ms_seq(TruncatedSeqLength),
     _dirtied_cards_rate_ms_seq(TruncatedSeqLength),

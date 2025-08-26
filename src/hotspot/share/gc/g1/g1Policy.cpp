@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
@@ -666,7 +667,7 @@ void G1Policy::record_pause_start_time() {
   _cur_pause_start_sec = now.seconds();
 
   double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_pause_end_ms();
-  double cur_gc_cpu_time_ms = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
+  double cur_gc_cpu_time_ms = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_MILLISEC;
 
   double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
   _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
@@ -1376,8 +1377,8 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
 
   update_time_to_mixed_tracking(gc_type, start, end);
 
-  double elapsed_gc_cpu_time = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
-  _analytics->set_gc_cpu_time_pause_end_ms(elapsed_gc_cpu_time);
+  double elapsed_gc_cpu_time = CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_MILLISEC;
+  _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,

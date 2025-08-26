@@ -45,8 +45,14 @@ class G1Analytics: public CHeapObj<mtGC> {
 
   TruncatedSeq _alloc_rate_ms_seq;
   double       _prev_collection_pause_end_ms;
-  double       _gc_cpu_time_pause_end_ms;
-  double       _concurrent_gc_cpu_time_ms;
+
+  // Records the total GC CPU time (in ms) at the end of the last GC pause.
+  // Used as a baseline to calculate CPU time spent in GC threads between pauses.
+  double _gc_cpu_time_at_pause_end_ms;
+
+  // CPU time (ms) spent by GC threads between the end of the last pause
+  // and the start of the current pause; calculated at start of a GC pause.
+  double _concurrent_gc_cpu_time_ms;
 
   TruncatedSeq _concurrent_refine_rate_ms_seq;
   TruncatedSeq _dirtied_cards_rate_ms_seq;
@@ -124,12 +130,12 @@ public:
     _prev_collection_pause_end_ms = ms;
   }
 
-  void set_gc_cpu_time_pause_end_ms(double ms) {
-    _gc_cpu_time_pause_end_ms = ms;
+  void set_gc_cpu_time_at_pause_end_ms(double ms) {
+    _gc_cpu_time_at_pause_end_ms = ms;
   }
 
   double gc_cpu_time_pause_end_ms() const {
-    return _gc_cpu_time_pause_end_ms;
+    return _gc_cpu_time_at_pause_end_ms;
   }
 
   void set_concurrent_gc_cpu_time_ms(double ms) {
