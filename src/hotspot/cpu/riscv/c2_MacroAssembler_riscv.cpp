@@ -2489,9 +2489,12 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
 #define __ masm.
   VectorRegister dst = stub.data<0>();
   VectorRegister src = stub.data<1>();
-  VectorRegister tmp = stub.data<2>();
+  VectorRegister vtmp = stub.data<2>();
+  assert_different_registers(dst, src, vtmp);
+
   __ bind(stub.entry());
 
+  // Active elements (NaNs) are marked in v0 mask register.
   // mul is already set to mf2 in float_to_float16_v.
 
   //  Float (32 bits)
@@ -2514,7 +2517,7 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
   const int fp16_exponent_bits = 5;
   const int fp16_mantissa_bits = 10;
 
-  // preserve the sign bit and exponent.
+  // preserve the sign bit and exponent, clear mantissa.
   __ vnsra_wi(dst, src, fp32_bits - fp_sign_bits - fp16_exponent_bits, Assembler::v0_t);
   __ vsll_vi(dst, dst, fp16_mantissa_bits, Assembler::v0_t);
 
@@ -2527,20 +2530,20 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
   //
   // Check j.l.Float.floatToFloat16 for more information.
   // 10 bits
-  __ vnsrl_wi(tmp, src, fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits, Assembler::v0_t);
   __ mv(t0, 0x3ff); // retain first part of mantissa in a float 32
-  __ vand_vx(tmp, tmp, t0, Assembler::v0_t);
-  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
   // 9 bits
-  __ vnsrl_wi(tmp, src, fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_3rd_part_bits, Assembler::v0_t);
   __ mv(t0, 0x1ff); // retain second part of mantissa in a float 32
-  __ vand_vx(tmp, tmp, t0, Assembler::v0_t);
-  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
   // 4 bits
   // Narrow shift is necessary to move data from 32 bits element to 16 bits element in vector register.
-  __ vnsrl_wi(tmp, src, 0, Assembler::v0_t);
-  __ vand_vi(tmp, tmp, 0xf, Assembler::v0_t);
-  __ vor_vv(dst, dst, tmp, Assembler::v0_t);
+  __ vnsrl_wi(vtmp, src, 0, Assembler::v0_t);
+  __ vand_vi(vtmp, vtmp, 0xf, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
 
   __ j(stub.continuation());
 #undef __
