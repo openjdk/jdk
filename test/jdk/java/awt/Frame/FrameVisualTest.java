@@ -56,7 +56,6 @@ public class FrameVisualTest {
     public static void main(String[] args) throws Exception {
         gcs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getConfigurations();
         robot = new Robot();
-        robot.waitForIdle();
         try {
             EventQueue.invokeAndWait(() -> createAndShowUI());
 
@@ -86,7 +85,6 @@ public class FrameVisualTest {
             for (index = 0; index < frames.length; index++) {
                 EventQueue.invokeAndWait(() -> {
                     if (frames[index] != null) {
-                        frames[index].setVisible(false);
                         frames[index].dispose();
                         frames[index] = null;
                     }
