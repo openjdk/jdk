@@ -253,7 +253,6 @@ void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableA
       if (p < ro_end) {
         continue;
       } else {
-        precond(mapinfo->is_static());
         last_ro_index = i;
         break;
       }

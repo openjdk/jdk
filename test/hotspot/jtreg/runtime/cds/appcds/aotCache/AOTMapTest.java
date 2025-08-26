@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test id=aot
  * @bug 8362566
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
  * @requires vm.flagless
@@ -30,8 +30,23 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build AOTMapTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
- * @run driver AOTMapTest
+ * @run driver AOTMapTest AOT --two-step-training
  */
+
+/**
+ * @test id=dynamic
+ * @bug 8362566
+ * @summary Test the contents of -Xlog:aot+map with AOT workflow
+ * @requires vm.flagless
+ * @requires vm.cds.supports.aot.class.linking
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @build AOTMapTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
+ * @run  main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
+ */
+
 
 import java.util.ArrayList;
 import jdk.test.lib.cds.CDSAppTester;
@@ -43,17 +58,17 @@ public class AOTMapTest {
     static final String mainClass = "AOTMapTestApp";
 
     public static void main(String[] args) throws Exception {
-        doTest(false);
+        doTest(args, false);
 
         if (Platform.is64bit()) {
             // There's no oop/klass compression on 32-bit.
-            doTest(true);
+            doTest(args, true);
         }
     }
 
-    public static void doTest(boolean compressed) throws Exception {
+    public static void doTest(String[] args, boolean compressed) throws Exception {
         Tester tester = new Tester(compressed);
-        tester.run(new String[] {"AOT", "--two-step-training"});
+        tester.run(args);
 
         validate(tester.dumpMapFile);
         validate(tester.runMapFile);
@@ -99,7 +114,7 @@ public class AOTMapTest {
             String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";
             String logMapSuffix = ":none:filesize=0";
 
-            if (runMode == RunMode.ASSEMBLY) {
+            if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC) {
                 vmArgs.add(logMapPrefix + dumpMapFile + logMapSuffix);
             } else if (runMode == RunMode.PRODUCTION) {
                 vmArgs.add(logMapPrefix + runMapFile + logMapSuffix);
