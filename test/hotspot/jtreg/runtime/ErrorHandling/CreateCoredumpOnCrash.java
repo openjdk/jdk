@@ -30,6 +30,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run driver CreateCoredumpOnCrash
  * @requires vm.flagless
+ * @requires !vm.asan
  */
 
 import jdk.test.lib.process.ProcessTools;
