@@ -27,6 +27,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -69,7 +70,7 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<
+typedef HashTable<
       size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
       size_t,    // size of this filler (in bytes)
       127,       // prime number
@@ -543,6 +544,10 @@ template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
   if (source_referent != nullptr) {
     if (java_lang_Class::is_instance(source_referent)) {
+      Klass* k = java_lang_Class::as_Klass(source_referent);
+      if (RegeneratedClasses::has_been_regenerated(k)) {
+        source_referent = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+      }
       // When the source object points to a "real" mirror, the buffered object should point
       // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
       // at run time).
@@ -754,7 +759,12 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
     guarantee(native_ptr != nullptr, "sanity");
-    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+
+    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
+      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
+    }
+
+    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
               "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);

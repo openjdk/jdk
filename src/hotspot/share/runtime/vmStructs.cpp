@@ -44,6 +44,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1027,6 +1028,7 @@
         declare_type(TrainingReplayThread, JavaThread)                    \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        declare_type(JfrRecorderThread, JavaThread)                       \
         DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
@@ -1483,13 +1485,13 @@
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
-  /***********************************************/                       \
-  /* ConstantPool* layout enum for InvokeDynamic */                       \
-  /***********************************************/                       \
+  /******************************************************/                \
+  /* BSMAttributeEntry* - layout enum for InvokeDynamic */                \
+  /******************************************************/                \
                                                                           \
-  declare_constant(ConstantPool::_indy_bsm_offset)                        \
-  declare_constant(ConstantPool::_indy_argc_offset)                       \
-  declare_constant(ConstantPool::_indy_argv_offset)                       \
+  declare_constant(BSMAttributeEntry::_bsmi_offset)                       \
+  declare_constant(BSMAttributeEntry::_argc_offset)                       \
+  declare_constant(BSMAttributeEntry::_argv_offset)                       \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
@@ -1564,6 +1566,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
@@ -1571,7 +1574,6 @@
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \

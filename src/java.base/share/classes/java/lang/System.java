@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -238,10 +237,11 @@ public final class System {
     private static volatile Console cons;
 
     /**
-     * Returns the unique {@link java.io.Console Console} object associated
+     * Returns the unique {@link Console Console} object associated
      * with the current Java virtual machine, if any.
      *
      * @return  The system console, if any, otherwise {@code null}.
+     * @see Console
      *
      * @since   1.6
      */
@@ -2022,6 +2022,9 @@ public final class System {
             public byte[] getRawExecutableTypeAnnotations(Executable executable) {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
+            public int getClassFileAccessFlags(Class<?> klass) {
+                return klass.getClassFileAccessFlags();
+            }
             public <E extends Enum<E>>
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
@@ -2118,12 +2121,17 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
-            public int uncheckedCountPositives(byte[] bytes, int offset, int length) {
+            public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
+
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
+            }
+
             public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
@@ -2137,24 +2145,20 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
-            }
-
             public byte[] getBytesUTF8NoRepl(String s) {
                 return String.getBytesUTF8NoRepl(s);
             }
 
-            public void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
-                return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            public int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len) {
+                return StringCoding.encodeAsciiArray(sa, sp, da, dp, len);
             }
 
             public InputStream initialSystemIn() {

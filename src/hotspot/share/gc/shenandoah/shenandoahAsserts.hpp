@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHASSERTS_HPP
 
 #include "memory/iterator.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -76,6 +77,11 @@ public:
   static void assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line);
   static void assert_generational(const char* file, int line);
   static void assert_generations_reconciled(const char* file, int line);
+
+  // Given a possibly invalid oop, extract narrowKlass (if UCCP) and Klass*
+  // from it safely.
+  // Note: For -UCCP, returned nk is always 0.
+  static bool extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap_bounds(interior_loc, obj) \

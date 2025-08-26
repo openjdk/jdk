@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ typedef void (GLAPIENTRY *glTextureBarrierNVType) (void);
  * REMIND: this caused an internal error in the MS compiler!?!?
  *
  *#define OGL_CHECK_FUNC_ERR(f) \
- *    J2dTrace1(J2D_TRACE_ERROR, "could not load function: %s", #f)
+ *    J2dTrace(J2D_TRACE_ERROR, "could not load function: %s", #f)
  */
 
 #define OGL_CHECK_FUNC_ERR(f) \

@@ -73,13 +73,13 @@ inline bool JavaThread::clear_carrier_thread_suspended() {
 }
 #endif
 
-class AsyncExceptionHandshake : public AsyncHandshakeClosure {
+class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   OopHandle _exception;
  public:
-  AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
+  AsyncExceptionHandshakeClosure(OopHandle& o, const char* name = "AsyncExceptionHandshakeClosure")
   : AsyncHandshakeClosure(name), _exception(o) { }
 
-  ~AsyncExceptionHandshake() {
+  ~AsyncExceptionHandshakeClosure() {
     Thread* current = Thread::current();
     // Can get here from the VMThread via install_async_exception() bail out.
     if (current->is_Java_thread()) {
@@ -103,9 +103,9 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   bool is_async_exception()   { return true; }
 };
 
-class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
-  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
@@ -117,7 +117,7 @@ class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
 
 inline void JavaThread::set_pending_unsafe_access_error() {
   if (!has_async_exception_condition()) {
-    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+    Handshake::execute(new UnsafeAccessErrorHandshakeClosure(), this);
   }
 }
 

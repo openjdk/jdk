@@ -115,10 +115,10 @@ class StubGenerator: public StubCodeGenerator {
   //   [SP+176]  - thread                   : Thread*
   //
   address generate_call_stub(address& return_address) {
-    // Set up a new C frame, copy Java arguments, call frame manager
+    // Set up a new C frame, copy Java arguments, call template interpreter
     // or native_entry, and process result.
 
-    StubGenStubId stub_id = StubGenStubId::call_stub_id;
+    StubId stub_id = StubId::stubgen_call_stub_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -164,15 +164,16 @@ class StubGenerator: public StubCodeGenerator {
 
       // Save non-volatile registers to ABI of caller frame.
       BLOCK_COMMENT("save registers, push frame {");
-      __ z_stmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_std(Z_F8, 96, Z_SP);
-      __ z_std(Z_F9, 104, Z_SP);
-      __ z_std(Z_F10, 112, Z_SP);
-      __ z_std(Z_F11, 120, Z_SP);
-      __ z_std(Z_F12, 128, Z_SP);
-      __ z_std(Z_F13, 136, Z_SP);
-      __ z_std(Z_F14, 144, Z_SP);
-      __ z_std(Z_F15, 152, Z_SP);
+      __ save_return_pc();
+      __ z_stmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_std(Z_F8, 80, Z_SP);
+      __ z_std(Z_F9, 88, Z_SP);
+      __ z_std(Z_F10, 96, Z_SP);
+      __ z_std(Z_F11, 104, Z_SP);
+      __ z_std(Z_F12, 112, Z_SP);
+      __ z_std(Z_F13, 120, Z_SP);
+      __ z_std(Z_F14, 128, Z_SP);
+      __ z_std(Z_F15, 136, Z_SP);
 
       //
       // Push ENTRY_FRAME including arguments:
@@ -272,10 +273,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("call {");
     {
-      // Call frame manager or native entry.
+      // Call template interpreter or native entry.
 
       //
-      // Register state on entry to frame manager / native entry:
+      // Register state on entry to template interpreter / native entry:
       //
       //   Z_ARG1 = r_top_of_arguments_addr  - intptr_t *sender tos (prepushed)
       //                                       Lesp = (SP) + copied_arguments_offset - 8
@@ -290,7 +291,7 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lgr(Z_esp, r_top_of_arguments_addr);
 
       //
-      // Stack on entry to frame manager / native entry:
+      // Stack on entry to template interpreter / native entry:
       //
       //     F0      [TOP_IJAVA_FRAME_ABI]
       //             [outgoing Java arguments]
@@ -300,7 +301,7 @@ class StubGenerator: public StubCodeGenerator {
       //
 
       // Do a light-weight C-call here, r_new_arg_entry holds the address
-      // of the interpreter entry point (frame manager or native entry)
+      // of the interpreter entry point (template interpreter or native entry)
       // and save runtime-value of return_pc in return_address
       // (call by reference argument).
       return_address = __ call_stub(r_new_arg_entry);
@@ -309,11 +310,11 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       BLOCK_COMMENT("restore registers {");
-      // Returned from frame manager or native entry.
+      // Returned from template interpreter or native entry.
       // Now pop frame, process result, and return to caller.
 
       //
-      // Stack on exit from frame manager / native entry:
+      // Stack on exit from template interpreter / native entry:
       //
       //     F0      [ABI]
       //             ...
@@ -330,22 +331,23 @@ class StubGenerator: public StubCodeGenerator {
       __ pop_frame();
 
       // Reload some volatile registers which we've spilled before the call
-      // to frame manager / native entry.
+      // to template interpreter / native entry.
       // Access all locals via frame pointer, because we know nothing about
       // the topmost frame's size.
       __ z_lg(r_arg_result_addr, result_address_offset, r_entryframe_fp);
       __ z_lg(r_arg_result_type, result_type_offset, r_entryframe_fp);
 
       // Restore non-volatiles.
-      __ z_lmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_ld(Z_F8, 96, Z_SP);
-      __ z_ld(Z_F9, 104, Z_SP);
-      __ z_ld(Z_F10, 112, Z_SP);
-      __ z_ld(Z_F11, 120, Z_SP);
-      __ z_ld(Z_F12, 128, Z_SP);
-      __ z_ld(Z_F13, 136, Z_SP);
-      __ z_ld(Z_F14, 144, Z_SP);
-      __ z_ld(Z_F15, 152, Z_SP);
+      __ restore_return_pc();
+      __ z_lmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_ld(Z_F8, 80, Z_SP);
+      __ z_ld(Z_F9, 88, Z_SP);
+      __ z_ld(Z_F10, 96, Z_SP);
+      __ z_ld(Z_F11, 104, Z_SP);
+      __ z_ld(Z_F12, 112, Z_SP);
+      __ z_ld(Z_F13, 120, Z_SP);
+      __ z_ld(Z_F14, 128, Z_SP);
+      __ z_ld(Z_F15, 136, Z_SP);
       BLOCK_COMMENT("} restore");
 
       //
@@ -459,7 +461,7 @@ class StubGenerator: public StubCodeGenerator {
   // pending exception stored in JavaThread that can be tested from
   // within the VM.
   address generate_catch_exception() {
-    StubGenStubId stub_id = StubGenStubId::catch_exception_id;
+    StubId stub_id = StubId::stubgen_catch_exception_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -511,7 +513,7 @@ class StubGenerator: public StubCodeGenerator {
   //   (Z_R14 is unchanged and is live out).
   //
   address generate_forward_exception() {
-    StubGenStubId stub_id = StubGenStubId::forward_exception_id;
+    StubId stub_id = StubId::stubgen_forward_exception_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -592,7 +594,7 @@ class StubGenerator: public StubCodeGenerator {
   //   raddr: Z_R14, blown by call
   //
   address generate_partial_subtype_check() {
-    StubGenStubId stub_id = StubGenStubId::partial_subtype_check_id;
+    StubId stub_id = StubId::stubgen_partial_subtype_check_id;
     StubCodeMark mark(this, stub_id);
     Label miss;
 
@@ -626,7 +628,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_lookup_secondary_supers_table_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
     StubCodeMark mark(this, stub_id);
 
     const Register
@@ -649,7 +651,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -1265,39 +1267,39 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  address generate_disjoint_nonoop_copy(StubGenStubId stub_id) {
+  address generate_disjoint_nonoop_copy(StubId stub_id) {
     bool aligned;
     int element_size;
     switch (stub_id) {
-    case jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_jbyte_disjoint_arraycopy_id:
       aligned = false;
       element_size = 1;
       break;
-    case arrayof_jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id:
       aligned = true;
       element_size = 1;
       break;
-    case jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_jshort_disjoint_arraycopy_id:
       aligned = false;
       element_size = 2;
       break;
-    case arrayof_jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id:
       aligned = true;
       element_size = 2;
       break;
-    case jint_disjoint_arraycopy_id:
+    case StubId::stubgen_jint_disjoint_arraycopy_id:
       aligned = false;
       element_size = 4;
       break;
-    case arrayof_jint_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_disjoint_arraycopy_id:
       aligned = true;
       element_size = 4;
       break;
-    case jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_jlong_disjoint_arraycopy_id:
       aligned = false;
       element_size = 8;
       break;
-    case arrayof_jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id:
       aligned = true;
       element_size = 8;
       break;
@@ -1310,23 +1312,23 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-  address generate_disjoint_oop_copy(StubGenStubId stub_id) {
+  address generate_disjoint_oop_copy(StubId stub_id) {
     bool aligned;
     bool dest_uninitialized;
     switch (stub_id) {
-    case oop_disjoint_arraycopy_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_id:
       aligned = false;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_id:
       aligned = true;
       dest_uninitialized = false;
       break;
-    case oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
       aligned = false;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id:
       aligned = true;
       dest_uninitialized = true;
       break;
@@ -1357,47 +1359,47 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-  address generate_conjoint_nonoop_copy(StubGenStubId stub_id) {
+  address generate_conjoint_nonoop_copy(StubId stub_id) {
     bool aligned;
     int shift; // i.e. log2(element size)
     address nooverlap_target;
     switch (stub_id) {
-    case jbyte_arraycopy_id:
+    case StubId::stubgen_jbyte_arraycopy_id:
       aligned = false;
       shift = 0;
       nooverlap_target = StubRoutines::jbyte_disjoint_arraycopy();
       break;
-    case arrayof_jbyte_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_arraycopy_id:
       aligned = true;
       shift = 0;
       nooverlap_target = StubRoutines::arrayof_jbyte_disjoint_arraycopy();
       break;
-    case jshort_arraycopy_id:
+    case StubId::stubgen_jshort_arraycopy_id:
       aligned = false;
       shift = 1;
       nooverlap_target = StubRoutines::jshort_disjoint_arraycopy();
       break;
-    case arrayof_jshort_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_arraycopy_id:
       aligned = true;
       shift = 1;
       nooverlap_target = StubRoutines::arrayof_jshort_disjoint_arraycopy();
       break;
-    case jint_arraycopy_id:
+    case StubId::stubgen_jint_arraycopy_id:
       aligned = false;
       shift = 2;
       nooverlap_target = StubRoutines::jint_disjoint_arraycopy();
       break;
-    case arrayof_jint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_arraycopy_id:
       aligned = true;
       shift = 2;
       nooverlap_target = StubRoutines::arrayof_jint_disjoint_arraycopy();
       break;
-    case jlong_arraycopy_id:
+    case StubId::stubgen_jlong_arraycopy_id:
       aligned = false;
       shift = 3;
       nooverlap_target = StubRoutines::jlong_disjoint_arraycopy();
       break;
-    case arrayof_jlong_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_arraycopy_id:
       aligned = true;
       shift = 3;
       nooverlap_target = StubRoutines::arrayof_jlong_disjoint_arraycopy();
@@ -1412,27 +1414,27 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-  address generate_conjoint_oop_copy(StubGenStubId stub_id) {
+  address generate_conjoint_oop_copy(StubId stub_id) {
     bool aligned;
     bool dest_uninitialized;
     address nooverlap_target;
     switch (stub_id) {
-    case oop_arraycopy_id:
+    case StubId::stubgen_oop_arraycopy_id:
       aligned = false;
       dest_uninitialized = false;
       nooverlap_target = StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
       break;
-    case arrayof_oop_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_id:
       aligned = true;
       dest_uninitialized = false;
       nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
       break;
-    case oop_arraycopy_uninit_id:
+    case StubId::stubgen_oop_arraycopy_uninit_id:
       aligned = false;
       dest_uninitialized = true;
       nooverlap_target = StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
       break;
-    case arrayof_oop_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_uninit_id:
       aligned = true;
       dest_uninitialized = true;
       nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
@@ -1480,7 +1482,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_unsafe_setmemory(address unsafe_byte_fill) {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    StubCodeMark mark(this, StubId::stubgen_unsafe_setmemory_id);
     unsigned int start_off = __ offset();
 
     // bump this on entry, not on exit:
@@ -1576,39 +1578,41 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_arraycopy_stubs() {
 
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
+
     // Note: the disjoint stubs must be generated first, some of
     // the conjoint stubs use them.
 
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+    StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubId::stubgen_jbyte_disjoint_arraycopy_id);
+    StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubId::stubgen_jshort_disjoint_arraycopy_id);
+    StubRoutines::_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubId::stubgen_jint_disjoint_arraycopy_id);
+    StubRoutines::_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubId::stubgen_jlong_disjoint_arraycopy_id);
+    StubRoutines::_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubId::stubgen_oop_disjoint_arraycopy_id);
+    StubRoutines::_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubId::stubgen_oop_disjoint_arraycopy_uninit_id);
 
-    StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::jbyte_disjoint_arraycopy_id);
-    StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubGenStubId::jshort_disjoint_arraycopy_id);
-    StubRoutines::_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubGenStubId::jint_disjoint_arraycopy_id);
-    StubRoutines::_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::jlong_disjoint_arraycopy_id);
-    StubRoutines::_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubGenStubId::oop_disjoint_arraycopy_id);
-    StubRoutines::_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubGenStubId::oop_disjoint_arraycopy_uninit_id);
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubId::stubgen_arrayof_jint_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubId::stubgen_arrayof_oop_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id);
 
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id);
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id);
-    StubRoutines::_arrayof_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubGenStubId::arrayof_jint_disjoint_arraycopy_id);
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::arrayof_jlong_disjoint_arraycopy_id);
-    StubRoutines::_arrayof_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubGenStubId::arrayof_oop_disjoint_arraycopy_id);
-    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubGenStubId::arrayof_oop_disjoint_arraycopy_uninit_id);
+    StubRoutines::_jbyte_arraycopy           = generate_conjoint_nonoop_copy(StubId::stubgen_jbyte_arraycopy_id);
+    StubRoutines::_jshort_arraycopy          = generate_conjoint_nonoop_copy(StubId::stubgen_jshort_arraycopy_id);
+    StubRoutines::_jint_arraycopy            = generate_conjoint_nonoop_copy(StubId::stubgen_jint_arraycopy_id);
+    StubRoutines::_jlong_arraycopy           = generate_conjoint_nonoop_copy(StubId::stubgen_jlong_arraycopy_id);
+    StubRoutines::_oop_arraycopy             = generate_conjoint_oop_copy(StubId::stubgen_oop_arraycopy_id);
+    StubRoutines::_oop_arraycopy_uninit      = generate_conjoint_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id);
 
-    StubRoutines::_jbyte_arraycopy           = generate_conjoint_nonoop_copy(StubGenStubId::jbyte_arraycopy_id);
-    StubRoutines::_jshort_arraycopy          = generate_conjoint_nonoop_copy(StubGenStubId::jshort_arraycopy_id);
-    StubRoutines::_jint_arraycopy            = generate_conjoint_nonoop_copy(StubGenStubId::jint_arraycopy_id);
-    StubRoutines::_jlong_arraycopy           = generate_conjoint_nonoop_copy(StubGenStubId::jlong_arraycopy_id);
-    StubRoutines::_oop_arraycopy             = generate_conjoint_oop_copy(StubGenStubId::oop_arraycopy_id);
-    StubRoutines::_oop_arraycopy_uninit      = generate_conjoint_oop_copy(StubGenStubId::oop_arraycopy_uninit_id);
-
-    StubRoutines::_arrayof_jbyte_arraycopy      = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jbyte_arraycopy_id);
-    StubRoutines::_arrayof_jshort_arraycopy     = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jshort_arraycopy_id);
-    StubRoutines::_arrayof_jint_arraycopy       = generate_conjoint_nonoop_copy (StubGenStubId::arrayof_jint_arraycopy_id);
-    StubRoutines::_arrayof_jlong_arraycopy      = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jlong_arraycopy_id);
-    StubRoutines::_arrayof_oop_arraycopy        = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_id);
-    StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id);
+    StubRoutines::_arrayof_jbyte_arraycopy      = generate_conjoint_nonoop_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id);
+    StubRoutines::_arrayof_jshort_arraycopy     = generate_conjoint_nonoop_copy(StubId::stubgen_arrayof_jshort_arraycopy_id);
+    StubRoutines::_arrayof_jint_arraycopy       = generate_conjoint_nonoop_copy (StubId::stubgen_arrayof_jint_arraycopy_id);
+    StubRoutines::_arrayof_jlong_arraycopy      = generate_conjoint_nonoop_copy(StubId::stubgen_arrayof_jlong_arraycopy_id);
+    StubRoutines::_arrayof_oop_arraycopy        = generate_conjoint_oop_copy(StubId::stubgen_arrayof_oop_arraycopy_id);
+    StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id);
 
 #ifdef COMPILER2
     StubRoutines::_unsafe_setmemory =
@@ -1898,7 +1902,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute AES encrypt function.
   address generate_AES_encryptBlock() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+    StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -1910,7 +1914,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute AES decrypt function.
   address generate_AES_decryptBlock() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -1971,7 +1975,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute chained AES encrypt function.
   address generate_cipherBlockChaining_AES_encrypt() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -1983,7 +1987,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute chained AES decrypt function.
   address generate_cipherBlockChaining_AES_decrypt() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -2690,7 +2694,7 @@ class StubGenerator: public StubCodeGenerator {
   // Encrypt or decrypt is selected via parameters. Only one stub is necessary.
   address generate_counterMode_AESCrypt() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -2704,7 +2708,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute GHASH function.
   address generate_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
 
@@ -2782,13 +2786,13 @@ class StubGenerator: public StubCodeGenerator {
   //      provides for a large enough source data buffer.
   //
   // Compute SHA-1 function.
-  address generate_SHA1_stub(StubGenStubId stub_id) {
+  address generate_SHA1_stub(StubId stub_id) {
     bool multiBlock;
     switch (stub_id) {
-    case sha1_implCompress_id:
+    case StubId::stubgen_sha1_implCompress_id:
       multiBlock = false;
       break;
-    case sha1_implCompressMB_id:
+    case StubId::stubgen_sha1_implCompressMB_id:
       multiBlock = true;
       break;
     default:
@@ -2875,13 +2879,13 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute SHA-256 function.
-  address generate_SHA256_stub(StubGenStubId stub_id) {
+  address generate_SHA256_stub(StubId stub_id) {
     bool multiBlock;
     switch (stub_id) {
-    case sha256_implCompress_id:
+    case StubId::stubgen_sha256_implCompress_id:
       multiBlock = false;
       break;
-    case sha256_implCompressMB_id:
+    case StubId::stubgen_sha256_implCompressMB_id:
       multiBlock = true;
       break;
     default:
@@ -2966,13 +2970,13 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute SHA-512 function.
-  address generate_SHA512_stub(StubGenStubId stub_id) {
+  address generate_SHA512_stub(StubId stub_id) {
     bool multiBlock;
     switch (stub_id) {
-    case sha512_implCompress_id:
+    case StubId::stubgen_sha512_implCompress_id:
       multiBlock = false;
       break;
-    case sha512_implCompressMB_id:
+    case StubId::stubgen_sha512_implCompressMB_id:
       multiBlock = true;
       break;
     default:
@@ -3102,7 +3106,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute CRC32 function.
   address generate_CRC32_updateBytes() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id =  StubGenStubId::updateBytesCRC32_id;
+    StubId stub_id =  StubId::stubgen_updateBytesCRC32_id;
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -3122,7 +3126,7 @@ class StubGenerator: public StubCodeGenerator {
   // Compute CRC32C function.
   address generate_CRC32C_updateBytes() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id =  StubGenStubId::updateBytesCRC32C_id;
+    StubId stub_id =  StubId::stubgen_updateBytesCRC32C_id;
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
@@ -3147,7 +3151,7 @@ class StubGenerator: public StubCodeGenerator {
   //   Z_ARG5    - z address
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id =  StubGenStubId::multiplyToLen_id;
+    StubId stub_id =  StubId::stubgen_multiplyToLen_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -3179,7 +3183,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id =  StubGenStubId::method_entry_barrier_id;
+    StubId stub_id =  StubId::stubgen_method_entry_barrier_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -3197,7 +3201,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
-    __ z_ltr(Z_R0_scratch, Z_RET);
+    __ z_ltr(Z_RET, Z_RET);
 
     // VM-Call Epilogue
     __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
@@ -3245,7 +3249,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
-    StubGenStubId stub_id =  StubGenStubId::upcall_stub_exception_handler_id;
+    StubId stub_id =  StubId::stubgen_upcall_stub_exception_handler_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -3263,7 +3267,7 @@ class StubGenerator: public StubCodeGenerator {
   // Z_ARG1 = jobject receiver
   // Z_method = Method* result
   address generate_upcall_stub_load_target() {
-    StubGenStubId stub_id =  StubGenStubId::upcall_stub_load_target_id;
+    StubId stub_id =  StubId::stubgen_upcall_stub_load_target_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -3281,6 +3285,10 @@ class StubGenerator: public StubCodeGenerator {
     __ z_br(Z_R14);
 
     return start;
+  }
+
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for s390
   }
 
   void generate_initial_stubs() {
@@ -3304,12 +3312,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 
@@ -3387,16 +3393,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // Generate SHA1/SHA256/SHA512 intrinsics code.
     if (UseSHA1Intrinsics) {
-      StubRoutines::_sha1_implCompress     = generate_SHA1_stub(StubGenStubId::sha1_implCompress_id);
-      StubRoutines::_sha1_implCompressMB   = generate_SHA1_stub(StubGenStubId::sha1_implCompressMB_id);
+      StubRoutines::_sha1_implCompress     = generate_SHA1_stub(StubId::stubgen_sha1_implCompress_id);
+      StubRoutines::_sha1_implCompressMB   = generate_SHA1_stub(StubId::stubgen_sha1_implCompressMB_id);
     }
     if (UseSHA256Intrinsics) {
-      StubRoutines::_sha256_implCompress   = generate_SHA256_stub(StubGenStubId::sha256_implCompress_id);
-      StubRoutines::_sha256_implCompressMB = generate_SHA256_stub(StubGenStubId::sha256_implCompressMB_id);
+      StubRoutines::_sha256_implCompress   = generate_SHA256_stub(StubId::stubgen_sha256_implCompress_id);
+      StubRoutines::_sha256_implCompressMB = generate_SHA256_stub(StubId::stubgen_sha256_implCompressMB_id);
     }
     if (UseSHA512Intrinsics) {
-      StubRoutines::_sha512_implCompress   = generate_SHA512_stub(StubGenStubId::sha512_implCompress_id);
-      StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubGenStubId::sha512_implCompressMB_id);
+      StubRoutines::_sha512_implCompress   = generate_SHA512_stub(StubId::stubgen_sha512_implCompress_id);
+      StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubId::stubgen_sha512_implCompressMB_id);
     }
 
 #ifdef COMPILER2
@@ -3416,22 +3422,25 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
-    case initial_id:
+    case BlobId::stubgen_preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
+    case BlobId::stubgen_initial_id:
       generate_initial_stubs();
       break;
-     case continuation_id:
+    case BlobId::stubgen_continuation_id:
       generate_continuation_stubs();
       break;
-    case compiler_id:
+    case BlobId::stubgen_compiler_id:
       generate_compiler_stubs();
       break;
-    case final_id:
+    case BlobId::stubgen_final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected blob id: %d", blob_id);
+      fatal("unexpected blob id: %s", StubInfo::name(blob_id));
       break;
     };
   }
@@ -3470,6 +3479,6 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
   StubGenerator g(code, blob_id);
 }

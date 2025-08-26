@@ -38,11 +38,11 @@
 #include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
+#include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
-#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
-#include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -61,8 +61,8 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
 #include "services/memoryPool.hpp"
@@ -291,7 +291,7 @@ static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
 }
 
 TRACE_REQUEST_FUNC(JavaAgent) {
-  const JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::java_agents();
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(agent->is_jplis(), "invariant");
@@ -300,7 +300,7 @@ TRACE_REQUEST_FUNC(JavaAgent) {
   }
 }
 
-static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
+static void send_native_agent_events(JvmtiAgentList::Iterator& it) {
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(!agent->is_jplis(), "invariant");
@@ -311,9 +311,9 @@ static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
 }
 
 TRACE_REQUEST_FUNC(NativeAgent) {
-  const JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
+  JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
   send_native_agent_events(native_agents_it);
-  const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
+  JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
   send_native_agent_events(xrun_agents_it);
 }
 #else  // INCLUDE_JVMTI

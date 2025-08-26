@@ -33,6 +33,10 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
+#ifdef LINUX
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#endif
+
 class Arena;
 class JavaThread;
 class JfrBuffer;
@@ -71,6 +75,7 @@ class JfrThreadLocal {
   jlong _wallclock_time;
   int32_t _non_reentrant_nesting;
   u2 _vthread_epoch;
+  mutable u2 _generation;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   volatile bool _enqueued_requests;
@@ -78,6 +83,22 @@ class JfrThreadLocal {
   bool _notified;
   bool _dead;
   bool _sampling_critical_section;
+
+#ifdef LINUX
+  timer_t* _cpu_timer;
+
+  enum CPUTimeLockState {
+    UNLOCKED,
+    // locked for enqueuing
+    ENQUEUE,
+    // locked for dequeuing
+    DEQUEUE
+  };
+  volatile CPUTimeLockState _cpu_time_jfr_locked;
+  volatile bool _has_cpu_time_jfr_requests;
+  JfrCPUTimeTraceQueue _cpu_time_jfr_queue;
+  volatile bool _do_async_processing_of_cpu_time_jfr_requests;
+#endif
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -328,6 +349,9 @@ class JfrThreadLocal {
     return _sampling_critical_section;
   }
 
+  // Serialization state.
+  bool should_write() const;
+
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);
 
@@ -341,6 +365,39 @@ class JfrThreadLocal {
   bool has_thread_blob() const;
   void set_thread_blob(const JfrBlobHandle& handle);
   const JfrBlobHandle& thread_blob() const;
+
+  // CPU time sampling
+#ifdef LINUX
+  void set_cpu_timer(timer_t* timer);
+  void unset_cpu_timer();
+  timer_t* cpu_timer() const;
+
+  // The CPU time JFR lock has three different states:
+  // - ENQUEUE: lock for enqueuing CPU time requests
+  // - DEQUEUE: lock for dequeuing CPU time requests
+  // - UNLOCKED: no lock held
+  // This ensures that we can safely enqueue and dequeue CPU time requests,
+  // without interleaving
+
+  bool is_cpu_time_jfr_enqueue_locked();
+  bool is_cpu_time_jfr_dequeue_locked();
+
+  bool try_acquire_cpu_time_jfr_enqueue_lock();
+  bool try_acquire_cpu_time_jfr_dequeue_lock();
+  void acquire_cpu_time_jfr_dequeue_lock();
+  void release_cpu_time_jfr_queue_lock();
+
+  void set_has_cpu_time_jfr_requests(bool has_events);
+  bool has_cpu_time_jfr_requests();
+
+  JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
+  void deallocate_cpu_time_jfr_queue();
+
+  void set_do_async_processing_of_cpu_time_jfr_requests(bool wants);
+  bool wants_async_processing_of_cpu_time_jfr_requests();
+#else
+  bool has_cpu_time_jfr_requests() { return false; }
+#endif
 
   // Hooks
   static void on_start(Thread* t);
