@@ -1203,12 +1203,12 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(in1);
   const Type* t2 = phase->type(in2);
-  if (t1 == Type::TOP) return Type::TOP;
-  if (t2 == Type::TOP) return Type::TOP;
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t2 == Type::TOP) { return Type::TOP; }
 
   // We always generate the dynamic check for 0.
   // 0 MOD X is 0
-  if (t1 == TypeInteger::zero(bt)) return t1;
+  if (t1 == TypeInteger::zero(bt)) { return t1; }
 
   // X MOD X is 0
   if (in1 == in2) {
