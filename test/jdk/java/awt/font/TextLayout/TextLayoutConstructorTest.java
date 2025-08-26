@@ -150,7 +150,7 @@ public class TextLayoutConstructorTest {
         assertEqual(0, tl.getVisibleAdvance(), "visible advance");
         assertEqual(ref.getAscent(), tl.getAscent(), "ascent");
         assertEqual(ref.getDescent(), tl.getDescent(), "descent");
-        assertEqual(0, tl.getLeading(), "leading");
+        assertEqual(ref.getLeading(), tl.getLeading(), "leading");
         assertEqual(zero2D, tl.getBounds(), "bounds");
         assertEqual(zero2D, tl.getPixelBounds(frc, 0, 0), "pixel bounds 1");
         assertEqual(oneTwo, tl.getPixelBounds(frc, 1, 2), "pixel bounds 2");
