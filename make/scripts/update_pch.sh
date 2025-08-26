@@ -70,7 +70,7 @@ make -j hotspot CONF_NAME="$RUN_NAME"
 "$CBA_PATH" --all "./build/$RUN_NAME/hotspot/variant-server/libjvm/objs" \
   "$CBA_OUTPUT"
 
-# Preserve comments on top
+# Preserve license and comments on top
 cat "$PRECOMPILED_HPP" | awk '/^#include/ {exit} {print}' > "$PRECOMPILED_HPP.tmp"
 
 if [ ! -f "$CBA_CONFIG" ]; then
