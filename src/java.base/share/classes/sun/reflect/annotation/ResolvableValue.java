@@ -28,9 +28,8 @@ package sun.reflect.annotation;
 /**
  * Denotes a parsed annotation element value that is not fully resolved to the
  * value returned by the annotation interface method for the element.
- * This is used for example to defer resolving enum constants which is important
- * in contexts where class initialization of the enum types should not be
- * triggered by annotation parsing.
+ * This is used, for example, to avoid enum class initialization when
+ * parsing enum annotation elements.
  */
 public interface ResolvableValue {
 
