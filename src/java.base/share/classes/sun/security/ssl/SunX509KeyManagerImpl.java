@@ -182,13 +182,6 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
                 getAlgorithmConstraints(socket), null, null);
     }
 
-    @Override
-    String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
-                                 QuicTLSEngineImpl quicTLSEngine) {
-        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
-                getAlgorithmConstraints(quicTLSEngine), null, null);
-    }
-
     /*
      * Choose an alias to authenticate the client side of an
      * <code>SSLEngine</code> connection given the public key type
@@ -200,6 +193,13 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
             Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                 getAlgorithmConstraints(engine), null, null);
+    }
+
+    @Override
+    String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
+                getAlgorithmConstraints(quicTLSEngine), null, null);
     }
 
     /*
@@ -215,16 +215,6 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
                 X509TrustManagerImpl.getRequestedServerNames(socket), "HTTPS");
     }
 
-    @Override
-    String chooseQuicServerAlias(String keyType,
-                                 X500Principal[] issuers,
-                                 QuicTLSEngineImpl quicTLSEngine) {
-        return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
-                getAlgorithmConstraints(quicTLSEngine),
-                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
-                "HTTPS");
-    }
-
     /*
      * Choose an alias to authenticate the server side of an
      * <code>SSLEngine</code> connection given the public key type
@@ -237,6 +227,16 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
                 getAlgorithmConstraints(engine),
                 X509TrustManagerImpl.getRequestedServerNames(engine), "HTTPS");
+    }
+
+    @Override
+    String chooseQuicServerAlias(String keyType,
+                                 X500Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
+                getAlgorithmConstraints(quicTLSEngine),
+                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
+                "HTTPS");
     }
 
     /*
