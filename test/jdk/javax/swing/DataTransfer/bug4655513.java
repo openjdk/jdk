@@ -69,6 +69,7 @@ public class bug4655513 {
             for (int y = dragStartLoc.y; y < dragEndLoc.y; y += 2) {
                 robot.mouseMove(dragStartLoc.x, y);
             }
+            robot.waitForIdle();
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
             robot.delay(500);
