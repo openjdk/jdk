@@ -1099,8 +1099,12 @@ void VM_Version::get_processor_features() {
   }
 
   stringStream ss(2048);
-  ss.print("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-           cores_per_cpu(), threads_per_core(),
+  if (supports_hybrid()) {
+    ss.print("(hybrid)");
+  } else {
+    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+  }
+  ss.print(" family %d model %d stepping %d microcode 0x%x",
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
@@ -3043,6 +3047,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (is_intel()) {
     if (sef_cpuid7_edx.bits.serialize != 0)
       vm_features.set_feature(CPU_SERIALIZE);
+    if (sef_cpuid7_edx.bits.hybrid != 0)
+      vm_features.set_feature(CPU_HYBRID);
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       vm_features.set_feature(CPU_AVX512_FP16);
   }
