@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
+#ifndef LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
+#define LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
 
-/*
- * @test
- * @requires os.family != "windows" & os.family != "aix" & vm.flagless
- *
- * @summary converted from VM testbase runtime/signal/sigalrm01.
- * VM testbase keywords: [signal, runtime, linux, macosx]
- *
- * @library /test/lib
- * @run main/native SigTestDriver SIGALRM
- */
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/macros.hpp"
 
+#include <csignal>
+#include <ctime>
+
+class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
+#ifdef ASSERT
+ public:
+  static const int TIMEOUT_SIGNAL = SIGALRM;
+  void compiler_signal_handler(int signo, siginfo_t* info, void* context);
+ private:
+  timer_t          _timer;
+#endif // ASSERT
+ public:
+  CompilerThreadTimeoutLinux() DEBUG_ONLY(: _timer(nullptr)) {};
+
+  bool init_timeout();
+  void arm();
+  void disarm();
+};
+
+#endif //LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
