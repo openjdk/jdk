@@ -28,6 +28,7 @@
  * @requires vm.flavor == "server"
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:LoopUnrollLimit=100 -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate TestSunkRangeFromPreLoopRCE3
+ * @run main TestSunkRangeFromPreLoopRCE3
  */
 
 import java.util.Arrays;
