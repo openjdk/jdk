@@ -228,7 +228,7 @@ enum X509Authentication implements SSLAuthentication {
             // just call the functionally limited
             // javax.net.ssl.X509KeyManager.chooseClientAlias(...)
             if (km instanceof X509KeyManagerCertChecking xkm) {
-                clientAlias = xkm.chooseClientAlias(keyTypes,
+                clientAlias = xkm.chooseQuicClientAlias(keyTypes,
                         chc.peerSupportedAuthorities == null
                                 ? null
                                 : chc.peerSupportedAuthorities.clone(),
@@ -322,7 +322,7 @@ enum X509Authentication implements SSLAuthentication {
                 // and just call the functionally limited
                 // javax.net.ssl.X509KeyManager.chooseServerAlias(...)
                 if (km instanceof X509KeyManagerCertChecking xkm) {
-                    serverAlias = xkm.chooseServerAlias(keyType,
+                    serverAlias = xkm.chooseQuicServerAlias(keyType,
                             shc.peerSupportedAuthorities == null
                                     ? null
                                     : shc.peerSupportedAuthorities.clone(),

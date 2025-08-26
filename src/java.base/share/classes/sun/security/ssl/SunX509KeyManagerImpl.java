@@ -183,8 +183,8 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
     }
 
     @Override
-    String chooseClientAlias(String[] keyTypes, Principal[] issuers,
-                             QuicTLSEngineImpl quicTLSEngine) {
+    String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                 getAlgorithmConstraints(quicTLSEngine), null, null);
     }
@@ -216,9 +216,9 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
     }
 
     @Override
-    String chooseServerAlias(String keyType,
-                             X500Principal[] issuers,
-                             QuicTLSEngineImpl quicTLSEngine) {
+    String chooseQuicServerAlias(String keyType,
+                                 X500Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
                 getAlgorithmConstraints(quicTLSEngine),
                 X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),

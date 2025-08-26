@@ -75,6 +75,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
 
     abstract boolean isCheckingDisabled();
 
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicServerAlias(String keyType,
+                                          X500Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
     // Entry point to do all certificate checks.
     protected EntryStatus checkAlias(int keyStoreIndex, String alias,
             Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
@@ -292,15 +301,6 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         return checksDisabled ? CheckResult.OK
                 : checkType.check(cert, date, serverNames, idAlgorithm);
     }
-
-    // TODO move this method to a public interface / class
-    abstract String chooseClientAlias(String[] keyTypes, Principal[] issuers,
-                                      QuicTLSEngineImpl quicTLSEngine);
-
-    // TODO move this method to a public interface / class
-    abstract String chooseServerAlias(String keyType,
-                                      X500Principal[] issuers,
-                                      QuicTLSEngineImpl quicTLSEngine);
 
     // enum for the result of the extension check
     // NOTE: the order of the constants is important as they are used
