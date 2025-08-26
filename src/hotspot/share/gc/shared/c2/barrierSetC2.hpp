@@ -318,7 +318,6 @@ public:
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barrier_nodes() const { return false; }
-  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
@@ -327,7 +326,6 @@ public:
   virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.

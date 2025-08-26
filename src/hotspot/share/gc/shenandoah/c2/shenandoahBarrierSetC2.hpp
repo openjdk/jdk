@@ -25,22 +25,25 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
+#include "shenandoahBarrierSetC2.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "utilities/growableArray.hpp"
 
-static const uint8_t ShenandoahBarrierStrong      = 1 << 0;
-static const uint8_t ShenandoahBarrierWeak        = 1 << 1;
-static const uint8_t ShenandoahBarrierPhantom     = 1 << 2;
-static const uint8_t ShenandoahBarrierNoKeepAlive = 1 << 3;
-static const uint8_t ShenandoahBarrierNative      = 1 << 4;
-static const uint8_t ShenandoahBarrierElided      = 1 << 5;
+static const uint8_t ShenandoahBarrierStrong          = 1 << 0;
+static const uint8_t ShenandoahBarrierWeak            = 1 << 1;
+static const uint8_t ShenandoahBarrierPhantom         = 1 << 2;
+static const uint8_t ShenandoahBarrierNative          = 1 << 3;
+static const uint8_t ShenandoahBarrierElided          = 1 << 4;
+static const uint8_t ShenandoahBarrierSATB            = 1 << 5;
+static const uint8_t ShenandoahBarrierCardMark        = 1 << 6;
+static const uint8_t ShenandoahBarrierCardMarkNotNull = 1 << 7;
 
-class ShenandoahBarrierStub;
+class ShenandoahBarrierStubC2;
 
 class ShenandoahBarrierSetC2State : public BarrierSetC2State {
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
-  GrowableArray<ShenandoahBarrierStub*>* _stubs;
+  GrowableArray<ShenandoahBarrierStubC2*>* _stubs;
   int _stubs_start_offset;
 
 public:
@@ -54,7 +57,7 @@ public:
   void add_load_reference_barrier(ShenandoahLoadReferenceBarrierNode* n);
   void remove_load_reference_barrier(ShenandoahLoadReferenceBarrierNode * n);
 
-  GrowableArray<ShenandoahBarrierStub*>* stubs() {
+  GrowableArray<ShenandoahBarrierStubC2*>* stubs() {
     return _stubs;
   }
 
@@ -67,42 +70,6 @@ public:
   }};
 
 class ShenandoahBarrierSetC2 : public BarrierSetC2 {
-private:
-  void shenandoah_eliminate_wb_pre(Node* call, PhaseIterGVN* igvn) const;
-
-  bool satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
-                                   BasicType bt, uint adr_idx) const;
-  void satb_write_barrier_pre(GraphKit* kit, bool do_load,
-                              Node* obj,
-                              Node* adr,
-                              uint alias_idx,
-                              Node* val,
-                              const TypeOopPtr* val_type,
-                              Node* pre_val,
-                              BasicType bt) const;
-
-  void shenandoah_write_barrier_pre(GraphKit* kit,
-                                    bool do_load,
-                                    Node* obj,
-                                    Node* adr,
-                                    uint alias_idx,
-                                    Node* val,
-                                    const TypeOopPtr* val_type,
-                                    Node* pre_val,
-                                    BasicType bt) const;
-
-  void post_barrier(GraphKit* kit,
-                    Node* ctl,
-                    Node* store,
-                    Node* obj,
-                    Node* adr,
-                    uint adr_idx,
-                    Node* val,
-                    BasicType bt,
-                    bool use_precise) const;
-
-  void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
-                          Node* pre_val, bool need_mem_bar) const;
 
   static bool clone_needs_barrier(Node* src, PhaseGVN& gvn);
 
@@ -118,16 +85,12 @@ protected:
 public:
   static ShenandoahBarrierSetC2* bsc2();
 
-  static bool is_shenandoah_wb_pre_call(Node* call);
   static bool is_shenandoah_clone_call(Node* call);
   static bool is_shenandoah_lrb_call(Node* call);
-  static bool is_shenandoah_marking_if(PhaseValues* phase, Node* n);
   static bool is_shenandoah_state_load(Node* n);
-  static bool has_only_shenandoah_wb_pre_uses(Node* n);
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_barrier_pre_Type();
   static const TypeFunc* clone_barrier_Type();
   static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
@@ -139,7 +102,6 @@ public:
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for GC barriers emitted during parsing
-  virtual bool is_gc_pre_barrier_node(Node* node) const;
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
@@ -151,15 +113,12 @@ public:
   virtual void register_potential_barrier_node(Node* node) const;
   virtual void unregister_potential_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const;
+  virtual void eliminate_gc_barrier_data(Node* node) const;
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const;
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
   virtual void* create_barrier_state(Arena* comp_arena) const;
-  // If the BarrierSetC2 state has kept macro nodes in its compilation unit state to be
-  // expanded later, then now is the time to do so.
-  virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const;
 
 #ifdef ASSERT
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const;
@@ -175,15 +134,33 @@ public:
   void emit_stubs(CodeBuffer& cb) const /* override */;
 };
 
-class ShenandoahBarrierStub : public BarrierStubC2 {
+class ShenandoahBarrierStubC2 : public BarrierStubC2 {
 protected:
-  explicit ShenandoahBarrierStub(const MachNode* node) : BarrierStubC2(node) {}
+  explicit ShenandoahBarrierStubC2(const MachNode* node) : BarrierStubC2(node) {}
   void register_stub();
 public:
   virtual void emit_code(MacroAssembler& masm) = 0;
 };
 
-class ShenandoahCASBarrierSlowStub : public ShenandoahBarrierStub {
+class ShenandoahSATBBarrierStubC2 : public ShenandoahBarrierStubC2 {
+  Register _addr_reg;
+  Register _preval;
+  Register _tmp1;
+  Register _tmp2;
+  ShenandoahSATBBarrierStubC2(const MachNode* node, Register addr, Register preval, Register tmp1, Register tmp2) :
+    ShenandoahBarrierStubC2(node),
+    _addr_reg(addr), _preval(preval), _tmp1(tmp1), _tmp2(tmp2) {}
+
+public:
+  static bool needs_barrier(const MachNode* node) {
+    return (node->barrier_data() & ShenandoahBarrierSATB) != 0;
+  }
+  static ShenandoahSATBBarrierStubC2* create(const MachNode* node, Register addr_reg, Register preval, Register tmp1, Register tmp2);
+
+  void emit_code(MacroAssembler& masm) override;
+};
+
+class ShenandoahCASBarrierSlowStubC2 : public ShenandoahBarrierStubC2 {
   Register _addr_reg;
   Address  _addr;
   Register _expected;
@@ -196,26 +173,27 @@ class ShenandoahCASBarrierSlowStub : public ShenandoahBarrierStub {
   bool     _release;
   bool     _weak;
 
-  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr_reg, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae, bool acquire, bool release, bool weak) :
-    ShenandoahBarrierStub(node),
+  explicit ShenandoahCASBarrierSlowStubC2(const MachNode* node, Register addr_reg, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae, bool acquire, bool release, bool weak) :
+    ShenandoahBarrierStubC2(node),
     _addr_reg(addr_reg), _addr(addr), _expected(expected), _new_val(new_val), _result(result), _tmp1(tmp1), _tmp2(tmp2), _cae(cae), _acquire(acquire), _release(release),  _weak(weak) {}
 
 public:
-  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool acquire, bool release, bool weak);
-  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae);
+  static ShenandoahCASBarrierSlowStubC2* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, Register tmp, bool cae, bool acquire, bool release, bool weak);
+  static ShenandoahCASBarrierSlowStubC2* create(const MachNode* node, Address addr, Register expected, Register new_val, Register result, Register tmp1, Register tmp2, bool cae);
   void emit_code(MacroAssembler& masm) override;
 };
 
-class ShenandoahCASBarrierMidStub : public ShenandoahBarrierStub {
-  ShenandoahCASBarrierSlowStub* _slow_stub;
+class ShenandoahCASBarrierMidStubC2 : public ShenandoahBarrierStubC2 {
+  ShenandoahCASBarrierSlowStubC2* _slow_stub;
   Register _expected;
   Register _result;
   Register _tmp;
   bool _cae;
-  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register expected, Register result, Register tmp, bool cae) :
-    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _expected(expected), _result(result), _tmp(tmp), _cae(cae) {}
+  ShenandoahCASBarrierMidStubC2(const MachNode* node, ShenandoahCASBarrierSlowStubC2* slow_stub, Register expected, Register result, Register tmp, bool cae) :
+    ShenandoahBarrierStubC2(node), _slow_stub(slow_stub), _expected(expected), _result(result), _tmp(tmp), _cae(cae) {}
 public:
-  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register expected, Register result, Register tmp, bool cae);
-  void emit_code(MacroAssembler& masm) override;};
+  static ShenandoahCASBarrierMidStubC2* create(const MachNode* node, ShenandoahCASBarrierSlowStubC2* slow_stub, Register expected, Register result, Register tmp, bool cae);
+  void emit_code(MacroAssembler& masm) override;
+};
 
 #endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

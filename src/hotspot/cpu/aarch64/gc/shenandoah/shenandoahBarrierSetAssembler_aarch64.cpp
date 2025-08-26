@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
+#include "runtime/continuationHelper.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
@@ -610,6 +611,15 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 #ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::satb_barrier_c2(MacroAssembler* masm, Register addr, Register pre_val, Register rthread, Register tmp1, Register tmp2, ShenandoahSATBBarrierStubC2* stub) {
+  // Check if GC marking is in progress, otherwise we don't have to do anything.
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(tmp1, gc_state);
+  __ tstw(tmp1, ShenandoahHeap::MARKING);
+  __ br(Assembler::NE, *stub->entry());
+  __ bind(*stub->continuation());
+}
+
 void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
                                                    MacroAssembler* masm,
                                                    Register addr,
@@ -624,8 +634,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
   assert_different_registers(addr, expected, result, tmp);
   assert_different_registers(addr, new_val,  result, tmp);
 
-  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, tmp, is_cae, acquire, release, weak);
-  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, expected, result, tmp, is_cae);
+  ShenandoahCASBarrierSlowStubC2* const slow_stub = ShenandoahCASBarrierSlowStubC2::create(node, addr, expected, new_val, result, tmp, is_cae, acquire, release, weak);
+  ShenandoahCASBarrierMidStubC2* const mid_stub = ShenandoahCASBarrierMidStubC2::create(node, slow_stub, expected, result, tmp, is_cae);
 
   // Step 1. Fast-path.
   //
@@ -649,7 +659,45 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
 #undef __
 #define __ masm.
 
-void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
+void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+  // Do we need to load the previous value?
+  if (_addr_reg != noreg) {
+    __ load_heap_oop(_preval, Address(_addr_reg, 0), noreg, noreg, AS_RAW);
+  }
+  // Is the previous value null?
+  __ tst(_preval, _preval);
+  // Then we don't need to do anything.
+  __ br(Assembler::EQ, *continuation());
+
+  Address queue_index(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
+  Label runtime;
+  __ ldr(_tmp1, queue_index);
+  // If buffer is full, call into runtime.
+  __ cbz(_tmp1, runtime);
+
+  // The buffer is not full, store value into it.
+  __ sub(_tmp1, _tmp1, wordSize);
+  __ str(_tmp1, queue_index);
+  __ ldr(_tmp2, buffer);
+  __ str(_preval, Address(_tmp2, _tmp1));
+  __ b(*continuation());
+
+  // Runtime call
+  __ bind(runtime);
+  {
+    SaveLiveRegisters save_registers(&masm, this);
+    if (c_rarg0 != _preval) {
+      __ mov(c_rarg0, _preval);
+    }
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre));
+    __ blr(lr);
+  }
+  __ b(*continuation());
+}
+
+void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
 
   // Check if CAS result is null. If it is, then we must have a legitimate failure.
@@ -671,7 +719,7 @@ void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
   __ b(*continuation());
 }
 
-void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
+void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
   Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
 

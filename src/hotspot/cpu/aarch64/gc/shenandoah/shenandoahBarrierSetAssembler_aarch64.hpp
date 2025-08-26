@@ -36,6 +36,7 @@ class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
 #ifdef COMPILER2
+class ShenandoahSATBBarrierStubC2;
 class MachNode;
 #endif // COMPILER2
 class StubCodeGenerator;
@@ -93,6 +94,8 @@ public:
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                    bool acquire, bool release, bool is_cae, Register result);
 #ifdef COMPILER2
+
+  void satb_barrier_c2(MacroAssembler* masm, Register obj, Register pre_val, Register rthread, Register tmp1, Register tmp2, ShenandoahSATBBarrierStubC2* stub);
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register expected, Register new_val, Register result,
                       bool acquire, bool release, bool weak, bool is_cae);
 #endif
