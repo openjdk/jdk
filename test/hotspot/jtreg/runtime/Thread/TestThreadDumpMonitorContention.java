@@ -50,10 +50,10 @@ public class TestThreadDumpMonitorContention {
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
     final static String PID = Long.toString(ProcessHandle.current().pid());
-    // jstack streming output should be disabled because if the attach operation is executed at a safepoint,
-    // the attach streaming output is enabled and the tool output is lengthy we can get both buffers (the attach
+    // jstack streaming output should be disabled because if the attach operation is executed at a safepoint,
+    // the attach streaming output is enabled, and the tool output is lengthy, then we can get both buffers (the attach
     // channel and the tool redirection buffer) full and the test hangs.
-    // Instead the attach operation output is buffered and is sent after the operation is completed
+    // Instead the attach operation output is buffered and is sent after the operation is completed.
     final static String DISABLE_STREAMING_OUTPUT = "-J-Djdk.attach.allowStreamingOutput=false";
 
     // looking for header lines with these patterns:
