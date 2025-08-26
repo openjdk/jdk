@@ -41,7 +41,7 @@ inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVis
   uint cur_pos = start_pos;
   uint count = 0;
   do {
-    G1HeapRegionRemSet::iterate_for_merge(groups()->at(offset + cur_pos)->card_set(), cl);
+    G1HeapRegionRemSet::iterate_for_merge(_groups.at(offset + cur_pos)->card_set(), cl);
     cur_pos++;
     count++;
     if (cur_pos == length) {
