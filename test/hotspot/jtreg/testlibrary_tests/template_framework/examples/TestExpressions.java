@@ -34,8 +34,8 @@
 package template_framework.examples;
 
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Set;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
@@ -44,6 +44,7 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
+import compiler.lib.template_framework.library.TestFrameworkClass;
 
 public class TestExpressions {
     public static void main(String[] args) {
@@ -51,67 +52,65 @@ public class TestExpressions {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("p.xyz.InnerTest", generate());
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
         // Compile the source file.
         comp.compile();
 
-        // p.xyz.InnerTest.main();
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
+        // p.xyz.InnterTest.main(new String[] {});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
     }
 
     // Generate a Java source file as String
-    public static String generate() {
+    public static String generate(CompileFramework comp) {
         // Generate a list of test methods.
-        Map<String, TemplateToken> tests = new HashMap<>();
+        List<TemplateToken> tests = new ArrayList<>();
 
         // Create a test method that executes the expression, with constant arguments.
-        var withConstantsTemplate = Template.make("name", "expression", (String name, Expression expression) -> body(
-            //let("CON1", type.con()),
-            //let("CON2", type.con()),
-            let("returnType", expression.returnType),
-            """
-            public static #returnType #name() {
-            """,
-            "return ", expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList()), ";\n",
-            """
-            }
-            """
-        ));
+        var withConstantsTemplate = Template.make("expression", (Expression expression) -> {
+            // Create a token: fill the expression with a fixed set of constants.
+            // We then use the same token with the same constants, once compiled and once not compiled.
+            TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
+            return body(
+                let("returnType", expression.returnType),
+                """
+                @Test
+                public static void $test() {
+                    #returnType v0 = ${test}_compiled();
+                    #returnType v1 = ${test}_reference();
+                    Verify.checkEQ(v0, v1);
+                }
 
-        int idx = 0;
+                @DontInline
+                public static #returnType ${test}_compiled() {
+                """,
+                "return ", expressionToken, ";\n",
+                """
+                }
+
+                @DontCompile
+                public static #returnType ${test}_reference() {
+                """,
+                "return ", expressionToken, ";\n",
+                """
+                }
+                """
+            );
+        });
+
         for (Expression operation : Operations.PRIMITIVE_OPERATIONS) {
-            String name = "test" + (idx++);
-            tests.put(name, withConstantsTemplate.asToken(name, operation));
+            tests.add(withConstantsTemplate.asToken(operation));
         }
 
-        // Finally, put all the tests together in a class, and invoke all
-        // tests from the main method.
-        var template = Template.make(() -> body(
-            """
-            package p.xyz;
-
-            import compiler.lib.verify.*;
-            import java.lang.foreign.MemorySegment;
-
-            public class InnerTest {
-                public static void main() {
-            """,
-            // Call all test methods from main.
-            tests.keySet().stream().map(
-                n -> List.of(n, "();\n")
-            ).toList(),
-            """
-                }
-            """,
-            // Now add all the test methods.
-            tests.values().stream().toList(),
-            """
-            }
-            """
-        ));
-
-        // Render the template to a String.
-        return template.render();
+        // Create the test class, which runs all tests.
+        return TestFrameworkClass.render(
+            // package and class name.
+            "p.xyz", "InnerTest",
+            // Set of imports.
+            Set.of("compiler.lib.verify.*"),
+            // classpath, so the Test VM has access to the compiled class files.
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // The list of tests.
+            tests);
     }
 }
