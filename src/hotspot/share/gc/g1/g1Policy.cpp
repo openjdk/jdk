@@ -1377,7 +1377,7 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
 
   update_time_to_mixed_tracking(gc_type, start, end);
 
-  double elapsed_gc_cpu_time = CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_MILLISEC;
+  double elapsed_gc_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_MILLISEC;
   _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
 }
 
