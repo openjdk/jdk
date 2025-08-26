@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,43 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
-#define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+/**
+ * @test
+ * @bug 8360561
+ * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
+ *          Comparing such values in such range with != should always be true.
+ * @library /test/lib /
+ * @run main compiler.igvn.CmpDisjointButNonOrderedRangesLong
+ */
+package compiler.igvn;
 
-#include "gc/g1/g1CollectionSet.hpp"
+import compiler.lib.ir_framework.*;
 
-#include "gc/g1/g1HeapRegionRemSet.hpp"
+public class CmpDisjointButNonOrderedRangesLong {
+    static boolean bFld;
+    static double dFld1;
+    static double dFld2;
 
-template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint length = groups_increment_length();
-  uint offset =  _groups_inc_part_start;
-  if (length == 0) {
-    return;
-  }
-
-  uint start_pos = (worker_id * length) / num_workers;
-  uint cur_pos = start_pos;
-  uint count = 0;
-  do {
-    G1HeapRegionRemSet::iterate_for_merge(_groups.at(offset + cur_pos)->card_set(), cl);
-    cur_pos++;
-    count++;
-    if (cur_pos == length) {
-      cur_pos = 0;
+    public static void main(String[] strArr) {
+        TestFramework.run();
     }
-  } while (cur_pos != start_pos);
+
+    @Test
+    @IR(failOn = {IRNode.PHI})
+    @Warmup(0)
+    static int test() {
+        long x = 7;
+        if (bFld) {
+            x = -195;
+        }
+
+        dFld1 = dFld2 % 2.5;
+
+        if (x == 0) {
+            return 0;
+        }
+        return 1;
+    }
 }
-#endif /* SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP */
