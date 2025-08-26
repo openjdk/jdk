@@ -991,25 +991,28 @@ size_t ShenandoahGeneration::used_regions_size() const {
 }
 
 size_t ShenandoahGeneration::available() const {
+  size_t result = available(max_capacity());
 #ifdef KELVIN_DEBUG
-  log_info(gc)("available(_type: %d) returning %zu", _type, available(max_capacity()));
+  log_info(gc)("available(_type: %d) returning %zu", _type, result);
 #endif
-  return available(max_capacity());
+  return result;
 }
 
 // For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
 size_t ShenandoahGeneration::available_with_reserve() const {
+  size_t result = available(max_capacity());
 #ifdef KELVIN_DEBUG
-  log_info(gc)("available_with_reserve(_type: %d) returning %zu", _type, available(max_capacity()));
+  log_info(gc)("available_with_reserve(_type: %d) returning %zu", _type, result);
 #endif
-  return available(max_capacity());
+  return result;
 }
 
 size_t ShenandoahGeneration::soft_available() const {
+  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity());
 #ifdef KELVIN_DEBUG
-  log_info(gc)("soft_available(_type: %d) returning %zu", _type, available(ShenandoahHeap::heap()->soft_max_capacity()));
+  log_info(gc)("soft_available(_type: %d) returning %zu", _type, result);
 #endif
-  return available(ShenandoahHeap::heap()->soft_max_capacity());
+  return result;
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {

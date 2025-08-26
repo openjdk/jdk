@@ -273,6 +273,7 @@ private:
     return result;
   }
 
+#ifdef KELVIN_DEPRECATE
   size_t get_total_region_count() const {
     size_t result;
     switch (_type) {
@@ -293,6 +294,7 @@ private:
 #endif
     return result;
   }
+#endif
 
   size_t get_humongous_waste() const {
     size_t result;

@@ -2235,6 +2235,14 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
     assert(young_affiliated_regions() == _heap->global_generation()->get_affiliated_region_count(), "sanity");
   }
 #endif
+#ifdef KELVIN_DEBUG
+  log_info(gc)("After find_region_with_alloc_capacity(), young_affiliated_regions is %zu",
+               (_heap->mode()->is_generational()?
+                ((_heap->young_generation()->max_capacity() - _heap->young_generation()->used_regions_size())
+                 / ShenandoahHeapRegion::region_size_bytes()):
+                ((_heap->global_generation()->max_capacity() - _heap->global_generation()->used_regions_size())
+                 / ShenandoahHeapRegion::region_size_bytes())));
+#endif
   log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
                       "  Old Collector range [%zd, %zd]",
                       _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
