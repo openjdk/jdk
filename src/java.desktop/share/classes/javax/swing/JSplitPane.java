@@ -393,7 +393,7 @@ public class JSplitPane extends JComponent implements Accessible
                     this.rightComponent = leftComponent;
                 }
             }
-            SwingUtilities.updateComponentTreeUI(this);
+            firePropertyChange(ORIENTATION_PROPERTY, curOrn, orientation);
             this.revalidate();
             this.repaint();
         }
