@@ -80,7 +80,7 @@ public:
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
 
-  // Notes on copy constructor, copy assignment operator, and copy_from(). 
+  // Notes on copy constructor, copy assignment operator, and copy_from().
   // These are necessary for generating deterministic CDS archives.
   //
   // We have some unused padding on 64-bit platforms (4 bytes at the tail end).
