@@ -844,8 +844,8 @@ public class JPEGImageReader extends ImageReader {
 
     @Override
     public int getWidth(int imageIndex) throws IOException {
-        verifyImageIndex(imageIndex);
         setThreadLock();
+        verifyImageIndex(imageIndex);
         try {
             if (currentImage != imageIndex) {
                 cbLock.check();
@@ -859,8 +859,8 @@ public class JPEGImageReader extends ImageReader {
 
     @Override
     public int getHeight(int imageIndex) throws IOException {
-        verifyImageIndex(imageIndex);
         setThreadLock();
+        verifyImageIndex(imageIndex);
         try {
             if (currentImage != imageIndex) {
                 cbLock.check();
@@ -890,8 +890,8 @@ public class JPEGImageReader extends ImageReader {
     @Override
     public ImageTypeSpecifier getRawImageType(int imageIndex)
         throws IOException {
-        verifyImageIndex(imageIndex);
         setThreadLock();
+        verifyImageIndex(imageIndex);
         try {
             if (currentImage != imageIndex) {
                 cbLock.check();
@@ -909,8 +909,8 @@ public class JPEGImageReader extends ImageReader {
     @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
-        verifyImageIndex(imageIndex);
         setThreadLock();
+        verifyImageIndex(imageIndex);
         try {
             return getImageTypesOnThread(imageIndex);
         } finally {

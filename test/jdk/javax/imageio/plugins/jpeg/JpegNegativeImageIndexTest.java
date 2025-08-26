@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug     8364135
  * @summary Test verifies that jpeg image reader throws
