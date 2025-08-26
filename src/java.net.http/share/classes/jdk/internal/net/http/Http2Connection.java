@@ -1400,6 +1400,7 @@ class Http2Connection  {
         String protocolError = "protocol error" + (msg == null?"":(": " + msg));
         ProtocolException protocolException =
                 new ProtocolException(protocolError);
+        this.cause.compareAndSet(null, protocolException);
         if (markHalfClosedLocal()) {
             framesDecoder.close(protocolError);
             subscriber.stop(protocolException);
