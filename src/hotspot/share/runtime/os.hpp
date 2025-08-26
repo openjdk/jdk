@@ -332,12 +332,12 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  ATTRIBUTE_NODISCARD static bool available_memory(size_t& value);
-  ATTRIBUTE_NODISCARD static bool used_memory(size_t& value);
-  ATTRIBUTE_NODISCARD static bool free_memory(size_t& value);
+  [[nodiscard]] static bool available_memory(size_t& value);
+  [[nodiscard]] static bool used_memory(size_t& value);
+  [[nodiscard]] static bool free_memory(size_t& value);
 
-  ATTRIBUTE_NODISCARD static bool total_swap_space(size_t& value);
-  ATTRIBUTE_NODISCARD static bool free_swap_space(size_t& value);
+  [[nodiscard]] static bool total_swap_space(size_t& value);
+  [[nodiscard]] static bool free_swap_space(size_t& value);
 
   static size_t physical_memory();
   static bool is_server_class_machine();
