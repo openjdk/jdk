@@ -47,7 +47,7 @@ public class Basic extends PKCS11Test {
             random = SecureRandom.getInstance("PKCS11");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            throw new SkippedException("Provider " + p + " does not support SecureRandom, skipping");
+            throw new SkippedException("Provider " + p + " does not support SecureRandom, skipping", e);
         }
         byte[] b = new byte[32];
         random.nextBytes(b);

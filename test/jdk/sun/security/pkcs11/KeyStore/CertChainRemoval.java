@@ -127,7 +127,7 @@ public class CertChainRemoval extends PKCS11Test {
             p11ks.load(null, PKCS11KS.passwd);
             printKeyStore("Initial PKCS11 KeyStore: ", p11ks);
         } catch (Exception e) {
-            throw new SkippedException("Skip test, due to " + e);
+            throw new SkippedException("Skip test, due to " + e, e);
         }
 
         // get the necessary keys from the temp keystore
