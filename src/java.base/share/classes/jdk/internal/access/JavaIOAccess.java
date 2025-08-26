@@ -25,11 +25,9 @@
 
 package jdk.internal.access;
 
-import jdk.internal.io.JdkConsole;
-
 import java.io.Console;
 
 public interface JavaIOAccess {
     Console console();
-    int istty();
+    int ttyStatus();
 }

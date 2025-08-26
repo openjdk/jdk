@@ -218,11 +218,6 @@ final class ProxyingConsole extends Console {
         }
     }
 
-    // package private access from Console
-    JdkConsole getDelegate() {
-        return delegate;
-    }
-
     private static final class WrappingWriter extends PrintWriter {
         private final PrintWriter pw;
         private final Object lock;

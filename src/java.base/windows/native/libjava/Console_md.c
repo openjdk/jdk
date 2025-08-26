@@ -32,7 +32,7 @@
 #include <Wincon.h>
 
 JNIEXPORT jint JNICALL
-Java_java_io_Console_istty(JNIEnv *env, jclass cls)
+Java_java_io_Console_ttyStatus(JNIEnv *env, jclass cls)
 {
     jint ret = 0;
     HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);

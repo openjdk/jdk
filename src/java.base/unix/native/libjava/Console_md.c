@@ -32,7 +32,7 @@
 #include <unistd.h>
 
 JNIEXPORT jint JNICALL
-Java_java_io_Console_istty(JNIEnv *env, jclass cls)
+Java_java_io_Console_ttyStatus(JNIEnv *env, jclass cls)
 {
     jint ret = 0;
 

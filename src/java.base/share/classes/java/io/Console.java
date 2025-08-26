@@ -29,7 +29,6 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
@@ -547,7 +546,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @since 22
      */
     public boolean isTerminal() {
-        return isTerminal;
+        return isStdinTty() && isStdoutTty();
     }
 
     private static UnsupportedOperationException newUnsupportedOperationException() {
@@ -555,13 +554,12 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    static final int TTY_STDERR_MASK = 0x00000001;
-    static final int TTY_STDIN_MASK = 0x00000002;
-    static final int TTY_STDOUT_MASK = 0x00000004;
-    // istty() returns bit patterns above, a bit is set if the corresponding file
+    static final int TTY_STDIN_MASK = 0x00000001;
+    static final int TTY_STDOUT_MASK = 0x00000002;
+    static final int TTY_STDERR_MASK = 0x00000004;
+    // ttyStatus() returns bit patterns above, a bit is set if the corresponding file
     // descriptor is a character device
-    private static final int istty = istty();
-    private static final boolean isTerminal = istty >= (TTY_STDIN_MASK | TTY_STDOUT_MASK);
+    private static final int ttyStatus = ttyStatus();
     private static final Charset STDIN_CHARSET =
         Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
     private static final Charset STDOUT_CHARSET =
@@ -573,8 +571,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             public Console console() {
                 return cons;
             }
-            public int istty() {
-                return istty;
+            public int ttyStatus() {
+                return ttyStatus;
             }
         });
     }
@@ -597,7 +595,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
             for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                 if (consModName.equals(jcp.getClass().getModule().getName())) {
-                    var jc = jcp.console(isTerminal , STDIN_CHARSET, STDOUT_CHARSET);
+                    var jc = jcp.console(isStdinTty() && isStdoutTty(), STDIN_CHARSET, STDOUT_CHARSET);
                     if (jc != null) {
                         c = new ProxyingConsole(jc);
                     }
@@ -608,12 +606,21 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         }
 
         // If not found, default to built-in Console
-        if (isTerminal && c == null) {
+        if (isStdinTty() && isStdoutTty() && c == null) {
             c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;
     }
 
-    private static native int istty();
+    private static boolean isStdinTty() {
+        return (ttyStatus & TTY_STDIN_MASK) != 0;
+    }
+    private static boolean isStdoutTty() {
+        return (ttyStatus & TTY_STDOUT_MASK) != 0;
+    }
+    private static boolean isStderrTty() {
+        return (ttyStatus & TTY_STDERR_MASK) != 0;
+    }
+    private static native int ttyStatus();
 }

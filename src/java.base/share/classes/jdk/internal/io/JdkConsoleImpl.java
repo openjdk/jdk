@@ -121,7 +121,7 @@ public final class JdkConsoleImpl implements JdkConsole {
 
             // If stdin is NOT redirected, return a JdkConsoleImpl instance,
             // otherwise null
-            return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
+            return (SharedSecrets.getJavaIOAccess().ttyStatus() & 0x00000001) != 0 ?
                 Optional.of(
                     new JdkConsoleImpl(
                         Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),

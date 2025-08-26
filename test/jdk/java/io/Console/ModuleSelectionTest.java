@@ -92,9 +92,9 @@ public class ModuleSelectionTest {
         var con = System.console();
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
-        var istty = (int)(MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup())
-                .findStatic(Console.class, "istty", MethodType.methodType(int.class))
-                .invoke()) >= 6; // both stdin/stdout are NOT redirected
+        var ttyStatus = (int)(MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup())
+                .findStatic(Console.class, "ttyStatus", MethodType.methodType(int.class))
+                .invoke());
 
         var impl = con != null ? MethodHandles.privateLookupIn(pc, MethodHandles.lookup())
                 .findGetter(pc, "delegate", jdkc)
@@ -110,7 +110,8 @@ public class ModuleSelectionTest {
                 Actual: %s
                 """.formatted(expected, actual));
         } else {
-            System.out.printf("%s is the expected implementation. (tty: %s)\n", actual, istty);
+            System.out.printf("%s is the expected implementation. (tty: %s)\n", actual,
+                (ttyStatus & 0x00000001) != 0 && (ttyStatus & 0x00000002) != 0);
         }
     }
 }
