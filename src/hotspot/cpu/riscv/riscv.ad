@@ -8554,7 +8554,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
 instruct reinterpretS2HF(fRegF dst, iRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
-  format %{ "fmv.h.x $dst, $src" %}
+  format %{ "fmv.h.x $dst, $src\t# reinterpretS2HF" %}
   ins_encode %{
     __ fmv_h_x($dst$$FloatRegister, $src$$Register);
   %}
@@ -8574,7 +8574,7 @@ instruct convF2HFAndS2HF(fRegF dst, fRegF src)
 instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
 %{
   match(Set dst (ReinterpretHF2S src));
-  format %{ "fmv.x.h $dst, $src" %}
+  format %{ "fmv.x.h $dst, $src\t# reinterpretHF2S" %}
   ins_encode %{
     __ fmv_x_h($dst$$Register, $src$$FloatRegister);
   %}

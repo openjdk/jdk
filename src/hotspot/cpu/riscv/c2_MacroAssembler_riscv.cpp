@@ -2161,18 +2161,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
   Register tmp = stub.data<2>();
   __ bind(stub.entry());
 
-  __ fmv_x_w(dst, src);
-
-  // preserve the payloads of non-canonical NaNs.
-  __ srai(dst, dst, 13);
-  // preserve the sign bit.
-  __ srai(tmp, dst, 13);
-  __ slli(tmp, tmp, 10);
-  __ mv(t0, 0x3ff);
-  __ orr(tmp, tmp, t0);
-
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-  __ andr(dst, dst, tmp);
+  __ float_to_float16_NaN(dst, src, t0, tmp);
 
   __ j(stub.continuation());
 #undef __
@@ -2180,7 +2169,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
 
 // j.l.Float.floatToFloat16
 void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
-  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
+  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 64, float_to_float16_slow_path);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
 
