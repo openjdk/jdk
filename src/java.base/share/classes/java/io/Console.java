@@ -576,9 +576,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             public int istty() {
                 return istty;
             }
-            public JdkConsole getJdkConsole() {
-                return cons instanceof ProxyingConsole pc ? pc.getDelegate() : null;
-            }
         });
     }
 

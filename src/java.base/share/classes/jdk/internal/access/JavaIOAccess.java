@@ -32,5 +32,4 @@ import java.io.Console;
 public interface JavaIOAccess {
     Console console();
     int istty();
-    JdkConsole getJdkConsole();
 }

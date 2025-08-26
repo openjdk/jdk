@@ -112,24 +112,25 @@ public final class JdkConsoleImpl implements JdkConsole {
     // Dedicated entry for sun.security.util.Password.
     private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
     public static Optional<JdkConsoleImpl> passwordConsole() {
-        return INSTANCE.orElseSet(() ->
-            {
-                var jia = SharedSecrets.getJavaIOAccess();
-                if (jia.getJdkConsole() instanceof JdkConsoleImpl jci) {
-                    return Optional.of(jci);
-                } else {
-                    // If stdin is NOT redirected, return a JdkConsoleImpl instance,
-                    // otherwise null
-                    return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
-                        Optional.of(
-                            new JdkConsoleImpl(
-                                Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                                Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
-                        Optional.empty();
-                }
-            });
+        return INSTANCE.orElseSet(() -> {
+            // If there's already a proper console, throw an exception
+            if (System.console() != null) {
+                throw new IllegalStateException("Can’t create a dedicated password " +
+                    "console since a real console already exists");
+            }
+
+            // If stdin is NOT redirected, return a JdkConsoleImpl instance,
+            // otherwise null
+            return (SharedSecrets.getJavaIOAccess().istty() & 0x00000002) != 0 ?
+                Optional.of(
+                    new JdkConsoleImpl(
+                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                Optional.empty();
+        });
     }
 
+    // Dedicated entry for sun.security.util.Password.
     public char[] readPasswordNoNewLine() {
         return readPassword0(true, Locale.getDefault(Locale.Category.FORMAT), "");
     }
