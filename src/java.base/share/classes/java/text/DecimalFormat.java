@@ -114,12 +114,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
  * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
  * on parsing behavior.
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
  *
  * <h3>Special Values</h3>
  * <ul>
@@ -417,6 +411,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
+ *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
@@ -651,17 +652,10 @@ public class DecimalFormat extends NumberFormat {
             return result;
         }
 
-        /* Detecting whether a double is negative is easy with the exception of
-         * the value -0.0.  This is a double which has a zero mantissa (and
-         * exponent), but a negative sign bit.  It is semantically distinct from
-         * a zero with a positive sign bit, and this distinction is important
-         * to certain kinds of computations.  However, it's a little tricky to
-         * detect, since (-0.0 == 0.0) and !(-0.0 < 0.0).  How then, you may
-         * ask, does it behave distinctly from +0.0?  Well, 1/(-0.0) ==
-         * -Infinity.  Proper detection of -0.0 is needed to deal with the
+        /* Proper detection of -0.0 is needed to deal with the
          * issues raised by bugs 4106658, 4106667, and 4147706.  Liu 7/6/98.
          */
-        boolean isNegative = ((number < 0.0) || (number == 0.0 && 1/number < 0.0)) ^ (multiplier < 0);
+        boolean isNegative = Double.doubleToRawLongBits(number) < 0 ^ multiplier < 0;
 
         if (multiplier != 1) {
             number *= multiplier;
