@@ -37,8 +37,12 @@ import java.util.Objects;
 /**
  * This immutable class specifies the set of parameters used with a {@code Cipher} for the
  * <a href="https://www.rfc-editor.org/info/rfc9180">Hybrid Public Key Encryption</a>
- * (HPKE) algorithm. The <a href=
- * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
+ * (HPKE) algorithm. HPKE is a public key encryption scheme for encrypting
+ * arbitrary-sized plaintexts to a receiver's public key. It combines a key
+ * encapsulation mechanism (KEM), a key derivation function (KDF), and an
+ * authenticated encryption with additional data (AEAD) cipher.
+ *
+ * The <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * standard algorithm name</a> for the cipher is "HPKE".
  * <p>
  * In HPKE, the sender's {@code Cipher} is always initialized with the
@@ -49,8 +53,8 @@ import java.util.Objects;
  * An {@code HPKEParameterSpec} object must be provided at HPKE
  * {@linkplain Cipher#init(int, Key, AlgorithmParameterSpec) cipher initialization}.
  * <p>
- * {@link #of(int, int, int)} creates an {@code HPKEParameterSpec} instance with
- * specified KEM, KDF, and AEAD algorithm identifiers.
+ * The {@link #of(int, int, int)} static method creates an {@code HPKEParameterSpec}
+ * instance with the specified KEM, KDF, and AEAD algorithm identifiers.
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
  * "AEAD algorithm identifiers" refer to their respective numeric values
  * (specifically, {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as
@@ -66,16 +70,16 @@ import java.util.Objects;
  * Application-supplied information can be provided using the
  * {@link #info(byte[])} method by both sides.
  * <li>
- * To support authentication using a pre-shared key ({@code mode_psk}), the
+ * To authenticate using a pre-shared key ({@code mode_psk}), the
  * pre-shared key and its identifier must be provided using the
  * {@link #psk(SecretKey, byte[])} method by both sides.
  * <li>
- * To support authentication using an asymmetric Key ({@code mode_auth}),
+ * To authenticate using an asymmetric key ({@code mode_auth}),
  * the asymmetric keys must be provided using the {@link #authKey(AsymmetricKey)}
  * method. Precisely, the sender must call this method with its own private key
  * and the recipient must call it with the sender's public key.
  * <li>
- * To support authentication using both a PSK and an asymmetric key
+ * To authenticate using both a PSK and an asymmetric key
  * ({@code mode_auth_psk}), both {@link #authKey(AsymmetricKey)} and
  * {@link #psk(SecretKey, byte[])} methods must be called as described above.
  * <li>
@@ -95,18 +99,19 @@ import java.util.Objects;
  * of RFC 9180.
  * <p>
  * If an HPKE cipher is initialized without parameters, an
- * {@code InvalidKeyException} will be thrown.
+ * {@code InvalidKeyException} is thrown.
  * <p>
- * At HPKE cipher initialization, if no HPKE implementation supports the provided
- * key type, an {@code InvalidKeyException} should be thrown. If the provided
- * {@code HPKEParameterSpec} is not supported by any HPKE implementation,
- * an {@code InvalidAlgorithmParameterException} will be thrown. For example:
+ * At HPKE cipher initialization, if no HPKE implementation supports the
+ * provided key type, an {@code InvalidKeyException} is thrown. If the provided
+ * {@code HPKEParameterSpec} is not accepted by any HPKE implementation,
+ * an {@code InvalidAlgorithmParameterException} is thrown by the
+ * {@code init} method. The following are cases of invalid parameters:
  * <ul>
  * <li> An algorithm identifier is unsupported or does not match the provided key type.
  * <li> The key encapsulation message is not provided on the receiver side.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code authKey(key)} is made but {@code mode_auth}
- *      or {@code mode_auth_psk}) is not supported by the KEM used.
+ *      or {@code mode_auth_psk} is not supported by the KEM used.
  * </ul>
  * After initialization, both the sender and receiver can process multiple
  * messages in sequence with repeated {@code doFinal} calls, optionally preceded
@@ -116,30 +121,31 @@ import java.util.Objects;
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5.2">Section 5.2</a>
  * of RFC 9180.
  * <p>
- * As with any AEAD cipher, each {@code doFinal} call on the server side must
+ * HPKE internally uses an AEAD cipher for message encryption and decryption.
+ * As with any AEAD cipher, each {@code doFinal} call on the receiver side must
  * correspond to exactly one complete ciphertext, and the number and order of
- * calls must match on both sides. Unlike raw AEAD usage, however, an HPKE
- * cipher manages nonce generation internally, and there is no need for the
- * application to reinitialize the cipher with a new IV for each message.
- * This simplifies usage while ensuring nonce uniqueness and preserving AEAD
- * security guarantees.
+ * calls must match on both sides. Unlike the direct use of an AEAD cipher,
+ * however, an HPKE cipher manages nonce generation internally, and there is no
+ * need for the application to reinitialize the cipher with a new IV for each
+ * message. This simplifies usage while ensuring nonce uniqueness and preserving
+ * AEAD security guarantees.
  * <p>
  * This example shows a sender and a receiver using HPKE to securely exchange
  * messages with an X25519 key pair.
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
  *
- * @implNote This class has defined constants for some of the standard algorithm
- * identifiers. For example, {@link #KEM_DHKEM_P_256_HKDF_SHA256},
- * {@link #KDF_HKDF_SHA256}, and {@link #AEAD_AES_128_GCM}. An implementation
- * may support all, some, or none of the algorithm identifiers defined here.
- * It may also support additional identifiers not listed here, including private
- * or experimental values.
+ * @implNote This class defines constants for some of the standard algorithm
+ * identifiers such as {@link #KEM_DHKEM_P_256_HKDF_SHA256},
+ * {@link #KDF_HKDF_SHA256}, and {@link #AEAD_AES_128_GCM}. An HPKE {@code Cipher}
+ * implementation may support all, some, or none of the algorithm identifiers
+ * defined here. An implementation may also support additional identifiers not
+ * listed here, including private or experimental values.
  *
  * @spec https://www.rfc-editor.org/info/rfc9180
  *      RFC 9180: Hybrid Public Key Encryption
  * @spec security/standard-names.html
  *      Java Security Standard Algorithm Names
- * @since 25
+ * @since 26
  */
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
