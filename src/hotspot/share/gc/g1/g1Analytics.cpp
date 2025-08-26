@@ -164,6 +164,7 @@ void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_ti
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
+  assert(fabs(short_interval_ms) != fabs(0.0), "short_interval_ms should not be zero, calculated from %f and %f", end_time_sec,  most_recent_gc_end_time_sec());
   _short_term_pause_time_ratio = pause_time_ms / short_interval_ms;
   _short_term_pause_time_ratio = clamp(_short_term_pause_time_ratio, 0.0, 1.0);
 }
