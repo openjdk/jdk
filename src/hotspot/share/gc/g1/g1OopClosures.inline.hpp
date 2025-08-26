@@ -50,9 +50,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  void* base = cast_from_oop<void*>(obj);
-  Prefetch::write(base, oopDesc::mark_offset_in_bytes());
-  Prefetch::read(base, oopDesc::mark_offset_in_bytes() + (HeapWordSize*2));
+  Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
+  Prefetch::read(obj->base_addr(), oopDesc::mark_offset_in_bytes() + (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
