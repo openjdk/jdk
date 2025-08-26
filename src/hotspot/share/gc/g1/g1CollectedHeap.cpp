@@ -74,6 +74,7 @@
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -799,6 +800,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
+  finish_codecache_marking_cycle();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -3079,6 +3081,8 @@ void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != nullptr, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
