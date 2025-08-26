@@ -27,11 +27,13 @@
  * @summary Test for ExtendedOpenOption.DIRECT flag
  * @requires (os.family == "linux" | os.family == "aix")
  * @library /test/lib
+ * @modules java.base/sun.nio.ch:+open java.base/java.io:+open
  * @build jdk.test.lib.Platform
  * @run main/native DirectIOTest
  */
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.*;
@@ -48,11 +50,27 @@ public class DirectIOTest {
 
     private static final int BASE_SIZE = 4096;
 
-    private static int testWrite(Path p, long blockSize) throws Exception {
-        try (FileChannel fc = FileChannel.open(p, StandardOpenOption.WRITE,
-             ExtendedOpenOption.DIRECT)) {
+    public static int getFD(FileChannel channel) throws Exception {
+        Field fFdFd = channel.getClass().getDeclaredField("fd");
+        fFdFd.setAccessible(true);
+        FileDescriptor fd = (FileDescriptor) fFdFd.get(channel);
+
+        Field fFd = FileDescriptor.class.getDeclaredField("fd");
+        fFd.setAccessible(true);
+        return fFd.getInt(fd);
+    }
+
+    private static void testWrite(Path p, long blockSize) throws Exception {
+        try (FileChannel fc = FileChannel.open(p,
+                StandardOpenOption.READ,
+                StandardOpenOption.WRITE,
+                ExtendedOpenOption.DIRECT)) {
+            int fd = getFD(fc);
+
             int bs = (int)blockSize;
             int size = Math.max(BASE_SIZE, bs);
+            flushFileCache(size, fd);
+
             int alignment = bs;
             ByteBuffer src = ByteBuffer.allocateDirect(size + alignment - 1)
                                        .alignedSlice(alignment);
@@ -61,21 +79,56 @@ public class DirectIOTest {
                 src.put((byte)0);
             }
             src.flip();
+
+            // If there is AV or other FS tracing software, it may cache the file
+            // contents on first access, even though we have asked for DIRECT here.
             fc.write(src);
-            return size;
+
+            // Flush the file cache, rewind...
+            flushFileCache(size, fd);
+            src.flip();
+            fc.position(0);
+
+            // ...and write again
+            fc.write(src);
+
+            if (isFileInCache(size, fd)) {
+                throw new RuntimeException("DirectIO is not working properly with " +
+                                           "write. File still exists in cache!");
+            }
         }
     }
 
-    private static int testRead(Path p, long blockSize) throws Exception {
-        try (FileChannel fc = FileChannel.open(p, ExtendedOpenOption.DIRECT)) {
+    private static void testRead(Path p, long blockSize) throws Exception {
+        try (FileChannel fc = FileChannel.open(p,
+                StandardOpenOption.READ,
+                ExtendedOpenOption.DIRECT)) {
+            int fd = getFD(fc);
+
             int bs = (int)blockSize;
             int size = Math.max(BASE_SIZE, bs);
+
             int alignment = bs;
             ByteBuffer dest = ByteBuffer.allocateDirect(size + alignment - 1)
                                         .alignedSlice(alignment);
             assert dest.capacity() != 0;
+
+            // If there is AV or other FS tracing software, it may cache the file
+            // contents on first access, even though we have asked for DIRECT here.
             fc.read(dest);
-            return size;
+
+            // Flush the file cache, rewind...
+            flushFileCache(size, fd);
+            dest.clear();
+            fc.position(0);
+
+            // ...and read again
+            fc.read(dest);
+
+            if (isFileInCache(size, fd)) {
+                throw new RuntimeException("DirectIO is not working properly with " +
+                                           "read. File still exists in cache!");
+            }
         }
     }
 
@@ -84,12 +137,8 @@ public class DirectIOTest {
             Paths.get(System.getProperty("test.dir", ".")), "test", null);
     }
 
-    private static boolean isFileInCache(int size, Path p) {
-        String path = p.toString();
-        return isFileInCache0(size, path);
-    }
-
-    private static native boolean isFileInCache0(int size, String path);
+    private static native boolean flushFileCache(int size, int fd);
+    private static native boolean isFileInCache(int size, int fd);
 
     public static void main(String[] args) throws Exception {
         Path p = createTempFile();
@@ -98,16 +147,8 @@ public class DirectIOTest {
         System.loadLibrary("DirectIO");
 
         try {
-            int size = testWrite(p, blockSize);
-            if (isFileInCache(size, p)) {
-                throw new RuntimeException("DirectIO is not working properly with "
-                    + "write. File still exists in cache!");
-            }
-            size = testRead(p, blockSize);
-            if (isFileInCache(size, p)) {
-                throw new RuntimeException("DirectIO is not working properly with "
-                    + "read. File still exists in cache!");
-            }
+            testWrite(p, blockSize);
+            testRead(p, blockSize);
         } finally {
             Files.delete(p);
         }
