@@ -81,12 +81,7 @@ class KQueueSelectorImpl extends SelectorImpl {
 
     KQueueSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
-        int res = kqueue_h.kqueue();
-        if (res < 0) {
-            throw ErrnoUtils.IOExceptionWithErrnoString(-res,
-                    "kqueue failed");
-        }
-        this.kqfd = res;
+        this.kqfd = KQueue.create();
         this.pollArrayAddress = KQueue.allocatePollArray(MAX_KEVENTS);
 
         try {

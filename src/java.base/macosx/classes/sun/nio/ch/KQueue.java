@@ -32,6 +32,7 @@ import jdk.internal.ffi.generated.ErrnoUtils;
 import jdk.internal.ffi.util.FFMUtils;
 import jdk.internal.foreign.BufferStack;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
@@ -157,5 +158,13 @@ final class KQueue {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    static int create() throws IOException {
+        int res = kqueue_h.kqueue();
+        if (res < 0) {
+            throw ErrnoUtils.IOExceptionWithErrnoString(-res, "kqueue failed");
+        }
+        return res;
     }
 }

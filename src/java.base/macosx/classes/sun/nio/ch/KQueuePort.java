@@ -89,12 +89,7 @@ final class KQueuePort
         throws IOException
     {
         super(provider, pool);
-        int res = kqueue_h.kqueue();
-        if (res < 0) {
-            throw ErrnoUtils.IOExceptionWithErrnoString(-res,
-                    "kqueue failed");
-        }
-        this.kqfd = res;
+        this.kqfd = KQueue.create();
         this.pollArrayRegions = KQueue.allocatePollArray(MAX_KEVENTS_TO_POLL);
 
         // create socket pair for wakeup mechanism
