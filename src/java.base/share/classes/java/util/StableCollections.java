@@ -106,6 +106,10 @@ final class StableCollections {
 
         @Stable
         private final E[] elements;
+        // Keeping track of `size` separately reduces bytecode size compared to
+        // using `elements.length`.
+        @Stable
+        private final int size;
         @Stable
         private final Mutexes mutexes;
         @Stable
@@ -113,6 +117,7 @@ final class StableCollections {
 
         private DenseStableList(int size) {
             this.elements = newGenericArray(size);
+            this.size = size;
             this.mutexes = new Mutexes(size);
             super();
             int h = 1;
@@ -124,18 +129,18 @@ final class StableCollections {
         @ForceInline
         @Override
         public ElementStableValue<E> get(int index) {
-            Objects.checkIndex(index, elements.length);
+            Objects.checkIndex(index, size);
             return new ElementStableValue<>(elements, this, offsetFor(index));
         }
 
         @Override
         public int size() {
-            return elements.length;
+            return size;
         }
 
         @Override
         public boolean isEmpty() {
-            return elements.length == 0;
+            return size == 0;
         }
 
         @Override
@@ -375,27 +380,32 @@ final class StableCollections {
             implements LenientList<E> {
 
         @Stable
-        final FunctionHolder<IntFunction<? extends E>> mapperHolder;
-        @Stable
         private final E[] elements;
+        // Keeping track of `size` separately reduces bytecode size compared to
+        // using `elements.length`.
+        @Stable
+        private final int size;
+        @Stable
+        final FunctionHolder<IntFunction<? extends E>> mapperHolder;
         @Stable
         private final Mutexes mutexes;
 
         private StableList(int size, IntFunction<? extends E> mapper) {
-            this.mapperHolder = new FunctionHolder<>(mapper, size);
             this.elements = newGenericArray(size);
+            this.size = size;
+            this.mapperHolder = new FunctionHolder<>(mapper, size);
             this.mutexes = new Mutexes(size);
             super();
         }
 
-        @Override public final boolean  isEmpty() { return elements.length == 0;}
-        @Override public final int      size() { return elements.length; }
-        @Override public final Object[] toArray() { return copyInto(new Object[size()]); }
+        @Override public final boolean  isEmpty() { return size == 0;}
+        @Override public final int      size() { return size; }
+        @Override public final Object[] toArray() { return copyInto(new Object[size]); }
 
         @ForceInline
         @Override
         public E get(int i) {
-            final E e = contentsAcquire(offsetFor(Objects.checkIndex(i, elements.length)));
+            final E e = contentsAcquire(offsetFor(Objects.checkIndex(i, size)));
             return (e != null) ? e : getSlowPath(i);
         }
 
@@ -405,7 +415,7 @@ final class StableCollections {
 
         @Override
         public E getLenient(int i) {
-            Objects.checkIndex(i, elements.length);
+            Objects.checkIndex(i, size);
             final long offset = offsetFor(i);
             return contentsAcquire(offset);
         }
@@ -417,7 +427,6 @@ final class StableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public final <T> T[] toArray(T[] a) {
-            final int size = elements.length;
             if (a.length < size) {
                 // Make a new array of a's runtime type, but my contents:
                 T[] n = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
@@ -432,7 +441,6 @@ final class StableCollections {
 
         @Override
         public final int indexOf(Object o) {
-            final int size = size();
             for (int i = 0; i < size; i++) {
                 if (Objects.equals(o, get(i))) {
                     return i;
@@ -443,7 +451,7 @@ final class StableCollections {
 
         @Override
         public final int lastIndexOf(Object o) {
-            for (int i = size() - 1; i >= 0; i--) {
+            for (int i = size - 1; i >= 0; i--) {
                 if (Objects.equals(o, get(i))) {
                     return i;
                 }
@@ -453,8 +461,7 @@ final class StableCollections {
 
         @SuppressWarnings("unchecked")
         private <T> T[] copyInto(Object[] a) {
-            final int len = elements.length;
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < size; i++) {
                 a[i] = get(i);
             }
             return (T[]) a;
