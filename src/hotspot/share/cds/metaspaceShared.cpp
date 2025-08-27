@@ -29,6 +29,7 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -325,6 +326,24 @@ void MetaspaceShared::initialize_for_static_dump() {
 // Called by universe_post_init()
 void MetaspaceShared::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
+    FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+
+    if (AOTMapLogger::is_logging_at_bootstrap()) {
+      // The map logging needs to be done here, as it requires some stubs on Windows,
+      // which are not generated until the end of init_globals().
+      AOTMapLogger::runtime_log(static_mapinfo, dynamic_mapinfo);
+    }
+
+    // Close any open file descriptors. However, mmap'ed pages will remain in memory.
+    static_mapinfo->close();
+    static_mapinfo->unmap_region(MetaspaceShared::bm);
+
+    if (dynamic_mapinfo != nullptr) {
+      dynamic_mapinfo->close();
+      dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+    }
+
     int size = AOTClassLocationConfig::runtime()->length();
     if (size > 0) {
       CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
@@ -1954,6 +1973,7 @@ class CountSharedSymbols : public SymbolClosure {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables.
@@ -1969,19 +1989,11 @@ void MetaspaceShared::initialize_shared_spaces() {
   Universe::load_archived_object_instances();
   AOTCodeCache::initialize();
 
-  // Close the mapinfo file
-  static_mapinfo->close();
-
-  static_mapinfo->unmap_region(MetaspaceShared::bm);
-
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
-    dynamic_mapinfo->close();
-    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   LogStreamHandle(Info, aot) lsh;
