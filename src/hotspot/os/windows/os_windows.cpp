@@ -4804,9 +4804,7 @@ int os::stat(const char *path, struct stat *sbuf) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
       os::free(wide_path);
       return -1;
     }
@@ -5019,9 +5017,7 @@ int os::open(const char *path, int oflag, int mode) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
       os::free(wide_path);
       return -1;
     }
