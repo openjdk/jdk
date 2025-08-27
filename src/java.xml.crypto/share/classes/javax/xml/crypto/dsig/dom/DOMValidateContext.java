@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.XMLValidateContext;
 import java.security.Key;
+import java.security.Provider;
+
 import org.w3c.dom.Node;
 
 /**
@@ -52,18 +54,28 @@ import org.w3c.dom.Node;
  * instance to validate two different {@link XMLSignature} objects).
  *
  * @implNote
- * By default, the JDK implementation enables a secure validation mode by
- * setting the <code>org.jcp.xml.dsig.secureValidation</code> property to
- * <code>Boolean.TRUE</code> (see the {@link #setProperty setProperty}
- * method). When enabled, validation of XML signatures are subject to
- * stricter checking of algorithms and other constraints as specified by the
- * <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
- * The mode can be disabled by setting the property to {@code Boolean.FALSE}.
- * The mode can also be enabled or disabled by setting the
- * {@systemProperty org.jcp.xml.dsig.secureValidation} system property to
- * "true" or "false". Any other value for the system property is also treated
- * as "false". If the system property is set, it supersedes the
- * {@code DOMValidateContext} property value.
+ * The JDK implementation supports the following properties that can be set
+ * using the {@link #setProperty setProperty} method.
+ * <ul>
+ *   <li><code>org.jcp.xml.dsig.secureValidation</code>: value must be a
+ *      {@link Boolean}. When enabled, validation of XML signatures are subject
+ *      to stricter checking of algorithms and other constraints as specified by the
+ *      <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
+ *      The default value if not specified is <code>Boolean.TRUE</code>.
+ *      The mode can be disabled by setting the property to {@code Boolean.FALSE}.
+ *      The mode can also be enabled or disabled by setting the
+ *      {@systemProperty org.jcp.xml.dsig.secureValidation} system property to
+ *      "true" or "false". Any other value for the system property is also treated
+ *      as "false". If the system property is set, it supersedes the
+ *      {@code DOMValidateContext} property value.
+ *   <li><code>org.jcp.xml.dsig.validateManifests</code>: value
+ *      must be a {@link Boolean}. If enabled, the references in manifest
+ *      elements (if exist) are validated during signature validation.
+ *      The default value if not specified is <code>Boolean.FALSE</code>.
+ *   <li><code>org.jcp.xml.dsig.internal.dom.SignatureProvider</code>: value
+ *      must be a {@link Provider}. If specified, the underlying {@code Signature}
+ *      will be instantiated from this provider.
+ * </ul>
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
