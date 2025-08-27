@@ -250,8 +250,8 @@ void ZHeap::account_undo_alloc_page(ZPage* page) {
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 }
 
-ZPage* ZHeap::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, age);
+ZPage* ZHeap::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, age, preferred_partition);
   if (page != nullptr) {
     // Insert page table entry
     _page_table.insert(page);
