@@ -38,6 +38,7 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/reachability.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
@@ -504,7 +505,7 @@ Node *Node::clone() const {
     C->add_expensive_node(n);
   }
   if (is_ReachabilityFence()) {
-    C->add_reachability_fence(n);
+    C->add_reachability_fence(n->as_ReachabilityFence());
   }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
@@ -618,7 +619,7 @@ void Node::destruct(PhaseValues* phase) {
     compile->remove_expensive_node(this);
   }
   if (is_ReachabilityFence()) {
-    compile->remove_reachability_fence(this);
+    compile->remove_reachability_fence(as_ReachabilityFence());
   }
   if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
