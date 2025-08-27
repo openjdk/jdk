@@ -1283,12 +1283,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  if (!is_abstract() && (_adapter == nullptr)) {
+  if (is_abstract()) {
+    h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
+  } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
     assert(adapter()->is_linked(), "Adapter must have been linked");
     h_method->_from_compiled_entry = adapter()->get_c2i_entry();
-  } else if (is_abstract()) {
-    h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
   }
 
   // ONLY USE the h_method now as make_adapter may have blocked
