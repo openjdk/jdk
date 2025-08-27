@@ -63,6 +63,7 @@ public class TestMultipleStartupRecordings {
         String recording1 = START_FLIGHT_RECORDING + (options1 != null ? options1 : "");
         String recording2 = START_FLIGHT_RECORDING + (options2 != null ? options2 : "");
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(recording1, recording2, MainClass.class.getName());
+        System.err.println("Out: " + pb.command());
         test(pb, "Started recording 1", "Started recording 2");
     }
 

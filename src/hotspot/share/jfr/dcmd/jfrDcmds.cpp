@@ -162,13 +162,13 @@ static void handle_dcmd_result(outputStream* output,
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
   if (startup) {
-    if (log_is_enabled(Warning, jfr, startup))  {
-      // if warning is set, assume user hasn't configured log level
+    if (log_is_default(jfr, startup))  {
+      // The user hasn't configured a log level
       // Log to Info and reset to Warning. This way user can disable
-      // default output by setting -Xlog:jfr+startup=error/off
+      // default output by setting -Xlog:jfr+startup=error/warning/off
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
       log(result, THREAD);
-      LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
+      LogConfiguration::reset_stdout(true, LOG_TAGS(jfr, startup));
     } else {
       log(result, THREAD);
     }

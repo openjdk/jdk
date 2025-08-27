@@ -29,6 +29,7 @@
 #include "logging/logDecorators.hpp"
 #include "logging/logDiagnosticCommand.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logLevel.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logStream.hpp"
@@ -237,7 +238,7 @@ void LogConfiguration::delete_output(size_t idx) {
 // is a subset of relevant tagsets decorators. After updating output's decorators, it is still safe to shrink all
 // decorators of tagsets.
 //
-void LogConfiguration::configure_output(size_t idx, const LogSelectionList& selections, const LogDecorators& decorators) {
+void LogConfiguration::configure_output(size_t idx, const LogSelectionList& selections, const LogDecorators& decorators, bool is_user_provided) {
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = %zu and _n_outputs = %zu", idx, _n_outputs);
   LogOutput* output = _outputs[idx];
@@ -265,6 +266,11 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
     // Set the new level, if it changed
     if (level != LogLevel::NotMentioned) {
       ts->set_output_level(output, level);
+      if (is_user_provided) {
+        ts->set_output_level_configured_by_user();
+      } else {
+        ts->set_output_level_not_configured_by_user();
+      }
     } else {
       // Look up the previously set level for this output on this tagset
       level = ts->level_for(output);
@@ -365,7 +371,7 @@ void LogConfiguration::disable_tags(int exact_match, ...) {
   // Apply configuration to all outputs, with the same decorators as before.
   ConfigurationLock cl;
   for (size_t i = 0; i < _n_outputs; i++) {
-    configure_output(i, list, _outputs[i]->decorators());
+    configure_output(i, list, _outputs[i]->decorators(), true);
   }
   notify_update_listeners();
 }
@@ -378,7 +384,19 @@ void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
-  configure_output(0, list, _outputs[0]->decorators());
+  configure_output(0, list, _outputs[0]->decorators(), true);
+  notify_update_listeners();
+}
+
+void LogConfiguration::reset_stdout(int exact_match, ...) {
+  va_list ap;
+  va_start(ap, exact_match);
+  LogSelectionList list = create_selection_list(LogLevel::Off, exact_match, ap);
+  va_end(ap);
+
+  // Apply configuration to stdout (output #0), with the same decorators as before.
+  ConfigurationLock cl;
+  configure_output(0, list, _outputs[0]->decorators(), false);
   notify_update_listeners();
 }
 
@@ -554,7 +572,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   if (!added && output_options != nullptr && strlen(output_options) > 0) {
     errstream->print_cr("Output options for existing outputs are ignored.");
   }
-  configure_output(idx, selections, decorators);
+  configure_output(idx, selections, decorators, true);
   notify_update_listeners();
   selections.verify_selections(errstream);
   return true;
