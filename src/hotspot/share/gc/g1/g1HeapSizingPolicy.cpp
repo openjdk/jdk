@@ -217,8 +217,8 @@ size_t G1HeapSizingPolicy::young_collection_resize_amount(bool& expand, size_t a
   assert(GCTimeRatio > 0, "must be");
   expand = false;
 
-  const double long_term_gc_cpu_usage = _analytics->long_term_pause_time_ratio();
-  const double short_term_gc_cpu_usage = _analytics->short_term_pause_time_ratio();
+  const double long_term_gc_cpu_usage = _analytics->long_term_gc_time_ratio();
+  const double short_term_gc_cpu_usage = _analytics->short_term_gc_time_ratio();
 
   double gc_cpu_usage_target = 1.0 / (1.0 + GCTimeRatio);
   gc_cpu_usage_target = scale_with_heap(gc_cpu_usage_target);
