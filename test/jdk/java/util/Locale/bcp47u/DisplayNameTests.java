@@ -82,9 +82,9 @@ public class DisplayNameTests {
             {Locale.US, loc1,
             "English (Latin, United States, Japanese Calendar, Accounting Currency Format, Pinyin Sort Order, Currency: Japanese Yen, Emoji Presentation For Emoji, First day of week: Wednesday, 24 Hour System (0–23), Loose Line Break Style, Allow Line Breaks In All Words, Imperial Measurement System, Roman Numerals, Region For Supplemental Data: United Kingdom, Region Subdivision: gbsct, Suppress Sentence Breaks After Standard Abbreviations, Time Zone: Japan Time, POSIX Compliant Locale)"},
             {Locale.JAPAN, loc1,
-            "英語 (ラテン文字、アメリカ合衆国、和暦、会計通貨フォーマット、ピンイン順、通貨: 日本円、em: emoji、fw: wed、24時間制(0〜23)、禁則処理(弱)、lw: breakall、ヤード・ポンド法、ローマ数字、rg: イギリス、sd: gbsct、ss: standard、タイムゾーン: 日本時間、ロケールのバリアント: posix)"},
+            "英語 (ラテン文字、アメリカ合衆国、和暦、会計通貨フォーマット、ピンイン順、通貨: 日本円、絵文字表示方法: emoji、fw: wed、24時間制(0〜23)、禁則処理(弱)、単語途中の改行: breakall、ヤード・ポンド法、ローマ数字、rg: イギリス、sd: gbsct、略語の後の文分割: standard、タイムゾーン: 日本時間、ロケールのバリアント: posix)"},
             {Locale.forLanguageTag("hi-IN"), loc1,
-            "अंग्रेज़ी (लैटिन, संयुक्त राज्य, जापानी पंचांग, लेखांकन मुद्रा प्रारूप, पिनयिन वर्गीकरण क्रम, मुद्रा: जापानी येन, em: emoji, fw: wed, 24 घंटों की प्रणाली (0–23), ढीली पंक्ति विच्छेद शैली, lw: breakall, इम्पीरियल मापन प्रणाली, रोमन संख्याएँ, rg: यूनाइटेड किंगडम, sd: gbsct, ss: standard, समय क्षेत्र: जापान समय, स्थानीय प्रकार: posix)"},
+            "अंग्रेज़ी (लैटिन, संयुक्त राज्य, जापानी पंचांग, लेखांकन मुद्रा प्रारूप, पिनयिन वर्गीकरण क्रम, मुद्रा: जापानी येन, इमोजी का प्रज़ेंटेशन: emoji, fw: wed, 24 घंटों की प्रणाली (0–23), ढीली पंक्ति विच्छेद शैली, शब्दों के बीच पंक्ति विच्छेद: breakall, इम्पीरियल मापन प्रणाली, रोमन संख्याएँ, rg: यूनाइटेड किंगडम, sd: gbsct, संक्षेपण के बाद वाक्य विच्छेद: standard, समय क्षेत्र: जापान समय, स्थानीय प्रकार: posix)"},
 
             // cases where no localized types are available. fall back to "key: type"
             {Locale.US, Locale.forLanguageTag("en-u-ca-unknown"), "English (Calendar: unknown)"},
