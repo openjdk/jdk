@@ -4805,6 +4805,7 @@ int os::stat(const char *path, struct stat *sbuf) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
+	  errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
@@ -5018,6 +5019,7 @@ int os::open(const char *path, int oflag, int mode) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
+	  errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
