@@ -86,9 +86,10 @@ public class TestHeapFreeRatio {
   }
 
   public static void main(String args[]) throws Exception {
-    testMinMaxFreeRatio( "0.1", "0.5", Validation.VALID);
-    testMinMaxFreeRatio(  ".1",  ".5", Validation.VALID);
-    testMinMaxFreeRatio( "0.5", "0.5", Validation.VALID);
+    testMinMaxFreeRatio( "0.1",  "0.5", Validation.VALID);
+    testMinMaxFreeRatio(  ".1",   ".5", Validation.VALID);
+    testMinMaxFreeRatio( "0.5",  "0.5", Validation.VALID);
+    testMinMaxFreeRatio( "0.0","0.001", Validation.VALID);
 
     testMinMaxFreeRatio("=0.1", "0.5", Validation.MIN_INVALID);
     testMinMaxFreeRatio("0.1f", "0.5", Validation.MIN_INVALID);
