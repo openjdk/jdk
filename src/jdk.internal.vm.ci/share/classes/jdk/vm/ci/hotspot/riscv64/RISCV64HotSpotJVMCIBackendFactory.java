@@ -49,7 +49,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     private static EnumSet<RISCV64.CPUFeature> computeFeatures(RISCV64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
-        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, mask -> mask, _ -> config.vmVersionFeatures, emptyMap());
     }
 
     private static TargetDescription createTarget(RISCV64HotSpotVMConfig config) {
