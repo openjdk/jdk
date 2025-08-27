@@ -42,7 +42,7 @@ import static org.testng.Assert.*;
  * @requires sun.arch.data.model == "64"
  * @requires vm.flavor != "zero"
  *
- * @run testng/othervm -Xmx6G TestStringEncodingJumbo
+ * @run testng/othervm/timeout=480 -Xmx6G TestStringEncodingJumbo
  */
 
 public class TestStringEncodingJumbo {

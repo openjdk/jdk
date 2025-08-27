@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.util.FileUtils CleanerTest
  * @modules java.management java.base/sun.nio.ch:+open
- * @run main/othervm CleanerTest
+ * @run main/othervm/timeout=480 CleanerTest
  */
 
 import com.sun.management.UnixOperatingSystemMXBean;

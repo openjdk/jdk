@@ -26,8 +26,8 @@
  * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  *          java.base/sun.net java.base/sun.nio.ch:+open
- * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedMulticastSockets
- * @run main/othervm UnreferencedMulticastSockets
+ * @run main/othervm/timeout=480 -Djava.net.preferIPv4Stack=true UnreferencedMulticastSockets
+ * @run main/othervm/timeout=480 UnreferencedMulticastSockets
  * @summary Check that unreferenced multicast sockets are closed
  */
 

@@ -25,13 +25,13 @@
  * @test
  * @summary Stress test Thread.sleep
  * @requires vm.debug != true & vm.continuations
- * @run main SleepALot 500000
+ * @run main/timeout=480 SleepALot 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true & vm.continuations
- * @run main/othervm/timeout=300 SleepALot 200000
+ * @run main/othervm/timeout=1200 SleepALot 200000
  */
 
 import java.time.Duration;

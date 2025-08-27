@@ -30,8 +30,8 @@ import java.io.IOException;
  * @requires (os.family == "linux" | os.family == "mac")
  * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
  * @requires (vm.compMode != "Xcomp")
- * @run main/othervm -Djdk.lang.Process.launchMechanism=POSIX_SPAWN UnblockSignals
- * @run main/othervm -Djdk.lang.Process.launchMechanism=POSIX_SPAWN -Xrs UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN -Xrs UnblockSignals
  */
 
 /*
@@ -41,8 +41,8 @@ import java.io.IOException;
  * @requires (os.family == "linux" | os.family == "mac")
  * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
  * @requires (vm.compMode != "Xcomp")
- * @run main/othervm -Djdk.lang.Process.launchMechanism=FORK UnblockSignals
- * @run main/othervm -Djdk.lang.Process.launchMechanism=FORK -Xrs UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=FORK UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=FORK -Xrs UnblockSignals
  */
 
 public class UnblockSignals {

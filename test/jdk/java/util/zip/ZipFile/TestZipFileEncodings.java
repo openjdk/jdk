@@ -26,7 +26,7 @@
  * @bug 8243254
  * @summary Tests a simple set of operations on Zip files in various encodings
  *          focusing on ensuring metadata is properly encoded and read.
- * @run testng TestZipFileEncodings
+ * @run testng/timeout=480 TestZipFileEncodings
  */
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;

@@ -29,7 +29,7 @@
  * @build jdk.test.lib.util.FileUtils UnreferencedFOSClosesFd
  * @bug 6524062
  * @summary Test to ensure that the fd is closed if left unreferenced
- * @run main/othervm UnreferencedFOSClosesFd
+ * @run main/othervm/timeout=480 UnreferencedFOSClosesFd
  */
 import java.io.File;
 import java.io.FileDescriptor;

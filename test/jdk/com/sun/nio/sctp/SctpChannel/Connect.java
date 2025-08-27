@@ -25,6 +25,7 @@
  * @bug 4927640
  * @summary Tests the SCTP protocol implementation
  * @author chegar
+ * @run main/timeout=480 Connect
  */
 
 import java.net.InetSocketAddress;

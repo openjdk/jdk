@@ -30,7 +30,7 @@
  * @bug 6524062
  * @summary Test to ensure that FIS.finalize() invokes the close() method as per
  * the specification.
- * @run main/othervm UnreferencedFISClosesFd
+ * @run main/othervm/timeout=480 UnreferencedFISClosesFd
  */
 import java.io.File;
 import java.io.FileDescriptor;

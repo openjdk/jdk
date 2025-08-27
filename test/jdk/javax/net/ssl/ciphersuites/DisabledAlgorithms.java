@@ -27,8 +27,8 @@
  * @summary Check if weak cipher suites are disabled
  * @library /javax/net/ssl/templates
  * @modules jdk.crypto.ec
- * @run main/othervm DisabledAlgorithms default
- * @run main/othervm DisabledAlgorithms empty
+ * @run main/othervm/timeout=480 DisabledAlgorithms default
+ * @run main/othervm/timeout=480 DisabledAlgorithms empty
  */
 
 import java.io.BufferedInputStream;

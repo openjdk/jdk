@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8245194
- * @run testng/othervm IOExchanges
+ * @run testng/othervm/timeout=480 IOExchanges
  */
 
 import java.io.IOException;

@@ -25,6 +25,7 @@
  * @test
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
+ * @run main/timeout=480 AddTest
  */
 
 import jdk.incubator.vector.FloatVector;

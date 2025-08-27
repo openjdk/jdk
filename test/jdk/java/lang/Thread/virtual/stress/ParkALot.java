@@ -26,14 +26,14 @@
  * @summary Stress test parking and unparking
  * @requires vm.debug != true
  * @library /test/lib
- * @run main/othervm/timeout=300 ParkALot 300000
+ * @run main/othervm/timeout=1200 ParkALot 300000
  */
 
 /*
  * @test
  * @requires vm.debug == true
  * @library /test/lib
- * @run main/othervm/timeout=300 ParkALot 100000
+ * @run main/othervm/timeout=1200 ParkALot 100000
  */
 
 import java.time.Instant;

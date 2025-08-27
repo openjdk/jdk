@@ -27,7 +27,7 @@
  * @summary Support "include" anywhere
  * @modules java.security.jgss/sun.security.krb5
  * @library /test/lib
- * @run main/othervm IncludeRandom
+ * @run main/othervm/timeout=480 IncludeRandom
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.security.SeededSecureRandom;

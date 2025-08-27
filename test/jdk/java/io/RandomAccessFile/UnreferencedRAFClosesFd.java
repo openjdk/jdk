@@ -48,7 +48,7 @@ import jdk.test.lib.util.FileUtils;
  * @build jdk.test.lib.util.FileUtils UnreferencedRAFClosesFd
  * @modules java.base/java.io:open
  * @summary Test to ensure that an unclosed and unreferenced RandomAccessFile closes the fd
- * @run main/othervm UnreferencedRAFClosesFd
+ * @run main/othervm/timeout=480 UnreferencedRAFClosesFd
  */
 public class UnreferencedRAFClosesFd {
 

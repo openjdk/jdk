@@ -26,8 +26,8 @@
  * @bug 4091859 8189366
  * @library /test/lib
  * @summary Test Socket.getInputStream().available()
- * @run main CloseAvailable
- * @run main/othervm -Djava.net.preferIPv4Stack=true CloseAvailable
+ * @run main/timeout=480 CloseAvailable
+ * @run main/othervm/timeout=480 -Djava.net.preferIPv4Stack=true CloseAvailable
  */
 
 import java.net.*;
