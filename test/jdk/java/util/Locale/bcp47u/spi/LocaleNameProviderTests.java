@@ -40,7 +40,7 @@ import java.util.Locale;
  * LocaleNameProvider works.
  */
 public class LocaleNameProviderTests {
-    private static final String expected = "foo (foo_ca:foo_ca=foo_japanese)";
+    private static final String expected = "foo (foo_ca=foo_japanese)";
 
     public static void main(String... args) {
         String name = Locale.forLanguageTag("foo-u-ca-japanese").getDisplayName(Locale.of("foo"));
