@@ -4620,28 +4620,6 @@ bool AllocateNode::maybe_set_complete(PhaseGVN* phase) {
   return true;
 }
 
-void InitializeNode::remove_narrow_mem_projs(PhaseIterGVN &igvn) {
-  // Remove NarrowMemProjs and only keep a single Proj: NarrowMemProjs are only useful as long as the Allocate node
-  // exists and can be removed.
-  auto find_raw_mem_proj = [&](ProjNode* proj) {
-    if (proj->Opcode() == Op_Proj) {
-      assert(proj->adr_type() == TypeRawPtr::BOTTOM, "one mem Proj with raw memory tpe");
-      return BREAK_AND_RETURN_CURRENT_PROJ;
-    }
-    assert(proj->adr_type() != TypeRawPtr::BOTTOM && proj->is_NarrowMemProj(), "other projs are NarrowMemProjs for fields/array elements");
-    return CONTINUE;
-  };
-  Node* raw_mem_proj = apply_to_projs(find_raw_mem_proj, TypeFunc::Memory);
-  DUIterator_Fast imax, i = fast_outs(imax);
-  auto remove_narrow_mem_projs = [&](NarrowMemProjNode* proj) {
-    igvn.replace_node(proj, raw_mem_proj);
-    --i; --imax;
-    return CONTINUE;
-  };
-
-  apply_to_narrow_mem_projs(imax, i, remove_narrow_mem_projs);
-}
-
 void InitializeNode::remove_extra_zeroes() {
   if (req() == RawStores)  return;
   Node* zmem = zero_memory();

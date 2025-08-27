@@ -1293,11 +1293,6 @@ void PhaseMacroExpand::expand_allocate_common(
     }
   }
 
-  InitializeNode* init = alloc->initialization();
-  if (init != nullptr) {
-    init->remove_narrow_mem_projs(_igvn);
-  }
-
   enum { too_big_or_final_path = 1, need_gc_path = 2 };
   Node *slow_region = nullptr;
   Node *toobig_false = ctrl;

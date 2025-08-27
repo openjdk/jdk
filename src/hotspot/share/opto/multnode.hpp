@@ -52,34 +52,6 @@ public:
   uint number_of_projs(uint which_proj) const;
   uint number_of_projs(uint which_proj, bool is_io_use) const;
 
-  enum ApplyToProjs {
-    CONTINUE,
-    BREAK_AND_RETURN_CURRENT_PROJ
-  };
-
-  // Run callback on projections from this node as long as callback returns CONTINUE
-  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
-    DUIterator_Fast imax, i = fast_outs(imax);
-    return apply_to_projs(imax, i, callback);
-  }
-
-  // Same but with provided iterators
-  template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    return apply_to_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
-  }
-
-  // Same but only for Proj node whose _con matches which_proj
-  template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
-
-  // Same but with default iterators
-  template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
-    DUIterator_Fast imax, i = fast_outs(imax);
-    return apply_to_projs(imax, i, callback, which_proj);
-  }
-
-  // Same but for matching _con and _is_io_use
-  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
-
 protected:
 
   // Provide single interface for DUIterator_Fast/DUIterator for template method below
@@ -139,6 +111,36 @@ protected:
     }
     return nullptr;
   }
+public:
+  enum ApplyToProjs {
+    CONTINUE,
+    BREAK_AND_RETURN_CURRENT_PROJ
+  };
+
+  // Run callback on projections with iterator passed as argument
+  template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
+    return apply_to_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  }
+
+  // Same but with default iterator
+  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
+    DUIterator_Fast imax, i = fast_outs(imax);
+    return apply_to_projs(imax, i, callback);
+  }
+
+  // Same but only for Proj node whose _con matches which_proj
+  template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
+
+  // Same but with default iterator
+  template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
+    DUIterator_Fast imax, i = fast_outs(imax);
+    return apply_to_projs(imax, i, callback, which_proj);
+  }
+
+  // Same but for matching _con and _is_io_use
+  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
+
+
 };
 
 //------------------------------ProjNode---------------------------------------

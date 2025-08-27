@@ -1379,16 +1379,6 @@ public:
 
   // Does a NarrowMemProj with this adr_type and this node as input already exist?
   bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
-  // Run callback on all NarrowMem proj uses using passed iterator
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
-    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
-  }
-
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
-  }
-
-  void remove_narrow_mem_projs(PhaseIterGVN& igvn);
 
 private:
   void remove_extra_zeroes();
@@ -1423,6 +1413,15 @@ private:
   template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback) const;
   // Same but only for NarrowMem proj whose adr_type matches
   template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
+public:
+  // Run callback on all NarrowMem proj uses using passed iterator
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
+  }
+
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  }
 };
 
 //------------------------------MergeMem---------------------------------------
