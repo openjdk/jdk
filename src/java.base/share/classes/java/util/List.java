@@ -27,7 +27,6 @@ package java.util;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.invoke.stable.StableUtil;
 
 import java.lang.invoke.StableValue;
 import java.util.function.IntFunction;
@@ -1247,7 +1246,7 @@ public interface List<E> extends SequencedCollection<E> {
         Utils.checkNonNegativeArgument(size, "size");
         Objects.requireNonNull(mapper);
         // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return StableCollections.StableList.of(size, mapper);
+        return StableCollections.ofLazyList(size, mapper);
     }
 
 }

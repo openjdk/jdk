@@ -31,6 +31,7 @@ import jdk.internal.invoke.stable.InternalStableValue;
 import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -334,13 +335,49 @@ final class StableCollections {
         }
     }
 
+    /**
+     * This class is using an array as a plain-memory cache for elements that need to be
+     * accessed using non-plain memory semantics.
+     *
+     * @param <E> element type
+     */
+    @ValueBased
+    static final class Aarch64StableList<E> extends StableList<E> {
+
+        @Stable
+        private final E[] elementsPlain;
+
+        private Aarch64StableList(int size, IntFunction<? extends E> mapper) {
+            this.elementsPlain = newGenericArray(size);
+            super(size, mapper);
+        }
+
+        @ForceInline
+        @Override
+        public E get(int i) {
+            E e = elementsPlain[i]; // Implicit bounds check of `i`
+            if (e != null || (e = elementsPlain[i] = contentsAcquire(offsetFor(i))) != null) {
+                return e;
+            }
+            return asStableValue(i).orElseSet(i, mapperHolder);
+        }
+
+        @Override
+        public E getLenient(int i) {
+            E e = elementsPlain[i]; // Implicit bounds check of `i`
+            return (e != null) ? e : contentsAcquire(offsetFor(i));
+        }
+
+
+    }
+
     @jdk.internal.ValueBased
-    static final class StableList<E>
+    static sealed class StableList<E>
             extends AbstractImmutableStableElementList<E>
             implements LenientList<E> {
 
         @Stable
-        private final FunctionHolder<IntFunction<? extends E>> mapperHolder;
+        final FunctionHolder<IntFunction<? extends E>> mapperHolder;
         @Stable
         private final E[] elements;
         @Stable
@@ -353,9 +390,9 @@ final class StableCollections {
             super();
         }
 
-        @Override public boolean  isEmpty() { return elements.length == 0;}
-        @Override public int      size() { return elements.length; }
-        @Override public Object[] toArray() { return copyInto(new Object[size()]); }
+        @Override public final boolean  isEmpty() { return elements.length == 0;}
+        @Override public final int      size() { return elements.length; }
+        @Override public final Object[] toArray() { return copyInto(new Object[size()]); }
 
         @ForceInline
         @Override
@@ -382,7 +419,7 @@ final class StableCollections {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T[] toArray(T[] a) {
+        public final <T> T[] toArray(T[] a) {
             final int size = elements.length;
             if (a.length < size) {
                 // Make a new array of a's runtime type, but my contents:
@@ -397,7 +434,7 @@ final class StableCollections {
         }
 
         @Override
-        public int indexOf(Object o) {
+        public final int indexOf(Object o) {
             final int size = size();
             for (int i = 0; i < size; i++) {
                 if (Objects.equals(o, get(i))) {
@@ -408,7 +445,7 @@ final class StableCollections {
         }
 
         @Override
-        public int lastIndexOf(Object o) {
+        public final int lastIndexOf(Object o) {
             for (int i = size() - 1; i >= 0; i--) {
                 if (Objects.equals(o, get(i))) {
                     return i;
@@ -427,39 +464,35 @@ final class StableCollections {
         }
 
         @Override
-        public List<E> reversed() {
+        public final List<E> reversed() {
             return new StableReverseOrderListView<>(this);
         }
 
         @Override
-        public List<E> subList(int fromIndex, int toIndex) {
+        public final List<E> subList(int fromIndex, int toIndex) {
             subListRangeCheck(fromIndex, toIndex, size());
             return StableSubList.fromStableList(this, fromIndex, toIndex);
         }
 
         @Override
-        public String toString() {
+        public final String toString() {
             return renderElements(this);
         }
 
         @Override
-        Mutexes mutexes() {
+        final Mutexes mutexes() {
             return mutexes;
         }
 
         @Override
-        int preHash() {
+        final int preHash() {
             return 0; // Never visible
         }
 
         @SuppressWarnings("unchecked")
         @ForceInline
-        private E contentsAcquire(long offset) {
+        final E contentsAcquire(long offset) {
             return (E) UNSAFE.getReferenceAcquire(elements, offset);
-        }
-
-        public static <E> List<E> of(int size, IntFunction<? extends E> mapper) {
-            return new StableList<>(size, mapper);
         }
 
         static final class StableSubList<E> extends ImmutableCollections.SubList<E>
@@ -554,7 +587,7 @@ final class StableCollections {
         @Stable
         private final Map<K, StandardStableValue<V>> delegate;
 
-        StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        private StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapperHolder = new FunctionHolder<>(mapper, keys.size());
             this.delegate = StableUtil.map(keys);
             super();
@@ -847,6 +880,16 @@ final class StableCollections {
             }
         }
         return sj.toString();
+    }
+
+    public static <E> List<E> ofLazyList(int size, IntFunction<? extends E> mapper) {
+        return Architecture.isAARCH64()
+                ? new Aarch64StableList<>(size, mapper)
+                : new StableList<>(size, mapper);
+    }
+
+    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        return new StableMap<>(keys, mapper);
     }
 
 }

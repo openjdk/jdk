@@ -122,11 +122,22 @@ final class StableTestUtil {
 
     static FunctionHolder<?> functionHolder(Object o) {
         try {
-            final Field field = o.getClass().getDeclaredField("mapperHolder");
+            final Field field = field(o.getClass(), "mapperHolder");
             field.setAccessible(true);
             return (FunctionHolder<?>) field.get(o);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static Field field(Class<?> clazz, String name) {
+        if (clazz.equals(Object.class)) {
+            throw new RuntimeException("No " + name);
+        }
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            return field(clazz.getSuperclass(), name);
         }
     }
 

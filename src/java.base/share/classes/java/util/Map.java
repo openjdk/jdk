@@ -1802,7 +1802,7 @@ public interface Map<K, V> {
         final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(mapper);
         // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-        return new StableCollections.StableMap<>(keyCopies, mapper);
+        return StableCollections.ofLazyMap(keyCopies, mapper);
     }
 
 }
