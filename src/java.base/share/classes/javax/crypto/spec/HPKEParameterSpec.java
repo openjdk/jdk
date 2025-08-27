@@ -28,7 +28,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.AsymmetricKey;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HexFormat;
@@ -298,17 +297,16 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      *               to protect against subsequent modification.
      * @return a new {@code HPKEParameterSpec} object
      * @throws NullPointerException if {@code psk_id} is {@code null}
-     * @throws InvalidAlgorithmParameterException if {@code psk} and {@code psk_id} are
+     * @throws IllegalArgumentException if {@code psk} and {@code psk_id} are
      *      not consistent, i.e. {@code psk} is not {@code null} but
      *      {@code psk_id} is empty, or {@code psk} is {@code null} but
      *      {@code psk_id} is not empty.
      */
-    public HPKEParameterSpec psk(SecretKey psk, byte[] psk_id)
-            throws InvalidAlgorithmParameterException {
+    public HPKEParameterSpec psk(SecretKey psk, byte[] psk_id) {
         Objects.requireNonNull(psk_id);
         if (psk == null && psk_id.length != 0
                 || psk != null && psk_id.length == 0) {
-            throw new InvalidAlgorithmParameterException("psk and psk_id do not match");
+            throw new IllegalArgumentException("psk and psk_id do not match");
         }
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id.clone(), kS, encapsulation);

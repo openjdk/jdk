@@ -126,8 +126,8 @@ public class Compliance {
         Asserts.assertThrows(NullPointerException.class, () -> spec.psk(psk, null));
 
         // psk and psk_id must match
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class, () -> spec.psk(psk, new byte[0]));
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class, () -> spec.psk(null, psk_id));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> spec.psk(psk, new byte[0]));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> spec.psk(null, psk_id));
 
         Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk().getEncoded(), psk.getEncoded());
         Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk_id(), psk_id);
