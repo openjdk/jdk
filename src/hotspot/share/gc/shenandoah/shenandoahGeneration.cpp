@@ -555,6 +555,12 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   size_t collector_regions_to_pip = 0;
   size_t mutator_regions_to_pip = 0;
 
+  size_t pip_mutator_regions = 0;
+  size_t pip_collector_regions = 0;
+  size_t pip_mutator_bytes = 0;
+  size_t pip_collector_bytes = 0;
+
+  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
   for (index_type i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
@@ -607,9 +613,19 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
             }
             promote_in_place_pad += remnant_bytes;
             free_set->prepare_to_promote_in_place(i, remnant_bytes);
+            if (remnant_bytes >= min_remnant_size) {
+              if (p == ShenandoahFreeSetPartitionId::Mutator) {
+                pip_mutator_regions++;
+                pip_mutator_bytes += remnant_bytes;
+              } else {
+                assert(p == ShenandoahFreeSetPartitionId::Collector, "sanity");
+                pip_collector_regions++;
+                pip_collector_bytes += remnant_bytes;
+              }
+            }
           } else {
-            // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
-            // allocations occurring within this region before the region is promoted in place.
+            // Since the remnant is so small that this region has already been retired, we don't have to worry about any
+            // accidental allocations occurring within this region before the region is promoted in place.
 
             // This region was already not in the Collector or Mutator set, so no need to remove it.
             assert(free_set->membership(i) == ShenandoahFreeSetPartitionId::NotFree, "sanity");
@@ -651,6 +667,10 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
     }
     // Note that we keep going even if one region is excluded from selection.
     // Subsequent regions may be selected if they have smaller live data.
+  }
+
+  if (pip_mutator_regions + pip_collector_regions > 0) {
+    freeset->account_for_pip_regions(pip_mutator_regions, pip_mutator_bytes, pip_collector_regions, pip_collector_bytes);
   }
 
   // Retire any regions that have been selected for promote in place
