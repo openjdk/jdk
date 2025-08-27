@@ -194,6 +194,10 @@ void ShenandoahArguments::initialize() {
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
+  if ((strcmp(ShenandoahGCMode, "generational") == 0) && !FLAG_IS_DEFAULT(ShenandoahGCHeuristics)) {
+    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input because generational shenandoah is in use");
+  }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
