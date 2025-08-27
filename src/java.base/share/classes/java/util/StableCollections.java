@@ -575,7 +575,7 @@ final class StableCollections {
         public V getOrDefault(Object key, V defaultValue) {
             final StandardStableValue<V> stable = delegate.get(key);
             return (stable == null)
-                    ? null
+                    ? defaultValue
                     : stable.orElseSet(key, mapperHolder);
         }
 

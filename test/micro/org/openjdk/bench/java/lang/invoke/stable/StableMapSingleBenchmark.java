@@ -75,7 +75,7 @@ public class StableMapSingleBenchmark {
     }
 
     @Benchmark
-    public int staticSMap() {
+    public int staticMap() {
         return MAP.get(1);
     }
 
