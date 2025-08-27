@@ -29,5 +29,5 @@ import java.io.Console;
 
 public interface JavaIOAccess {
     Console console();
-    int ttyStatus();
+    boolean isStdinTty();
 }

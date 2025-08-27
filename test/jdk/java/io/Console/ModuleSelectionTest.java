@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8295803 8299689 8351435 8361613
  * @summary Tests System.console() returns correct Console (or null) from the expected
@@ -92,9 +92,11 @@ public class ModuleSelectionTest {
         var con = System.console();
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
-        var ttyStatus = (int)(MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup())
-                .findStatic(Console.class, "ttyStatus", MethodType.methodType(int.class))
-                .invoke());
+        var lookup = MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup());
+        var istty= (boolean)lookup.findStatic(Console.class, "isStdinTty", MethodType.methodType(boolean.class))
+                        .invoke() &&
+                   (boolean)lookup.findStatic(Console.class, "isStdoutTty", MethodType.methodType(boolean.class))
+                        .invoke();
 
         var impl = con != null ? MethodHandles.privateLookupIn(pc, MethodHandles.lookup())
                 .findGetter(pc, "delegate", jdkc)
@@ -110,8 +112,7 @@ public class ModuleSelectionTest {
                 Actual: %s
                 """.formatted(expected, actual));
         } else {
-            System.out.printf("%s is the expected implementation. (tty: %s)\n", actual,
-                (ttyStatus & 0x00000001) != 0 && (ttyStatus & 0x00000002) != 0);
+            System.out.printf("%s is the expected implementation. (tty: %s)\n", actual, istty);
         }
     }
 }

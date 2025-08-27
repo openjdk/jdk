@@ -567,8 +567,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             public Console console() {
                 return cons;
             }
-            public int ttyStatus() {
-                return ttyStatus;
+            public boolean isStdinTty() {
+                return Console.isStdinTty();
             }
         });
     }
