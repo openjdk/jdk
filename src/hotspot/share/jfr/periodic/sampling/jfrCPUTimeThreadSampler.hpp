@@ -50,12 +50,14 @@ class JfrCPUTimeTraceQueue {
   static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
 
   JfrCPUTimeSampleRequest* _data;
-  volatile u4 _capacity;
+  u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
+  // the only property accessible without a lock
   volatile u4 _lost_samples;
-  volatile u4 _lost_samples_due_to_queue_full;
+
+  u4 _lost_samples_due_to_queue_full;
 
   static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
   static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
@@ -82,6 +84,7 @@ public:
 
   u4 lost_samples() const;
 
+  // the only method callable without holding a lock
   void increment_lost_samples();
 
   void increment_lost_samples_due_to_queue_full();
