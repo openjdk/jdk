@@ -92,10 +92,11 @@ class UnixException extends Exception {
             return new NoSuchFileException(file, other, null);
         if (errno() == UnixConstants.EEXIST)
             return new FileAlreadyExistsException(file, other, null);
-        if (errno() == UnixConstants.ELOOP)
-            return new FileSystemLoopException(file + ", " + other + ", "
-                + errorString()
-                + " or unable to access attributes of symbolic link");
+        if (errno() == UnixConstants.ELOOP) {
+            String msg = file + ": " + errorString()
+                 + " or unable to access attributes of symbolic link";
+            return new FileSystemLoopException(msg);
+        }
 
         // fallback to the more general exception
         return new FileSystemException(file, other, errorString());
