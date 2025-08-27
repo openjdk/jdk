@@ -282,7 +282,8 @@ public class Expression {
         if (arguments.size() != argumentTypes.size()) {
             throw new IllegalArgumentException("Wrong number of arguments:" +
                                                " expected: " + argumentTypes.size() +
-                                               " but got: " + arguments.size());
+                                               " but got: " + arguments.size() +
+                                               " for " + this.toString());
         }
 
         // List of tokens: interleave strings and arguments.
@@ -297,6 +298,25 @@ public class Expression {
             tokens
         ));
         return template.asToken();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Expression[");
+
+        for (int i = 0; i < this.argumentTypes.size(); i++) {
+            sb.append("\"");
+            sb.append(this.strings.get(i));
+            sb.append("\", ");
+            sb.append(this.argumentTypes.get(i).toString());
+            sb.append(", ");
+        }
+        sb.append("\"");
+        sb.append(this.strings.get(this.strings.size()-1));
+        sb.append("\"]");
+        return sb.toString();
     }
 
     /**
@@ -338,7 +358,7 @@ public class Expression {
         }
         newStrings.add(nestingExpression.strings.get(nestingExpression.strings.size() - 1) +
                        this.strings.get(slot + 1)); // concat S2 and s2
-        for (int i = slot; i < this.argumentTypes.size(); i++) {
+        for (int i = slot+1; i < this.argumentTypes.size(); i++) {
             newArgumentTypes.add(this.argumentTypes.get(i));
             newStrings.add(this.strings.get(i+1));
         }

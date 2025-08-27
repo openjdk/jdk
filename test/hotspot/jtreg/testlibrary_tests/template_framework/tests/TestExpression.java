@@ -49,6 +49,10 @@ import compiler.lib.template_framework.library.Expression;
  * If you are interested in how to use {@link Expression}s, see {@code examples/TestExpressions.java}.
  */
 public class TestExpression {
+    // Interface for failing tests.
+    interface FailingTest {
+        void run();
+    }
 
     // We define our own types, so that we can check if subtyping works right.
     public record MyType(String name) implements CodeGenerationDataNameType {
@@ -72,19 +76,27 @@ public class TestExpression {
     public static void main(String[] args) {
         // The following tests all pass, i.e. have no errors during rendering.
         testAsToken();
-        // TODO: add some
+        testNest();
+        // TODO: add some: info
 
         // The following tests should all fail, with an expected exception and message.
+        expectIllegalArgumentException(() -> testFailingAsToken1(), "Wrong number of arguments: expected: 2 but got: 1");
+        expectIllegalArgumentException(() -> testFailingAsToken2(), "Wrong number of arguments: expected: 2 but got: 3");
+        expectIllegalArgumentException(() -> testFailingNest1(), "Cannot nest expressions because of mismatched types.");
         // TODO: add some
     }
 
     public static void testAsToken() {
         Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
-        Expression e2 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeA, "]");
-        Expression e3 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeA, ",", myTypeA, "]");
-        Expression e4 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeA, ",", myTypeA, ",", myTypeA, "]");
+        Expression e2 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, "]");
+        Expression e3 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, ",", myTypeA1, "]");
+        Expression e4 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, ",", myTypeA1, ",", myTypeA, "]");
 
         var template = Template.make(() -> body(
+            "xx", e1.toString(), "yy\n",
+            "xx", e2.toString(), "yy\n",
+            "xx", e3.toString(), "yy\n",
+            "xx", e4.toString(), "yy\n",
             "xx", e1.asToken(List.of("a")), "yy\n",
             "xx", e2.asToken(List.of("a", "b")), "yy\n",
             "xx", e3.asToken(List.of("a", "b", "c")), "yy\n",
@@ -93,6 +105,10 @@ public class TestExpression {
 
         String expected =
             """
+            xxExpression["[", MyTypeA, "]"]yy
+            xxExpression["[", MyTypeA, ",", MyTypeB, "]"]yy
+            xxExpression["[", MyTypeA, ",", MyTypeB, ",", MyTypeA1, "]"]yy
+            xxExpression["[", MyTypeA, ",", MyTypeB, ",", MyTypeA1, ",", MyTypeA, "]"]yy
             xx[a]yy
             xx[a,b]yy
             xx[a,b,c]yy
@@ -102,11 +118,79 @@ public class TestExpression {
         checkEQ(code, expected);
     }
 
+    public static void testFailingAsToken1() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, "]");
+        e1.asToken(List.of("a"));
+    }
+
+    public static void testFailingAsToken2() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, "]");
+        e1.asToken(List.of("a", "b", "c"));
+    }
+
+    public static void testNest() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
+        Expression e2 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, "]");
+        Expression e3 = Expression.make(myTypeA1, "[", myTypeA, "]");
+        Expression e4 = Expression.make(myTypeA, "[", myTypeA, "x", myTypeA, "y", myTypeA, "z", myTypeA, "]");
+        Expression e5 = Expression.make(myTypeA, "[", myTypeA, "u", myTypeA, "v", myTypeA, "w", myTypeA, "]");
+
+        Expression e1e1 = e1.nest(0, e1);
+        Expression e2e1 = e2.nest(0, e1);
+        Expression e3e1 = e3.nest(0, e1);
+        Expression e4e5 = e4.nest(1, e5);
+
+        var template = Template.make(() -> body(
+            "xx", e1e1.toString(), "yy\n",
+            "xx", e2e1.toString(), "yy\n",
+            "xx", e3e1.toString(), "yy\n",
+            "xx", e4e5.toString(), "yy\n",
+            "xx", e1e1.asToken(List.of("a")), "yy\n",
+            "xx", e2e1.asToken(List.of("a", "b")), "yy\n",
+            "xx", e3e1.asToken(List.of("a")), "yy\n",
+            "xx", e4e5.asToken(List.of("a", "b", "c", "d", "e", "f", "g")), "yy\n"
+        ));
+
+        String expected =
+            """
+            xxExpression["[[", MyTypeA, "]]"]yy
+            xxExpression["[[", MyTypeA, "],", MyTypeB, "]"]yy
+            xxExpression["[[", MyTypeA, "]]"]yy
+            xxExpression["[", MyTypeA, "x[", MyTypeA, "u", MyTypeA, "v", MyTypeA, "w", MyTypeA, "]y", MyTypeA, "z", MyTypeA, "]"]yy
+            xx[[a]]yy
+            xx[[a],b]yy
+            xx[[a]]yy
+            xx[ax[bucvdwe]yfzg]yy
+            """;
+        String code = template.render();
+        checkEQ(code, expected);
+    }
+
+    public static void testFailingNest1() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
+        Expression e2 = Expression.make(myTypeB, "[", myTypeA, "]");
+        Expression e1e2 = e1.nest(0, e2);
+    }
+
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
             System.out.println("\"" + code + "\"");
             System.out.println("\"" + expected + "\"");
             throw new RuntimeException("Template rendering mismatch!");
+        }
+    }
+
+    public static void expectIllegalArgumentException(FailingTest test, String errorPrefix) {
+        try {
+            test.run();
+            System.out.println("Should have thrown IllegalArgumentException with prefix: " + errorPrefix);
+            throw new RuntimeException("Should have thrown!");
+        } catch(IllegalArgumentException e) {
+            if (!e.getMessage().startsWith(errorPrefix)) {
+                System.out.println("Should have thrown with prefix: " + errorPrefix);
+                System.out.println("got: " + e.getMessage());
+                throw new RuntimeException("Prefix mismatch", e);
+            }
         }
     }
 }
