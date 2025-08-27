@@ -77,6 +77,7 @@ public class TestExpression {
         // The following tests all pass, i.e. have no errors during rendering.
         testAsToken();
         testNest();
+        testNestRandomly();
         // TODO: add some: info
 
         // The following tests should all fail, with an expected exception and message.
@@ -161,6 +162,57 @@ public class TestExpression {
             xx[[a],b]yy
             xx[[a]]yy
             xx[ax[bucvdwe]yfzg]yy
+            """;
+        String code = template.render();
+        checkEQ(code, expected);
+    }
+
+    public static void testNestRandomly() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
+        Expression e2 = Expression.make(myTypeA, "(", myTypeA, ")");
+        Expression e3 = Expression.make(myTypeB, "{", myTypeA, "}");
+        Expression e4 = Expression.make(myTypeA1, "<", myTypeA, ">");
+        Expression e5 = Expression.make(myTypeA, "[", myTypeB, "]");
+
+        Expression e1e2 = e1.nestRandomly(List.of(e2));
+        Expression e1ex = e1.nestRandomly(List.of(e3, e2, e3));
+        Expression e1e4 = e1.nestRandomly(List.of(e3, e4, e3));
+        Expression e1ey = e1.nestRandomly(List.of(e3, e3));
+
+        // 5-deep nesting of e1
+        Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e2), 5);
+        // Alternating pattern
+        Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5);
+
+        var template = Template.make(() -> body(
+            "xx", e1e2.toString(), "yy\n",
+            "xx", e1ex.toString(), "yy\n",
+            "xx", e1e4.toString(), "yy\n",
+            "xx", e1ey.toString(), "yy\n",
+            "xx", deep1.toString(), "yy\n",
+            "xx", deep2.toString(), "yy\n",
+            "xx", e1e2.asToken(List.of("a")), "yy\n",
+            "xx", e1ex.asToken(List.of("a")), "yy\n",
+            "xx", e1e4.asToken(List.of("a")), "yy\n",
+            "xx", e1ey.asToken(List.of("a")), "yy\n",
+            "xx", deep1.asToken(List.of("a")), "yy\n",
+            "xx", deep2.asToken(List.of("a")), "yy\n"
+        ));
+
+        String expected =
+            """
+            xxExpression["[(", MyTypeA, ")]"]yy
+            xxExpression["[(", MyTypeA, ")]"]yy
+            xxExpression["[<", MyTypeA, ">]"]yy
+            xxExpression["[", MyTypeA, "]"]yy
+            xxExpression["[[(([", MyTypeA, "]))]]"]yy
+            xxExpression["[{[{[", MyTypeB, "]}]}]"]yy
+            xx[(a)]yy
+            xx[(a)]yy
+            xx[<a>]yy
+            xx[a]yy
+            xx[[(([a]))]]yy
+            xx[{[{[a]}]}]yy
             """;
         String code = template.render();
         checkEQ(code, expected);

@@ -320,6 +320,28 @@ public class Expression {
     }
 
     /**
+     * Create a nested expression with a specified {@code returnType} from a
+     * set of {@code expressions}.
+     */
+    public static Expression nestRandomly(CodeGenerationDataNameType returnType,
+                                          List<Expression> expressions,
+                                          int maxNumberOfUsedExpression) {
+        List<Expression> filtered = expressions.stream().filter(e -> e.returnType.isSubtypeOf(returnType)).toList();
+
+        if (filtered.size() == 0) {
+            throw new IllegalArgumentException("Found no exception with the specified returnType.");
+        }
+
+        int r = RANDOM.nextInt(filtered.size());
+        Expression expression = filtered.get(r);
+
+        for (int i = 1; i < maxNumberOfUsedExpression; i++) {
+            expression = expression.nestRandomly(expressions);
+        }
+        return expression;
+    }
+
+    /**
      * Nests a random expression from {@code nestingExpressions} into a random argument of
      * {@code this} expression, ensuring compatibility of argument and return type.
      */
@@ -327,6 +349,12 @@ public class Expression {
         int slot = RANDOM.nextInt(this.argumentTypes.size());
         CodeGenerationDataNameType slotType = this.argumentTypes.get(slot);
         List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(slotType)).toList();
+
+        if (filtered.size() == 0) {
+            // Found no expression that has a matching returnType.
+            return this;
+        }
+
         int r = RANDOM.nextInt(filtered.size());
         Expression expression = filtered.get(r);
 
@@ -365,9 +393,4 @@ public class Expression {
 
         return new Expression(this.returnType, newArgumentTypes, newStrings, this.info.combineWith(nestingExpression.info));
     }
-
-    //public static Expression nestRandomly(CodeGenerationDataNameType returnType,
-    //                                      List<Expression> expressions,
-    //                                      int numberOfUsedExpression) {
-    //}
 }
