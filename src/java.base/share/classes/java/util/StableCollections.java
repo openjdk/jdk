@@ -356,10 +356,9 @@ final class StableCollections {
         @Override
         public E get(int i) {
             E e = elementsPlain[i]; // Implicit bounds check of `i`
-            if (e != null || (e = elementsPlain[i] = contentsAcquire(offsetFor(i))) != null) {
-                return e;
-            }
-            return asStableValue(i).orElseSet(i, mapperHolder);
+            return (e != null || (e = elementsPlain[i] = contentsAcquire(offsetFor(i))) != null)
+                    ? e
+                    : getSlowPath(i);
         }
 
         @Override
@@ -367,7 +366,6 @@ final class StableCollections {
             E e = elementsPlain[i]; // Implicit bounds check of `i`
             return (e != null) ? e : contentsAcquire(offsetFor(i));
         }
-
 
     }
 
@@ -397,12 +395,11 @@ final class StableCollections {
         @ForceInline
         @Override
         public E get(int i) {
-            Objects.checkIndex(i, elements.length);
-            final long offset = offsetFor(i);
-            final E e = contentsAcquire(offset);
-            if (e != null) {
-                return e;
-            }
+            final E e = contentsAcquire(offsetFor(Objects.checkIndex(i, elements.length)));
+            return (e != null) ? e : getSlowPath(i);
+        }
+
+        public E getSlowPath(int i) {
             return asStableValue(i).orElseSet(i, mapperHolder);
         }
 
