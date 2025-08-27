@@ -87,23 +87,6 @@ JIMAGE_Close(JImageFile* image) {
 }
 
 /*
- * JImagePackageToModule - Given an open image file (see JImageOpen) and the name
- * of a package, return the name of module where the package resides. If the
- * package does not exist in the image file, the function returns NULL.
- * The resulting string does/should not have to be released. All strings are
- * utf-8, zero byte terminated.
- *
- * Ex.
- *  const char* package = (*JImagePackageToModule)(image, "java/lang");
- *  tty->print_cr(package);
- *  -> java.base
- */
-extern "C" JNIEXPORT const char*
-JIMAGE_PackageToModule(JImageFile* image, const char* package_name) {
-    return ((ImageFileReader*) image)->get_image_module_data()->package_to_module(package_name);
-}
-
-/*
  * JImageFindResource - Given an open image file (see JImageOpen), a module
  * name, a version string and the name of a class/resource, return location
  * information describing the resource and its size. If no resource is found, the
