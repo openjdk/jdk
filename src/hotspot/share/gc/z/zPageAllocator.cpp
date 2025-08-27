@@ -1090,7 +1090,8 @@ void ZPartition::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
     freed += vmem.size();
     _cache.insert(vmem);
   }
-  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all");
+  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all"
+         " %zu + %zu == %zu", allocation->harvested(), allocation->committed_capacity(), freed);
 
   // Adjust capacity to reflect the failed capacity increase
   const size_t remaining = allocation->size() - freed;
@@ -1907,11 +1908,15 @@ void ZPageAllocator::cleanup_failed_commit_single_partition(ZSinglePartitionAllo
   ZMemoryAllocation* const allocation = single_partition_allocation->allocation();
 
   assert(allocation->commit_failed(), "Must have failed to commit");
+  assert(allocation->partial_vmems()->is_empty(), "Invariant for single partition commit failure");
 
-  const size_t committed = allocation->committed_capacity();
-  const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
-  const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
-  const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
+  // For a single partition we have unmapped the harvested memory before we
+  // started committing, and moved its physical memory association to the start
+  // of the vmem. As such the partial_vmems is empty. All the harvested and
+  // partially successfully committed memory is mapped in the first part of vmem.
+  const size_t committed_and_harvested = allocation->committed_capacity() + allocation->harvested();
+  const ZVirtualMemory committed_vmem = vmem.first_part(committed_and_harvested);
+  const ZVirtualMemory non_committed_vmem = vmem.last_part(committed_and_harvested);
 
   if (committed_vmem.size() > 0) {
     // Register the committed and mapped memory. We insert the committed
