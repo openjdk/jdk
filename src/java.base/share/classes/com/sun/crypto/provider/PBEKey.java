@@ -28,7 +28,7 @@ package com.sun.crypto.provider;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.lang.ref.Reference;
-import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.Cleaner;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
@@ -55,7 +55,7 @@ final class PBEKey implements SecretKey {
 
     private final String type;
 
-    private transient Cleanable cleanable;
+    private transient Cleaner.Cleanable cleanable;
 
     /**
      * Creates a PBE key from a given PBE key specification.
@@ -145,9 +145,14 @@ final class PBEKey implements SecretKey {
      */
     @Override
     public void destroy() {
-        if (cleanable != null) {
-            cleanable.clean();
-            cleanable = null;
+        try {
+            if (cleanable != null) {
+                cleanable.clean();
+                cleanable = null;
+            }
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
         }
     }
 

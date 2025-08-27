@@ -373,6 +373,8 @@ public class SecretKeyFactory {
      * (e.g., the given key has an algorithm or format not supported by this
      * secret key factory).
      * @exception IllegalStateException if the given key is already destroyed.
+     * This exception may also be thrown if the given key is destroyed while
+     * this operation is in progress.
      */
     public final KeySpec getKeySpec(SecretKey key, Class<?> keySpec)
             throws InvalidKeySpecException {
@@ -415,6 +417,8 @@ public class SecretKeyFactory {
      * @exception InvalidKeyException if the given key cannot be processed
      * by this secret key factory.
      * @exception IllegalStateException if the given key is already destroyed.
+     * This exception may also be thrown if the given key is destroyed while
+     * this operation is in progress.
      */
     public final SecretKey translateKey(SecretKey key)
             throws InvalidKeyException {
