@@ -220,6 +220,7 @@ private:
   void satisfy_stalled();
 
   bool is_multi_partition_enabled() const;
+  bool is_multi_partition_allowed(const ZPageAllocation* allocation) const;
 
   const ZPartition& partition_from_partition_id(uint32_t partition_id) const;
   ZPartition&       partition_from_partition_id(uint32_t partition_id);
@@ -263,7 +264,7 @@ public:
   ZPageAllocatorStats stats(ZGeneration* generation) const;
   ZPageAllocatorStats update_and_stats(ZGeneration* generation);
 
-  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page);
   void free_pages(ZGenerationId id, const ZArray<ZPage*>* pages);

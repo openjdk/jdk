@@ -157,6 +157,7 @@ inline const ZVirtualMemory& ZPage::virtual_memory() const {
 }
 
 inline uint32_t ZPage::single_partition_id() const {
+  assert(!is_multi_partition(), "Don't fetch single partition id if page is multi-partition");
   return _single_partition_id;
 }
 
