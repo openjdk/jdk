@@ -944,7 +944,8 @@
   SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::write_barrier_pre))                     \
   declare_function(JVMCIRuntime::validate_object)                         \
                                                                           \
-  declare_function(JVMCIRuntime::test_deoptimize_call_int)
+  declare_function(JVMCIRuntime::test_deoptimize_call_int)                \
+  declare_function(JVMCIRuntime::test_deoptimize_caller_of_caller)
 
 
 #if INCLUDE_G1GC

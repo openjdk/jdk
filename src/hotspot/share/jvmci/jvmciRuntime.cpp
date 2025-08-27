@@ -78,7 +78,7 @@ static bool caller_is_deopted() {
 
 // Stress deoptimization
 static void deopt_caller() {
-  if ( !caller_is_deopted()) {
+  if (!caller_is_deopted()) {
     JavaThread* thread = JavaThread::current();
     RegisterMap reg_map(thread,
                         RegisterMap::UpdateMap::skip,
@@ -88,6 +88,34 @@ static void deopt_caller() {
     frame caller_frame = runtime_frame.sender(&reg_map);
     Deoptimization::deoptimize_frame(thread, caller_frame.id(), Deoptimization::Reason_constraint);
     assert(caller_is_deopted(), "Must be deoptimized");
+  }
+}
+
+static bool caller_of_caller_is_deopted() {
+  JavaThread* thread = JavaThread::current();
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
+  frame runtime_frame = thread->last_frame();
+  frame caller_frame = runtime_frame.sender(&reg_map);
+  frame caller_of_caller_frame = caller_frame.sender(&reg_map);
+  assert(caller_of_caller_frame.is_compiled_frame(), "must be compiled");
+  return caller_of_caller_frame.is_deoptimized_frame();
+}
+
+static void deopt_caller_of_caller() {
+  if (!caller_of_caller_is_deopted()) {
+    JavaThread* thread = JavaThread::current();
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
+    frame runtime_frame = thread->last_frame();
+    frame caller_frame = runtime_frame.sender(&reg_map);
+    frame caller_of_caller_frame = caller_frame.sender(&reg_map);
+    Deoptimization::deoptimize_frame(thread, caller_of_caller_frame.id(), Deoptimization::Reason_constraint);
+    assert(caller_of_caller_is_deopted(), "Must be deoptimized");
   }
 }
 
@@ -711,6 +739,11 @@ JRT_END
 
 JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* current, int value))
   deopt_caller();
+  return (jint) value;
+JRT_END
+
+JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_caller_of_caller(JavaThread* current, int value))
+  deopt_caller_of_caller();
   return (jint) value;
 JRT_END
 
