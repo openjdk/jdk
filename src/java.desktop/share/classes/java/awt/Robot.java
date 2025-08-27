@@ -129,12 +129,12 @@ public class Robot {
     /**
      * Default step-delay in milliseconds for mouse {@link #glide(int, int, int, int) glide}.
      */
-    public final int DEFAULT_STEP_DELAY = 20;
+    public static final int DEFAULT_STEP_DELAY = 20;
 
     /**
      * Default pixel step-length for mouse {@link #glide(int, int, int, int) glide}.
      */
-    public final int DEFAULT_STEP_LENGTH = 2;
+    public static final int DEFAULT_STEP_LENGTH = 2;
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
