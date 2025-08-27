@@ -1111,8 +1111,8 @@ public:
     for (uint32_t i = 0; i < ZNUMA::count(); i++) {
       ZRelocationSetParallelIterator* const iter = _iters->addr(i);
 
-      // Destruct iterator from previous GC-cycle, or the temporary
-      // iterators if this is the first GC-cycle.
+      // Destruct the iterator from the previous GC-cycle, which is a temporary
+      // iterator if this is the first GC-cycle.
       iter->~ZRelocationSetParallelIterator();
 
       // In-place construct the iterator with the current relocation set
