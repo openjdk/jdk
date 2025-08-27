@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @test
- * @bug 8235638 8235739 8285094
+ * @bug 8235638 8235739 8285094 8346952
  * @key headful
  */
 public final class GetGraphicsStressTest {

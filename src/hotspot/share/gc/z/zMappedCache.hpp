@@ -41,7 +41,7 @@ class ZMappedCache {
 private:
   struct EntryCompare {
     static int cmp(zoffset a, const IntrusiveRBNode* b);
-    static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
+    static bool cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
   };
 
   struct ZSizeClassListNode {
@@ -92,7 +92,7 @@ private:
   Tree          _tree;
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
-  size_t        _min;
+  size_t        _min_size_watermark;
 
   static int size_class_index(size_t size);
   static int guaranteed_size_class_index(size_t size);
@@ -132,8 +132,10 @@ public:
   ZVirtualMemory remove_contiguous_power_of_2(size_t min_size, size_t max_size);
   size_t remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out);
 
-  size_t reset_min();
-  size_t remove_from_min(size_t max_size, ZArray<ZVirtualMemory>* out);
+  // ZUncommitter support
+  void reset_min_size_watermark();
+  size_t min_size_watermark();
+  size_t remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out);
 
   void print_on(outputStream* st) const;
   void print_extended_on(outputStream* st) const;

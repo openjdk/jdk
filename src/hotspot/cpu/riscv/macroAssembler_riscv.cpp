@@ -97,52 +97,52 @@ bool MacroAssembler::is_pc_relative_at(address instr) {
   // auipc + load
   // auipc + fload_load
   return (is_auipc_at(instr)) &&
-         (is_addi_at(instr + instruction_size) ||
-          is_jalr_at(instr + instruction_size) ||
-          is_load_at(instr + instruction_size) ||
-          is_float_load_at(instr + instruction_size)) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size) ||
+          is_load_at(instr + MacroAssembler::instruction_size) ||
+          is_float_load_at(instr + MacroAssembler::instruction_size)) &&
          check_pc_relative_data_dependency(instr);
 }
 
 // ie:ld(Rd, Label)
 bool MacroAssembler::is_load_pc_relative_at(address instr) {
   return is_auipc_at(instr) && // auipc
-         is_ld_at(instr + instruction_size) && // ld
+         is_ld_at(instr + MacroAssembler::instruction_size) && // ld
          check_load_pc_relative_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr1_at(address instr) {
   return is_lui_at(instr) && // Lui
-         is_addi_at(instr + instruction_size) && // Addi
-         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
-         is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
-         (is_addi_at(instr + instruction_size * 5) ||
-          is_jalr_at(instr + instruction_size * 5) ||
-          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
+         is_addi_at(instr + MacroAssembler::instruction_size) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 11) && // Slli Rd, Rs, 11
+         is_addi_at(instr + MacroAssembler::instruction_size * 3) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 4, 6) && // Slli Rd, Rs, 6
+         (is_addi_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 5)) && // Addi/Jalr/Load
          check_movptr1_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr2_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_lui_at(instr + instruction_size) && // lui
-         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
-         is_add_at(instr + instruction_size * 3) &&
-         (is_addi_at(instr + instruction_size * 4) ||
-          is_jalr_at(instr + instruction_size * 4) ||
-          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         is_lui_at(instr + MacroAssembler::instruction_size) && // lui
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + MacroAssembler::instruction_size * 3) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 4)) && // Addi/Jalr/Load
          check_movptr2_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li16u_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_srli_at(instr + instruction_size) && // srli
+         is_srli_at(instr + MacroAssembler::instruction_size) && // srli
          check_li16u_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li32_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_addiw_at(instr + instruction_size) && // addiw
+         is_addiw_at(instr + MacroAssembler::instruction_size) && // addiw
          check_li32_data_dependency(instr);
 }
 
@@ -1268,12 +1268,19 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 // ----------- cmove, compare float -----------
+//
+// For CmpF/D + CMoveI/L, ordered ones are quite straight and simple,
+// so, just list behaviour of unordered ones as follow.
+//
+// Set dst (CMoveI (Binary cop (CmpF/D op1 op2)) (Binary dst src))
+// (If one or both inputs to the compare are NaN, then)
+//    1. (op1 lt op2) => true  => CMove: dst = src
+//    2. (op1 le op2) => true  => CMove: dst = src
+//    3. (op1 gt op2) => false => CMove: dst = dst
+//    4. (op1 ge op2) => false => CMove: dst = dst
+//    5. (op1 eq op2) => false => CMove: dst = dst
+//    6. (op1 ne op2) => true  => CMove: dst = src
 
-// Move src to dst only if cmp1 == cmp2,
-// otherwise leave dst unchanged, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 != cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1289,7 +1296,7 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 != cmp2, including the case of NaN
-    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    // fallthrough (i.e. move src to dst) if cmp1 == cmp2
     float_bne(cmp1, cmp2, no_set);
   } else {
     double_bne(cmp1, cmp2, no_set);
@@ -1298,11 +1305,6 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// Keep dst unchanged only if cmp1 == cmp2,
-// otherwise move src to dst, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 == cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1318,7 +1320,7 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 == cmp2
-    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    // fallthrough (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
     float_beq(cmp1, cmp2, no_set);
   } else {
     double_beq(cmp1, cmp2, no_set);
@@ -1327,14 +1329,6 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 < cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 > cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1350,7 +1344,7 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 > cmp2
-    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
     float_bgt(cmp1, cmp2, no_set);
   } else {
     double_bgt(cmp1, cmp2, no_set);
@@ -1359,14 +1353,30 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 <= cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 >= cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 < cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 >= cmp2
+    float_blt(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_blt(cmp1, cmp2, no_set, false, true);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
 void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1382,10 +1392,34 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 >= cmp2
-    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
     float_bge(cmp1, cmp2, no_set);
   } else {
     double_bge(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      flt_s(t0, cmp2, cmp1);
+    } else {
+      flt_d(t0, cmp2, cmp1);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 <= cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 > cmp2
+    float_ble(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_ble(cmp1, cmp2, no_set, false, true);
   }
   mv(dst, src);
   bind(no_set);
@@ -3739,11 +3773,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg) {
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp_reg) {
   ld(tmp_reg, Address(xthread, JavaThread::polling_word_offset()));
-  if (acquire) {
-    membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
   if (at_return) {
     bgtu(in_nmethod ? sp : fp, tmp_reg, slow_path, /* is_far */ true);
   } else {
@@ -3798,7 +3829,7 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
 
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
@@ -3819,15 +3850,15 @@ void MacroAssembler::load_reserved(Register dst,
 void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
                                        Register addr,
-                                       enum operand_size size,
+                                       Assembler::operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(dst, new_val, addr, release);
+      sc_d(dst, addr, new_val, release);
       break;
     case int32:
     case uint32:
-      sc_w(dst, new_val, addr, release);
+      sc_w(dst, addr, new_val, release);
       break;
     default:
       ShouldNotReachHere();
@@ -3836,7 +3867,7 @@ void MacroAssembler::store_conditional(Register dst,
 
 
 void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                                 enum operand_size size,
+                                                 Assembler::operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
 
@@ -3866,10 +3897,11 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
-                                          enum operand_size size,
+                                          Assembler::operand_size size,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3902,13 +3934,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     notr(scratch1, mask);
     bind(retry);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
   }
 
@@ -3940,10 +3972,11 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 // failed.
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
-                                               enum operand_size size,
+                                               Assembler::operand_size size,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3974,13 +4007,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   } else {
     notr(scratch1, mask);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
   }
 
@@ -3997,10 +4030,10 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
-                             enum operand_size size,
+                             Assembler::operand_size size,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
-  assert(size != int8 && size != int16, "unsupported operand size");
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4058,10 +4091,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
-                                  enum operand_size size,
+                                  Assembler::operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4134,7 +4167,7 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 #undef ATOMIC_XCHGU
 
 void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
-                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+                                Assembler::operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
       amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
@@ -4145,6 +4178,12 @@ void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
     case uint32:
       amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       zext(prev, prev, 32);
+      break;
+    case int16:
+      amocas_h(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      break;
+    case int8:
+      amocas_b(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     default:
       ShouldNotReachHere();
@@ -5071,7 +5110,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
 
 int MacroAssembler::max_reloc_call_address_stub_size() {
   // Max stub size: alignment nop, target address.
-  return 1 * instruction_size + wordSize;
+  return 1 * MacroAssembler::instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {
@@ -5303,42 +5342,6 @@ void MacroAssembler::add2_with_carry(Register final_dest_hi, Register dest_hi, R
 }
 
 /**
- * Multiply 32 bit by 32 bit first loop.
- */
-void MacroAssembler::multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
-                                           Register y, Register y_idx, Register z,
-                                           Register carry, Register product,
-                                           Register idx, Register kdx) {
-  // jlong carry, x[], y[], z[];
-  // for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx--, kdx--) {
-  //     long product = y[idx] * x[xstart] + carry;
-  //     z[kdx] = (int)product;
-  //     carry = product >>> 32;
-  // }
-  // z[xstart] = (int)carry;
-
-  Label L_first_loop, L_first_loop_exit;
-  blez(idx, L_first_loop_exit);
-
-  shadd(t0, xstart, x, t0, LogBytesPerInt);
-  lwu(x_xstart, Address(t0, 0));
-
-  bind(L_first_loop);
-  subiw(idx, idx, 1);
-  shadd(t0, idx, y, t0, LogBytesPerInt);
-  lwu(y_idx, Address(t0, 0));
-  mul(product, x_xstart, y_idx);
-  add(product, product, carry);
-  srli(carry, product, 32);
-  subiw(kdx, kdx, 1);
-  shadd(t0, kdx, z, t0, LogBytesPerInt);
-  sw(product, Address(t0, 0));
-  bgtz(idx, L_first_loop);
-
-  bind(L_first_loop_exit);
-}
-
-/**
  * Multiply 64 bit by 64 bit first loop.
  */
 void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
@@ -5554,77 +5557,16 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register carry = tmp5;
   const Register product = xlen;
   const Register x_xstart = tmp0;
+  const Register jdx = tmp1;
 
   mv(idx, ylen);         // idx = ylen;
   addw(kdx, xlen, ylen); // kdx = xlen+ylen;
   mv(carry, zr);         // carry = 0;
 
-  Label L_multiply_64_x_64_loop, L_done;
-
+  Label L_done;
   subiw(xstart, xlen, 1);
   bltz(xstart, L_done);
 
-  const Register jdx = tmp1;
-
-  if (AvoidUnalignedAccesses) {
-    int base_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
-    if ((base_offset % 8) == 0) {
-      // multiply_64_x_64_loop emits 8-byte load/store to access two elements
-      // at a time from int arrays x and y. When base_offset is 8 bytes, these
-      // accesses are naturally aligned if both xlen and ylen are even numbers.
-      orr(t0, xlen, ylen);
-      test_bit(t0, t0, 0);
-      beqz(t0, L_multiply_64_x_64_loop);
-    }
-
-    Label L_second_loop_unaligned, L_third_loop, L_third_loop_exit;
-
-    multiply_32_x_32_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    sw(carry, Address(t0, 0));
-
-    bind(L_second_loop_unaligned);
-    mv(carry, zr);
-    mv(jdx, ylen);
-    subiw(xstart, xstart, 1);
-    bltz(xstart, L_done);
-
-    subi(sp, sp, 2 * wordSize);
-    sd(z, Address(sp, 0));
-    sd(zr, Address(sp, wordSize));
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    addi(z, t0, 4);
-    shadd(t0, xstart, x, t0, LogBytesPerInt);
-    lwu(product, Address(t0, 0));
-
-    blez(jdx, L_third_loop_exit);
-
-    bind(L_third_loop);
-    subiw(jdx, jdx, 1);
-    shadd(t0, jdx, y, t0, LogBytesPerInt);
-    lwu(t0, Address(t0, 0));
-    mul(t1, t0, product);
-    add(t0, t1, carry);
-    shadd(tmp6, jdx, z, t1, LogBytesPerInt);
-    lwu(t1, Address(tmp6, 0));
-    add(t0, t0, t1);
-    sw(t0, Address(tmp6, 0));
-    srli(carry, t0, 32);
-    bgtz(jdx, L_third_loop);
-
-    bind(L_third_loop_exit);
-    ld(z, Address(sp, 0));
-    addi(sp, sp, 2 * wordSize);
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    sw(carry, Address(t0, 0));
-
-    j(L_second_loop_unaligned);
-  }
-
-  bind(L_multiply_64_x_64_loop);
   multiply_64_x_64_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
 
   Label L_second_loop_aligned;
@@ -6010,6 +5952,62 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
+}
+
+// Helper routine processing the slow path of NaN when converting float to float16
+void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
+                                          Register tmp1, Register tmp2) {
+  fmv_x_w(dst, src);
+
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
+  const int fp_sign_bits = 1;
+  const int fp32_bits = 32;
+  const int fp32_exponent_bits = 8;
+  const int fp32_mantissa_1st_part_bits = 10;
+  const int fp32_mantissa_2nd_part_bits = 9;
+  const int fp32_mantissa_3rd_part_bits = 4;
+  const int fp16_exponent_bits = 5;
+  const int fp16_mantissa_bits = 10;
+
+  // preserve the sign bit and exponent, clear mantissa.
+  srai(tmp2, dst, fp32_bits - fp_sign_bits - fp16_exponent_bits);
+  slli(tmp2, tmp2, fp16_mantissa_bits);
+
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //   | (doppel & 0x007f_e000) >> 13 // 10 bits
+  //   | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+  //   | (doppel & 0x0000_000f));     //  4 bits
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  int left_shift = fp_sign_bits + fp32_exponent_bits + 32;
+  int right_shift = left_shift + fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 9 bits
+  left_shift += fp32_mantissa_1st_part_bits;
+  right_shift = left_shift + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 4 bits
+  andi(tmp1, dst, 0xf);
+  orr(dst, tmp2, tmp1);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
@@ -6479,7 +6477,6 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails
 void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, tmp1, tmp2, tmp3, t0);
 
   Label push;
@@ -6539,7 +6536,6 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - tmp1, tmp2, tmp3: temporary registers
 // - slow: branched to if unlocking fails
 void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT

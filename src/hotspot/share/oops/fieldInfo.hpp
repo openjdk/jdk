@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ class FieldInfo {
 
  public:
 
-  FieldInfo() : _name_index(0),
+  FieldInfo() : _index(0),
+                _name_index(0),
                 _signature_index(0),
                 _offset(0),
                 _access_flags(AccessFlags(0)),
@@ -147,6 +148,7 @@ class FieldInfo {
                 _contention_group(0) { }
 
   FieldInfo(AccessFlags access_flags, u2 name_index, u2 signature_index, u2 initval_index, FieldInfo::FieldFlags fflags) :
+            _index(0),
             _name_index(name_index),
             _signature_index(signature_index),
             _offset(0),
@@ -220,29 +222,28 @@ public:
   void map_field_info(const FieldInfo& fi);
 };
 
-
 // Gadget for decoding and reading the stream of field records.
 class FieldInfoReader {
-  friend class FieldInfoStream;
-  friend class ClassFileParser;
-  friend class FieldStreamBase;
-  friend class FieldInfo;
-
   UNSIGNED5::Reader<const u1*, int> _r;
   int _next_index;
 
-  public:
+public:
   FieldInfoReader(const Array<u1>* fi);
 
-  private:
-  uint32_t next_uint() { return _r.next_uint(); }
+private:
+  inline uint32_t next_uint() { return _r.next_uint(); }
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
-  int has_next() { return _r.has_next(); }
-  int position() { return _r.position(); }
-  int next_index() { return _next_index; }
+  void read_field_counts(int* java_fields, int* injected_fields);
+  int has_next() const { return _r.position() < _r.limit(); }
+  int position() const { return _r.position(); }
+  int next_index() const { return _next_index; }
+  void read_name_and_signature(u2* name_index, u2* signature_index);
   void read_field_info(FieldInfo& fi);
+
+  int search_table_lookup(const Array<u1>* search_table, const Symbol* name, const Symbol* signature, ConstantPool* cp, int java_fields);
+
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
 
@@ -269,6 +270,11 @@ class FieldInfoStream : AllStatic {
   friend class JavaFieldStream;
   friend class FieldStreamBase;
   friend class ClassFileParser;
+  friend class FieldInfoReader;
+  friend class FieldInfoComparator;
+
+ private:
+  static int compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2);
 
  public:
   static int num_java_fields(const Array<u1>* fis);
@@ -276,9 +282,14 @@ class FieldInfoStream : AllStatic {
   static int num_total_fields(const Array<u1>* fis);
 
   static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
-                                                          ClassLoaderData* loader_data, TRAPS);
+                                           ClassLoaderData* loader_data, TRAPS);
+  static Array<u1>* create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS);
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
+
+  DEBUG_ONLY(static void validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table);)
+
+  static void print_search_table(outputStream* st, ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table);
 };
 
 class FieldStatus {

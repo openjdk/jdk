@@ -1487,16 +1487,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  struct rusage usage;
-  int retval = getrusage(RUSAGE_THREAD, &usage);
-  if (retval == 0) {
-    return (double) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (double) (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000 * 1000);
-  } else {
-    // better than nothing, but not much
-    return elapsedTime();
-  }
-}
 
 void os::Linux::fast_thread_clock_init() {
   clockid_t clockid;
@@ -1693,6 +1683,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     // Successful loading
     return result;
+  }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
   }
 
   Elf32_Ehdr elf_head;
@@ -2487,9 +2482,18 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
+  jlong j = OSContainer::cpu_usage_in_micros();
+  st->print("cpu_usage_in_micros: ");
+  if (j >= 0) {
+    st->print_cr(JLONG_FORMAT, j);
+  } else {
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "no usage");
+  }
+
   OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_throttle_limit_in_bytes(), "memory_throttle_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::rss_usage_in_bytes(), "rss_usage_in_bytes");
@@ -2497,7 +2501,7 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   OSContainer::print_version_specific_info(st);
 
-  jlong j = OSContainer::pids_max();
+  j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2746,117 +2750,8 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
 #endif
 }
 
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm.so
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  char dli_fname[MAXPATHLEN];
-  dli_fname[0] = '\0';
-  bool ret = dll_address_to_library_name(
-                                         CAST_FROM_FN_PTR(address, os::jvm_path),
-                                         dli_fname, sizeof(dli_fname), nullptr);
-  assert(ret, "cannot locate libjvm");
-  char *rp = nullptr;
-  if (ret && dli_fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
-  }
-  if (rp == nullptr) {
-    return;
-  }
-
-  // If executing unit tests we require JAVA_HOME to point to the real JDK.
-  if (Arguments::executing_unit_tests()) {
-    // Look for JAVA_HOME in the environment.
-    char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != nullptr && java_home_var[0] != 0) {
-
-      // Check the current module name "libjvm.so".
-      const char* p = strrchr(buf, '/');
-      if (p == nullptr) {
-        return;
-      }
-      assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-      stringStream ss(buf, buflen);
-      rp = os::realpath(java_home_var, buf, buflen);
-      if (rp == nullptr) {
-        return;
-      }
-
-      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
-      ss.print("%s/lib", buf);
-
-      if (0 == access(buf, F_OK)) {
-        // Use current module name "libjvm.so"
-        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
-        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
-               "buf has been truncated");
-      } else {
-        // Go back to path of .so
-        rp = os::realpath(dli_fname, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, MAXPATHLEN);
-  saved_jvm_path[MAXPATHLEN - 1] = '\0';
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
-
-// Rationale behind this function:
-//  current (Mon Apr 25 20:12:18 MSD 2005) oprofile drops samples without executable
-//  mapping for address (see lookup_dcookie() in the kernel module), thus we cannot get
-//  samples for JITted code. Here we create private executable mapping over the code cache
-//  and then we can use standard (well, almost, as mapping can change) way to provide
-//  info for the reporting script by storing timestamp and location of symbol
-void linux_wrap_code(char* base, size_t size) {
-  static volatile jint cnt = 0;
-
-  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
-
-  if (!UseOprofile) {
-    return;
-  }
-
-  char buf[PATH_MAX+1];
-  int num = Atomic::add(&cnt, 1);
-
-  snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
-           os::get_temp_directory(), os::current_process_id(), num);
-  unlink(buf);
-
-  int fd = ::open(buf, O_CREAT | O_RDWR, S_IRWXU);
-
-  if (fd != -1) {
-    off_t rv = ::lseek(fd, size-2, SEEK_SET);
-    if (rv != (off_t)-1) {
-      if (::write(fd, "", 1) == 1) {
-        mmap(base, size,
-             PROT_READ|PROT_WRITE|PROT_EXEC,
-             MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE, fd, 0);
-      }
-    }
-    ::close(fd);
-    unlink(buf);
-  }
-}
 
 static bool recoverable_mmap_error(int err) {
   // See if the error is one we can let the caller handle. This
@@ -4977,9 +4872,8 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors
-  // (e.g. as we do in closeDescriptors in UNIXProcess.c), and this in
-  // turn might:
+  // might fork and exec without closing all appropriate file descriptors,
+  // and this in turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or

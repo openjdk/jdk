@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,11 @@ inline bool Klass::is_non_strong_hidden() const {
 // of this function must ensure that a safepoint doesn't happen while interpreting the return value.
 inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
+}
+
+inline bool Klass::is_loader_present_and_alive() const {
+  ClassLoaderData* cld = class_loader_data();
+  return (cld != nullptr) ? cld->is_alive() : false;
 }
 
 inline markWord Klass::prototype_header() const {
@@ -177,6 +182,6 @@ inline bool Klass::needs_narrow_id() const {
   // never instantiated classes out of class space lessens the class space pressure.
   // For more details, see JDK-8338526.
   // Note: don't call this function before access flags are initialized.
-  return !is_abstract() && !is_interface();
+  return UseClassMetaspaceForAllClasses || (!is_abstract() && !is_interface());
 }
 #endif // SHARE_OOPS_KLASS_INLINE_HPP

@@ -39,18 +39,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-// We use an illtrap for marking a method as not_entrant
-// Work around a C++ compiler bug which changes 'this'
-bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
-  if (!Assembler::is_illtrap(addr)) return false;
-  CodeBlob* cb = CodeCache::find_blob(addr);
-  if (cb == nullptr || !cb->is_nmethod()) return false;
-  nmethod *nm = (nmethod *)cb;
-  // This method is not_entrant iff the illtrap instruction is
-  // located at the verified entry point.
-  return nm->verified_entry_point() == addr;
-}
-
 #ifdef ASSERT
 void NativeInstruction::verify() {
   // Make sure code pattern is actually an instruction address.
@@ -331,25 +319,6 @@ void NativeMovConstReg::verify() {
 }
 #endif // ASSERT
 
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  ResourceMark rm;
-  int code_size = 1 * BytesPerInstWord;
-  CodeBuffer cb(verified_entry, code_size + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-#ifdef COMPILER2
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-#endif
-  // Patch this nmethod atomically. Always use illtrap/trap in debug build.
-  if (DEBUG_ONLY(false &&) a->is_within_range_of_b(dest, a->pc())) {
-    a->b(dest);
-  } else {
-    // The signal handler will continue at dest=OptoRuntime::handle_wrong_method_stub().
-    // We use an illtrap for marking a method as not_entrant.
-    a->illtrap();
-  }
-  ICache::ppc64_flush_icache_bytes(verified_entry, code_size);
-}
-
 #ifdef ASSERT
 void NativeJump::verify() {
   address addr = addr_at(0);
@@ -462,9 +431,7 @@ bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   if (!Assembler::is_illtrap(code_pos)) return false;
   CodeBlob* cb = CodeCache::find_blob(code_pos);
   if (cb == nullptr || !cb->is_nmethod()) return false;
-  nmethod *nm = (nmethod *)cb;
-  // see NativeInstruction::is_sigill_not_entrant_at()
-  return nm->verified_entry_point() != code_pos;
+  return true;
 }
 
 // Inserts an instruction which is specified to cause a SIGILL at a given pc

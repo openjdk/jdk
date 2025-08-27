@@ -38,7 +38,6 @@
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -54,9 +53,12 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -131,13 +133,27 @@ public:
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
     address* ptr_loc = (address*)(_buffered_obj + field_offset);
 
-    address old_p = *ptr_loc;
+    address old_p_with_tags = *ptr_loc;
+    assert(old_p_with_tags != nullptr, "null ptrs shouldn't have been marked");
+
+    address old_p = MetaspaceClosure::strip_tags(old_p_with_tags);
+    uintx tags = MetaspaceClosure::decode_tags(old_p_with_tags);
     address new_p = _builder->get_buffered_addr(old_p);
 
-    log_trace(aot)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
-                   p2i(ptr_loc), p2i(old_p), p2i(new_p));
+    bool nulled;
+    if (new_p == nullptr) {
+      // old_p had a FollowMode of set_to_null
+      nulled = true;
+    } else {
+      new_p = MetaspaceClosure::add_tags(new_p, tags);
+      nulled = false;
+    }
+
+    log_trace(aot)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT " %zu",
+                   p2i(ptr_loc), p2i(old_p) + tags, p2i(new_p), tags);
 
     ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
+    ArchiveBuilder::current()->count_relocated_pointer(tags != 0, nulled);
     return true; // keep iterating the bitmap
   }
 };
@@ -178,6 +194,9 @@ ArchiveBuilder::ArchiveBuilder() :
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
   _entropy_seed = 0x12345678;
+  _relocated_ptr_info._num_ptrs = 0;
+  _relocated_ptr_info._num_tagged_ptrs = 0;
+  _relocated_ptr_info._num_nulled_ptrs = 0;
   assert(_current == nullptr, "must be");
   _current = this;
 }
@@ -437,6 +456,11 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   }
 #endif
 
+  if (ref->msotype() == MetaspaceObj::MethodDataType) {
+    MethodData* md = (MethodData*)ref->obj();
+    md->clean_method_data(false /* always_clean */);
+  }
+
   assert(p->read_only() == src_info.read_only(), "must be");
 
   if (created && src_info.should_copy()) {
@@ -534,8 +558,11 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
-             ref->msotype() == MetaspaceObj::MethodCountersType) {
-    return set_to_null;
+             ref->msotype() == MetaspaceObj::MethodCountersType ||
+             ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
+             ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
+             ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
+    return (TrainingData::need_data() || TrainingData::assembling_data()) ? make_a_copy : set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
     if (CDSConfig::is_dumping_adapters()) {
       AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
@@ -547,6 +574,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     if (ref->msotype() == MetaspaceObj::ClassType) {
       Klass* klass = (Klass*)ref->obj();
       assert(klass->is_klass(), "must be");
+      if (RegeneratedClasses::has_been_regenerated(klass)) {
+        klass = RegeneratedClasses::get_regenerated_object(klass);
+      }
       if (is_excluded(klass)) {
         ResourceMark rm;
         log_debug(cds, dynamic)("Skipping class (excluded): %s", klass->external_name());
@@ -718,17 +748,29 @@ void ArchiveBuilder::mark_and_relocate_to_buffered_addr(address* ptr_location) {
 
 bool ArchiveBuilder::has_been_archived(address src_addr) const {
   SourceObjInfo* p = _src_obj_table.get(src_addr);
-  return (p != nullptr);
-}
-
-bool ArchiveBuilder::has_been_buffered(address src_addr) const {
-  if (RegeneratedClasses::has_been_regenerated(src_addr) ||
-      _src_obj_table.get(src_addr) == nullptr ||
-      get_buffered_addr(src_addr) == nullptr) {
+  if (p == nullptr) {
+    // This object has never been seen by ArchiveBuilder
     return false;
-  } else {
-    return true;
   }
+  if (p->buffered_addr() == nullptr) {
+    // ArchiveBuilder has seen this object, but decided not to archive it. So
+    // Any reference to this object will be modified to nullptr inside the buffer.
+    assert(p->follow_mode() == set_to_null, "must be");
+    return false;
+  }
+
+  DEBUG_ONLY({
+    // This is a class/method that belongs to one of the "original" classes that
+    // have been regenerated by lambdaFormInvokers.cpp. We must have archived
+    // the "regenerated" version of it.
+    if (RegeneratedClasses::has_been_regenerated(src_addr)) {
+      address regen_obj = RegeneratedClasses::get_regenerated_object(src_addr);
+      precond(regen_obj != nullptr && regen_obj != src_addr);
+      assert(has_been_archived(regen_obj), "must be");
+      assert(get_buffered_addr(src_addr) == get_buffered_addr(regen_obj), "must be");
+    }});
+
+  return true;
 }
 
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
@@ -756,6 +798,10 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   aot_log_info(aot)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
+  log_info(cds)("Relocating %zu pointers, %zu tagged, %zu nulled",
+                _relocated_ptr_info._num_ptrs,
+                _relocated_ptr_info._num_tagged_ptrs,
+                _relocated_ptr_info._num_nulled_ptrs);
 }
 
 #define ADD_COUNT(x) \
@@ -951,6 +997,28 @@ void ArchiveBuilder::make_klasses_shareable() {
 #undef STATS_PARAMS
 
   DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::make_training_data_shareable() {
+  auto clean_td = [&] (address& src_obj,  SourceObjInfo& info) {
+    if (!is_in_buffer_space(info.buffered_addr())) {
+      return;
+    }
+
+    if (info.msotype() == MetaspaceObj::KlassTrainingDataType ||
+        info.msotype() == MetaspaceObj::MethodTrainingDataType ||
+        info.msotype() == MetaspaceObj::CompileTrainingDataType) {
+      TrainingData* buffered_td = (TrainingData*)info.buffered_addr();
+      buffered_td->remove_unshareable_info();
+    } else if (info.msotype() == MetaspaceObj::MethodDataType) {
+      MethodData* buffered_mdo = (MethodData*)info.buffered_addr();
+      buffered_mdo->remove_unshareable_info();
+    } else if (info.msotype() == MetaspaceObj::MethodCountersType) {
+      MethodCounters* buffered_mc = (MethodCounters*)info.buffered_addr();
+      buffered_mc->remove_unshareable_info();
+    }
+  };
+  _src_obj_table.iterate_all(clean_td);
 }
 
 void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
@@ -1586,6 +1654,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
   mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
+}
+
+void ArchiveBuilder::count_relocated_pointer(bool tagged, bool nulled) {
+  _relocated_ptr_info._num_ptrs ++;
+  _relocated_ptr_info._num_tagged_ptrs += tagged ? 1 : 0;
+  _relocated_ptr_info._num_nulled_ptrs += nulled ? 1 : 0;
 }
 
 void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {

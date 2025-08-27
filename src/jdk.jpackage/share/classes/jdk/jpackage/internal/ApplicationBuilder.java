@@ -33,11 +33,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
+import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
@@ -83,21 +84,21 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder initFromAppImage(AppImageFile appImageFile,
+    ApplicationBuilder initFromExternalApplication(ExternalApplication app,
             Function<LauncherInfo, Launcher> mapper) {
         if (version == null) {
-            version = appImageFile.getAppVersion();
+            version = app.getAppVersion();
         }
         if (name == null) {
-            name = appImageFile.getAppName();
+            name = app.getAppName();
         }
         runtimeBuilder = null;
 
-        var mainLauncherInfo = new LauncherInfo(appImageFile.getLauncherName(), false, Map.of());
+        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false, Map.of());
 
         launchers = new ApplicationLaunchers(
                 mapper.apply(mainLauncherInfo),
-                appImageFile.getAddLaunchers().stream().map(mapper).toList());
+                app.getAddLaunchers().stream().map(mapper).toList());
 
         return this;
     }
@@ -152,9 +153,30 @@ final class ApplicationBuilder {
     }
 
     static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {
-        return new Launcher.Stub(launcher.name(), Optional.of(startupInfo),
-                launcher.fileAssociations(), launcher.isService(), launcher.description(),
-                launcher.icon(), launcher.defaultIconResourceName(), launcher.extraAppImageFileData());
+        return new Launcher.Stub(
+                launcher.name(),
+                Optional.of(startupInfo),
+                launcher.fileAssociations(),
+                launcher.isService(),
+                launcher.description(),
+                launcher.icon(),
+                launcher.defaultIconResourceName(),
+                launcher.extraAppImageFileData());
+    }
+
+    static Application overrideAppImageLayout(Application app, AppImageLayout appImageLayout) {
+        return new Application.Stub(
+                app.name(),
+                app.description(),
+                app.version(),
+                app.vendor(),
+                app.copyright(),
+                app.srcDir(),
+                app.contentDirs(),
+                Objects.requireNonNull(appImageLayout),
+                app.runtimeBuilder(),
+                app.launchers(),
+                app.extraAppImageFileData());
     }
 
     record MainLauncherStartupInfo(String qualifiedClassName) implements LauncherStartupInfo {

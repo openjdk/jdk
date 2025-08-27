@@ -43,6 +43,7 @@ PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 
 void PhaseIFG::init( uint maxlrg ) {
   _maxlrg = maxlrg;
+  _edges = 0;
   _yanked = new (_arena) VectorSet(_arena);
   _is_square = false;
   // Make uninitialized adjacency lists
@@ -65,7 +66,12 @@ int PhaseIFG::add_edge( uint a, uint b ) {
   // Sort a and b, so that a is bigger
   assert( !_is_square, "only on triangular" );
   if( a < b ) { uint tmp = a; a = b; b = tmp; }
-  return _adjs[a].insert( b );
+  int ret = _adjs[a].insert(b);
+  _edges += ret;
+  if (_edges > IFGEdgesLimit) {
+    C->record_method_not_compilable("out of IFG edges");
+  }
+  return ret;
 }
 
 // Is there an edge between a and b?
@@ -299,6 +305,9 @@ void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
       LRG& interfering_lrg = lrgs(interfering_lid);
       if (rm.overlap(interfering_lrg.mask())) {
         _ifg->add_edge(lid, interfering_lid);
+        if (C->failing()) {
+          return;
+        }
       }
       interfering_lid = elements.next();
     }
@@ -348,6 +357,9 @@ void PhaseChaitin::build_ifg_virtual( ) {
 
         // Interfere with everything live
         interfere_with_live(r, liveout);
+        if (C->failing()) {
+          return;
+        }
       }
 
       // Make all inputs live
@@ -391,6 +403,9 @@ void PhaseChaitin::build_ifg_virtual( ) {
           uint kidx = _lrg_map.live_range_id(n->in(k));
           if (kidx != lidx) {
             _ifg->add_edge(r, kidx);
+            if (C->failing()) {
+              return;
+            }
           }
         }
       }
@@ -917,6 +932,9 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
         interfere_with_live(lid, &liveout);
+        if (C->failing()) {
+          return 0;
+        }
       }
 
       // Area remaining in the block

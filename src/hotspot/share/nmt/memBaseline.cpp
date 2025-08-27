@@ -160,7 +160,7 @@ bool MemBaseline::baseline_allocation_sites() {
 
   // Virtual memory allocation sites
   VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!VirtualMemoryTracker::walk_virtual_memory(&virtual_memory_walker)) {
+  if (!VirtualMemoryTracker::Instance::walk_virtual_memory(&virtual_memory_walker)) {
     return false;
   }
 
@@ -215,7 +215,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
       site = node->data();
     }
     site->reserve_memory(rgn->size());
-    site->commit_memory(rgn->committed_size());
+    site->commit_memory(VirtualMemoryTracker::Instance::committed_size(rgn));
   }
 
   _virtual_memory_sites.move(&allocation_sites);

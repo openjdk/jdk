@@ -1605,7 +1605,7 @@ generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
-               "eret", "drps", "isb",])
+               "eret", "drps", "isb", "sb",])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
@@ -2087,6 +2087,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["index",    "__ sve_index(z7, __ D, r5, 5);",                     "index\tz7.d, x5, #5"],
                         ["cpy",      "__ sve_cpy(z7, __ H, p3, r5);",                      "cpy\tz7.h, p3/m, w5"],
                         ["tbl",      "__ sve_tbl(z16, __ S, z17, z18);",                   "tbl\tz16.s, {z17.s}, z18.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ B, z17, z18, z16);",              "tbl\tz16.b, {z17.b, z18.b}, z16.b"],
+                        ["tbl",      "__ sve_tbl(z16, __ H, z17, z18, z16);",              "tbl\tz16.h, {z17.h, z18.h}, z16.h"],
+                        ["tbl",      "__ sve_tbl(z16, __ S, z17, z18, z16);",              "tbl\tz16.s, {z17.s, z18.s}, z16.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ D, z17, z18, z16);",              "tbl\tz16.d, {z17.d, z18.d}, z16.d"],
                         ["ld1w",     "__ sve_ld1w_gather(z15, p0, r5, z16);",              "ld1w\t{z15.s}, p0/z, [x5, z16.s, uxtw #2]"],
                         ["ld1d",     "__ sve_ld1d_gather(z15, p0, r5, z16);",              "ld1d\t{z15.d}, p0/z, [x5, z16.d, uxtw #3]"],
                         ["st1w",     "__ sve_st1w_scatter(z15, p0, r5, z16);",             "st1w\t{z15.s}, p0, [x5, z16.s, uxtw #2]"],

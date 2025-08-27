@@ -44,7 +44,7 @@ class MacroAssembler: public Assembler {
 
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg = t0);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp_reg = t0);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
@@ -660,13 +660,15 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
 
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
   // we often need to resort to movptr, li <48imm>.
-  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/main/src/asm-manual.adoc
 
   // Hotspot only use the standard calling convention using x1/ra.
   // The alternative calling convection using x5/t0 is not used.
@@ -1187,26 +1189,26 @@ public:
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp, Label &succeed, Label *fail);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
-               enum operand_size size,
+               Assembler::operand_size size,
                Assembler::Aqrl acquire, Assembler::Aqrl release,
                Register result, bool result_as_bool = false);
   void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
-                    enum operand_size size,
+                    Assembler::operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
   void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
-                            enum operand_size size,
+                            Assembler::operand_size size,
                             Assembler::Aqrl acquire, Assembler::Aqrl release,
                             Register result, bool result_as_bool,
                             Register tmp1, Register tmp2, Register tmp3);
   void weak_cmpxchg_narrow_value(Register addr, Register expected,
                                  Register new_val,
-                                 enum operand_size size,
+                                 Assembler::operand_size size,
                                  Assembler::Aqrl acquire, Assembler::Aqrl release,
                                  Register result,
                                  Register tmp1, Register tmp2, Register tmp3);
@@ -1223,7 +1225,7 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
+  void atomic_cas(Register prev, Register newv, Register addr, Assembler::operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
 
   // Emit a far call/jump. Only invalidates the tmp register which
@@ -1238,7 +1240,7 @@ public:
   void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
-      return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
+      return 2 * MacroAssembler::instruction_size;  // auipc + jalr, see far_call() & far_jump()
   }
 
   void load_byte_map_base(Register reg);
@@ -1382,10 +1384,6 @@ public:
   void adc(Register dst, Register src1, Register src2, Register carry);
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2, Register carry);
-  void multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
-                             Register y, Register y_idx, Register z,
-                             Register carry, Register product,
-                             Register idx, Register kdx);
   void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
                              Register y, Register y_idx, Register z,
                              Register carry, Register product,
@@ -1432,6 +1430,9 @@ public:
 
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
   void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+
+  // Helper routine processing the slow path of NaN when converting float to float16
+  void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
@@ -1636,8 +1637,8 @@ private:
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
-  void load_reserved(Register dst, Register addr, enum operand_size size, Assembler::Aqrl acquire);
-  void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
+  void load_reserved(Register dst, Register addr, Assembler::operand_size size, Assembler::Aqrl acquire);
+  void store_conditional(Register dst, Register new_val, Register addr, Assembler::operand_size size, Assembler::Aqrl release);
 
 public:
   void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
@@ -1646,9 +1647,9 @@ public:
 public:
   enum {
     // movptr
-    movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
-    movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
-    load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
+    movptr1_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
   static bool is_load_pc_relative_at(address branch);
@@ -1703,11 +1704,11 @@ public:
   //     addi/jalr/load
   static bool check_movptr1_data_dependency(address instr) {
     address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address last_instr = slli2 + instruction_size;
+    address addi1 = lui + MacroAssembler::instruction_size;
+    address slli1 = addi1 + MacroAssembler::instruction_size;
+    address addi2 = slli1 + MacroAssembler::instruction_size;
+    address slli2 = addi2 + MacroAssembler::instruction_size;
+    address last_instr = slli2 + MacroAssembler::instruction_size;
     return extract_rs1(addi1) == extract_rd(lui) &&
            extract_rs1(addi1) == extract_rd(addi1) &&
            extract_rs1(slli1) == extract_rd(addi1) &&
@@ -1727,10 +1728,10 @@ public:
   //     addi/jalr/load
   static bool check_movptr2_data_dependency(address instr) {
     address lui1 = instr;
-    address lui2 = lui1 + instruction_size;
-    address slli = lui2 + instruction_size;
-    address add  = slli + instruction_size;
-    address last_instr = add + instruction_size;
+    address lui2 = lui1 + MacroAssembler::instruction_size;
+    address slli = lui2 + MacroAssembler::instruction_size;
+    address add  = slli + MacroAssembler::instruction_size;
+    address last_instr = add + MacroAssembler::instruction_size;
     return extract_rd(add) == extract_rd(lui2) &&
            extract_rs1(add) == extract_rd(lui2) &&
            extract_rs2(add) == extract_rd(slli) &&
@@ -1744,7 +1745,7 @@ public:
   //     srli
   static bool check_li16u_data_dependency(address instr) {
     address lui = instr;
-    address srli = lui + instruction_size;
+    address srli = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(srli) == extract_rd(lui) &&
            extract_rs1(srli) == extract_rd(srli);
@@ -1755,7 +1756,7 @@ public:
   //     addiw
   static bool check_li32_data_dependency(address instr) {
     address lui = instr;
-    address addiw = lui + instruction_size;
+    address addiw = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(addiw) == extract_rd(lui) &&
            extract_rs1(addiw) == extract_rd(addiw);
@@ -1766,7 +1767,7 @@ public:
   //     jalr/addi/load/float_load
   static bool check_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address last_instr = auipc + instruction_size;
+    address last_instr = auipc + MacroAssembler::instruction_size;
 
     return extract_rs1(last_instr) == extract_rd(auipc);
   }
@@ -1776,7 +1777,7 @@ public:
   //     load
   static bool check_load_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address load = auipc + instruction_size;
+    address load = auipc + MacroAssembler::instruction_size;
 
     return extract_rd(load) == extract_rd(auipc) &&
            extract_rs1(load) == extract_rd(load);
