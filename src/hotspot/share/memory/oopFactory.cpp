@@ -73,7 +73,6 @@ typeArrayOop oopFactory::new_longArray(int length, TRAPS) {
 
 // create java.lang.Object[]
 objArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
-  assert(Universe::objectArrayKlass() != nullptr, "Too early?");
   return Universe::objectArrayKlass()->allocate_instance(length, THREAD);
 }
 

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -104,6 +105,8 @@ void CDSConfig::ergo_initialize() {
   if (!is_dumping_heap()) {
     _is_dumping_full_module_graph = false;
   }
+
+  AOTMapLogger::ergo_initialize();
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -643,8 +646,17 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (is_dumping_preimage_static_archive() || is_dumping_final_static_archive()) {
-      // Don't tweak execution mode
+    if (is_dumping_preimage_static_archive()) {
+      // Don't tweak execution mode during AOT training run
+    } else if (is_dumping_final_static_archive()) {
+      if (Arguments::mode() == Arguments::_comp) {
+        // AOT assembly phase submits the non-blocking compilation requests
+        // for methods collected during training run, then waits for all compilations
+        // to complete. With -Xcomp, we block for each compilation request, which is
+        // counter-productive. Switching back to mixed mode improves testing time
+        // with AOT and -Xcomp.
+        Arguments::set_mode_flags(Arguments::_mixed);
+      }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
