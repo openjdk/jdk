@@ -808,6 +808,40 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         String[] usages;
         Set<SSLScope> scopes;
 
+        // To avoid user confusion, we block signature scheme names to be used
+        // with CertificateSignature algorithm constraints usage. For example,
+        // RSASSA-PSS certificate signature algorithm corresponds to multiple
+        // signature scheme names and blocking one of those signature scheme
+        // with CertificateSignature usage directive won't block RSASSA-PSS
+        // certificate signature because other rsa_pss_* signature schemes
+        // still will be allowed.
+        // Below are signature scheme names supported in TLSv1.2 and TLSv1.3
+        // that are unique (i.e. different from corresponding algorithm names).
+        // We avoid calling back the SSL layer to get these names because of
+        // the circular dependency.
+        private static final Set<String> BLOCKED_FOR_CERT_SCOPE = Set.of(
+                "ecdsa_secp256r1_sha256",
+                "ecdsa_secp384r1_sha384",
+                "ecdsa_secp521r1_sha512",
+                "rsa_pss_rsae_sha256",
+                "rsa_pss_rsae_sha384",
+                "rsa_pss_rsae_sha512",
+                "rsa_pss_pss_sha256",
+                "rsa_pss_pss_sha384",
+                "rsa_pss_pss_sha512",
+                "rsa_pkcs1_sha256",
+                "rsa_pkcs1_sha384",
+                "rsa_pkcs1_sha512",
+                "dsa_sha256",
+                "ecdsa_sha224",
+                "rsa_sha224",
+                "dsa_sha224",
+                "ecdsa_sha1",
+                "rsa_pkcs1_sha1",
+                "dsa_sha1",
+                "rsa_md5"
+        );
+
         UsageConstraint(
                 String algorithm, String[] usages, String propertyName) {
             this.algorithm = algorithm;
@@ -818,9 +852,18 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     SSLScope scope = SSLScope.nameOf(usage);
 
                     if (scope != null) {
+                        if (SSLScope.CERTIFICATE_SIGNATURE.equals(scope)
+                                && BLOCKED_FOR_CERT_SCOPE.contains(
+                                algorithm.toLowerCase(Locale.ENGLISH))) {
+                            throw new IllegalArgumentException("Can't use "
+                                    + "signature scheme names with "
+                                    + usage + " usage constraint");
+                        }
+
                         if (this.scopes == null) {
                             this.scopes = new HashSet<>(usages.length);
                         }
+
                         this.scopes.add(scope);
                     } else {
                         this.usages = usages;
@@ -840,11 +883,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         @Override
         public boolean permits(Set<SSLScope> scopes) {
-            if (this.scopes == null || scopes == null) {
-                return true;
-            }
-
-            return Collections.disjoint(this.scopes, scopes);
+            return this.scopes == null || scopes == null
+                    || Collections.disjoint(this.scopes, scopes);
         }
 
         @Override

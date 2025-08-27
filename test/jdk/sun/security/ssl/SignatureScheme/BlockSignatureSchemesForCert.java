@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8349583
- * @summary Add mechanism to disable signature schemes based on their TLS scope
+ * @bug 8366211
+ * @summary Block signature scheme names to be used with CertificateSignature
+ *          algorithm constraints usage
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm MixingTLSUsageConstraintsWithNonTLS
+ * @run main/othervm BlockSignatureSchemesForCert
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
@@ -36,21 +37,21 @@ import static jdk.test.lib.Utils.runAndCheckException;
 
 import java.security.Security;
 
-public class MixingTLSUsageConstraintsWithNonTLS extends SSLSocketTemplate {
+public class BlockSignatureSchemesForCert extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms",
-                "SHA1withRSA usage handshakeSignature certificateSignature TLSServer");
+                "rsa_pss_pss_sha256 usage CertificateSignature");
 
         runAndCheckException(
-                () -> new MixingTLSUsageConstraintsWithNonTLS().run(),
+                () -> new BlockSignatureSchemesForCert().run(),
                 e -> {
                     assertTrue(e instanceof ExceptionInInitializerError);
                     assertTrue(
                             e.getCause() instanceof IllegalArgumentException);
                     assertEquals(e.getCause().getMessage(),
-                            "Can't mix TLS protocol specific constraints"
-                                    + " with other usage constraints");
+                            "Can't use signature scheme names with "
+                                    + "CertificateSignature usage constraint");
                 });
     }
 }
