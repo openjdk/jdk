@@ -132,9 +132,9 @@ public final class WindowsMenuUI extends BasicMenuUI {
 
     @Override
     protected void paintMenuItem(Graphics g, JComponent c,
-                              Icon checkIcon, Icon arrowIcon,
-                              Color background, Color foreground,
-                              int defaultTextIconGap) {
+                                 Icon checkIcon, Icon arrowIcon,
+                                 Color background, Color foreground,
+                                 int defaultTextIconGap) {
         assert c == menuItem : "menuItem passed as 'c' must be the same";
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintMenuItem(accessor, g, c,
