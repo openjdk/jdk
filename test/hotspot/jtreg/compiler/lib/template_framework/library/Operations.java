@@ -328,6 +328,8 @@ public final class Operations {
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalOr(", BOOLEANS, ", ", BOOLEANS, ")"));
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalXor(", BOOLEANS, ", ", BOOLEANS, ")"));
 
+        // TODO: Math and other classes.
+
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
     }

@@ -23,22 +23,27 @@
 
 package compiler.lib.template_framework.library;
 
-import compiler.lib.template_framework.Template;
-import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
-
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Random;
+import jdk.test.lib.Utils;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
 
 /**
  * TODO: desc
  */
 public class Expression {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public CodeGenerationDataNameType returnType;
     public List<CodeGenerationDataNameType> argumentTypes;
-    private List<String> strings;
+    List<String> strings;
     public Info info;
 
     private Expression(CodeGenerationDataNameType returnType,
@@ -69,15 +74,27 @@ public class Expression {
             this.isResultDeterministic = info.isResultDeterministic;
         }
 
+        /**
+         * TODO: desc union of exceptions
+         */
         public Info withExceptions(Set<String> exceptions) {
             Info info = new Info(this);
-            info.exceptions = Set.copyOf(exceptions);
+            info.exceptions = Stream.concat(this.exceptions.stream(), exceptions.stream())
+                                    .collect(Collectors.toSet());
             return info;
         }
 
         public Info withNondeterministicResult() {
             Info info = new Info(this);
             info.isResultDeterministic = false;
+            return info;
+        }
+
+        Info combineWith(Info other) {
+            Info info = this.withExceptions(other.exceptions);
+            if (!other.isResultDeterministic) {
+                info = info.withNondeterministicResult();
+            }
             return info;
         }
     }
@@ -281,4 +298,56 @@ public class Expression {
         ));
         return template.asToken();
     }
+
+    /**
+     * Nests a random expression from {@code nestingExpressions} into a random argument of
+     * {@code this} expression, ensuring compatibility of argument and return type.
+     */
+    public Expression nestRandomly(List<Expression> nestingExpressions) {
+        int slot = RANDOM.nextInt(this.argumentTypes.size());
+        CodeGenerationDataNameType slotType = this.argumentTypes.get(slot);
+        List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(slotType)).toList();
+        int r = RANDOM.nextInt(filtered.size());
+        Expression expression = filtered.get(r);
+
+        return this.nest(slot, expression);
+    }
+
+    /**
+     * Nests the {@code nestingExpression} into the specified {@code slot} of
+     * {@code this} expression.
+     */
+    public Expression nest(int slot, Expression nestingExpression) {
+        if (!nestingExpression.returnType.isSubtypeOf(this.argumentTypes.get(slot))) {
+            throw new IllegalArgumentException("Cannot nest expressions because of mismatched types.");
+        }
+
+        List<CodeGenerationDataNameType> newArgumentTypes = new ArrayList<>();
+        List<String> newStrings = new ArrayList<>();
+        // s0 t0 s1 [S0 T0 S1 T1 S2] s2 t2 s3
+        for (int i = 0; i < slot; i++) {
+            newStrings.add(this.strings.get(i));
+            newArgumentTypes.add(this.argumentTypes.get(i));
+        }
+        newStrings.add(this.strings.get(slot) +
+                       nestingExpression.strings.get(0)); // concat s1 and S0
+        newArgumentTypes.add(nestingExpression.argumentTypes.get(0));
+        for (int i = 1; i < nestingExpression.argumentTypes.size(); i++) {
+            newStrings.add(nestingExpression.strings.get(i));
+            newArgumentTypes.add(nestingExpression.argumentTypes.get(i));
+        }
+        newStrings.add(nestingExpression.strings.get(nestingExpression.strings.size() - 1) +
+                       this.strings.get(slot + 1)); // concat S2 and s2
+        for (int i = slot; i < this.argumentTypes.size(); i++) {
+            newArgumentTypes.add(this.argumentTypes.get(i));
+            newStrings.add(this.strings.get(i+1));
+        }
+
+        return new Expression(this.returnType, newArgumentTypes, newStrings, this.info.combineWith(nestingExpression.info));
+    }
+
+    //public static Expression nestRandomly(CodeGenerationDataNameType returnType,
+    //                                      List<Expression> expressions,
+    //                                      int numberOfUsedExpression) {
+    //}
 }

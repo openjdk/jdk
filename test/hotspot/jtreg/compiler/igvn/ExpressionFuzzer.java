@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8359412
- * @summary Demonstrate the use of Expressions form the Template Library.
+ * @summary Use the template framework library to generate random expressions.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @compile ../../../compiler/lib/verify/Verify.java
- * @run main template_framework.examples.TestExpressions
+ * @compile ../lib/verify/Verify.java
+ * @run main compiler.igvn.ExpressionFuzzer
  */
 
-package template_framework.examples;
+package compiler.igvn;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -46,19 +46,19 @@ import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
-public class TestExpressions {
+public class ExpressionFuzzer {
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
+        comp.addJavaSourceCode("compiler.igvn.templated.ExpressionFuzzerInnerTest", generate(comp));
 
         // Compile the source file.
         comp.compile();
 
-        // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
+        // compiler.igvn.templated.InnterTest.main(new String[] {});
+        comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {}});
     }
 
     // Generate a Java source file as String
@@ -105,7 +105,7 @@ public class TestExpressions {
         // Create the test class, which runs all tests.
         return TestFrameworkClass.render(
             // package and class name.
-            "p.xyz", "InnerTest",
+            "compiler.igvn.templated", "ExpressionFuzzerInnerTest",
             // Set of imports.
             Set.of("compiler.lib.verify.*"),
             // classpath, so the Test VM has access to the compiled class files.
