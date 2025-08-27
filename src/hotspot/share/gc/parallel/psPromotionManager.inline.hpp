@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   if (PSScavenge::is_obj_in_young(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
-    Prefetch::write(obj->mark_addr(), 0);
+    Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
     push_depth(ScannerTask(p));
   }
 }
