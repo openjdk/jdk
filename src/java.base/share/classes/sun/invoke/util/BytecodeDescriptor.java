@@ -126,8 +126,15 @@ public class BytecodeDescriptor {
             }
         } else if (c == '[') {
             Class<?> t = parseSig(str, i, end, loader);
-            if (t != null)
-                t = t.arrayType();
+            if (t != null) {
+                try {
+                    t = t.arrayType();
+                } catch (UnsupportedOperationException ex) {
+                    // Bad arrays, such as [V or more than 255 dims
+                    // We have a more informative IAE
+                    return null;
+                }
+            }
             return t;
         } else {
             Wrapper w;
