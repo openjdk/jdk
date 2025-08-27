@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.lang.annotation.Native;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -550,9 +551,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    static final int TTY_STDIN_MASK = 0x00000001;
-    static final int TTY_STDOUT_MASK = 0x00000002;
-    static final int TTY_STDERR_MASK = 0x00000004;
+    @Native static final int TTY_STDIN_MASK = 0x00000001;
+    @Native static final int TTY_STDOUT_MASK = 0x00000002;
+    @Native static final int TTY_STDERR_MASK = 0x00000004;
     // ttyStatus() returns bit patterns above, a bit is set if the corresponding file
     // descriptor is a character device
     private static final int ttyStatus = ttyStatus();
