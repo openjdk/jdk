@@ -38,7 +38,7 @@ import java.util.Objects;
  * This immutable class specifies the set of parameters used with a {@code Cipher} for the
  * <a href="https://www.rfc-editor.org/info/rfc9180">Hybrid Public Key Encryption</a>
  * (HPKE) algorithm. HPKE is a public key encryption scheme for encrypting
- * arbitrary-sized plaintexts to a receiver's public key. It combines a key
+ * arbitrary-sized plaintexts with a receiver's public key. It combines a key
  * encapsulation mechanism (KEM), a key derivation function (KDF), and an
  * authenticated encryption with additional data (AEAD) cipher.
  *
@@ -116,19 +116,16 @@ import java.util.Objects;
  * After initialization, both the sender and receiver can process multiple
  * messages in sequence with repeated {@code doFinal} calls, optionally preceded
  * by one or more {@code updateAAD} and {@code update}. Each {@code doFinal}
- * call performs a complete HPKE encryption or decryption operation using
- * a distinct nonce derived from an internal sequence counter, as specified by
+ * performs a complete HPKE encryption or decryption operation using a distinct
+ * IV derived from an internal sequence counter, as specified in
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5.2">Section 5.2</a>
- * of RFC 9180.
- * <p>
- * HPKE internally uses an AEAD cipher for message encryption and decryption.
- * As with any AEAD cipher, each {@code doFinal} call on the receiver side must
- * correspond to exactly one complete ciphertext, and the number and order of
- * calls must match on both sides. Unlike the direct use of an AEAD cipher,
- * however, an HPKE cipher manages nonce generation internally, and there is no
- * need for the application to reinitialize the cipher with a new IV for each
- * message. This simplifies usage while ensuring nonce uniqueness and preserving
- * AEAD security guarantees.
+ * of RFC 9180. On the receiver side, each {@code doFinal} call must correspond
+ * to exactly one complete ciphertext, and the number and order of calls must
+ * match those on the sender side. This differs from the direct use of an AEAD
+ * cipher, where the caller must provide a fresh IV and reinitialize the cipher
+ * for each message. By managing IVs internally, HPKE allows a single
+ * initialization to support multiple messages while still ensuring IV
+ * uniqueness and preserving AEAD security guarantees.
  * <p>
  * This example shows a sender and a receiver using HPKE to securely exchange
  * messages with an X25519 key pair.
