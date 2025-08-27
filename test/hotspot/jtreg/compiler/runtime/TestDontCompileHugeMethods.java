@@ -41,7 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 public class TestDontCompileHugeMethods {
 
@@ -97,10 +97,10 @@ public class TestDontCompileHugeMethods {
         compileClass(workDir, sourceFile);
     }
 
-    private static void runTest(Path workDir, String[] jvmArgs) throws Exception {
+    private static void runTest(Path workDir, List jvmArgs) throws Exception {
         ArrayList<String> command = new ArrayList<>();
         command.add("-XX:+PrintCompilation");
-        command.addAll(Arrays.asList(jvmArgs));
+        command.addAll(jvmArgs);
         command.add("-cp");
         command.add(workDir.toAbsolutePath().toString());
         command.add(HUGE_SWITCH_CLASS_NAME);
@@ -115,7 +115,7 @@ public class TestDontCompileHugeMethods {
         Path workDir = Paths.get("");
         generateAndCompileClass(workDir);
 
-        runTest(workDir, new String[0]);
-        runTest(workDir, new String[] {"-XX:-TieredCompilation"});
+        runTest(workDir, List.of());
+        runTest(workDir, List.of("-XX:-TieredCompilation"));
     }
 }
