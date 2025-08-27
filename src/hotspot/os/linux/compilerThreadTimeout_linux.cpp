@@ -94,7 +94,7 @@ bool CompilerThreadTimeoutLinux::init_timeout() {
   JavaThread* thread = JavaThread::current();
 
   // Create a POSIX timer sending SIGALRM to this thread only.
-  sigevent_t sev;
+  struct sigevent sev;
   sev.sigev_value.sival_ptr = nullptr;
   sev.sigev_signo = TIMEOUT_SIGNAL;
   sev.sigev_notify = SIGEV_THREAD_ID;
