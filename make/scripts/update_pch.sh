@@ -98,4 +98,4 @@ fi
   >> "$PRECOMPILED_HPP.tmp"
 mv "$PRECOMPILED_HPP.tmp" "$PRECOMPILED_HPP"
 
-java /jdk/test/hotspot/jtreg/sources/SortIncludes.java --update /jdk/src/hotspot/share/precompiled
+java test/hotspot/jtreg/sources/SortIncludes.java --update "$PRECOMPILED_HPP"
