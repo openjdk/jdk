@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,8 @@ class UnixException extends Exception {
         if (errno() == UnixConstants.EEXIST)
             return new FileAlreadyExistsException(file, other, null);
         if (errno() == UnixConstants.ELOOP)
-            return new FileSystemException(file, other, errorString()
+            return new FileSystemLoopException(file + ", " + other + ", "
+                + errorString()
                 + " or unable to access attributes of symbolic link");
 
         // fallback to the more general exception
