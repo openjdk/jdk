@@ -2511,11 +2511,14 @@ void Compile::Optimize() {
     return;
   }
 
-  { // No more loop opts. It is safe to eliminate reachability fence nodes.
+  // No more loop opts. It is safe to get rid of all reachability fence nodes
+  // and migrate reachability edges to safepoints.
+  if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
     TracePhase tp(_t_idealLoop);
     PhaseIdealLoop::optimize(igvn, LoopOptsEliminateRFs);
     print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
     if (failing())  return;
+    assert(_reachability_fences.length() == 0, "no RF nodes allowed");
   }
 
   C->clear_major_progress(); // ensure that major progress is now clear
