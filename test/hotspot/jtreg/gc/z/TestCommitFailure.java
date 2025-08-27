@@ -28,7 +28,7 @@ package gc.z;
  * @requires vm.gc.Z & vm.debug
  * @summary Test ZGC graceful failure when a commit fails
  * @library / /test/lib
- * @run main/othervm gc.z.TestCommitFailure
+ * @run driver gc.z.TestCommitFailure
  *
  */
 
