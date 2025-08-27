@@ -2282,6 +2282,16 @@ operand flagsRegF() %{
 operand vecD() %{
   constraint(ALLOC_IN_RC(actual_dflt_reg));
   match(VecD);
+  match(vecD_low);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecD_low() %{
+  constraint(ALLOC_IN_RC(dflt_low_reg));
+  match(VecD);
+  match(vecD);
 
   format %{ %}
   interface(REG_INTER);
@@ -2290,6 +2300,16 @@ operand vecD() %{
 operand vecX() %{
   constraint(ALLOC_IN_RC(vectorx_reg));
   match(VecX);
+  match(vecX_low);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecX_low() %{
+  constraint(ALLOC_IN_RC(dflt_low_reg));
+  match(VecX);
+  match(vecX);
 
   format %{ %}
   interface(REG_INTER);
@@ -9894,7 +9914,7 @@ instruct vadd2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_pipe( faddD_reg_reg ); // FIXME
 %}
 
-instruct vadd2F_reg_vfp(vecD dst, vecD src1, vecD src2) %{
+instruct vadd2F_reg_vfp(vecD_low dst, vecD_low src1, vecD_low src2) %{
   predicate(n->as_Vector()->length() == 2 && !VM_Version::simd_math_is_compliant());
   match(Set dst (AddVF src1 src2));
   ins_cost(DEFAULT_COST*2); // FIXME
@@ -9925,7 +9945,7 @@ instruct vadd4F_reg_simd(vecX dst, vecX src1, vecX src2) %{
   ins_pipe( faddD_reg_reg ); // FIXME
 %}
 
-instruct vadd4F_reg_vfp(vecX dst, vecX src1, vecX src2) %{
+instruct vadd4F_reg_vfp(vecX_low dst, vecX_low src1, vecX_low src2) %{
   predicate(n->as_Vector()->length() == 4 && !VM_Version::simd_math_is_compliant());
   match(Set dst (AddVF src1 src2));
   size(4*4);
@@ -10091,7 +10111,7 @@ instruct vsub2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_pipe( faddF_reg_reg ); // FIXME
 %}
 
-instruct vsub2F_reg_vfp(vecD dst, vecD src1, vecD src2) %{
+instruct vsub2F_reg_vfp(vecD_low dst, vecD_low src1, vecD_low src2) %{
   predicate(n->as_Vector()->length() == 2 && !VM_Version::simd_math_is_compliant());
   match(Set dst (SubVF src1 src2));
   size(4*2);
@@ -10128,7 +10148,7 @@ instruct vsub4F_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe( faddF_reg_reg ); // FIXME
 %}
 
-instruct vsub4F_reg_vfp(vecX dst, vecX src1, vecX src2) %{
+instruct vsub4F_reg_vfp(vecX_low dst, vecX_low src1, vecX_low src2) %{
   predicate(n->as_Vector()->length() == 4 && !VM_Version::simd_math_is_compliant());
   match(Set dst (SubVF src1 src2));
   size(4*4);
@@ -10247,7 +10267,7 @@ instruct vmul2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_pipe( fmulF_reg_reg ); // FIXME
 %}
 
-instruct vmul2F_reg_vfp(vecD dst, vecD src1, vecD src2) %{
+instruct vmul2F_reg_vfp(vecD_low dst, vecD_low src1, vecD_low src2) %{
   predicate(n->as_Vector()->length() == 2 && !VM_Version::simd_math_is_compliant());
   match(Set dst (MulVF src1 src2));
   size(4*2);
@@ -10277,7 +10297,7 @@ instruct vmul4F_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe( fmulF_reg_reg ); // FIXME
 %}
 
-instruct vmul4F_reg_vfp(vecX dst, vecX src1, vecX src2) %{
+instruct vmul4F_reg_vfp(vecX_low dst, vecX_low src1, vecX_low src2) %{
   predicate(n->as_Vector()->length() == 4 && !VM_Version::simd_math_is_compliant());
   match(Set dst (MulVF src1 src2));
   size(4*4);
