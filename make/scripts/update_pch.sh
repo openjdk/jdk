@@ -94,7 +94,8 @@ fi
   awk -v x="$MIN_MS" '$1 < x { exit } { print $3 }' | \
   # Filter away non-hotspot headers
   grep hotspot/share | \
-  sort | \
   awk -F "hotspot/share/" '{ printf "#include \"%s\"\n", $2 }' \
   >> "$PRECOMPILED_HPP.tmp"
 mv "$PRECOMPILED_HPP.tmp" "$PRECOMPILED_HPP"
+
+java /jdk/test/hotspot/jtreg/sources/SortIncludes.java --update /jdk/src/hotspot/share/precompiled
