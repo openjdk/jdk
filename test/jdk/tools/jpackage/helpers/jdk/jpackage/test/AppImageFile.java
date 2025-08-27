@@ -22,20 +22,28 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public record AppImageFile(String mainLauncherName, String mainLauncherClassName,
-        String version, boolean macSigned, boolean macAppStore) {
+        String version, boolean macSigned, boolean macAppStore, Map<String, Map<String, String>> launchers) {
 
     public static Path getPathInAppImage(Path appImageDir) {
         return ApplicationLayout.platformAppImage()
@@ -44,8 +52,23 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
                 .resolve(FILENAME);
     }
 
+    public AppImageFile {
+        Objects.requireNonNull(mainLauncherName);
+        Objects.requireNonNull(mainLauncherClassName);
+        Objects.requireNonNull(version);
+        if (!launchers.containsKey(mainLauncherName)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
     public AppImageFile(String mainLauncherName, String mainLauncherClassName) {
-        this(mainLauncherName, mainLauncherClassName, "1.0", false, false);
+        this(mainLauncherName, mainLauncherClassName, "1.0", false, false, Map.of(mainLauncherName, Map.of()));
+    }
+
+    public Map<String, Map<String, String>> addLaunchers() {
+        return launchers.entrySet().stream().filter(e -> {
+            return !e.getKey().equals(mainLauncherName);
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public void save(Path appImageDir) throws IOException {
@@ -73,6 +96,18 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
             xml.writeStartElement("app-store");
             xml.writeCharacters(Boolean.toString(macAppStore));
             xml.writeEndElement();
+
+            for (var al : addLaunchers().keySet().stream().sorted().toList()) {
+                xml.writeStartElement("add-launcher");
+                xml.writeAttribute("name", al);
+                var props = launchers.get(al);
+                for (var prop : props.keySet().stream().sorted().toList()) {
+                    xml.writeStartElement(prop);
+                    xml.writeCharacters(props.get(prop));
+                    xml.writeEndElement();
+                }
+                xml.writeEndElement();
+            }
         });
     }
 
@@ -99,8 +134,34 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
                     "/jpackage-state/app-store/text()", doc)).map(
                             Boolean::parseBoolean).orElse(false);
 
+            var addLaunchers = XmlUtils.queryNodes(doc, xPath, "/jpackage-state/add-launcher").map(Element.class::cast).map(toFunction(addLauncher -> {
+                Map<String, String> launcherProps = new HashMap<>();
+
+                // @name and @service attributes.
+                XmlUtils.toStream(addLauncher.getAttributes()).forEach(attr -> {
+                    launcherProps.put(attr.getNodeName(), attr.getNodeValue());
+                });
+
+                // Extra properties.
+                XmlUtils.queryNodes(addLauncher, xPath, "*[count(*) = 0]").map(Element.class::cast).forEach(e -> {
+                    launcherProps.put(e.getNodeName(), e.getTextContent());
+                });
+
+                return launcherProps;
+            }));
+
+            var mainLauncherProperties = Map.of("name", mainLauncherName);
+
+            var launchers = Stream.concat(Stream.of(mainLauncherProperties), addLaunchers).collect(toMap(attrs -> {
+                return Objects.requireNonNull(attrs.get("name"));
+            }, attrs -> {
+                Map<String, String> copy = new HashMap<>(attrs);
+                copy.remove("name");
+                return Map.copyOf(copy);
+            }));
+
             return new AppImageFile(mainLauncherName, mainLauncherClassName,
-                    version, macSigned, macAppStore);
+                    version, macSigned, macAppStore, launchers);
 
         }).get();
     }

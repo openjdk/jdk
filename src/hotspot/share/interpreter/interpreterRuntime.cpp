@@ -46,8 +46,8 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -75,6 +75,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 // Helper class to access current interpreter state
 class LastFrameAccessor : public StackObj {
@@ -497,6 +500,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      Exceptions::log_exception_stacktrace(h_exception, h_method, current_bci);
+    }
+
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
 //       // disabled for now - interpreter is not using shortcut yet
@@ -1167,6 +1174,7 @@ JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.

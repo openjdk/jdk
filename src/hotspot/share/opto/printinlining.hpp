@@ -26,9 +26,9 @@
 #define PRINTINLINING_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/growableArray.hpp"
-#include "nmt/nmtTreap.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/rbTree.inline.hpp"
 
 class JVMState;
 class ciMethod;
@@ -77,7 +77,7 @@ private:
     ciMethod* _method;
     int _bci;
     GrowableArrayCHeap<IPInlineAttempt, mtCompiler> _attempts;
-    TreapCHeap<int, IPInlineSite, Cmp> _children;
+    RBTreeCHeap<int, IPInlineSite, Cmp, mtCompiler> _children;
 
   public:
     IPInlineSite(ciMethod* method, int bci) : _method(method), _bci(bci) {}

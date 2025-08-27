@@ -60,7 +60,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threads.hpp"
@@ -898,13 +897,6 @@ size_t os::rss() {
   return rss;
 }
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  MEMORYSTATUSEX ms;
-  ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  *limit = (size_t)ms.ullAvailVirtual;
-  return true;
-}
 
 int os::active_processor_count() {
   // User has overridden the number of active processors
@@ -1195,19 +1187,36 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
   FILETIME kernel;
   FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
   }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
 }
 
 jlong os::javaTimeMillis() {
@@ -1713,6 +1722,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -2245,6 +2260,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
@@ -2624,14 +2641,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2752,19 +2767,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
-
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
 
     if (in_java) {
       switch (exception_code) {
@@ -3292,6 +3294,51 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+size_t os::commit_memory_limit() {
+  BOOL is_in_job_object = false;
+  BOOL res = IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to determine whether the process is running in a job failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling IsProcessInJob.
+    return SIZE_MAX;
+  }
+
+  if (!is_in_job_object) {
+    // Not limited by a Job Object
+    return SIZE_MAX;
+  }
+
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+  res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling QueryInformationJobObject.
+    return SIZE_MAX;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) {
+    return jeli.ProcessMemoryLimit;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_JOB_MEMORY) {
+    return jeli.JobMemoryLimit;
+  }
+
+  // No limit
+  return SIZE_MAX;
+}
+
+size_t os::reserve_memory_limit() {
+  // Virtual address space cannot be limited on Windows.
+  return SIZE_MAX;
 }
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
@@ -5840,61 +5887,34 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// returns true if thread could be suspended,
-// false otherwise
-static bool do_suspend(HANDLE* h) {
-  if (h != nullptr) {
-    if (SuspendThread(*h) != ~0) {
-      return true;
-    }
-  }
-  return false;
-}
+// WINDOWS CONTEXT Flags for THREAD_SAMPLING
+#if defined(AMD64) || defined(_M_ARM64)
+  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
+#endif
 
-// resume the thread
-// calling resume on an active thread is a no-op
-static void do_resume(HANDLE* h) {
-  if (h != nullptr) {
-    ResumeThread(*h);
-  }
-}
-
-// retrieve a suspend/resume context capable handle
-// from the tid. Caller validates handle return value.
-void get_thread_handle_for_extended_context(HANDLE* h,
-                                            DWORD tid) {
-  if (h != nullptr) {
-    *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
-  }
+// Retrieve a suspend/resume context capable handle for the tid.
+// Caller validates handle return value.
+static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
+  return OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
 }
 
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
-  CONTEXT    ctxt;
-  HANDLE     h = nullptr;
-
-  // get context capable handle for thread
-  get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
-
-  // sanity
-  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+  const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
+  if (h == nullptr) {
     return;
   }
-
-  // suspend the thread
-  if (do_suspend(&h)) {
-    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
-    // get thread context
-    GetThreadContext(h, &ctxt);
-    SuspendedThreadTaskContext context(_thread, &ctxt);
-    // pass context to Thread Sampling impl
-    do_task(context);
-    // resume thread
-    do_resume(&h);
+  CONTEXT ctxt;
+  ctxt.ContextFlags = sampling_context_flags;
+  if (SuspendThread(h) != OS_ERR) {
+    if (GetThreadContext(h, &ctxt)) {
+      const SuspendedThreadTaskContext context(_thread, &ctxt);
+      // Pass context to Thread Sampling implementation.
+      do_task(context);
+    }
+    ResumeThread(h);
   }
-
-  // close handle
   CloseHandle(h);
 }
 

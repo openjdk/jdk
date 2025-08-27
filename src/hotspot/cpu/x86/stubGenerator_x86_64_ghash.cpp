@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -82,7 +82,7 @@ void StubGenerator::generate_ghash_stubs() {
 address StubGenerator::generate_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
   Label L_ghash_loop, L_exit;
-  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -105,7 +105,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 
   __ enter();
 
-  __ push(rbx); // scratch
+  __ push_ppx(rbx); // scratch
 
   __ movdqu(xmm_temp10, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
 
@@ -206,7 +206,7 @@ address StubGenerator::generate_ghash_processBlocks() {
   __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
   __ movdqu(Address(state, 0), xmm_temp6);   // store the result
 
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
   __ leave();
   __ ret(0);
@@ -219,7 +219,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 address StubGenerator::generate_avx_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
 
-  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -229,11 +229,11 @@ address StubGenerator::generate_avx_ghash_processBlocks() {
   const Register data = c_rarg2;
   const Register blocks = c_rarg3;
   __ enter();
-  __ push(rbx);
+  __ push_ppx(rbx);
 
   avx_ghash(state, htbl, data, blocks);
 
-  __ pop(rbx);
+  __ pop_ppx(rbx);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 

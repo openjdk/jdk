@@ -77,13 +77,13 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
@@ -153,6 +153,8 @@
 #define JAVA_24_VERSION                   68
 
 #define JAVA_25_VERSION                   69
+
+#define JAVA_26_VERSION                   70
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -780,7 +782,7 @@ class NameSigHash: public ResourceObj {
   }
 };
 
-using NameSigHashtable = ResourceHashtable<NameSigHash, int,
+using NameSigHashtable = HashTable<NameSigHash, int,
                                            NameSigHash::HASH_ROW_SIZE,
                                            AnyObj::RESOURCE_AREA, mtInternal,
                                            &NameSigHash::hash, &NameSigHash::equals>;
@@ -847,7 +849,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
     // Set containing interface names
-    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    HashTable<Symbol*, int>* interface_names = new HashTable<Symbol*, int>();
     for (index = 0; index < itfs_len; index++) {
       const InstanceKlass* const k = _local_interfaces->at(index);
       Symbol* interface_name = k->name();
@@ -939,6 +941,8 @@ public:
     _jdk_internal_ValueBased,
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
+    _jdk_internal_vm_annotation_AOTSafeClassInitializer,
+    _method_AOTRuntimeSetup,
     _annotation_LIMIT
   };
   const Location _location;
@@ -974,6 +978,8 @@ public:
 
   void set_stable(bool stable) { set_annotation(_field_Stable); }
   bool is_stable() const { return has_annotation(_field_Stable); }
+
+  bool has_aot_runtime_setup() const { return has_annotation(_method_AOTRuntimeSetup); }
 };
 
 // This class also doubles as a holder for metadata cleanup.
@@ -1894,6 +1900,16 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_AOTSafeClassInitializer;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTRuntimeSetup_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_AOTRuntimeSetup;
+    }
     default: {
       break;
     }
@@ -1973,6 +1989,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       m->set_deprecated_for_removal();
     }
   }
+  if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
+    ik->set_has_aot_safe_initializer();
+  }
 }
 
 #define MAX_ARGS_SIZE 255
@@ -2003,7 +2022,7 @@ void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
 
   ResourceMark rm(THREAD);
 
-  typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
+  typedef HashTable<LocalVariableTableElement, LocalVariableTableElement*,
                             256, AnyObj::RESOURCE_AREA, mtInternal,
                             &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
 
@@ -2658,6 +2677,13 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
     m->set_is_hidden();
+  }
+  if (parsed_annotations.has_aot_runtime_setup()) {
+    if (name != vmSymbols::runtimeSetup() || signature != vmSymbols::void_method_signature() ||
+        !access_flags.is_private() || !access_flags.is_static()) {
+      classfile_parse_error("@AOTRuntimeSetup method must be declared private static void runtimeSetup() for class %s", CHECK_NULL);
+    }
+    _has_aot_runtime_setup_method = true;
   }
 
   // Copy annotations
@@ -3738,6 +3764,7 @@ void ClassFileParser::apply_parsed_class_metadata(
   _cp->set_pool_holder(this_klass);
   this_klass->set_constants(_cp);
   this_klass->set_fieldinfo_stream(_fieldinfo_stream);
+  this_klass->set_fieldinfo_search_table(_fieldinfo_search_table);
   this_klass->set_fields_status(_fields_status);
   this_klass->set_methods(_methods);
   this_klass->set_inner_classes(_inner_classes);
@@ -3746,6 +3773,8 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_cp, _fieldinfo_stream, _fieldinfo_search_table));
 
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
@@ -3972,6 +4001,15 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     // Forbid fast-path allocation.
     const jint lh = Klass::instance_layout_helper(ik->size_helper(), true);
     ik->set_layout_helper(lh);
+  }
+
+  // Propagate the AOT runtimeSetup method discovery
+  if (_has_aot_runtime_setup_method) {
+    ik->set_is_runtime_setup_required();
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Found @AOTRuntimeSetup class %s", ik->external_name());
+    }
   }
 }
 
@@ -5054,6 +5092,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // note that is not safe to use the fields in the parser from this point on
   assert(nullptr == _cp, "invariant");
   assert(nullptr == _fieldinfo_stream, "invariant");
+  assert(nullptr == _fieldinfo_search_table, "invariant");
   assert(nullptr == _fields_status, "invariant");
   assert(nullptr == _methods, "invariant");
   assert(nullptr == _inner_classes, "invariant");
@@ -5111,8 +5150,47 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   check_methods_for_intrinsics(ik, methods);
 
   // Fill in field values obtained by parse_classfile_attributes
-  if (_parsed_annotations->has_any_annotations()) {
+  if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
+
+  // AOT-related checks.
+  // Note we cannot check this in general due to instrumentation or module patching
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
+    // Check the aot initialization safe status.
+    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
+    // in the AOT assembly phase.
+    if (ik->has_aot_safe_initializer()) {
+      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
+      //   - all super classes must be included
+      //   - all super interfaces that have <clinit> must be included.
+      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
+      // ik's <clinit>.
+      if (_super_klass != nullptr) {
+        guarantee_property(_super_klass->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superclass %s for class %s",
+                           _super_klass->external_name(),
+                           CHECK);
+      }
+
+      int len = _local_interfaces->length();
+      for (int i = 0; i < len; i++) {
+        InstanceKlass* intf = _local_interfaces->at(i);
+        guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
+                           intf->external_name(),
+                           CHECK);
+      }
+
+      if (log_is_enabled(Info, aot, init)) {
+        ResourceMark rm;
+        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
+      }
+    } else {
+      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
+      guarantee_property(!ik->is_runtime_setup_required(),
+                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
+                         CHECK);
+    }
   }
 
   apply_parsed_class_attributes(ik);
@@ -5170,7 +5248,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(module_entry != nullptr, "module_entry should always be set");
 
   // Obtain java.lang.Module
-  Handle module_handle(THREAD, module_entry->module());
+  Handle module_handle(THREAD, module_entry->module_oop());
 
   // Allocate mirror and initialize static fields
   java_lang_Class::create_mirror(ik,
@@ -5274,6 +5352,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _super_klass(),
   _cp(nullptr),
   _fieldinfo_stream(nullptr),
+  _fieldinfo_search_table(nullptr),
   _fields_status(nullptr),
   _methods(nullptr),
   _inner_classes(nullptr),
@@ -5319,6 +5398,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _has_aot_runtime_setup_method(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {
@@ -5350,6 +5430,7 @@ void ClassFileParser::clear_class_metadata() {
   // deallocated if classfile parsing returns an error.
   _cp = nullptr;
   _fieldinfo_stream = nullptr;
+  _fieldinfo_search_table = nullptr;
   _fields_status = nullptr;
   _methods = nullptr;
   _inner_classes = nullptr;
@@ -5372,6 +5453,7 @@ ClassFileParser::~ClassFileParser() {
   if (_fieldinfo_stream != nullptr) {
     MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_stream);
   }
+  MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_search_table);
 
   if (_fields_status != nullptr) {
     MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
@@ -5772,6 +5854,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   _fieldinfo_stream =
     FieldInfoStream::create_FieldInfoStream(_temp_field_info, _java_fields_count,
                                             injected_fields_count, loader_data(), CHECK);
+  _fieldinfo_search_table = FieldInfoStream::create_search_table(_cp, _fieldinfo_stream, _loader_data, CHECK);
   _fields_status =
     MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(),
                                             FieldStatus(0), CHECK);

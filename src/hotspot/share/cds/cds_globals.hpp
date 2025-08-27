@@ -119,6 +119,10 @@
           "Cache for improving start up and warm up")                       \
           constraint(AOTCacheConstraintFunc, AtParse)                       \
                                                                             \
+  product(ccstr, AOTCacheOutput, nullptr,                                   \
+          "Specifies the file name for writing the AOT cache")              \
+          constraint(AOTCacheOutputConstraintFunc, AtParse)                 \
+                                                                            \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
           "ConstantPools")                                                  \
@@ -129,6 +133,23 @@
                                                                             \
   product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
           "Use parallel relocation code to speed up startup.")              \
+                                                                            \
+  /* flags to control training and deployment modes  */                     \
+                                                                            \
+  product(bool, AOTRecordTraining, false, DIAGNOSTIC,                       \
+          "Request output of training data for improved deployment.")       \
+                                                                            \
+  product(bool, AOTReplayTraining, false, DIAGNOSTIC,                       \
+          "Read training data, if available, for use in this execution")    \
+                                                                            \
+  product(bool, AOTPrintTrainingInfo, false, DIAGNOSTIC,                    \
+          "Print additional information about training")                    \
+                                                                            \
+  product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
+          "Verify archived training data")                                  \
+                                                                            \
+  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
+          "Compile methods as soon as possible")                            \
                                                                             \
   /* AOT Code flags */                                                      \
                                                                             \

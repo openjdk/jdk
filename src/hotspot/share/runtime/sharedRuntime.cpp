@@ -80,14 +80,14 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Shared runtime stub routines reside in their own unique blob with a
@@ -95,59 +95,62 @@
 
 
 #define SHARED_STUB_FIELD_DEFINE(name, type) \
-  type        SharedRuntime::BLOB_FIELD_NAME(name);
+  type*       SharedRuntime::BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DEFINE)
 #undef SHARED_STUB_FIELD_DEFINE
 
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
+#if 0
+// TODO tweak global stub name generation to match this
 #define SHARED_STUB_NAME_DECLARE(name, type) "Shared Runtime " # name "_blob",
 const char *SharedRuntime::_stub_names[] = {
   SHARED_STUBS_DO(SHARED_STUB_NAME_DECLARE)
 };
+#endif
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_initial_stubs() {
   // Build this early so it's available for the interpreter.
   _throw_StackOverflowError_blob =
-    generate_throw_exception(SharedStubId::throw_StackOverflowError_id,
+    generate_throw_exception(StubId::shared_throw_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 }
 
 void SharedRuntime::generate_stubs() {
   _wrong_method_blob =
-    generate_resolve_blob(SharedStubId::wrong_method_id,
+    generate_resolve_blob(StubId::shared_wrong_method_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method));
   _wrong_method_abstract_blob =
-    generate_resolve_blob(SharedStubId::wrong_method_abstract_id,
+    generate_resolve_blob(StubId::shared_wrong_method_abstract_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_abstract));
   _ic_miss_blob =
-    generate_resolve_blob(SharedStubId::ic_miss_id,
+    generate_resolve_blob(StubId::shared_ic_miss_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_ic_miss));
   _resolve_opt_virtual_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_opt_virtual_call_id,
+    generate_resolve_blob(StubId::shared_resolve_opt_virtual_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C));
   _resolve_virtual_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_virtual_call_id,
+    generate_resolve_blob(StubId::shared_resolve_virtual_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C));
   _resolve_static_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_static_call_id,
+    generate_resolve_blob(StubId::shared_resolve_static_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C));
 
   _throw_delayed_StackOverflowError_blob =
-    generate_throw_exception(SharedStubId::throw_delayed_StackOverflowError_id,
+    generate_throw_exception(StubId::shared_throw_delayed_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
 
   _throw_AbstractMethodError_blob =
-    generate_throw_exception(SharedStubId::throw_AbstractMethodError_id,
+    generate_throw_exception(StubId::shared_throw_AbstractMethodError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
 
   _throw_IncompatibleClassChangeError_blob =
-    generate_throw_exception(SharedStubId::throw_IncompatibleClassChangeError_id,
+    generate_throw_exception(StubId::shared_throw_IncompatibleClassChangeError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
 
   _throw_NullPointerException_at_call_blob =
-    generate_throw_exception(SharedStubId::throw_NullPointerException_at_call_id,
+    generate_throw_exception(StubId::shared_throw_NullPointerException_at_call_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
 #if COMPILER2_OR_JVMCI
@@ -155,15 +158,15 @@ void SharedRuntime::generate_stubs() {
   bool support_wide = is_wide_vector(MaxVectorSize);
   if (support_wide) {
     _polling_page_vectors_safepoint_handler_blob =
-      generate_handler_blob(SharedStubId::polling_page_vectors_safepoint_handler_id,
+      generate_handler_blob(StubId::shared_polling_page_vectors_safepoint_handler_id,
                             CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
   }
 #endif // COMPILER2_OR_JVMCI
   _polling_page_safepoint_handler_blob =
-    generate_handler_blob(SharedStubId::polling_page_safepoint_handler_id,
+    generate_handler_blob(StubId::shared_polling_page_safepoint_handler_id,
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
   _polling_page_return_handler_blob =
-    generate_handler_blob(SharedStubId::polling_page_return_handler_id,
+    generate_handler_blob(StubId::shared_polling_page_return_handler_id,
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
 
   generate_deopt_blob();
@@ -570,6 +573,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   if (StubRoutines::returns_to_call_stub(return_address)) {
     // The deferred StackWatermarkSet::after_unwind check will be performed in
     // JavaCallWrapper::~JavaCallWrapper
+    assert (StubRoutines::catch_exception_entry() != nullptr, "must be generated before");
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
@@ -2177,7 +2181,6 @@ static int _lookups; // number of calls to lookup
 static int _equals;  // number of buckets checked with matching hash
 static int _archived_hits; // number of successful lookups in archived table
 static int _runtime_hits;  // number of successful lookups in runtime table
-static int _compact; // number of equals calls with compact signature
 #endif
 
 // A simple wrapper class around the calling convention information
@@ -2188,18 +2191,23 @@ class AdapterFingerPrint : public MetaspaceObj {
     _basic_type_bits = 4,
     _basic_type_mask = right_n_bits(_basic_type_bits),
     _basic_types_per_int = BitsPerInt / _basic_type_bits,
-    _compact_int_count = 3
   };
   // TO DO:  Consider integrating this with a more global scheme for compressing signatures.
   // For now, 4 bits per components (plus T_VOID gaps after double/long) is not excessive.
 
   int _length;
-  int _value[_compact_int_count];
+
+  static int data_offset() { return sizeof(AdapterFingerPrint); }
+  int* data_pointer() {
+    return (int*)((address)this + data_offset());
+  }
 
   // Private construtor. Use allocate() to get an instance.
-  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
+  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt, int len) {
+    int* data = data_pointer();
     // Pack the BasicTypes with 8 per int
-    _length = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
+    assert(len == length(total_args_passed), "sanity");
+    _length = len;
     int sig_index = 0;
     for (int index = 0; index < _length; index++) {
       int value = 0;
@@ -2208,13 +2216,21 @@ class AdapterFingerPrint : public MetaspaceObj {
         assert((bt & _basic_type_mask) == bt, "must fit in 4 bits");
         value = (value << _basic_type_bits) | bt;
       }
-      _value[index] = value;
+      data[index] = value;
     }
   }
 
   // Call deallocate instead
   ~AdapterFingerPrint() {
-    FreeHeap(this);
+    ShouldNotCallThis();
+  }
+
+  static int length(int total_args) {
+    return (total_args + (_basic_types_per_int-1)) / _basic_types_per_int;
+  }
+
+  static int compute_size_in_words(int len) {
+    return (int)heap_word_size(sizeof(AdapterFingerPrint) + (len * sizeof(int)));
   }
 
   // Remap BasicTypes that are handled equivalently by the adapters.
@@ -2276,31 +2292,25 @@ class AdapterFingerPrint : public MetaspaceObj {
   }
 
  public:
-  static int allocation_size(int total_args_passed, BasicType* sig_bt) {
-    int len = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
-    return sizeof(AdapterFingerPrint) + (len > _compact_int_count ? (len - _compact_int_count) * sizeof(int) : 0);
-  }
-
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
-    int size_in_bytes = allocation_size(total_args_passed, sig_bt);
-    return new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
+    int len = length(total_args_passed);
+    int size_in_bytes = BytesPerWord * compute_size_in_words(len);
+    AdapterFingerPrint* afp = new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt, len);
+    assert((afp->size() * BytesPerWord) == size_in_bytes, "should match");
+    return afp;
   }
 
   static void deallocate(AdapterFingerPrint* fp) {
-    fp->~AdapterFingerPrint();
+    FreeHeap(fp);
   }
 
   int value(int index) {
-    return _value[index];
+    int* data = data_pointer();
+    return data[index];
   }
 
   int length() {
-    if (_length < 0) return -_length;
     return _length;
-  }
-
-  bool is_compact() {
-    return _length <= _compact_int_count;
   }
 
   unsigned int compute_hash() {
@@ -2405,7 +2415,7 @@ class AdapterFingerPrint : public MetaspaceObj {
       return false;
     } else {
       for (int i = 0; i < _length; i++) {
-        if (_value[i] != other->_value[i]) {
+        if (value(i) != other->value(i)) {
           return false;
         }
       }
@@ -2415,7 +2425,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // methods required by virtue of being a MetaspaceObj
   void metaspace_pointers_do(MetaspaceClosure* it) { return; /* nothing to do here */ }
-  int size() const { return (int)heap_word_size(sizeof(AdapterFingerPrint) + (_length > _compact_int_count ? (_length - _compact_int_count) * sizeof(int) : 0)); }
+  int size() const { return compute_size_in_words(_length); }
   MetaspaceObj::Type type() const { return AdapterFingerPrintType; }
 
   static bool equals(AdapterFingerPrint* const& fp1, AdapterFingerPrint* const& fp2) {
@@ -2440,7 +2450,7 @@ class ArchivedAdapterTable : public OffsetCompactHashtable<
 #endif // INCLUDE_CDS
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = HashTable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals>;
@@ -2459,14 +2469,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
   if (AOTCodeCache::is_using_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
-    if (entry != nullptr) {
 #ifndef PRODUCT
-      if (fp->is_compact()) {
-        _compact++;
-      }
+    if (entry != nullptr) {
       _archived_hits++;
-#endif
     }
+#endif
   }
 #endif // INCLUDE_CDS
   if (entry == nullptr) {
@@ -2478,7 +2485,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
              entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
              fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
   #ifndef PRODUCT
-      if (fp->is_compact()) _compact++;
       _runtime_hits++;
   #endif
     }
@@ -2497,8 +2503,8 @@ static void print_table_statistics() {
   tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
                 _adapter_handler_table->table_size(), _adapter_handler_table->number_of_entries());
   int total_hits = _archived_hits + _runtime_hits;
-  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d) compact %d",
-                _lookups, _equals, total_hits, _archived_hits, _runtime_hits, _compact);
+  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d)",
+                _lookups, _equals, total_hits, _archived_hits, _runtime_hits);
 }
 #endif
 
@@ -2596,19 +2602,24 @@ void AdapterHandlerLibrary::initialize() {
     BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
     _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args);
 
-    assert(no_arg_blob != nullptr &&
-           obj_arg_blob != nullptr &&
-           int_arg_blob != nullptr &&
-           obj_int_arg_blob != nullptr &&
-           obj_obj_arg_blob != nullptr, "Initial adapters must be properly created");
+    // we should always get an entry back but we don't have any
+    // associated blob on Zero
+    assert(_no_arg_handler != nullptr &&
+           _obj_arg_handler != nullptr &&
+           _int_arg_handler != nullptr &&
+           _obj_int_arg_handler != nullptr &&
+           _obj_obj_arg_handler != nullptr, "Initial adapter handlers must be properly created");
   }
 
   // Outside of the lock
+#ifndef ZERO
+  // no blobs to register when we are on Zero
   post_adapter_creation(no_arg_blob, _no_arg_handler);
   post_adapter_creation(obj_arg_blob, _obj_arg_handler);
   post_adapter_creation(int_arg_blob, _int_arg_handler);
   post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler);
   post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler);
+#endif // ZERO
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
@@ -2703,12 +2714,15 @@ const char* AdapterHandlerEntry::_entry_names[] = {
 
 #ifdef ASSERT
 void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached_entry) {
+  // we can only check for the same code if there is any
+#ifndef ZERO
   AdapterBlob* comparison_blob = nullptr;
   AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, true);
   assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
   assert(comparison_entry->compare_code(cached_entry), "code must match");
   // Release the one just created
   AdapterHandlerEntry::deallocate(comparison_entry);
+# endif // ZERO
 }
 #endif /* ASSERT*/
 
@@ -2763,15 +2777,21 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
   ResourceMark rm;
   const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
   const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
-  int offsets[AdapterHandlerEntry::ENTRIES_COUNT];
+  int offsets[AdapterBlob::ENTRY_COUNT];
 
   AdapterBlob* adapter_blob = nullptr;
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, offsets);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
     adapter_blob = blob->as_adapter_blob();
+    adapter_blob->get_offsets(offsets);
     address i2c_entry = adapter_blob->content_begin();
     assert(offsets[0] == 0, "sanity check");
-    handler->set_entry_points(i2c_entry, i2c_entry + offsets[1], i2c_entry + offsets[2], i2c_entry + offsets[3]);
+    handler->set_entry_points(
+      i2c_entry,
+      (offsets[1] != -1) ? (i2c_entry + offsets[1]) : nullptr,
+      (offsets[2] != -1) ? (i2c_entry + offsets[2]) : nullptr,
+      (offsets[3] != -1) ? (i2c_entry + offsets[3]) : nullptr
+    );
   }
   return adapter_blob;
 }
@@ -2780,8 +2800,13 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
 void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob) {
   ttyLocker ttyl;
   ResourceMark rm;
-  int insts_size = adapter_blob->code_size();
+  int insts_size;
+  // on Zero the blob may be null
   handler->print_adapter_on(tty);
+  if (adapter_blob == nullptr) {
+    return;
+  }
+  insts_size = adapter_blob->code_size();
   st->print_cr("i2c argument handler for: %s %s (%d bytes generated)",
                 handler->fingerprint()->as_basic_args_string(),
                 handler->fingerprint()->as_string(), insts_size);
@@ -2822,6 +2847,11 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
                                          sig_bt,
                                          regs,
                                          handler);
+#ifdef ZERO
+  // On zero there is no code to save and no need to create a blob and
+  // or relocate the handler.
+  adapter_blob = nullptr;
+#else
 #ifdef ASSERT
   if (VerifyAdapterSharing) {
     handler->save_code(buf->code_begin(), buffer.insts_size());
@@ -2831,7 +2861,18 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
   }
 #endif
 
-  adapter_blob = AdapterBlob::create(&buffer);
+  int entry_offset[AdapterBlob::ENTRY_COUNT];
+  assert(AdapterBlob::ENTRY_COUNT == 4, "sanity");
+  address i2c_entry = handler->get_i2c_entry();
+  entry_offset[0] = 0; // i2c_entry offset
+  entry_offset[1] = (handler->get_c2i_entry() != nullptr) ?
+                    (handler->get_c2i_entry() - i2c_entry) : -1;
+  entry_offset[2] = (handler->get_c2i_unverified_entry() != nullptr) ?
+                    (handler->get_c2i_unverified_entry() - i2c_entry) : -1;
+  entry_offset[3] = (handler->get_c2i_no_clinit_check_entry() != nullptr) ?
+                    (handler->get_c2i_no_clinit_check_entry() - i2c_entry) : -1;
+
+  adapter_blob = AdapterBlob::create(&buffer, entry_offset);
   if (adapter_blob == nullptr) {
     // CodeCache is full, disable compilation
     // Ought to log this but compile log is only per compile thread
@@ -2842,23 +2883,19 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
-    int entry_offset[AdapterHandlerEntry::ENTRIES_COUNT];
-    assert(AdapterHandlerEntry::ENTRIES_COUNT == 4, "sanity");
-    address i2c_entry = handler->get_i2c_entry();
-    entry_offset[0] = 0; // i2c_entry offset
-    entry_offset[1] = handler->get_c2i_entry() - i2c_entry;
-    entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
-    entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
+    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
   handler->relocate(adapter_blob->content_begin());
+#endif // ZERO
+
 #ifndef PRODUCT
   // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     print_adapter_handler_info(tty, handler, adapter_blob);
   }
 #endif
+
   return true;
 }
 
@@ -3280,7 +3317,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   assert(current == JavaThread::current(), "pre-condition");
-
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
