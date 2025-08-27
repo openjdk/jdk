@@ -788,8 +788,6 @@ private:
   // Group cardsets
   G1CSetCandidateGroup _young_regions_cset_group;
 
-  DEBUG_ONLY(size_t _num_young_rem_set_cards_at_start;)
-
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
