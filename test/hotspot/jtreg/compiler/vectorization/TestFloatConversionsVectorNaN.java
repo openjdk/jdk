@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8320646
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs, with NaN
  * @requires vm.compiler2.enabled
@@ -37,9 +38,11 @@
 package compiler.vectorization;
 
 import java.util.HexFormat;
+import java.util.Random;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestFloatConversionsVectorNaN {
     private static final int ARRLEN = 1024;
@@ -79,14 +82,16 @@ public class TestFloatConversionsVectorNaN {
 
     @Run(test = {"test_float_float16"}, mode = RunMode.STANDALONE)
     public void kernel_test_float_float16() {
+        Random rand = Utils.getRandomInstance();
         int errno = 0;
         finp = new float[ARRLEN];
         sout = new short[ARRLEN];
 
         // Setup
         for (int i = 0; i < ARRLEN; i++) {
-            if (i%39 == 0) {
-                int x = 0x7f800000 + ((i/39) << 13);
+            if (i%3 == 0) {
+                int shift = rand.nextInt(13+1);
+                int x = 0x7f800000 + ((i/39) << shift);
                 x = (i%2 == 0) ? x : (x | 0x80000000);
                 finp[i] = Float.intBitsToFloat(x);
             } else {
@@ -128,7 +133,8 @@ public class TestFloatConversionsVectorNaN {
 
     static int assertEquals(int idx, float f, short expected, short actual) {
         HexFormat hf = HexFormat.of();
-        String msg = "floatToFloat16 wrong result: idx: " + idx + ", \t" + f +
+        String msg = "floatToFloat16 wrong result: idx: " + idx +
+                     ", \t" + f + ", hex: " + Integer.toHexString(Float.floatToRawIntBits(f)) +
                      ",\t expected: " + hf.toHexDigits(expected) +
                      ",\t actual: " + hf.toHexDigits(actual);
         if ((expected & 0x7c00) != 0x7c00) {
@@ -167,7 +173,7 @@ public class TestFloatConversionsVectorNaN {
 
         // Setup
         for (int i = 0; i < ARRLEN; i++) {
-            if (i%39 == 0) {
+            if (i%3 == 0) {
                 int x = 0x7c00 + i;
                 x = (i%2 == 0) ? x : (x | 0x8000);
                 sinp[i] = (short)x;
