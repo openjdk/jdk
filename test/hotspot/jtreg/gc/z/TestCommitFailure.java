@@ -29,7 +29,6 @@ package gc.z;
  * @summary Test ZGC graceful failure when a commit fails
  * @library / /test/lib
  * @run driver gc.z.TestCommitFailure
- *
  */
 
 /*
