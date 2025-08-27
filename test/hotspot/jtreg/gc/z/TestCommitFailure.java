@@ -28,7 +28,7 @@ package gc.z;
  * @requires vm.gc.Z & vm.debug
  * @library / /test/lib
  * @summary Test ZGC graceful failure when a commit fails (with ZFakeNUMA)
- * @run main/othervm gc.z.TestCommitFailure -XX:ZFakeNUMA=16
+ * @run driver gc.z.TestCommitFailure -XX:ZFakeNUMA=16
  */
 
 import jdk.test.lib.process.ProcessTools;
