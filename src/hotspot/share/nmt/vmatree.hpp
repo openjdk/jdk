@@ -50,10 +50,10 @@ public:
 
   class PositionComparator {
   public:
-    static int cmp(position a, position b) {
-      if (a < b) return -1;
-      if (a == b) return 0;
-      if (a > b) return 1;
+    static RBTreeOrdering cmp(position a, position b) {
+      if (a < b) return RBTreeOrdering::less;
+      if (a == b) return RBTreeOrdering::equal;
+      if (a > b) return RBTreeOrdering::greater;
       ShouldNotReachHere();
     }
   };
