@@ -49,6 +49,7 @@ import com.sun.nio.file.ExtendedOpenOption;
 public class DirectIOTest {
 
     private static final int BASE_SIZE = 4096;
+    private static final int TRIES = 3;
 
     public static int getFD(FileChannel channel) throws Exception {
         Field fFdFd = channel.getClass().getDeclaredField("fd");
@@ -78,24 +79,23 @@ public class DirectIOTest {
             for (int j = 0; j < size; j++) {
                 src.put((byte)0);
             }
-            src.flip();
 
             // If there is AV or other FS tracing software, it may cache the file
             // contents on first access, even though we have asked for DIRECT here.
-            fc.write(src);
+            // Do several attempts to make test more resilient.
 
-            // Flush the file cache, rewind...
-            flushFileCache(size, fd);
-            src.flip();
-            fc.position(0);
-
-            // ...and write again
-            fc.write(src);
-
-            if (isFileInCache(size, fd)) {
-                throw new RuntimeException("DirectIO is not working properly with " +
-                                           "write. File still exists in cache!");
+            for (int t = 0; t < TRIES; t++) {
+                flushFileCache(size, fd);
+                src.flip();
+                fc.position(0);
+                fc.write(src);
+                if (!isFileInCache(size, fd)) {
+                    return;
+                }
             }
+
+            throw new RuntimeException("DirectIO is not working properly with " +
+                                       "write. File still exists in cache!");
         }
     }
 
@@ -115,20 +115,20 @@ public class DirectIOTest {
 
             // If there is AV or other FS tracing software, it may cache the file
             // contents on first access, even though we have asked for DIRECT here.
-            fc.read(dest);
+            // Do several attempts to make test more resilient.
 
-            // Flush the file cache, rewind...
-            flushFileCache(size, fd);
-            dest.clear();
-            fc.position(0);
-
-            // ...and read again
-            fc.read(dest);
-
-            if (isFileInCache(size, fd)) {
-                throw new RuntimeException("DirectIO is not working properly with " +
-                                           "read. File still exists in cache!");
+            for (int t = 0; t < TRIES; t++) {
+                flushFileCache(size, fd);
+                dest.clear();
+                fc.position(0);
+                fc.read(dest);
+                if (!isFileInCache(size, fd)) {
+                    return;
+                }
             }
+
+            throw new RuntimeException("DirectIO is not working properly with " +
+                                       "read. File still exists in cache!");
         }
     }
 
