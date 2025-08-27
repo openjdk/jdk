@@ -26,11 +26,11 @@
 #define SHARE_OPTO_REGMASK_HPP
 
 #include "code/vmreg.hpp"
+#include "memory/arena.hpp"
 #include "opto/optoreg.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "memory/arena.hpp"
 
 class LRG;
 
