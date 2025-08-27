@@ -74,6 +74,7 @@
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -799,6 +800,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
+  finish_codecache_marking_cycle();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -848,12 +850,9 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                          size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
 
-  const bool do_clear_all_soft_refs = clear_all_soft_refs ||
-      soft_ref_policy()->should_clear_all_soft_refs();
-
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause(), true);
-  G1FullCollector collector(this, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
+  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -985,9 +984,6 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   if (result != nullptr) {
     return result;
   }
-
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-         "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
@@ -1492,6 +1488,8 @@ jint G1CollectedHeap::initialize() {
   _monitoring_support = new G1MonitoringSupport(this);
 
   _collection_set.initialize(max_num_regions());
+
+  start_new_collection_set();
 
   allocation_failure_injector()->reset();
 
@@ -2799,8 +2797,6 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->stop_incremental_building();
 
   collection_set()->abandon_all_candidates();
-
-  young_regions_cset_group()->clear();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
@@ -3085,6 +3081,8 @@ void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != nullptr, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
@@ -3165,5 +3163,5 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
 void G1CollectedHeap::prepare_group_cardsets_for_scan() {
   young_regions_cardset()->reset_table_scanner_for_groups();
 
-  collection_set()->prepare_groups_for_scan();
+  collection_set()->prepare_for_scan();
 }

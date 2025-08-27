@@ -218,6 +218,7 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
@@ -228,6 +229,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
+  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
@@ -371,6 +373,7 @@ void CompileQueue::delete_all() {
 
   // Iterate over all tasks in the compile queue
   while (current != nullptr) {
+    CompileTask* next = current->next();
     if (!current->is_blocking()) {
       // Non-blocking task. No one is waiting for it, delete it now.
       delete current;
@@ -379,7 +382,7 @@ void CompileQueue::delete_all() {
       // to delete the task. We cannot delete it here, because we do not
       // coordinate with waiters. We will notify the waiters later.
     }
-    current = current->next();
+    current = next;
   }
   _first = nullptr;
   _last = nullptr;
@@ -479,6 +482,7 @@ void CompileQueue::purge_stale_tasks() {
       MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != nullptr; ) {
         CompileTask* next_task = task->next();
+        task->set_next(nullptr);
         CompileTaskWrapper ctw(task); // Frees the task
         task->set_failure_reason("stale task");
         task = next_task;
@@ -504,6 +508,8 @@ void CompileQueue::remove(CompileTask* task) {
     assert(task == _last, "Sanity");
     _last = task->prev();
   }
+  task->set_next(nullptr);
+  task->set_prev(nullptr);
   --_size;
   ++_total_removed;
 }
@@ -1728,17 +1734,22 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   // It is harmless to check this status without the lock, because
   // completion is a stable property.
-  if (!task->is_complete() && is_compilation_disabled_forever()) {
-    // Task is not complete, and we are exiting for compilation shutdown.
-    // The task can still be executed by some compiler thread, therefore
-    // we cannot delete it. This will leave task allocated, which leaks it.
-    // At this (degraded) point, it is less risky to abandon the task,
-    // rather than attempting a more complicated deletion protocol.
+  if (!task->is_complete()) {
+    // Task is not complete, likely because we are exiting for compilation
+    // shutdown. The task can still be reached through the queue, or executed
+    // by some compiler thread. There is no coordination with either MCQ lock
+    // holders or compilers, therefore we cannot delete the task.
+    //
+    // This will leave task allocated, which leaks it. At this (degraded) point,
+    // it is less risky to abandon the task, rather than attempting a more
+    // complicated deletion protocol.
     free_task = false;
   }
 
   if (free_task) {
     assert(task->is_complete(), "Compilation should have completed");
+    assert(task->next() == nullptr && task->prev() == nullptr,
+           "Completed task should not be in the queue");
 
     // By convention, the waiter is responsible for deleting a
     // blocking CompileTask. Since there is only one waiter ever
@@ -1915,6 +1926,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread

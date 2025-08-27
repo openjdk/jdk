@@ -46,6 +46,7 @@ import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
@@ -237,6 +238,23 @@ final class DesktopIntegration extends ShellCustomAction {
         data.put("DEPLOY_BUNDLE_CATEGORY", pkg.menuGroupName());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
                 installedLayout.launchersDirectory().resolve(launcher.executableNameWithSuffix()).toString()));
+        data.put("STARTUP_DIRECTORY", launcher.shortcut()
+                .flatMap(LauncherShortcut::startupDirectory)
+                .map(startupDirectory -> {
+                    switch (startupDirectory) {
+                        case DEFAULT -> {
+                            return (Path)null;
+                        }
+                        case APP_DIR -> {
+                            return installedLayout.appDirectory();
+                        }
+                        default -> {
+                            throw new AssertionError();
+                        }
+                    }
+                }).map(str -> {
+                    return "Path=" + str;
+                }).orElse(null));
 
         return data;
     }
@@ -337,7 +355,7 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).desktopIntegrationDirectory().resolve(fileName);
+        var srcPath = env.asApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         return new InstallableFile(srcPath, installPath);
     }

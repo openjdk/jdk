@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ final class Histogram {
     private static final class LookupKey {
         private Object keys;
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
+        @SuppressWarnings({ "unchecked"})
         public void add(Object o) {
             // One key, fast path
             if (keys == null) {
@@ -58,8 +58,8 @@ final class Histogram {
                 return;
             }
             // Three or more keys
-            if (keys instanceof Set set) {
-                set.add(o);
+            if (keys instanceof Set<?> set) {
+                ((Set<Object>) set).add(o);
                 return;
             }
             // Two keys
