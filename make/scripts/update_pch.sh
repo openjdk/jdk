@@ -66,7 +66,7 @@ sh configure --with-toolchain-type=clang \
              --with-extra-cflags="-ftime-trace"
 
 make clean CONF_NAME="$RUN_NAME"
-make -j hotspot CONF_NAME="$RUN_NAME"
+make hotspot CONF_NAME="$RUN_NAME"
 "$CBA_PATH" --all "./build/$RUN_NAME/hotspot/variant-server/libjvm/objs" \
   "$CBA_OUTPUT"
 
