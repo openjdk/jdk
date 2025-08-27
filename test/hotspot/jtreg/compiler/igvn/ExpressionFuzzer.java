@@ -44,7 +44,9 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
+import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
 
 public class ExpressionFuzzer {
     public static void main(String[] args) {
@@ -66,40 +68,56 @@ public class ExpressionFuzzer {
         // Generate a list of test methods.
         List<TemplateToken> tests = new ArrayList<>();
 
-        // Create a test method that executes the expression, with constant arguments.
-        var withConstantsTemplate = Template.make("expression", (Expression expression) -> {
-            // Create a token: fill the expression with a fixed set of constants.
-            // We then use the same token with the same constants, once compiled and once not compiled.
-            TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
+
+        var bodyTemplate = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> body(
+                """
+                try {
+                """,
+                "return ", expression.asToken(arguments), ";\n",
+                expression.info.exceptions.stream().map(exception ->
+                    "} catch (" + exception + " e) { return e;\n"
+                ).toList(),
+                """
+                } finally {
+                    // Just so that javac is happy if there are no exceptions to catch.
+                }
+                """
+        ));
+
+        var testTemplate = Template.make("expression", (Expression expression) -> {
+            // Fix the arguments for both the compiled and reference method.
+            List<Object> arguments = expression.argumentTypes.stream().map(t -> t.con()).toList();
             return body(
-                let("returnType", expression.returnType),
                 """
                 @Test
                 public static void $primitiveConTest() {
-                    #returnType v0 = ${primitiveConTest}_compiled();
-                    #returnType v1 = ${primitiveConTest}_reference();
+                    Object v0 = ${primitiveConTest}_compiled();
+                    Object v1 = ${primitiveConTest}_reference();
                     Verify.checkEQ(v0, v1);
                 }
 
                 @DontInline
-                public static #returnType ${primitiveConTest}_compiled() {
+                public static Object ${primitiveConTest}_compiled() {
                 """,
-                "return ", expressionToken, ";\n",
+                bodyTemplate.asToken(expression, arguments),
                 """
                 }
 
                 @DontCompile
-                public static #returnType ${primitiveConTest}_reference() {
+                public static Object ${primitiveConTest}_reference() {
                 """,
-                "return ", expressionToken, ";\n",
+                bodyTemplate.asToken(expression, arguments),
                 """
                 }
                 """
             );
         });
 
-        for (Expression operation : Operations.PRIMITIVE_OPERATIONS) {
-            tests.add(withConstantsTemplate.asToken(operation));
+        for (PrimitiveType type : PRIMITIVE_TYPES) {
+            for (int i = 0; i < 10; i++) {
+                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, 10);
+                tests.add(testTemplate.asToken(expression));
+            }
         }
 
         // Create the test class, which runs all tests.
