@@ -12,6 +12,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Hans"/>
 		<territory type="MY"/>
 	</identity>
+	<localeDisplayNames>
+		<territories>
+			<territory type="BN" draft="unconfirmed">汶莱</territory>
+			<territory type="LA" draft="unconfirmed">寮国</territory>
+			<territory type="NZ" draft="unconfirmed">纽西兰</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="islamic" scope="core" draft="unconfirmed">回历</type>
+			<type key="calendar" type="islamic-civil" scope="core" draft="unconfirmed">表格式回历（民用纪元）</type>
+			<type key="calendar" type="islamic-tbla" scope="core" draft="unconfirmed">表格式回历（天文纪元）</type>
+		</types>
+	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
@@ -53,9 +65,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<currencies>
+			<currency type="BND">
+				<displayName draft="unconfirmed">汶莱元</displayName>
+				<displayName count="other" draft="unconfirmed">汶莱元</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">印度尼西亚盾</displayName>
+				<displayName count="other" draft="unconfirmed">印度尼西亚盾</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">寮国基普</displayName>
+				<displayName count="other" draft="unconfirmed">寮国基普</displayName>
+			</currency>
 			<currency type="MYR">
-				<displayName draft="unconfirmed">马来西亚令吉</displayName>
-				<displayName count="other" draft="unconfirmed">马来西亚令吉</displayName>
+				<displayName>马来西亚令吉</displayName>
 			</currency>
 		</currencies>
 	</numbers>

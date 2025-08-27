@@ -11,8 +11,817 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ha"/>
 		<territory type="NE"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af">Afirkanci</language>
+			<language type="prg">Ferusawa</language>
+			<language type="st">Sesotanci</language>
+		</languages>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters type="auxiliary">[áàâ éèê íìî óòô p q {r̃} úùû v x {ʼy}]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O P Q R S T U V W X Y Ƴ Z]</exemplarCharacters>
 	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yy GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{0} 'da' {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{0} 'da' {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">shekara {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">shekaru {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">shekara {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">shekaru {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwata {0} da suka gabata</relativeTimePattern>
+					<relativeTimePattern count="other">kwata {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwata {0} da suka gabata</relativeTimePattern>
+					<relativeTimePattern count="other">kwata {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwata {0} da suka gabata</relativeTimePattern>
+					<relativeTimePattern count="other">kwata {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">wata {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">watanni {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">wata {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">watanni {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">mako {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">makonni {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">mako {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">mako {0} da ya gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">a cikin kwanaki {0}</relativeTimePattern>
+					<relativeTimePattern count="other">a cikin kwanaki {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwana {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">kwanaki {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">a cikin kwanaki {0}</relativeTimePattern>
+					<relativeTimePattern count="other">a cikin kwanaki {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwana {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">kwanaki {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Lahadi {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Lahadi {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Lahadi {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Lahadi {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Lahadi {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Lahadi {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Lahadi {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Lahadi {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Lahadi {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Lahadi {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Litinin {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Litinin {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">Litinin din da ta gabata</relative>
+				<relative type="0">wannan Litinin din</relative>
+				<relative type="1">Litinin mai zuwa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Litinin {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Litinin {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Litinin {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Litinin {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">Litinin din da ta gabata</relative>
+				<relative type="0">wannan Litinin din</relative>
+				<relative type="1">Litinin mai zuwa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Litinin {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Litinin {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Litinin {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Litinin {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Talata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Talata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Talata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Talata {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Talata {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Talata {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Talata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Talata {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Talata {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Talata {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Laraba {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Laraba {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Laraba {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Laraba {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Laraba {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Laraba {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Laraba {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Laraba {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Laraba {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Laraba {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Alhamis {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Alhamis {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Alhamis {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Alhamis {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Alhamis {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Alhamis {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Alhamis {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Alhamis {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Alhamis {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">Alhamis {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Jumaʼa {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Jumaʼa {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Jumaʼa {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Jumaʼa {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Jumaʼa {0} da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">Jumaʼa {0} da suka wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Jumaʼa {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Jumaʼa {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Jumaʼa {0} da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">Jumaʼa {0} da suka wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Asabar {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Asabar {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Asabar {0} da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">Asabar {0} da ta wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Asabar {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Asabar {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Asabar {0} da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">Asabar {0} da suka wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin Asabar {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin Asabar {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Asabar {0} da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">Asabar {0} da suka wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin awa {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin awanni {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">awa {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">awanni {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin awa {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin awanni {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">awa {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">awanni {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin minti {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin mintuna {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">minti {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">mintuna {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin minti {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin mintuna {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">minti {0} da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">mintuna {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin dakika {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin dakiku {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">dakika {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">dakiku {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin dakika {0}</relativeTimePattern>
+					<relativeTimePattern count="other">cikin dakiku {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">dakika {0} da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">dakiku {0} da suka gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="AED">
+				<displayName>Kuɗin Haɗaɗɗiyar Daular Larabawa</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Kuɗin Albania</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Kuɗin Armenia</displayName>
+				<displayName count="one">kuɗin Armenia</displayName>
+				<displayName count="other">Dram na Armeniya</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Kuɗin Angola</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Kuɗin Azerbaijani</displayName>
+				<displayName count="one">kuɗin Azerbaijani</displayName>
+				<displayName count="other">Manat na Azebaijan</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName count="one">taka na ƙasar Bangladesh</displayName>
+				<displayName count="other">Taka na ƙasar Bangladesh</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Kuɗin Bulgeria</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Kuɗin Baharan</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Kuɗin Burundi</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName count="one">ngultrum na ƙasar Bhutan</displayName>
+				<displayName count="other">Ngultrum na ƙasar Bhutan</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Kuɗin Baswana</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Kuɗin Belarus</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Kuɗin Kongo</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Kuɗin Suwizalan</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName count="one">yuwan na ƙasar Sin (na wajen ƙasa)</displayName>
+				<displayName count="other">yuwan na ƙasar Sin (na wajen ƙasa)</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Kuɗin Tsibiran Kap Barde</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Kuɗin Czech</displayName>
+				<displayName count="one">kuɗin Czech</displayName>
+				<displayName count="other">Koruna na Czech</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Kuɗin Jibuti</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Kuɗin Aljeriya</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Fam kin Masar</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Kuɗin Habasha</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>Kuɗin Georgia</displayName>
+				<displayName count="one">kuɗin Georgia</displayName>
+				<displayName count="other">Lari na Georgia</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Kuɗin Gibraltal</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Kuɗin Gambiya</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Kuɗin Guinea</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName count="one">dalar Hong Kong</displayName>
+				<displayName count="other">Dalar Hong Kong</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Kuɗin Croatia</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Kuɗin Hungary</displayName>
+				<displayName count="one">kuɗin Hungary</displayName>
+				<displayName count="other">Forint na Hungary</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName count="one">rupiah na ƙasar Indonesia</displayName>
+				<displayName count="other">Rupiah na ƙasar Indonesia</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Sabbin Kuɗin Israʼila</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Kuɗin Indiya</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName count="one">som na ƙasar Kyrgystani</displayName>
+				<displayName count="other">Som na ƙasar Kyrgystani</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName count="one">riel na ƙasar Cambodia</displayName>
+				<displayName count="other">Riel na ƙasar Cambodia</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Kuɗin Kwamoras</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName count="one">won na ƙasar Koriya ta Arewa</displayName>
+				<displayName count="other">won na ƙasar Koriya ta Arewa</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName count="one">won na Koriya ta Kudu</displayName>
+				<displayName count="other">won na Koriya ta Kudu</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName count="one">tenge na ƙasar Kazakhstan</displayName>
+				<displayName count="other">Tenge na ƙasar Kazkhstan</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Kuɗin Laos</displayName>
+				<displayName count="one">kuɗin Laos</displayName>
+				<displayName count="other">Kip na ƙasar Laos</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Kuɗin Lebanon</displayName>
+				<displayName count="one">kuɗin Lebanon</displayName>
+				<displayName count="other">Fam na Lebanon</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName count="one">rupee na ƙasar Sri Lanka</displayName>
+				<displayName count="other">Rupee na ƙasar Sri Lanka</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>Kuɗin Lesoto</displayName>
+				<displayName count="one">Loti na Lesoto</displayName>
+				<displayName count="other">Kuɗaɗen Lesoto</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Kuɗin Libiya</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Kuɗin Maroko</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Kuɗaɗen Moldova</displayName>
+				<displayName count="one">Kuɗaɗen Moldova</displayName>
+				<displayName count="other">kuɗaɗen Moldova</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Kuɗin Madagaskar</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Kuɗin Myanmar</displayName>
+				<displayName count="one">kuɗin Myanmar</displayName>
+				<displayName count="other">Kyat na ƙasar Myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName count="one">tugrik na Mongoliya</displayName>
+				<displayName count="other">Tugrik na Mongolia</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName count="one">pataca na ƙasar Macao</displayName>
+				<displayName count="other">Pataca na ƙasar Macao</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName>Kuɗin Moritaniya</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Kuɗin Moritus</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Rufiyaa na ɓasar Maldives</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Kuɗin Malawi</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Kuɗin Malaysia</displayName>
+				<displayName count="one">kuɗin Malaysia</displayName>
+				<displayName count="other">Ringgit na ƙasar Malaysia</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName count="one">rupee na Nepal</displayName>
+				<displayName count="other">Rupee na Nepal</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina na ƙasar Papua Sabon Guinea</displayName>
+				<displayName count="one">kina na ƙasar Papua Sabon Guinea</displayName>
+				<displayName count="other">Kina na ƙasar Papua New Guinea</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Kuɗin Philippine</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName count="one">rupee na ƙasar Pakistan</displayName>
+				<displayName count="other">Rupee na ƙasar Pakistan</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Kuɗin Polan</displayName>
+				<displayName count="one">kuɗin Polan</displayName>
+				<displayName count="other">kuɗaɗen Polan</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Kuɗin Romania</displayName>
+				<displayName count="one">kuɗin Romania</displayName>
+				<displayName count="other">Leu na Romania</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName>Kuɗin Ruwanda</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Riyal</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Dalar Tsibirai na Solomon</displayName>
+				<displayName count="one">Dalar Tsibiran Solomon</displayName>
+				<displayName count="other">Dalolin Tsibirai na Solomon</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Kuɗin Saishal</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Fam kin San Helena</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName>Kuɗin Salewo</displayName>
+				<displayName count="one">Leone na Saliyo</displayName>
+				<displayName count="other">Kuɗin Saliyo</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Kuɗin Salewo (1964—2022)</displayName>
+				<displayName count="one">Leone na Saliyo (1964—2022)</displayName>
+				<displayName count="other">Kuɗin Saliyo (1964—2022)</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Kuɗin Sawo Tome da Paransip</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Kuɗin Siriya</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Kuɗin Lilangeni</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName count="one">baht na ƙasar Thailand</displayName>
+				<displayName count="other">Baht na ƙasar Thailand</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName count="one">somoni na ƙasar Tajikistan</displayName>
+				<displayName count="other">Somoni na ƙasar Tajikistan</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName count="one">manat na ƙasar Turkmenistan</displayName>
+				<displayName count="other">Manat na ƙasar Turkmenistan</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Kuɗin Tunisiya</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName count="one">paʻanga na ƙasar Tonga</displayName>
+				<displayName count="other">Paʻanga na ƙasar Tonga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Kuɗin Turkiyya</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName count="one">Sabuwar dalar Taiwan</displayName>
+				<displayName count="other">Sabuwar Dalar Taiwan</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Kudin Ukrainian</displayName>
+				<displayName count="one">kuɗin Ukrain</displayName>
+				<displayName count="other">Kuɗin Ukrain</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Sule Yuganda</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName count="one">som na ƙasar Uzbekistan</displayName>
+				<displayName count="other">Som na ƙasar Uzbekistan</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Kuɗin Vietnam</displayName>
+				<displayName count="one">kuɗin Vietnam</displayName>
+				<displayName count="other">Dong na ƙasar Vietnam</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName count="one">vatu na ƙasar Vanuatu</displayName>
+				<displayName count="other">Vatu da ƙasar Vanuatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName count="one">tala na ƙasar Samoa</displayName>
+				<displayName count="other">Tala na ƙasar Samoa</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName count="one">kuɗin CFP franc</displayName>
+				<displayName count="other">Kuɗin CFP franc</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName count="one">(kuɗin sashe da ba a sani ba)</displayName>
+				<displayName count="other">(Kudin da ba a sani ba)</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Kuɗin Afirka Ta Kudu</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Kuɗin Zambiya</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-quarter">
+				<displayName>kwatoci</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>wat</displayName>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<unitPattern count="one">{0} aya a inci</unitPattern>
+				<unitPattern count="other">{0} ayoyi a inci</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>earth radius</displayName>
+				<unitPattern count="one">earth radius {0}</unitPattern>
+				<unitPattern count="other">earth radius {0}</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>darare</displayName>
+				<unitPattern count="one">dare {0}</unitPattern>
+				<unitPattern count="other">darare {0}</unitPattern>
+				<perUnitPattern>dare {0}</perUnitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="length-centimeter">
+				<unitPattern count="one">sm {0}</unitPattern>
+				<unitPattern count="other">cm {0}</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<perUnitPattern>{0}/ƙf</perUnitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<unitPattern count="one">hsk {0}</unitPattern>
+				<unitPattern count="other">hsk {0}</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="length-centimeter">
+				<unitPattern count="one">cm{0}</unitPattern>
+				<unitPattern count="other">cm{0}</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="one">ƙf{0}</unitPattern>
+				<unitPattern count="other">ƙff{0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">galIm{0}</unitPattern>
+				<unitPattern count="other">galIm{0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>hsk</displayName>
+				<unitPattern count="one">hsk {0}</unitPattern>
+				<unitPattern count="other">hsk {0}</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>darare</displayName>
+				<unitPattern count="one">dare {0}</unitPattern>
+				<unitPattern count="other">darare {0}</unitPattern>
+				<perUnitPattern>dare {0}</perUnitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<personNames>
+		<sampleName item="foreignFull">
+			<nameField type="generation">Jr</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

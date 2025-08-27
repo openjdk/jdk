@@ -4550,9 +4550,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>西非时间</generic>
-					<standard>西非标准时间</standard>
-					<daylight>西非夏令时间</daylight>
+					<standard>西非时间</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4938,6 +4936,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>盖亚那时间</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>夏威夷-阿留申标准时间</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -5521,16 +5524,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="other">¤0万</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 0万</pattern>
 					<pattern type="100000" count="other">¤00万</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 00万</pattern>
 					<pattern type="1000000" count="other">¤000万</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 000万</pattern>
 					<pattern type="10000000" count="other">¤0000万</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 0000万</pattern>
 					<pattern type="100000000" count="other">¤0亿</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 0亿</pattern>
 					<pattern type="1000000000" count="other">¤00亿</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 00亿</pattern>
 					<pattern type="10000000000" count="other">¤000亿</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 000亿</pattern>
 					<pattern type="100000000000" count="other">¤0000亿</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 0000亿</pattern>
 					<pattern type="1000000000000" count="other">¤0兆</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0兆</pattern>
 					<pattern type="10000000000000" count="other">¤00兆</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00兆</pattern>
 					<pattern type="100000000000000" count="other">¤000兆</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000兆</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>

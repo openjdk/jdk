@@ -12,13 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territory type="IN"/>
 	</identity>
 	<localeDisplayNames>
-		<languages>
-			<language type="bn">Bengali</language>
-		</languages>
-		<scripts>
-			<script type="Beng">Bengali</script>
-			<script type="Orya">Oriya</script>
-		</scripts>
 		<types>
 			<type key="numbers" type="beng">Bengali Digits</type>
 			<type key="numbers" type="orya">Oriya Digits</type>
@@ -319,11 +312,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MEEEEd">EEEE, d/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Asia/Hovd">
-				<exemplarCity>Khovd</exemplarCity>
-			</zone>
 			<metazone type="Gulf">
 				<short>
 					<standard>GST</standard>
@@ -341,6 +385,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimalFormatLength>
 				<decimalFormat>
 					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="contributed">0 thousand</pattern>
+					<pattern type="1000" count="other" draft="contributed">0 thousand</pattern>
+					<pattern type="10000" count="one" draft="contributed">00 thousand</pattern>
+					<pattern type="10000" count="other" draft="contributed">00 thousand</pattern>
+					<pattern type="100000" count="one" draft="contributed">0 lakh</pattern>
+					<pattern type="100000" count="other" draft="contributed">0 lakh</pattern>
+					<pattern type="1000000" count="one" draft="contributed">00 lakh</pattern>
+					<pattern type="1000000" count="other" draft="contributed">00 lakh</pattern>
+					<pattern type="10000000" count="one" draft="contributed">0 crore</pattern>
+					<pattern type="10000000" count="other" draft="contributed">0 crore</pattern>
+					<pattern type="100000000" count="one" draft="contributed">00 crore</pattern>
+					<pattern type="100000000" count="other" draft="contributed">00 crore</pattern>
+					<pattern type="1000000000" count="one" draft="contributed">000 crore</pattern>
+					<pattern type="1000000000" count="other" draft="contributed">000 crore</pattern>
+					<pattern type="10000000000" count="one" draft="contributed">0000 crore</pattern>
+					<pattern type="10000000000" count="other" draft="contributed">0000 crore</pattern>
+					<pattern type="100000000000" count="one" draft="contributed">00000 crore</pattern>
+					<pattern type="100000000000" count="other" draft="contributed">00000 crore</pattern>
+					<pattern type="1000000000000" count="one" draft="contributed">0 lakh crore</pattern>
+					<pattern type="1000000000000" count="other" draft="contributed">0 lakh crore</pattern>
+					<pattern type="10000000000000" count="one" draft="contributed">00 lakh crore</pattern>
+					<pattern type="10000000000000" count="other" draft="contributed">00 lakh crore</pattern>
+					<pattern type="100000000000000" count="one" draft="contributed">000 lakh crore</pattern>
+					<pattern type="100000000000000" count="other" draft="contributed">000 lakh crore</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -383,8 +455,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -433,10 +505,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="ANG">
+				<displayName count="one">Netherlands Antillean Guilder</displayName>
+				<displayName count="other">Netherlands Antillean Guilders</displayName>
+			</currency>
 			<currency type="KGS">
 				<displayName>Kyrgyzstani Som</displayName>
-				<displayName count="one">Kyrgyzstani som</displayName>
-				<displayName count="other">Kyrgyzstani soms</displayName>
+				<displayName count="one">Kyrgyzstani Som</displayName>
+				<displayName count="other">Kyrgyzstani Soms</displayName>
 			</currency>
 			<currency type="KZT">
 				<displayName count="one">Kazakhstani Tenge</displayName>
@@ -467,9 +543,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Venezuelan bolívars</displayName>
 			</currency>
 			<currency type="VES">
-				<displayName>VEF</displayName>
-				<displayName count="one">VEF</displayName>
-				<displayName count="other">VEF</displayName>
+				<displayName count="one">Venezuelan Bolívar</displayName>
+				<displayName count="other">Venezuelan Bolívars</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName>Caribbean Guilder</displayName>
+				<displayName count="one">Caribbean Guilder</displayName>
+				<displayName count="other">Caribbean Guilders</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName count="one">Zimbabwean Gold</displayName>
+				<displayName count="other">Zimbabwean Gold</displayName>
 			</currency>
 		</currencies>
 	</numbers>

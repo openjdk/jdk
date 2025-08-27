@@ -10,6 +10,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<version number="$Revision$"/>
 		<language type="sgs"/>
 	</identity>
+	<localeDisplayNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Kalba: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Skripts: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Regijuons: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[aā b cč d eė{ė̄}ē f g h iī j k l m n oō p r sš t uū v zž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[{ch} {dz}{dž}]</exemplarCharacters>

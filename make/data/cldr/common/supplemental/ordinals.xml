@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -101,7 +101,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="few">n % 10 = 3 and n % 100 != 13 @integer 3, 23, 33, 43, 53, 63, 73, 83, 103, 1003, …</pluralRule>
             <pluralRule count="other"> @integer 0, 4~18, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="mr kok kok_Latn">
+        <pluralRules locales="kok kok_Latn mr">
             <pluralRule count="one">n = 1 @integer 1</pluralRule>
             <pluralRule count="two">n = 2,3 @integer 2, 3</pluralRule>
             <pluralRule count="few">n = 4 @integer 4</pluralRule>

@@ -195,6 +195,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SH">Hɛlena</territory>
 			<territory type="SJ">Sífábáàdì àti Jánì Máyɛ̀nì</territory>
 			<territory type="SN">Sɛnɛga</territory>
+			<territory type="SO">Somalia</territory>
 			<territory type="ST">Sao tomi ati piriishipi</territory>
 			<territory type="SV">Ɛɛsáfádò</territory>
 			<territory type="SX">Síntì Mátɛ́ɛ̀nì</territory>
@@ -456,6 +457,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="0" alt="variant">Sáájú ìgbà mímɔ̀</era>
 					</eraNames>
 				</eras>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="h">h a</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -612,6 +661,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">O àná</relative>
 				<relative type="0">O yì</relative>
 				<relative type="1">O tóńbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ní {0} O</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} W tɛ́lɛ̀</relativeTimePattern>
 				</relativeTime>
@@ -650,11 +702,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">Etì àná</relative>
 				<relative type="0">Etì yì</relative>
 				<relative type="1">Et tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Et</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} Et sɛ́yìn</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-narrow">
+				<relative type="-1">F tóko̩já</relative>
+				<relative type="0">F èyí</relative>
+				<relative type="1">F tómbò̩</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} F</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} F tɛ́lɛ̀</relativeTimePattern>
 				</relativeTime>
@@ -663,6 +724,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">Aba tókojá</relative>
 				<relative type="0">Aba èyí</relative>
 				<relative type="1">Aba tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Aba</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} Aba. sɛ́yìn</relativeTimePattern>
 				</relativeTime>
@@ -671,6 +735,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">Ab sɛ́yìn</relative>
 				<relative type="0">Ab èyí</relative>
 				<relative type="1">Ab tónbò</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ab</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} Ab ɛ̀yí</relativeTimePattern>
 				</relativeTime>
@@ -684,6 +751,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second">
 				<displayName>Ìsɛ́jú Ààyá</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>Agbègbè</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -771,9 +841,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Àkókò Ìwɔ̀-Oòrùn Afírikà</generic>
-					<standard>Àkókò Ìwɔ̀-Oòrùn Àfɛnukò Afírikà</standard>
-					<daylight>Àkókò Ìwɔ̀-Oòrùn Ooru Afírikà</daylight>
+					<standard>Àkókò Ìwɔ̀-Oòrùn Afírikà</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -1025,6 +1093,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Gulf">
 				<long>
 					<standard>Àkókò Àfɛnukò Gulf</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Àkókò Àfɛnukò Hawaii-Aleutian</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -1377,6 +1450,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName>Diami ti Awon Orílɛ́ède Arabu</displayName>
@@ -1856,6 +1936,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>sɛ́bì {0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="area-hectare">
+				<displayName>hekita</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>sare</displayName>
+			</unit>
 			<unit type="concentr-item">
 				<displayName>àwɔ́n ohun</displayName>
 			</unit>
@@ -1938,6 +2024,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìdinwɔ̀n ayé</displayName>
 				<unitPattern count="other">{0} ìdinwɔ̀n ayé</unitPattern>
 			</unit>
+			<unit type="length-meter">
+				<displayName>mita</displayName>
+			</unit>
 			<unit type="length-furlong">
 				<displayName>àwɔn fɔ́lɔ́ɔ̀ngì</displayName>
 				<unitPattern count="other">{0} àwɔn fɔ́lɔ́ɔ̀ngì</unitPattern>
@@ -1956,6 +2045,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>mɛtiriki tɔɔnu</displayName>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>lita</displayName>
 			</unit>
 			<unit type="volume-bushel">
 				<displayName>búsɛ́ɛ̀li</displayName>
@@ -2087,6 +2179,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="area-hectare">
+				<displayName>hekita</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>sare</displayName>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ɔd</displayName>
 				<unitPattern count="other">{0} ɔd</unitPattern>
@@ -2101,15 +2199,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-minute">
 				<unitPattern count="other">{0}/ìsh</unitPattern>
 			</unit>
+			<unit type="length-meter">
+				<displayName>mita</displayName>
+			</unit>
 			<unit type="length-fathom">
 				<displayName>fatɔ́</displayName>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lɔ́s</displayName>
 			</unit>
+			<unit type="volume-liter">
+				<displayName>lita</displayName>
+			</unit>
 			<unit type="volume-bushel">
 				<displayName>búsɛ́li</displayName>
 				<unitPattern count="other">{0}búsɛ́ɛ̀li</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ife</displayName>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ìmɔ́lɛ̀</displayName>
@@ -2122,6 +2229,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 	</units>
+	<listPatterns>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>Bɛ́ɛ̀ni :N</yesstr>

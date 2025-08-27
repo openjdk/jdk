@@ -20,7 +20,6 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="brah" type="numeric" digits="&#x11066;&#x11067;&#x11068;&#x11069;&#x1106A;&#x1106B;&#x1106C;&#x1106D;&#x1106E;&#x1106F;"/>
         <numberingSystem id="cakm" type="numeric" digits="&#x11136;&#x11137;&#x11138;&#x11139;&#x1113A;&#x1113B;&#x1113C;&#x1113D;&#x1113E;&#x1113F;"/>
         <numberingSystem id="cham" type="numeric" digits="꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙"/>
-        <numberingSystem id="chis" type="numeric" digits="&#x16DA0;&#x16DA1;&#x16DA2;&#x16DA3;&#x16DA4;&#x16DA5;&#x16DA6;&#x16DA7;&#x16DA8;&#x16DA9;"/>
         <numberingSystem id="cyrl" type="algorithmic" rules="cyrillic-lower"/>
         <numberingSystem id="deva" type="numeric" digits="०१२३४५६७८९"/>
         <numberingSystem id="diak" type="numeric" digits="&#x11950;&#x11951;&#x11952;&#x11953;&#x11954;&#x11955;&#x11956;&#x11957;&#x11958;&#x11959;"/>

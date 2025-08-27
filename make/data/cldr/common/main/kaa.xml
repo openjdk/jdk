@@ -339,6 +339,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">григориан календарь</type>
+			<type key="calendar" type="gregorian" scope="core" draft="unconfirmed">григориан</type>
 			<type key="calendar" type="islamic-civil">кестели ҳижрий календарь</type>
 			<type key="calendar" type="islamic-tbla">кестели ҳижрий календарь (астрономиялық дәўир)</type>
 			<type key="calendar" type="iso8601">ISO-8601 календары</type>
@@ -622,9 +623,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>ай</displayName>
-				<relative type="-1">өткен ай</relative>
-				<relative type="0">усы ай</relative>
-				<relative type="1">кейинги ай</relative>
 			</field>
 			<field type="month-narrow">
 				<displayName>ай</displayName>
@@ -644,14 +642,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">өткен ҳәп.</relative>
 				<relative type="0">усы ҳәп.</relative>
 				<relative type="1">кейинги ҳәп.</relative>
-				<relativePeriod>{0}-ҳәпте</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>ҳәп</displayName>
 				<relative type="-1">өтк. ҳәп.</relative>
 				<relative type="0">усы ҳәп.</relative>
 				<relative type="1">кей. ҳәп.</relative>
-				<relativePeriod>{0}-ҳәпте</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>күн</displayName>
@@ -661,15 +657,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>күн</displayName>
-				<relative type="-1">кеше</relative>
-				<relative type="0">бүгин</relative>
-				<relative type="1">ертең</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName>күн</displayName>
-				<relative type="-1">кеше</relative>
-				<relative type="0">бүгин</relative>
-				<relative type="1">ертең</relative>
 			</field>
 			<field type="weekday">
 				<displayName>ҳәпте күни</displayName>
@@ -708,5 +698,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ўақыт зонасы</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">Белгисиз орын</exemplarCity>
+			</zone>
+		</timeZoneNames>
 	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<nan draft="unconfirmed">сан емес</nan>
+		</symbols>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} ҳәм {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ҳәм {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ямаса {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} ҳәм {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ҳәм {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 </ldml>

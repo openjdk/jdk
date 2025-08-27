@@ -214,12 +214,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">E, y/MM/dd – E, y/MM/dd G</greatestDifference>
 							<greatestDifference id="y">E, y/MM/dd – E, y/MM/dd G</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
 							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
@@ -425,13 +419,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>∅∅∅</generic>
-					<standard>∅∅∅</standard>
-					<daylight>∅∅∅</daylight>
-				</short>
-			</zone>
 			<metazone type="Alaska">
 				<short>
 					<generic>∅∅∅</generic>
@@ -472,6 +459,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>∅∅∅</generic>
 					<standard>∅∅∅</standard>
 					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Hawaii">
+				<short>
+					<standard>∅∅∅</standard>
 				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

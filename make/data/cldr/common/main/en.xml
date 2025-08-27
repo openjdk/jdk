@@ -745,7 +745,6 @@ annotations.
 			<script type="Cari">Carian</script>
 			<script type="Cham">Cham</script>
 			<script type="Cher">Cherokee</script>
-			<script type="Chis">Chisoi</script>
 			<script type="Chrs">Chorasmian</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Coptic</script>
@@ -1386,9 +1385,9 @@ annotations.
 			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Calendar (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">Gregorian Calendar (Year First)</type>
-			<type key="calendar" type="iso8601" alt="variant">ISO 8601 Order</type>
-			<type key="calendar" type="iso8601" scope="core">Gregorian YMD</type>
+			<type key="calendar" type="iso8601">Gregorian Calendar (ISO 8601 Weeks)</type>
+			<type key="calendar" type="iso8601" alt="variant">ISO 8601 Weeks</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Japanese Calendar</type>
 			<type key="calendar" type="japanese" scope="core">Japanese</type>
 			<type key="calendar" type="persian">Persian Calendar</type>
@@ -1623,7 +1622,6 @@ annotations.
 			<type key="numbers" type="brah">Brahmi Digits</type>
 			<type key="numbers" type="cakm">Chakma Digits</type>
 			<type key="numbers" type="cham">Cham Digits</type>
-			<type key="numbers" type="chis">Chisoi Digits</type>
 			<type key="numbers" type="cyrl">Cyrillic Numerals</type>
 			<type key="numbers" type="deva">Devanagari Digits</type>
 			<type key="numbers" type="diak">Dives Akuru Digits</type>
@@ -1977,7 +1975,6 @@ annotations.
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Eh">E h a</dateFormatItem>
 						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
-						<dateFormatItem id="EH">E HH'h'</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1993,7 +1990,7 @@ annotations.
 						<dateFormatItem id="GyMMMMEd">E, MMMM d, r(U)</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="h" alt="ascii">h a</dateFormatItem>
-						<dateFormatItem id="H">HH'h'</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hm" alt="ascii">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
@@ -2048,7 +2045,7 @@ annotations.
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH'h'</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -2073,7 +2070,7 @@ annotations.
 							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH'h' v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -2219,7 +2216,6 @@ annotations.
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Eh">E h a</dateFormatItem>
 						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
-						<dateFormatItem id="EH">E HH'h'</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2235,7 +2231,7 @@ annotations.
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="h" alt="ascii">h a</dateFormatItem>
-						<dateFormatItem id="H">HH'h'</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hm" alt="ascii">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
@@ -2335,7 +2331,7 @@ annotations.
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH'h'</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -2360,7 +2356,7 @@ annotations.
 							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH'h' v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -2834,7 +2830,6 @@ annotations.
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Eh">E h a</dateFormatItem>
 						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
-						<dateFormatItem id="EH">E HH'h'</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2850,7 +2845,7 @@ annotations.
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="h" alt="ascii">h a</dateFormatItem>
-						<dateFormatItem id="H">HH'h'</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hm" alt="ascii">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
@@ -2959,7 +2954,7 @@ annotations.
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH'h'</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -2984,7 +2979,7 @@ annotations.
 							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH'h' v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -3396,110 +3391,6 @@ annotations.
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="iso8601">
-				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="relative">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="relative">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="relative">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="relative">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBh">E h B</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Eh">E h a</dateFormatItem>
-						<dateFormatItem id="EH">E HH'h'</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyM">G y-MM</dateFormatItem>
-						<dateFormatItem id="GyMd">G y-MM-dd</dateFormatItem>
-						<dateFormatItem id="GyMEd">G y-MM-dd, E</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH'h'</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
-						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
-						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMMM 'week' W</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMMM 'week' W</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">y-MM</dateFormatItem>
-						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMEd">y-MM-dd, E</dateFormatItem>
-						<dateFormatItem id="yMMM">y MMM</dateFormatItem>
-						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
-						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
-						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
-						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
-						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="one">Y 'week' w</dateFormatItem>
-						<dateFormatItem id="yw" count="other">Y 'week' w</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
@@ -3546,7 +3437,7 @@ annotations.
 						<era type="40">Anna</era>
 						<era type="41">Tenroku</era>
 						<era type="42">Ten’en</era>
-						<era type="43">Jōgen</era>
+						<era type="43">Jōgen (43)</era>
 						<era type="44">Tengen</era>
 						<era type="45">Eikan</era>
 						<era type="46">Kanna</era>
@@ -3564,7 +3455,7 @@ annotations.
 						<era type="58">Chōryaku</era>
 						<era type="59">Chōkyū</era>
 						<era type="60">Kantoku</era>
-						<era type="61">Eishō</era>
+						<era type="61">Eishō (61)</era>
 						<era type="62">Tengi</era>
 						<era type="63">Kōhei</era>
 						<era type="64">Jiryaku</era>
@@ -3577,7 +3468,7 @@ annotations.
 						<era type="71">Kahō</era>
 						<era type="72">Eichō</era>
 						<era type="73">Jōtoku</era>
-						<era type="74">Kōwa</era>
+						<era type="74">Kōwa (74)</era>
 						<era type="75">Chōji</era>
 						<era type="76">Kajō</era>
 						<era type="77">Tennin</era>
@@ -3587,11 +3478,11 @@ annotations.
 						<era type="81">Hōan</era>
 						<era type="82">Tenji</era>
 						<era type="83">Daiji</era>
-						<era type="84">Tenshō</era>
+						<era type="84">Tenshō (84)</era>
 						<era type="85">Chōshō</era>
 						<era type="86">Hōen</era>
 						<era type="87">Eiji</era>
-						<era type="88">Kōji</era>
+						<era type="88">Kōji (88)</era>
 						<era type="89">Ten’yō</era>
 						<era type="90">Kyūan</era>
 						<era type="91">Ninpei</era>
@@ -3620,7 +3511,7 @@ annotations.
 						<era type="114">Kenryaku</era>
 						<era type="115">Kempo</era>
 						<era type="116">Jōkyū</era>
-						<era type="117">Jōō</era>
+						<era type="117">Jōō (117)</era>
 						<era type="118">Gennin</era>
 						<era type="119">Karoku</era>
 						<era type="120">Antei</era>
@@ -3649,12 +3540,12 @@ annotations.
 						<era type="143">Kengen</era>
 						<era type="144">Kagen</era>
 						<era type="145">Tokuji</era>
-						<era type="146">Enkyō</era>
+						<era type="146">Enkyō (146)</era>
 						<era type="147">Ōchō</era>
-						<era type="148">Shōwa</era>
+						<era type="148">Shōwa (148)</era>
 						<era type="149">Bunpō</era>
 						<era type="150">Gen’ō</era>
-						<era type="151">Genkō</era>
+						<era type="151">Genkō (151)</era>
 						<era type="152">Shōchū</era>
 						<era type="153">Karyaku</era>
 						<era type="154">Gentoku</era>
@@ -4760,13 +4651,6 @@ annotations.
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
@@ -4913,9 +4797,7 @@ annotations.
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>West Africa Time</generic>
-					<standard>West Africa Standard Time</standard>
-					<daylight>West Africa Summer Time</daylight>
+					<standard>West Africa Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -5342,6 +5224,14 @@ annotations.
 				<long>
 					<standard>Guyana Time</standard>
 				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleutian Standard Time</standard>
+				</long>
+				<short>
+					<standard>HST</standard>
+				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>

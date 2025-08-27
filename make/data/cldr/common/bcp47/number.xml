@@ -22,7 +22,6 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="brah" description="Brahmi digits" since="21"/>
             <type name="cakm" description="Chakma digits" since="21"/>
             <type name="cham" description="Cham digits" since="21"/>
-            <type name="chis" description="Chisoi digits" since="48"/>
             <type name="cyrl" description="Cyrillic numerals — algorithmic" since="28"/>
             <type name="deva" description="Devanagari digits"/>
             <type name="diak" description="Dives Akuru digits" since="36.1"/>

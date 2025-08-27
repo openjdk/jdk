@@ -1144,7 +1144,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Cari" to="xcr_Cari_TR"/>		<!--?‧Carian‧?	➡ Carian‧Carian‧Türkiye-->
 		<likelySubtag from="und_Cham" to="cjm_Cham_VN"/>		<!--?‧Cham‧?	➡ Eastern Cham‧Cham‧Vietnam-->
 		<likelySubtag from="und_Cher" to="chr_Cher_US"/>		<!--?‧Cherokee‧?	➡ Cherokee‧Cherokee‧United States-->
-		<likelySubtag from="und_Chis" to="kyw_Chis_IN"/>		<!--?‧Chisoi‧?	➡ Kudmali‧Chisoi‧India-->
 		<likelySubtag from="und_Chrs" to="xco_Chrs_UZ"/>		<!--?‧Chorasmian‧?	➡ Chorasmian‧Chorasmian‧Uzbekistan-->
 		<likelySubtag from="und_Copt" to="cop_Copt_EG"/>		<!--?‧Coptic‧?	➡ Coptic‧Coptic‧Egypt-->
 		<likelySubtag from="und_Cpmn" to="und_Cpmn_CY"/>		<!--?‧Cypro-Minoan‧?	➡ ?‧Cypro-Minoan‧Cyprus-->
