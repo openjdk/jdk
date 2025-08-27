@@ -33,6 +33,7 @@
 package template_framework.tests;
 
 import java.util.List;
+import java.util.Set;
 
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
@@ -78,13 +79,12 @@ public class TestExpression {
         testAsToken();
         testNest();
         testNestRandomly();
-        // TODO: add some: info
+        testInfo();
 
         // The following tests should all fail, with an expected exception and message.
         expectIllegalArgumentException(() -> testFailingAsToken1(), "Wrong number of arguments: expected: 2 but got: 1");
         expectIllegalArgumentException(() -> testFailingAsToken2(), "Wrong number of arguments: expected: 2 but got: 3");
         expectIllegalArgumentException(() -> testFailingNest1(), "Cannot nest expressions because of mismatched types.");
-        // TODO: add some
     }
 
     public static void testAsToken() {
@@ -180,7 +180,7 @@ public class TestExpression {
         Expression e1ey = e1.nestRandomly(List.of(e3, e3));
 
         // 5-deep nesting of e1
-        Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e2), 5);
+        Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e3), 5);
         // Alternating pattern
         Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5);
 
@@ -205,13 +205,13 @@ public class TestExpression {
             xxExpression["[(", MyTypeA, ")]"]yy
             xxExpression["[<", MyTypeA, ">]"]yy
             xxExpression["[", MyTypeA, "]"]yy
-            xxExpression["[[(([", MyTypeA, "]))]]"]yy
+            xxExpression["[[[[[", MyTypeA, "]]]]]"]yy
             xxExpression["[{[{[", MyTypeB, "]}]}]"]yy
             xx[(a)]yy
             xx[(a)]yy
             xx[<a>]yy
             xx[a]yy
-            xx[[(([a]))]]yy
+            xx[[[[[a]]]]]yy
             xx[{[{[a]}]}]yy
             """;
         String code = template.render();
@@ -222,6 +222,40 @@ public class TestExpression {
         Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
         Expression e2 = Expression.make(myTypeB, "[", myTypeA, "]");
         Expression e1e2 = e1.nest(0, e2);
+    }
+
+    public static void testInfo() {
+        Expression e1 = Expression.make(myTypeA, "[", myTypeA, "]");
+        Expression e2 = Expression.make(myTypeA, "(", myTypeA, ")");
+        Expression e3 = Expression.make(myTypeA, "<", myTypeA, ">", new Expression.Info().withExceptions(Set.of("E1")));
+        Expression e4 = Expression.make(myTypeA, "+", myTypeA, "-", new Expression.Info().withExceptions(Set.of("E2")));
+        Expression e5 = Expression.make(myTypeA, "x", myTypeA, "y", new Expression.Info().withNondeterministicResult());
+        Expression e6 = Expression.make(myTypeA, "u", myTypeA, "v", new Expression.Info().withNondeterministicResult());
+        checkInfo(e1, Set.of(), true);
+        checkInfo(e2, Set.of(), true);
+        checkInfo(e3, Set.of("E1"), true);
+        checkInfo(e4, Set.of("E2"), true);
+        checkInfo(e1.nest(0, e2), Set.of(), true);
+        checkInfo(e2.nest(0, e1), Set.of(), true);
+        checkInfo(e1.nest(0, e3), Set.of("E1"), true);
+        checkInfo(e3.nest(0, e1), Set.of("E1"), true);
+        checkInfo(e3.nest(0, e4), Set.of("E1", "E2"), true);
+        checkInfo(e4.nest(0, e3), Set.of("E1", "E2"), true);
+        checkInfo(e5, Set.of(), false);
+        checkInfo(e6, Set.of(), false);
+        checkInfo(e1.nest(0, e5), Set.of(), false);
+        checkInfo(e5.nest(0, e1), Set.of(), false);
+        checkInfo(e5.nest(0, e6), Set.of(), false);
+        checkInfo(e4.nest(0, e3).nest(0, e5), Set.of("E1", "E2"), false);
+        checkInfo(e5.nest(0, e4).nest(0, e3), Set.of("E1", "E2"), false);
+        checkInfo(e3.nest(0, e5).nest(0, e4), Set.of("E1", "E2"), false);
+    }
+
+    public static void checkInfo(Expression e, Set<String> exceptions, boolean isResultDeterministic) {
+        if (!e.info.exceptions.equals(exceptions) ||
+            e.info.isResultDeterministic != isResultDeterministic) {
+            throw new RuntimeException("Info not as expected.");
+        }
     }
 
     public static void checkEQ(String code, String expected) {
