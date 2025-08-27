@@ -28,6 +28,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -149,6 +150,10 @@ double G1Analytics::predict_zero_bounded(G1PhaseDependentSeq const* seq, bool fo
 
 int G1Analytics::num_alloc_rate_ms() const {
   return _alloc_rate_ms_seq.num();
+}
+
+double G1Analytics::gc_cpu_time_ms() const {
+  return (double)CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_MILLISEC;
 }
 
 void G1Analytics::report_concurrent_mark_remark_times_ms(double ms) {

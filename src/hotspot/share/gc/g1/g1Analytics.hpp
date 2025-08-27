@@ -134,13 +134,15 @@ public:
     _gc_cpu_time_at_pause_end_ms = ms;
   }
 
-  double gc_cpu_time_pause_end_ms() const {
+  double gc_cpu_time_at_pause_end_ms() const {
     return _gc_cpu_time_at_pause_end_ms;
   }
 
   void set_concurrent_gc_cpu_time_ms(double ms) {
     _concurrent_gc_cpu_time_ms = ms;
   }
+
+  double gc_cpu_time_ms() const;
 
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
