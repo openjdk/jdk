@@ -549,6 +549,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
   char* aligned_heap_base_min_address = align_up((char*)HeapBaseMinAddress, alignment);
+  assert(aligned_heap_base_min_address != 0,"Should not be 0");
   size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > (char*)OopEncodingHeapMax) ?
     noaccess_prefix_size : 0;
 

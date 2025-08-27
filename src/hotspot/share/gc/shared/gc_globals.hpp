@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,6 +539,7 @@
                                                                             \
   product_pd(size_t, HeapBaseMinAddress,                                    \
           "OS specific low limit for heap base address")                    \
+          range(64 * K, max_uintx)                                          \
           constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, PretenureSizeThreshold, 0,                                \
