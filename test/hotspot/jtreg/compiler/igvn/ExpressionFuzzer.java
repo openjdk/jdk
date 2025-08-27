@@ -68,7 +68,6 @@ public class ExpressionFuzzer {
         // Generate a list of test methods.
         List<TemplateToken> tests = new ArrayList<>();
 
-
         var bodyTemplate = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> body(
                 """
                 try {
@@ -87,6 +86,14 @@ public class ExpressionFuzzer {
         var testTemplate = Template.make("expression", (Expression expression) -> {
             // Fix the arguments for both the compiled and reference method.
             List<Object> arguments = expression.argumentTypes.stream().map(t -> t.con()).toList();
+            // TODO: fix with Values
+            // We need to have a way to get values with type constraints
+            // And we need to "load" them once in compiled and once in reference
+            // Could do mix of method args, fields and constants.
+            // And even computations in the method? Not sure
+            // Args and fields can then be "constrained" in the method before use.
+            // And the result should be returned, but also some "checksum" to
+            // detect range and bits.
             return body(
                 """
                 @Test
@@ -115,6 +122,7 @@ public class ExpressionFuzzer {
 
         for (PrimitiveType type : PRIMITIVE_TYPES) {
             for (int i = 0; i < 10; i++) {
+                // TODO: have a range of depths?
                 Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, 10);
                 tests.add(testTemplate.asToken(expression));
             }
