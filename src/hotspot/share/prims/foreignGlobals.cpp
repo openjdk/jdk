@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "foreignGlobals.hpp"
 #include "classfile/javaClasses.hpp"
+#include "foreignGlobals.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
