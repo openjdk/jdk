@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,38 @@ public:
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
 
+  // Notes on copy constructor, copy assignment operator, and copy_from().
+  // These are necessary for generating deterministic CDS archives.
+  //
+  // We have some unused padding on 64-bit platforms (4 bytes at the tail end).
+  //
+  // When ResolvedFieldEntries in a ConstantPoolCache are allocated from the metaspace,
+  // their entire content (including the padding) is filled with zeros. They are
+  // then initialized with initialize_resolved_entries_array() in cpCache.cpp from a
+  // GrowableArray.
+  //
+  // The GrowableArray is initialized in rewriter.cpp, using ResolvedFieldEntries that
+  // are originally allocated from the C++ stack. Functions like GrowableArray::expand_to()
+  // will also allocate ResolvedFieldEntries from the stack. These may have random bits
+  // in the padding as the C++ compiler is allowed to leave the padding in uninitialized
+  // states.
+  //
+  // If we use the default copy constructor and/or default copy assignment operator,
+  // the random padding will be copied into the GrowableArray, from there
+  // to the ConstantPoolCache, and eventually to the CDS archive. As a result, the
+  // CDS archive will contain random bits, causing failures in
+  // test/hotspot/jtreg/runtime/cds/DeterministicDump.java (usually on Windows).
+  //
+  // By using copy_from(), we can prevent the random padding from being copied,
+  // ensuring that the ResolvedFieldEntries in a ConstantPoolCache (and thus the
+  // CDS archive) will have all zeros in the padding.
+
+  // Copy constructor
   ResolvedFieldEntry(const ResolvedFieldEntry& other) {
     copy_from(other);
   }
 
+  // Copy assignment operator
   ResolvedFieldEntry& operator=(const ResolvedFieldEntry& other) {
     copy_from(other);
     return *this;

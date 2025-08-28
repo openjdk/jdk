@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ class ResolvedIndyEntry {
   u1 _flags;                     // Flags: [0000|00|has_appendix|resolution_failed]
 
 public:
+  // The copy_from() pattern in resolvedFieldEntry.hpp is not necessary
+  // as we have no unused padding (on 32- or 64-bit platforms).
+
   ResolvedIndyEntry() :
     _method(nullptr),
     _resolved_references_index(0),
