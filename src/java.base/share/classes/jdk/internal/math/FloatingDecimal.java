@@ -46,7 +46,7 @@ public class FloatingDecimal {
     private static final int    MAX_SMALL_BIN_EXP = 62;
     private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
     private static final int    MAX_DECIMAL_DIGITS = 15;  // max{n : 10^n <= 2^P}
-    private static final int    FLOG_10_MAX_LONG = 18;  // floor(log_10(Long.MAX_VALUE))
+    private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
     private static final int    SINGLE_EXP_SHIFT  = FloatConsts.SIGNIFICAND_WIDTH - 1;
     private static final int    SINGLE_FRACT_HOB  = 1 << SINGLE_EXP_SHIFT;
@@ -893,18 +893,25 @@ public class FloatingDecimal {
         }
     }
 
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NOT_A_NUMBER  = new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_ZERO = new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_ZERO = new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
+    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_INFINITY =
+            new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_INFINITY =
+            new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NOT_A_NUMBER  =
+            new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
+    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_ZERO =
+            new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_ZERO =
+            new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
 
     /**
      * A buffered implementation of {@link ASCIIToBinaryConverter}.
      *<p>
      * The mathematical value x of an instance is
-     *      [+-] 0.d_1 ... d_n 10^e
-     * where d_i = d[i-1] - '0', n = d.length, and isNegative denotes the sign.
+     *      ±0.d_1...d_n 10^e
+     * where d_i = d[i-1] - '0' (0 < n ≤ d.length) is the i-th digit.
+     * isNegative denotes the - sign.
+     * Further, it is assumed that d_1 > 0.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
         private final boolean isNegative;
@@ -919,7 +926,7 @@ public class FloatingDecimal {
             this.n = n;
         }
 
-        /* When f < 10^19 return it as an unsigned long. */
+        /* When n ≤ 19, return the decimal in d as an unsigned long. */
         private long toLong(int n) {
             long f = 0;
             for (int i = 0; i < n; ++i) {
@@ -942,28 +949,43 @@ public class FloatingDecimal {
                 return isNegative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
             }
             /*
-             * Note that for doubles, readJavaFormatString() ensures
-             * d_1 != 0, d_n != 0, 0 < n <= 769, so ep does not overflow.
-             *
              * Attempt some fast paths before resorting to heavier lifting work.
              * Here, let P = Double.PRECISION = 53.
              *
-             * Below, f is a (signed) long, thus safely require n <= 18.
+             * Below, f is a (signed) long, thus require n ≤ 18.
              * In fact, not all f values fit in a (signed) long when n > 18.
+             *
+             * However, when n = 19 then d fits in an unsigned long.
+             * The method highPrecisionDoubleValue() can deal with them.
+             */
+            int n = this.n;
+            if (n > FLOG_10_MAX_LONG + 1) {
+                /*
+                 * n > 19 is too large for both this method's fast paths and
+                 * for highPrecisionDoubleValue().
+                 */
+                return fullPrecisionDoubleValue();  // n is too large
+            }
+            /*
+             * Note that for doubles, readJavaFormatString() ensures
+             * d_1 > 0, d_n > 0, 0 < n ≤ 769.
+             * The other invoker of this method is parseDoubleSignlessDigits()
+             * with a significantly smaller 0 < n ≤ 26.
+             * Hence, ep does not overflow.
              *
              * When ep < -22 neither 10^ep nor 10^(-ep) are exact doubles.
              * Thus, the expressions f 10^ep as well as f / 10^(-ep) could
              * incur 2 or more rounding errors when double arithmetic is used.
              */
-            int n = this.n;
+            long f = toLong(n);  // 0 < f < 10^19 when considered unsigned long
             int ep = e - n;
-            if (n > FLOG_10_MAX_LONG || -MAX_SMALL_TEN > ep) {
-                return slowDoubleValue();
+            if (n == FLOG_10_MAX_LONG + 1 || -MAX_SMALL_TEN > ep) {
+                return highPrecisionDoubleValue(f);
             }
-            long f = toLong(n);  // 0 < f < 10^18
             /*
-             * If 0 < ep & n + ep <= 18 then |x| = f 10^ep < 10^n 10^ep <= 10^18.
-             * Thus, |x| = f 10^ep fits in a long as well.
+             * Here we have n ≤ 18, hence f < 10^18.
+             * If 0 < ep & n + ep ≤ 18 then |x| = f 10^ep < 10^n 10^ep ≤ 10^18.
+             * Thus, |x| = (f 10^ep) 10^0 fits in a long as well.
              */
             if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
                 /* 0 < ep < 18, hence the arg to pow10() is safe. */
@@ -974,56 +996,57 @@ public class FloatingDecimal {
             if (ep == 0) {
                 /*
                  * While f might not be an exact double, v is correctly rounded.
-                 * This case includes precisely all x values that is are
-                 * mathematical integers and that meet |x| < 10^18.
+                 * This case includes precisely all x values that are
+                 * integers meeting |x| < 10^18.
                  */
                 return isNegative ? -v : v;
             }
 
             /*
-             * Here -22 <= ep.
+             * Here -22 ≤ ep.
              * Since f < 10^18, f is an exact double iff (long) v == f holds.
              *
              * If f is not an exact double, resort to higher precision arithmetic.
              *
-             * Otherwise, if ep <= 22, then f 10^ep incurs at most one
+             * Otherwise, if ep ≤ 22, then f 10^ep incurs at most one
              * rounding error when computed in double arithmetic.
              */
             boolean isExact = (long) v == f;
             if (isExact && ep <= MAX_SMALL_TEN) {
                 /*
-                 * Since -22 <= ep <= 22, 10^|ep| is an exact double.
+                 * Since -22 ≤ ep ≤ 22, 10^|ep| is an exact double.
                  * The product or quotient below operate on exact doubles,
                  * so the result is subject to at most one rounding error.
                  */
-                v = ep > 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
+                v = ep >= 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
                 return isNegative ? -v : v;
             }
 
             /*
-             * Here, f is not an exact double or ep > 22.
-             * If f is not an exact double, resort to higher precision arithmetic.
+             * Here, f < 10^18 is not an exact double or ep > 22.
+             * If f is not an exact double, resort to high precision arithmetic.
              *
              * Otherwise, ep > 22.
-             * When n <= 15 let ef = 15 - n.
+             * When n ≤ 15 let ef = 15 - n.
              * Then f 10^ef < 10^15 < 2^P, so f 10^ef is an exact double.
-             * When n <= 16 and d_1 < 9 let ef = 16 - n.
+             * When n ≤ 16 and d_1 < 9 let ef = 16 - n.
              * Then f 10^ef < 9 10^15 < 2^P, thus f 10^ef is an exact double.
              * Otherwise, let ef be negative.
              *
-             * Thus, when ef >= 0 and ep - ef <= 22 we know that
+             * Thus, when ef ≥ 0 and ep - ef ≤ 22 we know that
              * f 10^ep = (f 10^ef) 10^(ep-ef), with (f 10^ef) and 10^(ep-ef)
              * both exact doubles.
              */
             if (isExact) {  // v and f are mathematically equal.
-                int ef = (d[0] != '9'
+                int ef = (d[0] < '9'
                         ? MAX_DECIMAL_DIGITS + 1
                         : MAX_DECIMAL_DIGITS) - n;
                 /*
-                 * Examples are
-                 *      for ef >= 0 & ep - ef <= MAX_SMALL_TEN take 8.9e37
-                 *      for ef >= 0 & ep - ef > MAX_SMALL_TEN take 9.1e37
-                 *      for ef < 0 take 72057594037927936e23 = 2^(P+3) 10^23
+                 * Test cases are:
+                 *      for ef ≥ 0 & ep - ef ≤ 22 take x = .89e38
+                 *      for ef ≥ 0 & ep - ef > 22 take x = .91e38
+                 *      for ef < 0 take x = .72057594037927936e40 = 2^(P+3) 10^23
+                 * Only the 1st case is handled here.
                  */
                 if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {
                     /* The left associativity of * is essential here! */
@@ -1032,17 +1055,24 @@ public class FloatingDecimal {
                 }
             }
 
-            /* For now use higher precision arithmetic. */
-            return slowDoubleValue();
+            return highPrecisionDoubleValue(f);
+        }
+
+        private double highPrecisionDoubleValue(long f) {
+            /*
+             * TODO add fast paths when 0 < f < 10^19 considered as unsigned long.
+             *  For now just resort to full precision.
+             */
+            return fullPrecisionDoubleValue();
         }
 
         /*
          * Assumes
-         *      0 < n <= 769
-         *      d_1 != 0, d_n != 0
+         *      0 < n ≤ 769
+         *      d_1 > 0, d_n > 0
          *      E_THR_Z[BINARY_64_IX] < e < E_THR_I[BINARY_64_IX]
          */
-        private double slowDoubleValue() {
+        private double fullPrecisionDoubleValue() {
             int n = this.n;
             int kDigits = Math.min(n, MAX_DECIMAL_DIGITS + 1);
 
@@ -1313,7 +1343,7 @@ public class FloatingDecimal {
             }
             /*
              * Note that for doubles, readJavaFormatString() ensures
-             * d_1 != 0, d_n != 0, 0 < n <= 114, so ep does not overflow.
+             * d_1 > 0, d_n > 0, 0 < n ≤ 114, so exp does not overflow.
              */
             int n = this.n;
             int kDigits = Math.min(n, SINGLE_MAX_DECIMAL_DIGITS + 1);
@@ -2197,24 +2227,14 @@ public class FloatingDecimal {
             // 237,
     };
 
-    @Stable
-    private static final int[] W = {
-            5,
-            FloatToDecimal.W,
-            DoubleToDecimal.W,
-//            (1 << 4 + BINARY_128_IX) - P[BINARY_128_IX],
-//            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
-    };
-
     /* Minimum exponent in the c 2^q representation. */
     @Stable
     private static final int[] Q_MIN = {
             -24,  // Float16ToDecimal.Q_MIN,
             FloatToDecimal.Q_MIN,
             DoubleToDecimal.Q_MIN,
-            // TODO magic constants here
-//            QP_MIN[BINARY_128_IX] - P[BINARY_128_IX],
-//            QP_MIN[BINARY_256_IX] - P[BINARY_256_IX],
+//            -16_494,
+//            -262_378,
     };
 
     /* Minimum exponent in the m 2^qp representation. */
