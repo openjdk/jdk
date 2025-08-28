@@ -37,7 +37,7 @@ import java.util.Objects;
  * This immutable class specifies the set of parameters used with a {@code Cipher} for the
  * <a href="https://www.rfc-editor.org/info/rfc9180">Hybrid Public Key Encryption</a>
  * (HPKE) algorithm. HPKE is a public key encryption scheme for encrypting
- * arbitrary-sized plaintexts with a receiver's public key. It combines a key
+ * arbitrary-sized plaintexts with a recipient's public key. It combines a key
  * encapsulation mechanism (KEM), a key derivation function (KDF), and an
  * authenticated encryption with additional data (AEAD) cipher.
  *
@@ -86,9 +86,9 @@ import java.util.Objects;
  * encapsulation message must be transmitted from the sender to the recipient
  * so that the recipient can recover this shared secret. On the sender side,
  * after the cipher is initialized, the key encapsulation message can be
- * retrieved directly using the {@link Cipher#getIV()} method. On the recipient
- * side, the key encapsulation message must be provided using the
- * {@link #encapsulation(byte[])} method.
+ * retrieved using the {@link Cipher#getIV()} method. On the recipient side,
+ * this message must be supplied as part of an {@code HPKEParameterSpec}
+ * object obtained from the {@link #encapsulation(byte[])} method.
  * </ul>
  * For successful interoperability, both sides need to have identical algorithm
  * identifiers, and supply identical
@@ -107,18 +107,18 @@ import java.util.Objects;
  * {@code init} method. The following are cases of invalid parameters:
  * <ul>
  * <li> An algorithm identifier is unsupported or does not match the provided key type.
- * <li> The key encapsulation message is not provided on the receiver side.
+ * <li> The key encapsulation message is not provided on the recipient side.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code authKey(key)} is made but {@code mode_auth}
  *      or {@code mode_auth_psk} is not supported by the KEM used.
  * </ul>
- * After initialization, both the sender and receiver can process multiple
+ * After initialization, both the sender and recipient can process multiple
  * messages in sequence with repeated {@code doFinal} calls, optionally preceded
  * by one or more {@code updateAAD} and {@code update}. Each {@code doFinal}
  * performs a complete HPKE encryption or decryption operation using a distinct
  * IV derived from an internal sequence counter, as specified in
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5.2">Section 5.2</a>
- * of RFC 9180. On the receiver side, each {@code doFinal} call must correspond
+ * of RFC 9180. On the recipient side, each {@code doFinal} call must correspond
  * to exactly one complete ciphertext, and the number and order of calls must
  * match those on the sender side. This differs from the direct use of an AEAD
  * cipher, where the caller must provide a fresh IV and reinitialize the cipher
@@ -126,7 +126,7 @@ import java.util.Objects;
  * initialization to support multiple messages while still ensuring IV
  * uniqueness and preserving AEAD security guarantees.
  * <p>
- * This example shows a sender and a receiver using HPKE to securely exchange
+ * This example shows a sender and a recipient using HPKE to securely exchange
  * messages with an X25519 key pair.
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
  *
@@ -266,7 +266,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Creates a new {@code HPKEParameterSpec} object with a different
+     * Creates a new {@code HPKEParameterSpec} object with the specified
      * {@code info} value.
      * <p>
      * For interoperability, RFC 9180 Section 7.2.1 recommends limiting
@@ -285,7 +285,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Creates a new {@code HPKEParameterSpec} object with different
+     * Creates a new {@code HPKEParameterSpec} object with the specified
      * {@code psk} value and {@code psk_id} values.
      * <p>
      * For interoperability, RFC 9180 Section 7.2.1 recommends limiting both
@@ -313,7 +313,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Creates a new {@code HPKEParameterSpec} object with a different
+     * Creates a new {@code HPKEParameterSpec} object with the specified
      * key encapsulation message value that will be used by the recipient.
      *
      * @param encapsulation the key encapsulation message. If set to
@@ -330,7 +330,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Creates a new {@code HPKEParameterSpec} object with a different
+     * Creates a new {@code HPKEParameterSpec} object with the specified
      * authentication key value.
      * <p>
      * Note: this method does not check whether the KEM supports
