@@ -41,7 +41,7 @@ public class BlockSignatureSchemesForCert extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms",
-                "rsa_pss_pss_sha256 usage CertificateSignature");
+                "Rsa_Pss_Pss_Sha256 usage CertificateSignature");
 
         runAndCheckException(
                 () -> new BlockSignatureSchemesForCert().run(),
@@ -49,9 +49,9 @@ public class BlockSignatureSchemesForCert extends SSLSocketTemplate {
                     assertTrue(e instanceof ExceptionInInitializerError);
                     assertTrue(
                             e.getCause() instanceof IllegalArgumentException);
-                    assertEquals(e.getCause().getMessage(),
-                            "Can't use signature scheme names with "
-                                    + "CertificateSignature usage constraint");
+                    assertEquals(e.getCause().getMessage(), "Can't use "
+                            + "signature scheme names with "
+                            + "CertificateSignature usage constraint");
                 });
     }
 }

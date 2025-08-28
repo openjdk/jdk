@@ -48,9 +48,9 @@ public class MixingTLSUsageConstraintsWithNonTLS extends SSLSocketTemplate {
                     assertTrue(e instanceof ExceptionInInitializerError);
                     assertTrue(
                             e.getCause() instanceof IllegalArgumentException);
-                    assertEquals(e.getCause().getMessage(),
-                            "Can't mix TLS protocol specific constraints"
-                                    + " with other usage constraints");
+                    assertEquals(e.getCause().getMessage(), "Can't mix TLS "
+                            + "protocol specific constraints"
+                            + " with other usage constraints");
                 });
     }
 }
