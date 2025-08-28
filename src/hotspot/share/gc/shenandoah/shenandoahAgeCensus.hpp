@@ -111,8 +111,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   size_t _total;                     // net size of objects encountered (counted or skipped) in census
 #endif
 
-  uint _epoch;                       // Current epoch (modulo max age)
-  uint *_tenuring_threshold;         // An array of the last N tenuring threshold values we
+  uint  _epoch;                      // Current epoch (modulo max age)
+  uint* _tenuring_threshold;         // An array of the last N tenuring threshold values we
                                      // computed.
 
   uint _max_workers;                 // Maximum number of workers for parallel tasks
@@ -176,6 +176,10 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _local_age_table[worker_id];
   }
 
+  // Return the most recently computed tenuring threshold.
+  // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
+  uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
+
   // Return true if this age is above the tenuring threshold.
   bool is_tenurable(uint age) const {
     return age > tenuring_threshold();
@@ -209,9 +213,6 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // ShenandoahGenerationalCensusAtEvac. In this case, the age0_pop
   // is 0, because the evacuated objects have all had their ages incremented.
   void update_census(size_t age0_pop, AgeTable* pv1 = nullptr, AgeTable* pv2 = nullptr);
-
-  // Return the most recently computed tenuring threshold
-  uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
   // Reset the epoch, clearing accumulated census history
   // Note: this isn't currently used, but reserved for planned

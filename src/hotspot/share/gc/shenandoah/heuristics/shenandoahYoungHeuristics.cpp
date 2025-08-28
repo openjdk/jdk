@@ -26,7 +26,7 @@
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -69,7 +69,6 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
 
   // This is young-gen collection or a mixed evacuation.
   // If this is mixed evacuation, the old-gen candidate regions have already been added.
@@ -89,7 +88,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
     if (cset->is_preselected(r->index())) {
       continue;
     }
-    if (r->age() < tenuring_threshold) {
+    if (heap->is_tenurable(r)) {
       size_t new_cset = cur_cset + r->get_live_data_bytes();
       size_t region_garbage = r->garbage();
       size_t new_garbage = cur_young_garbage + region_garbage;
