@@ -22,15 +22,47 @@
  */
 
 #include <stdio.h>
+#include <sys/resource.h>
 #include "jvmti.h"
+
+static jint limit_num_fds();
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  // Lower the number of possible open files to make the test go faster
+  jint ret = limit_num_fds();
+  if (ret != 0) {
+    return ret;
+  }
+
   const char* filename = "./testfile_FDLeaker.txt";
   FILE* f = fopen(filename, "w");
   if (f == NULL) {
     return JNI_ERR;
   }
   printf("Opened and leaked %s (%d)", filename, fileno(f));
+  return JNI_OK;
+}
+
+static jint limit_num_fds() {
+  struct rlimit rl;
+
+  // Fetch the current limit
+  int ret = getrlimit(RLIMIT_NOFILE, &rl);
+  if (ret != 0) {
+    return JNI_ERR;
+  }
+
+  // Use a lower value unless it is already low
+  if (100 < rl.rlim_cur) {
+    rl.rlim_cur = 100;
+  }
+
+  // Lower the value
+  int ret2 = setrlimit(RLIMIT_NOFILE, &rl);
+  if (ret2 != 0) {
+    return JNI_ERR;
+  }
+
   return JNI_OK;
 }
