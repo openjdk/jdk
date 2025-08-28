@@ -349,7 +349,11 @@ public:
 
   void vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
 
+  void vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
+
   void vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
+
+  void vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
 
   void vector_cast_double_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,

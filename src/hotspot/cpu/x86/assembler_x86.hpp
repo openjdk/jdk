@@ -1309,15 +1309,19 @@ private:
   void cvttsd2sil(Register dst, XMMRegister src);
   void cvttsd2siq(Register dst, Address src);
   void cvttsd2siq(Register dst, XMMRegister src);
-  void evcvttsd2sis(Register dst, XMMRegister src);
   void evcvttsd2sisl(Register dst, XMMRegister src);
+  void evcvttsd2sisl(Register dst, Address src);
+  void evcvttsd2sisq(Register dst, XMMRegister src);
+  void evcvttsd2sisq(Register dst, Address src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
   void cvtss2sil(Register dst, XMMRegister src);
-  void evcvttss2sis(Register dst, XMMRegister src);
   void evcvttss2sisl(Register dst, XMMRegister src);
+  void evcvttss2sisl(Register dst, Address src);
+  void evcvttss2sisq(Register dst, XMMRegister src);
+  void evcvttss2sisq(Register dst, Address src);
 
   // Convert vector double to int
   void cvttpd2dq(XMMRegister dst, XMMRegister src);
@@ -1330,8 +1334,10 @@ private:
   void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttps2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2dqs(XMMRegister dst, Address src, int vector_len);
   void evcvttps2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttps2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1341,10 +1347,12 @@ private:
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector double to int
   void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2dqs(XMMRegister dst, Address src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
