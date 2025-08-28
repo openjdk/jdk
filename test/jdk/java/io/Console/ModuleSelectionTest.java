@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8295803 8299689 8351435 8361613
+ * @bug 8295803 8299689 8351435 8361613 8366261
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
  * @library /test/lib
