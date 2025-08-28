@@ -84,6 +84,9 @@
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
+  start_class(HotSpotResolvedJavaRecordComponent, jdk_vm_ci_hotspot_HotSpotResolvedJavaRecordComponent)       \
+    jvmci_constructor(HotSpotResolvedJavaRecordComponent, "(Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;III)V") \
+  end_class                                                                                                   \
   start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
     long_field(HotSpotMethodData, methodDataPointer)                                                          \
   end_class                                                                                                   \
@@ -165,6 +168,8 @@
     jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forPrimitive, forPrimitive_signature) \
   end_class                                                                                                   \
   start_class(ResolvedJavaMethod, jdk_vm_ci_meta_ResolvedJavaMethod)                                          \
+  end_class                                                                                                   \
+  start_class(ResolvedJavaRecordComponent, jdk_vm_ci_meta_ResolvedJavaRecordComponent)                        \
   end_class                                                                                                   \
   start_class(PrimitiveConstant, jdk_vm_ci_meta_PrimitiveConstant)                                            \
     object_field(PrimitiveConstant, kind, "Ljdk/vm/ci/meta/JavaKind;")                                        \

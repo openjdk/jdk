@@ -50,6 +50,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
+#include "oops/recordComponent.hpp"
 #include "oops/trainingData.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -401,7 +402,7 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   methodHandle method (THREAD, InstanceKlass::cast(holder)->method_with_idnum(slot));
   JVMCIObject result = JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
-}
+C2V_END
 
 C2V_VMENTRY_PREFIX(jboolean, updateCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
   return CompilerThreadCanCallJava::update(thread, newState) != nullptr;
@@ -2246,6 +2247,28 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
+C2V_VMENTRY_NULL(jobjectArray, getRecordComponents, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  if (!klass->is_instance_klass()) {
+    return nullptr;
+  }
+
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  Array<RecordComponent*>* components = iklass->record_components();
+  if (components == nullptr) {
+    return nullptr;
+  }
+  JVMCIObjectArray res = JVMCIENV->new_ResolvedJavaRecordComponent_array(components->length(), JVMCI_CHECK_NULL);
+  for (int i = 0; i < components->length(); i++) {
+    JVMCIObject component = JVMCIENV->new_HotSpotResolvedJavaRecordComponent(JVMCIENV->wrap(klass_obj), i, components->at(i), JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(res, i, component);
+  }
+  return JVMCIENV->get_jobjectArray(res);
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, getAllMethods, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
@@ -3107,18 +3130,35 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationValues, (JNIEnv* env,
   return get_encoded_annotation_values(method->method_holder(), raw_annotations, category, memberType, THREAD, JVMCIENV);
 C2V_END
 
-C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index, jint category))
+C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index, jboolean is_field, jint category))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCI_CHECK_NULL);
-  fieldDescriptor fd(holder, index);
-  AnnotationArray* raw_annotations;
-  if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
-    raw_annotations = fd.annotations();
-  } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
-    raw_annotations = fd.type_annotations();
+  AnnotationArray* raw_annotations = nullptr;
+  if (is_field) {
+    fieldDescriptor fd(holder, index);
+    if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+      raw_annotations = fd.annotations();
+    } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+      raw_annotations = fd.type_annotations();
+    } else {
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                    err_msg("%d", category));
+    }
   } else {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                  err_msg("%d", category));
+    Array<RecordComponent*>* components = holder->record_components();
+    if (components == nullptr) {
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                    err_msg("%s has no record components", holder->name()->as_C_string()));
+    }
+    RecordComponent* rc = components->at(index);
+    if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+      raw_annotations = rc->annotations();
+    } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+      raw_annotations = rc->type_annotations();
+    } else {
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                    err_msg("%d", category));
+    }
   }
   return get_encoded_annotation_values(holder, raw_annotations, category, nullptr, THREAD, JVMCIENV);
 C2V_END
@@ -3324,13 +3364,13 @@ C2V_END
 #define OBJECT                  "Ljava/lang/Object;"
 #define CLASS                   "Ljava/lang/Class;"
 #define OBJECTCONSTANT          "Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;"
-#define EXECUTABLE              "Ljava/lang/reflect/Executable;"
 #define STACK_TRACE_ELEMENT     "Ljava/lang/StackTraceElement;"
 #define INSTALLED_CODE          "Ljdk/vm/ci/code/InstalledCode;"
 #define BYTECODE_FRAME          "Ljdk/vm/ci/code/BytecodeFrame;"
 #define JAVACONSTANT            "Ljdk/vm/ci/meta/JavaConstant;"
 #define INSPECTED_FRAME_VISITOR "Ljdk/vm/ci/code/stack/InspectedFrameVisitor;"
 #define RESOLVED_METHOD         "Ljdk/vm/ci/meta/ResolvedJavaMethod;"
+#define RESOLVED_RECORD_COMPONENT "Ljdk/vm/ci/meta/ResolvedJavaRecordComponent;"
 #define FIELDINFO               "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl$FieldInfo;"
 #define HS_RESOLVED_TYPE        "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaType;"
 #define HS_INSTALLED_CODE       "Ljdk/vm/ci/hotspot/HotSpotInstalledCode;"
@@ -3339,8 +3379,8 @@ C2V_END
 #define HS_CONFIG               "Ljdk/vm/ci/hotspot/HotSpotVMConfig;"
 #define HS_STACK_FRAME_REF      "Ljdk/vm/ci/hotspot/HotSpotStackFrameReference;"
 #define HS_SPECULATION_LOG      "Ljdk/vm/ci/hotspot/HotSpotSpeculationLog;"
-#define REFLECTION_EXECUTABLE   "Ljava/lang/reflect/Executable;"
-#define REFLECTION_FIELD        "Ljava/lang/reflect/Field;"
+#define EXECUTABLE              "Ljava/lang/reflect/Executable;"
+#define FIELD                   "Ljava/lang/reflect/Field;"
 
 // Types wrapping VM pointers. The ...2 macro is for a pair: (wrapper, pointer)
 #define HS_METHOD               "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;"
@@ -3436,6 +3476,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredMethods)},
+  {CC "getRecordComponents",                          CC "(" HS_KLASS2 ")[" RESOLVED_RECORD_COMPONENT,                                      FN_PTR(getRecordComponents)},
   {CC "getAllMethods",                                CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getAllMethods)},
   {CC "getDeclaredFieldsInfo",                        CC "(" HS_KLASS2 ")[" FIELDINFO,                                                      FN_PTR(getDeclaredFieldsInfo)},
   {CC "readStaticFieldValue",                         CC "(" HS_KLASS2 "JC)" JAVACONSTANT,                                                  FN_PTR(readStaticFieldValue)},
@@ -3462,11 +3503,11 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "unhand",                                       CC "(J)" OBJECT,                                                                      FN_PTR(unhand)},
   {CC "updateHotSpotNmethod",                         CC "(" HS_NMETHOD ")V",                                                               FN_PTR(updateHotSpotNmethod)},
   {CC "getCode",                                      CC "(" HS_INSTALLED_CODE ")[B",                                                       FN_PTR(getCode)},
-  {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" REFLECTION_EXECUTABLE,                                          FN_PTR(asReflectionExecutable)},
-  {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" REFLECTION_FIELD,                                               FN_PTR(asReflectionField)},
+  {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" EXECUTABLE,                                                     FN_PTR(asReflectionExecutable)},
+  {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" FIELD,                                                          FN_PTR(asReflectionField)},
   {CC "getEncodedClassAnnotationValues",              CC "(" HS_KLASS2 "I)[B",                                                              FN_PTR(getEncodedClassAnnotationValues)},
   {CC "getEncodedExecutableAnnotationValues",         CC "(" HS_METHOD2 HS_KLASS2 "I)[B",                                                   FN_PTR(getEncodedExecutableAnnotationValues)},
-  {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "II)[B",                                                             FN_PTR(getEncodedFieldAnnotationValues)},
+  {CC "getEncodedFieldAnnotationValues",              CC "(" HS_KLASS2 "IZI)[B",                                                            FN_PTR(getEncodedFieldAnnotationValues)},
   {CC "getFailedSpeculations",                        CC "(J[[B)[[B",                                                                       FN_PTR(getFailedSpeculations)},
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getFailedSpeculationsAddress)},
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},

@@ -35,6 +35,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
@@ -73,6 +74,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     private final long klassPointer;
 
+    private ResolvedJavaRecordComponent[] recordComponents;
     private HotSpotResolvedJavaMethodImpl[] methodCacheArray;
     private HashMap<Long, HotSpotResolvedJavaMethodImpl> methodCacheHashMap;
     private volatile HotSpotResolvedJavaField[] instanceFields;
@@ -827,6 +829,26 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
     }
 
+    @Override
+    public boolean isRecord() {
+        HotSpotResolvedObjectTypeImpl superclass = getSuperclass();
+        if (!isLeaf() || superclass == null || !superclass.equals(runtime().getJavaLangRecord())) {
+            return false;
+        }
+        return UNSAFE.getAddress(getKlassPointer() + config().instanceKlassRecordComponentsOffset) != 0;
+    }
+
+    @Override
+    public ResolvedJavaRecordComponent[] getRecordComponents() {
+        if (!isRecord()) {
+            return null;
+        }
+        if (recordComponents == null) {
+            recordComponents = compilerToVM().getRecordComponents(this);
+        }
+        return recordComponents;
+    }
+
     /**
      * Gets the instance or static fields of this class.
      *
@@ -834,7 +856,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @param prepend an array to be prepended to the returned result
      */
     private HotSpotResolvedJavaField[] getFields(boolean retrieveStaticFields, HotSpotResolvedJavaField[] prepend) {
-        HotSpotVMConfig config = config();
         int resultCount = 0;
         int index = 0;
 

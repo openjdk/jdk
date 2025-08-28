@@ -32,11 +32,13 @@ import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantPool.BootstrapMethodInvocation;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 import java.lang.reflect.Executable;
@@ -1171,6 +1173,15 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
+     * Gets the {@link ResolvedJavaRecordComponent}s for {@code klass}.
+     */
+    ResolvedJavaRecordComponent[] getRecordComponents(HotSpotResolvedObjectTypeImpl klass) {
+        return getRecordComponents(klass, klass.getKlassPointer());
+    }
+
+    native ResolvedJavaRecordComponent[] getRecordComponents(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    /**
      * Gets the {@link ResolvedJavaMethod}s for all methods of {@code klass}.
      */
     ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass) {
@@ -1468,14 +1479,15 @@ final class CompilerToVM {
                                                        HotSpotResolvedObjectTypeImpl memberType, long klassPointer, int category);
 
     /**
-     * Gets the serialized annotation info for the field denoted by {@code holder} and
-     * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     * Gets the serialized annotation info for the field ({@code isField == true}) or
+     * record component ({@code isField == false}) denoted by {@code holder} and
+     * {@code index} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
      */
-    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, int category) {
-        return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), fieldIndex, category);
+    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int index, boolean isField, int category) {
+        return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), index, isField, category);
     }
 
-    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex, int category);
+    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int index, boolean isField, int category);
 
     /**
      * @see HotSpotResolvedJavaMethod#getOopMapAt

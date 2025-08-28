@@ -26,13 +26,14 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.services.Services;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
 
+import java.util.Objects;
+
 /**
  * Used to access native configuration details.
- *
+ * <p>
  * All non-static, public fields in this class are so that they can be compiled as constants.
  */
 class HotSpotVMConfig extends HotSpotVMConfigAccess {
@@ -57,13 +58,11 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      */
     static String getHostArchitectureName() {
         Architecture arch = Architecture.current();
-        switch (arch) {
-            case X64: return "amd64";
-            default:  return arch.name().toLowerCase();
+        if (Objects.requireNonNull(arch) == Architecture.X64) {
+            return "amd64";
         }
+        return arch.name().toLowerCase();
     }
-
-    final boolean useDeferredInitBarriers = getFlag("ReduceInitialCardMarks", Boolean.class);
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
@@ -97,8 +96,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
-    final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
+    final int instanceKlassRecordComponentsOffset = getFieldOffset("InstanceKlass::_record_components", Integer.class, "Array<RecordComponent*>*");
     final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
     final int klassMiscFlagsOffset = getFieldOffset("Klass::_misc_flags._flags", Integer.class, "u1");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
@@ -112,9 +111,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int annotationsClassAnnotationsOffset = getFieldOffset("Annotations::_class_annotations", Integer.class, "AnnotationArray*");
     final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
 
-    final int arrayU1LengthOffset = getFieldOffset("Array<int>::_length", Integer.class, "int");
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
-    final int arrayU2DataOffset = getFieldOffset("Array<u2>::_data", Integer.class);
 
     final int jvmAccHasFinalizer = getConstant("KlassFlags::_misc_has_finalizer", Integer.class);
     final int jvmFieldFlagInternalShift = getConstant("FieldInfo::FieldFlags::_ff_injected", Integer.class);
@@ -155,7 +152,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, "nmethod*");
 
     final int methodFlagsForceInline = getConstant("MethodFlags::_misc_force_inline", Integer.class);
-    final int methodFlagsDontInline = getConstant("MethodFlags::_misc_dont_inline", Integer.class);
     final int nonvirtualVtableIndex = getConstant("Method::nonvirtual_vtable_index", Integer.class);
     final int invalidVtableIndex = getConstant("Method::invalid_vtable_index", Integer.class);
 
@@ -170,16 +166,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataOverflowTraps = getFieldOffset("MethodData::_compiler_counters._nof_overflow_traps", Integer.class, "uint");
 
     final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "CompLevel");
-
-    final int compilationLevelNone = getConstant("CompLevel_none", Integer.class);
-    final int compilationLevelSimple = getConstant("CompLevel_simple", Integer.class);
-    final int compilationLevelLimitedProfile = getConstant("CompLevel_limited_profile", Integer.class);
-    final int compilationLevelFullProfile = getConstant("CompLevel_full_profile", Integer.class);
-    final int compilationLevelFullOptimization = getConstant("CompLevel_full_optimization", Integer.class);
-
-    final int compLevelAdjustmentNone = getConstant("JVMCIRuntime::none", Integer.class);
-    final int compLevelAdjustmentByHolder = getConstant("JVMCIRuntime::by_holder", Integer.class);
-    final int compLevelAdjustmentByFullSignature = getConstant("JVMCIRuntime::by_full_signature", Integer.class);
 
     final int invocationEntryBci = getConstant("InvocationEntryBci", Integer.class);
 
@@ -281,8 +267,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int baseVtableLength() {
         return universeBaseVtableSize / (vtableEntrySize / heapWordSize);
     }
-
-    final int klassOffset = getFieldValue("java_lang_Class::_klass_offset", Integer.class, "int");
 
     /**
      * The DataLayout header size is the same as the cell size.

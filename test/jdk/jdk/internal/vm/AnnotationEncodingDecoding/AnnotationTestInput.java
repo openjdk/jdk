@@ -177,6 +177,8 @@ public class AnnotationTestInput {
     @SuppressWarnings({"rawtypes", "all"})
     public static class AnnotatedClass extends @TypeQualifier Thread implements @TypeQualifier Serializable {}
 
+    public static record AnnotatedRecord(@TypeQualifier @Named("obj1Component Name") String obj1Component, @Missing @NestedAnno("int1 value") int int1Component, @Missing float componentWithMissingAnno) {}
+
     @Single(string = "a",
             stringArray = {"a", "b"},
             classValue = String.class,
@@ -242,7 +244,7 @@ public class AnnotationTestInput {
     // Define a type-use annotation
     @Target(ElementType.TYPE_USE)
     @Retention(RetentionPolicy.RUNTIME)
-    @interface TypeQualifier{
+    @interface TypeQualifier {
         String comment() default "";
     }
 

@@ -59,6 +59,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.annotation.Annotated;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
@@ -88,6 +89,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,7 +99,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.reflect.Modifier.isAbstract;
@@ -209,6 +210,16 @@ public class TestResolvedJavaType extends TypeUniverse {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             boolean expected = !c.isArray() && !c.isPrimitive() && !c.isInterface();
             boolean actual = type.isInstanceClass();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void isRecordTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isRecord();
+            boolean actual = type.isRecord();
             assertEquals(expected, actual);
         }
     }
@@ -1025,6 +1036,27 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void getRecordComponentsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            RecordComponent[] raw = c.getRecordComponents();
+            if (raw == null) {
+                assertFalse(type.isRecord());
+                continue;
+            }
+            assertTrue(type.isRecord());
+            Set<ResolvedJavaRecordComponent> expected = new HashSet<>();
+            for (RecordComponent rc : raw) {
+                ResolvedJavaRecordComponent resolvedRecordComponent = metaAccess.lookupJavaRecordComponent(rc);
+                assertNotNull(resolvedRecordComponent);
+                expected.add(resolvedRecordComponent);
+            }
+            Set<ResolvedJavaRecordComponent> actual = new HashSet<>(Arrays.asList(type.getRecordComponents()));
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
     public void getDeclaredConstructorsTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
@@ -1362,6 +1394,14 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     private static List<AnnotationValue> testGetAnnotationValues(Annotated annotated, List<Annotation> annotations) throws AssertionError {
+        try {
+            return testGetAnnotationValues0(annotated, annotations);
+        } catch (AssertionError e) {
+            throw new AssertionError("Annotated: " + annotated, e);
+        }
+    }
+
+    private static List<AnnotationValue> testGetAnnotationValues0(Annotated annotated, List<Annotation> annotations) throws AssertionError {
         List<AnnotationValue> res = new ArrayList<>(annotations.size());
 
         Map<ResolvedJavaType, AnnotationValue> allAnnotationValues = annotated.getDeclaredAnnotationValues();
@@ -1389,6 +1429,8 @@ public class TestResolvedJavaType extends TypeUniverse {
             return metaAccess.lookupJavaType(t);
         } else if (element instanceof Method m) {
             return metaAccess.lookupJavaMethod(m);
+        } else if (element instanceof RecordComponent rc) {
+            return metaAccess.lookupJavaRecordComponent(rc);
         } else {
             Field f = (Field) element;
             return metaAccess.lookupJavaField(f);

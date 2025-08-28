@@ -495,6 +495,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Gets the type annotations for this method that back the implementation
      * of {@link Method#getAnnotatedReturnType()}, {@link Method#getAnnotatedReceiverType()},
      * {@link Method#getAnnotatedExceptionTypes()} and {@link Method#getAnnotatedParameterTypes()}.
+     * This method returns an empty list if there are no type annotations.
      *
      * @throws UnsupportedOperationException if this operation is not supported
      */

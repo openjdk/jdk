@@ -315,6 +315,18 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     ResolvedJavaField[] getStaticFields();
 
     /**
+     * Returns whether this type is a {@link Record}.
+     */
+    boolean isRecord();
+
+    /**
+     * Returns an array of {@code ResolvedJavaRecordComponent} objects representing all the
+     * record components of this record class, or {@code null} if this class is
+     * not a record class.
+     */
+    ResolvedJavaRecordComponent[] getRecordComponents();
+
+    /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
      * or {@code null} if there is no such field.
      *
@@ -431,6 +443,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     /**
      * Gets the type annotations for this type that back the implementation
      * of {@link Class#getAnnotatedSuperclass()} and {@link Class#getAnnotatedInterfaces()}.
+     * This method returns an empty list if there are no type annotations.
      *
      * @throws UnsupportedOperationException if this operation is not supported
      */
