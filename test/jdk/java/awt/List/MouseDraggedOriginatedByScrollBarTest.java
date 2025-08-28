@@ -34,7 +34,6 @@ import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -46,7 +45,6 @@ public class MouseDraggedOriginatedByScrollBarTest {
     static Frame frame;
     static volatile Point loc;
     static volatile List list;
-    static volatile int width;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -116,26 +114,20 @@ public class MouseDraggedOriginatedByScrollBarTest {
     }
 
     private static void test() throws Exception {
-        Robot robot;
-        try {
-            robot = new Robot();
-        } catch (Exception ex) {
-            throw new RuntimeException("Can't create robot");
-        }
+        Robot robot = new Robot();
         robot.waitForIdle();
         robot.delay(1000);
         robot.setAutoWaitForIdle(true);
 
-        // Focus default button and wait till it gets focus
         EventQueue.invokeAndWait(() -> {
-            loc = list.getLocationOnScreen();
-            width = list.getWidth();
+            Point p = list.getLocationOnScreen();
+            p.translate(list.getWidth(), 20);
+            loc = p;
         });
-        robot.mouseMove(loc.x + width - 10, loc.y + 20);
+        robot.mouseMove(loc.x - 10, loc.y + 20);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         for (int i = 0; i < 30; i++) {
-            Point p = MouseInfo.getPointerInfo().getLocation();
-            robot.mouseMove(p.x, p.y + 1);
+            robot.mouseMove(loc.x, loc.y + 1);
         }
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
