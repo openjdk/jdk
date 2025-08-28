@@ -872,6 +872,8 @@ uint8_t MemNode::barrier_data(const Node* n) {
     return n->as_LoadStore()->barrier_data();
   } else if (n->is_Mem()) {
     return n->as_Mem()->barrier_data();
+  } else if (n->is_DecodeN()) {
+    return n->as_DecodeN()->barrier_data();
   }
   return 0;
 }
@@ -1000,7 +1002,9 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   load->set_barrier_data(barrier_data);
   if (load->Opcode() == Op_LoadN) {
     Node* ld = gvn.transform(load);
-    return new DecodeNNode(ld, ld->bottom_type()->make_ptr());
+    DecodeNNode* decode = new DecodeNNode(ld, ld->bottom_type()->make_ptr());
+    decode->set_barrier_data(barrier_data);
+    return decode;
   }
 
   return load;

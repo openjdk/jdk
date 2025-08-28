@@ -301,45 +301,6 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   return BarrierSetC2::store_at_resolved(access, val);
 }
 
-Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
-  // 0: non-reference load, no additional barrier is needed
-  if (!access.is_oop()) {
-    return BarrierSetC2::load_at_resolved(access, val_type);
-  }
-
-  // 1. If we are reading the value of the referent field of a Reference object, we
-  // need to record the referent in an SATB log buffer using the pre-barrier
-  // mechanism.
-  DecoratorSet decorators = access.decorators();
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
-  // If we are reading the value of the referent field of a Reference object, we
-  // need to record the referent in an SATB log buffer using the pre-barrier
-  // mechanism. Also we need to add a memory barrier to prevent commoning reads
-  // from this field across safepoints, since GC can change its value.
-  bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
-  if (access.is_oop() && need_read_barrier) {
-    access.set_barrier_data(ShenandoahBarrierSATB);
-  }
-
-  Node* load = BarrierSetC2::load_at_resolved(access, val_type);
-
-  BasicType type = access.type();
-
-  // 2: apply LRB if needed
-  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
-    load = new ShenandoahLoadReferenceBarrierNode(nullptr, load, decorators);
-    if (access.is_parse_access()) {
-      load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
-    } else {
-      load = static_cast<C2OptAccess &>(access).gvn().transform(load);
-    }
-  }
-
-  return load;
-}
-
 static void set_barrier_data(C2Access& access) {
   if (!access.is_oop()) {
     return;
@@ -365,6 +326,36 @@ static void set_barrier_data(C2Access& access) {
   }
 
   access.set_barrier_data(barrier_data);
+}
+
+Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
+  // 1: non-reference load, no additional barrier is needed
+  if (!access.is_oop()) {
+    return BarrierSetC2::load_at_resolved(access, val_type);
+  }
+
+  // 2. Set barrier data for LRB.
+  set_barrier_data(access);
+
+  // 3. If we are reading the value of the referent field of a Reference object, we
+  // need to record the referent in an SATB log buffer using the pre-barrier
+  // mechanism.
+  DecoratorSet decorators = access.decorators();
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
+  // If we are reading the value of the referent field of a Reference object, we
+  // need to record the referent in an SATB log buffer using the pre-barrier
+  // mechanism. Also we need to add a memory barrier to prevent commoning reads
+  // from this field across safepoints, since GC can change its value.
+  uint8_t barriers = access.barrier_data();
+  bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
+  if (access.is_oop() && need_read_barrier) {
+    barriers |= ShenandoahBarrierSATB;
+  }
+  access.set_barrier_data(barriers);
+
+  return BarrierSetC2::load_at_resolved(access, val_type);
 }
 
 Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
@@ -857,6 +848,12 @@ void ShenandoahBarrierStubC2::register_stub() {
   }
 }
 
+ShenandoahLoadRefBarrierStubC2* ShenandoahLoadRefBarrierStubC2::create(const MachNode* node, Register obj, Register addr, bool narrow) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahLoadRefBarrierStubC2(node, obj, addr, narrow);
+  stub->register_stub();
+  return stub;
+}
+
 ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Register addr_reg, Register preval) {
   auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, addr_reg, Address(), preval, noreg);
   stub->register_stub();
@@ -891,7 +888,7 @@ bool ShenandoahBarrierSetC2State::needs_liveness_data(const MachNode* mach) cons
   //assert(mach->barrier_data() != 0, "what else?");
   // return mach->barrier_data() != 0;
   //return (mach->barrier_data() & ShenandoahSATBBarrier) != 0;
-  return ShenandoahSATBBarrierStubC2::needs_barrier(mach);
+  return ShenandoahSATBBarrierStubC2::needs_barrier(mach) || ShenandoahLoadRefBarrierStubC2::needs_barrier(mach);
 }
 
 bool ShenandoahBarrierSetC2State::needs_livein_data() const {

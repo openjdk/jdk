@@ -146,6 +146,20 @@ public:
   virtual void emit_code(MacroAssembler& masm) = 0;
 };
 
+class ShenandoahLoadRefBarrierStubC2 : public ShenandoahBarrierStubC2 {
+  Register _obj;
+  Register _addr;
+  bool _narrow;
+  ShenandoahLoadRefBarrierStubC2(const MachNode* node, Register obj, Register addr, bool narrow) :
+    ShenandoahBarrierStubC2(node), _obj(obj), _addr(addr), _narrow(narrow) {}
+public:
+  static bool needs_barrier(const MachNode* node) {
+    return (node->barrier_data() & (ShenandoahBarrierStrong | ShenandoahBarrierWeak | ShenandoahBarrierPhantom | ShenandoahBarrierNative)) != 0;
+  }
+  static ShenandoahLoadRefBarrierStubC2* create(const MachNode* node, Register obj, Register addr, bool narrow);
+  void emit_code(MacroAssembler& masm) override;
+};
+
 class ShenandoahSATBBarrierStubC2 : public ShenandoahBarrierStubC2 {
   Register _addr_reg;
   Address _addr;

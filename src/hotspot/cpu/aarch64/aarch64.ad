@@ -8200,6 +8200,7 @@ instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src, rFlagsReg cr) %{
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
   predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
             n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
+  predicate(!UseShenandoahGC || n->as_DecodeN()->barrier_data() == 0);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop $dst, $src" %}
@@ -8214,6 +8215,7 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
   predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
             n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
+  predicate(!UseShenandoahGC || n->as_DecodeN()->barrier_data() == 0);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop_not_null $dst, $src" %}

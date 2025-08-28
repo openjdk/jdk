@@ -494,7 +494,7 @@ instruct getAndSetNAcq_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, 
 instruct loadP_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
 %{
   // This instruction does not need an acquiring counterpart because it is only
-  // used for reference loading (Reference::get()). The same holds for g1LoadN.
+  // used for reference loading (Reference::get()).
   match(Set dst (LoadP mem));
   predicate(UseShenandoahGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
@@ -505,25 +505,80 @@ instruct loadP_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
     ShenandoahBarrierSet::assembler()->satb_barrier_c2(this, masm,
                  noreg /* obj */,
                  $dst$$Register /* pre_val */);
+    ShenandoahBarrierSet::assembler()->load_ref_barrier_c2(this, masm,
+                                                           $dst$$Register /* obj */,
+                                                           $mem$$Register /* addr */,
+                                                           false /* narrow */,
+                                                           true /* maybe_null */);
   %}
   ins_pipe(iload_reg_mem);
 %}
 
-instruct loadN_shenandoah(iRegNNoSp dst, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+instruct loadP_volatile_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
 %{
-  match(Set dst (LoadN mem));
-  predicate(UseShenandoahGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
-  effect(TEMP dst, TEMP tmp, KILL cr);
+  // This instruction does not need an acquiring counterpart because it is only
+  // used for reference loading (Reference::get()).
+  match(Set dst (LoadP mem));
+  predicate(UseShenandoahGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  effect(TEMP dst, KILL cr);
   ins_cost(4 * INSN_COST);
-  format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
+  format %{ "ldar  $dst, $mem\t# ptr" %}
   ins_encode %{
-    __ ldrw($dst$$Register, $mem$$Register);
-  if (ShenandoahSATBBarrierStubC2::needs_barrier(this)) {
-      __ decode_heap_oop($tmp$$Register, $dst$$Register);
-      ShenandoahBarrierSet::assembler()->satb_barrier_c2(this, masm,
-                   noreg /* obj */,
-                   $tmp$$Register /* pre_val */);
-    }
+    __ ldar($dst$$Register, $mem$$Register);
+    ShenandoahBarrierSet::assembler()->satb_barrier_c2(this, masm,
+                 noreg /* obj */,
+                 $dst$$Register /* pre_val */);
+    ShenandoahBarrierSet::assembler()->load_ref_barrier_c2(this, masm,
+                                                           $dst$$Register /* obj */,
+                                                           $mem$$Register /* addr */,
+                                                           false /* narrow */,
+                                                           true /* maybe_null */);
   %}
   ins_pipe(iload_reg_mem);
+%}
+
+instruct loadAndDecodeN_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr) %{
+  match(Set dst (DecodeN (LoadN mem)));
+  predicate(UseShenandoahGC && !needs_acquiring_load(n->in(1)) && n->in(1)->as_Load()->barrier_data() != 0);
+  effect(TEMP_DEF dst, KILL cr);
+  ins_cost(INSN_COST * 6);
+  format %{ "ldr  $dst, $mem\t# ptr"
+            "decode_heap_oop $dst, $dst"
+  %}
+  ins_encode %{
+    __ ldrw($dst$$Register, $mem$$Register);
+    __ decode_heap_oop($dst$$Register, $dst$$Register);
+    ShenandoahBarrierSet::assembler()->satb_barrier_c2(this, masm,
+                                                       noreg /* obj */,
+                                                       $dst$$Register /* pre_val */);
+    ShenandoahBarrierSet::assembler()->load_ref_barrier_c2(this, masm,
+                                                           $dst$$Register /* obj */,
+                                                           $mem$$Register /* addr */,
+                                                           true /* narrow */,
+                                                           true /* maybe_null */);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct loadAndDecodeN_volatile_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr) %{
+  predicate(UseShenandoahGC && needs_acquiring_load(n->in(1)) && n->in(1)->as_Load()->barrier_data() != 0);
+  match(Set dst (DecodeN (LoadN mem)));
+  effect(TEMP dst, KILL cr);
+  ins_cost(INSN_COST * 3);
+  format %{ "ldarw  $dst, $mem\t# ptr"
+            "decode_heap_oop $dst, $dst"
+  %}
+  ins_encode %{
+    __ ldarw($dst$$Register, $mem$$Register);
+    __ decode_heap_oop($dst$$Register, $dst$$Register);
+    ShenandoahBarrierSet::assembler()->satb_barrier_c2(this, masm,
+                                                       noreg /* obj */,
+                                                       $dst$$Register /* pre_val */);
+    ShenandoahBarrierSet::assembler()->load_ref_barrier_c2(this, masm,
+                                                           $dst$$Register /* obj */,
+                                                           $mem$$Register /* addr */,
+                                                           true /* narrow */,
+                                                           true /* maybe_null */);
+  %}
+  ins_pipe(ialu_reg);
 %}
