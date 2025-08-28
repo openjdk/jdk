@@ -1647,7 +1647,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * in the default time zone with the given locale.
      * <p>
      * If the locale contains the time zone with "tz"
-     * {@link Locale##def_locale_extensionUnicode extension},
+     * {@link Locale##def_locale_extension Unicode extension},
      * that time zone is used instead.
      *
      * @param aLocale the locale for the week data
