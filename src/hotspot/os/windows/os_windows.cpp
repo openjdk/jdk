@@ -5029,10 +5029,9 @@ int os::open(const char *path, int oflag, int mode) {
 
   int fd = ::_wopen(is_symlink ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
 
-  // if opening files failed, GetLastError should be called immediately after that
+  // if opening files failed, errno has been set to indicate the problem
   if (fd == -1) {
-    DWORD errcode = ::GetLastError();
-    log_debug(os)("os::open() failed to _wopen: GetLastError->%lu.", errcode);
+    log_debug(os)("os::open() failed to _wopen: errno->%ld.", errno);
   }
   os::free(wide_path);
   os::free(path_to_target);
