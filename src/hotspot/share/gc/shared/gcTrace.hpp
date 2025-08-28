@@ -105,8 +105,7 @@ class GCTracer {
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
 
   // Report object count by not performing a heap inspection. This method will
-  // only work if there's a global KlassInfoTable that is already filled with
-  // entries prior to calling this method.
+  // only work if there's a global KlassInfoTable in the heap.
   template <typename T>
   void report_object_count() NOT_SERVICES_RETURN;
 
