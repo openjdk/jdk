@@ -109,19 +109,22 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_aliasing_analysis;
   const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_aliasing_analysis,
                   const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
     _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
-    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
+    _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                          (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -161,6 +164,7 @@ public:
   DEBUG_ONLY( bool is_empty() const { return _vtnodes.is_empty(); } )
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
+  const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
@@ -173,7 +177,7 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
+  void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -248,7 +252,8 @@ private:
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  void apply_speculative_runtime_checks();
+  void apply_speculative_alignment_runtime_checks();
+  void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
   void add_speculative_check(BoolNode* bol);
 
@@ -259,22 +264,52 @@ private:
 // VTransform. Many such vtnodes make up the VTransformGraph. The vtnodes represent
 // the resulting scalar and vector nodes as closely as possible.
 // See description at top of this file.
+//
+// There are 3 tyes of edges:
+// - data edges (req):           corresponding to C2 IR Node data edges, except control
+//                               and memory.
+// - strong memory edges:        memory edges that must be respected when scheduling.
+// - weak memory edges:          memory edges that can be violated, but if violated then
+//                               corresponding aliasing analysis runtime checks must be
+//                               inserted.
+//
+// Strong edges: union of data edges and strong memory edges.
+//               These must be respected by scheduling in all cases.
+//
+// The C2 IR Node memory edges essentially define a linear order of all memory operations
+// (only Loads with the same memory input can be executed in an arbitrary order). This is
+// efficient, because it means every Load and Store has exactly one input memory edge,
+// which keeps the memory edge count linear. This is approach is too restrictive for
+// vectorization, for example, we could never vectorize stores, since they are all in a
+// dependency chain. Instead, we model the memory edges between all memory nodes, which
+// could be quadratic in the worst case. For vectorization, we must essentially reorder the
+// instructions in the graph. For this we must model all memory dependencies.
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
 
 private:
-  // _in is split into required inputs (_req, i.e. all data dependencies),
-  // and memory dependencies.
+  // We split _in into 3 sections:
+  // - data edges (req):     _in[0                           .. _req-1]
+  // - strong memory edges:  _in[_req                        .. _in_end_strong_memory_edges-1]
+  // - weak memory edges:    _in[_in_end_strong_memory_edges .. ]
   const uint _req;
+  uint _in_end_strong_memory_edges;
   GrowableArray<VTransformNode*> _in;
+
+  // We split _out into 2 sections:
+  // - strong edges:         _out[0                     .. _out_end_strong_edges-1]
+  // - weak memory edges:    _out[_out_end_strong_edges .. _len-1]
+  uint _out_end_strong_edges;
   GrowableArray<VTransformNode*> _out;
 
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
     _req(req),
+    _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
+    _out_end_strong_edges(0),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
     vtransform.graph().add_vtnode(this);
@@ -284,7 +319,7 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out(this);
+    n->add_out_strong_edge(this);
   }
 
   void swap_req(uint i, uint j) {
@@ -295,23 +330,67 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_memory_dependency(VTransformNode* n) {
+  void add_strong_memory_edge(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
-    _in.push(n);
-    n->add_out(this);
+    if (_in_end_strong_memory_edges < (uint)_in.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _in.at(_in_end_strong_memory_edges);
+      _in.at_put(_in_end_strong_memory_edges, n);
+      _in.push(first_weak);
+    } else {
+      _in.push(n);
+    }
+    _in_end_strong_memory_edges++;
+    n->add_out_strong_edge(this);
   }
 
-  void add_out(VTransformNode* n) {
+  void add_weak_memory_edge(VTransformNode* n) {
+    assert(n != nullptr, "no need to add nullptr");
+    _in.push(n);
+    n->add_out_weak_memory_edge(this);
+  }
+
+private:
+  void add_out_strong_edge(VTransformNode* n) {
+    if (_out_end_strong_edges < (uint)_out.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _out.at(_out_end_strong_edges);
+      _out.at_put(_out_end_strong_edges, n);
+      _out.push(first_weak);
+    } else {
+      _out.push(n);
+    }
+    _out_end_strong_edges++;
+  }
+
+  void add_out_weak_memory_edge(VTransformNode* n) {
     _out.push(n);
   }
 
+public:
   uint req() const { return _req; }
-  VTransformNode* in(int i) const { return _in.at(i); }
-  int outs() const { return _out.length(); }
-  VTransformNode* out(int i) const { return _out.at(i); }
+  uint out_strong_edges() const { return _out_end_strong_edges; }
+  uint out_weak_edges() const { return _out.length() - _out_end_strong_edges; }
 
-  bool has_req_or_dependency() const {
-    for (int i = 0; i < _in.length(); i++) {
+  VTransformNode* in_req(uint i) const {
+    assert(i < _req, "must be a req");
+    return _in.at(i);
+  }
+
+  VTransformNode* out_strong_edge(uint i) const {
+    assert(i < out_strong_edges(), "must be a strong memory edge or data edge");
+    return _out.at(i);
+  }
+
+  VTransformNode* out_weak_edge(uint i) const {
+    assert(i < out_weak_edges(), "must be a strong memory edge");
+    return _out.at(_out_end_strong_edges + i);
+  }
+
+  bool has_strong_in_edge() const {
+    for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
