@@ -2441,6 +2441,12 @@ void G1CollectedHeap::update_perf_counter_cpu_time() {
 }
 
 void G1CollectedHeap::start_new_collection_set() {
+  // Clear current young cset group to allow adding.
+  // It is fine to clear it this late - evacuation does not add any remembered sets
+  // by itself, but only marks cards.
+  // The regions had their association to this group already removed earlier.
+  young_regions_cset_group()->clear();
+
   collection_set()->start_incremental_building();
 
   clear_region_attr();
