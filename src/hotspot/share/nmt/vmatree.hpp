@@ -52,9 +52,8 @@ public:
   public:
     static RBTreeOrdering cmp(position a, position b) {
       if (a < b) return RBTreeOrdering::less;
-      if (a == b) return RBTreeOrdering::equal;
       if (a > b) return RBTreeOrdering::greater;
-      ShouldNotReachHere();
+      return RBTreeOrdering::equal;
     }
   };
 

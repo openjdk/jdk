@@ -209,12 +209,12 @@ private:
   static constexpr bool HasNodeComparator = has_cmp_type<CMP, RBTreeOrdering, K, const NodeType*>::value;
 
   template <typename CMP, typename RET, typename ARG1, typename ARG2, typename = void>
-  struct has_less_type : std::false_type {};
+  struct has_less_than_type : std::false_type {};
   template <typename CMP, typename RET, typename ARG1, typename ARG2>
-  struct has_less_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::less), void())> : std::true_type {};
+  struct has_less_than_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::less), void())> : std::true_type {};
 
   template <typename CMP>
-  static constexpr bool HasNodeVerifier = has_less_type<CMP, bool, const NodeType*, const NodeType*>::value;
+  static constexpr bool HasNodeVerifier = has_less_than_type<CMP, bool, const NodeType*, const NodeType*>::value;
 
   template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeComparator<CMP>)>
   RBTreeOrdering cmp(const K& a, const NodeType* b) const {
