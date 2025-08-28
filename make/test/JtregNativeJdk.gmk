@@ -82,7 +82,7 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
-    BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := $(LIBDL) $(LIBPTHREAD)
+    BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
 endif
@@ -138,6 +138,7 @@ ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
       OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
       EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
       EXTRA_FILES := $(BUILD_JDK_JTREG_EXTRA_FILES), \
+      LIBS := $(LIBPTHREAD), \
   ))
 endif
 
