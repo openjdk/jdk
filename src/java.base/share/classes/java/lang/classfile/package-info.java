@@ -277,7 +277,7 @@
  * the {@code class} file format.  A value that is lost when it is built to a
  * {@code class} file and re-parsed to a model is rejected with an {@link
  * IllegalArgumentException}.  For example, a negative value or a value over
- * {@code 65535} is lost when built to a {@code u2} (JVMS {@jvms 4}) item, with
+ * {@code 65535} is lost when built to a {@link ##u2 u2} item, with
  * the range {@code [0, 65535]}.  In particular, any variable-sized table
  * exceeding its maximum representable size is rejected.
  * <p>
