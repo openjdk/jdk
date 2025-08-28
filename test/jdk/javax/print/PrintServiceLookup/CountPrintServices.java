@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
-import javax.print.attribute.AttributeSet;
-import javax.print.attribute.HashAttributeSet;
-import javax.print.attribute.standard.PrinterName;
+
+import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 8032693
  * @key printer
+ * @library /test/lib/
  * @summary Test that lpstat and JDK agree whether there are printers.
  */
 public class CountPrintServices {
@@ -51,7 +51,14 @@ public class CountPrintServices {
        return;
     }
     String[] lpcmd = { "lpstat", "-a" };
-    Process proc = Runtime.getRuntime().exec(lpcmd);
+    Process proc = null;
+    try {
+        proc = Runtime.getRuntime().exec(lpcmd);
+    } catch (java.io.IOException e) {
+        if(e.getMessage().contains("No such file or directory")) {
+            throw new SkippedException("Can not find lpstat, test skip");
+        }
+    }
     proc.waitFor();
     InputStreamReader ir = new InputStreamReader(proc.getInputStream());
     BufferedReader br = new BufferedReader(ir);
@@ -66,4 +73,3 @@ public class CountPrintServices {
     }
  }
 }
-
