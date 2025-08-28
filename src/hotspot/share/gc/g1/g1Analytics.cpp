@@ -181,6 +181,7 @@ void G1Analytics::update_gc_time_ratios(double end_time_sec, double pause_time_m
 
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
 
+  assert(short_interval_ms != 0.0, "short_interval_ms should not be zero, calculated from %f and %f", end_time_sec,  most_recent_gc_end_time_sec());
   _short_term_gc_time_ratio = gc_time_ms / short_interval_ms;
   _short_term_gc_time_ratio = clamp(_short_term_gc_time_ratio, 0.0, 1.0);
 
