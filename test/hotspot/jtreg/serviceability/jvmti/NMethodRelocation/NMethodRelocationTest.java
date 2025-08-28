@@ -21,20 +21,75 @@
  * questions.
  */
 
-package nsk.jvmti.NMethodRelocation;
+/*
+ * @test
+ *
+ * @bug 8316694
+ * @summary Verify that nmethod relocation posts the correct JVMTI events
+ * @requires vm.jvmti
+ * @library /test/lib /test/hotspot/jtreg
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/native NMethodRelocationTest
+ */
 
-import java.io.PrintStream;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import nsk.share.*;
-import nsk.share.jvmti.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
-import jdk.test.whitebox.code.NMethod;
 import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.NMethod;
 
-public class nmethodrelocation extends DebugeeClass {
+
+public class NMethodRelocationTest {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-agentlib:NMethodRelocationTest",
+                "--enable-native-access=ALL-UNNAMED",
+                "-Xbootclasspath/a:.",
+                "-XX:+UseG1GC",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+WhiteBoxAPI",
+                "-XX:+SegmentedCodeCache",
+                "-XX:-TieredCompilation",
+                "-Xbatch",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+NMethodRelocation",
+                "DoWork");
+
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        String output = oa.getOutput();
+        if (oa.getExitValue() != 0) {
+            System.err.println(oa.getOutput());
+            throw new RuntimeException("Non-zero exit code returned from the test");
+        }
+        Asserts.assertTrue(oa.getExitValue() == 0);
+
+        Pattern pattern = Pattern.compile("(?m)^Relocated nmethod from (0x[0-9a-f]{16}) to (0x[0-9a-f]{16})$");
+        Matcher matcher = pattern.matcher(output);
+
+        if (matcher.find()) {
+            String fromAddr = matcher.group(1);
+            String toAddr = matcher.group(2);
+
+            // Confirm events sent for both original and relocated nmethod
+            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + fromAddr);
+            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + toAddr);
+            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + fromAddr);
+            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + toAddr);
+        } else {
+            System.err.println(oa.getOutput());
+            throw new RuntimeException("Unable to find relocation information");
+        }
+    }
+}
+
+class DoWork {
 
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
@@ -44,7 +99,14 @@ public class nmethodrelocation extends DebugeeClass {
 
     /** Load native library if required. */
     static {
-        loadLibrary("agentnmethodrelocation001");
+        try {
+            System.loadLibrary("NMethodRelocationTest");
+        } catch (UnsatisfiedLinkError ule) {
+            System.err.println("Could not load NMethodRelocationTest library");
+            System.err.println("java.library.path: "
+                + System.getProperty("java.library.path"));
+            throw ule;
+        }
     }
 
     /**
@@ -72,16 +134,13 @@ public class nmethodrelocation extends DebugeeClass {
         String result = getVMOption(name);
         return result == null ? defaultValue : result;
     }
-    public static void main(String argv[]) throws Exception {
-        argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
 
+    public static void main(String argv[]) throws Exception {
         run();
     }
 
-    static int status = Consts.TEST_PASSED;
-
-    public static int run() throws Exception {
-        Executable method = nmethodrelocation.class.getDeclaredMethod("compiledMethod");
+    public static void run() throws Exception {
+        Executable method = DoWork.class.getDeclaredMethod("compiledMethod");
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
         compile();
@@ -107,12 +166,8 @@ public class nmethodrelocation extends DebugeeClass {
         WHITE_BOX.fullGC();
         WHITE_BOX.fullGC();
 
-        status = checkStatus(status);
-
         System.out.printf("Relocated nmethod from 0x%016x to 0x%016x%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
         System.out.flush();
-
-        return status;
     }
 
     private static void compile() {
