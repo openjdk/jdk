@@ -96,7 +96,7 @@ public:
 
   // TrainingDataLocker is used to guard read/write operations on non-MT-safe data structures.
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
-  // It is also a part of the TD collection termination protocol (see the "spanshot" field).
+  // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
     static volatile bool _snapshot; // If true we're not allocating new training data
     static int _lock_mode;
@@ -105,7 +105,7 @@ public:
 #if INCLUDE_CDS
       assert(_lock_mode != 0, "Forgot to call TrainingDataLocker::initialize()");
       if (_lock_mode > 0) {
-        TrainingData_lock->lock();
+        TrainingData_lock->lock_without_safepoint_check();
       }
 #endif
     }
