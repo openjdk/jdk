@@ -33,7 +33,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
+
 #include <type_traits>
 
 // The metadata hierarchy is separate from the oop hierarchy
@@ -374,7 +375,7 @@ public:
   UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 private:
-  ResizeableResourceHashtable<address, bool, AnyObj::C_HEAP,
+  ResizeableHashTable<address, bool, AnyObj::C_HEAP,
                               mtClassShared> _has_been_visited;
 };
 
