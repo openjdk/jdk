@@ -5490,6 +5490,20 @@ bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* ad
   return apply_to_narrow_mem_projs(find_proj, adr_type) != nullptr;
 }
 
+MachProjNode* InitializeNode::mem_mach_proj() const {
+  auto find_proj = [](ProjNode* proj) {
+    if (proj->is_MachProj()) {
+      return BREAK_AND_RETURN_CURRENT_PROJ;
+    }
+    return CONTINUE;
+  };
+  ProjNode* proj = apply_to_projs(find_proj, TypeFunc::Memory);
+  if (proj == nullptr) {
+    return nullptr;
+  }
+  return proj->as_MachProj();
+}
+
 #ifdef ASSERT
 bool InitializeNode::stores_are_sane(PhaseValues* phase) {
   if (is_complete())

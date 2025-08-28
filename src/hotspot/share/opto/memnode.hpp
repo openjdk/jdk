@@ -1380,6 +1380,8 @@ public:
   // Does a NarrowMemProj with this adr_type and this node as input already exist?
   bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
 
+  MachProjNode* mem_mach_proj() const;
+
 private:
   void remove_extra_zeroes();
 

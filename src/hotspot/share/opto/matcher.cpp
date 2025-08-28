@@ -1165,9 +1165,12 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             }
           } else {                  // Nothing the matcher cares about
             if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
-              if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory && has_new_node(n->in(0))) {
-                InitializeNode* new_init = new_node(n->in(0))->as_Initialize();
-                m = new_init->proj_out_or_null(TypeFunc::Memory);
+              if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
+                m = n->in(0)->as_Initialize()->mem_mach_proj();
+                if (m == nullptr && has_new_node(n->in(0))) {
+                  InitializeNode* new_init = new_node(n->in(0))->as_Initialize();
+                  m = new_init->mem_mach_proj();
+                }
                 assert(m == nullptr || m->is_MachProj(), "");
               }
               if (m == nullptr) {

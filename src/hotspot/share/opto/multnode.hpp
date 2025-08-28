@@ -139,8 +139,6 @@ public:
 
   // Same but for matching _con and _is_io_use
   template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
-
-
 };
 
 //------------------------------ProjNode---------------------------------------
