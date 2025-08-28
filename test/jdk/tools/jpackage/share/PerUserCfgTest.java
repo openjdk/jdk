@@ -27,13 +27,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherVerifier.Action;
 import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -65,7 +66,7 @@ public class PerUserCfgTest {
 
         cfgCmd.execute();
 
-        new PackageTest().configureHelloApp().addInstallVerifier(cmd -> {
+        new PackageTest().addHelloAppInitializer(null).addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running per-user configuration tests")) {
                 return;
             }
@@ -144,10 +145,7 @@ public class PerUserCfgTest {
     }
 
     private static void addLauncher(JPackageCommand cmd, String name) {
-        new AdditionalLauncher(name) {
-            @Override
-            protected void verify(JPackageCommand cmd) {}
-        }.setDefaultArguments(name).applyTo(cmd);
+        new AdditionalLauncher(name).setDefaultArguments(name).withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(cmd);
     }
 
     private static Path getUserHomeDir() {
