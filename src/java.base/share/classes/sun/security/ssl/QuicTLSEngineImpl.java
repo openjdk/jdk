@@ -745,11 +745,11 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     }
 
     // for testing (PacketEncryptionTest)
-    void deriveOneRttKeys(final QuicVersion version,
-            final SecretKey client_application_traffic_secret_0,
-            final SecretKey server_application_traffic_secret_0,
-            final CipherSuite negotiatedCipherSuite,
-            final boolean clientMode) throws IOException,
+    void deriveOneRTTKeys(final QuicVersion version,
+                          final SecretKey client_application_traffic_secret_0,
+                          final SecretKey server_application_traffic_secret_0,
+                          final CipherSuite negotiatedCipherSuite,
+                          final boolean clientMode) throws IOException,
             GeneralSecurityException {
         this.oneRttKeyManager.deriveOneRttKeys(version,
                 client_application_traffic_secret_0,

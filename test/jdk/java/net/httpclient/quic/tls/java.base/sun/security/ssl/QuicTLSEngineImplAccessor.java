@@ -32,7 +32,7 @@ import jdk.internal.net.quic.QuicVersion;
 
 public final class QuicTLSEngineImplAccessor {
     // visible for testing
-    public static void testDeriveOneRttKeys(QuicVersion version,
+    public static void testDeriveOneRTTKeys(QuicVersion version,
                                             QuicTLSEngineImpl engine,
                                             SecretKey client_application_traffic_secret_0,
                                             SecretKey server_application_traffic_secret_0,
@@ -40,7 +40,7 @@ public final class QuicTLSEngineImplAccessor {
                                             boolean clientMode)
             throws IOException, GeneralSecurityException
     {
-        engine.deriveOneRttKeys(version, client_application_traffic_secret_0,
+        engine.deriveOneRTTKeys(version, client_application_traffic_secret_0,
                                 server_application_traffic_secret_0,
                                 CipherSuite.valueOf(negotiatedCipherSuite),
                                 clientMode);

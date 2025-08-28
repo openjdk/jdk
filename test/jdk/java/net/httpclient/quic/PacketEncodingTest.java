@@ -549,7 +549,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         final QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         assertEquals(destid.length, destConnectionId.length(), "dcid length");
@@ -711,7 +711,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         byte[] srcid = randomIdBytes(srcIdLength);
@@ -824,7 +824,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         byte[] srcid = randomIdBytes(srcIdLength);
@@ -937,7 +937,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         byte[] srcid = randomIdBytes(srcIdLength);
@@ -1036,7 +1036,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         byte[] srcid = randomIdBytes(srcIdLength);
@@ -1139,7 +1139,7 @@ public class PacketEncodingTest {
         QuicPacketEncoder encoder = QuicPacketEncoder.of(quicVersion);
         QuicPacketDecoder decoder = QuicPacketDecoder.of(quicVersion);
         byte[] destid = QuicConnectionIdFactory.getClient()
-                .newConnectionID(destIdLength, IDS.incrementAndGet());
+                .newConnectionId(destIdLength, IDS.incrementAndGet());
         assert destid.length <= 20;
         QuicConnectionId destConnectionId = new PeerConnectionId(destid);
         int bound = MAX_DATAGRAM_IPV6 - destid.length - 7

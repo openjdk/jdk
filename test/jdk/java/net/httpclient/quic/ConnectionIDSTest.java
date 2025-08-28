@@ -78,7 +78,7 @@ public class ConnectionIDSTest {
             long token = idFactory.newToken();
             assertEquals(token, previous +1);
             previous = token;
-            var id = idFactory.newConnectionID(length, token);
+            var id = idFactory.newConnectionId(length, token);
             var cid = new ConnID(token, id);
             System.out.printf("%s: %s/%s%n", length, token, cid);
             assertEquals(id.length, expectedLength);
@@ -98,7 +98,7 @@ public class ConnectionIDSTest {
             previous = ptoken;
             for (long token : List.of(ptoken, ntoken)) {
                 long expectedToken = token >= 0 ? token : -token -1;
-                var id = idFactory.newConnectionID(length, token);
+                var id = idFactory.newConnectionId(length, token);
                 var cid = new ConnID(expectedToken, id);
                 System.out.printf("%s: %s/%s%n", length, token, cid);
                 assertEquals(id.length, length);
@@ -116,7 +116,7 @@ public class ConnectionIDSTest {
         for (length=9; length <= 20; length++) {
             for (long token : bounds) {
                 long expectedToken = token >= 0 ? token : -token - 1;
-                var id = idFactory.newConnectionID(length, token);
+                var id = idFactory.newConnectionId(length, token);
                 var cid = new ConnID(expectedToken, id);
                 System.out.printf("%s: %s/%s%n", length, token, cid);
                 assertEquals(id.length, length);

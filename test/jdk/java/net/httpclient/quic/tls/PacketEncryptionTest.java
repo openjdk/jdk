@@ -332,7 +332,7 @@ public class PacketEncryptionTest {
     public void testEncryptChaCha() throws Exception {
         QuicTLSEngineImpl clientEngine = (QuicTLSEngineImpl) getQuicV1Engine(SSLContext.getDefault(), true);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
-        QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, clientEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", true);
+        QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V1, clientEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", true);
 
         final int packetLen = ONERTT_PAYLOAD_OFFSET + ONERTT_PAYLOAD_LENGTH + 16;
         final ByteBuffer packet = ByteBuffer.allocate(packetLen);
@@ -355,7 +355,7 @@ public class PacketEncryptionTest {
         // mark the TLS handshake as FINISHED
         QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
-        QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
+        QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 
         ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_ONERTT_PAYLOAD));
         unprotect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, serverEngine, 0x1f);
@@ -377,7 +377,7 @@ public class PacketEncryptionTest {
         // mark the TLS handshake as FINISHED
         QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
-        QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
+        QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 
         final int keyPhase = 0;
         // attempt 1
@@ -403,7 +403,7 @@ public class PacketEncryptionTest {
         // mark the TLS handshake as FINISHED
         QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
-        QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
+        QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V1, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
 
         ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_ONERTT_PAYLOAD));
         unprotect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, serverEngine, 0x1f);

@@ -98,7 +98,7 @@ public class QuicConnectionIdFactory {
     public QuicConnectionId newConnectionId() {
         long token = newToken();
         return new QuicLocalConnectionId(token, simpleDesc,
-                newConnectionID(connectionIdLength, token));
+                newConnectionId(connectionIdLength, token));
     }
 
     /**
@@ -172,7 +172,7 @@ public class QuicConnectionIdFactory {
     }
 
     // visible for testing
-    public byte[] newConnectionID(int length, long token) {
+    public byte[] newConnectionId(int length, long token) {
         length = Math.clamp(length, MIN_CONNECTION_ID_LENGTH, MAX_CONNECTION_ID_LENGTH);
         assert length <= MAX_CONNECTION_ID_LENGTH;
         assert length >= MIN_CONNECTION_ID_LENGTH;
