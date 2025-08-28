@@ -70,8 +70,6 @@ public class DirectIOTest {
 
             int bs = (int)blockSize;
             int size = Math.max(BASE_SIZE, bs);
-            flushFileCache(size, fd);
-
             int alignment = bs;
             ByteBuffer src = ByteBuffer.allocateDirect(size + alignment - 1)
                                        .alignedSlice(alignment);
@@ -107,7 +105,6 @@ public class DirectIOTest {
 
             int bs = (int)blockSize;
             int size = Math.max(BASE_SIZE, bs);
-
             int alignment = bs;
             ByteBuffer dest = ByteBuffer.allocateDirect(size + alignment - 1)
                                         .alignedSlice(alignment);
