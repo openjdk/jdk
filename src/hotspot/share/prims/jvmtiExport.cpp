@@ -1859,9 +1859,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // depth 0 as it is already late in the method exiting dance.
   state->set_top_frame_is_exiting();
 
-  // Deferred transition to VM, so we can stash away the return oop before GC
-  // Note that this transition is not needed when throwing an exception, because
-  // there is no oop to retain.
+  // Deferred transition to VM, so we can stash away the return oop before GC.
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, false, current_frame, value);
