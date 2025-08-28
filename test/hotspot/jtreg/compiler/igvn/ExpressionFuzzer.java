@@ -36,12 +36,17 @@ package compiler.igvn;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Random;
+import jdk.test.lib.Utils;
+import java.util.stream.Collectors;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.$;
+import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.PrimitiveType;
@@ -49,6 +54,10 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
 
 public class ExpressionFuzzer {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
+    public static record MethodArgument(String name, CodeGenerationDataNameType type) {}
+
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
@@ -83,9 +92,27 @@ public class ExpressionFuzzer {
                 """
         ));
 
+        var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
+            "#type #name = ", type.con(), ";\n"
+            // TODO: randomize!
+        ));
+
         var testTemplate = Template.make("expression", (Expression expression) -> {
             // Fix the arguments for both the compiled and reference method.
-            List<Object> arguments = expression.argumentTypes.stream().map(t -> t.con()).toList();
+            List<MethodArgument> methodArguments = new ArrayList<>();
+            List<Object> expressionArguments = new ArrayList<>();
+            for (CodeGenerationDataNameType type : expression.argumentTypes) {
+                switch (RANDOM.nextInt(2)) {
+                    case 0 -> {
+                        String name = $("arg" + methodArguments.size());
+                        methodArguments.add(new MethodArgument(name, type));
+                        expressionArguments.add(name);
+                    }
+                    default -> {
+                        expressionArguments.add(type.con());
+                    }
+                }
+            }
             // TODO: fix with Values
             // We need to have a way to get values with type constraints
             // And we need to "load" them once in compiled and once in reference
@@ -95,25 +122,32 @@ public class ExpressionFuzzer {
             // And the result should be returned, but also some "checksum" to
             // detect range and bits.
             return body(
+                let("methodArguments",
+                    methodArguments.stream().map(ma -> ma.name).collect(Collectors.joining(", "))),
+                let("methodArgumentsWithTypes",
+                    methodArguments.stream().map(ma -> ma.type + " " + ma.name).collect(Collectors.joining(", "))),
                 """
                 @Test
                 public static void $primitiveConTest() {
-                    Object v0 = ${primitiveConTest}_compiled();
-                    Object v1 = ${primitiveConTest}_reference();
+                """,
+                methodArguments.stream().map(ma -> valueTemplate.asToken(ma.name, ma.type)).toList(),
+                """
+                    Object v0 = ${primitiveConTest}_compiled(#methodArguments);
+                    Object v1 = ${primitiveConTest}_reference(#methodArguments);
                     Verify.checkEQ(v0, v1);
                 }
 
                 @DontInline
-                public static Object ${primitiveConTest}_compiled() {
+                public static Object ${primitiveConTest}_compiled(#methodArgumentsWithTypes) {
                 """,
-                bodyTemplate.asToken(expression, arguments),
+                bodyTemplate.asToken(expression, expressionArguments),
                 """
                 }
 
                 @DontCompile
-                public static Object ${primitiveConTest}_reference() {
+                public static Object ${primitiveConTest}_reference(#methodArgumentsWithTypes) {
                 """,
-                bodyTemplate.asToken(expression, arguments),
+                bodyTemplate.asToken(expression, expressionArguments),
                 """
                 }
                 """
