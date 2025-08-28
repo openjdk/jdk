@@ -78,9 +78,11 @@ public:
                    Register res, Address addr, Register oldval, Register newval,
                    bool exchange, Register tmp1, Register tmp2);
 #ifdef COMPILER2
+  void satb_barrier_c2(const MachNode* node, MacroAssembler* masm,
+                       Address addr, Register preval, Register tmp);
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
-                     Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
-                     bool exchange);
+                      Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
+                      bool exchange);
 #endif
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);

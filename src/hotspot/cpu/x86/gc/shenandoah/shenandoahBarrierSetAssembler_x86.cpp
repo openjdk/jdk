@@ -778,6 +778,19 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 #ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::satb_barrier_c2(const MachNode* node, MacroAssembler* masm,
+                                                    Address addr, Register preval, Register tmp) {
+  if (!ShenandoahSATBBarrierStubC2::needs_barrier(node)) {
+    return;
+  }
+  ShenandoahSATBBarrierStubC2* const stub = ShenandoahSATBBarrierStubC2::create(node, addr, preval, tmp);
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  Address gc_state(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ testb(gc_state, ShenandoahHeap::MARKING);
+  __ jcc(Assembler::notZero, *stub->entry());
+  __ bind(*stub->continuation());
+}
+
 void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
                                                 bool exchange) {
@@ -786,8 +799,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAs
   assert_different_registers(oldval, tmp1, tmp2);
   assert_different_registers(newval, tmp1, tmp2);
 
-  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, oldval, newval, res, tmp1, tmp2, exchange);
-  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, oldval, res, tmp1, exchange);
+  ShenandoahCASBarrierSlowStubC2* const slow_stub = ShenandoahCASBarrierSlowStubC2::create(node, addr, oldval, newval, res, tmp1, tmp2, exchange);
+  ShenandoahCASBarrierMidStubC2* const mid_stub = ShenandoahCASBarrierMidStubC2::create(node, slow_stub, oldval, res, tmp1, exchange);
 
   Label L_success, L_failure;
 
@@ -821,7 +834,51 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAs
 #undef __
 #define __ masm.
 
-void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
+void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+  Address index(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  Label runtime;
+
+  // Do we need to load the previous value?
+  if (_addr.base() != noreg) {
+    __ load_heap_oop(_preval, _addr, noreg, AS_RAW);
+  }
+  // Is the previous value null?
+  __ cmpptr(_preval, NULL_WORD);
+  __ jcc(Assembler::equal, *continuation());
+
+  // Can we store a value in the given thread's buffer?
+  // (The index field is typed as size_t.)
+  __ movptr(_tmp, index);
+  __ testptr(_tmp, _tmp);
+  __ jccb(Assembler::zero, runtime);
+  // The buffer is not full, store value into it.
+  __ subptr(_tmp, wordSize);
+  __ movptr(index, _tmp);
+  __ addptr(_tmp, buffer);
+  __ movptr(Address(_tmp, 0), _preval);
+
+  __ jmp(*continuation());
+
+  __ bind(runtime);
+  {
+    SaveLiveRegisters save_registers(&masm, this);
+    if (c_rarg0 != _preval) {
+      __ mov(c_rarg0, _preval);
+    }
+    // rax is a caller-saved, non-argument-passing register, so it does not
+    // interfere with c_rarg0 or c_rarg1. If it contained any live value before
+    // entering this stub, it is saved at this point, and restored after the
+    // call. If it did not contain any live value, it is free to be used. In
+    // either case, it is safe to use it here as a call scratch register.
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre_c2)), rax);
+  }
+  __ jmp(*continuation());
+}
+
+void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
 
   if (!_cae) {
@@ -843,7 +900,7 @@ void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
   __ jmp(*continuation());
 }
 
-void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
+void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
 
   assert(_expected == rax, "expected must be rax");
