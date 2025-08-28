@@ -62,6 +62,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menu) {
                 State state = menu.isEnabled() ? State.NORMAL
                         : State.DISABLED;
