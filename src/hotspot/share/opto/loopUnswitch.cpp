@@ -481,6 +481,8 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 //                                                         |
 //                                                      slow_path
 //
+// For more descriptions on multiversioning:
+// See: PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
 IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
   // Give all nodes in the old sub-graph a name.
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();

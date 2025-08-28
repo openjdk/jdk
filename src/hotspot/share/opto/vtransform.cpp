@@ -23,6 +23,7 @@
 
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/vtransform.hpp"
 
@@ -57,7 +58,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_req_or_dependency(stack);
+  collect_nodes_without_strong_in_edges(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -72,8 +73,11 @@ bool VTransformGraph::schedule() {
       //   No  -> we are mid-visit.
       bool all_uses_already_visited = true;
 
-      for (int i = 0; i < vtn->outs(); i++) {
-        VTransformNode* use = vtn->out(i);
+      // We only need to respect the strong edges (data edges and strong memory edges).
+      // Violated weak memory edges are allowed, but require a speculative aliasing
+      // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
+      for (uint i = 0; i < vtn->out_strong_edges(); i++) {
+        VTransformNode* use = vtn->out_strong_edge(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -109,11 +113,11 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no strong input edges (data edges and strong memory edges):
+void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dependency()) {
+    if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
   }
@@ -144,11 +148,11 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-void VTransform::apply_speculative_runtime_checks() {
+void VTransform::apply_speculative_alignment_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector || _trace._speculative_runtime_checks) {
-      tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
+      tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
     }
 #endif
 
@@ -216,6 +220,206 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   add_speculative_check(bol_alignment);
 }
 
+class VPointerWeakAliasingPair : public StackObj {
+private:
+  // Using references instead of pointers would be preferrable, but GrowableArray
+  // requires a default constructor, and we do not have a default constructor for
+  // VPointer.
+  const VPointer* _vp1 = nullptr;
+  const VPointer* _vp2 = nullptr;
+
+  VPointerWeakAliasingPair(const VPointer& vp1, const VPointer& vp2) : _vp1(&vp1), _vp2(&vp2) {
+    assert(vp1.is_valid(), "sanity");
+    assert(vp2.is_valid(), "sanity");
+    assert(!vp1.never_overlaps_with(vp2), "otherwise no aliasing");
+    assert(!vp1.always_overlaps_with(vp2), "otherwise must be strong");
+    assert(VPointer::cmp_summands_and_con(vp1, vp2) <= 0, "must be sorted");
+  }
+
+public:
+  // Default constructor to make GrowableArray happy.
+  VPointerWeakAliasingPair() : _vp1(nullptr), _vp2(nullptr) {}
+
+  static VPointerWeakAliasingPair make(const VPointer& vp1, const VPointer& vp2) {
+    if (VPointer::cmp_summands_and_con(vp1, vp2) <= 0) {
+      return VPointerWeakAliasingPair(vp1, vp2);
+    } else {
+      return VPointerWeakAliasingPair(vp2, vp1);
+    }
+  }
+
+  const VPointer& vp1() const { return *_vp1; }
+  const VPointer& vp2() const { return *_vp2; }
+
+  // Sort by summands, so that pairs with same summands (summand1, summands2) are adjacent.
+  static int cmp_for_sort(VPointerWeakAliasingPair* pair1, VPointerWeakAliasingPair* pair2) {
+    int cmp_summands1 = VPointer::cmp_summands(pair1->vp1(), pair2->vp1());
+    if (cmp_summands1 != 0) { return cmp_summands1; }
+    return VPointer::cmp_summands(pair1->vp2(), pair2->vp2());
+  }
+};
+
+void VTransform::apply_speculative_aliasing_runtime_checks() {
+
+  if (_vloop.use_speculative_aliasing_checks()) {
+
+#ifdef ASSERT
+    if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_aliasing_runtime_checks: speculative aliasing analysis runtime checks");
+    }
+#endif
+
+    // It would be nice to add a ResourceMark here. But it would collide with resource allocation
+    // in PhaseIdealLoop::set_idom for _idom and _dom_depth. See also JDK-8337015.
+    VectorSet visited;
+    GrowableArray<VPointerWeakAliasingPair> weak_aliasing_pairs;
+
+    const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
+    for (int i = 0; i < schedule.length(); i++) {
+      VTransformNode* vtn = schedule.at(i);
+      for (uint i = 0; i < vtn->out_weak_edges(); i++) {
+        VTransformNode* use = vtn->out_weak_edge(i);
+        if (visited.test(use->_idx)) {
+          // The use node was already visited, i.e. is higher up in the schedule.
+          // The "out" edge thus points backward, i.e. it is violated.
+          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
+          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+#ifdef ASSERT
+          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+            tty->print_cr("\nViolated Weak Edge:");
+            vtn->print();
+            vp1.print_on(tty);
+            use->print();
+            vp2.print_on(tty);
+          }
+#endif
+
+          // We could generate checks for the pair (vp1, vp2) directly. But in
+          // some graphs, this generates quadratically many checks. Example:
+          //
+          //   set1: a[i+0] a[i+1] a[i+2] a[i+3]
+          //   set2: b[i+0] b[i+1] b[i+2] b[i+3]
+          //
+          // We may have a weak memory edge between every memory access from
+          // set1 to every memory access from set2. In this example, this would
+          // be 4 * 4 = 16 checks. But instead, we can create a union VPointer
+          // for set1 and set2 each, and only create a single check.
+          //
+          //   set1: a[i+0, size = 4]
+          //   set1: b[i+0, size = 4]
+          //
+          // For this, we add all pairs to an array, and process it below.
+          weak_aliasing_pairs.push(VPointerWeakAliasingPair::make(vp1, vp2));
+        }
+      }
+      visited.set(vtn->_idx);
+    }
+
+    // Sort so that all pairs with the same summands (summands1, summands2)
+    // are consecutive, i.e. in the same group. This allows us to do a linear
+    // walk over all pairs of a group and create the union VPointers.
+    weak_aliasing_pairs.sort(VPointerWeakAliasingPair::cmp_for_sort);
+
+    int group_start = 0;
+    while (group_start < weak_aliasing_pairs.length()) {
+      // New group: pick the first pair as the reference.
+      const VPointer* vp1 = &weak_aliasing_pairs.at(group_start).vp1();
+      const VPointer* vp2 = &weak_aliasing_pairs.at(group_start).vp2();
+      jint size1 = vp1->size();
+      jint size2 = vp2->size();
+      int group_end = group_start + 1;
+      while (group_end < weak_aliasing_pairs.length()) {
+        const VPointer* vp1_next = &weak_aliasing_pairs.at(group_end).vp1();
+        const VPointer* vp2_next = &weak_aliasing_pairs.at(group_end).vp2();
+        jint size1_next = vp1_next->size();
+        jint size2_next = vp2_next->size();
+
+        // Different summands -> different group.
+        if (VPointer::cmp_summands(*vp1, *vp1_next) != 0) { break; }
+        if (VPointer::cmp_summands(*vp2, *vp2_next) != 0) { break; }
+
+        // Pick the one with the lower con as the reference.
+        if (vp1->con() > vp1_next->con()) {
+          swap(vp1, vp1_next);
+          swap(size1, size1_next);
+        }
+        if (vp2->con() > vp2_next->con()) {
+          swap(vp2, vp2_next);
+          swap(size2, size2_next);
+        }
+
+        // Compute the distance from vp1 to vp1_next + size, to get a size that would include vp1_next.
+        NoOverflowInt new_size1 = NoOverflowInt(vp1_next->con()) + NoOverflowInt(size1_next) - NoOverflowInt(vp1->con());
+        NoOverflowInt new_size2 = NoOverflowInt(vp2_next->con()) + NoOverflowInt(size2_next) - NoOverflowInt(vp2->con());
+        if (new_size1.is_NaN() || new_size2.is_NaN()) { break; /* overflow -> new group */ }
+
+        // The "next" VPointer indeed belong to the group.
+        //
+        // vp1:       |-------------->
+        // vp1_next:            |---------------->
+        // result:    |-------------------------->
+        //
+        // vp1:       |-------------------------->
+        // vp1_next:            |------->
+        // result:    |-------------------------->
+        //
+        size1 = MAX2(size1, new_size1.value());
+        size2 = MAX2(size2, new_size2.value());
+        group_end++;
+      }
+      // Create "union" VPointer that cover all VPointer from the group.
+      const VPointer vp1_union = vp1->make_with_size(size1);
+      const VPointer vp2_union = vp2->make_with_size(size2);
+
+#ifdef ASSERT
+      if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+        tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
+        vp1_union.print_on(tty);
+        vp2_union.print_on(tty);
+      }
+
+      // Verification - union must contain all VPointer of the group.
+      for (int i = group_start; i < group_end; i++) {
+        const VPointer& vp1_i = weak_aliasing_pairs.at(i).vp1();
+        const VPointer& vp2_i = weak_aliasing_pairs.at(i).vp2();
+        assert(vp1_union.con() <= vp1_i.con(), "must start before");
+        assert(vp2_union.con() <= vp2_i.con(), "must start before");
+        assert(vp1_union.size() >= vp1_i.size(), "must end after");
+        assert(vp2_union.size() >= vp2_i.size(), "must end after");
+      }
+#endif
+
+      BoolNode* bol = vp1_union.make_speculative_aliasing_check_with(vp2_union);
+      add_speculative_check(bol);
+
+      group_start = group_end;
+    }
+  }
+}
+
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check:
+//   - Alignment:
+//       See VTransform::add_speculative_alignment_check
+//   - Aliasing:
+//       See VTransform::apply_speculative_aliasing_runtime_checks
+//   There is a two staged approach for compilation:
+//   - AutoVectorization Predicate:
+//       See VM flag UseAutoVectorizationPredicate and documentation in predicates.hpp
+//       We speculate that the checks pass, and only compile a vectorized  loop.
+//       We expect the checks to pass in almost all cases, and so we only need
+//       to compile and cache the vectorized loop.
+//       If the predicate ever fails, we deoptimize, and eventually compile
+//       without predicate. This means we will recompile with multiversioning.
+//    - Multiversioning:
+//       See VM Flag LoopMultiversioning and documentaiton in loopUnswitch.cpp
+//       If the predicate is not available or previously failed, then we compile
+//       a vectorized and a scalar loop. If the runtime check passes we take the
+//       vectorized loop, else the scalar loop.
+//       Multiversioning takes more compile time and code cache, but it also
+//       produces fast code for when the runtime check passes (vectorized) and
+//       when it fails (scalar performance).
 void VTransform::add_speculative_check(BoolNode* bol) {
   assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
@@ -494,7 +698,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 }
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
+  Node* n = vnode_idx_to_transformed_node.at(in_req(i)->_idx);
   assert(n != nullptr, "must find input IR node");
   return n;
 }
@@ -616,7 +820,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
+  VTransformElementWiseVectorNode* vtn_cmp = in_req(1)->isa_ElementWiseVector();
   assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
@@ -750,14 +954,26 @@ void VTransformNode::print() const {
     print_node_idx(_in.at(i));
   }
   if ((uint)_in.length() > _req) {
-    tty->print(" |");
-    for (int i = _req; i < _in.length(); i++) {
+    tty->print(" | strong:");
+    for (uint i = _req; i < _in_end_strong_memory_edges; i++) {
+      print_node_idx(_in.at(i));
+    }
+  }
+  if ((uint)_in.length() > _in_end_strong_memory_edges) {
+    tty->print(" | weak:");
+    for (uint i = _in_end_strong_memory_edges; i < (uint)_in.length(); i++) {
       print_node_idx(_in.at(i));
     }
   }
   tty->print(") [");
-  for (int i = 0; i < _out.length(); i++) {
+  for (uint i = 0; i < _out_end_strong_edges; i++) {
     print_node_idx(_out.at(i));
+  }
+  if ((uint)_out.length() > _out_end_strong_edges) {
+    tty->print(" | weak:");
+    for (uint i = _out_end_strong_edges; i < (uint)_out.length(); i++) {
+      print_node_idx(_out.at(i));
+    }
   }
   tty->print("] ");
   print_spec();
