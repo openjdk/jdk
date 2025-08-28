@@ -1711,14 +1711,35 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   case ShenandoahFreeSetPartitionId::Mutator:
     recompute_total_used</* UsedByMutatorChanged */ true,
                          /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    }
     break;
   case ShenandoahFreeSetPartitionId::Collector:
     recompute_total_used</* UsedByMutatorChanged */ false,
                          /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    }
     break;
   case ShenandoahFreeSetPartitionId::OldCollector:
     recompute_total_used</* UsedByMutatorChanged */ false,
                          /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ true>();
+    }
     break;
   case ShenandoahFreeSetPartitionId::NotFree:
   default:
@@ -1874,7 +1895,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
   recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
                              /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
                              /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ true,
+                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
   _partitions.assert_bounds(true);
   return _heap->get_region(beg)->bottom();
@@ -2350,8 +2371,8 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
                              /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
                              /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
+                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
   _partitions.assert_bounds(true);
 #ifdef ASSERT
   if (_heap->mode()->is_generational()) {
@@ -2553,15 +2574,25 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
 
   if (which_collector == ShenandoahFreeSetPartitionId::OldCollector) {
     _total_young_regions += transferred_regions;
+    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
+                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
+                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
+                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
+  } else {
+    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
+                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
+                               /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
+                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
+                               /* UnaffiliatedChangesAreYoungNeutral */ true>();
   }
+#ifdef KELVIN_DEPRECATE
+  // We transferred only empty regions.  There should be no impact on used.
+
   // _total_global_regions unaffected by transfer
   recompute_total_used</* UsedByMutatorChanged */ true,
                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
+#endif
   _partitions.assert_bounds(true);
   return transferred_regions;
 }
