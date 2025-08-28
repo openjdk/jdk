@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,11 @@ class UnixException extends Exception {
             return new NoSuchFileException(file, other, null);
         if (errno() == UnixConstants.EEXIST)
             return new FileAlreadyExistsException(file, other, null);
-        if (errno() == UnixConstants.ELOOP)
-            return new FileSystemException(file, other, errorString()
-                + " or unable to access attributes of symbolic link");
+        if (errno() == UnixConstants.ELOOP) {
+            String msg = file + ": " + errorString()
+                 + " or unable to access attributes of symbolic link";
+            return new FileSystemLoopException(msg);
+        }
 
         // fallback to the more general exception
         return new FileSystemException(file, other, errorString());
