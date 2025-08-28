@@ -113,7 +113,6 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkRefsAndCountClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   ShenandoahObjectCountClosure* _count;
-
   template <class T>
   inline void do_oop_work(T* p) {
     // Count newly marked strong references to avoid double counting.

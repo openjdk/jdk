@@ -7,10 +7,11 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/mutex.hpp"
 
+#if INCLUDE_JFR
+
 class ShenandoahObjectCountClosure {
 private:
   KlassInfoTable* _cit;
-
   template <class T>
   inline void do_oop_work(T* p) {
     assert(p != nullptr, "Object is null");
@@ -33,5 +34,7 @@ public:
   // Clears the thread's table, so it won't be used again.
   void merge_table(KlassInfoTable* global_cit);
 };
+
+#endif // INCLUDE_JFR
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOBJECTCOUNTCLOSURE_HPP
