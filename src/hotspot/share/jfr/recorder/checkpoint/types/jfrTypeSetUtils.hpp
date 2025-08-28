@@ -28,11 +28,9 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrSet.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
-
-template <typename T>
-class GrowableArray;
 
 // Composite callback/functor building block
 template <typename T, typename Func1, typename Func2>
@@ -135,27 +133,6 @@ class SymbolPredicate {
   }
 };
 
-class KlassUsedPredicate {
-  bool _current_epoch;
- public:
-  KlassUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
-  bool operator()(const Klass* klass) {
-    return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
-  }
-};
-
-class MethodUsedPredicate {
-  bool _current_epoch;
-public:
-  MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
-  bool operator()(const Klass* klass) {
-    if (!klass->is_instance_klass()) {
-      return false;
-    }
-    return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
-  }
-};
-
 template <bool leakp>
 class MethodFlagPredicate {
   bool _current_epoch;
@@ -203,20 +180,46 @@ class LeakPredicate<const Method*> {
  * in the respective VM subsystems.
  */
 class JfrArtifactSet : public JfrCHeapObj {
+ public:
+  class JfrArtifactSetConfig : public AllStatic {
+   public:
+    typedef const Klass* KEY_TYPE;
+
+    constexpr static AnyObj::allocation_type alloc_type() {
+      return AnyObj::RESOURCE_AREA;
+    }
+
+    constexpr static MemTag memory_tag() {
+      return mtInternal;
+    }
+
+    // Knuth multiplicative hashing.
+    static uint32_t hash(const KEY_TYPE& k) {
+      const uint32_t v = static_cast<uint32_t>(JfrTraceId::load_raw(k));
+      return v * UINT32_C(2654435761);
+    }
+
+    static bool cmp(const KEY_TYPE& lhs, const KEY_TYPE& rhs) {
+      return lhs == rhs;
+    }
+  };
+
+  typedef JfrSet<JfrArtifactSetConfig> JfrKlassSet;
+
  private:
   JfrSymbolTable* _symbol_table;
-  GrowableArray<const Klass*>* _klass_list;
-  GrowableArray<const Klass*>* _klass_loader_set;
-  GrowableArray<const Klass*>* _klass_loader_leakp_set;
+  JfrKlassSet* _klass_set;
+  JfrKlassSet* _klass_loader_set;
+  JfrKlassSet* _klass_loader_leakp_set;
   size_t _total_count;
   bool _class_unload;
 
  public:
-  JfrArtifactSet(bool class_unload);
+  JfrArtifactSet(bool class_unload, bool previous_epoch);
   ~JfrArtifactSet();
 
   // caller needs ResourceMark
-  void initialize(bool class_unload);
+  void initialize(bool class_unload, bool previous_epoch);
   void clear();
 
   traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
@@ -231,7 +234,6 @@ class JfrArtifactSet : public JfrCHeapObj {
   const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
 
   bool has_klass_entries() const;
-  int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
   bool should_do_cld_klass(const Klass* k, bool leakp);
@@ -254,19 +256,17 @@ class JfrArtifactSet : public JfrCHeapObj {
 
   template <typename Functor>
   void iterate_klasses(Functor& functor) const {
-    if (iterate(functor, _klass_list)) {
+    if (iterate(functor, _klass_set)) {
       iterate(functor, _klass_loader_set);
     }
   }
 
  private:
   template <typename Functor>
-  bool iterate(Functor& functor, GrowableArray<const Klass*>* list) const {
-    assert(list != nullptr, "invariant");
-    for (int i = 0; i < list->length(); ++i) {
-      if (!functor(list->at(i))) {
-        return false;
-      }
+  bool iterate(Functor& functor, JfrKlassSet* set) const {
+    assert(set != nullptr, "invariant");
+    if (set->is_nonempty()) {
+      set->iterate(functor);
     }
     return true;
   }
