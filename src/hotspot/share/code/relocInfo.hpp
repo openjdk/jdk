@@ -562,13 +562,12 @@ class RelocIterator : public StackObj {
 
  private:
   address         _limit;   // stop producing relocations after this _addr
-  relocInfo*      _base;    // base pointer into relocInfo array
-  int             _current; // current index
-  int             _len;     // length
+  relocInfo*      _current; // the current relocation information
+  relocInfo*      _end;     // end marker; we're done iterating when _current == _end
   nmethod*        _code;    // compiled method containing _addr
   address         _addr;    // instruction to which the relocation applies
-  short*          _data;    // pointer to the relocation's data
   short           _databuf; // spare buffer for compressed data
+  short*          _data;    // pointer to the relocation's data
   short           _datalen; // number of halfwords in _data
 
   // Base addresses needed to compute targets of section_word_type relocs.
@@ -579,14 +578,15 @@ class RelocIterator : public StackObj {
     _datalen = !b ? -1 : 0;
     DEBUG_ONLY(_data = nullptr);
   }
+  void set_current(relocInfo& ri) {
+    _current = &ri;
+    set_has_current(true);
+  }
 
   RelocationHolder _rh; // where the current relocation is allocated
 
-  relocInfo* current_no_check() const { return &_base[_current]; }
-  relocInfo* current() const {
-    assert(has_current(), "must have current");
-    return current_no_check();
-  }
+  relocInfo* current() const { assert(has_current(), "must have current");
+                               return _current; }
 
   void set_limits(address begin, address limit);
 
@@ -597,7 +597,6 @@ class RelocIterator : public StackObj {
   void initialize(nmethod* nm, address begin, address limit);
 
   RelocIterator() { initialize_misc(); }
-  RelocIterator(relocInfo& ri);
 
  public:
   // constructor
@@ -608,24 +607,25 @@ class RelocIterator : public StackObj {
   // get next reloc info, return !eos
   bool next() {
     _current++;
-    assert(_current <= _len, "must not overrun relocInfo");
-    if (_current == _len) {
+    assert(_current <= _end, "must not overrun relocInfo");
+    if (_current == _end) {
       set_has_current(false);
       return false;
     }
     set_has_current(true);
 
-    if (current()->is_prefix()) {
+    if (_current->is_prefix()) {
       advance_over_prefix();
       assert(!current()->is_prefix(), "only one prefix at a time");
     }
 
-    _addr += current()->addr_offset();
+    _addr += _current->addr_offset();
 
     if (_limit != nullptr && _addr >= _limit) {
       set_has_current(false);
       return false;
     }
+
     return true;
   }
 
