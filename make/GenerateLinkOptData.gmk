@@ -76,10 +76,14 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
 	    $(CLASSLIST_FILE_VM_OPTS) \
+	    -Xlog:aot=off \
+	    -Xlog:cds=off \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist $(LOG_DEBUG)
 	$(GREP) -v HelloClasslist $@.raw > $@.interim
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -Xshare:dump \
+	    -Xlog:aot=off \
+	    -Xlog:cds=off \
 	    -XX:SharedClassListFile=$@.interim -XX:SharedArchiveFile=$@.jsa \
 	    -Xmx128M -Xms128M $(LOG_INFO)
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw.2 \
@@ -87,6 +91,8 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    $(CLASSLIST_FILE_VM_OPTS) \
 	    --module-path $(SUPPORT_OUTPUTDIR)/classlist.jar \
+	    -Xlog:aot=off \
+	    -Xlog:cds=off \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist \
 	    2> $(LINK_OPT_DIR)/stderr > $(JLI_TRACE_FILE) \
@@ -100,6 +106,8 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	$(GREP) -v HelloClasslist $@.raw.2 > $@.raw.3
 	$(GREP) -v @cp $@.raw.3 > $@.raw.4
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java \
+	    -Xlog:aot=off \
+	    -Xlog:cds=off \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.SortClasslist $@.raw.4 > $@
 

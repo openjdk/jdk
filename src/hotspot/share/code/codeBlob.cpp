@@ -128,7 +128,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
-  _mutable_data(header_begin() + size), // default value is blob_end()
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -158,10 +158,8 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
-  } else {
-    // We need unique and valid not null address
-    assert(_mutable_data = blob_end(), "sanity");
   }
+  assert(_mutable_data != nullptr || _mutable_data_size == 0, "No mutable data => mutable data size is 0");
 
   set_oop_maps(oop_maps);
 }
@@ -170,22 +168,23 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(header_begin() + size), // default value is blob_end()
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
   _data_offset(size),
   _frame_size(0),
+  _mutable_data_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
   _frame_complete_offset(CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
+  assert(_mutable_data == nullptr && _mutable_data_size == 0, "invariant");
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
-  assert(_mutable_data = blob_end(), "sanity");
 }
 
 void CodeBlob::restore_mutable_data(address reloc_data) {
@@ -195,22 +194,23 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
+  } else {
+    _mutable_data = nullptr;
   }
   if (_relocation_size > 0) {
+    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
     memcpy((address)relocation_begin(), reloc_data, relocation_size());
   }
 }
 
 void CodeBlob::purge() {
-  assert(_mutable_data != nullptr, "should never be null");
-  if (_mutable_data != blob_end()) {
-    os::free(_mutable_data);
-    _mutable_data = blob_end(); // Valid not null address
-  }
-  if (_oop_maps != nullptr) {
-    delete _oop_maps;
-    _oop_maps = nullptr;
-  }
+  os::free(_mutable_data);
+  _mutable_data = nullptr;
+  _mutable_data_size = 0;
+  delete _oop_maps;
+  _oop_maps = nullptr;
+  _relocation_size = 0;
+
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
@@ -264,7 +264,11 @@ void CodeBlob::post_restore() {
   vptr(_kind)->post_restore(this);
 }
 
-CodeBlob* CodeBlob::restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps) {
+CodeBlob* CodeBlob::restore(address code_cache_buffer,
+                            const char* name,
+                            address archived_reloc_data,
+                            ImmutableOopMapSet* archived_oop_maps)
+{
   copy_to(code_cache_buffer);
   CodeBlob* code_blob = (CodeBlob*)code_cache_buffer;
   code_blob->set_name(name);
@@ -273,7 +277,12 @@ CodeBlob* CodeBlob::restore(address code_cache_buffer, const char* name, address
   return code_blob;
 }
 
-CodeBlob* CodeBlob::create(CodeBlob* archived_blob, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps) {
+CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
+                           const char* name,
+                           address archived_reloc_data,
+                           ImmutableOopMapSet* archived_oop_maps
+                          )
+{
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -284,8 +293,12 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob, const char* name, address ar
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     address code_cache_buffer = (address)CodeCache::allocate(size, CodeBlobType::NonNMethod);
     if (code_cache_buffer != nullptr) {
-      blob = archived_blob->restore(code_cache_buffer, name, archived_reloc_data, archived_oop_maps);
+      blob = archived_blob->restore(code_cache_buffer,
+                                    name,
+                                    archived_reloc_data,
+                                    archived_oop_maps);
       assert(blob != nullptr, "sanity check");
+
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());
       CodeCache::commit(blob); // Count adapters
@@ -370,8 +383,8 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
 //----------------------------------------------------------------------------------------------------
 // Implementation of BufferBlob
 
-BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
-: RuntimeBlob(name, kind, size, sizeof(BufferBlob))
+BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size)
+: RuntimeBlob(name, kind, size, header_size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
@@ -394,8 +407,8 @@ BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
 }
 
 
-BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size)
-  : RuntimeBlob(name, kind, cb, size, sizeof(BufferBlob), CodeOffsets::frame_never_safe, 0, nullptr)
+BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size)
+  : RuntimeBlob(name, kind, cb, size, header_size, CodeOffsets::frame_never_safe, 0, nullptr)
 {}
 
 // Used by gtest
@@ -427,12 +440,22 @@ void BufferBlob::free(BufferBlob *blob) {
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
-AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
-  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size) {
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) :
+  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
+  assert(entry_offset[0] == 0, "sanity check");
+  for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
+    // The entry is within the adapter blob or unset.
+    assert((entry_offset[i] > 0 && entry_offset[i] < cb->insts()->size()) ||
+           (entry_offset[i] == -1),
+           "invalid entry offset[%d] = 0x%x", i, entry_offset[i]);
+  }
+  _c2i_offset = entry_offset[1];
+  _c2i_unverified_offset = entry_offset[2];
+  _c2i_no_clinit_check_offset = entry_offset[3];
   CodeCache::commit(this);
 }
 
-AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
+AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -441,12 +464,19 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) AdapterBlob(size, cb);
+    blob = new (size) AdapterBlob(size, cb, entry_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
   return blob;
+}
+
+void AdapterBlob::get_offsets(int entry_offset[ENTRY_COUNT]) {
+  entry_offset[0] = 0;
+  entry_offset[1] = _c2i_offset;
+  entry_offset[2] = _c2i_unverified_offset;
+  entry_offset[3] = _c2i_no_clinit_check_offset;
 }
 
 //----------------------------------------------------------------------------------------------------

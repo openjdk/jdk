@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class hashcode001 {
     private final static String threadName = "thread1";
     private final static String methodName = "foo";
     private final static String fieldName = "name";
-    private final static int brkpLineNumber = 145;
+    private final static int brkpLineNumber = 146;
 
     //------------------------------------------------------- immutable common methods
 
@@ -126,7 +126,8 @@ public class hashcode001 {
             switch (i) {
 
                 case 0:
-                       ThreadReference thread = debuggee.threadByName(threadName);
+                       ThreadReference thread =
+                           debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
 
                        display(".....setting up StepRequest");
                        eventRequest = eventRequestManager.createStepRequest

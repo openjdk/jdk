@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import jdk.internal.misc.TerminatingThreadLocal;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -41,7 +43,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8202788 8291897
+ * @bug 8202788 8291897 8357637
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
  * @requires vm.continuations
@@ -152,6 +154,53 @@ public class TestTerminatingThreadLocal {
         carrier.join();
 
         assertEquals(terminatedValues, expectedTerminatedValues);
+    }
+
+    /**
+     * Test TerminatingThreadLocal when thread locals are "cleared" by null'ing the
+     * threadLocal field of the current Thread.
+     */
+    @Test
+    public void testClearingThreadLocals() throws Throwable {
+        var terminatedValues = new CopyOnWriteArrayList<Object>();
+
+        var tl = new ThreadLocal<String>();
+        var ttl = new TerminatingThreadLocal<String>() {
+            @Override
+            protected void threadTerminated(String value) {
+                terminatedValues.add(value);
+            }
+        };
+        var throwableRef = new AtomicReference<Throwable>();
+
+        String tlValue = "abc";
+        String ttlValue = "xyz";
+
+        Thread thread = Thread.ofPlatform().start(() -> {
+            try {
+                tl.set(tlValue);
+                ttl.set(ttlValue);
+
+                assertEquals(tl.get(), tlValue);
+                assertEquals(ttl.get(), ttlValue);
+
+                // set Thread.threadLocals to null
+                Field f = Thread.class.getDeclaredField("threadLocals");
+                f.setAccessible(true);
+                f.set(Thread.currentThread(), null);
+
+                assertNull(tl.get());
+                assertEquals(ttl.get(), ttlValue);
+            } catch (Throwable t) {
+                throwableRef.set(t);
+            }
+        });
+        thread.join();
+        if (throwableRef.get() instanceof Throwable t) {
+            throw t;
+        }
+
+        assertEquals(terminatedValues, List.of(ttlValue));
     }
 
     /**

@@ -287,7 +287,7 @@ void DowncallLinker::StubGenerator::generate() {
       __ membar(MacroAssembler::AnyAny);
     }
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, false /* in_nmethod */);
     __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
     __ bnez(t0, L_safepoint_poll_slow_path);
 

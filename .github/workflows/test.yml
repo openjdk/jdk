@@ -40,6 +40,16 @@ on:
       xcode-toolset-version:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
+      debug-suffix:
+        required: false
+        type: string
+      static-suffix:
+        required: false
+        type: string
 
 env:
   # These are needed to make the MSYS2 bash work properly
@@ -86,35 +96,35 @@ jobs:
 
           - test-name: 'hs/tier1 common'
             test-suite: 'test/hotspot/jtreg/:tier1_common'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 1'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_1'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 2'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 3'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 gc'
             test-suite: 'test/hotspot/jtreg/:tier1_gc'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 runtime'
             test-suite: 'test/hotspot/jtreg/:tier1_runtime'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 serviceability'
             test-suite: 'test/hotspot/jtreg/:tier1_serviceability'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'lib-test/tier1'
             test-suite: 'test/lib-test/:tier1'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
     steps:
       - name: 'Checkout the JDK source'
@@ -140,6 +150,8 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
+          static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Install dependencies'
         run: |
@@ -160,6 +172,21 @@ jobs:
           else
             echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
+          if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
+            echo "static-hotspot-problemlist-path=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-jdk-problemlist-path=`pwd`/test/jdk/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-langtools-problemlist-path=`pwd`/test/langtools/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-lib-test-problemlist-path=`pwd`/test/lib-test/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 'Set Extra Options'
+        id: extra-options
+        run: |
+          if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
+            echo "test-jdk=JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}" >> $GITHUB_OUTPUT
+            echo "compile-jdk=JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}" >> $GITHUB_OUTPUT
+            echo "extra-problem-lists=EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-hotspot-problemlist-path }}%20${{ steps.path.outputs.static-jdk-problemlist-path }}%20${{ steps.path.outputs.static-langtools-problemlist-path }}%20${{ steps.path.outputs.static-lib-test-problemlist-path }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: 'Run tests'
         id: run-tests
@@ -171,10 +198,13 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          ${{ steps.extra-options.outputs.test-jdk }}
+          ${{ steps.extra-options.outputs.compile-jdk }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
+        if: ${{ inputs.dry-run == false }}
 
         # This is a separate step, since if the markdown from a step gets bigger than
         # 1024 kB it is skipped, but then the short summary above is still generated
@@ -204,7 +234,7 @@ jobs:
             echo '::warning ::Missing test-support directory'
           fi
 
-          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }} | tr '/ ' '__')"
+          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }}${{ inputs.static-suffix }} | tr '/ ' '__')"
           echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
         if: always()
 

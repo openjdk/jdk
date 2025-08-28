@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/cds_globals.hpp"
-#include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
+#include "cds/filemap.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
@@ -114,6 +114,8 @@ class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
 class RunTimeClassInfo;
 class RunTimeSharedDictionary;
+
+template <typename E> class GrowableArray;
 
 class SharedClassLoadingMark {
  private:
@@ -249,6 +251,7 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static InstanceKlass* get_unregistered_class(Symbol* name);
   static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
 
   static void finish_exclusion_checks();
@@ -260,6 +263,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
+  static void set_from_class_file_load_hook(InstanceKlass* k) NOT_CDS_RETURN;
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive(bool is_static_archive = true);
@@ -267,6 +271,7 @@ public:
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);
   static const char* loader_type_for_shared_class(Klass* k);
+  static void get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;

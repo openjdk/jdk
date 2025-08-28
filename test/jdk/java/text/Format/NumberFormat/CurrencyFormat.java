@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary Basic tests for currency formatting.
  *          Tests both COMPAT and CLDR data.
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=CLDR CurrencyFormat
+ * @run junit CurrencyFormat
  */
 
 import java.io.File;

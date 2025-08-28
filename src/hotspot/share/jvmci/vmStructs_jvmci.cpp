@@ -54,6 +54,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #endif
@@ -122,6 +123,7 @@
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
   X86_ONLY(static_field(CompilerToVM::Data,    L1_line_size,                           int))                                         \
+  X86_ONLY(static_field(CompilerToVM::Data,    supports_avx512_simd_sort,              bool))                                        \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
@@ -139,18 +141,21 @@
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dsinh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
+  static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+  static_field(CompilerToVM::Data,             crc_table_addr,                         address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
-  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                         \
+  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                        \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
@@ -414,8 +419,6 @@
   static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
   static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
-  static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
-  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
   static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
   static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
   static_field(StubRoutines,                _multiplyToLen,                                   address)                               \
@@ -495,6 +498,12 @@
 #define VM_INT_CONSTANTS(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
                                                                           \
+  declare_preprocessor_constant("INCLUDE_SERIALGC", INCLUDE_SERIALGC)     \
+  declare_preprocessor_constant("INCLUDE_PARALLELGC", INCLUDE_PARALLELGC) \
+  declare_preprocessor_constant("INCLUDE_G1GC", INCLUDE_G1GC)             \
+  declare_preprocessor_constant("INCLUDE_ZGC", INCLUDE_ZGC)               \
+  declare_preprocessor_constant("INCLUDE_SHENANDOAHGC", INCLUDE_SHENANDOAHGC) \
+                                                                          \
   declare_constant(CompLevel_none)                                        \
   declare_constant(CompLevel_simple)                                      \
   declare_constant(CompLevel_limited_profile)                             \
@@ -555,7 +564,30 @@
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
   declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
-                                                                          \
+                                                                                          \
+  declare_constant(nmethod::InvalidationReason::NOT_INVALIDATED)                          \
+  declare_constant(nmethod::InvalidationReason::C1_CODEPATCH)                             \
+  declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE)                            \
+  declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING)               \
+  declare_constant(nmethod::InvalidationReason::C1_PREDICATE_FAILED_TRAP)                 \
+  declare_constant(nmethod::InvalidationReason::CI_REPLAY)                                \
+  declare_constant(nmethod::InvalidationReason::UNLOADING)                                \
+  declare_constant(nmethod::InvalidationReason::UNLOADING_COLD)                           \
+  declare_constant(nmethod::InvalidationReason::JVMCI_INVALIDATE)                         \
+  declare_constant(nmethod::InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT)         \
+  declare_constant(nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE)             \
+  declare_constant(nmethod::InvalidationReason::JVMCI_REPROFILE)                          \
+  declare_constant(nmethod::InvalidationReason::MARKED_FOR_DEOPTIMIZATION)                \
+  declare_constant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER)                \
+  declare_constant(nmethod::InvalidationReason::NOT_USED)                                 \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_BACK_BRANCH)             \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1)   \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL)          \
+  declare_constant(nmethod::InvalidationReason::SET_NATIVE_FUNCTION)                      \
+  declare_constant(nmethod::InvalidationReason::UNCOMMON_TRAP)                            \
+  declare_constant(nmethod::InvalidationReason::WHITEBOX_DEOPTIMIZATION)                  \
+  declare_constant(nmethod::InvalidationReason::ZOMBIE)                                   \
+                                                                                          \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
   declare_constant(CodeInstaller::OSR_ENTRY)                              \
@@ -684,6 +716,7 @@
   declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
   declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
   declare_constant(ConstMethodFlags::_misc_is_scoped)                     \
+  declare_constant(ConstMethodFlags::_misc_is_overpass)                   \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \
@@ -730,6 +763,7 @@
   declare_constant(Deoptimization::Reason_constraint)                     \
   declare_constant(Deoptimization::Reason_div0_check)                     \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_type_checked_inlining)          \
   declare_constant(Deoptimization::Reason_optimized_type_check)           \
@@ -961,6 +995,13 @@
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_index_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::card_table_offset", in_bytes(ShenandoahThreadLocalData::card_table_offset())) \
+   declare_constant_with_value("ShenandoahHeap::HAS_FORWARDED", ShenandoahHeap::HAS_FORWARDED)                                           \
+   declare_constant_with_value("ShenandoahHeap::MARKING", ShenandoahHeap::MARKING)                                                       \
+   declare_constant_with_value("ShenandoahHeap::EVACUATION", ShenandoahHeap::EVACUATION)                                                 \
+   declare_constant_with_value("ShenandoahHeap::UPDATE_REFS", ShenandoahHeap::UPDATE_REFS)                                               \
+   declare_constant_with_value("ShenandoahHeap::WEAK_ROOTS", ShenandoahHeap::WEAK_ROOTS)                                                 \
+   declare_constant_with_value("ShenandoahHeap::YOUNG_MARKING", ShenandoahHeap::YOUNG_MARKING)                                           \
+   declare_constant_with_value("ShenandoahHeap::OLD_MARKING", ShenandoahHeap::OLD_MARKING)                                               \
 
 #endif
 
@@ -997,7 +1038,11 @@
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
-  static_field(VM_Version, _has_intel_jcc_erratum, bool)
+  static_field(VM_Version,                     _features,                      VM_Version::VM_Features) \
+                                                                                                        \
+  nonstatic_field(VM_Version::VM_Features,     _features_bitmap[0],            uint64_t)                \
+  static_field(VM_Version::VM_Features,        _features_bitmap_size,          int)                     \
+  static_field(VM_Version,                     _has_intel_jcc_erratum,         bool)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
@@ -1005,7 +1050,8 @@
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
 #define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
-#define VM_LONG_CPU_FEATURE_CONSTANTS CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
+#define VM_LONG_CPU_FEATURE_CONSTANTS \
+   CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
 
 #endif
 
@@ -1107,7 +1153,6 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 #endif
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };
-#undef DECLARE_CPU_FEATURE_FLAG
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,

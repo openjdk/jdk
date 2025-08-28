@@ -591,7 +591,7 @@ public class RuleBasedCollator extends Collator{
         // Here's a hypothetical example, with the collation element represented as
         // a three-digit number, one digit for primary, one for secondary, etc.
         //
-        // String:              A     a     B   \u00e9 <--(e-acute)
+        // String:              A     a     B   é (U+00E9, e-acute)
         // Collation Elements: 101   100   201  510
         //
         // Collation Key:      1125<null>0001<null>1010

@@ -30,6 +30,7 @@
 #include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 class MetadataFactory : AllStatic {
@@ -46,6 +47,12 @@ class MetadataFactory : AllStatic {
       array->at_put(i, value);
     }
     return array;
+  }
+
+  // This API should be used for TrainingData only.
+  template <typename T>
+  static Array<T>* new_array_from_c_heap(int length, MemTag flags) {
+    return new (length, flags) Array<T>(length);
   }
 
   template <typename T>
