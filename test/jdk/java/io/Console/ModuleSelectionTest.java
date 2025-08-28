@@ -93,7 +93,7 @@ public class ModuleSelectionTest {
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
         var lookup = MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup());
-        var istty= (boolean)lookup.findStatic(Console.class, "isStdinTty", MethodType.methodType(boolean.class))
+        var istty = (boolean)lookup.findStatic(Console.class, "isStdinTty", MethodType.methodType(boolean.class))
                         .invoke() &&
                    (boolean)lookup.findStatic(Console.class, "isStdoutTty", MethodType.methodType(boolean.class))
                         .invoke();
