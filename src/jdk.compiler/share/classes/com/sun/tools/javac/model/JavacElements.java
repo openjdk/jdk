@@ -128,6 +128,7 @@ public class JavacElements implements Elements {
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Set<? extends ModuleElement> getAllModuleElements() {
+        ensureEntered("getAllModuleElements");
         if (allowModules)
             return Collections.unmodifiableSet(modules.allModules());
         else

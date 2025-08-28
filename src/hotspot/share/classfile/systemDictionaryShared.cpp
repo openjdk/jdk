@@ -22,6 +22,7 @@
  *
  */
 
+
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
@@ -74,7 +75,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
@@ -239,7 +240,7 @@ void SystemDictionaryShared::iterate_all_verification_dependency_names(InstanceK
 
 // This is a table of classes that need to be check for exclusion.
 class SystemDictionaryShared::ExclusionCheckCandidates
-  : public ResourceHashtable<InstanceKlass*, DumpTimeClassInfo*, 15889> {
+  : public HashTable<InstanceKlass*, DumpTimeClassInfo*, 15889> {
   void add_candidate(InstanceKlass* k) {
     if (contains(k)) {
       return;
@@ -640,7 +641,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
   return k;
 }
 
-class UnregisteredClassesTable : public ResourceHashtable<
+class UnregisteredClassesTable : public HashTable<
   Symbol*, InstanceKlass*,
   15889, // prime number
   AnyObj::C_HEAP> {};
@@ -1409,6 +1410,12 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   } else {
     return "unknown loader";
   }
+}
+
+void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
+  get_archive(is_static_archive)->_builtin_dictionary.iterate([&] (const RunTimeClassInfo* record) {
+      classes->append(record->klass());
+    });
 }
 
 class SharedDictionaryPrinter : StackObj {

@@ -259,7 +259,7 @@ inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   }
 }
 
-using DumpTimeSharedClassTableBaseType = ResourceHashtable<
+using DumpTimeSharedClassTableBaseType = HashTable<
   InstanceKlass*,
   DumpTimeClassInfo,
   15889, // prime number
