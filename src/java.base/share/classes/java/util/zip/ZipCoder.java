@@ -256,7 +256,7 @@ class ZipCoder {
             try {
                 // Copy subrange for exclusive use by the string being created
                 byte[] bytes = Arrays.copyOfRange(ba, off, off + length);
-                return JLA.uncheckedNewStringNoReplacement(bytes, StandardCharsets.UTF_8);
+                return JLA.uncheckedNewStringOrThrow(bytes, StandardCharsets.UTF_8);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
@@ -265,7 +265,7 @@ class ZipCoder {
         @Override
         byte[] getBytes(String s) {
             try {
-                return JLA.getBytesUTF8NoReplacement(s);
+                return JLA.getBytesUTF8OrThrow(s);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
@@ -298,7 +298,7 @@ class ZipCoder {
         @Override
         byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.uncheckedGetBytesNoReplacement(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.uncheckedGetBytesOrThrow(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return EXACT_MATCH;

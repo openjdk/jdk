@@ -2132,8 +2132,8 @@ public final class System {
                 return String.newStringWithLatin1Bytes(bytes);
             }
 
-            public String uncheckedNewStringNoReplacement(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoReplacement(bytes, cs);
+            public String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringOrThrow(bytes, cs);
             }
 
             public char uncheckedGetUTF16Char(byte[] bytes, int index) {
@@ -2144,12 +2144,12 @@ public final class System {
                 StringUTF16.putChar(bytes, index, ch);
             }
 
-            public byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoReplacement(s, cs);
+            public byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesOrThrow(s, cs);
             }
 
-            public byte[] getBytesUTF8NoReplacement(String s) throws CharacterCodingException {
-                return String.getBytesUTF8NoReplacement(s);
+            public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
+                return String.getBytesUTF8OrThrow(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {

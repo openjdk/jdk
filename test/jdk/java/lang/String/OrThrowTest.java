@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8286287 8288589
- * @summary Tests for *NoReplacement() shared secret methods.
- * @run testng NoReplacementTest
+ * @summary Tests for *OrThrow() shared secret methods.
+ * @run testng OrThrowTest
  * @modules jdk.charsets
  */
 
@@ -39,17 +39,17 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import org.testng.annotations.Test;
 
 @Test
-public class NoReplacementTest {
+public class OrThrowTest {
     private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
     private final static String MALFORMED_WINDOWS_1252 = "\u0080\u041e";
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
 
     /**
-     * Verifies {@code uncheckedNewStringNoReplacement()} throws a {@link CharacterCodingException}.
+     * Verifies {@code uncheckedNewStringOrThrow()} throws a {@link CharacterCodingException}.
      * The method is invoked by {@code Files.readString()} method.
      */
     @Test
-    public void uncheckedNewStringNoReplacementTest() throws IOException {
+    public void uncheckedNewStringOrThrowTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try (var fos = Files.newOutputStream(f)) {
             fos.write(MALFORMED_UTF16);
@@ -67,11 +67,11 @@ public class NoReplacementTest {
     }
 
     /**
-     * Verifies {@code uncheckedGetBytesNoReplacement()} throws a {@link CharacterCodingException}.
+     * Verifies {@code uncheckedGetBytesOrThrow()} throws a {@link CharacterCodingException}.
      * The method is invoked by {@code Files.writeString()} method.
      */
     @Test
-    public void uncheckedGetBytesNoReplacementTest() throws IOException {
+    public void uncheckedGetBytesOrThrowTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try {
             Files.writeString(f, MALFORMED_WINDOWS_1252, WINDOWS_1252);

@@ -342,7 +342,7 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String uncheckedNewStringNoReplacement(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
      * {@return the sequence of bytes obtained by encoding the given string in
@@ -357,7 +357,7 @@ public interface JavaLangAccess {
      * @throws NullPointerException If {@code s} or {@code cs} is null
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] uncheckedGetBytesNoReplacement(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -389,7 +389,7 @@ public interface JavaLangAccess {
      * @throws NullPointerException If {@code s} is null
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    byte[] getBytesUTF8NoReplacement(String s) throws CharacterCodingException;
+    byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException;
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
