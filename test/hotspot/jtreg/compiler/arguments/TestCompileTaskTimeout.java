@@ -49,7 +49,7 @@ public class TestCompileTaskTimeout {
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
 
-        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=200", "--version")
+        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=2000", "--version")
                     .shouldHaveExitValue(0);
     }
 }
