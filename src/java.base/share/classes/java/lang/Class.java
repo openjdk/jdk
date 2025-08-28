@@ -4160,11 +4160,14 @@ public final class Class<T> implements java.io.Serializable,
         Objects.requireNonNull(name);
         // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
         // If the string is short enough, it definitely fits.
-        if (name.length() * 3 <= JAVA_CLASSNAME_MAX_LEN) {
+        int nameLen = name.length();
+        if (nameLen <= JAVA_CLASSNAME_MAX_LEN / 3) {
             return true;
         }
-        // Compute exact Modified UTF-8 length.
-        return ModifiedUtf.utfLen(name, 0) <= JAVA_CLASSNAME_MAX_LEN;
+        // Check exact Modified UTF-8 length.
+        // The check utfLen >= nameLen ensures we don't incorrectly return true in case of int overflow.
+        int utfLen = ModifiedUtf.utfLen(name, 0);
+        return utfLen <= JAVA_CLASSNAME_MAX_LEN && utfLen >= nameLen;
     }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
