@@ -321,24 +321,24 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
                 GLvoid *pSrc = PtrCoord(srcInfo->rasBase,
                                         sx, srcInfo->pixelStride,
                                         sy, srcInfo->scanStride);
-                                        if (pf != NULL) {
-                                                            if (slowPath) {
-                    jint tmph = sh;
-                    while (tmph > 0) {
-                        j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
+                if (pf != NULL) {
+                    if (slowPath) {
+                        jint tmph = sh;
+                        while (tmph > 0) {
+                            j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
                                             0, sh - tmph, sw, 1,
                                             pf->format, pf->type,
                                             pSrc);
-                        pSrc = PtrAddBytes(pSrc, srcInfo->scanStride);
-                        tmph--;
+                            pSrc = PtrAddBytes(pSrc, srcInfo->scanStride);
+                            tmph--;
+                        }
+                    } else {
+                        j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
+                                            0, 0, sw, sh,
+                                            pf->format, pf->type,
+                                            pSrc);
                     }
-                } else {
-                    j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
-                                        0, 0, sw, sh,
-                                        pf->format, pf->type,
-                                        pSrc);
                 }
-                                        }
 
 
                 // the texture image is "right side up", so we align the
@@ -410,23 +410,23 @@ OGLBlitSwToTexture(SurfaceDataRasInfo *srcInfo, OGLPixelFormat *pf,
     // in case pixel stride is not a multiple of scanline stride the copy
     // has to be done line by line (see 6207877)
     if (pf != NULL) {
-            if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
-        jint width = dx2 - dx1;
-        jint height = dy2 - dy1;
-        GLvoid *pSrc = srcInfo->rasBase;
+        if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
+            jint width = dx2 - dx1;
+            jint height = dy2 - dy1;
+            GLvoid *pSrc = srcInfo->rasBase;
 
-        while (height > 0) {
-            j2d_glTexSubImage2D(dstOps->textureTarget, 0,
+            while (height > 0) {
+                j2d_glTexSubImage2D(dstOps->textureTarget, 0,
                                 dx1, dy2 - height, width, 1,
                                 pf->format, pf->type, pSrc);
-            pSrc = PtrAddBytes(pSrc, srcInfo->scanStride);
-            height--;
+                pSrc = PtrAddBytes(pSrc, srcInfo->scanStride);
+                height--;
+            }
+        } else {
+            j2d_glTexSubImage2D(dstOps->textureTarget, 0,
+                                dx1, dy1, dx2-dx1, dy2-dy1,
+                                pf->format, pf->type, srcInfo->rasBase);
         }
-    } else {
-        j2d_glTexSubImage2D(dstOps->textureTarget, 0,
-                            dx1, dy1, dx2-dx1, dy2-dy1,
-                            pf->format, pf->type, srcInfo->rasBase);
-    }
     }
     if (adjustAlpha) {
         // restore scale/bias to their original values
