@@ -809,13 +809,13 @@ private:
 
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, int op1, int op2, bool no_flags = false, bool use_prefixq = false, bool is_commutative = false);
-                                    
+
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
                                              int size, int op1, int op2, bool no_flags);
 
   void emit_eevex_or_demote(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
-  
+
   void emit_eevex_or_demote(Register dst, Address src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags = false, bool is_map1 = false, bool is_commutative = false);
 
