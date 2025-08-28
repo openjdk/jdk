@@ -25,53 +25,27 @@
 // Precompiled headers are turned off if the user passes
 // --disable-precompiled-headers to configure.
 
-// These header files are included in at least 130 C++ files, as of
-// measurements made in November 2018. This list excludes files named
-// *.inline.hpp, since including them decreased build performance.
+// These header files are selected using the output of Clang
+// '-ftime-trace' as a measure of how much time we spend
+// compiling them.
 
-#include "classfile/classLoaderData.hpp"
-#include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "logging/log.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
-#include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
-#include "nmt/memTracker.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.hpp"
-#include "oops/oop.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/handles.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
-#include "runtime/timer.hpp"
-#include "utilities/align.hpp"
-#include "utilities/bitMap.hpp"
-#include "utilities/copy.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/exceptions.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/macros.hpp"
-#include "utilities/ostream.hpp"
-#include "utilities/ticks.hpp"
-
-#ifdef TARGET_COMPILER_visCPP
-// For Visual Studio, including the *.inline.hpp files actually
-// increased performance.
-#include "memory/allocation.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/instanceStackChunkKlass.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-#endif // TARGET_COMPILER_visCPP
+#include "oops/oopHandle.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#endif
+#if INCLUDE_ZGC
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
+#endif
