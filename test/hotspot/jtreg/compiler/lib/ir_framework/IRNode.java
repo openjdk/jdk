@@ -2740,6 +2740,36 @@ public class IRNode {
         vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
     }
 
+    public static final String COMPRESS_VB = VECTOR_PREFIX + "COMPRESS_VB" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VB, "CompressV", TYPE_BYTE);
+    }
+
+    public static final String COMPRESS_VS = VECTOR_PREFIX + "COMPRESS_VS" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VS, "CompressV", TYPE_SHORT);
+    }
+
+    public static final String COMPRESS_VI = VECTOR_PREFIX + "COMPRESS_VI" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VI, "CompressV", TYPE_INT);
+    }
+
+    public static final String COMPRESS_VL = VECTOR_PREFIX + "COMPRESS_VL" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VL, "CompressV", TYPE_LONG);
+    }
+
+    public static final String COMPRESS_VF = VECTOR_PREFIX + "COMPRESS_VF" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VF, "CompressV", TYPE_FLOAT);
+    }
+
+    public static final String COMPRESS_VD = VECTOR_PREFIX + "COMPRESS_VD" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VD, "CompressV", TYPE_DOUBLE);
+    }
+
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
         String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
