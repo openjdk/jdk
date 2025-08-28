@@ -704,7 +704,8 @@ public final class String
      *         {@code bytes.length - length}
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    private static String newStringUTF8NoReplacement(byte[] bytes, int offset, int length) throws CharacterCodingException {
+    private static String newStringUTF8NoReplacement(byte[] bytes, int offset, int length)
+            throws CharacterCodingException {
         checkBoundsOffCount(offset, length, bytes.length);  // Implicit null check on `bytes`
         if (length == 0) {
             return "";
@@ -874,16 +875,7 @@ public final class String
         if (cs == US_ASCII.INSTANCE) {
             return encodeASCII(coder, val);
         }
-        return encodeWithEncoder(cs, coder, val);
-    }
-
-    private static byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val) {
         return encodeWithEncoder(cs, coder, val, null);
-    }
-
-    private static byte[] encodeWithEncoderNoReplacement(Charset cs, byte coder, byte[] val)
-            throws CharacterCodingException {
-        return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
     }
 
     /**
@@ -1005,7 +997,7 @@ public final class String
                 }
             }
         }
-        return encodeWithEncoderNoReplacement(cs, coder, val);
+        return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
     }
 
     private static byte[] encodeASCII(byte coder, byte[] val) {
@@ -1333,9 +1325,11 @@ public final class String
     }
 
     /**
-     * {@return a new {@link MalformedInputException} for the sub-range denoted by specified {@code offset} and {@code length}}
+     * {@return a new {@link MalformedInputException} for the sub-range denoted
+     * by specified {@code offset} and {@code length}}
      *
-     * @param <E> The exception type parameter to enable callers to avoid having to declare the exception
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
      */
     @SuppressWarnings("unchecked")
     private static <E extends Exception> E malformedInputException(int offset, int length) throws E {
@@ -1346,9 +1340,11 @@ public final class String
     }
 
     /**
-     * {@return a new {@link MalformedInputException} for the given malformed ASCII string}
+     * {@return a new {@link MalformedInputException} for the given malformed
+     * ASCII string}
      *
-     * @param <E> The exception type parameter to enable callers to avoid having to declare the exception
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
      */
     private static <E extends Exception> E malformedASCII(byte[] val) throws E {
         int dp = StringCoding.countPositives(val, 0, val.length);
@@ -1358,7 +1354,8 @@ public final class String
     /**
      * {@return a new {@link UnmappableCharacterException} at given {@code offset}}
      *
-     * @param <E> The exception type parameter to enable callers to avoid having to declare the exception
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
      */
     @SuppressWarnings("unchecked")
     private static <E extends Exception> E unmappableCharacterException(int offset) throws E {
@@ -1369,9 +1366,11 @@ public final class String
     }
 
     /**
-     * {@return a new {@link UnmappableCharacterException} for the given malformed ASCII string}
+     * {@return a new {@link UnmappableCharacterException} for the given
+     * malformed ASCII string}
      *
-     * @param <E> The exception type parameter to enable callers to avoid having to declare the exception
+     * @param <E> The exception type parameter to enable callers to avoid
+     *          having to declare the exception
      */
     private static <E extends Exception> E unmappableASCII(byte[] val) throws E {
         int dp = StringCoding.countPositives(val, 0, val.length);
