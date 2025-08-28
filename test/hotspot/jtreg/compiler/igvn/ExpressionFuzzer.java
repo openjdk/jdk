@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.Random;
 import jdk.test.lib.Utils;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
@@ -77,11 +78,12 @@ public class ExpressionFuzzer {
         // Generate a list of test methods.
         List<TemplateToken> tests = new ArrayList<>();
 
-        var bodyTemplate = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> body(
+        var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
                 """
                 try {
                 """,
-                "return ", expression.asToken(arguments), ";\n",
+                "var val = ", expression.asToken(arguments), ";\n",
+                "return #checksum(val);\n",
                 expression.info.exceptions.stream().map(exception ->
                     "} catch (" + exception + " e) { return e;\n"
                 ).toList(),
@@ -122,6 +124,7 @@ public class ExpressionFuzzer {
             // And the result should be returned, but also some "checksum" to
             // detect range and bits.
             return body(
+                let("returnType", expression.returnType),
                 let("methodArguments",
                     methodArguments.stream().map(ma -> ma.name).collect(Collectors.joining(", "))),
                 let("methodArgumentsWithTypes",
@@ -140,14 +143,40 @@ public class ExpressionFuzzer {
                 @DontInline
                 public static Object ${primitiveConTest}_compiled(#methodArgumentsWithTypes) {
                 """,
-                bodyTemplate.asToken(expression, expressionArguments),
+                bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
                 """
                 }
 
                 @DontCompile
                 public static Object ${primitiveConTest}_reference(#methodArgumentsWithTypes) {
                 """,
-                bodyTemplate.asToken(expression, expressionArguments),
+                bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
+                """
+                }
+
+                @ForceInline
+                public static Object $checksum(#returnType val) {
+                """,
+                "return new Object[] {",
+                switch(expression.returnType.name()) {
+                    // The integral values have signed/unsigned ranges and known bits.
+                    // Return val, but also some range and bits tests to see if those
+                    // ranges and bits are correct.
+                    case "byte", "short", "char", "int", "long" ->
+                        List.of("val",
+                                IntStream.range(0, 20).mapToObj(i ->
+                                    // Generate a test like:
+                                    // val < 5
+                                    // val & 16
+                                    List.of(", val", List.of("<", ">", "<=", ">=", "&").get(i % 5), expression.returnType.con())
+                                ).toList());
+                    // Float/Double have no range, just return the value:
+                    case "float", "double" -> "val";
+                    // Check if the boolean constant folded:
+                    case "boolean" -> "val, val == true, val == false";
+                    default -> throw new RuntimeException("should only be primitive types");
+                }
+                , "};\n",
                 """
                 }
                 """
@@ -156,8 +185,8 @@ public class ExpressionFuzzer {
 
         for (PrimitiveType type : PRIMITIVE_TYPES) {
             for (int i = 0; i < 10; i++) {
-                // TODO: have a range of depths?
-                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, 10);
+                int depth = RANDOM.nextInt(1, 20);
+                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth);
                 tests.add(testTemplate.asToken(expression));
             }
         }
