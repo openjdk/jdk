@@ -1394,6 +1394,13 @@ class JavaVMRefsInitialization: public StackObj {
   }
 };
 
+#ifdef ASSERT
+static void assert_equals(const char* desc, int expect, int actual) {
+  assert(expect == actual, "%s: %d != %d", desc, expect, actual);
+
+}
+#endif
+
 void JVMCIRuntime::initialize(JVMCI_TRAPS) {
   // Check first without _lock
   if (_init_state == fully_initialized) {
@@ -1464,6 +1471,11 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
+
+    DEBUG_ONLY(assert_equals("DECLARED_ANNOTATIONS", CompilerToVM::DECLARED_ANNOTATIONS, JVMCIENV->get_VMSupport_DECLARED_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("PARAMETER_ANNOTATIONS", CompilerToVM::PARAMETER_ANNOTATIONS, JVMCIENV->get_VMSupport_PARAMETER_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("TYPE_ANNOTATIONS", CompilerToVM::TYPE_ANNOTATIONS, JVMCIENV->get_VMSupport_TYPE_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("ANNOTATION_MEMBER_VALUE", CompilerToVM::ANNOTATION_MEMBER_VALUE, JVMCIENV->get_VMSupport_ANNOTATION_MEMBER_VALUE()));
   }
 
   _init_state = fully_initialized;
@@ -1510,22 +1522,10 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
   return _HotSpotJVMCIRuntime_instance;
 }
 
-#ifdef ASSERT
-static void assert_equals(const char* desc, int expect, int actual) {
-  assert(expect == actual, "%s: %d != %d", desc, expect, actual);
-
-}
-#endif
-
 // Implementation of CompilerToVM.registerNatives()
 // When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
-
-  DEBUG_ONLY(assert_equals("DECLARED_ANNOTATIONS", CompilerToVM::DECLARED_ANNOTATIONS, JVMCIENV->get_VMSupport_DECLARED_ANNOTATIONS()));
-  DEBUG_ONLY(assert_equals("PARAMETER_ANNOTATIONS", CompilerToVM::PARAMETER_ANNOTATIONS, JVMCIENV->get_VMSupport_PARAMETER_ANNOTATIONS()));
-  DEBUG_ONLY(assert_equals("TYPE_ANNOTATIONS", CompilerToVM::TYPE_ANNOTATIONS, JVMCIENV->get_VMSupport_TYPE_ANNOTATIONS()));
-  DEBUG_ONLY(assert_equals("ANNOTATION_MEMBER_VALUE", CompilerToVM::ANNOTATION_MEMBER_VALUE, JVMCIENV->get_VMSupport_ANNOTATION_MEMBER_VALUE()));
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);

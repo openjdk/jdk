@@ -42,8 +42,6 @@ import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.SpeculationLog.NoSpeculationReason;
 import jdk.vm.ci.meta.SpeculationLog.Speculation;
 
-// JaCoCo Exclude
-
 /**
  * HotSpot implementation of {@link MetaAccessProvider}.
  */

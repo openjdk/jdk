@@ -29,6 +29,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
@@ -227,6 +228,16 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public ResolvedJavaField[] getStaticFields() {
         return new ResolvedJavaField[0];
+    }
+
+    @Override
+    public boolean isRecord() {
+        return false;
+    }
+
+    @Override
+    public ResolvedJavaRecordComponent[] getRecordComponents() {
+        return null;
     }
 
     @Override

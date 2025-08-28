@@ -306,6 +306,16 @@ public class TypeUniverse {
         }
     }
 
+    public static Field lookupField(Class<?> declaringClass, String fieldName) {
+        try {
+            Field result = declaringClass.getDeclaredField(fieldName);
+            result.setAccessible(true);
+            return result;
+        } catch (ReflectiveOperationException | LinkageError cause) {
+            throw new AssertionError(cause);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static <E extends Throwable> RuntimeException rethrow(Throwable ex) throws E {
         throw (E) ex;
@@ -324,6 +334,16 @@ public class TypeUniverse {
             throw new AssertionError(ex);
         } catch (ReflectiveOperationException ex) {
             throw new AssertionError(ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getFieldValue(Field field, Object receiver) {
+        field.setAccessible(true);
+        try {
+            return (T) field.get(receiver);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
         }
     }
 }

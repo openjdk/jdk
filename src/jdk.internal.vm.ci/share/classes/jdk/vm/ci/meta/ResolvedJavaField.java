@@ -86,7 +86,8 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
 
     /**
      * Gets the type annotations for this field that backs the implementation
-     * of {@link Field#getAnnotatedType()}.
+     * of {@link Field#getAnnotatedType()}. This method returns an empty
+     * list if there are no type annotations.
      *
      * @throws UnsupportedOperationException if this operation is not supported
      */
