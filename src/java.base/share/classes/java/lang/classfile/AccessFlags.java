@@ -64,8 +64,8 @@ public sealed interface AccessFlags
         permits AccessFlagsImpl {
 
     /**
-     * {@return the access flags, as a bit mask}  It is in the range of unsigned
-     * short, {@code [0, 0xFFFF]}.
+     * {@return the access flags, as a bit mask}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      */
     int flagsMask();
 

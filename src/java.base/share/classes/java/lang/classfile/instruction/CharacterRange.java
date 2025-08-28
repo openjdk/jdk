@@ -149,8 +149,8 @@ public sealed interface CharacterRange extends PseudoInstruction
      * @param characterRangeStart the encoded start of the character range region (inclusive)
      * @param characterRangeEnd the encoded end of the character range region (exclusive)
      * @param flags a flags word, indicating the kind of range
-     * @throws IllegalArgumentException if {@code flags} is not in the range
-     * {@code [0, 65535]}
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static CharacterRange of(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
         return new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags);

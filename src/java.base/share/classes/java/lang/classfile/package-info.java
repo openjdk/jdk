@@ -460,6 +460,29 @@
  * accept nominal descriptors from {@link java.lang.constant} (e.g., {@link
  * ClassDesc}.)
  *
+ * <h3 id="data-types">Conventional data types</h3>
+ * Chapter {@jvms 4} of the <cite>Java Virtual Machine Specification</cite>
+ * defines a few conventional data types in the {@code class} file format.
+ * They are consistently represented as {@code int} in the API model.
+ * Out-of-bound values provided for these data types to the API result in {@link
+ * IllegalArgumentException}.
+ * <dl>
+ * <dt id="u1">{@code u1}</dt>
+ * <dd>One-byte {@linkplain Byte#toUnsignedInt(byte) unsigned} integer, in the
+ * range {@code [0, 255]}.
+ * <br>See {@link java.io.DataInput#readUnsignedByte()}.</dd>
+ * <dt id="u2">{@code u2}</dt>
+ * <dd>Two-byte {@linkplain Short#toUnsignedInt(short) unsigned} integer, in the
+ * range {@code [0, 65535]}.
+ * <br>Equivalent to a Java {@link Character char}.  Frequently used for flag
+ * fields and indices and sizes of list structures.
+ * <br>See {@link java.io.DataInput#readUnsignedShort()}.</dd>
+ * <dt id="u4">{@code u4}</dt>
+ * <dd>Four-byte {@linkplain Integer#toUnsignedLong(int) unsigned} integer, in
+ * the range {@code [0, 4294967295]}.
+ * <br>See {@link java.io.DataInput#readInt()}.</dd>
+ * </dl>
+ *
  * <h2><a id="data_model"></a>Data model</h2>
  * We define each kind of element by its name, an optional arity indicator (zero
  * or more, zero or one, exactly one), and a list of components.  The elements
