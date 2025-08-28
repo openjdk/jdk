@@ -1914,7 +1914,7 @@ void ZPageAllocator::cleanup_failed_commit_single_partition(ZSinglePartitionAllo
 
   // For a single partition we have unmapped the harvested memory before we
   // started committing, and moved its physical memory association to the start
-  // of the vmem. As such the partial_vmems is empty. All the harvested and
+  // of the vmem. As such, the partial_vmems is empty. All the harvested and
   // partially successfully committed memory is mapped in the first part of vmem.
   const size_t harvested_and_committed = allocation->harvested() + allocation->committed_capacity();
   const ZVirtualMemory committed_vmem = vmem.first_part(harvested_and_committed);
