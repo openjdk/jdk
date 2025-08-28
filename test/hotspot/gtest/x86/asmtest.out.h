@@ -924,9 +924,9 @@
     __ exorq(r28, r28, Address(r29, r27, (Address::ScaleFactor)2, +0x53091f6f), false); //    xor r28, qword ptr [r29+r27*4+0x53091f6f]    IID892
     __ exorq(r17, r16, Address(r27, +0x7c6e9207), true);                        //    {NF}xor r17, r16, qword ptr [r27+0x7c6e9207]    IID893
     __ exorq(r15, r15, Address(r13, r24, (Address::ScaleFactor)3, -0x75c87960), true); //    {NF}xor r15, r15, qword ptr [r13+r24*8-0x75c87960]    IID894
-    __ eaddq(r16, rbx, r18, true);                                              //    {load}{NF}add r16, rbx, r18    IID895
-    __ eaddq(r24, r24, r18, true);                                              //    {load}{NF}add r24, r24, r18    IID896
-    __ eaddq(r9, r15, r9, true);                                                //    {load}{NF}add r9, r15, r9    IID897
+    __ eaddq(r16, rbx, r18, false);                                             //    {load}{EVEX}add r16, rbx, r18    IID895
+    __ eaddq(r24, r24, r18, false);                                             //    {load}add r24, r18    IID896
+    __ eaddq(r9, r15, r9, false);                                               //    {load}add r9, r15    IID897
     __ eaddq(r19, r26, r13, true);                                              //    {load}{NF}add r19, r26, r13    IID898
     __ eaddq(r28, r28, r22, true);                                              //    {load}{NF}add r28, r28, r22    IID899
     __ eaddq(r22, r11, r22, true);                                              //    {load}{NF}add r22, r11, r22    IID900
@@ -1960,9 +1960,9 @@
     0xd5, 0x7f, 0x33, 0xa4, 0x9d, 0x6f, 0x1f, 0x09, 0x53,                            // IID892
     0x62, 0xcc, 0xf4, 0x14, 0x33, 0x83, 0x07, 0x92, 0x6e, 0x7c,                      // IID893
     0x62, 0x14, 0x80, 0x1c, 0x33, 0xbc, 0xc5, 0xa0, 0x86, 0x37, 0x8a,                // IID894
-    0x62, 0xfc, 0xfc, 0x14, 0x03, 0xda,                                              // IID895
-    0x62, 0x6c, 0xbc, 0x14, 0x03, 0xc2,                                              // IID896
-    0x62, 0x54, 0xb4, 0x1c, 0x03, 0xf9,                                              // IID897
+    0x62, 0xfc, 0xfc, 0x10, 0x03, 0xda,                                              // IID895
+    0xd5, 0x5c, 0x03, 0xc2,                                                          // IID896
+    0x4d, 0x03, 0xcf,                                                                // IID897
     0x62, 0x44, 0xe4, 0x14, 0x03, 0xd5,                                              // IID898
     0x62, 0x6c, 0x9c, 0x14, 0x03, 0xe6,                                              // IID899
     0x62, 0x7c, 0xcc, 0x14, 0x03, 0xde,                                              // IID900
@@ -2998,8 +2998,8 @@
     10,   // IID893
     11,   // IID894
     6,    // IID895
-    6,    // IID896
-    6,    // IID897
+    4,    // IID896
+    3,    // IID897
     6,    // IID898
     6,    // IID899
     6,    // IID900
@@ -4034,9 +4034,9 @@
     "__ exorq(r28, r28, Address(r29, r27, (Address::ScaleFactor)2, +0x53091f6f), false);", // IID892
     "__ exorq(r17, r16, Address(r27, +0x7c6e9207), true);",                               // IID893
     "__ exorq(r15, r15, Address(r13, r24, (Address::ScaleFactor)3, -0x75c87960), true);", // IID894
-    "__ eaddq(r16, rbx, r18, true);",                                                     // IID895
-    "__ eaddq(r24, r24, r18, true);",                                                     // IID896
-    "__ eaddq(r9, r15, r9, true);",                                                       // IID897
+    "__ eaddq(r16, rbx, r18, false);",                                                    // IID895
+    "__ eaddq(r24, r24, r18, false);",                                                    // IID896
+    "__ eaddq(r9, r15, r9, false);",                                                      // IID897
     "__ eaddq(r19, r26, r13, true);",                                                     // IID898
     "__ eaddq(r28, r28, r22, true);",                                                     // IID899
     "__ eaddq(r22, r11, r22, true);",                                                     // IID900

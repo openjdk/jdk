@@ -1429,7 +1429,6 @@ private:
   void imulq(Register dst, Address src);
   void eimulq(Register dst, Address src, bool no_flags);
   void eimulq(Register dst, Register src1, Address src2, bool no_flags);
-  void eimulq(Register dst, Address src1, Register src2, bool no_flags);
   void imulq(Register dst);
   void eimulq(Register dst, bool no_flags);
 
@@ -1772,7 +1771,6 @@ private:
   void orb(Address dst, int imm8);
   void eorb(Register dst, Address  src, int imm8, bool no_flags);
   void orb(Address dst, Register src);
-  void orb(Register dst, Address src);
   void eorb(Register dst, Address src1, Register src2, bool no_flags);
 
   void orq(Address dst, int32_t imm32);

@@ -1437,7 +1437,7 @@ instruction_set64 = {
         ('exorq', 'xor', 64, True),
     ],
     RegRegRegNddInstruction: [
-        ('eaddq', 'add', 64, True),
+        ('eaddq', 'add', 64, False),
         ('eaddq', 'add', 64, True),
         ('eadcxq', 'adcx', 64, None),
         ('eadoxq', 'adox', 64, None),
