@@ -229,6 +229,7 @@ private:
   shenandoah_padding(0);
   volatile size_t _committed;
   shenandoah_padding(1);
+  // Used for JFR object count event support.
   KlassInfoTable* _cit;
   void increase_used(const ShenandoahAllocRequest& req);
 
@@ -253,11 +254,8 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
-  // Create Shenandoah's KlassInfoTable.
-  // Used for JFR object count event support.
+  // Setter & accessor for class histogram
   inline void set_cit(KlassInfoTable* cit);
-
-  // Return Shenandoah's KlassInfoTable.
   inline KlassInfoTable* get_cit();
 
 // ---------- Periodic Tasks

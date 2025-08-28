@@ -126,10 +126,10 @@ void ShenandoahControlThread::run_service() {
 
     if (gc_requested) {
       // Create the KlassInfoTable for Shenandoah only if JFR is enabled.
-      #if INCLUDE_JFR
+#if INCLUDE_JFR
       KlassInfoTable cit(false);
       heap->set_cit(&cit);
-      #endif // INCLUDE_JFR
+#endif // INCLUDE_JFR
 
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);

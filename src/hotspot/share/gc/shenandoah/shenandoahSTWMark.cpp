@@ -24,7 +24,7 @@
  */
 
 
-#include "gc/shared/objectCountEventSender.inline.hpp"
+#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -123,7 +123,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      #if INCLUDE_JFR
+#if INCLUDE_JFR
       // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
       const bool object_count_enabled = ObjectCountEventSender::should_send_event();
       if (object_count_enabled) {
@@ -134,7 +134,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
         _root_scanner.roots_do(&init_mark, worker_id);
         _count.merge_table(global_cit);
       } else
-      #endif // INCLUDE_JFR
+#endif // INCLUDE_JFR
       {
         ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
         _root_scanner.roots_do(&init_mark, worker_id);

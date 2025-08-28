@@ -649,13 +649,13 @@ inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
 }
 
 inline void ShenandoahHeap::set_cit(KlassInfoTable* cit) {
-  assert((_cit == nullptr && cit != nullptr) ||
-    (_cit != nullptr && cit == nullptr), "Initialize once & clear once");
+  assert(_cit == nullptr || cit == nullptr, "Overwriting an existing histogram");
+  assert(_cit != nullptr || cit != nullptr, "Already cleared");
   _cit = cit;
 }
 
 inline KlassInfoTable* ShenandoahHeap::get_cit() {
-  assert(_cit != nullptr, "KlassInfoTable for Shenandoah should be initialized");
+  assert(_cit != nullptr, "KlassInfoTable is null");
   return _cit;
 }
 

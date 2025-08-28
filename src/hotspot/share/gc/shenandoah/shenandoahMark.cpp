@@ -24,7 +24,7 @@
  */
 
 
-#include "gc/shared/objectCountEventSender.inline.hpp"
+#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -69,7 +69,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     Closure cl(q, rp, old_q);
     mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    #if INCLUDE_JFR
+#if INCLUDE_JFR
     // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
     const bool object_count_enabled = ObjectCountEventSender::should_send_event();
     if (object_count_enabled && !ShenandoahHeap::heap()->mode()->is_generational()) {
@@ -81,7 +81,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
       mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
       _count.merge_table(global_cit);
     } else
-    #endif // INCLUDE_JFR
+#endif // INCLUDE_JFR
     {
       using Closure = ShenandoahMarkRefsClosure<GENERATION>;
       Closure cl(q, rp, old_q);

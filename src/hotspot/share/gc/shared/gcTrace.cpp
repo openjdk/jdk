@@ -27,8 +27,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTrace.inline.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
@@ -75,9 +73,9 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 }
 
 #if INCLUDE_SERVICES
-
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
+
   if (ObjectCountEventSender::should_send_event()) {
     ResourceMark rm;
 
@@ -85,12 +83,11 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure<false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
 }
-
 #endif // INCLUDE_SERVICES
 
 void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const {

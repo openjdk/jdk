@@ -30,7 +30,9 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
@@ -92,6 +94,33 @@ class ParallelOldGCInfo {
   void* dense_prefix() const { return _dense_prefix; }
 };
 
+#if INCLUDE_SERVICES
+class ObjectCountEventSenderClosure : public KlassInfoClosure {
+  const double _size_threshold_percentage;
+  const size_t _total_size_in_words;
+  const Ticks _timestamp;
+
+ public:
+  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp) :
+    _size_threshold_percentage(ObjectCountCutOffPercent / 100),
+    _total_size_in_words(total_size_in_words),
+    _timestamp(timestamp)
+  {}
+
+  virtual void do_cinfo(KlassInfoEntry* entry) {
+    if (should_send_event(entry)) {
+      ObjectCountEventSender::send(entry, _timestamp);
+    }
+  }
+
+ private:
+  bool should_send_event(const KlassInfoEntry* entry) const {
+    double percentage_of_heap = ((double) entry->words()) / _total_size_in_words;
+    return percentage_of_heap >= _size_threshold_percentage;
+  }
+};
+#endif // INCLUDE_SERVICES
+
 class GCTracer {
  protected:
   SharedGCInfo _shared_gc_info;
@@ -103,13 +132,11 @@ class GCTracer {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
-
+  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   // Report object count by not performing a heap inspection. This method will
   // only work if there's a global KlassInfoTable in the heap.
   template <typename T>
   void report_object_count() NOT_SERVICES_RETURN;
-
-  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:
