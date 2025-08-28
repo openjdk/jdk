@@ -23,7 +23,7 @@
  *
  */
 
-
+#include "gc/shared/objectCountEventSender.inline.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -44,6 +45,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/threads.hpp"
+
 
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask : public WorkerTask {
@@ -170,8 +172,20 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ?
           nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
-  _root_scanner.roots_do(&cl, worker_id);
+
+  // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
+  const bool object_count_enabled = ObjectCountEventSender::should_send_event();
+  if (object_count_enabled  && !ShenandoahHeap::heap()->mode()->is_generational()) {
+    KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
+    KlassInfoTable local_cit(false);
+    ShenandoahObjectCountClosure _count(&local_cit);
+    ShenandoahMarkRefsAndCountClosure<GENERATION> cl(q, _rp, old_q, &_count);
+    _root_scanner.roots_do(&cl, worker_id);
+    _count.merge_table(global_cit);
+  } else {
+    ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
+    _root_scanner.roots_do(&cl, worker_id);
+  }
 }
 
 void ShenandoahConcurrentMark::mark_concurrent_roots() {

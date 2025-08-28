@@ -46,6 +46,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
+#include "memory/heapInspection.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -645,6 +646,17 @@ inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const
 
 inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
   return _marking_context;
+}
+
+inline void ShenandoahHeap::set_cit(KlassInfoTable* cit) {
+  assert((_cit == nullptr && cit != nullptr) ||
+    (_cit != nullptr && cit == nullptr), "Initialize once & clear once");
+  _cit = cit;
+}
+
+inline KlassInfoTable* ShenandoahHeap::get_cit() {
+  assert(_cit != nullptr, "KlassInfoTable for Shenandoah should be initialized");
+  return _cit;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP

@@ -27,6 +27,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gcTrace.inline.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
@@ -74,34 +75,9 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 }
 
 #if INCLUDE_SERVICES
-class ObjectCountEventSenderClosure : public KlassInfoClosure {
-  const double _size_threshold_percentage;
-  const size_t _total_size_in_words;
-  const Ticks _timestamp;
-
- public:
-  ObjectCountEventSenderClosure(size_t total_size_in_words, const Ticks& timestamp) :
-    _size_threshold_percentage(ObjectCountCutOffPercent / 100),
-    _total_size_in_words(total_size_in_words),
-    _timestamp(timestamp)
-  {}
-
-  virtual void do_cinfo(KlassInfoEntry* entry) {
-    if (should_send_event(entry)) {
-      ObjectCountEventSender::send(entry, _timestamp);
-    }
-  }
-
- private:
-  bool should_send_event(const KlassInfoEntry* entry) const {
-    double percentage_of_heap = ((double) entry->words()) / _total_size_in_words;
-    return percentage_of_heap >= _size_threshold_percentage;
-  }
-};
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
-
   if (ObjectCountEventSender::should_send_event()) {
     ResourceMark rm;
 
@@ -109,11 +85,12 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, Work
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<false> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
 }
+
 #endif // INCLUDE_SERVICES
 
 void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const {
