@@ -118,7 +118,7 @@ static ZMappedCacheEntry* create_entry(const ZVirtualMemory& vmem) {
   return entry;
 }
 
-bool ZMappedCache::EntryCompare::less(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
+bool ZMappedCache::EntryCompare::less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
   const ZVirtualMemory vmem_a = ZMappedCacheEntry::cast_to_entry(a)->vmem();
   const ZVirtualMemory vmem_b = ZMappedCacheEntry::cast_to_entry(b)->vmem();
 
@@ -168,12 +168,12 @@ void ZMappedCache::Tree::insert(TreeNode* node, const TreeCursor& cursor) {
   // Insert in tree
   TreeImpl::insert_at_cursor(node, cursor);
 
-  if (_left_most == nullptr || EntryCompare::less(node, _left_most)) {
+  if (_left_most == nullptr || EntryCompare::less_than(node, _left_most)) {
     // Keep track of left most node
     _left_most = node;
   }
 
-  if (_right_most == nullptr || EntryCompare::less(_right_most, node)) {
+  if (_right_most == nullptr || EntryCompare::less_than(_right_most, node)) {
     // Keep track of right most node
     _right_most = node;
   }

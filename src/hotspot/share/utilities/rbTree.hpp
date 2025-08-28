@@ -38,7 +38,7 @@
 //     - RBTreeOrdering::less when a < b
 //     - RBTreeOrdering::equal when a == b
 //     - RBTreeOrdering::greater when a > b
-// A second static function `less(const IntrusiveRBNode* a, const IntrusiveRBNode* b)`
+// A second static function `less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b)`
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
 //     - false otherwise
@@ -53,7 +53,7 @@
 //     - RBTreeOrdering::less when a < b
 //     - RBTreeOrdering::equal when a == b
 //     - RBTreeOrdering::greater when a > b
-// A second static function `less(const RBNode<K, V>* a, const RBNode<K, V>* b)`
+// A second static function `less_than(const RBNode<K, V>* a, const RBNode<K, V>* b)`
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
 //     - false otherwise
@@ -227,13 +227,13 @@ private:
   }
 
   template <typename CMP = COMPARATOR, ENABLE_IF(!HasNodeVerifier<CMP>)>
-  bool less(const NodeType* a, const NodeType* b) const {
+  bool less_than(const NodeType* a, const NodeType* b) const {
     return true;
   }
 
   template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
-  bool less(const NodeType* a, const NodeType* b) const {
-    return COMPARATOR::less(a, b);
+  bool less_than(const NodeType* a, const NodeType* b) const {
+    return COMPARATOR::less_than(a, b);
   }
 
   // Cannot assert if no key comparator exist.
@@ -445,7 +445,7 @@ public:
   // If provided, each node is also verified through this callable.
   template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
   void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less(a, b);}, extra_verifier);
+    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less_than(a, b);}, extra_verifier);
   }
 
   template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR,

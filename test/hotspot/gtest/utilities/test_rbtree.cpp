@@ -42,7 +42,7 @@ public:
       return RBTreeOrdering::equal;
     }
 
-    static bool less(const RBTreeIntNode* a, const RBTreeIntNode* b) {
+    static bool less_than(const RBTreeIntNode* a, const RBTreeIntNode* b) {
       return a->key() < b->key();
     }
   };
@@ -106,7 +106,7 @@ struct ArrayAllocator {
     }
 
     // true if a < b
-    static bool less(const IntrusiveTreeNode* a, const IntrusiveTreeNode* b) {
+    static bool less_than(const IntrusiveTreeNode* a, const IntrusiveTreeNode* b) {
       return (IntrusiveHolder::cast_to_self(a)->key -
               IntrusiveHolder::cast_to_self(b)->key) < 0;
     }

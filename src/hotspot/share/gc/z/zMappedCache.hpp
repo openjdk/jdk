@@ -41,7 +41,7 @@ class ZMappedCache {
 private:
   struct EntryCompare {
     static RBTreeOrdering cmp(zoffset a, const IntrusiveRBNode* b);
-    static bool less(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
+    static bool less_than(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
   };
 
   struct ZSizeClassListNode {
