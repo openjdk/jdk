@@ -30,7 +30,7 @@ jvmtiEnv* jvmti_env;
 bool method_exit_posted = false;
 // This method exit callback actually works only for 2 methods:
 // 1) for ExceptionExit it verifies that method exit
-//    has been popped by exception and call 'upCall' mthod using JNI.
+//    has been popped by exception and calls 'upCall' method using JNI.
 // 2) for upCall method it verifies that event has correct
 //    return value and was not popped by exception.
 // The event callback just exits for all other methods.
@@ -64,7 +64,7 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
     return;
   }
   jmethodID upcall_method = jni->GetStaticMethodID(main_class,
-      "upCall", "()Ljava/lang/String;");
+                                                   "upCall", "()Ljava/lang/String;");
   if (upcall_method == nullptr) {
     fatal(jni,"Can't find upCall method.");
   }
@@ -101,11 +101,12 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   err = jvmti->SetEventCallbacks(&callbacks, (int) sizeof (jvmtiEventCallbacks));
   check_jvmti_error(err, "SetEventCallbacks");
   jvmti_env = jvmti;
- return JNI_OK;
+  return JNI_OK;
 }
 
 
 extern "C" {
+
 JNIEXPORT void JNICALL
 Java_TestMethodExitWithPendingException_enable(JNIEnv *jni, jclass clazz) {
   jthread thread = get_current_thread(jvmti_env, jni);
@@ -122,4 +123,4 @@ Java_TestMethodExitWithPendingException_disableAndCheck(JNIEnv *jni, jclass claz
   }
 }
 
-}
+} // extern "C"

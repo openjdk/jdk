@@ -1848,7 +1848,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     oop oop_result;
     BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
     assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
-      "Stack shouldn't be empty");
+           "Stack shouldn't be empty");
     if (is_reference_type(type)) {
       result = Handle(thread, oop_result);
       value.l = JNIHandles::make_local(thread, result());
@@ -1862,7 +1862,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC.
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
-    post_method_exit_inner(thread, mh, state, false, current_frame, value);
+    post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
   JRT_BLOCK_END
 
   // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
