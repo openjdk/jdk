@@ -108,6 +108,7 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
+#if INCLUDE_JFR
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkRefsAndCountClosure : public ShenandoahMarkRefsSuperClosure {
 private:
@@ -129,6 +130,7 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
+#endif // INCLUDE_JFR
 
 class ShenandoahForwardedIsAliveClosure : public BoolObjectClosure {
 private:
