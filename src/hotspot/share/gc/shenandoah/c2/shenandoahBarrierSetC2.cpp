@@ -857,8 +857,8 @@ void ShenandoahBarrierStubC2::register_stub() {
   }
 }
 
-ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Register addr_reg, Register preval, Register tmp1, Register tmp2) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, addr_reg, preval, tmp1, tmp2);
+ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Register addr_reg, Register preval) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, addr_reg, preval);
   stub->register_stub();
   return stub;
 }
@@ -882,9 +882,10 @@ ShenandoahCASBarrierMidStubC2* ShenandoahCASBarrierMidStubC2::create(const MachN
 }
 
 bool ShenandoahBarrierSetC2State::needs_liveness_data(const MachNode* mach) const {
-  assert(mach->barrier_data() != 0, "what else?");
-  return mach->barrier_data() != 0;
-;
+  //assert(mach->barrier_data() != 0, "what else?");
+  // return mach->barrier_data() != 0;
+  //return (mach->barrier_data() & ShenandoahSATBBarrier) != 0;
+  return ShenandoahSATBBarrierStubC2::needs_barrier(mach);
 }
 
 bool ShenandoahBarrierSetC2State::needs_livein_data() const {

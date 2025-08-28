@@ -36,8 +36,6 @@ static void satb_barrier(MacroAssembler* masm,
                          const MachNode* node,
                          Register addr,
                          Register pre_val,
-                         Register tmp1,
-                         Register tmp2,
                          RegSet preserve = RegSet(),
                          RegSet no_preserve = RegSet()) {
   if (!ShenandoahSATBBarrierStubC2::needs_barrier(node)) {
@@ -45,14 +43,14 @@ static void satb_barrier(MacroAssembler* masm,
   }
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   ShenandoahBarrierSetAssembler* bsasm = ShenandoahBarrierSet::barrier_set()->assembler();
-  ShenandoahSATBBarrierStubC2* const stub = ShenandoahSATBBarrierStubC2::create(node, addr, pre_val, tmp1, tmp2);
+  ShenandoahSATBBarrierStubC2* const stub = ShenandoahSATBBarrierStubC2::create(node, addr, pre_val);
   for (RegSetIterator<Register> reg = preserve.begin(); *reg != noreg; ++reg) {
     stub->preserve(*reg);
   }
   for (RegSetIterator<Register> reg = no_preserve.begin(); *reg != noreg; ++reg) {
     stub->dont_preserve(*reg);
   }
-  bsasm->satb_barrier_c2(masm, addr, pre_val, rthread, tmp1, tmp2, stub);
+  bsasm->satb_barrier_c2(masm, addr, pre_val, stub);
 }
 
 %}
@@ -67,9 +65,7 @@ instruct storeP_shenandoah(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     __ str($src$$Register, $mem$$Register);
   %}
@@ -86,9 +82,7 @@ instruct storePVolatile_shenandoah(indirect mem, iRegP src, iRegPNoSp tmp, rFlag
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     __ stlr($src$$Register, $mem$$Register);
   %}
@@ -105,9 +99,7 @@ instruct storeN_shenandoah(indirect mem, iRegN src, iRegPNoSp tmp, rFlagsReg cr)
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     __ strw($src$$Register, $mem$$Register);
   %}
@@ -124,9 +116,7 @@ instruct storeNVolatile_shenandoah(indirect mem, iRegN src, iRegPNoSp tmp, rFlag
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     __ stlrw($src$$Register, $mem$$Register);
   %}
@@ -144,9 +134,7 @@ instruct encodePAndStoreN_shenandoah(indirect mem, iRegP src, iRegPNoSp tmp, rFl
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     if ((barrier_data() & ShenandoahBarrierCardMarkNotNull) == 0) {
       __ encode_heap_oop($tmp$$Register, $src$$Register);
@@ -169,9 +157,7 @@ instruct encodePAndStoreNVolatile_shenandoah(indirect mem, iRegP src, iRegPNoSp 
   ins_encode %{
     satb_barrier(masm, this,
                  $mem$$Register /* obj */,
-                 rscratch1 /* pre_val */,
-                 rscratch2 /* tmp1 */,
-                 $tmp$$Register /* tmp2 */,
+                 $tmp$$Register /* pre_val */,
                  RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     if ((barrier_data() & ShenandoahBarrierCardMarkNotNull) == 0) {
       __ encode_heap_oop($tmp$$Register, $src$$Register);
@@ -200,8 +186,6 @@ instruct compareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldval, i
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -231,8 +215,6 @@ instruct compareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldval, i
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -261,8 +243,6 @@ instruct compareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP oldval
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -293,8 +273,6 @@ instruct compareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN oldval
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -321,8 +299,6 @@ instruct compareAndExchangeN_shenandoah(iRegNNoSp res, indirect mem, iRegN oldva
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -345,8 +321,6 @@ instruct compareAndExchangeP_shenandoah(iRegPNoSp res, indirect mem, iRegP oldva
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -372,8 +346,6 @@ instruct compareAndExchangeNAcq_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -397,8 +369,6 @@ instruct compareAndExchangePAcq_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -424,8 +394,6 @@ instruct weakCompareAndSwapN_shenandoah(iRegINoSp res, indirect mem, iRegN oldva
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -448,8 +416,6 @@ instruct weakCompareAndSwapP_shenandoah(iRegINoSp res, indirect mem, iRegP oldva
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -476,8 +442,6 @@ instruct weakCompareAndSwapNAcq_shenandoah(iRegINoSp res, indirect mem, iRegN ol
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                    RegSet::of($res$$Register) /* no_preserve */);
     }
@@ -502,8 +466,6 @@ instruct weakCompareAndSwapPAcq_shenandoah(iRegINoSp res, indirect mem, iRegP ol
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $oldval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                  RegSet::of($res$$Register) /* no_preserve */);
     ShenandoahBarrierSet::assembler()->cmpxchg_oop_c2(this, masm, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $res$$Register,
@@ -525,8 +487,6 @@ instruct getAndSetP_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, rFl
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $preval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
   %}
   ins_pipe(pipe_serial);
@@ -545,8 +505,6 @@ instruct getAndSetPAcq_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, 
     satb_barrier(masm, this,
                  noreg /* obj */,
                  $preval$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */,
                  RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
   %}
   ins_pipe(pipe_serial);
@@ -567,16 +525,12 @@ instruct getAndSetN_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRe
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
     }
   %}
   ins_pipe(pipe_serial);
 %}
 
-// This pattern is generated automatically from g1_aarch64.m4.
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct getAndSetNAcq_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set preval (GetAndSetN mem newval));
@@ -592,22 +546,18 @@ instruct getAndSetNAcq_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, 
       satb_barrier(masm, this,
                    noreg /* obj */,
                    $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */,
                    RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
     }
   %}
   ins_pipe(pipe_serial);
 %}
 
-// This pattern is generated automatically from g1_aarch64.m4.
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct loadP_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
 %{
   // This instruction does not need an acquiring counterpart because it is only
   // used for reference loading (Reference::get()). The same holds for g1LoadN.
   match(Set dst (LoadP mem));
-  predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# ptr" %}
@@ -615,15 +565,11 @@ instruct loadP_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
     __ ldr($dst$$Register, $mem$$Register);
     satb_barrier(masm, this,
                  noreg /* obj */,
-                 $dst$$Register /* pre_val */,
-                 rscratch1 /* tmp1 */,
-                 rscratch2 /* tmp2 */);
+                 $dst$$Register /* pre_val */);
   %}
   ins_pipe(iload_reg_mem);
 %}
 
-// This pattern is generated automatically from g1_aarch64.m4.
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct loadN_shenandoah(iRegNNoSp dst, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set dst (LoadN mem));
@@ -637,9 +583,7 @@ instruct loadN_shenandoah(iRegNNoSp dst, indirect mem, iRegPNoSp tmp, rFlagsReg 
       __ decode_heap_oop($tmp$$Register, $dst$$Register);
       satb_barrier(masm, this,
                    noreg /* obj */,
-                   $tmp$$Register /* pre_val */,
-                   rscratch1 /* tmp1 */,
-                   rscratch2 /* tmp2 */);
+                   $tmp$$Register /* pre_val */);
     }
   %}
   ins_pipe(iload_reg_mem);

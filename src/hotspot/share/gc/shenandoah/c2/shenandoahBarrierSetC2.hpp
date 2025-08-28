@@ -132,6 +132,10 @@ public:
 
   int estimate_stub_size() const /* override */;
   void emit_stubs(CodeBuffer& cb) const /* override */;
+  void late_barrier_analysis() const /* override*/ {
+    compute_liveness_at_stubs();
+  }
+
 };
 
 class ShenandoahBarrierStubC2 : public BarrierStubC2 {
@@ -145,17 +149,15 @@ public:
 class ShenandoahSATBBarrierStubC2 : public ShenandoahBarrierStubC2 {
   Register _addr_reg;
   Register _preval;
-  Register _tmp1;
-  Register _tmp2;
-  ShenandoahSATBBarrierStubC2(const MachNode* node, Register addr, Register preval, Register tmp1, Register tmp2) :
+  ShenandoahSATBBarrierStubC2(const MachNode* node, Register addr, Register preval) :
     ShenandoahBarrierStubC2(node),
-    _addr_reg(addr), _preval(preval), _tmp1(tmp1), _tmp2(tmp2) {}
+    _addr_reg(addr), _preval(preval) {}
 
 public:
   static bool needs_barrier(const MachNode* node) {
     return (node->barrier_data() & ShenandoahBarrierSATB) != 0;
   }
-  static ShenandoahSATBBarrierStubC2* create(const MachNode* node, Register addr_reg, Register preval, Register tmp1, Register tmp2);
+  static ShenandoahSATBBarrierStubC2* create(const MachNode* node, Register addr_reg, Register preval);
 
   void emit_code(MacroAssembler& masm) override;
 };

@@ -611,11 +611,12 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 #ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::satb_barrier_c2(MacroAssembler* masm, Register addr, Register pre_val, Register rthread, Register tmp1, Register tmp2, ShenandoahSATBBarrierStubC2* stub) {
+void ShenandoahBarrierSetAssembler::satb_barrier_c2(MacroAssembler* masm, Register addr, Register pre_val, ShenandoahSATBBarrierStubC2* stub) {
+  assert_different_registers(addr, pre_val);
   // Check if GC marking is in progress, otherwise we don't have to do anything.
   Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ ldrb(tmp1, gc_state);
-  __ tstw(tmp1, ShenandoahHeap::MARKING);
+  __ ldrb(rscratch1, gc_state);
+  __ tstw(rscratch1, ShenandoahHeap::MARKING);
   __ br(Assembler::NE, *stub->entry());
   __ bind(*stub->continuation());
 }
@@ -666,22 +667,20 @@ void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
     __ load_heap_oop(_preval, Address(_addr_reg, 0), noreg, noreg, AS_RAW);
   }
   // Is the previous value null?
-  __ tst(_preval, _preval);
-  // Then we don't need to do anything.
-  __ br(Assembler::EQ, *continuation());
+  __ cbz(_preval, *continuation());
 
-  Address queue_index(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
+  Address index(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
   Label runtime;
-  __ ldr(_tmp1, queue_index);
+  __ ldr(rscratch1, index);
   // If buffer is full, call into runtime.
-  __ cbz(_tmp1, runtime);
+  __ cbz(rscratch1, runtime);
 
   // The buffer is not full, store value into it.
-  __ sub(_tmp1, _tmp1, wordSize);
-  __ str(_tmp1, queue_index);
-  __ ldr(_tmp2, buffer);
-  __ str(_preval, Address(_tmp2, _tmp1));
+  __ sub(rscratch1, rscratch1, wordSize);
+  __ str(rscratch1, index);
+  __ ldr(rscratch2, buffer);
+  __ str(_preval, Address(rscratch2, rscratch1));
   __ b(*continuation());
 
   // Runtime call
@@ -691,8 +690,8 @@ void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
     if (c_rarg0 != _preval) {
       __ mov(c_rarg0, _preval);
     }
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre));
-    __ blr(lr);
+    __ mov(rscratch1, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre_c2));
+    __ blr(rscratch1);
   }
   __ b(*continuation());
 }
