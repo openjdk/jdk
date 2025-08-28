@@ -1328,8 +1328,8 @@ nmethod::nmethod(
            "wrong mutable data size: %d != %d + %d",
            _mutable_data_size, _relocation_size, metadata_size);
 
-    // native wrapper does not have read-only data
-    _immutable_data          = nullptr;
+    // native wrapper does not have read-only data but we need unique not null address
+    _immutable_data          = blob_end();
     _immutable_data_size     = 0;
     _nul_chk_table_offset    = 0;
     _handler_table_offset    = 0;
@@ -1442,7 +1442,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
     _immutable_data             = nm._immutable_data;
     set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
   } else {
-    _immutable_data             = nullptr;
+    _immutable_data             = blob_end();
   }
 
   _exception_cache              = nullptr;
@@ -1769,7 +1769,8 @@ nmethod::nmethod(
       assert(immutable_data != nullptr, "required");
       _immutable_data     = immutable_data;
     } else {
-      _immutable_data     = nullptr;
+      // We need unique not null address
+      _immutable_data     = blob_end();
     }
     CHECKED_CAST(_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
     CHECKED_CAST(_handler_table_offset, uint16_t, (_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
@@ -2440,24 +2441,23 @@ void nmethod::purge(bool unregister_nmethod) {
     delete ec;
     ec = next;
   }
-
-  delete _pc_desc_container;
+  if (_pc_desc_container != nullptr) {
+    delete _pc_desc_container;
+  }
   delete[] _compiled_ic_data;
 
-  if (_immutable_data != nullptr) {
+  if (_immutable_data != blob_end()) {
     int reference_count = get_immutable_data_references_counter();
     assert(reference_count > 0, "immutable data has no references");
 
     set_immutable_data_references_counter(reference_count - 1);
-
     // Free memory if this is the last nmethod referencing immutable data
     if (reference_count == 0) {
       os::free(_immutable_data);
     }
-  }
 
-  _immutable_data = nullptr;
-  _immutable_data_size = 0;
+    _immutable_data = blob_end(); // Valid not null address
+  }
 
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
