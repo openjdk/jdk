@@ -141,6 +141,8 @@
           "GC heuristics to use. This fine-tunes the GC mode selected, "    \
           "by choosing when to start the GC, how much to process on each "  \
           "cycle, and what other features to automatically enable. "        \
+          "When -XX:ShenandoahGCMode is generational, the only supported"   \
+          "option is the default, `adaptive`."                              \
           "Possible values are:"                                            \
           " adaptive - adapt to maintain the given amount of free heap "    \
           "at all times, even during the GC cycle;"                         \

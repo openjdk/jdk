@@ -2908,10 +2908,10 @@ Java HotSpot VM.
 :   Sets the heuristics for Shenandoah GC to use. By default, this option is
     set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
     to start the GC, how much to process on each cycle, and what other features
-    to automatically enable.
+    to automatically enable. When `-XX:ShenandoahGCMode` is `generational`, the
+    only supported option is the default, `adaptive`.
 
-    Possible heuristics are the following (when `-XX:ShenandoahGCMode` is
-    `generational`, the only supported option is the default, `adaptive`):
+    Possible heuristics are the following:
 
     `adaptive`
     :   To maintain the given amount of free heap at all times, even during
