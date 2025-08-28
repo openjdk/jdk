@@ -2590,6 +2590,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len32               = x28;
     const Register vl                  = t1;
     const Register ctr                 = t2;
+    const Register tmp                 = c_rarg7;
 
     const unsigned char block_size = 16;
 
@@ -2609,8 +2610,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // Init 0b01010101... v0 mask for counter increase
     uint64_t maskIndex = 0xaaul;
+    __ vsetvli(t0, x0, Assembler::e8, Assembler::m1);
     __ mv(t0, maskIndex);
-    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
     __ vmv_v_x(v0, t0);
 
     Label L_aes128_loadkeys, L_aes192_loadkeys, L_exit_loadkeys;
@@ -2641,10 +2642,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bge(used, t0, L_main);
 
     __ bind(L_encrypt_next);
-    __ add(t1, saved_encrypted_ctr, used);
-    __ lb(t0, Address(t1));
-    __ lb(t1, Address(in));
-    __ xorr(t0, t0, t1);
+    __ add(tmp, saved_encrypted_ctr, used);
+    __ lbu(t0, Address(tmp));
+    __ lbu(tmp, Address(in));
+    __ xorr(t0, t0, tmp);
     __ sb(t0, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
