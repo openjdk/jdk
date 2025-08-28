@@ -802,19 +802,25 @@ private:
   int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool commutative_demotion = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
+  void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                                      InstructionAttr *attributes, int op1, int op2, bool no_flags = false, bool use_prefixq = false, bool is_commutative = false);
+                                    
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
                                              int size, int op1, int op2, bool no_flags);
 
   void emit_eevex_or_demote(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
+  
+  void emit_eevex_or_demote(Register dst, Address src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags = false, bool is_map1 = false, bool is_commutative = false);
 
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false);
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false, bool is_commutative = false);
 
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags, bool is_map1 = false);
@@ -832,7 +838,7 @@ private:
   void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
-  void emit_arith(int op1, int op2, Register dst, Register src);
+  void emit_arith(int op1, int op2, Register dst, Register src, bool swap = false);
 
   bool emit_compressed_disp_byte(int &disp);
 
@@ -1149,6 +1155,7 @@ private:
   void eandl(Register dst, Register src, int32_t imm32, bool no_flags);
   void andl(Register dst, Address src);
   void eandl(Register dst, Register src1, Address src2, bool no_flags);
+  void eandl(Register dst, Address src1, Register src2, bool no_flags);
   void andl(Register dst, Register src);
   void eandl(Register dst, Register src1, Register src2, bool no_flags);
   void andl(Address dst, Register src);
@@ -1422,6 +1429,7 @@ private:
   void imulq(Register dst, Address src);
   void eimulq(Register dst, Address src, bool no_flags);
   void eimulq(Register dst, Register src1, Address src2, bool no_flags);
+  void eimulq(Register dst, Address src1, Register src2, bool no_flags);
   void imulq(Register dst);
   void eimulq(Register dst, bool no_flags);
 
@@ -1764,6 +1772,7 @@ private:
   void orb(Address dst, int imm8);
   void eorb(Register dst, Address  src, int imm8, bool no_flags);
   void orb(Address dst, Register src);
+  void orb(Register dst, Address src);
   void eorb(Register dst, Address src1, Register src2, bool no_flags);
 
   void orq(Address dst, int32_t imm32);
