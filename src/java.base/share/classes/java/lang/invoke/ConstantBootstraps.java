@@ -410,8 +410,10 @@ public final class ConstantBootstraps {
      * @param dstType the destination type of the conversion
      * @param value the value to be converted, may be null
      * @return the converted value
-     * @throws ClassCastException when {@code dstType} is {@code void}, when
-     *         a cast per (1) fails, or according to (2).(3)
+     * @throws ClassCastException when {@code dstType} is {@code void}; when
+     *         {@code dstType} is reference, and the reference cast fails; or
+     *         when {@code dstType} is primitive, and {@code value} is an
+     *         instance of a reference type that is not a wrapper class
      * @since 15
      */
     public static Object explicitCast(MethodHandles.Lookup lookup, String name, Class<?> dstType, Object value)
