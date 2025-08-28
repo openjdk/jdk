@@ -28,9 +28,9 @@
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
-#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -372,8 +372,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, CodeBlobKind kind, int size);
-  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size);
+  BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size = sizeof(BufferBlob));
+  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size = sizeof(BufferBlob));
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -404,12 +404,18 @@ class BufferBlob: public RuntimeBlob {
 // AdapterBlob: used to hold C2I/I2C adapters
 
 class AdapterBlob: public BufferBlob {
+public:
+  static const int ENTRY_COUNT = 4;
 private:
-  AdapterBlob(int size, CodeBuffer* cb);
-
+  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  // _i2c_offset is always 0 so no need to store it
+  int _c2i_offset;
+  int _c2i_unverified_offset;
+  int _c2i_no_clinit_check_offset;
 public:
   // Creation
-  static AdapterBlob* create(CodeBuffer* cb);
+  static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  void get_offsets(int entry_offset[ENTRY_COUNT]);
 };
 
 //---------------------------------------------------------------------------------------------------

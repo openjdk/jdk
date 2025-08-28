@@ -103,10 +103,13 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <li> "cf"
  * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
  * Currency Format style</a>) - Overrides the Currency Format style used
+ * <li> "cu"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyIdentifier">
+ * Currency Type</a>) - Overrides the Currency used
  * </ul>
  * <p>
- * If both "nu" and "rg" are specified, the decimal digits from the "nu"
- * extension supersedes the implicit one from the "rg" extension.
+ * For both "nu" and "cu", if they are specified in addition to "rg", the respective
+ * values from the "nu" and "cu" extension supersede the implicit ones from the "rg" extension.
  * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
  * defines various keys and values, actual locale-sensitive service implementations
  * in a Java Runtime Environment might not support any particular Unicode locale
@@ -192,7 +195,11 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Lenient parsing should be used when attempting to parse a number
  * out of a String that contains non-numerical or non-format related values.
  * For example, using a {@link Locale#US} currency format to parse the number
- * {@code 1000} out of the String "$1,000.00 was paid".
+ * {@code 1000} out of the String "$1,000.00 was paid". Lenient parsing also
+ * allows loose matching of characters in the source text. For example, an
+ * implementation of the {@code NumberFormat} class may allow matching "−"
+ * (U+2212 MINUS SIGN) to the "-" (U+002D HYPHEN-MINUS) pattern character
+ * when used as a negative prefix.
  * <p>
  * Strict parsing should be used when attempting to ensure a String adheres exactly
  * to a locale's conventions, and can thus serve to validate input. For example, successfully
