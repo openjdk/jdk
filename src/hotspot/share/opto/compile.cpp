@@ -3988,14 +3988,16 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
     return;
 
   // Go over ReachabilityFence nodes to skip DecodeN nodes for referents.
+  // The sole purpose of RF node is to keep the referent oop alive and
+  // decoding the oop for that is not needed.
   for (int i = 0; i < C->reachability_fences_count(); i++) {
-    Node* rf = C->reachability_fence(i);
-    Node* in = rf->in(1);
-    if (in->is_DecodeN()) {
-      if (!in->has_non_debug_uses() || Matcher::narrow_oop_use_complex_address()) {
-        rf->set_req(1, in->in(1));
-        if (in->outcnt() == 0) {
-          in->disconnect_inputs(this);
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
+    DecodeNNode* dn = rf->in(1)->isa_DecodeN();
+    if (dn != nullptr) {
+      if (!dn->has_non_debug_uses() || Matcher::narrow_oop_use_complex_address()) {
+        rf->set_req(1, dn->in(1));
+        if (dn->outcnt() == 0) {
+          dn->disconnect_inputs(this);
         }
       }
     }

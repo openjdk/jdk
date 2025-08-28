@@ -371,6 +371,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
     if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oop locals alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
       Node* loc = local(index);
       if (loc->bottom_type() != TypePtr::NULL_PTR) {
         assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
@@ -386,6 +388,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     const Type *type = osr_block->stack_type_at(index);
     set_stack(index, check_interpreter_type(l, type, bad_type_exit));
     if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oops on stack alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
       Node* stk = stack(index);
       if (stk->bottom_type() != TypePtr::NULL_PTR) {
         assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
@@ -1222,7 +1226,8 @@ void Parse::do_method_entry() {
   }
 
   if (StressReachabilityFences) {
-    // Keep all oop arguments alive until method return.
+    // Keep all oop arguments alive until the method returns as if there are
+    // reachability fences for them at the end of the method.
     int max_locals = jvms()->loc_size();
     for (int idx = 0; idx < max_locals; idx++) {
       Node* loc = local(idx);
@@ -2219,7 +2224,7 @@ void Parse::return_current(Node* value) {
   }
 
   if (StressReachabilityFences) {
-    // Keep all oop arguments alive until method return.
+    // Insert reachability fences for all oop arguments at the end of the method.
     for (uint i = 1; i < _stress_rf_hook->req(); i++) {
       Node* referent = _stress_rf_hook->in(i);
       assert(referent->bottom_type()->isa_oopptr(), "%s", Type::str(referent->bottom_type()));

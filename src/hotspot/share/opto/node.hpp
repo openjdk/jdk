@@ -699,8 +699,8 @@ public:
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
-        DEFINE_CLASS_ID(Initialize,        MemBar, 0)
-        DEFINE_CLASS_ID(MemBarStoreStore,  MemBar, 1)
+        DEFINE_CLASS_ID(Initialize,       MemBar, 0)
+        DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
       DEFINE_CLASS_ID(ReachabilityFence, Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)

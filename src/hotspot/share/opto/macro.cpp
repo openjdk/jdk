@@ -44,6 +44,7 @@
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -969,7 +970,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         }
         _igvn._worklist.push(ac);
       } else if (use->is_ReachabilityFence() && OptimizeReachabilityFences) {
-        _igvn.replace_input_of(use, 1, _igvn.makecon(TypePtr::NULL_PTR)); // reset; redundant fence
+        use->as_ReachabilityFence()->clear_referent(_igvn); // redundant fence
       } else {
         eliminate_gc_barrier(use);
       }

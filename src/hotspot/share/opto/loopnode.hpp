@@ -44,6 +44,7 @@ class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
 class LoopSelector;
+class ReachabilityFenceNode;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -1476,6 +1477,20 @@ public:
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
 
+  // Reachability Fence (RF) support.
+ private:
+  bool is_redundant_rf(ReachabilityFenceNode* rf, bool rf_only);
+  bool find_redundant_rfs(Unique_Node_List& redundant_rfs);
+  void insert_rf(Node* ctrl, Node* referent);
+  void replace_rf(Node* old_node, Node* new_node);
+  void remove_rf(ReachabilityFenceNode* rf);
+#ifdef ASSERT
+  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only);
+#endif // ASSERT
+ public:
+  bool optimize_reachability_fences();
+  bool eliminate_reachability_fences();
+
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
@@ -1495,20 +1510,7 @@ public:
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
 
-  // Reachability fence support.
-  bool optimize_reachability_fences();
-  bool eliminate_reachability_fences();
-
-  bool is_redundant_rf(Node* rf, bool rf_only);
-  bool find_redundant_rfs(Unique_Node_List& redundant_rfs);
-  void insert_rf(Node* ctrl, Node* referent);
-  void replace_rf(Node* old_node, Node* new_node);
-  void remove_rf(Node* rf);
-#ifdef ASSERT
-  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only);
-#endif // ASSERT
-
-public:
+ public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
   // execution of the expensive node. Return true if progress.

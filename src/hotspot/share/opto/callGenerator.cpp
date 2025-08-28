@@ -614,10 +614,10 @@ void CallGenerator::do_late_inline_helper() {
 
   uint endoff = call->jvms()->endoff();
   if (C->inlining_incrementally()) {
-    assert(endoff == call->req(), ""); // assert in SafePointNode::grow_stack
+    assert(endoff == call->req(), "reachability edge present"); // asserted in SafePointNode::grow_stack
   } else {
     if (call->req() > endoff) {
-      assert(OptimizeReachabilityFences, "");
+      assert(OptimizeReachabilityFences, "reachability edge present");
       return; // keep the original call node as the holder of reachability info
     }
   }

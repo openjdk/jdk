@@ -51,6 +51,8 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
 
+  bool clear_referent(PhaseIterGVN& phase);
+
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
   virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra) const;

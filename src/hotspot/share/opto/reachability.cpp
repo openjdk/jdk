@@ -34,29 +34,41 @@
 /*
  * Reference::reachabilityFence support.
  *
- * Reachability fences (RFs) are intended to be used in performance critical code,
- * so the primary goal for C2 support is to reduce their runtime overhead as much as possible.
+ * Reachability Fence (RF) ensures that the given object (referent) remains strongly reachable
+ * regardless of any optimizing transformations the virtual machine may perform that might otherwise
+ * allow the object to become unreachable.
  *
- * Reference::reachabilityFence() calls are intrinsified into ReachabilityFence CFG nodes
- * and transition through multiple phases:
+ * RFs are intended to be used in performance-critical code, so the primary goal for C2 support is
+ * to reduce their runtime overhead as much as possible.
+ *
+ * Reference::reachabilityFence() calls are intrinsified into ReachabilityFence CFG nodes. RF node keeps
+ * its referent alive, so the referent's location is recorded at every safepoint (in its oop map) which
+ * interferes with referent's live range.
+ *
+ * It is tempting to directly attach referents to interfering safepoints right from the beginning, but it
+ * doesn't play well with some optimizations C2 does.
+ *
+ * Instead, reachability representation transitions through multiple phases:
  *   (0) initial set of RFs is materialized during parsing;
- *   (1) optimization pass during loop opts which eliminates redundant nodes and
- *     moves loop-invariant ones outside loops;
- *   (2) reachability information is transferred to safepoint nodes (appended as edges after debug info);
- *   (3) reachability information from safepoints materialized as RF nodes attached to the safepoint node.
+ *   (1) optimization pass during loop opts eliminates redundant RF nodes and
+ *       moves the ones with loop-invariant referents outside loops;
+ *   (2) after loop opts are over, RF nodes are eliminated and their referents are transferred to
+ *       safepoint nodes (appended as edges after debug info);
+ *   (3) during final graph reshaping, referent edges are removed from safepoints and materialized as RF nodes
+ *       attached to their safepoint node (closely following it in CFG graph).
  *
  * Some implementation considerations.
  *
  * It looks attractive to get rid of RF nodes early and transfer to safepoint-attached representation,
  * but it is not correct until loop opts are done.
  *
- * RF nodes may interfere with RA, so stand-alone RF nodes are eliminated and reachability information is
- * transferred to corresponding safepoints. When safepoints are pruned during macro expansion, corresponding
- * reachability info also goes away.
+ * RF nodes may interfere with RA, so stand-alone RF nodes are eliminated and their referents are
+ * transferred to corresponding safepoints (phase #2). When safepoints are pruned during macro expansion,
+ * corresponding reachability edges also go away.
  *
  * Unfortunately, it's not straightforward to stay with safepoint-attached representation till the very end,
- * because information about derived oops is attached to safepoints in a similar way. So, for now RFs are
- * rematerialized at safepoints before RA.
+ * because information about derived oops is attached to safepoints the very same similar way. So, for now RFs are
+ * rematerialized at safepoints before RA (phase #3).
  */
 
 // RF is redundant for some referent oop when the referent has another user which keeps it alive across the RF.
@@ -111,6 +123,16 @@ Node* ReachabilityFenceNode::Identity(PhaseGVN* phase) {
     return in(0);
   }
   return this;
+}
+
+// Turn the RF node into an no-op by setting it's referent to null.
+bool ReachabilityFenceNode::clear_referent(PhaseIterGVN& phase) {
+  if (phase.type(in(1)) == TypePtr::NULL_PTR) {
+    return false;
+  } else {
+    phase.replace_input_of(this, 1, phase.makecon(TypePtr::NULL_PTR));
+    return true;
+  }
 }
 
 #ifndef PRODUCT
@@ -185,8 +207,7 @@ void PhaseIdealLoop::replace_rf(Node* old_node, Node* new_node) {
   lazy_replace(old_node, new_node);
 }
 
-void PhaseIdealLoop::remove_rf(Node* rf) {
-  assert(rf->is_ReachabilityFence(), "");
+void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
   Node* referent = rf->in(1);
   if (igvn().type(referent) != TypePtr::NULL_PTR) {
     igvn().replace_input_of(rf, 1, makecon(TypePtr::NULL_PTR));
@@ -198,8 +219,7 @@ void PhaseIdealLoop::remove_rf(Node* rf) {
   replace_rf(rf, rf_ctrl_in);
 }
 
-bool PhaseIdealLoop::is_redundant_rf(Node* rf, bool rf_only) {
-  assert(rf->is_ReachabilityFence(), "");
+bool PhaseIdealLoop::is_redundant_rf(ReachabilityFenceNode* rf, bool rf_only) {
   Node* referent = rf->in(1);
   return is_redundant_rf_helper(rf, referent, this, igvn(), rf_only);
 }
@@ -209,7 +229,7 @@ bool PhaseIdealLoop::is_redundant_rf(Node* rf, bool rf_only) {
 bool PhaseIdealLoop::find_redundant_rfs(Unique_Node_List& redundant_rfs) {
   bool found = false;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
-    Node* rf = C->reachability_fence(i);
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
     Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
     if (!redundant_rfs.member(rf) && is_redundant_rf(rf, true /*rf_only*/)) {
@@ -266,7 +286,7 @@ static void dump_rfs_on(outputStream* st, PhaseIdealLoop* phase, Unique_Node_Lis
 
 bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only) {
   for (int i = 0; i < C->reachability_fences_count(); i++) {
-    Node* rf = C->reachability_fence(i);
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
     Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
     if (ignored_rfs.member(rf)) {
@@ -334,7 +354,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
   // Eliminate redundant RFs.
   bool progress = (redundant_rfs.size() > 0);
   while (redundant_rfs.size() > 0) {
-    remove_rf(redundant_rfs.pop());
+    remove_rf(redundant_rfs.pop()->as_ReachabilityFence());
   }
 
   assert(redundant_rfs.size() == 0, "");
@@ -365,7 +385,7 @@ static void linear_traversal(Node* n, Node_Stack& worklist, VectorSet& visited, 
 }
 
 // Enumerate all safepoints which are reachable from the RF to its referent through CFG.
-// Start at rf node and traverse CFG upwards until referent's control node is reached.
+// Start at RF node and traverse CFG upwards until referent's control node is reached.
 static void enumerate_interfering_sfpts(Node* rf, PhaseIdealLoop* phase, Node_List& safepoints) {
   Node* referent = rf->in(1);
   Node* referent_ctrl = phase->get_ctrl(referent);
@@ -420,7 +440,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
   Unique_Node_List redundant_rfs;
   Node_List worklist;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
-    ReachabilityFenceNode* rf = C->reachability_fence(i)->as_ReachabilityFence();
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
     assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
     if (!is_redundant_rf(rf, false /*rf_only*/)) {
       Node_List safepoints;
@@ -447,9 +467,10 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
     igvn()._worklist.push(sfpt);
   }
 
-  bool progress =  (redundant_rfs.size() > 0);
+  // Eliminate redundant RFs.
+  bool progress = (redundant_rfs.size() > 0);
   while (redundant_rfs.size() > 0) {
-    remove_rf(redundant_rfs.pop());
+    remove_rf(redundant_rfs.pop()->as_ReachabilityFence());
   }
 
   assert(C->reachability_fences_count() == 0, "");
