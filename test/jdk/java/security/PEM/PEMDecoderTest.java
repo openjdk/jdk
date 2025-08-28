@@ -79,6 +79,8 @@ public class PEMDecoderTest {
         testClass(PEMData.rsapub, X509EncodedKeySpec.class, true);
         System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
         testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false, ClassCastException.class);
+        System.out.println("Decoder test rsapriv PEM asking other EKS returned:");
+        testClass(PEMData.rsapriv, XEKS.class, false, ClassCastException.class);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
         testClass(PEMData.rsaCert, X509EncodedKeySpec.class, false);
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
@@ -584,6 +586,17 @@ public class PEMDecoderTest {
         } catch (Exception e) {
             System.out.println("FAIL: " + entry.name());
             throw new AssertionError(e);
+        }
+    }
+
+    class XEKS extends EncodedKeySpec {
+        public XEKS(byte[] encodedKey) {
+            super(encodedKey);
+        }
+
+        @Override
+        public String getFormat() {
+            return "";
         }
     }
 }
