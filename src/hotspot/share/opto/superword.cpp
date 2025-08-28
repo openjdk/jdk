@@ -2108,19 +2108,14 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
 
 void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
+  VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
-                                              vtnode_idx_to_transformed_node);
+    VTransformApplyResult result = vtn->apply(apply_state);
     NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
 
-    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
