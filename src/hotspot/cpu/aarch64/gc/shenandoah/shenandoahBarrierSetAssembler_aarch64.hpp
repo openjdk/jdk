@@ -95,7 +95,7 @@ public:
                    bool acquire, bool release, bool is_cae, Register result);
 #ifdef COMPILER2
 
-  void satb_barrier_c2(MacroAssembler* masm, Register obj, Register pre_val, ShenandoahSATBBarrierStubC2* stub);
+  void satb_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register pre_val);
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register expected, Register new_val, Register result,
                       bool acquire, bool release, bool weak, bool is_cae);
 #endif
