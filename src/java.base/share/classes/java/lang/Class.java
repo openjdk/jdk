@@ -78,6 +78,7 @@ import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
+import jdk.internal.util.ModifiedUtf;
 import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -92,7 +93,6 @@ import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
-import static jdk.internal.util.ModifiedUtf.utfLen;
 /**
  * Instances of the class {@code Class} represent classes and
  * interfaces in a running Java application. An enum class and a record
@@ -4164,7 +4164,7 @@ public final class Class<T> implements java.io.Serializable,
             return true;
         }
         // Compute exact Modified UTF-8 length.
-        return utfLen(name, 0) <= JAVA_CLASSNAME_MAX_LEN;
+        return ModifiedUtf.utfLen(name, 0) <= JAVA_CLASSNAME_MAX_LEN;
     }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
