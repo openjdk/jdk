@@ -67,7 +67,7 @@ public class CPUInfoTest {
                     "f16c",         "pku",              "ospke",             "cet_ibt",
                     "cet_ss",       "avx512_ifma",      "serialize",         "avx_ifma",
                     "apx_f",        "avx10_1",          "avx10_2",           "avx512_fp16",
-                    "sha512"
+                    "sha512",       "hybrid"
                     );
             // @formatter:on
             // Checkstyle: resume
