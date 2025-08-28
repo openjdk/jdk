@@ -2583,6 +2583,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register input_len           = c_rarg4;
     const Register saved_encrypted_ctr = c_rarg5;
     const Register used_ptr            = c_rarg6;
+    const Register tmp                 = c_rarg7;
 
     const Register keylen              = x31;
     const Register used                = x30;
@@ -2590,7 +2591,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register len32               = x28;
     const Register vl                  = t1;
     const Register ctr                 = t2;
-    const Register tmp                 = c_rarg7;
 
     const unsigned char block_size = 16;
 
