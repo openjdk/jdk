@@ -127,12 +127,14 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
-     * Default step-delay in milliseconds for mouse {@link #glide(int, int, int, int) glide}.
+     * Default step-delay in milliseconds for mouse
+     * {@link #glide(int, int, int, int) glide}.
      */
     public static final int DEFAULT_STEP_DELAY = 20;
 
     /**
-     * Default pixel step-length for mouse {@link #glide(int, int, int, int) glide}.
+     * Default pixel step-length for mouse
+     * {@link #glide(int, int, int, int) glide}.
      */
     public static final int DEFAULT_STEP_LENGTH = 2;
 
@@ -809,9 +811,9 @@ public class Robot {
      */
     public void click(int buttons) {
         mousePress(buttons);
-        waitForIdle(20);
+        waitForIdle(DEFAULT_STEP_DELAY);
         mouseRelease(buttons);
-        waitForIdle(20);
+        waitForIdle(DEFAULT_STEP_DELAY);
     }
 
     /**
