@@ -1941,7 +1941,7 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
     }
 
     const size_t committed = allocation->committed_capacity();
-    const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
+    const ZVirtualMemory non_harvested_vmem = partial_vmem.last_part(allocation->harvested());
     const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
     const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
 
