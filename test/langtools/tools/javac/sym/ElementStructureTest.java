@@ -514,12 +514,10 @@ public class ElementStructureTest {
                 out.write(Double.toHexString((Double) value));
             } else if (value instanceof Float) {
                 out.write(Float.toHexString((Float) value));
+            } else if (value instanceof Character ch && Character.isSurrogate(ch)) {
+                out.write(Integer.toHexString(ch));
             } else {
-                if (value instanceof Character ch && Character.isSurrogate(ch)) {
-                    out.write(Integer.toHexString(ch));
-                } else {
-                    out.write(String.valueOf(value));
-                }
+                out.write(String.valueOf(value));
             }
         }
 
