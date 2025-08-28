@@ -103,7 +103,7 @@ public final class FilterSemiCustomImages {
         // standard source -> custom dst
         BufferedImage src = new BufferedImage(W, H, type);
         fill(src);
-        BufferedImage dstCustom = makeCustomBI(srcGold);
+        BufferedImage dstCustom = makeCustomBI(dstGold);
         op.filter(src, dstCustom);
         verify(dstGold, dstCustom);
 
