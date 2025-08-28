@@ -35,7 +35,7 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& time
 
   // If this request of object counting was done by the ObjectCount event,
   // emit data for only that event and not ObjectCountAfterGC. We know
-  // that if this condition fails, then object counting was triggered by 
+  // that if this condition fails, then object counting was triggered by
   // ObjectCountAfterGC and so emit both events.
   if (SeparateEventEmission && _should_send_requestable_event) {
     send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);

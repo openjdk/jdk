@@ -229,7 +229,7 @@ private:
   shenandoah_padding(0);
   volatile size_t _committed;
   shenandoah_padding(1);
-  
+
   KlassInfoTable* _cit;
   void increase_used(const ShenandoahAllocRequest& req);
 

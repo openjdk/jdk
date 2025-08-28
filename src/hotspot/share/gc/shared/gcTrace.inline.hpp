@@ -24,7 +24,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
     _total_size_in_words(total_size_in_words),
     _timestamp(timestamp)
   {}
-  
+
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       if (SeparateEventEmission) {
@@ -47,7 +47,7 @@ void GCTracer::report_object_count() {
   if (!ObjectCountEventSender::should_send_event()) {
     return;
   }
-  
+
   T* heap = T::heap();
   KlassInfoTable* cit = heap->get_cit();
 

@@ -10,7 +10,7 @@
 class ShenandoahObjectCountClosure {
 private:
   KlassInfoTable* _cit;
-  
+
   template <class T>
   inline void do_oop_work(T* p) {
     assert(p != nullptr, "Object is null");
