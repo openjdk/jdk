@@ -3069,7 +3069,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const bool is_sub = iv_scale * iv_stride > 0;
 
   // 1.1: con
-  Node* xbic = igvn().intcon(is_sub ? -con : con);
+  Node* xbic = phase()->intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar = SUM(invar_summands)
@@ -3086,7 +3086,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       phase()->register_new_node(invar_variable, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
-    Node* invar_scale_con = igvn().intcon(invar_scale);
+    Node* invar_scale_con = phase()->intcon(invar_scale);
     TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
@@ -3138,7 +3138,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 2: Compute (14):
   //    XBIC = xbic / abs(iv_scale)
   //    The division is executed as shift
-  Node* log2_abs_iv_scale = igvn().intcon(exact_log2(abs(iv_scale)));
+  Node* log2_abs_iv_scale = phase()->intcon(exact_log2(abs(iv_scale)));
   Node* XBIC = new URShiftINode(xbic, log2_abs_iv_scale);
   phase()->register_new_node(XBIC, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_iv_scale);
@@ -3163,7 +3163,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                    = XBIC_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
   //    a bitmask operation.
-  Node* mask_AW = igvn().intcon(AW-1);
+  Node* mask_AW = phase()->intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBIC_OP_old_limit, mask_AW);
   phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);

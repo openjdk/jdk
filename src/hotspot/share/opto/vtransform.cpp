@@ -203,13 +203,13 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
     TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
   }
 
-  Node* mask_alignment = igvn().intcon(alignment-1);
+  Node* mask_alignment = phase()->intcon(alignment-1);
   Node* base_alignment = new AndINode(node, mask_alignment);
   phase()->register_new_node(base_alignment, ctrl);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(mask_alignment);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(base_alignment);
 
-  Node* zero = igvn().intcon(0);
+  Node* zero = phase()->intcon(0);
   Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
   BoolNode* bol_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
   phase()->register_new_node(cmp_alignment, ctrl);
@@ -734,7 +734,7 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.
-  Node* shift_count_masked = new AndINode(shift_count_in, phase->igvn().intcon(_mask));
+  Node* shift_count_masked = new AndINode(shift_count_in, phase->intcon(_mask));
   register_new_node_from_vectorization(apply_state, shift_count_masked, shift_count_in);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
   VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
@@ -749,7 +749,7 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
   assert(val->is_Phi(), "expected to be iv");
   assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
-  VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
+  VectorNode* vn = new PopulateIndexNode(val, phase->intcon(1), vt);
   register_new_node_from_vectorization(apply_state, vn, val);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
@@ -827,7 +827,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   BoolTest::mask mask = test()._mask;
 
   PhaseIdealLoop* phase = apply_state.phase();
-  ConINode* mask_node  = phase->igvn().intcon((int)mask);
+  ConINode* mask_node  = phase->intcon((int)mask);
   const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
