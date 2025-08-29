@@ -383,9 +383,6 @@ public class Lint {
 
         /**
          * Warn about recognized {@code @SuppressWarnings} lint categories that don't actually suppress any warnings.
-         *
-         * <p>
-         * This category is excluded from unnecessary suppression warnings.
          */
         SUPPRESSION("suppression"),
 
@@ -470,8 +467,8 @@ public class Lint {
     }
 
     /**
-     * Determine whether warnings in the given category should be calculated, because
-     * the category is either (a) enabled or (b) being tracked for unnecessary suppression.
+     * Determine whether warnings in the given category should be calculated, because either
+     * (a) the category is enabled, or (b) lint category {@code "suppression"} is enabled.
      *
      * <p>
      * Use of this method is never required; it simply helps avoid potentially useless work.

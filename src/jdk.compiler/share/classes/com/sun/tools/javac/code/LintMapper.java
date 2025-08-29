@@ -90,12 +90,9 @@ import com.sun.tools.javac.util.Log;
  *  <li>Some lint categories don't support suppression via the {@code @SuppressWarnings} annotations
  *      (e.g., {@code "classfile"}). Specifying such a category in a {@code @SuppressWarnings} annotation
  *      is always unnecessary and will trigger an unnecessary suppression warning (if enabled).
- *  <li>Some categories are not tracked for unnecessary suppression, e.g., {@code "options"}, {@code "path"},
- *      and {@code "suppression"} itself. Specifying such a category in a {@code @SuppressWarnings} annotation
- *      will never generate an unnecessary suppression warning.
- *  <li>{@code @SuppressWarnings("suppression")} is perfectly valid and reasonable: it means unnecessary
- *      suppression warnings will never be reported for any lint category suppressed by that annotation
- *      or by any {@code @SuppressWarnings} annotation nested within the scope of its declaration.
+ *  <li>{@code @SuppressWarnings("suppression")} is normal and valid: it means unnecessary suppression
+ *      warnings won't occur for that annotation or any other {@code @SuppressWarnings} annotations within
+ *      the scope of the annotated declaration.
  * </ul>
  *
  * <p><b>This is NOT part of any supported API.
