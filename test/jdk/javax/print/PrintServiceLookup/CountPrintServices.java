@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
+import java.io.IOException;
 
 import jtreg.SkippedException;
 
@@ -49,9 +50,11 @@ public class CountPrintServices {
     Process proc = null;
     try {
         proc = Runtime.getRuntime().exec(lpcmd);
-    } catch (java.io.IOException e) {
+    } catch (IOException e) {
         if (e.getMessage().contains("No such file or directory")) {
             throw new SkippedException("Cannot find lpstat");
+        } else {
+            throw e;
         }
     }
     proc.waitFor();
