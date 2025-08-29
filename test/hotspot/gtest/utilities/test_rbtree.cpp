@@ -1079,3 +1079,15 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   }
 }
 
+struct OomAllocator {
+  void* allocate(size_t sz) {
+    return nullptr;
+  }
+  void free(void* ptr) {}
+};
+TEST_VM_F(RBTreeTest, AllocatorMayReturnNull) {
+  RBTree<int, int, Cmp, OomAllocator> rbtree;
+  bool success = rbtree.upsert(5, 5);
+  EXPECT_EQ(false, success);
+  // The test didn't exit the VM, so it was succesful.
+}
