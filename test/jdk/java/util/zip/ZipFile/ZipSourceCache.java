@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.zip.*;
 import jdk.test.lib.util.FileUtils;
@@ -93,10 +94,16 @@ public class ZipSourceCache {
             } else {
                 assertEquals(++numSources, internalMap.size());
             }
-
-            // update the zip file, should expect a new Source Object
-            // ignore this part of test if file can't be updated (can't overwrite)
-            if (createZipFile("differentContent")) {
+            final FileTime prevLastModTime = Files.readAttributes(Path.of(ZIPFILE_NAME),
+                    BasicFileAttributes.class).lastModifiedTime();
+            // Update the ZIP file. May expect a new Source Object (depending on whether
+            // the file could be overwritten and its last modified time is newer than previous)
+            final boolean created = createZipFile("differentContent");
+            final FileTime newLastModTime = Files.readAttributes(Path.of(ZIPFILE_NAME),
+                    BasicFileAttributes.class).lastModifiedTime();
+            // only run this part of the test if the file was overwritten and its last modified time
+            // changed to a more recent value
+            if (created && newLastModTime.compareTo(prevLastModTime) > 0) {
                 ZipFile z = new ZipFile(relativeFile);
                 // update of file should trigger new <Key, Source> mapping
                 assertEquals(++numSources, internalMap.size());
@@ -107,6 +114,10 @@ public class ZipSourceCache {
                 assertEquals(INVALID_LOC_EXCEPTION, ioe.getMessage());
                 z.close();
                 assertEquals(--numSources, internalMap.size());
+            } else {
+                System.err.println("no updates detected to " + ZIPFILE_NAME
+                        + ", last modified time before update = " + prevLastModTime
+                        + ", after update = " + newLastModTime);
             }
         }
         // with fileKey() support, the close() call shouldn't remove the
