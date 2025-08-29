@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -626,7 +627,7 @@ public class SuppressionWarningTest extends TestRunner {
 
         // Detect if any modules are being compiled; if so we need to create an extra source directory level
         Pattern moduleDecl = Pattern.compile("module\\s+(\\S*).*");
-        Set<String> moduleNames = test.sources().stream()
+        Set<String> moduleNames = test.sources.stream()
           .flatMap(source -> Stream.of(source.split("\\n")))
           .map(moduleDecl::matcher)
           .filter(Matcher::matches)
@@ -636,7 +637,7 @@ public class SuppressionWarningTest extends TestRunner {
         // Special JAR file support for REQUIRES_AUTOMATIC and REQUIRES_TRANSITIVE_AUTOMATIC
         Path modulePath = base.resolve("modules");
         resetDirectory(modulePath);
-        LintCategory category = test.category();
+        LintCategory category = test.category;
         switch (category) {
         case REQUIRES_AUTOMATIC:
         case REQUIRES_TRANSITIVE_AUTOMATIC:
@@ -667,8 +668,8 @@ public class SuppressionWarningTest extends TestRunner {
         String annotation = String.format("@SuppressWarnings(\"%s\")", category.option);
 
         // See which annotation substitutions this test supports
-        boolean hasOuterAnnotation = test.sources().stream().anyMatch(source -> source.contains("@OUTER@"));
-        boolean hasInnerAnnotation = test.sources().stream().anyMatch(source -> source.contains("@INNER@"));
+        boolean hasOuterAnnotation = test.sources.stream().anyMatch(source -> source.contains("@OUTER@"));
+        boolean hasInnerAnnotation = test.sources.stream().anyMatch(source -> source.contains("@INNER@"));
 
         // Try all combinations of inner and outer @SuppressWarnings
         boolean[] booleans = new boolean[] { false, true };
@@ -679,7 +680,7 @@ public class SuppressionWarningTest extends TestRunner {
               continue;
 
           // Insert or comment out the @SuppressWarnings annotations in the source templates
-          String[] sources = test.sources().stream()
+          String[] sources = test.sources.stream()
             .map(source -> source.replace("@OUTER@",
               String.format("%s@SuppressWarnings(\"%s\")", outerAnnotation ? "" : "//", category.option)))
             .map(source -> source.replace("@INNER@",
@@ -705,7 +706,7 @@ public class SuppressionWarningTest extends TestRunner {
           for (boolean enableCategory : booleans) {                         // [-]category
              for (boolean enableSuppression : booleans) {                    // [-]suppression
 
-                // Should we expect the warning to be emitted?
+                // Should we expect the "test.warningKey" warning to be emitted?
                 boolean expectCategoryWarning = category.annotationSuppression ?
                   enableCategory && !outerAnnotation && !innerAnnotation : enableCategory;
 
@@ -720,11 +721,14 @@ public class SuppressionWarningTest extends TestRunner {
                     flags.add("--module-path");
                     flags.add(modulePath.toString());
                 }
-                flags.add("--release");
-                flags.add(Source.DEFAULT.name);
-                flags.addAll(test.compileFlags());
+                if (!test.compileFlags.contains("--release")) {
+                    flags.add("--release");
+                    flags.add(Source.DEFAULT.name);
+                }
+                flags.addAll(test.compileFlags);
 
-                ArrayList<String> lints = new ArrayList<>();
+                // Add the -Xlint flag (if any)
+                LinkedHashSet<String> lints = new LinkedHashSet<>();
                 lints.add(String.format("%s%s", enableCategory ? "" : "-", category.option));
                 if (enableSuppression)
                     lints.add(SUPPRESSION.option);
@@ -741,43 +745,43 @@ public class SuppressionWarningTest extends TestRunner {
                 PrintWriter log = new PrintWriter(buf);
                 try {
 
-                  // Logging
-                  log.println(String.format(">>> Test  START: %s", description));
-                  Stream.of(sources).forEach(log::println);
-                  log.println(String.format(">>> expectCategoryWarning=%s", expectCategoryWarning));
-                  log.println(String.format(">>> expectSuppressionWarning=%s", expectSuppressionWarning));
+                    // Logging
+                    log.println(String.format(">>> Test  START: %s", description));
+                    Stream.of(sources).forEach(log::println);
+                    log.println(String.format(">>> expectCategoryWarning=%s", expectCategoryWarning));
+                    log.println(String.format(">>> expectSuppressionWarning=%s", expectSuppressionWarning));
 
-                  // Compile sources and get log output
-                  List<String> output = compile(base, Task.Expect.SUCCESS, flags.toArray(new String[0]));
+                    // Compile sources and get log output
+                    List<String> output = compile(base, Task.Expect.SUCCESS, flags.toArray(new String[0]));
 
-                  // Scrub insignificant log output
-                  output.removeIf(line -> line.matches("[0-9]+ (error|warning)s?"));
-                  output.removeIf(line -> line.contains("compiler.err.warnings.and.werror"));
-                  output.removeIf(line -> line.matches("- compiler\\.note\\..*"));   // mandatory warning "recompile" etc.
+                    // Scrub insignificant log output
+                    output.removeIf(line -> line.matches("[0-9]+ (error|warning)s?"));
+                    output.removeIf(line -> line.contains("compiler.err.warnings.and.werror"));
+                    output.removeIf(line -> line.matches("- compiler\\.note\\..*"));   // mandatory warning "recompile" etc.
 
-                  // See which warnings appeared
-                  boolean foundSuppressionWarning = output.removeIf(
-                    line -> line.contains("compiler.warn.unnecessary.warning.suppression"));
-                  boolean foundCategoryWarning = output.removeIf(line -> line.contains(test.warningKey()));
+                    // See which warnings appeared
+                    boolean foundSuppressionWarning = output.removeIf(
+                      line -> line.contains("compiler.warn.unnecessary.warning.suppression"));
+                    boolean foundCategoryWarning = output.removeIf(line -> line.contains(test.warningKey()));
 
-                  // Compare that vs. expectations
-                  if (foundCategoryWarning != expectCategoryWarning) {
-                      throw new AssertionError(String.format("%s: category warning: found=%s but expected=%s",
-                        description, foundCategoryWarning, expectCategoryWarning));
-                  }
-                  if (foundSuppressionWarning != expectSuppressionWarning) {
-                      throw new AssertionError(String.format("%s: \"%s\" warning: found=%s but expected=%s",
-                        description, SUPPRESSION.option, foundSuppressionWarning, expectSuppressionWarning));
-                  }
+                    // Compare that vs. expectations
+                    if (foundCategoryWarning != expectCategoryWarning) {
+                        throw new AssertionError(String.format("%s: category warning: found=%s but expected=%s",
+                          description, foundCategoryWarning, expectCategoryWarning));
+                    }
+                    if (foundSuppressionWarning != expectSuppressionWarning) {
+                        throw new AssertionError(String.format("%s: \"%s\" warning: found=%s but expected=%s",
+                          description, SUPPRESSION.option, foundSuppressionWarning, expectSuppressionWarning));
+                    }
 
-                  // There shouldn't be any other warnings
-                  if (!output.isEmpty()) {
-                      throw new AssertionError(String.format(
-                        "%s: %d unexpected warning(s): %s", description, output.size(), output));
-                  }
+                    // There shouldn't be any other warnings
+                    if (!output.isEmpty()) {
+                        throw new AssertionError(String.format(
+                          "%s: %d unexpected warning(s): %s", description, output.size(), output));
+                    }
 
-                  // Done
-                  log.println(String.format("<<< Test PASSED: %s", description));
+                    // Done
+                    log.println(String.format("<<< Test PASSED: %s", description));
                 } catch (AssertionError e) {
                     log.println(String.format("<<< Test FAILED: %s", description));
                     log.flush();
