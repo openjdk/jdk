@@ -33,17 +33,12 @@ import jtreg.SkippedException;
  * @bug 8032693
  * @key printer
  * @library /test/lib/
+ * @requires (os.family == "linux")
  * @summary Test that lpstat and JDK agree whether there are printers.
  */
 public class CountPrintServices {
 
   public static void main(String[] args) throws Exception {
-    String os = System.getProperty("os.name").toLowerCase();
-    System.out.println("OS is " + os);
-    if (!os.equals("linux")) {
-        System.out.println("Linux specific test. No need to continue");
-        return;
-    }
     PrintService services[] =
         PrintServiceLookup.lookupPrintServices(null, null);
     if (services.length > 0) {
