@@ -57,6 +57,7 @@ import java.util.stream.Stream;
  *
  * @param <T> the type of value
  * @since 1.8
+ * @author KostiaY, VilaliiH, OleksiiS
  */
 @jdk.internal.ValueBased
 public sealed interface Optional<T> {
