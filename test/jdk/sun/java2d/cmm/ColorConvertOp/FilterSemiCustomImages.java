@@ -139,7 +139,8 @@ public final class FilterSemiCustomImages {
                 // fully opaque pixels
                 Color c = new Color(y * 255 / (height - 1),
                                     x * 255 / (width - 1),
-                                    x % 255, (x % 2 == 0) ? 0 : 255);
+                                    x % 255,
+                                    (x % 2 == 0) ? 0 : 255);
                 image.setRGB(x, y, c.getRGB());
             }
         }
