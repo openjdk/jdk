@@ -80,11 +80,13 @@ import jdk.internal.util.StaticProperty;
  * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
- * <p> Unless otherwise noted, {@linkplain java.nio.file##links symbolic links}
- * are automatically redirected to the <i>target</i> of the link, whether they
- * are provided by a pathname string or via a {@code File} object.  Methods
- * which only operate on the abstract pathname do not access the file system
- * and thus do not resolve symbolic links.
+ * <p> Many operating systems and file systems have support for
+ * {@linkplain java.nio.file##links symbolic links}.
+ * A symbolic link is a special file that serves as a reference to another file.
+ * Unless otherwise specified, symbolic links are transparent to applications
+ * and operations on files that are symbolic links are automatically redirected
+ * to the target of the link.  Methods that only operate on the abstract pathnam
+ * do not access the file system and thus do not resolve symbolic links.
  *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
  * the {@link #getParent} method of this class and consists of the pathname's
@@ -1942,11 +1944,9 @@ public class File
      * Compares two abstract pathnames lexicographically.  The ordering
      * defined by this method depends upon the underlying system.  On UNIX
      * systems, alphabetic case is significant in comparing pathnames; on
-     * Microsoft Windows systems it is not.
-     *
-     * @apiNote This method only compares the abstract pathnames;
-     *          it does not access the file system and the file is not required
-     *          to exist.
+     * Microsoft Windows systems it is not.  This method only compares the
+     * abstract pathnames; it does not access the file system and the file is
+     * not required to exist.
      *
      * @param   pathname  The abstract pathname to be compared to this abstract
      *                    pathname
@@ -1970,11 +1970,9 @@ public class File
      * abstract pathname.  Whether or not two abstract
      * pathnames are equal depends upon the underlying operating system.
      * On UNIX systems, alphabetic case is significant in comparing pathnames;
-     * on Microsoft Windows systems it is not.
-     *
-     * @apiNote This method only tests whether the abstract pathnames are equal;
-     *          it does not access the file system and the file is not required
-     *          to exist.
+     * on Microsoft Windows systems it is not.  This method only tests whether
+     * the abstract pathnames are equal; it does not access the file system and
+     * the file is not required to exist.
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
