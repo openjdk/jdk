@@ -5869,7 +5869,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     BIND(L_skip_align2);
   }
   {
-    Label L_fill_32_bytes, L_C_align, L_align_64_bytes;
+    Label L_fill_32_bytes;
     if (!UseUnalignedLoadStores) {
       // align to 8 bytes, we know we are 4 byte aligned to start
       testptr(to, 4);
@@ -5878,7 +5878,6 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       addptr(to, 4);
       subptr(count, 1<<shift);
     }
-
     BIND(L_fill_32_bytes);
     {
       Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
@@ -5908,9 +5907,8 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
 
           BIND(L_check_fill_64_bytes_avx2);
         }
-
         // align data for 64-byte chunks
-        Label L_fill_64_bytes_loop, L_fill_64_start;
+        Label L_fill_64_bytes_loop, L_fill_64_start, L_align_64_bytes;
         if (EnableX86ECoreOpts) {
             // align 'big' arrays to 64 bytes (cache line size) to minimize split_stores
             cmpptr(count, 256<<shift);
