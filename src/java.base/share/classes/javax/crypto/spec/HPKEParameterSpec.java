@@ -244,9 +244,9 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * specified KEM, KDF, and AEAD algorithm identifiers in {@code mode_base}
      * mode with an empty {@code info}.
      *
-     * @param kem_id identifier for KEM, must be between 0 and 65535 (inclusive)
-     * @param kdf_id identifier for KDF, must be between 0 and 65535 (inclusive)
-     * @param aead_id identifier for AEAD, must be between 0 and 65535 (inclusive)
+     * @param kem_id algorithm identifier for KEM, must be between 0 and 65535 (inclusive)
+     * @param kdf_id algorithm identifier for KDF, must be between 0 and 65535 (inclusive)
+     * @param aead_id algorithm identifier for AEAD, must be between 0 and 65535 (inclusive)
      * @return a new {@code HPKEParameterSpec} object
      * @throws IllegalArgumentException if any input value
      *      is out of range (must be between 0 and 65535, inclusive).
@@ -348,21 +348,21 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * {@return the identifier for KEM }
+     * {@return the algorithm identifier for KEM }
      */
     public int kem_id() {
         return kem_id;
     }
 
     /**
-     * {@return the identifier for KDF }
+     * {@return the algorithm identifier for KDF }
      */
     public int kdf_id() {
         return kdf_id;
     }
 
     /**
-     * {@return the identifier for AEAD }
+     * {@return the algorithm identifier for AEAD }
      */
     public int aead_id() {
         return aead_id;
