@@ -55,7 +55,7 @@
 /**
  * @test id=custom-cl-zgc
  * @requires vm.cds.custom.loaders
- * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoops.archive.available
  * @requires vm.gc.Z
  * @summary Test dumptime_table entries are removed with zgc eager class unloading
  * @bug 8274935
