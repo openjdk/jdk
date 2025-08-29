@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,17 +76,17 @@ class ExplodedImage extends SystemImage {
         private PathNode link;
         private List<Node> children;
 
-        PathNode(String name, Path path, BasicFileAttributes attrs) {  // path
+        private PathNode(String name, Path path, BasicFileAttributes attrs) {  // path
             super(name, attrs);
             this.path = path;
         }
 
-        PathNode(String name, Node link) {              // link
+        private PathNode(String name, Node link) {              // link
             super(name, link.getFileAttributes());
             this.link = (PathNode)link;
         }
 
-        PathNode(String name, List<Node> children) {    // dir
+        private PathNode(String name, List<Node> children) {    // dir
             super(name, modulesDirAttrs);
             this.children = children;
         }
@@ -115,7 +114,7 @@ class ExplodedImage extends SystemImage {
             return recursive && link.isLink() ? link.resolveLink(true) : link;
         }
 
-        byte[] getContent() throws IOException {
+        private byte[] getContent() throws IOException {
             if (!getFileAttributes().isRegularFile())
                 throw new FileSystemException(getName() + " is not file");
             return Files.readAllBytes(path);
@@ -190,9 +189,9 @@ class ExplodedImage extends SystemImage {
      * @return the newly created and cached node, or {@code null} if the given
      *     path references a file which must be hidden in the node hierarchy.
      */
-    Node createModulesNode(String name, Path path) {
+    private Node createModulesNode(String name, Path path) {
         assert !nodes.containsKey(name) : "Node must not already exist: " + name;
-        assert name.startsWith(MODULES) && name.length() > MODULES.length() : "Invalid modules name: " + name;
+        assert isNonEmptyModulesPath(name) : "Invalid modules name: " + name;
 
         try {
             // We only know if we're creating a resource of directory when we
@@ -222,12 +221,18 @@ class ExplodedImage extends SystemImage {
      * or {@code null} if the name is not in the "/modules/..." namespace or the
      * path does not reference a file.
      */
-    Path underlyingModulesPath(String name) {
-        if (name.startsWith(MODULES) && name.length() > MODULES.length()) {
+    private Path underlyingModulesPath(String name) {
+        if (isNonEmptyModulesPath(name)) {
             Path path = modulesDir.resolve(frontSlashToNativeSlash(name.substring(MODULES.length())));
             return Files.exists(path) ? path : null;
         }
         return null;
+    }
+
+    private static boolean isNonEmptyModulesPath(String name) {
+        // Don't just check the prefix, there must be something after it too
+        // (otherwise you end up with an empty string after trimming).
+        return name.startsWith(MODULES) && name.length() > MODULES.length();
     }
 
     // convert "/" to platform path separator
