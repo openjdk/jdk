@@ -31,6 +31,7 @@
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -49,21 +50,17 @@ public class JpegNegativeImageIndexTest {
     }
 
     private static void testMethod(String methodName,
-                                   RunnableWithException method) {
+                                   Callable<?> method) {
         boolean exceptionReceived = false;
         System.out.println("Testing " + methodName);
         try {
-            method.run();
+            method.call();
         } catch (Exception e) {
             if (e instanceof IndexOutOfBoundsException) {
                 exceptionReceived = true;
             }
         }
         checkException(exceptionReceived, methodName);
-    }
-
-    private interface RunnableWithException {
-        void run() throws Exception;
     }
 
     public static void main(String[] args) throws IOException {
