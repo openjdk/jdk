@@ -1795,14 +1795,20 @@ public interface Map<K, V> {
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-    static <K, V> Map<K, V> ofLazy(Set<K> keys,
+    static <K, V> Map<K, V> ofLazy(Set<? extends K> keys,
                                    Function<? super K, ? extends V> mapper) {
         // Protect against TOC-TOU attacks.
         // Also, implicit null check of `keys` and all its elements
         final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(mapper);
-        // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-        return StableCollections.ofLazyMap(keyCopies, mapper);
+        if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            var enumMap = (Map<K, V>) StableCollections.ofLazyEnumMap(keyCopies, mapper);
+            return enumMap;
+        } else {
+            // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
+            return StableCollections.ofLazyMap(keyCopies, mapper);
+        }
     }
 
 }

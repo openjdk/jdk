@@ -9,9 +9,13 @@ import java.util.function.Supplier;
 // Wrapper interface to allow internal implementations that are not public
 public non-sealed interface InternalStableValue<T> extends StableValue<T> {
 
-    T orElseSet(final int input, final FunctionHolder<?> functionHolder);
+    T orElseSet(int input, FunctionHolder<?> functionHolder);
+
+    T orElseSet(Object key, FunctionHolder<?> functionHolder);
 
     Object contentsPlain();
+
+    Object contentsAcquire();
 
     boolean set(T newValue);
 

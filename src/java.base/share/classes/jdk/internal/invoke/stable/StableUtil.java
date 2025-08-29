@@ -38,13 +38,13 @@ public final class StableUtil {
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StandardStableValue<?>[] delegates) {
+                                            InternalStableValue<?>[] delegates) {
         return renderElements(self, selfName, delegates, 0, delegates.length);
     }
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StandardStableValue<?>[] delegates,
+                                            InternalStableValue<?>[] delegates,
                                             int offset,
                                             int length) {
         final StringJoiner sj = new StringJoiner(", ", "[", "]");
@@ -61,7 +61,7 @@ public final class StableUtil {
 
     public static <K, V> String renderMappings(Object self,
                                                String selfName,
-                                               Iterable<Map.Entry<K, StandardStableValue<V>>> delegates,
+                                               Iterable<Map.Entry<K, InternalStableValue<V>>> delegates,
                                                boolean curly) {
         final StringJoiner sj = new StringJoiner(", ", curly ? "{" : "[", curly ? "}" : "]");
         for (var e : delegates) {
@@ -87,10 +87,10 @@ public final class StableUtil {
         return stableValues;
     }
 
-    public static <K, T> Map<K, StandardStableValue<T>> map(Set<K> keys) {
+    public static <K, T> Map<K, InternalStableValue<T>> map(Set<K> keys) {
         Objects.requireNonNull(keys);
         @SuppressWarnings("unchecked")
-        final var entries = (Map.Entry<K, StandardStableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        final var entries = (Map.Entry<K, InternalStableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
         int i = 0;
         for (K key : keys) {
             entries[i++] = Map.entry(key, StandardStableValue.of());

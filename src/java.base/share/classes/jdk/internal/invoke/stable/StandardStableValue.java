@@ -31,8 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -67,6 +65,8 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
     //
     @Stable
     private Object contents;
+
+    // Todo: This scheme has to be verified.
 
     // Shadow contents that eventually will be the same as the field `contents` but is
     // guaranteed to respect any and all happens-before constraints but at the same
@@ -156,6 +156,7 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     @SuppressWarnings("unchecked")
     @ForceInline
+    @Override
     public T orElseSet(final Object input,
                        final FunctionHolder<?> functionHolder) {
         Object t = contentsPlain;
@@ -183,6 +184,7 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
     // Internal methods shared with other internal classes
 
     @ForceInline
+    @Override
     public Object contentsAcquire() {
         return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }

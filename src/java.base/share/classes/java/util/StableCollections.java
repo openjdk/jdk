@@ -32,6 +32,7 @@ import jdk.internal.invoke.stable.StableUtil;
 import jdk.internal.invoke.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -41,7 +42,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 /**
  * Container class for stable collections. Not part of the public API.
@@ -228,6 +231,15 @@ final class StableCollections {
                 return (t == null) ? orElseSetSlowPath(supplier) : t;
             }
 
+            @Override
+            public T orElseSet(Object key, FunctionHolder<?> functionHolder) {
+                final Object mutex = acquireMutex();
+                if (mutex == Mutexes.TOMB_STONE) {
+                    return contentsAcquire();
+                }
+                return orElseSetSlowPath(mutex, key, functionHolder);
+            }
+
             private T orElseSetSlowPath(Supplier<? extends T> supplier) {
                 final Object mutex = acquireMutex();
                 if (mutex == Mutexes.TOMB_STONE) {
@@ -286,7 +298,8 @@ final class StableCollections {
 
             @SuppressWarnings("unchecked")
             @ForceInline
-            private T contentsAcquire() {
+            @Override
+            public T contentsAcquire() {
                 return (T) UNSAFE.getReferenceAcquire(elements, offset);
             }
 
@@ -336,6 +349,10 @@ final class StableCollections {
         }
 
         public static <E> List<StableValue<E>> ofList(int size) {
+            return new DenseStableList<>(size);
+        }
+
+        static <E> DenseStableList<E> ofDenseList(int size) {
             return new DenseStableList<>(size);
         }
     }
@@ -583,34 +600,128 @@ final class StableCollections {
         E getLenient(int i);
     }
 
+    static final class StableEnumMap<K extends Enum<K>, V>
+            extends AbstractStableMap<K, V> {
+
+        @Stable
+        private final DenseStableList<V> delegate;
+        @Stable
+        private final Class<K> enumType;
+        @Stable
+        private final int min;
+        @Stable
+        private final IntPredicate member;
+
+        public StableEnumMap(int size, Class<K> enumType, int min, int backingSize, IntPredicate member,  Function<? super K, ? extends V> mapper) {
+            this.delegate = DenseStableList.ofDenseList(backingSize);
+            this.enumType = enumType;
+            this.min = min;
+            this.member = member;
+            super(size, mapper);
+        }
+
+        @Override
+        @ForceInline
+        public boolean containsKey(Object o) {
+            return enumType.isAssignableFrom(o.getClass())
+                    && member.test(enumType.cast(o).ordinal());
+        }
+
+        @Override
+        @ForceInline
+        InternalStableValue<V> stableValue(Object key) {
+            if (containsKey(key)) {
+                final int index = indexFor(enumType.cast(key));
+                return delegate.get(index);
+            }
+            return null;
+        }
+
+        @Override
+        // This Set is only used internally and only a few methods
+        // are ever used.
+        Set<Entry<K, InternalStableValue<V>>> stableEntrySet() {
+            return new AbstractSet<Entry<K, InternalStableValue<V>>>() {
+                @Override
+                public Iterator<Entry<K, InternalStableValue<V>>> iterator() {
+                    final K[] constants = enumType.getEnumConstants();
+                    return Arrays.stream(constants)
+                            .filter(e -> StableEnumMap.this.member.test(e.ordinal()))
+                            .map(k -> (Entry<K, InternalStableValue<V>>)
+                                    new KeyValueHolder<>(k,
+                                            (InternalStableValue<V>) StableEnumMap.this.delegate.get(indexFor(k))))
+                            .iterator();
+                }
+
+                @Override
+                public int size() {
+                    return StableEnumMap.this.size();
+                }
+            };
+        }
+
+        private int indexFor(Enum<?> e) {
+            return e.ordinal() - min;
+        }
+
+    }
+
     static final class StableMap<K, V>
+            extends AbstractStableMap<K, V> {
+
+        @Stable
+        private final Map<K, InternalStableValue<V>> delegate;
+
+        public StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+            this.delegate = StableUtil.map(keys);
+            super(keys.size(), mapper);
+        }
+
+        @Override public boolean containsKey(Object o) { return delegate.containsKey(o); }
+        @ForceInline
+        @Override InternalStableValue<V> stableValue(Object key) { return delegate.get(key); }
+        @Override Set<Entry<K, InternalStableValue<V>>> stableEntrySet() { return delegate.entrySet(); }
+    }
+
+    static sealed abstract class AbstractStableMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         @Stable
-        private final FunctionHolder<Function<? super K, ? extends V>> mapperHolder;
+        private final int size;
         @Stable
-        private final Map<K, StandardStableValue<V>> delegate;
+        private final FunctionHolder<Function<? super K, ? extends V>> mapperHolder;
 
-        private StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-            this.mapperHolder = new FunctionHolder<>(mapper, keys.size());
-            this.delegate = StableUtil.map(keys);
+        private AbstractStableMap(int size, Function<? super K, ? extends V> mapper) {
+            this.size = size;
+            this.mapperHolder = new FunctionHolder<>(mapper, size);
             super();
         }
 
-        @Override public boolean          containsKey(Object o) { return delegate.containsKey(o); }
-        @Override public int              size() { return delegate.size(); }
-        @Override public Set<Entry<K, V>> entrySet() { return StableMapEntrySet.of(this); }
+        // Abstract methods
+        @Override public abstract boolean containsKey(Object o);
+
+        /**
+         * {@return the StableValue for this key, otherwise {@code null}}
+         * @param key to look up
+         */
+        abstract InternalStableValue<V> stableValue(Object key);
+        abstract Set<Entry<K, InternalStableValue<V>>> stableEntrySet();
+
+        // Public methods
+        @Override public final int              size() { return size; }
+        @Override public final boolean          isEmpty() { return size == 0; }
+        @Override public final Set<Entry<K, V>> entrySet() { return StableMapEntrySet.of(this); }
 
         @ForceInline
         @Override
-        public V get(Object key) {
+        public final V get(Object key) {
             return getOrDefault(key, null);
         }
 
         @ForceInline
         @Override
-        public V getOrDefault(Object key, V defaultValue) {
-            final StandardStableValue<V> stable = delegate.get(key);
+        public final V getOrDefault(Object key, V defaultValue) {
+            final InternalStableValue<V> stable = stableValue(key);
             return (stable == null)
                     ? defaultValue
                     : stable.orElseSet(key, mapperHolder);
@@ -622,14 +733,14 @@ final class StableCollections {
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final StableMap<K, V> outer;
+            private final AbstractStableMap<K, V> outer;
 
             @Stable
-            private final Set<Entry<K, StandardStableValue<V>>> delegateEntrySet;
+            private final Set<Entry<K, InternalStableValue<V>>> delegateEntrySet;
 
-            private StableMapEntrySet(StableMap<K, V> outer) {
+            private StableMapEntrySet(AbstractStableMap<K, V> outer) {
                 this.outer = outer;
-                this.delegateEntrySet = outer.delegate.entrySet();
+                this.delegateEntrySet = outer.stableEntrySet();
                 super();
             }
 
@@ -643,7 +754,7 @@ final class StableCollections {
             }
 
             // For @ValueBased
-            private static <K, V> StableMapEntrySet<K, V> of(StableMap<K, V> outer) {
+            private static <K, V> StableMapEntrySet<K, V> of(AbstractStableMap<K, V> outer) {
                 return new StableMapEntrySet<>(outer);
             }
 
@@ -656,7 +767,7 @@ final class StableCollections {
                 private final StableMapEntrySet<K, V> outer;
 
                 @Stable
-                private final Iterator<Entry<K, StandardStableValue<V>>> delegateIterator;
+                private final Iterator<Entry<K, InternalStableValue<V>>> delegateIterator;
 
                 private LazyMapIterator(StableMapEntrySet<K, V> outer) {
                     this.outer = outer;
@@ -668,17 +779,17 @@ final class StableCollections {
 
                 @Override
                 public Entry<K, V> next() {
-                    final Entry<K, StandardStableValue<V>> inner = delegateIterator.next();
+                    final Entry<K, InternalStableValue<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
                     return new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder);
                 }
 
                 @Override
                 public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
-                    final Consumer<? super Entry<K, StandardStableValue<V>>> innerAction =
+                    final Consumer<? super Entry<K, InternalStableValue<V>>> innerAction =
                             new Consumer<>() {
                                 @Override
-                                public void accept(Entry<K, StandardStableValue<V>> inner) {
+                                public void accept(Entry<K, InternalStableValue<V>> inner) {
                                     final K k = inner.getKey();
                                     action.accept(new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder));
                                 }
@@ -695,7 +806,7 @@ final class StableCollections {
         }
 
         private record StableEntry<K, V>(K getKey, // trick
-                                         StandardStableValue<V> stableValue,
+                                         InternalStableValue<V> stableValue,
                                          FunctionHolder<Function<? super K, ? extends V>> mapperHolder) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
@@ -727,9 +838,9 @@ final class StableCollections {
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final StableMap<?, V> outer;
+            private final AbstractStableMap<?, V> outer;
 
-            private StableMapValues(StableMap<?, V> outer) {
+            private StableMapValues(AbstractStableMap<?, V> outer) {
                 this.outer = outer;
                 super();
             }
@@ -739,21 +850,18 @@ final class StableCollections {
             @Override public boolean     isEmpty() { return outer.isEmpty(); }
             @Override public boolean     contains(Object v) { return outer.containsValue(v); }
 
-            private static final IntFunction<StandardStableValue<?>[]> GENERATOR = new IntFunction<StandardStableValue<?>[]>() {
-                @Override
-                public StandardStableValue<?>[] apply(int len) {
-                    return new StandardStableValue<?>[len];
-                }
-            };
-
             @Override
             public String toString() {
-                final StandardStableValue<?>[] values = outer.delegate.values().toArray(GENERATOR);
+                final InternalStableValue<?>[] values = new InternalStableValue<?>[outer.size()];
+                int i = 0;
+                for (var e: outer.stableEntrySet()) {
+                    values[i++] = e.getValue();
+                }
                 return StableUtil.renderElements(this, "StableCollection", values);
             }
 
             // For @ValueBased
-            private static <V> StableMapValues<V> of(StableMap<?, V> outer) {
+            private static <V> StableMapValues<V> of(AbstractStableMap<?, V> outer) {
                 return new StableMapValues<>(outer);
             }
 
@@ -761,7 +869,7 @@ final class StableCollections {
 
         @Override
         public String toString() {
-            return StableUtil.renderMappings(this, "StableMap", delegate.entrySet(), true);
+            return StableUtil.renderMappings(this, "Map", stableEntrySet(), true);
         }
 
     }
@@ -886,14 +994,35 @@ final class StableCollections {
         return sj.toString();
     }
 
-    public static <E> List<E> ofLazyList(int size, IntFunction<? extends E> mapper) {
+    public static <E> List<E> ofLazyList(int size,
+                                         IntFunction<? extends E> mapper) {
         return Architecture.isAARCH64()
                 ? new Aarch64StableList<>(size, mapper)
                 : new StableList<>(size, mapper);
     }
 
-    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
+                                             Function<? super K, ? extends V> mapper) {
         return new StableMap<>(keys, mapper);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, E extends Enum<E>, V> Map<K, V> ofLazyEnumMap(Set<K> keys,
+                                                                    Function<? super K, ? extends V> mapper) {
+        // The input set is not empty
+        final Class<E> enumType = ((E) keys.iterator().next()).getDeclaringClass();
+        final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        for (K t : keys) {
+            final int ordinal = ((E) t).ordinal();
+            min = Math.min(min, ordinal);
+            max = Math.max(max, ordinal);
+            bitSet.set(ordinal);
+        }
+        final int backingSize = max - min + 1;
+        final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
+        return (Map<K, V>) new StableEnumMap<>(keys.size(), enumType, min, backingSize, member, (Function<E, V>) mapper);
     }
 
 }
