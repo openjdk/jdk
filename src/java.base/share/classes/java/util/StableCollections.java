@@ -64,9 +64,12 @@ final class StableCollections {
             implements List<StableValue<E>>, RandomAccess {
 
         @Stable
+        private final int size;
+        @Stable
         private final E[] elements;
 
         private PresetStableList(E[] elements) {
+            this.size = elements.length;
             this.elements = elements;
             super();
         }
@@ -80,7 +83,7 @@ final class StableCollections {
 
         @Override
         public int size() {
-            return elements.length;
+            return size;
         }
 
         @Override
@@ -103,8 +106,8 @@ final class StableCollections {
 
     @ValueBased
     static final class DenseStableList<E>
-            extends AbstractImmutableStableElementList<StableValue<E>>
-            implements List<StableValue<E>>, RandomAccess {
+            extends ImmutableCollections.AbstractImmutableList<StableValue<E>>
+            implements List<StableValue<E>>, ElementBackedList<E>, RandomAccess {
 
         @Stable
         private final E[] elements;
@@ -132,7 +135,7 @@ final class StableCollections {
         @Override
         public ElementStableValue<E> get(int index) {
             Objects.checkIndex(index, size);
-            return new ElementStableValue<>(elements, this, offsetFor(index));
+            return new ElementStableValue<>(this, offsetFor(index));
         }
 
         @Override
@@ -157,19 +160,24 @@ final class StableCollections {
 
         @ForceInline
         @Override
-        Mutexes mutexes() {
+        public E[] elements() {
+            return elements;
+        }
+
+        @ForceInline
+        @Override
+        public Mutexes mutexes() {
             return mutexes;
         }
 
         @Override
-        int preHash() {
+        public int preHash() {
             return preHash;
         }
 
         // The views subList() and reversed() in the base class suffice for this list type
 
-        record ElementStableValue<T>(@Stable T[] elements, // fast track this one
-                                     AbstractImmutableStableElementList<?> list,
+        record ElementStableValue<T>(ElementBackedList<T> list,
                                      long offset) implements InternalStableValue<T> {
 
             @ForceInline
@@ -275,9 +283,11 @@ final class StableCollections {
             // (by definition, the elements' contents are then also the same).
             @Override
             public boolean equals(Object o) {
-                if (!(o instanceof ElementStableValue<?> that)) return false;
-                return list == that.list
-                        && offset == that.offset;
+                if (!(o instanceof ElementStableValue<?>(
+                        ElementBackedList<?> otherList, long otherOffset
+                ))) { return false; }
+                return list == otherList
+                        && offset == otherOffset;
             }
 
             // Similar arguments are true for hashCode() where it must depend on the referring
@@ -299,13 +309,13 @@ final class StableCollections {
             @ForceInline
             @Override
             public T contentsAcquire() {
-                return (T) UNSAFE.getReferenceAcquire(elements, offset);
+                return (T) UNSAFE.getReferenceAcquire(list.elements(), offset);
             }
 
             @SuppressWarnings("unchecked")
             @Override
             public T contentsPlain() {
-                return (T) UNSAFE.getReference(elements, offset);
+                return (T) UNSAFE.getReference(list.elements(), offset);
             }
 
             @ForceInline
@@ -338,8 +348,8 @@ final class StableCollections {
                 Object mutex;
                 assert Thread.holdsLock(mutex = mutexVolatile()) : indexFor(offset) + "(@ offset " + offset + ") didn't hold " + mutex;
                 // We know we hold the monitor here so plain semantic is enough
-                if (UNSAFE.getReference(elements, offset) == null) {
-                    UNSAFE.putReferenceRelease(elements, offset, newValue);
+                if (UNSAFE.getReference(list.elements(), offset) == null) {
+                    UNSAFE.putReferenceRelease(list.elements(), offset, newValue);
                     return true;
                 }
                 return false;
@@ -357,43 +367,23 @@ final class StableCollections {
     }
 
     /**
-     * This class is using an array as a plain-memory cache for elements that need to be
-     * accessed using non-plain memory semantics.
+     * Placeholder for a future optimized stable list for A64 CPUs.
      *
      * @param <E> element type
      */
     @ValueBased
     static final class Aarch64StableList<E> extends StableList<E> {
 
-        @Stable
-        private final E[] elementsPlain;
-
         private Aarch64StableList(int size, IntFunction<? extends E> mapper) {
-            this.elementsPlain = newGenericArray(size);
             super(size, mapper);
-        }
-
-        @ForceInline
-        @Override
-        public E get(int i) {
-            E e = elementsPlain[i]; // Implicit bounds check of `i`
-            return (e != null || (e = elementsPlain[i] = contentsAcquire(offsetFor(i))) != null)
-                    ? e
-                    : getSlowPath(i);
-        }
-
-        @Override
-        public E getLenient(int i) {
-            E e = elementsPlain[i]; // Implicit bounds check of `i`
-            return (e != null) ? e : contentsAcquire(offsetFor(i));
         }
 
     }
 
     @jdk.internal.ValueBased
     static sealed class StableList<E>
-            extends AbstractImmutableStableElementList<E>
-            implements LenientList<E> {
+            extends ImmutableCollections.AbstractImmutableList<E>
+            implements LenientList<E>, ElementBackedList<E> {
 
         @Stable
         private final E[] elements;
@@ -437,7 +427,7 @@ final class StableCollections {
         }
 
         public DenseStableList.ElementStableValue<E> asStableValue(int index) {
-            return new DenseStableList.ElementStableValue<>(elements, this, offsetFor(index));
+            return new DenseStableList.ElementStableValue<>(this, offsetFor(index));
         }
 
         @Override
@@ -499,13 +489,19 @@ final class StableCollections {
             return renderElements(this);
         }
 
+        @ForceInline
         @Override
-        final Mutexes mutexes() {
+        public E[] elements() {
+            return elements;
+        }
+
+        @Override
+        public final Mutexes mutexes() {
             return mutexes;
         }
 
         @Override
-        final int preHash() {
+        public final int preHash() {
             return 0; // Never visible
         }
 
@@ -873,16 +869,17 @@ final class StableCollections {
 
     }
 
-    abstract static class AbstractImmutableStableElementList<E>
-            extends ImmutableCollections.AbstractImmutableList<E> {
+    interface ElementBackedList<E> {
 
-        abstract Mutexes mutexes();
+        E[] elements();
 
-        abstract int preHash();
+        Mutexes mutexes();
+
+        int preHash();
 
     }
 
-    private static final class Mutexes {
+    static final class Mutexes {
 
         static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
 

@@ -64,25 +64,12 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private Object contents;
-
-    // Todo: This scheme has to be verified.
-
-    // Shadow contents that eventually will be the same as the field `contents` but is
-    // guaranteed to respect any and all happens-before constraints but at the same
-    // time, allows read operations under plain memory semantics.
-    //
-    // Typically, this fields is checked first and if it is non-null, it's contents
-    // can safely be used directly. If it is null, its contents needs to be set by reading
-    // from `contents` before being used.
-    @Stable
-    private Object contentsPlain;
+    private T contents;
 
     private StandardStableValue() {}
 
     private StandardStableValue(T contents) {
-        this.contents = contents;
-        this.contentsPlain = contents;
+        rawSetRelease(contents);
     }
 
     @ForceInline
@@ -102,24 +89,22 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T get() {
-        Object t = contentsPlain;
-        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
-            return (T) t;
+        final T t = contentsAcquire();
+        if (t != null) {
+            return t;
         }
         throw new NoSuchElementException("No contents set");
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElse(T other) {
-        Object t = contentsPlain;
-        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
-            return (T) t;
+        final T t = contentsAcquire();
+        if (t != null) {
+            return t;
         }
         return other;
     }
@@ -127,41 +112,38 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return (contentsPlain != null || (contentsPlain = contentsAcquire()) != null);
+        return contentsAcquire() != null;
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        Object t = contentsPlain;
-        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
-            return (T) t;
+        final T t = contentsAcquire();
+        if (t != null) {
+            return t;
         }
         return orElseSetSlowPath(this, supplier, null);
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElseSet(final int input,
                        final FunctionHolder<?> functionHolder) {
-        Object t = contentsPlain;
-        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
-            return (T) t;
+        final T t = contentsAcquire();
+        if (t != null) {
+            return t;
         }
         return orElseSetSlowPath(this, input, functionHolder);
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T orElseSet(final Object input,
                        final FunctionHolder<?> functionHolder) {
-        Object t = contentsPlain;
-        if (t != null || (t = contentsPlain = contentsAcquire()) != null) {
-            return (T) t;
+        final T t = contentsAcquire();
+        if (t != null) {
+            return t;
         }
         return orElseSetSlowPath(this, input, functionHolder);
     }
@@ -175,7 +157,7 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = contentsAcquire();
+        final T t = contentsAcquire();
         return t == this
                 ? "(this StableValue)"
                 : render(t);
@@ -183,10 +165,11 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
 
     // Internal methods shared with other internal classes
 
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
-    public Object contentsAcquire() {
-        return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
+    public T contentsAcquire() {
+        return (T) UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }
 
     public static String render(Object t) {
@@ -209,10 +192,15 @@ public final class StandardStableValue<T> implements InternalStableValue<T> {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
         if (contents == null) {
-            UNSAFE.putReferenceRelease(this, CONTENTS_OFFSET, newValue);
+            rawSetRelease(newValue);
             return true;
         }
         return false;
+    }
+
+    @ForceInline
+    private void rawSetRelease(T newValue) {
+        UNSAFE.putReferenceRelease(this, CONTENTS_OFFSET, newValue);
     }
 
     // Factories
