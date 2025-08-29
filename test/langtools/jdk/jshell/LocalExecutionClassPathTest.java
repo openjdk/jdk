@@ -30,12 +30,14 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask LocalExecutionTestSupport
- * @run testng/othervm LocalExecutionClassPathTest
+ * @run junit/othervm LocalExecutionClassPathTest
  */
 
 import java.util.Locale;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LocalExecutionClassPathTest extends LocalExecutionTestSupport {
 
     @Override

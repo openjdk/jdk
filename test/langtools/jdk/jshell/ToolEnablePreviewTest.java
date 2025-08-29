@@ -25,7 +25,7 @@
  * @test
  * @bug 8199193
  * @summary Tests for the --enable-preview option
- * @run testng ToolEnablePreviewTest
+ * @run junit ToolEnablePreviewTest
  */
 
 import java.io.IOException;
@@ -33,9 +33,8 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class ToolEnablePreviewTest extends ReplToolTesting {
 

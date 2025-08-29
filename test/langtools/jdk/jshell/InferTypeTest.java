@@ -30,14 +30,14 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
- * @run testng InferTypeTest
+ * @run junit InferTypeTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class InferTypeTest extends KullaTesting {
 
+    @Test
     public void testTypeInference() {
         assertInferredType("1", "int");
         assertEval("import java.util.*;");
