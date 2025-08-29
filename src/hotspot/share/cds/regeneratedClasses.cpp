@@ -74,8 +74,6 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
       _original_objs->put((address)regen_m, (address)orig_m);
     }
   }
-
-  regen_klass->set_shared_classpath_index(orig_klass->shared_classpath_index());
 }
 
 bool RegeneratedClasses::has_been_regenerated(address orig_obj) {

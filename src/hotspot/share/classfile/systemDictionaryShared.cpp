@@ -308,7 +308,7 @@ public:
 //         when verifying ik's bytecodes.
 //
 // This method ensure that exclusion check is performed on X and all of its exclusion dependencies.
-void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceKlass *ik) {
+void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceKlass* ik) {
   assert_lock_strong(DumpTimeTable_lock);
   ResourceMark rm;
 
@@ -342,7 +342,7 @@ void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceK
     // Because of the possibility of cycles in the graph, we cannot use simple
     // recursion. Otherwise we will either never terminate, or will miss some paths.
     //
-    // Hence, we keep doing a linear scan of the candidate until we stop finding
+    // Hence, we keep doing a linear scan of the candidates until we stop finding
     // new exclusions.
     //
     // In the worst case, we find one exclusion per iteration of the while loop,
