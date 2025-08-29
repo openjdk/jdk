@@ -1,6 +1,6 @@
 package jdk.internal.invoke.stable;
 
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.IntFunction;

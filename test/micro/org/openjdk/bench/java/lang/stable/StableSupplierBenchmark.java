@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.function.Supplier;
 
 /**
