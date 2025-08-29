@@ -192,8 +192,8 @@ static int read_ticks(const char *procfile, uint64_t *userTicks, uint64_t *syste
  * to the JVM on any CPU.
  */
 static int get_jvmticks(ticks *pticks) {
-    uint64_t userTicks = 0;
-    uint64_t systemTicks = 0;
+    uint64_t userTicks;
+    uint64_t systemTicks;
 
     if (read_ticks("/proc/self/stat", &userTicks, &systemTicks) != 2) {
         return -1;
