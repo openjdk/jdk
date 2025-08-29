@@ -825,7 +825,8 @@ public sealed interface TypeAnnotation
          * @param startLabel the code label indicating start of an interval where variable has value
          * @param endLabel the code label indicating start of an interval where variable has value
          * @param index index into the local variables
-         * @throws IllegalArgumentException if {@code index} is out of bounds
+         * @throws IllegalArgumentException if {@code index} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         static LocalVarTargetInfo of(Label startLabel, Label endLabel, int index) {
             return new TargetInfoImpl.LocalVarTargetInfoImpl(startLabel, endLabel, index);
