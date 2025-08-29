@@ -376,10 +376,13 @@ public class Table<T> extends Content {
         }
 
         var table = HtmlTree.DIV(tableStyle).addStyle(gridStyle);
-        if ((tabs == null || occurringTabs.size() == 1) && renderTabs) {
-            if (tabs == null) {
+        if (tabs == null || (occurringTabs.size() == 1 && renderTabs)) {
+            // Render table with static content. Note that a single-tab table is only static
+            // if it is controlled by local tabs. In a multi-table summary page, it still
+            // must be able to show/hide its content depending on page-level controls.
+            if (caption != null) {
                 main.add(caption);
-            } else {
+            } else if (tabs != null) {
                 main.add(getCaption(occurringTabs.iterator().next().label()));
             }
             table.add(getTableBody());
