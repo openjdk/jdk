@@ -936,7 +936,7 @@ bool CDSConfig::is_preserving_verification_dependencies() {
   // (A and B in the above example) are unconditionally loaded during the bootstrap
   // of the production run. This means that if a class was successfully verified
   // in the assembly phase, all of the verifier's assignability checks will remain
-  // valid in the production run, so we don't need to verify aot-lined classes again.
+  // valid in the production run, so we don't need to verify aot-linked classes again.
 
   if (is_dumping_preimage_static_archive()) { // writing AOT config
     return AOTClassLinking;

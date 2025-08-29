@@ -91,7 +91,7 @@ void DumpTimeClassInfo::add_old_verification_dependency(Symbol* name) {
 
   if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(aot, verification)("add old verification dependency: %s: %s must be also be archived",
+    log_trace(aot, verification)("added old verification dependency: %s: %s must be also be archived",
                                  _klass->external_name(), name->as_klass_external_name());
   }
 }

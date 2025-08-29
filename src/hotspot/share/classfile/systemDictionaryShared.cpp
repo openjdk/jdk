@@ -241,7 +241,7 @@ void SystemDictionaryShared::iterate_verification_dependency_names(InstanceKlass
   }
 }
 
-// This is a table of classes that need to be check for exclusion.
+// This is a table of classes that need to be checked for exclusion.
 class SystemDictionaryShared::ExclusionCheckCandidates
   : public HashTable<InstanceKlass*, DumpTimeClassInfo*, 15889> {
   void add_candidate(InstanceKlass* k) {
@@ -312,7 +312,7 @@ void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceK
   assert_lock_strong(DumpTimeTable_lock);
   ResourceMark rm;
 
-  // This will recursive find ik and all of its exclusion dependencies that have not yet been checked.
+  // This will recursively find ik and all of its exclusion dependencies that have not yet been checked.
   ExclusionCheckCandidates candidates(ik);
 
   // (1) Check each class to see if it should be excluded due to its own problems
