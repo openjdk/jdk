@@ -286,7 +286,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * Creates a new {@code HPKEParameterSpec} object with the specified
-     * {@code psk} value and {@code psk_id} values.
+     * {@code psk} and {@code psk_id} values.
      * <p>
      * For interoperability, RFC 9180 Section 7.2.1 recommends limiting both
      * values to a maximum of 64 bytes.
