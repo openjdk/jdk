@@ -31,6 +31,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
@@ -62,7 +63,6 @@ import jdk.vm.ci.runtime.test.TestResolvedJavaField.TestClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.reflect.annotation.TypeAnnotation;
-import sun.reflect.annotation.TypeAnnotationParser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -207,19 +207,17 @@ public class TestResolvedJavaField extends FieldUniverse {
      */
     private static void getTypeAnnotationValuesTest(Field field) {
         ResolvedJavaField javaField = metaAccess.lookupJavaField(field);
-        TypeAnnotation[] typeAnnotations = getTypeAnnotations(field);
+        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(field);
         List<TypeAnnotationValue> typeAnnotationValues = javaField.getTypeAnnotationValues();
         TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
     }
 
     private static final Method fieldGetTypeAnnotationBytes = lookupMethod(Field.class, "getTypeAnnotationBytes0");
-    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
 
-    private static TypeAnnotation[] getTypeAnnotations(Field f) {
+    private static List<TypeAnnotation> getTypeAnnotations(Field f) {
         byte[] rawAnnotations = invokeMethod(fieldGetTypeAnnotationBytes, f);
         Class<?> container = f.getDeclaringClass();
-        jdk.internal.reflect.ConstantPool cp = invokeMethod(classGetConstantPool, container);
-        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container);
+        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
     }
 
     @Test

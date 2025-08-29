@@ -27,6 +27,7 @@
  * @modules java.base/jdk.internal.vm
  *          java.base/sun.reflect.annotation
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile alt/MemberDeleted.java alt/MemberTypeChanged.java
  * @run testng/othervm
  *      jdk.internal.vm.test.TestAnnotationEncodingDecoding

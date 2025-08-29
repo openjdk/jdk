@@ -30,6 +30,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.function.Predicate;
 
 public class AnnotationTestInput {
 
@@ -177,7 +178,9 @@ public class AnnotationTestInput {
     @SuppressWarnings({"rawtypes", "all"})
     public static class AnnotatedClass extends @TypeQualifier Thread implements @TypeQualifier Serializable {}
 
-    public static record AnnotatedRecord(@TypeQualifier @Named("obj1Component Name") String obj1Component, @Missing @NestedAnno("int1 value") int int1Component, @Missing float componentWithMissingAnno) {}
+    public record AnnotatedRecord(@TypeQualifier @Named("obj1Component Name") String obj1Component, @Missing @NestedAnno("int1 value") int int1Component, @Missing float componentWithMissingAnno) {}
+
+    public static abstract class AnnotatedClass2<T> implements Predicate<@MissingTypeQualifier T> {}
 
     @Single(string = "a",
             stringArray = {"a", "b"},
@@ -246,6 +249,12 @@ public class AnnotationTestInput {
     @Retention(RetentionPolicy.RUNTIME)
     @interface TypeQualifier {
         String comment() default "";
+    }
+
+    // Define a type-use annotation that is missing at runtime
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface MissingTypeQualifier {
     }
 
     @Retention(RetentionPolicy.RUNTIME)

@@ -31,6 +31,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
@@ -69,7 +70,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import sun.reflect.annotation.TypeAnnotation;
-import sun.reflect.annotation.TypeAnnotationParser;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -603,7 +603,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
      */
     private static void getTypeAnnotationValuesTest(Executable executable) {
         ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
-        TypeAnnotation[] typeAnnotations = getTypeAnnotations(executable);
+        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(executable);
         List<TypeAnnotationValue> typeAnnotationValues = method.getTypeAnnotationValues();
         TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
     }
@@ -669,13 +669,11 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     }
 
     private static final Method executableGetTypeAnnotationBytes = lookupMethod(Executable.class, "getTypeAnnotationBytes");
-    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
 
-    private static TypeAnnotation[] getTypeAnnotations(Executable e) {
+    private static List<TypeAnnotation> getTypeAnnotations(Executable e) {
         byte[] rawAnnotations = invokeMethod(executableGetTypeAnnotationBytes, e);
         Class<?> container = e.getDeclaringClass();
-        jdk.internal.reflect.ConstantPool cp = invokeMethod(classGetConstantPool, container);
-        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container);
+        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
     }
 
     @Test

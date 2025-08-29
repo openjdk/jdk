@@ -468,9 +468,19 @@ public class VMSupport {
      * @param dos stream for assembling the byte array
      */
     public static void encodeTypeAnnotations(DataOutputStream dos, TypeAnnotation[] typeAnnotations) throws IOException {
-        writeLength(dos, typeAnnotations.length);
+        int wellFormed = 0;
         for (TypeAnnotation ta : typeAnnotations) {
-            encodeTypeAnnotation(dos, ta);
+            // Ignore not well-formed type annotations like
+            // TypeAnnotationParser.mapTypeAnnotations does
+            if (ta.getAnnotation() != null) {
+                wellFormed++;
+            }
+        }
+        writeLength(dos, wellFormed);
+        for (TypeAnnotation ta : typeAnnotations) {
+            if (ta.getAnnotation() != null) {
+                encodeTypeAnnotation(dos, ta);
+            }
         }
     }
 
