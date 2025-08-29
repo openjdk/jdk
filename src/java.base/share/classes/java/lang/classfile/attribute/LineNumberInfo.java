@@ -60,6 +60,8 @@ public sealed interface LineNumberInfo
      *
      * @param startPc the starting index of the code array for this line
      * @param lineNumber the line number within the original source file
+     * @throws IllegalArgumentException if {@code startPc} or {@code lineNumber}
+     *         is not {@link java.lang.classfile##u2 u2}
      */
     public static LineNumberInfo of(int startPc, int lineNumber) {
         return new UnboundAttribute.UnboundLineNumberInfo(startPc, lineNumber);

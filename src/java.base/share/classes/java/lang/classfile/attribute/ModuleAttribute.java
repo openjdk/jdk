@@ -81,8 +81,8 @@ public sealed interface ModuleAttribute
     ModuleEntry moduleName();
 
     /**
-     * {@return the module flags of the module, as a bit mask}  It is in the
-     * range of unsigned short, {@code [0, 0xFFFF]}.
+     * {@return the module flags of the module, as a bit mask}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      *
      * @see ModuleDescriptor#modifiers()
      * @see AccessFlag.Location#MODULE
@@ -170,6 +170,8 @@ public sealed interface ModuleAttribute
      * @param opens the opened packages
      * @param uses the consumed services
      * @param provides the provided services
+     * @throws IllegalArgumentException if {@code moduleFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleAttribute of(ModuleEntry moduleName, int moduleFlags,
                               Utf8Entry moduleVersion,
@@ -230,6 +232,8 @@ public sealed interface ModuleAttribute
          *
          * @param flagsMask the module flags
          * @return this builder
+         * @throws IllegalArgumentException if {@code flagsMask} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         ModuleAttributeBuilder moduleFlags(int flagsMask);
 

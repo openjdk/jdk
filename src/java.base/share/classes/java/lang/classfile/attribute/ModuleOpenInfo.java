@@ -64,7 +64,7 @@ public sealed interface ModuleOpenInfo
 
     /**
      * {@return the flags associated with this open declaration, as a bit mask}
-     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
+     * It is a {@link java.lang.classfile##u2 u2} value.
      *
      * @see ModuleDescriptor.Opens#modifiers()
      * @see AccessFlag.Location#MODULE_OPENS
@@ -109,6 +109,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleOpenInfo of(PackageEntry opens, int opensFlags,
                              List<ModuleEntry> opensTo) {
@@ -137,6 +139,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleOpenInfo of(PackageEntry opens,
                              int opensFlags,
@@ -166,6 +170,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the modules to which this package is opened, if it is a
      *                qualified open, or empty
+     * @throws IllegalArgumentException if {@code opensFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleOpenInfo of(PackageDesc opens, int opensFlags,
                              List<ModuleDesc> opensTo) {
@@ -194,6 +200,8 @@ public sealed interface ModuleOpenInfo
      * @param opensFlags the open flags
      * @param opensTo the packages to which this package is opened, or empty if
      *               this is an unqualified open
+     * @throws IllegalArgumentException if {@code opensFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleOpenInfo of(PackageDesc opens,
                              int opensFlags,
