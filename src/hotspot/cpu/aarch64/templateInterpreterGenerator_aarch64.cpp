@@ -1478,22 +1478,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
-  if (LockingMode != LM_LEGACY) {
-    // Check preemption for Object.wait()
-    Label not_preempted;
-    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
-    __ cbz(rscratch1, not_preempted);
-    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
-    __ br(rscratch1);
-    __ bind(native_return);
-    __ restore_after_resume(true /* is_native */);
-    // reload result_handler
-    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
-    __ bind(not_preempted);
-  } else {
-    // any pc will do so just use this one for LM_LEGACY to keep code together.
-    __ bind(native_return);
-  }
+  // Check preemption for Object.wait()
+  Label not_preempted;
+  __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  __ cbz(rscratch1, not_preempted);
+  __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  __ br(rscratch1);
+  __ bind(native_return);
+  __ restore_after_resume(true /* is_native */);
+  // reload result_handler
+  __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
+  __ bind(not_preempted);
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);

@@ -33,8 +33,27 @@ import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 
-import sun.security.util.*;
-import sun.security.x509.*;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.ObjectIdentifier;
+import sun.security.util.SignatureUtil;
+import sun.security.x509.AccessDescription;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.AuthorityInfoAccessExtension;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.IPAddressName;
+import sun.security.x509.SubjectKeyIdentifierExtension;
+import sun.security.x509.BasicConstraintsExtension;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.ExtendedKeyUsageExtension;
+import sun.security.x509.DNSName;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.KeyUsageExtension;
+import sun.security.x509.SubjectAlternativeNameExtension;
+import sun.security.x509.URIName;
+import sun.security.x509.KeyIdentifier;
+
 
 /**
  * Helper class that builds and signs X.509 certificates.
@@ -295,6 +314,26 @@ public class CertificateBuilder {
             GeneralNames gNames = new GeneralNames();
             for (String name : dnsNames) {
                 gNames.add(new GeneralName(new DNSName(name)));
+            }
+            addExtension(new SubjectAlternativeNameExtension(false,
+                    gNames));
+        }
+        return this;
+    }
+
+    /**
+     * Helper method to add IPAddress types for the SAN extension
+     *
+     * @param ipAddresses A {@code List} of names to add as IPAddress
+     *         types
+     * @throws IOException if an encoding error occurs.
+     */
+    public CertificateBuilder addSubjectAltNameIPExt(List<String> ipAddresses)
+            throws IOException {
+        if (!ipAddresses.isEmpty()) {
+            GeneralNames gNames = new GeneralNames();
+            for (String name : ipAddresses) {
+                gNames.add(new GeneralName(new IPAddressName(name)));
             }
             addExtension(new SubjectAlternativeNameExtension(false,
                     gNames));

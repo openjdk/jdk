@@ -224,8 +224,6 @@ void G1FullCollector::collect() {
   }
 
   phase5_reset_metadata();
-
-  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 void G1FullCollector::complete_collection(size_t allocation_word_size) {
@@ -245,8 +243,6 @@ void G1FullCollector::complete_collection(size_t allocation_word_size) {
   _heap->prepare_for_mutator_after_full_collection(allocation_word_size);
 
   _heap->resize_all_tlabs();
-
-  _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);

@@ -954,6 +954,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
           [
             AC_MSG_RESULT([yes])
             $2SVE_CFLAGS="-march=armv8-a+sve"
+            # Switching the initialization mode with gcc from 'pattern' to 'zero'
+            # avoids the use of unsupported `__builtin_clear_padding` for variable
+            # length aggregates
+            if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
+              INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
+              FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
+                IF_TRUE: [
+                  $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
+                ]
+              )
+            fi
           ],
           [
             AC_MSG_RESULT([no])

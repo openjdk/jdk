@@ -1,0 +1,10 @@
+LexicalLintNesting.java:12:36: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:30:40: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:55:40: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:68:45: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:80:41: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:92:37: compiler.warn.trailing.white.space.will.be.removed
+LexicalLintNesting.java:162:37: compiler.warn.trailing.white.space.will.be.removed
+- compiler.err.warnings.and.werror
+1 error
+7 warnings
