@@ -133,7 +133,7 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not i{@link
+     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
      *         java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageEntry exports,
