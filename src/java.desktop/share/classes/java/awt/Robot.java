@@ -810,10 +810,13 @@ public class Robot {
      * @since   26
      */
     public void click(int buttons) {
-        mousePress(buttons);
-        waitForIdle(DEFAULT_STEP_DELAY);
-        mouseRelease(buttons);
-        waitForIdle(DEFAULT_STEP_DELAY);
+        try {
+            mousePress(buttons);
+            waitForIdle(DEFAULT_STEP_DELAY);
+        } finally {
+            mouseRelease(buttons);
+            waitForIdle(DEFAULT_STEP_DELAY);
+        }
     }
 
     /**
