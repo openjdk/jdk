@@ -4165,8 +4165,9 @@ public final class Class<T> implements java.io.Serializable,
             return true;
         }
         // Check exact Modified UTF-8 length.
+        // The check utfLen >= nameLen ensures we don't incorrectly return true in case of int overflow.
         int utfLen = ModifiedUtf.utfLen(name, 0);
-        return JAVA_CLASSNAME_MAX_LEN - utfLen >= 0;
+        return utfLen <= JAVA_CLASSNAME_MAX_LEN && utfLen >= nameLen;
     }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
