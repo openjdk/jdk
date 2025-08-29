@@ -1004,7 +1004,8 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
 }
 
 void VTransformMemopScalarNode::print_spec() const {
-  tty->print("node[%d %s]", _node->_idx, _node->Name());
+  tty->print("node[%d %s] ", _node->_idx, _node->Name());
+  _vpointer.print_on(tty, false);
 }
 
 void VTransformDataScalarNode::print_spec() const {
@@ -1047,5 +1048,9 @@ void VTransformVectorNode::print_spec() const {
     tty->print("%d %s", n->_idx, n->Name());
   }
   tty->print("]");
+  if (is_load_or_store_in_loop()) {
+    tty->print(" ");
+    vpointer().print_on(tty, false);
+  }
 }
 #endif
