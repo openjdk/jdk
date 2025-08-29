@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * @summary Known Answer Test for AES cipher with GCM mode support in
  * PKCS11 provider.
  */
+import jtreg.SkippedException;
+
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.util.Arrays;
@@ -311,9 +313,8 @@ public class TestKATForGCM extends PKCS11Test {
         try {
             c = Cipher.getInstance(transformation, p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Skip testing " + p.getName() +
-                    ", no support for " + transformation);
-            return;
+            throw new SkippedException("Skip testing " + p.getName() +
+                                       ", no support for " + transformation);
         }
         try {
             if (execute(testValues, c)) {

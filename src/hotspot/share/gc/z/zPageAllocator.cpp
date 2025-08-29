@@ -412,7 +412,7 @@ private:
   const Ticks                _start_timestamp;
   const uint32_t             _young_seqnum;
   const uint32_t             _old_seqnum;
-  const uint32_t             _initiating_numa_id;
+  const uint32_t             _preferred_partition;
   bool                       _is_multi_partition;
   ZSinglePartitionAllocation _single_partition_allocation;
   ZMultiPartitionAllocation  _multi_partition_allocation;
@@ -420,7 +420,7 @@ private:
   ZFuture<bool>              _stall_result;
 
 public:
-  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age)
+  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition)
     : _type(type),
       _requested_size(size),
       _flags(flags),
@@ -428,12 +428,14 @@ public:
       _start_timestamp(Ticks::now()),
       _young_seqnum(ZGeneration::young()->seqnum()),
       _old_seqnum(ZGeneration::old()->seqnum()),
-      _initiating_numa_id(ZNUMA::id()),
+      _preferred_partition(preferred_partition),
       _is_multi_partition(false),
       _single_partition_allocation(size),
       _multi_partition_allocation(size),
       _node(),
-      _stall_result() {}
+      _stall_result() {
+    assert(_preferred_partition < ZNUMA::count(), "Preferred partition out-of-bounds (0 <= %d < %d)", _preferred_partition, ZNUMA::count());
+  }
 
   void reset_for_retry() {
     _is_multi_partition = false;
@@ -474,8 +476,8 @@ public:
     return _old_seqnum;
   }
 
-  uint32_t initiating_numa_id() const {
-    return _initiating_numa_id;
+  uint32_t preferred_partition() const {
+    return _preferred_partition;
   }
 
   bool is_multi_partition() const {
@@ -1397,10 +1399,10 @@ static void check_out_of_memory_during_initialization() {
   }
 }
 
-ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition) {
   EventZPageAllocation event;
 
-  ZPageAllocation allocation(type, size, flags, age);
+  ZPageAllocation allocation(type, size, flags, age, preferred_partition);
 
   // Allocate the page
   ZPage* const page = alloc_page_inner(&allocation);
@@ -1548,7 +1550,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
   }
 
   // Round robin single-partition claiming
-  const uint32_t start_numa_id = allocation->initiating_numa_id();
+  const uint32_t start_numa_id = allocation->preferred_partition();
   const uint32_t start_partition = start_numa_id;
   const uint32_t num_partitions = _partitions.count();
 
@@ -1560,7 +1562,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
     }
   }
 
-  if (!is_multi_partition_enabled() || sum_available() < allocation->size()) {
+  if (!is_multi_partition_allowed(allocation)) {
     // Multi-partition claiming is not possible
     return false;
   }
@@ -1578,7 +1580,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
 }
 
 bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
-  const uint32_t start_node = allocation->initiating_numa_id();
+  const uint32_t start_node = allocation->preferred_partition();
   const uint32_t numa_nodes = ZNUMA::count();
 
   for (uint32_t i = 0; i < numa_nodes; ++i) {
@@ -1939,7 +1941,7 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
     }
 
     const size_t committed = allocation->committed_capacity();
-    const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
+    const ZVirtualMemory non_harvested_vmem = partial_vmem.last_part(allocation->harvested());
     const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
     const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
 
@@ -2189,6 +2191,12 @@ void ZPageAllocator::satisfy_stalled() {
 
 bool ZPageAllocator::is_multi_partition_enabled() const {
   return _virtual.is_multi_partition_enabled();
+}
+
+bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
+  return is_multi_partition_enabled() &&
+         allocation->type() == ZPageType::large &&
+         allocation->size() <= sum_available();
 }
 
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {
