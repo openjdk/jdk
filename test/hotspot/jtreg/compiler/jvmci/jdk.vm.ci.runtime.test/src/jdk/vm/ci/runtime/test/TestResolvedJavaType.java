@@ -31,6 +31,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
@@ -1249,6 +1250,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     @Test
     public void getTypeAnnotationValuesTest() {
         getTypeAnnotationValuesTest(AnnotationTestInput.AnnotatedClass.class);
+        getTypeAnnotationValuesTest(AnnotationTestInput.AnnotatedClass2.class);
         getTypeAnnotationValuesTest(int.class);
         getTypeAnnotationValuesTest(void.class);
         for (Class<?> c : classes) {
@@ -1268,15 +1270,22 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static final Method classGetRawTypeAnnotations = lookupMethod(Class.class, "getRawTypeAnnotations");
     private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
 
-    private static TypeAnnotation[] getTypeAnnotations(Class<?> c) {
+    private static List<TypeAnnotation> getTypeAnnotations(Class<?> c) {
         byte[] rawAnnotations = invokeMethod(classGetRawTypeAnnotations, c);
-        ConstantPool cp = invokeMethod(classGetConstantPool, c);
-        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, c);
+        return getTypeAnnotations(rawAnnotations, c);
+    }
+
+    public static List<TypeAnnotation> getTypeAnnotations(byte[] rawAnnotations, Class<?> container) {
+        ConstantPool cp = invokeMethod(classGetConstantPool, container);
+        return Stream.of(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container))
+                .filter(ta -> ta.getAnnotation() != null)
+                .toList();
     }
 
     @Test
     public void getAnnotationValuesTest() {
         getAnnotationValuesTest(AnnotationTestInput.AnnotatedClass.class);
+        getAnnotationValuesTest(AnnotationTestInput.AnnotatedClass2.class);
         getAnnotationValuesTest(int.class);
         getAnnotationValuesTest(void.class);
         for (Class<?> c : classes) {
@@ -1383,11 +1392,11 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     public static void assertTypeAnnotationsEquals(
-            TypeAnnotation[] typeAnnotations,
+            List<TypeAnnotation> typeAnnotations,
             List<TypeAnnotationValue> typeAnnotationValues) throws AssertionError {
-        assertEquals(typeAnnotations.length, typeAnnotationValues.size());
-        for (int i = 0; i < typeAnnotations.length; i++) {
-            TypeAnnotation typeAnnotation = typeAnnotations[i];
+        assertEquals(typeAnnotations.size(), typeAnnotationValues.size());
+        for (int i = 0; i < typeAnnotations.size(); i++) {
+            TypeAnnotation typeAnnotation = typeAnnotations.get(i);
             TypeAnnotationValue typeAnnotationValue = typeAnnotationValues.get(i);
             assertTypeAnnotationEquals(typeAnnotation, typeAnnotationValue);
         }

@@ -31,6 +31,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
@@ -50,7 +51,6 @@
 
 package jdk.vm.ci.runtime.test;
 
-import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.internal.vm.test.AnnotationTestInput.AnnotatedRecord;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -59,7 +59,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 import org.junit.Test;
 import sun.reflect.annotation.TypeAnnotation;
-import sun.reflect.annotation.TypeAnnotationParser;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -141,7 +140,7 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
      */
     private static void getTypeAnnotationValuesTest(RecordComponent rc) {
         ResolvedJavaRecordComponent resolvedRc = metaAccess.lookupJavaRecordComponent(rc);
-        TypeAnnotation[] typeAnnotations = getTypeAnnotations(rc);
+        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(rc);
         List<TypeAnnotationValue> typeAnnotationValues = resolvedRc.getTypeAnnotationValues();
         TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
         if (!typeAnnotationValues.isEmpty()) {
@@ -150,13 +149,11 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
     }
 
     private static final Field recordComponentTypeAnnotations = lookupField(RecordComponent.class, "typeAnnotations");
-    private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
 
-    private static TypeAnnotation[] getTypeAnnotations(RecordComponent rc) {
-        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
+    private static List<TypeAnnotation> getTypeAnnotations(RecordComponent rc) {
         Class<?> container = rc.getDeclaringRecord();
-        jdk.internal.reflect.ConstantPool cp = invokeMethod(classGetConstantPool, container);
-        return TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container);
+        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
+        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
     }
 
     @Test
