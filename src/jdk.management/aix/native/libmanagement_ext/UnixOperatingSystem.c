@@ -31,55 +31,71 @@
 #include <time.h>
 #include <stdlib.h>
 #include <libperfstat.h>
+#include <pthread.h>
 #include "com_sun_management_internal_OperatingSystemImpl.h"
-perfstat_process_t prev_stats = {0};
-static unsigned long long prev_timebase = 0;
-static int initialized = 0;
-
 #define HTIC2SEC(x) (((double)(x) * XINTFRAC) / 1000000000.0)
 
-static perfstat_cpu_total_t cpu_total_old;
-static time_t last_sample_time = 0;
-static double last_cpu_load = -1.0;
+static struct perfMetrics{
+    unsigned long long timebase;
+    perfstat_process_t stats;
+    perfstat_cpu_total_t cpu_total;
+} counters;
+
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+int perfInit() {
+    static int initialized = 0;
+    if (!initialized) {
+
+        perfstat_id_t id;
+        counters.stats = (perfstat_process_t){0};
+        counters.timebase = 0;
+        int rc = perfstat_cpu_total(NULL, &counters.cpu_total, sizeof(perfstat_cpu_total_t), 1);
+        if (rc < 0) {
+            return -1;
+        }
+        rc = perfstat_process(&id, &counters.stats, sizeof(perfstat_process_t), 1);
+        if (rc < 0) {
+            return -1;
+        }
+        counters.timebase = counters.stats.last_timebase;
+        initialized = 1;
+    }
+    return initialized ? 0 : -1;
+}
+
 JNIEXPORT jdouble JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
-    perfstat_cpu_total_t cpu_total;
-    int ret;
-
-    time_t now = time(NULL);
-    if (initialized && (now - last_sample_time < 5)) {
-        return last_cpu_load; // Return cached value if less than 5s
+    double load = -1.0;
+    pthread_mutex_lock(&lock);
+    if (perfInit() == 0) {
+        int ret;
+        perfstat_cpu_total_t cpu_total;
+        ret = perfstat_cpu_total(NULL, &cpu_total, sizeof(perfstat_cpu_total_t), 1);
+        if (ret < 0) {
+            return -1.0;
+        }
+        long long user_diff = cpu_total.user - counters.cpu_total.user;
+        long long sys_diff = cpu_total.sys - counters.cpu_total.sys;
+        long long idle_diff = cpu_total.idle - counters.cpu_total.idle;
+        long long wait_diff = cpu_total.wait - counters.cpu_total.wait;
+        long long total = user_diff + sys_diff + idle_diff + wait_diff;
+        if (total < (user_diff + sys_diff)) {
+            total = user_diff + sys_diff;
+        }
+        if (total == 0) {
+            load = 0.0;
+        }
+        else {
+            load = (double)(user_diff + sys_diff) / total;
+            load = MAX(load, 0.0);
+            load = MIN(load, 1.0);
+        }
+        counters.cpu_total = cpu_total;
     }
-
-    ret = perfstat_cpu_total(NULL, &cpu_total, sizeof(perfstat_cpu_total_t), 1);
-    if (ret < 0) {
-        return -1.0;
-    }
-
-    if (!initialized) {
-        cpu_total_old = cpu_total;
-        initialized = 1;
-        last_sample_time = now;
-        return -1.0;
-    }
-
-    long long user_diff = cpu_total.user - cpu_total_old.user;
-    long long sys_diff = cpu_total.sys - cpu_total_old.sys;
-    long long idle_diff = cpu_total.idle - cpu_total_old.idle;
-    long long wait_diff = cpu_total.wait - cpu_total_old.wait;
-    long long total = user_diff + sys_diff + idle_diff + wait_diff;
-
-    if (total == 0) {
-        return -1.0;
-    }
-
-    double load = (double)(user_diff + sys_diff) / total;
-    last_cpu_load = load;
-    last_sample_time = now;
-    cpu_total_old = cpu_total;
-
+    pthread_mutex_unlock(&lock);
     return load;
 }
 
@@ -91,28 +107,34 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
     perfstat_id_t id;
     unsigned long long curr_timebase, timebase_diff;
     double user_diff, sys_diff, delta_time;
-
-    if (perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1) < 0) {
-        return -1.0;
+    double cpu_load = -1.0;
+    pthread_mutex_lock(&lock);
+    if (perfInit() == 0) {
+        int ret;
+        ret = perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1);
+        if (ret < 0) {
+            return -1.0;
+        }
+        curr_timebase = curr_stats.last_timebase;
+        timebase_diff = curr_timebase - counters.timebase;
+        if ((long long)timebase_diff <= 0 || XINTFRAC == 0) {
+            cpu_load = 0.0;
+        }
+        delta_time = HTIC2SEC(timebase_diff);
+        user_diff = (double)(curr_stats.ucpu_time - counters.stats.ucpu_time);
+        sys_diff  = (double)(curr_stats.scpu_time - counters.stats.scpu_time);
+        counters.stats = curr_stats;
+        counters.timebase = curr_timebase;
+        if(delta_time == 0) {
+            cpu_load = 0.0;
+        }
+        else {
+            cpu_load = MAX(cpu_load, 0.0);
+            cpu_load = MIN(cpu_load, 1.0);
+            cpu_load = (user_diff + sys_diff) / delta_time;
+        }
     }
-    if (!initialized) {
-        prev_stats = curr_stats;
-        prev_timebase = curr_stats.last_timebase;
-        initialized = 1;
-        return -1.0;
-    }
-    curr_timebase = curr_stats.last_timebase;
-    timebase_diff = curr_timebase - prev_timebase;
-    if ((long long)timebase_diff <= 0 || XINTFRAC == 0) {
-        return -1.0;
-    }
-
-    delta_time = HTIC2SEC(timebase_diff);
-    user_diff = (double)(curr_stats.ucpu_time - prev_stats.ucpu_time);
-    sys_diff  = (double)(curr_stats.scpu_time - prev_stats.scpu_time);
-    prev_stats = curr_stats;
-    prev_timebase = curr_timebase;
-    double cpu_load = (user_diff + sys_diff) / delta_time;
+    pthread_mutex_unlock(&lock);
     return (jdouble)cpu_load;
 }
 
