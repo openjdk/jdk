@@ -169,10 +169,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_intrinsic() ||
-        method()->is_compiled_lambda_form()) {
-      call->set_method_handle_invoke(true);
-    }
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);

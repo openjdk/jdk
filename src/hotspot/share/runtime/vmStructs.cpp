@@ -542,7 +542,6 @@
   nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _deopt_handler_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
@@ -614,7 +613,6 @@
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
-  volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
   volatile_nonstatic_field(JavaThread,         _thread_state,                                 JavaThreadState)                       \
   nonstatic_field(JavaThread,                  _stack_base,                                   address)                               \
@@ -1713,7 +1711,6 @@
   /**********************/                                                \
                                                                           \
   declare_constant(PcDesc::PCDESC_reexecute)                              \
-  declare_constant(PcDesc::PCDESC_is_method_handle_invoke)                \
   declare_constant(PcDesc::PCDESC_return_oop)                             \
                                                                           \
   /**********************/                                                \

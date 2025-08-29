@@ -530,10 +530,12 @@ int vframeArrayElement::on_stack_size(int callee_parameters,
 }
 
 
+#if 0
 intptr_t* vframeArray::unextended_sp() const {
   assert(owner_thread()->is_in_usable_stack((address) _original.unextended_sp()), INTPTR_FORMAT, p2i(_original.unextended_sp()));
   return _original.unextended_sp();
 }
+#endif
 
 vframeArray* vframeArray::allocate(JavaThread* thread, int frame_size, GrowableArray<compiledVFrame*>* chunk,
                                    RegisterMap *reg_map, frame sender, frame caller, frame self,

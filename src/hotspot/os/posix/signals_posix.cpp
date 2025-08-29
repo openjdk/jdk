@@ -621,9 +621,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       if (cb != nullptr && cb->is_nmethod()) {
         nmethod* nm = cb->as_nmethod();
         assert(nm->insts_contains_inclusive(pc), "");
-        address deopt = nm->is_method_handle_return(pc) ?
-          nm->deopt_mh_handler_begin() :
-          nm->deopt_handler_begin();
+        address deopt = nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);

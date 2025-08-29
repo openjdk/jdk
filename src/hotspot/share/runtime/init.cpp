@@ -216,7 +216,6 @@ jint init_globals2() {
   return JNI_OK;
 }
 
-
 void exit_globals() {
   static bool destructorsCalled = false;
   if (!destructorsCalled) {

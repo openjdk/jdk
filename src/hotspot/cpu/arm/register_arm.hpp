@@ -364,7 +364,6 @@ class VFPSystemRegisterImpl : public AbstractRegisterImpl {
 //  This does not seem to conflict with Rexception_pc
 //  In case of issues, R3 might be OK but adapters calling the runtime would have to save it
 #define R5_mh            R5 // MethodHandle register, used during the call setup
-#define Rmh_SP_save      FP // for C1
 
 /*
  * C++ Interpreter Register Defines

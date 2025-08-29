@@ -525,9 +525,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(current->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
-  // Reset method handle flag.
-  current->set_is_method_handle_return(false);
-
 #if INCLUDE_JVMCI
   // JVMCI's ExceptionHandlerStub expects the thread local exception PC to be clear
   // and other exception handler continuations do not read it
@@ -542,8 +539,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   CodeBlob* blob = CodeCache::find_blob(return_address);
   nmethod* nm = (blob != nullptr) ? blob->as_nmethod_or_null() : nullptr;
   if (nm != nullptr) {
-    // Set flag if return address is a method handle call site.
-    current->set_is_method_handle_return(nm->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");

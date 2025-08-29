@@ -186,7 +186,9 @@ class vframeArray: public CHeapObj<mtCompiler> {
   // Accessors for sp
   intptr_t* sp() const                       { return _original.sp(); }
 
+#if 0
   intptr_t* unextended_sp() const;
+#endif
 
   frame original() const                     { return _original; }
 
