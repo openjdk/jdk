@@ -21,9 +21,9 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.invoke.stable;
+package org.openjdk.bench.java.lang.stable;
 
-import org.openjdk.bench.java.lang.invoke.stable.StableValueBenchmark.Dcl;
+import org.openjdk.bench.java.lang.stable.StableValueBenchmark.Dcl;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

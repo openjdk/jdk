@@ -48,7 +48,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;

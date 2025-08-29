@@ -23,20 +23,20 @@
 
 /* @test
  * @summary Basic tests for StableList methods
- * @modules java.base/jdk.internal.invoke.stable
+ * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableListTest
  */
 
-import jdk.internal.invoke.stable.FunctionHolder;
-import jdk.internal.invoke.stable.StableUtil;
-import jdk.internal.invoke.stable.StandardStableValue;
+import jdk.internal.lang.stable.FunctionHolder;
+import jdk.internal.lang.stable.StableUtil;
+import jdk.internal.lang.stable.StandardStableValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;

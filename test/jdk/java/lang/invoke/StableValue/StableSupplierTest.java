@@ -24,12 +24,12 @@
 /* @test
  * @summary Basic tests for StableSupplier methods
  * @enablePreview
- * @modules java.base/jdk.internal.invoke.stable
+ * @modules java.base/jdk.internal.lang.stable
  * @compile StableTestUtil.java
- * @run junit/othervm --add-opens java.base/jdk.internal.invoke.stable=ALL-UNNAMED StableSupplierTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED StableSupplierTest
  */
 
-import jdk.internal.invoke.stable.FunctionHolder;
+import jdk.internal.lang.stable.FunctionHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Objects;

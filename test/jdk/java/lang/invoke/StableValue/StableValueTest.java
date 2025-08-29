@@ -24,7 +24,7 @@
 /* @test
  * @summary Basic tests for StableValue implementations
  * @enablePreview
- * @modules java.base/jdk.internal.invoke.stable
+ * @modules java.base/jdk.internal.lang.stable
  * @run junit StableValueTest
  */
 
@@ -38,7 +38,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;

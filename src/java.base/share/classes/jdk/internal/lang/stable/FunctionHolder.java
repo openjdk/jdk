@@ -1,4 +1,4 @@
-package jdk.internal.invoke.stable;
+package jdk.internal.lang.stable;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;

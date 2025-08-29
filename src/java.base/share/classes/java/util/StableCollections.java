@@ -26,17 +26,17 @@
 package java.util;
 
 import jdk.internal.ValueBased;
-import jdk.internal.invoke.stable.FunctionHolder;
-import jdk.internal.invoke.stable.InternalStableValue;
-import jdk.internal.invoke.stable.StableUtil;
-import jdk.internal.invoke.stable.StandardStableValue;
+import jdk.internal.lang.stable.FunctionHolder;
+import jdk.internal.lang.stable.InternalStableValue;
+import jdk.internal.lang.stable.StableUtil;
+import jdk.internal.lang.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -44,7 +44,6 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 /**
  * Container class for stable collections. Not part of the public API.

@@ -25,7 +25,7 @@
 
 package jdk.internal.access;
 
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.List;
 
 public interface JavaUtilCollectionAccess {

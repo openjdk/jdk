@@ -26,11 +26,11 @@
 package java.util.function;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.invoke.stable.StableSupplier;
+import jdk.internal.lang.stable.StableSupplier;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 
 /**
  * Represents a supplier of results.

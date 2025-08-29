@@ -28,7 +28,7 @@ package java.util;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 

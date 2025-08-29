@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.invoke.stable;
+package jdk.internal.lang.stable;
 
 import jdk.internal.foreign.Utils;
 

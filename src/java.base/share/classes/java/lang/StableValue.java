@@ -23,13 +23,13 @@
  * questions.
  */
 
-package java.lang.invoke;
+package java.lang;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.invoke.stable.InternalStableValue;
-import jdk.internal.invoke.stable.StandardStableValue;
+import jdk.internal.lang.stable.InternalStableValue;
+import jdk.internal.lang.stable.StandardStableValue;
 
 import java.io.Serializable;
 import java.util.Arrays;

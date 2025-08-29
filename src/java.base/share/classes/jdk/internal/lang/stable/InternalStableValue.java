@@ -1,4 +1,4 @@
-package jdk.internal.invoke.stable;
+package jdk.internal.lang.stable;
 
 import java.lang.StableValue;
 import java.util.Objects;

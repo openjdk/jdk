@@ -24,7 +24,7 @@
 /* @test
  * @summary Basic tests for making sure StableValue publishes values safely
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.invoke.stable
+ * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @compile StableTestUtil.java
  * @run junit StableValuesSafePublicationTest
@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.invoke.StableValue;
+import java.lang.StableValue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
