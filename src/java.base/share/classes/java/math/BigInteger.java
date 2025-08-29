@@ -2768,7 +2768,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @since 26
-     * @apiNote Note that calling {@code nthRoot(2)} is equivalent to call {@code sqrt()}.
+     * @apiNote Note that calling {@code nthRoot(2)} is equivalent to calling {@code sqrt()}.
      */
     public BigInteger nthRoot(int n) {
         if (n == 1)
@@ -2795,7 +2795,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #sqrtAndRemainder()
      * @see #nthRoot(int)
      * @since 26
-     * @apiNote Note that calling {@code nthRootAndRemainder(2)} is equivalent to call
+     * @apiNote Note that calling {@code nthRootAndRemainder(2)} is equivalent to calling
      *          {@code sqrtAndRemainder()}.
      */
     public BigInteger[] nthRootAndRemainder(int n) {
