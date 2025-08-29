@@ -879,6 +879,13 @@ public final class String
     }
 
     /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with the encoder of {@code
+     * cs}}
+     *
+     * @param cs a charset to obtain the encoder from
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
      * @param exClass The exception class where any non-null value indicates
      *                malformed or unmappable bytes will result in an exception
      *                to be thrown instead of getting replaced.
@@ -999,6 +1006,13 @@ public final class String
         return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
     }
 
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with US-ASCII}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
+     */
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
             int positives = StringCoding.countPositives(val, 0, val.length);
@@ -1046,6 +1060,11 @@ public final class String
     }
 
     /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with ISO-8859-1}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
      * @param exClass The exception class where any non-null value indicates
      *                malformed or unmappable bytes will result in an exception
      *                to be thrown instead of getting replaced.
@@ -1383,6 +1402,11 @@ public final class String
     }
 
     /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with UTF-8}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
      * @param exClass The exception class where any non-null value indicates
      *                malformed or unmappable bytes will result in an exception
      *                to be thrown instead of getting replaced.
@@ -1420,6 +1444,10 @@ public final class String
     }
 
     /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * UTF-16, and then encoding the result with UTF-8}
+     *
+     * @param val a string byte array encoded with UTF-16
      * @param exClass The exception class where any non-null value indicates
      *                malformed or unmappable bytes will result in an exception
      *                to be thrown instead of getting replaced.
