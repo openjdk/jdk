@@ -89,7 +89,7 @@ public abstract class PKCS11Test {
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
     // The other is "libnss3.so", listed as "nss3".
-    static String nss_library = "softokn3";
+    static String nss_library = System.getProperty("CUSTOM_P11_LIBRARY_NAME", "softokn3");
 
     // NSS versions of each library.  It is simpler to keep nss_version
     // for quick checking for generic testing than many if-else statements.
@@ -455,7 +455,6 @@ public abstract class PKCS11Test {
     }
 
     public static String getNssConfig() throws Exception {
-        nss_library = System.getProperty("CUSTOM_P11_LIBRARY_NAME", nss_library);
         String libdir = getNSSLibDir();
         if (libdir == null) {
             return null;
