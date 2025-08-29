@@ -59,16 +59,22 @@ import java.util.stream.Stream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class Optional<T> {
-    /**
-     * Common instance for {@code empty()}.
-     */
-    private static final Optional<?> EMPTY = new Optional<>(null);
+public sealed interface Optional<T> {
 
     /**
-     * If non-null, the value; if null, indicates no value is present
+     * A record class representing a non-empty Optional
+     * @param <T> the type of value
      */
-    private final T value;
+    public record Some<T>(T value) implements Optional<T> {}
+
+    /**
+     * A record class representing an empty Optional
+     * @param <T> the type of value
+     */
+    public record None<T>() implements Optional<T> {
+        private static final None<?> INSTANCE = new None<>();
+    }
+
 
     /**
      * Returns an empty {@code Optional} instance.  No value is present for this
@@ -85,19 +91,8 @@ public final class Optional<T> {
      */
     public static<T> Optional<T> empty() {
         @SuppressWarnings("unchecked")
-        Optional<T> t = (Optional<T>) EMPTY;
+        Optional<T> t = (Optional<T>) None.INSTANCE;
         return t;
-    }
-
-    /**
-     * Constructs an instance with the described value.
-     *
-     * @param value the value to describe; it's the caller's responsibility to
-     *        ensure the value is non-{@code null} unless creating the singleton
-     *        instance returned by {@code empty()}.
-     */
-    private Optional(T value) {
-        this.value = value;
     }
 
     /**
@@ -110,7 +105,7 @@ public final class Optional<T> {
      * @throws NullPointerException if value is {@code null}
      */
     public static <T> Optional<T> of(T value) {
-        return new Optional<>(Objects.requireNonNull(value));
+        return new Some<>(Objects.requireNonNull(value));
     }
 
     /**
@@ -124,8 +119,8 @@ public final class Optional<T> {
      */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> ofNullable(T value) {
-        return value == null ? (Optional<T>) EMPTY
-                             : new Optional<>(value);
+        return value == null ? (Optional<T>) None.INSTANCE
+                             : new Some<>(value);
     }
 
     /**
@@ -138,11 +133,11 @@ public final class Optional<T> {
      * @return the non-{@code null} value described by this {@code Optional}
      * @throws NoSuchElementException if no value is present
      */
-    public T get() {
-        if (value == null) {
-            throw new NoSuchElementException("No value present");
-        }
-        return value;
+    default public T get() {
+        return switch (this) {
+            case Some<T>(var value) -> value;
+            case None<T>() -> throw new NoSuchElementException("No value present");
+        };
     }
 
     /**
@@ -150,8 +145,8 @@ public final class Optional<T> {
      *
      * @return {@code true} if a value is present, otherwise {@code false}
      */
-    public boolean isPresent() {
-        return value != null;
+    default public boolean isPresent() {
+        return this instanceof Some<?>;
     }
 
     /**
@@ -161,8 +156,8 @@ public final class Optional<T> {
      * @return  {@code true} if a value is not present, otherwise {@code false}
      * @since   11
      */
-    public boolean isEmpty() {
-        return value == null;
+    default public boolean isEmpty() {
+        return this instanceof None<?>;
     }
 
     /**
@@ -173,8 +168,9 @@ public final class Optional<T> {
      * @throws NullPointerException if value is present and the given action is
      *         {@code null}
      */
-    public void ifPresent(Consumer<? super T> action) {
-        if (value != null) {
+    default public void ifPresent(Consumer<? super T> action) {
+        Objects.requireNonNull(action);
+        if (this instanceof Some<T>(var value)) {
             action.accept(value);
         }
     }
@@ -191,11 +187,12 @@ public final class Optional<T> {
      *         action is {@code null}.
      * @since 9
      */
-    public void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction) {
-        if (value != null) {
-            action.accept(value);
-        } else {
-            emptyAction.run();
+    default public void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction) {
+        Objects.requireNonNull(action);
+        Objects.requireNonNull(emptyAction);
+        switch (this) {
+            case Some<T>(var value) -> action.accept(value);
+            case None<T>() -> emptyAction.run();
         }
     }
 
@@ -210,13 +207,12 @@ public final class Optional<T> {
      *         given predicate, otherwise an empty {@code Optional}
      * @throws NullPointerException if the predicate is {@code null}
      */
-    public Optional<T> filter(Predicate<? super T> predicate) {
+    default public Optional<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
-        if (isEmpty()) {
-            return this;
-        } else {
-            return predicate.test(value) ? this : empty();
-        }
+        return switch (this) {
+            case Some<T>(var value) -> predicate.test(value) ? this : empty();
+            case None<T>() -> empty();
+        };
     }
 
     /**
@@ -252,13 +248,12 @@ public final class Optional<T> {
      *         present, otherwise an empty {@code Optional}
      * @throws NullPointerException if the mapping function is {@code null}
      */
-    public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+    default public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
-        if (isEmpty()) {
-            return empty();
-        } else {
-            return Optional.ofNullable(mapper.apply(value));
-        }
+        return switch (this) {
+            case Some<T>(var value) -> ofNullable(mapper.apply(value));
+            case None<T>() -> empty();
+        };
     }
 
     /**
@@ -280,15 +275,16 @@ public final class Optional<T> {
      * @throws NullPointerException if the mapping function is {@code null} or
      *         returns a {@code null} result
      */
-    public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper) {
+    default public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
-        if (isEmpty()) {
-            return empty();
-        } else {
-            @SuppressWarnings("unchecked")
-            Optional<U> r = (Optional<U>) mapper.apply(value);
-            return Objects.requireNonNull(r);
-        }
+        return switch (this) {
+            case Some<T>(var value) -> {
+                @SuppressWarnings("unchecked")
+                Optional<U> r = (Optional<U>) mapper.apply(value);
+                yield Objects.requireNonNull(r);
+            }
+            case None<T>() -> empty();
+        };
     }
 
     /**
@@ -304,15 +300,16 @@ public final class Optional<T> {
      *         produces a {@code null} result
      * @since 9
      */
-    public Optional<T> or(Supplier<? extends Optional<? extends T>> supplier) {
+    default public Optional<T> or(Supplier<? extends Optional<? extends T>> supplier) {
         Objects.requireNonNull(supplier);
-        if (isPresent()) {
-            return this;
-        } else {
-            @SuppressWarnings("unchecked")
-            Optional<T> r = (Optional<T>) supplier.get();
-            return Objects.requireNonNull(r);
-        }
+        return switch (this) {
+            case Some<T>(var value) -> this;
+            case None<T>() -> {
+                @SuppressWarnings("unchecked")
+                Optional<T> r = (Optional<T>) supplier.get();
+                yield Objects.requireNonNull(r);
+            }
+        };
     }
 
     /**
@@ -330,12 +327,11 @@ public final class Optional<T> {
      * @return the optional value as a {@code Stream}
      * @since 9
      */
-    public Stream<T> stream() {
-        if (isEmpty()) {
-            return Stream.empty();
-        } else {
-            return Stream.of(value);
-        }
+    default public Stream<T> stream() {
+        return switch (this) {
+            case Some<T>(var value) -> Stream.of(value);
+            case None<T>() -> Stream.empty();
+        };
     }
 
     /**
@@ -346,8 +342,11 @@ public final class Optional<T> {
      *        May be {@code null}.
      * @return the value, if present, otherwise {@code other}
      */
-    public T orElse(T other) {
-        return value != null ? value : other;
+    default public T orElse(T other) {
+        return switch (this) {
+            case Some<T>(var value) -> value;
+            case None<T>() -> other;
+        };
     }
 
     /**
@@ -360,8 +359,12 @@ public final class Optional<T> {
      * @throws NullPointerException if no value is present and the supplying
      *         function is {@code null}
      */
-    public T orElseGet(Supplier<? extends T> supplier) {
-        return value != null ? value : supplier.get();
+    default public T orElseGet(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier);
+        return switch (this) {
+            case Some<T>(var value) -> value;
+            case None<T>() -> supplier.get();
+        };
     }
 
     /**
@@ -372,11 +375,11 @@ public final class Optional<T> {
      * @throws NoSuchElementException if no value is present
      * @since 10
      */
-    public T orElseThrow() {
-        if (value == null) {
-            throw new NoSuchElementException("No value present");
-        }
-        return value;
+    default public T orElseThrow() {
+        return switch (this) {
+            case Some<T>(var value) -> value;
+            case None<T>() -> throw new NoSuchElementException("No value present");
+        };
     }
 
     /**
@@ -396,65 +399,11 @@ public final class Optional<T> {
      * @throws NullPointerException if no value is present and the exception
      *         supplying function is {@code null} or produces a {@code null} result
      */
-    public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        if (value != null) {
-            return value;
-        } else {
-            throw exceptionSupplier.get();
-        }
-    }
-
-    /**
-     * Indicates whether some other object is "equal to" this {@code Optional}.
-     * The other object is considered equal if:
-     * <ul>
-     * <li>it is also an {@code Optional} and;
-     * <li>both instances have no value present or;
-     * <li>the present values are "equal to" each other via {@code equals()}.
-     * </ul>
-     *
-     * @param obj an object to be tested for equality
-     * @return {@code true} if the other object is "equal to" this object
-     *         otherwise {@code false}
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        return obj instanceof Optional<?> other
-                && Objects.equals(value, other.value);
-    }
-
-    /**
-     * Returns the hash code of the value, if present, otherwise {@code 0}
-     * (zero) if no value is present.
-     *
-     * @return hash code value of the present value or {@code 0} if no value is
-     *         present
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(value);
-    }
-
-    /**
-     * Returns a non-empty string representation of this {@code Optional}
-     * suitable for debugging.  The exact presentation format is unspecified and
-     * may vary between implementations and versions.
-     *
-     * @implSpec
-     * If a value is present the result must include its string representation
-     * in the result.  Empty and present {@code Optional}s must be unambiguously
-     * differentiable.
-     *
-     * @return the string representation of this instance
-     */
-    @Override
-    public String toString() {
-        return value != null
-            ? ("Optional[" + value + "]")
-            : "Optional.empty";
+    default public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier);
+        return switch (this) {
+            case Some<T>(var value) -> value;
+            case None<T>() -> throw exceptionSupplier.get();
+        };
     }
 }
