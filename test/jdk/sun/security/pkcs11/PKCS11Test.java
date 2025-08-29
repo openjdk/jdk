@@ -531,7 +531,12 @@ public abstract class PKCS11Test {
                 nssConfigDir + SEP + customConfigName;
         String customConfigVariant = System.getProperty("CUSTOM_P11_CONFIG_VARIANT");
         if (customConfigVariant != null) {
-            // Change, e.g., .../p11-nss.txt to .../p11-nss-sensitive.txt.
+            // If the file name has an extension, prepend
+            // -{CUSTOM_P11_CONFIG_VARIANT} before its "."; for
+            // example, .../p11-nss.txt becomes
+            // .../p11-nss-sensitive.txt.  If the file name has no
+            // extension, append -{CUSTOM_P11_CONFIG_VARIANT}; for
+            // example: .../p11-nss becomes .../p11-nss-sensitive.
             configFilePath = configFilePath.replaceFirst(
                     "(\\.[^\\.]*)?$", "-" + customConfigVariant + "$1");
         }
