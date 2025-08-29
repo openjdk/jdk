@@ -997,12 +997,10 @@ void JvmtiClassFileReconstituter::write_u8(u8 x) {
 
 void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
                                                  unsigned char* bytecodes) {
-  // We acquire the init_lock monitor to serialize with class linking
-  // so we are not getting bytecodes at the same time the linking process
-  // is rewriting them.
-  JavaThread* current = JavaThread::current();
-  Handle h_init_lock(current, mh->method_holder()->init_lock());
-  ObjectLocker ol(h_init_lock, current);
+  // We must copy bytecodes only from linked classes.
+  // Being linked guarantees we are not getting bytecodes at
+  // the same time the linking process is rewriting them.
+  guarantee(mh->method_holder()->is_linked(), "Bytecodes must be copied from a linked class");
 
   // use a BytecodeStream to iterate over the bytecodes. JVM/fast bytecodes
   // and the breakpoint bytecode are converted to their original bytecodes.
