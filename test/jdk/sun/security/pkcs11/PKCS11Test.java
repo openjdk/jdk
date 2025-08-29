@@ -540,6 +540,10 @@ public abstract class PKCS11Test {
             configFilePath = configFilePath.replaceFirst(
                     "(\\.[^\\.]*)?$", "-" + customConfigVariant + "$1");
         }
+        if (!new File(configFilePath).exists()) {
+            throw new RuntimeException("Configuration file does not exist: "
+                                       + configFilePath);
+        }
         System.out.println("Configuration file: " + configFilePath);
         return configFilePath;
     }
