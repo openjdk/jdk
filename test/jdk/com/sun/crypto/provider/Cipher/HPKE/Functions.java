@@ -81,19 +81,19 @@ public class Functions {
                     System.out.println(params);
 
                     c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), params);
-                    c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params.encapsulation(c1.getIV()));
+                    c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params.withEncapsulation(c1.getIV()));
                     Asserts.assertEqualsByteArray(msg, c2.doFinal(c1.doFinal(msg)));
                     Asserts.assertEqualsByteArray(msg2, c2.doFinal(c1.doFinal(msg2)));
 
                     c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), params
-                            .authKey(kp2.getPrivate())
-                            .info(info)
-                            .psk(psk, psk_id));
+                            .withAuthKey(kp2.getPrivate())
+                            .withInfo(info)
+                            .withPsk(psk, psk_id));
                     c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params
-                            .authKey(kp2.getPublic())
-                            .info(info)
-                            .psk(psk, psk_id)
-                            .encapsulation(c1.getIV()));
+                            .withAuthKey(kp2.getPublic())
+                            .withInfo(info)
+                            .withPsk(psk, psk_id)
+                            .withEncapsulation(c1.getIV()));
                     Asserts.assertEqualsByteArray(msg, c2.doFinal(c1.doFinal(msg)));
                     Asserts.assertEqualsByteArray(msg2, c2.doFinal(c1.doFinal(msg2)));
                 }

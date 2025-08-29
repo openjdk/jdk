@@ -83,25 +83,25 @@ public class KAT9180 {
             var info = h.parseHex(tg.get("info").asString());
 
             var kpR = new DHKEM.RFC9180DeriveKeyPairSR(ikmR).derive(kem_id);
-            var spec = HPKEParameterSpec.of(kem_id, kdf_id, aead_id).info(info);
+            var spec = HPKEParameterSpec.of(kem_id, kdf_id, aead_id).withInfo(info);
             var rand = new DHKEM.RFC9180DeriveKeyPairSR(ikmE);
 
             if (mode == 1 || mode == 3) {
-                spec = spec.psk(
+                spec = spec.withPsk(
                         new SecretKeySpec(h.parseHex(tg.get("psk").asString()), "Generic"),
                         h.parseHex(tg.get("psk_id").asString()));
             }
             if (mode == 0 || mode == 1) {
                 c1.init(Cipher.ENCRYPT_MODE, kpR.getPublic(), spec, rand);
                 c2.init(Cipher.DECRYPT_MODE, kpR.getPrivate(),
-                        spec.encapsulation(c1.getIV()));
+                        spec.withEncapsulation(c1.getIV()));
             } else {
                 var ikmS = h.parseHex(tg.get("ikmS").asString());
                 var kpS = new DHKEM.RFC9180DeriveKeyPairSR(ikmS).derive(kem_id);
                 c1.init(Cipher.ENCRYPT_MODE, kpR.getPublic(),
-                        spec.authKey(kpS.getPrivate()), rand);
+                        spec.withAuthKey(kpS.getPrivate()), rand);
                 c2.init(Cipher.DECRYPT_MODE, kpR.getPrivate(),
-                        spec.encapsulation(c1.getIV()).authKey(kpS.getPublic()));
+                        spec.withEncapsulation(c1.getIV()).withAuthKey(kpS.getPublic()));
             }
             var enc = tg.get("encryptions");
             if (enc != null) {

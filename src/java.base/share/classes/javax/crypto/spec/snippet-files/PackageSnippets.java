@@ -45,7 +45,7 @@ class PackageSnippets {
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
                         HPKEParameterSpec.KDF_HKDF_SHA256,
                         HPKEParameterSpec.AEAD_AES_128_GCM)
-                .info("app_info".getBytes(StandardCharsets.UTF_8));
+                .withInfo("app_info".getBytes(StandardCharsets.UTF_8));
         senderCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
         // Retrieve the key encapsulation message (from the KEM step) from
@@ -60,8 +60,8 @@ class PackageSnippets {
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
                         HPKEParameterSpec.KDF_HKDF_SHA256,
                         HPKEParameterSpec.AEAD_AES_128_GCM)
-                .info("app_info".getBytes(StandardCharsets.UTF_8))
-                .encapsulation(kemEncap);
+                .withInfo("app_info".getBytes(StandardCharsets.UTF_8))
+                .withEncapsulation(kemEncap);
         recipientCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
 
         // Encryption and decryption

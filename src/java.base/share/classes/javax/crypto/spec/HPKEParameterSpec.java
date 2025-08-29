@@ -67,20 +67,20 @@ import java.util.Objects;
  * <ul>
  * <li>
  * Application-supplied information can be provided using the
- * {@link #info(byte[])} method by both sides.
+ * {@link #withInfo(byte[])} method by both sides.
  * <li>
  * To authenticate using a pre-shared key ({@code mode_psk}), the
  * pre-shared key and its identifier must be provided using the
- * {@link #psk(SecretKey, byte[])} method by both sides.
+ * {@link #withPsk(SecretKey, byte[])} method by both sides.
  * <li>
  * To authenticate using an asymmetric key ({@code mode_auth}),
- * the asymmetric keys must be provided using the {@link #authKey(AsymmetricKey)}
+ * the asymmetric keys must be provided using the {@link #withAuthKey(AsymmetricKey)}
  * method. Precisely, the sender must call this method with its own private key
  * and the recipient must call it with the sender's public key.
  * <li>
  * To authenticate using both a PSK and an asymmetric key
- * ({@code mode_auth_psk}), both {@link #authKey(AsymmetricKey)} and
- * {@link #psk(SecretKey, byte[])} methods must be called as described above.
+ * ({@code mode_auth_psk}), both {@link #withAuthKey(AsymmetricKey)} and
+ * {@link #withPsk(SecretKey, byte[])} methods must be called as described above.
  * <li>
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient
@@ -88,7 +88,7 @@ import java.util.Objects;
  * after the cipher is initialized, the key encapsulation message can be
  * retrieved using the {@link Cipher#getIV()} method. On the recipient side,
  * this message must be supplied as part of an {@code HPKEParameterSpec}
- * object obtained from the {@link #encapsulation(byte[])} method.
+ * object obtained from the {@link #withEncapsulation(byte[])} method.
  * </ul>
  * For successful interoperability, both sides need to have identical algorithm
  * identifiers, and supply identical
@@ -108,8 +108,8 @@ import java.util.Objects;
  * <ul>
  * <li> An algorithm identifier is unsupported or does not match the provided key type.
  * <li> The key encapsulation message is not provided on the recipient side.
- * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
- * <li> An attempt to use {@code authKey(key)} is made but {@code mode_auth}
+ * <li> An attempt to use {@code withAuthKey(key)} is made with an incompatible key.
+ * <li> An attempt to use {@code withAuthKey(key)} is made but {@code mode_auth}
  *      or {@code mode_auth_psk} is not supported by the KEM used.
  * </ul>
  * After initialization, both the sender and recipient can process multiple
@@ -279,7 +279,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * @return a new {@code HPKEParameterSpec} object
      * @throws NullPointerException if {@code info} is {@code null}
      */
-    public HPKEParameterSpec info(byte[] info) {
+    public HPKEParameterSpec withInfo(byte[] info) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 Objects.requireNonNull(info).clone(), psk, psk_id, kS, encapsulation);
     }
@@ -302,7 +302,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      *      {@code psk_id} is empty, or {@code psk} is {@code null} but
      *      {@code psk_id} is not empty.
      */
-    public HPKEParameterSpec psk(SecretKey psk, byte[] psk_id) {
+    public HPKEParameterSpec withPsk(SecretKey psk, byte[] psk_id) {
         Objects.requireNonNull(psk_id);
         if (psk == null && psk_id.length != 0
                 || psk != null && psk_id.length == 0) {
@@ -323,7 +323,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      *
      * @return a new {@code HPKEParameterSpec} object
      */
-    public HPKEParameterSpec encapsulation(byte[] encapsulation) {
+    public HPKEParameterSpec withEncapsulation(byte[] encapsulation) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id, kS,
                 encapsulation == null ? null : encapsulation.clone());
@@ -342,7 +342,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      *          authentication key is cleared.
      * @return a new {@code HPKEParameterSpec} object
      */
-    public HPKEParameterSpec authKey(AsymmetricKey kS) {
+    public HPKEParameterSpec withAuthKey(AsymmetricKey kS) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id, kS, encapsulation);
     }

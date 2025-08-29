@@ -114,7 +114,8 @@ public class HPKE extends CipherSpi {
 
     @Override
     protected byte[] engineGetIV() {
-        return state == BEGIN ? null : impl.params.encapsulation();
+        return (state == BEGIN || impl.kemEncaps == null)
+                ? null : impl.kemEncaps.clone();
     }
 
     @Override
@@ -297,6 +298,9 @@ public class HPKE extends CipherSpi {
         String kdfAlg;
         int kdfNh;
 
+        // only used on sender side
+        byte[] kemEncaps;
+
         class Context {
             final SecretKey k; // null if only export
             final byte[] base_nonce;
@@ -403,7 +407,7 @@ public class HPKE extends CipherSpi {
                     throw new InvalidAlgorithmParameterException(
                             "Cannot auth with public key");
                 }
-                params = params.encapsulation(enc.encapsulation());
+                kemEncaps = enc.encapsulation();
                 shared_secret = enc.key();
             } else {
                 if (!(key instanceof PrivateKey sk)) {
