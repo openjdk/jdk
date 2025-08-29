@@ -201,7 +201,7 @@ public final class VarHandleGuardMethodGenerator {
         );
 
         // The 5 JVM calling convention types
-        List<Class<?>> basicTypes = List.of(int.class, long.class, float.class, double.class, Object.class);
+        List<Class<?>> basicTypes = List.of(Object.class, int.class, long.class, float.class, double.class);
 
         Stream.of(VarHandleTemplate.class.getMethods()).<MethodType>
                         mapMulti((m, sink) -> {
