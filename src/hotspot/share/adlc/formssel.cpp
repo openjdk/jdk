@@ -4233,11 +4233,13 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
+        strcmp(opType, "AddReductionVHF")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
         strcmp(opType,"AddReductionVD")==0 ||
         strcmp(opType,"MulReductionVI")==0 ||
         strcmp(opType,"MulReductionVL")==0 ||
         strcmp(opType,"MulReductionVF")==0 ||
+        strcmp(opType,"MulReductionVHF")==0 ||
         strcmp(opType,"MulReductionVD")==0 ||
         strcmp(opType,"MinReductionV")==0 ||
         strcmp(opType,"MaxReductionV")==0 ||
@@ -4346,9 +4348,9 @@ bool MatchRule::is_vector() const {
     "MaxV", "MinV", "MinVHF", "MaxVHF", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
-    "AddReductionVF", "AddReductionVD",
+    "AddReductionVHF", "AddReductionVF", "AddReductionVD",
     "MulReductionVI", "MulReductionVL",
-    "MulReductionVF", "MulReductionVD",
+    "MulReductionVHF", "MulReductionVF", "MulReductionVD",
     "MaxReductionV", "MinReductionV",
     "AndReductionV", "OrReductionV", "XorReductionV",
     "MulAddVS2VI", "MacroLogicV",

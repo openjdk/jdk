@@ -1346,6 +1346,10 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_LONG, "must be");
       vopc = Op_AddReductionVL;
       break;
+    case Op_AddHF:
+      assert(bt == T_SHORT, "must be");
+      vopc = Op_AddReductionVHF;
+      break;
     case Op_AddF:
       assert(bt == T_FLOAT, "must be");
       vopc = Op_AddReductionVF;
@@ -1369,6 +1373,10 @@ int ReductionNode::opcode(int opc, BasicType bt) {
     case Op_MulL:
       assert(bt == T_LONG, "must be");
       vopc = Op_MulReductionVL;
+      break;
+    case Op_MulHF:
+      assert(bt == T_SHORT, "must be");
+      vopc = Op_MulReductionVHF;
       break;
     case Op_MulF:
       assert(bt == T_FLOAT, "must be");
@@ -1490,19 +1498,21 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
   guarantee(vopc != opc, "Vector for '%s' is not implemented", NodeClassNames[opc]);
 
   switch (vopc) {
-  case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
-  case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
-  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
-  case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
-  case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
-  case Op_MaxReductionV:  return new MaxReductionVNode (ctrl, n1, n2);
-  case Op_AndReductionV:  return new AndReductionVNode (ctrl, n1, n2);
-  case Op_OrReductionV:   return new OrReductionVNode  (ctrl, n1, n2);
-  case Op_XorReductionV:  return new XorReductionVNode (ctrl, n1, n2);
+  case Op_AddReductionVI:  return new AddReductionVINode(ctrl, n1, n2);
+  case Op_AddReductionVL:  return new AddReductionVLNode(ctrl, n1, n2);
+  case Op_AddReductionVHF: return new AddReductionVHFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_AddReductionVF:  return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_AddReductionVD:  return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVI:  return new MulReductionVINode(ctrl, n1, n2);
+  case Op_MulReductionVL:  return new MulReductionVLNode(ctrl, n1, n2);
+  case Op_MulReductionVHF: return new MulReductionVHFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVF:  return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVD:  return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MinReductionV:   return new MinReductionVNode (ctrl, n1, n2);
+  case Op_MaxReductionV:   return new MaxReductionVNode (ctrl, n1, n2);
+  case Op_AndReductionV:   return new AndReductionVNode (ctrl, n1, n2);
+  case Op_OrReductionV:    return new OrReductionVNode  (ctrl, n1, n2);
+  case Op_XorReductionV:   return new XorReductionVNode (ctrl, n1, n2);
   default:
     assert(false, "unknown node: %s", NodeClassNames[vopc]);
     return nullptr;
@@ -1664,6 +1674,7 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
       break;
     case Op_AddReductionVI: // fallthrough
     case Op_AddReductionVL: // fallthrough
+    case Op_AddReductionVHF: // fallthrough
     case Op_AddReductionVF: // fallthrough
     case Op_AddReductionVD:
     case Op_OrReductionV:
@@ -1673,6 +1684,8 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
       return gvn.makecon(TypeInt::ONE);
     case Op_MulReductionVL:
       return gvn.makecon(TypeLong::ONE);
+    case Op_MulReductionVHF:
+      return gvn.makecon(TypeH::ONE);
     case Op_MulReductionVF:
       return gvn.makecon(TypeF::ONE);
     case Op_MulReductionVD:
