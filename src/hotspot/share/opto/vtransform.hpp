@@ -64,7 +64,7 @@ class VTransformMemopScalarNode;
 class VTransformDataScalarNode;
 class VTransformLoopPhiNode;
 class VTransformCFGNode;
-class VTransformInputScalarNode; // TODO: rename to VTransformOuterNode
+class VTransformOuterNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
@@ -426,7 +426,7 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
-  virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
+  virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
@@ -526,16 +526,16 @@ public:
 // Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
 // Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
 // we must wrap the inputs that are outside the loop into special vtnodes, too.
-class VTransformInputScalarNode : public VTransformNode {
+class VTransformOuterNode : public VTransformNode {
 private:
   Node* _node;
 public:
-  VTransformInputScalarNode(VTransform& vtransform, Node* n) :
+  VTransformOuterNode(VTransform& vtransform, Node* n) :
     VTransformNode(vtransform, n->req()), _node(n) {}
 
-  virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+  virtual VTransformOuterNode* isa_Outer() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -693,8 +693,8 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
 
-    // We can ignore input nodes, they are outside the loop.
-    if (vtn->isa_InputScalar() != nullptr) { continue; }
+    // We must ignore nodes outside the loop.
+    if (vtn->isa_Outer() != nullptr) { continue; }
 
     VTransformMemopScalarNode* scalar = vtn->isa_MemopScalar();
     if (scalar != nullptr) {

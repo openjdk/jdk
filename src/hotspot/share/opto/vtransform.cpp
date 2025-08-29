@@ -728,7 +728,7 @@ VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformInputScalarNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
@@ -1019,7 +1019,7 @@ void VTransformCFGNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
-void VTransformInputScalarNode::print_spec() const {
+void VTransformOuterNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
