@@ -50,8 +50,8 @@ public class CountPrintServices {
     try {
         proc = Runtime.getRuntime().exec(lpcmd);
     } catch (java.io.IOException e) {
-        if(e.getMessage().contains("No such file or directory")) {
-            throw new SkippedException("Can not find lpstat, test skip");
+        if (e.getMessage().contains("No such file or directory")) {
+            throw new SkippedException("Cannot find lpstat");
         }
     }
     proc.waitFor();
