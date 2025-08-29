@@ -33,6 +33,8 @@
  * @run main/othervm/native NMethodRelocationTest
  */
 
+import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
+
 import java.lang.reflect.Executable;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -52,12 +54,11 @@ public class NMethodRelocationTest {
                 "-agentlib:NMethodRelocationTest",
                 "--enable-native-access=ALL-UNNAMED",
                 "-Xbootclasspath/a:.",
-                "-XX:+UseG1GC",
+                "-XX:+UseSerialGC",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:+SegmentedCodeCache",
                 "-XX:-TieredCompilation",
-                "-Xbatch",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+NMethodRelocation",
                 "DoWork");
@@ -92,10 +93,6 @@ public class NMethodRelocationTest {
 class DoWork {
 
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-
-    /** Value of {@code -XX:CompileThreshold} */
-    protected static final int COMPILE_THRESHOLD
-        = Integer.parseInt(getVMOption("CompileThreshold", "10000"));
 
     /** Load native library if required. */
     static {
@@ -143,7 +140,10 @@ class DoWork {
         Executable method = DoWork.class.getDeclaredMethod("compiledMethod");
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
-        compile();
+        WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
+        while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
+            Thread.onSpinWait();
+        }
 
         NMethod originalNMethod = NMethod.get(method, false);
         if (originalNMethod == null) {
@@ -166,14 +166,10 @@ class DoWork {
         WHITE_BOX.fullGC();
         WHITE_BOX.fullGC();
 
+        WHITE_BOX.lockCompilation();
+
         System.out.printf("Relocated nmethod from 0x%016x to 0x%016x%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
         System.out.flush();
-    }
-
-    private static void compile() {
-        for (int i = 0; i < COMPILE_THRESHOLD; i++) {
-            compiledMethod();
-        }
     }
 
     public static long compiledMethod() {
