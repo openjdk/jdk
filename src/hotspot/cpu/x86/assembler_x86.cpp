@@ -2367,7 +2367,7 @@ void Assembler::evcvttps2dqs(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx10_2(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_32bit);
   attributes.set_is_evex_instruction();
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_MAP5, &attributes);
   emit_int8((unsigned char)0x6D);
@@ -2393,7 +2393,7 @@ void Assembler::evcvttpd2dqs(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx10_2(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
   attributes.set_is_evex_instruction();
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_MAP5, &attributes);
   emit_int8((unsigned char)0x6D);
@@ -2427,7 +2427,7 @@ void Assembler::evcvttps2qqs(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx10_2(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_HV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_HV, /* input_size_in_bits */ EVEX_32bit);
   attributes.set_is_evex_instruction();
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP5, &attributes);
   emit_int8((unsigned char)0x6D);
@@ -2470,7 +2470,7 @@ void Assembler::evcvttpd2qqs(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx10_2(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
   attributes.set_is_evex_instruction();
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP5, &attributes);
   emit_int8((unsigned char)0x6D);
