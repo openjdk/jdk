@@ -1976,61 +1976,59 @@ class MutableBigInteger {
             // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
             s = new MutableBigInteger(sLong);
         } else {
-            final int rootLen = (bitLength - 1) / n + 1;
+            final int rootLen = (bitLength - 1) / n + 1; // ⌈bitLength / n⌉
             int rootSh;
             double rad = 0.0, approx = 0.0;
-            if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
-                // Set the root shift to the root's bit length minus 1
-                // The initial estimate will be 2^rootLen == 2 << (rootLen - 1)
-                rootSh = rootLen - 1;
-            } else {
+            if (n < Double.PRECISION) {
                 // Set up the initial estimate of the iteration.
                 /* Since the following equality holds:
                  * nthRoot(x, n) == nthRoot(x/2^sh, n) * 2^(sh/n),
                  *
                  * to get an upper bound of the root of x, it suffices to find an integer sh
                  * and a real s such that s >= nthRoot(x/2^sh, n) and sh % n == 0.
-                 * The uppper bound will be s * 2^(sh/n), indeed:
+                 * The upper bound will be s * 2^(sh/n), indeed:
                  * s * 2^(sh/n) >= nthRoot(x/2^sh, n) * 2^(sh/n) == nthRoot(x, n).
                  * To achieve this, we right shift the input of sh bits into finite double range,
                  * rounding up the result.
                  *
                  * The value of the shift sh is chosen in order to have the smallest number of
                  * trailing zeros in the double value of s after the significand (minimizing
-                 * non-significant bits), avoiding to lose bits in the significand.
+                 * non-significant bits), to avoid losing bits in the significand.
                  */
                 // Determine a right shift that is a multiple of n into finite double range.
-                int sh = bitLength - Double.PRECISION;
+                rootSh = (bitLength - Double.PRECISION) / n; // rootSh < rootLen
                 /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
-                 * bl = bitLength, ex = sh % n
+                 * bl = bitLength, sh = rootSh * n, ex = (bl - P) % n
                  *
-                 * We have bl-(sh-ex) = bl-(bl-P-ex) = P + ex
-                 * Since ex < n < P, we get P + ex ≤ ME, and so bl-(sh-ex) ≤ ME.
+                 * We have bl-sh = bl-((bl-P)-ex) = P + ex
+                 * Since ex < n < P, we get P + ex ≤ ME, and so bl-sh ≤ ME.
                  *
                  * Recalling x < 2^bl:
-                 * x >> (sh-ex) < 2^(bl-(sh-ex)) ≤ 2^ME < Double.MAX_VALUE
+                 * x >> sh < 2^(bl-sh) ≤ 2^ME < Double.MAX_VALUE
                  * Thus, rad ≤ 2^ME is in the range of finite doubles.
                  *
-                 * Noting that ex ≥ 0, we get bl-(sh-ex) = P + ex ≥ P
-                 * which shows that x >> (sh-ex) has at least P bits of precision,
-                 * since bl-(sh-ex) is its bit length.
+                 * Noting that ex ≥ 0, we get bl-sh = P + ex ≥ P
+                 * which shows that x >> sh has at least P bits of precision,
+                 * since bl-sh is its bit length.
                  */
-                sh -= sh % n; // Adjust shift to a multiple of n
                 // Shift the value into finite double range
-                rad = this.toBigInteger().shiftRight(sh).doubleValue();
+                rad = this.toBigInteger().shiftRight(rootSh * n).doubleValue();
 
                 // Use the root of the shifted value as an estimate.
                 // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
                 rad = Math.nextUp(rad);
                 approx = nthRootApprox(rad, n);
-                rootSh = sh / n; // sh < bitLength, so sh / n == rootSh < rootLen
+            } else { // fp arithmetic gives too few correct bits
+                // Set the root shift to the root's bit length minus 1
+                // The initial estimate will be 2^rootLen == 2 << (rootLen - 1)
+                rootSh = rootLen - 1;
             }
 
             if (rootSh == 0) {
                 // approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
                 s = new MutableBigInteger((int) approx + 1);
             } else {
-                // Allocate sufficient space to store the final root
+                // Allocate ⌈intLen / n⌉ ints to store the final root
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
 
                 if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
@@ -2045,9 +2043,9 @@ class MutableBigInteger {
                     int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
                     // Since rad <= 2^(bitLength - sh), then
                     // wrongBits <= ((bitLength - sh + 1) - Double.PRECISION) / n,
-                    // so wrongBits is less than ((bitLength - sh) - 1) / n + 1,
+                    // so wrongBits is less than ⌈(bitLength - sh) / n⌉,
                     // the bit length of the exact shifted root,
-                    // hence wrongBits + rootSh < (((bitLength - sh) - 1) / n + 1) + rootSh == rootLen
+                    // hence wrongBits + rootSh < ⌈(bitLength - sh) / n⌉ + rootSh == rootLen
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
@@ -2064,7 +2062,7 @@ class MutableBigInteger {
                  * The shifted radicand is determined by the same reasoning used to get the
                  * initial estimate.
                  */
-                // Refine the estimate, avoiding to compute non-significant bits
+                // Refine the estimate to avoid computing non-significant bits
                 // rootSh is always less than rootLen, so correctBits >= 1
                 for (int correctBits = rootLen - rootSh; correctBits < rootSh; correctBits <<= 1) {
                     s.leftShift(correctBits);
