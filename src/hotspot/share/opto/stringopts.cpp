@@ -919,6 +919,11 @@ bool StringConcat::validate_control_flow() {
 
   int null_check_count = 0;
   Unique_Node_List ctrl_path;
+  VectorSet argument_set;
+
+  for (int i = 0; i < num_arguments(); i++) {
+    argument_set.set(argument(i)->_idx);
+  }
 
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
@@ -1053,15 +1058,32 @@ bool StringConcat::validate_control_flow() {
         ptr = copy;
         continue;
       }
-      if (ptr->req() == 3 &&
-          ptr->in(1) != nullptr && ptr->in(1)->is_Proj() &&
-          ptr->in(2) != nullptr && ptr->in(2)->is_Proj() &&
-          ptr->in(1)->in(0) == ptr->in(2)->in(0) &&
-          ptr->in(1)->in(0) != nullptr && ptr->in(1)->in(0)->is_If()) {
-        // Simple diamond.
+      if (ptr->as_Region()->is_diamond()) {
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
+
+        // First exclude the following pattern:
+        // append -> Phi -> Region -> (True, False) -> If -> Bool -> CmpP -> Proj (Result) -> toString;
+        // in order to prevent an unsafe transformation in eliminate_unneeded_control,
+        // where the Bool would be replaced by a constant zero but the Phi stays live
+        // as it is a parameter of the concatenation itself.
+        Node* v1 = ptr->in(1)->in(0)->in(1)->in(1)->in(1);
+        Node* v2 = ptr->in(1)->in(0)->in(1)->in(1)->in(2);
+        if (_multiple &&
+            ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+             (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+          for (SimpleDUIterator i(ptr); i.has_next(); i.next()) {
+            Node *use = i.get();
+            if (use->is_Phi() && argument_set.test(use->_idx)) {
+              fail = true;
+              break;
+            }
+          }
+          if (fail) {
+            break;
+          }
+        }
         Compile::current()->record_for_igvn(ptr);
         _control.push(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
