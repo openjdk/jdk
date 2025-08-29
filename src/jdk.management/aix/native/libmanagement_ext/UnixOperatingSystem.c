@@ -117,8 +117,8 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
         }
         curr_timebase = curr_stats.last_timebase;
         timebase_diff = curr_timebase - counters.timebase;
-        if ((long long)timebase_diff <= 0 || XINTFRAC == 0) {
-            cpu_load = 0.0;
+        if ((long long)timebase_diff < 0 || XINTFRAC == 0) {
+            return -1.0;
         }
         delta_time = HTIC2SEC(timebase_diff);
         user_diff = (double)(curr_stats.ucpu_time - counters.stats.ucpu_time);
