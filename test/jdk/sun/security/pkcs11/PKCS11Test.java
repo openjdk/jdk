@@ -454,6 +454,54 @@ public abstract class PKCS11Test {
         System.out.println("testNSS: Completed");
     }
 
+    /**
+     * Return the full path of a configuration file that will be used
+     * to configure the PKCS11 provider.
+     *
+     * By default, the directory is that returned by copyNssFiles,
+     * "./nss", and the file is "p11-nss.txt", resulting in the full
+     * path "./nss/p11-nss.txt".
+     *
+     * This value can be adjusted using the following system
+     * properties:
+     *
+     * CUSTOM_P11_CONFIG_NAME: The name of a custom configuration
+     * file; overrides the default "p11-nss.txt".
+     *
+     * CUSTOM_P11_CONFIG: The absolute path of a custom configuration
+     * file; overrides the default "./nss/p11-nss.txt".  Takes
+     * precedence over CUSTOM_P11_CONFIG_NAME if both are specified.
+     *
+     * CUSTOM_P11_CONFIG_VARIANT: The variant of the base
+     * configuration file name to use.
+     *
+     * A hyphen followed by the CUSTOM_P11_CONFIG_VARIANT string will
+     * be inserted before the "." in the file extension, or appended
+     * to the file name if it is extensionless.
+     *
+     * Providers can have related configurations with multiple
+     * variants, for example, p11-nss.txt and p11-nss-sensitive.txt.
+     * The CUSTOM_P11_CONFIG_VARIANT property allows test authors to
+     * select in which of the related configurations the provider
+     * should run.
+     *
+     * For example, setting -DCUSTOM_P11_CONFIG_VARIANT=sensitive,
+     * (and no other CUSTOM_P11_CONFIG_* properties), will cause this
+     * method to return "./nss/p11-nss-sensitive.txt".
+     *
+     * CUSTOM_P11_CONFIG and CUSTOM_P11_CONFIG_NAME are also
+     * influenced by CUSTOM_P11_CONFIG_VARIANT.  For example the
+     * settings "-DCUSTOM_P11_CONFIG=/tmp/p11-nss.txt
+     * -DCUSTOM_P11_CONFIG_VARIANT=sensitive" will cause this method
+     * to return "/tmp/p11-nss-sensitive.txt".
+     *
+     * CUSTOM_P11_CONFIG_VARIANT is primarily meant to be set in test
+     * case @run arguments.  The test can then specify whether it
+     * needs the provider to be configured with a specific variant,
+     * while still allowing the user of the test suite to specify a
+     * custom set of configuration file variants by setting
+     * CUSTOM_P11_CONFIG on the jtreg command line.
+     */
     public static String getNssConfig() throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
