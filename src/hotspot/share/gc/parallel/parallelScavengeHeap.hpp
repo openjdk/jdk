@@ -102,9 +102,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   inline bool should_alloc_in_eden(size_t size) const;
 
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
@@ -197,7 +195,7 @@ public:
   // an excessive amount of time is being spent doing collections
   // and caused a null to be returned.  If a null is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
 
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
