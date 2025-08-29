@@ -451,6 +451,13 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 
 public:
   RBTree() : BaseType(), _allocator() {}
+  RBTree(const RBTree& other) : BaseType(), _allocator() {
+    other.visit_in_order([&](auto node) {
+      this->upsert(node->key(), node->val());
+      return true;
+    });
+  }
+  RBTree& operator=(const RBTree& other) = delete;
   ~RBTree() { remove_all(); }
 
   typedef typename BaseType::Cursor Cursor;

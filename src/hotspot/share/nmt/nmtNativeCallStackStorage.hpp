@@ -94,7 +94,8 @@ public:
   }
 
   NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size);
-
+  NativeCallStackStorage(const NativeCallStackStorage& other);
+  NativeCallStackStorage& operator=(const NativeCallStackStorage& other) = delete;
   ~NativeCallStackStorage();
 };
 

@@ -395,13 +395,11 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
 
 void MemDetailReporter::report_virtual_memory_map() {
   // Virtual memory map always in base address order
-  VirtualMemoryAllocationIterator itr = _baseline.virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
-
   output()->print_cr("Virtual memory map:");
-  while ((rgn = itr.next()) != nullptr) {
-    report_virtual_memory_region(rgn);
-  }
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+    report_virtual_memory_region(&rgn);
+    return true;
+  });
 }
 
 void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
