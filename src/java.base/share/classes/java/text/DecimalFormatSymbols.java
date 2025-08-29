@@ -1015,7 +1015,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             currencyInitialized = true;
         }
 
-        if (loadNumberData(locale) instanceof Object[] d &&
+        // `locale` was once nullable, need to check before loading locale data
+        if (locale != null && loadNumberData(locale) instanceof Object[] d &&
             d[0] instanceof String[] numberElements &&
             numberElements.length >= 14) {
             lenientMinusSigns = numberElements[13];
