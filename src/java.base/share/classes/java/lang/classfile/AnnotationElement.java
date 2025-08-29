@@ -210,7 +210,7 @@ public sealed interface AnnotationElement
      * @param values the associated values
      * @see AnnotationValue#ofArray(AnnotationValue...) AnnotationValue::ofArray
      * @throws IllegalArgumentException if the number of associated values
-     *         exceeds {@code 65535}
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static AnnotationElement ofArray(String name,
                                      AnnotationValue... values) {

@@ -55,7 +55,7 @@ public sealed interface Interfaces
      * {@return an {@linkplain Interfaces} element}
      * @param interfaces the interfaces
      * @throws IllegalArgumentException if the number of interfaces
-     *         exceeds {@code 65535}
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static Interfaces of(List<ClassEntry> interfaces) {
         return new InterfacesImpl(interfaces);
@@ -65,7 +65,7 @@ public sealed interface Interfaces
      * {@return an {@linkplain Interfaces} element}
      * @param interfaces the interfaces
      * @throws IllegalArgumentException if the number of interfaces
-     *         exceeds {@code 65535}
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static Interfaces of(ClassEntry... interfaces) {
         return of(List.of(interfaces));
@@ -75,7 +75,8 @@ public sealed interface Interfaces
      * {@return an {@linkplain Interfaces} element}
      * @param interfaces the interfaces
      * @throws IllegalArgumentException if any of {@code interfaces} is primitive,
-     *         or if the number of interfaces exceeds {@code 65535}
+     *         or if the number of interfaces exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static Interfaces ofSymbols(List<ClassDesc> interfaces) {
         return of(Util.entryList(interfaces));
@@ -85,7 +86,8 @@ public sealed interface Interfaces
      * {@return an {@linkplain Interfaces} element}
      * @param interfaces the interfaces
      * @throws IllegalArgumentException if any of {@code interfaces} is primitive,
-     *         or if the number of interfaces exceeds {@code 65535}
+     *         or if the number of interfaces exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static Interfaces ofSymbols(ClassDesc... interfaces) {
         return ofSymbols(Arrays.asList(interfaces));

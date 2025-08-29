@@ -131,7 +131,8 @@ public sealed interface ClassBuilder
      *
      * @param interfaces the interfaces
      * @return this builder
-     * @throws IllegalArgumentException if the number of interfaces exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of interfaces exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      * @see Interfaces
      */
     default ClassBuilder withInterfaces(List<ClassEntry> interfaces) {
@@ -143,7 +144,8 @@ public sealed interface ClassBuilder
      *
      * @param interfaces the interfaces
      * @return this builder
-     * @throws IllegalArgumentException if the number of interfaces exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of interfaces exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      * @see Interfaces
      */
     default ClassBuilder withInterfaces(ClassEntry... interfaces) {
@@ -156,7 +158,8 @@ public sealed interface ClassBuilder
      * @param interfaces the interfaces
      * @return this builder
      * @throws IllegalArgumentException if any of {@code interfaces} is primitive,
-     *         or if the number of interfaces exceeds {@code 65535}
+     *         or if the number of interfaces exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      * @see Interfaces
      */
     default ClassBuilder withInterfaceSymbols(List<ClassDesc> interfaces) {
@@ -169,7 +172,8 @@ public sealed interface ClassBuilder
      * @param interfaces the interfaces
      * @return this builder
      * @throws IllegalArgumentException if any of {@code interfaces} is primitive,
-     *         or if the number of interfaces exceeds {@code 65535}
+     *         or if the number of interfaces exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      * @see Interfaces
      */
     default ClassBuilder withInterfaceSymbols(ClassDesc... interfaces) {

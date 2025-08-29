@@ -74,7 +74,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
-     * @throws IllegalArgumentException if the number of packages exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute of(List<PackageEntry> packages) {
         return new UnboundAttribute.UnboundModulePackagesAttribute(packages);
@@ -83,7 +84,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
-     * @throws IllegalArgumentException if the number of packages exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute of(PackageEntry... packages) {
         return of(List.of(packages));
@@ -92,7 +94,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
-     * @throws IllegalArgumentException if the number of packages exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute ofNames(List<PackageDesc> packages) {
         var p = new PackageEntry[packages.size()];
@@ -105,7 +108,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
-     * @throws IllegalArgumentException if the number of packages exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute ofNames(PackageDesc... packages) {
         // List view, since ref to packages is temporary

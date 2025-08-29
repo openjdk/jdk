@@ -77,7 +77,8 @@ public sealed interface ExceptionsAttribute
     /**
      * {@return an {@code Exceptions} attribute}
      * @param exceptions the exceptions that may be thrown from this method
-     * @throws IllegalArgumentException if the number of exceptions exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of exceptions exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ExceptionsAttribute of(List<ClassEntry> exceptions) {
         return new UnboundAttribute.UnboundExceptionsAttribute(exceptions);
@@ -86,7 +87,8 @@ public sealed interface ExceptionsAttribute
     /**
      * {@return an {@code Exceptions} attribute}
      * @param exceptions the exceptions that may be thrown from this method
-     * @throws IllegalArgumentException if the number of exceptions exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of exceptions exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ExceptionsAttribute of(ClassEntry... exceptions) {
         return of(List.of(exceptions));
@@ -95,7 +97,8 @@ public sealed interface ExceptionsAttribute
     /**
      * {@return an {@code Exceptions} attribute}
      * @param exceptions the exceptions that may be thrown from this method
-     * @throws IllegalArgumentException if the number of exceptions exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of exceptions exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ExceptionsAttribute ofSymbols(List<ClassDesc> exceptions) {
         return of(Util.entryList(exceptions));
@@ -104,7 +107,8 @@ public sealed interface ExceptionsAttribute
     /**
      * {@return an {@code Exceptions} attribute}
      * @param exceptions the exceptions that may be thrown from this method
-     * @throws IllegalArgumentException if the number of exceptions exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of exceptions exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ExceptionsAttribute ofSymbols(ClassDesc... exceptions) {
         return ofSymbols(Arrays.asList(exceptions));

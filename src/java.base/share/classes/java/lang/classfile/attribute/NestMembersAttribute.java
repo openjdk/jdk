@@ -72,7 +72,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
-     * @throws IllegalArgumentException if the number of member classes exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of member classes exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static NestMembersAttribute of(List<ClassEntry> nestMembers) {
         return new UnboundAttribute.UnboundNestMembersAttribute(nestMembers);
@@ -82,7 +83,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
-     * @throws IllegalArgumentException if the number of member classes exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of member classes exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static NestMembersAttribute of(ClassEntry... nestMembers) {
         return of(List.of(nestMembers));
@@ -93,7 +95,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      *
      * @param nestMembers the member classes of the nest
      * @throws IllegalArgumentException if any of {@code nestMembers} is primitive,
-     *         or if the number of member classes exceeds {@code 65535}
+     *         or if the number of member classes exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static NestMembersAttribute ofSymbols(List<ClassDesc> nestMembers) {
         return of(Util.entryList(nestMembers));
@@ -104,7 +107,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      *
      * @param nestMembers the member classes of the nest
      * @throws IllegalArgumentException if any of {@code nestMembers} is primitive,
-     *         or if the number of member classes exceeds {@code 65535}
+     *         or if the number of member classes exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static NestMembersAttribute ofSymbols(ClassDesc... nestMembers) {
         // List version does defensive copy

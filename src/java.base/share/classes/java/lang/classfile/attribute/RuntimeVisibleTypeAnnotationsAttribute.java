@@ -79,7 +79,8 @@ public sealed interface RuntimeVisibleTypeAnnotationsAttribute
      * {@return a {@code RuntimeVisibleTypeAnnotations} attribute}
      *
      * @param annotations the annotations
-     * @throws IllegalArgumentException if the number of annotations exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of annotations exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RuntimeVisibleTypeAnnotationsAttribute of(List<TypeAnnotation> annotations) {
         return new UnboundAttribute.UnboundRuntimeVisibleTypeAnnotationsAttribute(annotations);
@@ -89,7 +90,8 @@ public sealed interface RuntimeVisibleTypeAnnotationsAttribute
      * {@return a {@code RuntimeVisibleTypeAnnotations} attribute}
      *
      * @param annotations the annotations
-     * @throws IllegalArgumentException if the number of annotations exceeds {@code 65535}
+     * @throws IllegalArgumentException if the number of annotations exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RuntimeVisibleTypeAnnotationsAttribute of(TypeAnnotation... annotations) {
         return of(List.of(annotations));

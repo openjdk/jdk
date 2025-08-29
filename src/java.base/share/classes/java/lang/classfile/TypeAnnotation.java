@@ -183,7 +183,7 @@ public sealed interface TypeAnnotation
      * @param targetPath which part of the type is annotated
      * @param annotation the annotation
      * @throws IllegalArgumentException if the size of {@code targetPath}
-     *         exceeds {@code 255}
+     *         exceeds the limit of {@link java.lang.classfile##u1 u1}
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                              Annotation annotation) {
@@ -489,7 +489,7 @@ public sealed interface TypeAnnotation
          * @param targetType {@link TargetType#LOCAL_VARIABLE} or {@link TargetType#RESOURCE_VARIABLE}
          * @param table the list of local variable targets
          * @throws IllegalArgumentException if the size of the list of targets
-         *         exceeds {@code 65535}
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
@@ -499,7 +499,7 @@ public sealed interface TypeAnnotation
          * {@return a target for annotations on the type in a local variable declaration}
          * @param table the list of local variable targets
          * @throws IllegalArgumentException if the size of the list of targets
-         *         exceeds {@code 65535}
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofLocalVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.LOCAL_VARIABLE, table);
@@ -510,7 +510,7 @@ public sealed interface TypeAnnotation
          * as a resource in a try-with-resources statement}
          * @param table the list of local variable targets
          * @throws IllegalArgumentException if the size of the list of targets
-         *         exceeds {@code 65535}
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofResourceVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.RESOURCE_VARIABLE, table);

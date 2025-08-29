@@ -95,8 +95,8 @@ public sealed interface Annotation
      * @param annotationClass the constant pool entry holding the descriptor string
      *                        of the annotation interface
      * @param elements the element-value pairs of the annotation
-     * @throws IllegalArgumentException if the number of pairs exceeds {@code
-     *         65535}
+     * @throws IllegalArgumentException if the number of pairs exceeds the limit
+     *         of {@link java.lang.classfile##u2 u2}
      */
     static Annotation of(Utf8Entry annotationClass,
                          List<AnnotationElement> elements) {
@@ -108,8 +108,8 @@ public sealed interface Annotation
      * @param annotationClass the constant pool entry holding the descriptor string
      *                        of the annotation interface
      * @param elements the element-value pairs of the annotation
-     * @throws IllegalArgumentException if the number of pairs exceeds {@code
-     *         65535}
+     * @throws IllegalArgumentException if the number of pairs exceeds the limit
+     *         of {@link java.lang.classfile##u2 u2}
      */
     static Annotation of(Utf8Entry annotationClass,
                          AnnotationElement... elements) {
@@ -120,8 +120,8 @@ public sealed interface Annotation
      * {@return an annotation}
      * @param annotationClass the descriptor of the annotation interface
      * @param elements the element-value pairs of the annotation
-     * @throws IllegalArgumentException if the number of pairs exceeds {@code
-     *         65535}
+     * @throws IllegalArgumentException if the number of pairs exceeds the limit
+     *         of {@link java.lang.classfile##u2 u2}
      */
     static Annotation of(ClassDesc annotationClass,
                          List<AnnotationElement> elements) {
@@ -132,8 +132,8 @@ public sealed interface Annotation
      * {@return an annotation}
      * @param annotationClass the descriptor of the annotation interface
      * @param elements the element-value pairs of the annotation
-     * @throws IllegalArgumentException if the number of pairs exceeds {@code
-     *         65535}
+     * @throws IllegalArgumentException if the number of pairs exceeds the limit
+     *         of {@link java.lang.classfile##u2 u2}
      */
     static Annotation of(ClassDesc annotationClass,
                          AnnotationElement... elements) {
