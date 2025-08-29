@@ -178,6 +178,8 @@ class G1CollectionSet {
   // Index into the _groups indicating the start of the current collection set increment.
   uint _groups_inc_part_start;
 
+  uint groups_increment_length() const;
+
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
@@ -227,6 +229,7 @@ class G1CollectionSet {
                           uint& num_optional_regions,
                           double& predicted_optional_time_ms,
                           double predicted_time_ms);
+
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
@@ -234,6 +237,8 @@ public:
   // Initializes the collection set giving the maximum possible length of the collection set.
   void initialize(uint max_region_length);
 
+  // Drop the collection set and collection set candidates.
+  void abandon();
   // Drop all collection set candidates (only the candidates).
   void abandon_all_candidates();
 
@@ -266,8 +271,8 @@ public:
 
   // Incremental collection set support
 
-  // Initialize incremental collection set info.
-  void start_incremental_building();
+  // Start incremental building for the next mutator phase. 
+  void start();
   // Start a new collection set increment, continuing the incremental building.
   void continue_incremental_building();
   // Stop adding regions to the current collection set increment.
@@ -281,8 +286,6 @@ public:
   size_t regions_cur_length() const { return _regions_cur_length - _regions_inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
   size_t cur_length() const { return _regions_cur_length; }
-
-  uint groups_increment_length() const;
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of the regions.
