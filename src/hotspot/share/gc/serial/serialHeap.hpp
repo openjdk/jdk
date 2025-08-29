@@ -229,10 +229,6 @@ public:
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
