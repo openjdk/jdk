@@ -486,7 +486,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
 [
   UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
-      DESC: [enable static analyzer],
+      DESC: [enable the GCC static analyzer],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if static analyzer is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
