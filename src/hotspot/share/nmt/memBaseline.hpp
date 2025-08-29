@@ -35,7 +35,6 @@
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
-typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
