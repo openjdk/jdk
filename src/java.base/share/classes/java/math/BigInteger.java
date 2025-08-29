@@ -2743,8 +2743,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns the integer {@code n}th root of this BigInteger. The integer
-     * {@code n}th root {@code r} of the corresponding mathematical integer {@code x}
+     * Returns the integer {@code n}<sup>th</sup> root of this BigInteger. The integer
+     * {@code n}<sup>th</sup> root {@code r} of the corresponding mathematical integer {@code x}
      * is defined as follows:
      * <ul>
      *   <li>if {@code x} &ge; 0, then {@code r} &ge; 0 is the largest integer such that
@@ -2754,20 +2754,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * </ul>
      * If the root is defined, it is equal to the value of
      * {@code x.signum()}&sdot; &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
-     * where {@code nthRoot(x, n)} denotes the real {@code n}th root of {@code x}
+     * where {@code nthRoot(x, n)} denotes the real {@code n}<sup>th</sup> root of {@code x}
      * treated as a real.
      * Otherwise, the method throws an {@code ArithmeticException}.
      *
-     * <p>Note that the magnitude of the integer {@code n}th root will be less than
-     * the magnitude of the real {@code n}th root if the latter is not representable
+     * <p>Note that the magnitude of the integer {@code n}<sup>th</sup> root will be less than
+     * the magnitude of the real {@code n}<sup>th</sup> root if the latter is not representable
      * as an integral value.
      *
      * @param n the root degree
-     * @return the integer {@code n}th root of {@code this}
+     * @return the integer {@code n}<sup>th</sup> root of {@code this}
      * @throws ArithmeticException if {@code n <= 0}.
      * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @since 26
+     * @apiNote Note that calling {@code nthRoot(2)} is equivalent to call {@code sqrt()}.
      */
     public BigInteger nthRoot(int n) {
         if (n == 1)
@@ -2781,12 +2782,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns an array of two BigIntegers containing the integer {@code n}th root
+     * Returns an array of two BigIntegers containing the integer {@code n}<sup>th</sup> root
      * {@code r} of {@code this} and its remainder {@code this - r}<sup>{@code n}</sup>,
      * respectively.
      *
      * @param n the root degree
-     * @return an array of two BigIntegers with the integer {@code n}th root at
+     * @return an array of two BigIntegers with the integer {@code n}<sup>th</sup> root at
      *         offset 0 and the remainder at offset 1
      * @throws ArithmeticException if {@code n <= 0}.
      * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
@@ -2794,6 +2795,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #sqrtAndRemainder()
      * @see #nthRoot(int)
      * @since 26
+     * @apiNote Note that calling {@code nthRootAndRemainder(2)} is equivalent to call
+     *          {@code sqrtAndRemainder()}.
      */
     public BigInteger[] nthRootAndRemainder(int n) {
         if (n == 1)
