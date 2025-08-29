@@ -726,10 +726,8 @@ public abstract class HttpRequest {
          * from the specified {@code offset}}
          * <p>
          * This method and the returned {@code BodyPublisher} do not modify the
-         * {@code channel}'s position.
-         * <p>
-         * This method does not close the {@code channel}. The caller is
-         * expected to close the {@code channel} when no longer needed.
+         * {@code channel}'s position, and do not close the {@code channel}. The
+         * caller is expected to close the {@code channel} when no longer needed.
          *
          * @apiNote
          * This method can be used to either publish just a region of a file as
@@ -752,8 +750,6 @@ public abstract class HttpRequest {
          *
          * @throws IOException if the {@linkplain FileChannel#size() channel's
          * size} cannot be determined or the {@code channel} is closed
-         *
-         * @throws NullPointerException if {@code channel} is null
          *
          * @since 26
          */
