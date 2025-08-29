@@ -1058,7 +1058,12 @@ bool StringConcat::validate_control_flow() {
         ptr = copy;
         continue;
       }
-      if (ptr->as_Region()->is_diamond()) {
+      if (ptr->req() == 3 &&
+          ptr->in(1) != nullptr && ptr->in(1)->is_Proj() &&
+          ptr->in(2) != nullptr && ptr->in(2)->is_Proj() &&
+          ptr->in(1)->in(0) == ptr->in(2)->in(0) &&
+          ptr->in(1)->in(0) != nullptr && ptr->in(1)->in(0)->is_If()) {
+        // Simple diamond.
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
