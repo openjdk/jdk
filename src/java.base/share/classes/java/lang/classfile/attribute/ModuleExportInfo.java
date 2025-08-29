@@ -58,7 +58,7 @@ public sealed interface ModuleExportInfo
 
     /**
      * {@return the flags associated with this export declaration, as a bit mask}
-     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
+     * It is a {@link java.lang.classfile##u2 u2} value.
      *
      * @see ModuleDescriptor.Exports#modifiers()
      * @see AccessFlag.Location#MODULE_EXPORTS
@@ -103,8 +103,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not in the
-     * range {@code [0, 65535]}, or if the number of modules exceeds {@code 65535}
+     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds {@code 65535}
      */
     static ModuleExportInfo of(PackageEntry exports, int exportFlags,
                                List<ModuleEntry> exportsTo) {
@@ -134,8 +134,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not in the
-     * range {@code [0, 65535]}, or if the number of modules exceeds {@code 65535}
+     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds {@code 65535}
      */
     static ModuleExportInfo of(PackageEntry exports,
                                int exportFlags,
@@ -167,8 +167,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not in the
-     * range {@code [0, 65535]}, or if the number of modules exceeds {@code 65535}
+     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds {@code 65535}
      */
     static ModuleExportInfo of(PackageDesc exports, int exportFlags,
                                List<ModuleDesc> exportsTo) {
@@ -200,8 +200,8 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not in the
-     * range {@code [0, 65535]}, or if the number of modules exceeds {@code 65535}
+     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds {@code 65535}
      */
     static ModuleExportInfo of(PackageDesc exports,
                                int exportFlags,

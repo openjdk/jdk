@@ -60,8 +60,8 @@ public sealed interface ClassFileVersion
         extends ClassElement
         permits ClassFileVersionImpl {
     /**
-     * {@return the major version}  It is in the range of unsigned short, {@code
-     * [0, 65535]}.
+     * {@return the major version}  It is a {@link java.lang.classfile##u2 u2}
+     * value.
      *
      * @apiNote
      * Constants in {@link ClassFile} named {@code Java_#_VERSION}, where # is
@@ -71,8 +71,8 @@ public sealed interface ClassFileVersion
     int majorVersion();
 
     /**
-     * {@return the minor version}  It is in the range of unsigned short, {@code
-     * [0, 65535]}.
+     * {@return the minor version}  It is a {@link java.lang.classfile##u2 u2}
+     * value.
      */
     int minorVersion();
 
@@ -82,9 +82,9 @@ public sealed interface ClassFileVersion
      *
      * @param majorVersion the major version
      * @param minorVersion the minor version
-     * @throws IllegalArgumentException if the major version is not in the range
-     * {@code [0, 65535]}, or the minor version is not in the range {@code [-1,
-     * 65535]}
+     * @throws IllegalArgumentException if the major version or the minor
+     *         version is not {@link java.lang.classfile##u2 u2}; the minor
+     *         version may be {@code -1}
      */
     static ClassFileVersion of(int majorVersion, int minorVersion) {
         return new ClassFileVersionImpl(majorVersion, minorVersion);

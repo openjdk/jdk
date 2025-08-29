@@ -168,7 +168,7 @@ public sealed interface CharacterRangeInfo
      *        source file, exclusive
      * @param flags the flags of this entry
      * @throws IllegalArgumentException if {@code startPc}, {@code endPc}, or
-     * {@code flags} is not in the range {@code [0, 65535]}
+     *         {@code flags} is not {@link java.lang.classfile##u2 u2}
      */
     static CharacterRangeInfo of(int startPc,
                                  int endPc,

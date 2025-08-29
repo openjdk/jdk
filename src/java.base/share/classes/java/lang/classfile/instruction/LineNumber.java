@@ -75,8 +75,8 @@ public sealed interface LineNumber extends PseudoInstruction
      * {@return a line number pseudo-instruction}
      *
      * @param line the line number
-     * @throws IllegalArgumentException if {@code line} is not in the range
-     * {@code [0, 65535]}
+     * @throws IllegalArgumentException if {@code line} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static LineNumber of(int line) {
         return LineNumberImpl.of(line);

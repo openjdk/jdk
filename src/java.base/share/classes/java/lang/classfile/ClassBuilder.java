@@ -66,9 +66,9 @@ public sealed interface ClassBuilder
      * @param major the major version number
      * @param minor the minor version number
      * @return this builder
-     * @throws IllegalArgumentException if {@code major} is not in the range
-     * {@code [0, 65535]}, or the {@code minor} is not in the range {@code [-1,
-     * 65535]}
+     * @throws IllegalArgumentException if {@code major} or {@code minor} is not
+     *         {@link java.lang.classfile##u2 u2}; {@code minor} may be {@code
+     *         -1} to indicate {@value ClassFile#PREVIEW_MINOR_VERSION}
      * @see ClassFileVersion
      */
     default ClassBuilder withVersion(int major, int minor) {
@@ -80,8 +80,8 @@ public sealed interface ClassBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
-     * @throws IllegalArgumentException if {@code flags} is not in the range
-     * {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see AccessFlags
      * @see AccessFlag.Location#CLASS
      */
@@ -197,8 +197,8 @@ public sealed interface ClassBuilder
      * @param descriptor the field descriptor string
      * @param flags the access flags for this field, as a bit mask
      * @return this builder
-     * @throws IllegalArgumentException if {@code flags} is not in the range
-     * {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see FieldModel
      * @see FieldBuilder#withFlags(int)
      */
@@ -232,8 +232,8 @@ public sealed interface ClassBuilder
      * @param descriptor the symbolic field descriptor
      * @param flags the access flags for this field, as a bit mask
      * @return this builder
-     * @throws IllegalArgumentException if {@code flags} is not in the range
-     * {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see FieldModel
      * @see FieldBuilder#withFlags(int)
      */
@@ -273,8 +273,8 @@ public sealed interface ClassBuilder
      *        ACC_STATIC} bit definitely set
      * @param handler handler to supply the contents of the method
      * @return this builder
-     * @throws IllegalArgumentException if {@code methodFlags} is not in the
-     * range {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code methodFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see MethodModel
      */
     ClassBuilder withMethod(Utf8Entry name,
@@ -299,8 +299,8 @@ public sealed interface ClassBuilder
      *        ACC_STATIC} bit definitely set
      * @param handler handler to supply the contents of the method body
      * @return this builder
-     * @throws IllegalArgumentException if {@code methodFlags} is not in the
-     * range {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code methodFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see MethodModel
      */
     default ClassBuilder withMethodBody(Utf8Entry name,
@@ -321,8 +321,8 @@ public sealed interface ClassBuilder
      *        ACC_STATIC} bit definitely set
      * @param handler handler to supply the contents of the method
      * @return this builder
-     * @throws IllegalArgumentException if {@code methodFlags} is not in the
-     * range {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code methodFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see MethodModel
      */
     default ClassBuilder withMethod(String name,
@@ -352,8 +352,8 @@ public sealed interface ClassBuilder
      *        ACC_STATIC} bit definitely set
      * @param handler handler to supply the contents of the method body
      * @return this builder
-     * @throws IllegalArgumentException if {@code methodFlags} is not in the
-     * range {@code [0, 0xFFFF]}
+     * @throws IllegalArgumentException if {@code methodFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see MethodModel
      */
     default ClassBuilder withMethodBody(String name,
