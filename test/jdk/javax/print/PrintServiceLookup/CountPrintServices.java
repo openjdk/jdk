@@ -47,7 +47,7 @@ public class CountPrintServices {
        return;
     }
     String[] lpcmd = { "lpstat", "-a" };
-    Process proc = null;
+    Process proc;
     try {
         proc = Runtime.getRuntime().exec(lpcmd);
     } catch (IOException e) {
