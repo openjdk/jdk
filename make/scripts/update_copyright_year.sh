@@ -62,17 +62,22 @@ Help()
   echo "options:"
   echo "-c     Specifies the company. Set to Oracle by default."
   echo "-y     Specifies the copyright year. Set to current year by default."
+  echo "-b     Specifies the base reference for change set lookup."
   echo "-f     Updates the copyright for all change sets in a given year,"
-  echo "       as specified by -y."
+  echo "       as specified by -y. Overrides -b flag."
   echo "-h     Print this help."
   echo
 }
 
 full_year=false
+base_reference=master
 
 # Process options
-while getopts "c:fhy:" option; do
+while getopts "b:c:fhy:" option; do
   case $option in
+    b) # supplied base reference
+      base_reference=${OPTARG}
+      ;;
     c) # supplied company year
       company=${OPTARG}
       ;;
@@ -111,7 +116,7 @@ else
   if [ "$full_year" = "true" ]; then
     vcs_list_changesets=(git log --no-merges --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
   else
-    vcs_list_changesets=(git log --no-merges 'master..HEAD' --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
+    vcs_list_changesets=(git log --no-merges "${base_reference}..HEAD" --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
   fi
   vcs_changeset_message=(git log -1 --pretty=tformat:"%B") # followed by ${changeset}
   vcs_changeset_files=(git diff-tree --no-commit-id --name-only -r) # followed by ${changeset}
