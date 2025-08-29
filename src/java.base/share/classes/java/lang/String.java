@@ -879,20 +879,19 @@ public final class String
     }
 
     /**
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting replaced.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
     private static <E extends Exception> byte[] encodeWithEncoder(
-            Charset cs, byte coder, byte[] val, Class<E> exceptionClass)
+            Charset cs, byte coder, byte[] val, Class<E> exClass)
             throws E {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        boolean doReplace = exceptionClass == null;
+        boolean doReplace = exClass == null;
         // fastpath with ArrayEncoder implies `doReplace`.
         if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
@@ -1047,14 +1046,13 @@ public final class String
     }
 
     /**
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting replaced.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> exceptionClass) throws E {
+    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> exClass) throws E {
         if (coder == LATIN1) {
             return val.clone();
         }
@@ -1068,7 +1066,7 @@ public final class String
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
-                if (exceptionClass != null) {
+                if (exClass != null) {
                     throw String.<E>unmappableCharacterException(sp);
                 }
                 char c = StringUTF16.getChar(val, sp++);
@@ -1174,15 +1172,14 @@ public final class String
     }
 
     /**
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting replaced.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
     private static <E extends Exception> int decodeUTF8_UTF16(
-            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exceptionClass)
+            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
         while (sp < sl) {
             int b1 = src[sp++];
@@ -1192,7 +1189,7 @@ public final class String
                 if (sp < sl) {
                     int b2 = src[sp++];
                     if (isNotContinuation(b2)) {
-                        if (exceptionClass != null) {
+                        if (exClass != null) {
                             throw String.<E>malformedInputException(sp - 1, 1);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
@@ -1202,7 +1199,7 @@ public final class String
                     }
                     continue;
                 }
-                if (exceptionClass != null) {
+                if (exClass != null) {
                     throw String.<E>malformedInputException(sp, 1);  // underflow()
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1212,7 +1209,7 @@ public final class String
                     int b2 = src[sp++];
                     int b3 = src[sp++];
                     if (isMalformed3(b1, b2, b3)) {
-                        if (exceptionClass != null) {
+                        if (exClass != null) {
                             throw String.<E>malformedInputException(sp - 3, 3);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
@@ -1221,7 +1218,7 @@ public final class String
                     } else {
                         char c = decode3(b1, b2, b3);
                         if (Character.isSurrogate(c)) {
-                            if (exceptionClass != null) {
+                            if (exClass != null) {
                                 throw String.<E>malformedInputException(sp - 3, 3);
                             }
                             StringUTF16.putChar(dst, dp++, REPL);
@@ -1232,13 +1229,13 @@ public final class String
                     continue;
                 }
                 if (sp < sl && isMalformed3_2(b1, src[sp])) {
-                    if (exceptionClass != null) {
+                    if (exClass != null) {
                         throw String.<E>malformedInputException(sp - 1, 2);
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (exceptionClass != null) {
+                if (exClass != null) {
                     throw String.<E>malformedInputException(sp, 1);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1251,7 +1248,7 @@ public final class String
                     int uc = decode4(b1, b2, b3, b4);
                     if (isMalformed4(b2, b3, b4) ||
                             !Character.isSupplementaryCodePoint(uc)) { // shortest form check
-                        if (exceptionClass != null) {
+                        if (exClass != null) {
                             throw String.<E>malformedInputException(sp - 4, 4);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
@@ -1265,13 +1262,13 @@ public final class String
                 }
                 b1 &= 0xff;
                 if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
-                    if (exceptionClass != null) {
+                    if (exClass != null) {
                         throw String.<E>malformedInputException(sp - 1, 1);  // or 2
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (exceptionClass != null) {
+                if (exClass != null) {
                     throw String.<E>malformedInputException(sp - 1, 1);
                 }
                 sp++;
@@ -1281,7 +1278,7 @@ public final class String
                 }
                 break;
             } else {
-                if (exceptionClass != null) {
+                if (exClass != null) {
                     throw String.<E>malformedInputException(sp - 1, 1);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1386,16 +1383,15 @@ public final class String
     }
 
     /**
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting replaced.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exceptionClass) throws E {
+    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exClass) throws E {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16(val, exceptionClass);
+            return encodeUTF8_UTF16(val, exClass);
         }
 
         int positives = StringCoding.countPositives(val, 0, val.length);
@@ -1424,20 +1420,19 @@ public final class String
     }
 
     /**
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting replaced.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> exceptionClass) throws E {
+    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, exceptionClass) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, exClass) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
@@ -1466,7 +1461,7 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    if (exceptionClass == null) {
+                    if (exClass == null) {
                         dst[dp++] = '?';
                     } else {
                         throw String.<E>unmappableCharacterException(sp - 1);
@@ -1494,14 +1489,13 @@ public final class String
     /**
      * {@return the exact size required to UTF_8 encode this UTF16 string}
      *
-     * @param exceptionClass The exception class where any non-null value
-     *                       indicates malformed or unmappable bytes will
-     *                       result in an exception to be thrown instead of
-     *                       getting discarded.
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting discarded.
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> exceptionClass) throws E {
+    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1520,7 +1514,7 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    if (exceptionClass == null) {
+                    if (exClass == null) {
                         dp++;
                     } else {
                         throw String.<E>unmappableCharacterException(sp - 1);
