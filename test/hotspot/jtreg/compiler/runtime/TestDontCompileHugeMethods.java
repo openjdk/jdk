@@ -100,6 +100,7 @@ public class TestDontCompileHugeMethods {
     private static void runTest(Path workDir, List jvmArgs) throws Exception {
         ArrayList<String> command = new ArrayList<>();
         command.add("-XX:+PrintCompilation");
+        command.add("-Xbatch");
         command.addAll(jvmArgs);
         command.add("-cp");
         command.add(workDir.toAbsolutePath().toString());
