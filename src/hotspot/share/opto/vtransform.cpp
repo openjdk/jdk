@@ -282,8 +282,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
-          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
-          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+          const VPointer& vp1 = vtn->vpointer();
+          const VPointer& vp2 = use->vpointer();
 #ifdef ASSERT
           if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
             tty->print_cr("\nViolated Weak Edge:");
@@ -630,7 +630,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        const VPointer& p = vtn->vpointer();
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           bool is_load = vtn->is_load_in_loop();
@@ -881,7 +881,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
-  const VPointer& load_p = vpointer(apply_state.vloop_analyzer());
+  const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
     VPointer store_p(mem->as_Mem(), apply_state.vloop());
     if (store_p.never_overlaps_with(load_p)) {

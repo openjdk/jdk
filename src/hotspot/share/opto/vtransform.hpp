@@ -440,7 +440,7 @@ public:
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); }
+  virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
 
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
 
@@ -472,8 +472,7 @@ public:
   virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return true; }
 
-  // TODO: rm vloop_analyzer!
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -666,7 +665,7 @@ public:
 
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
