@@ -230,7 +230,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile", false, true),
+        CLASSFILE("classfile", false),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -277,7 +277,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity", true, true, "synchronization"),
+        IDENTITY("identity", true, "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -285,7 +285,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating", false, true),
+        INCUBATING("incubating", false),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -311,10 +311,9 @@ public class Lint {
          * Warn about issues relating to use of command line options.
          *
          * <p>
-         * This category is not supported by {@code @SuppressWarnings}
-         * and is not tracked for unnecessary suppression.
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options", false, false),
+        OPTIONS("options", false),
 
         /**
          * Warn when any output file is written to more than once.
@@ -322,7 +321,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash", false, true),
+        OUTPUT_FILE_CLASH("output-file-clash", false),
 
         /**
          * Warn about issues regarding method overloads.
@@ -338,10 +337,9 @@ public class Lint {
          * Warn about invalid path elements on the command line.
          *
          * <p>
-         * This category is not supported by {@code @SuppressWarnings}
-         * and is not tracked for unnecessary suppression.
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path", false, false),
+        PATH("path", false),
 
         /**
          * Warn about issues regarding annotation processing.
@@ -387,9 +385,9 @@ public class Lint {
          * Warn about recognized {@code @SuppressWarnings} lint categories that don't actually suppress any warnings.
          *
          * <p>
-         * This category is not tracked for unnecessary suppression.
+         * This category is excluded from unnecessary suppression warnings.
          */
-        SUPPRESSION("suppression", true, false),
+        SUPPRESSION("suppression"),
 
         /**
          * Warn about issues relating to use of text blocks
@@ -427,13 +425,12 @@ public class Lint {
         RESTRICTED("restricted");
 
         LintCategory(String option) {
-            this(option, true, true);
+            this(option, true);
         }
 
-        LintCategory(String option, boolean annotationSuppression, boolean suppressionTracking, String... aliases) {
+        LintCategory(String option, boolean annotationSuppression, String... aliases) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
-            this.suppressionTracking = suppressionTracking;
             ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
             optionList.add(option);
             Collections.addAll(optionList, aliases);
@@ -470,9 +467,6 @@ public class Lint {
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
-
-        /** Does the {@code "suppression"} category track suppressions in this category? */
-        public final boolean suppressionTracking;
     }
 
     /**
@@ -484,7 +478,7 @@ public class Lint {
      */
     public boolean isActive(LintCategory lc) {
         initializeRootIfNeeded();
-        return values.contains(lc) || needsSuppressionTracking(lc);
+        return values.contains(lc) || values.contains(LintCategory.SUPPRESSION);
     }
 
     /**
@@ -590,7 +584,7 @@ public class Lint {
     }
 
     /**
-     * Validate any suppression of the given category currently in scope.
+     * Validate any suppression of the given lint category currently in scope.
      *
      * <p>
      * Such a suppression will therefore <b>not</b> be declared as unnecessary by the
@@ -600,24 +594,10 @@ public class Lint {
      * @return this instance
      */
     public Lint validateSuppression(LintCategory lc) {
-        if (needsSuppressionTracking(lc))
+        initializeRootIfNeeded();
+        if (values.contains(LintCategory.SUPPRESSION))
             lintMapper.validateSuppression(symbol, lc);
         return this;
-    }
-
-    /**
-     * Determine whether we should be tracking suppression validation for the given lint category.
-     *
-     * <p>
-     * We need to track validation of the suppression of a lint category if:
-     * <ul>
-     *  <li>It's supported by {@code "suppression"} suppression tracking
-     *  <li>Lint category {@code "suppression"} is currently enabled
-     * </ul>
-     */
-    private boolean needsSuppressionTracking(LintCategory lc) {
-        initializeRootIfNeeded();
-        return lc.suppressionTracking && values.contains(LintCategory.SUPPRESSION);
     }
 
     private void initializeSymbolsIfNeeded() {

@@ -253,7 +253,6 @@ public class LintMapper {
           .filter(node -> node.lint.isEnabled(LintCategory.SUPPRESSION, false))
           .forEach(node -> {
             String unnecessaryCategoryNames = node.unvalidated.stream()
-              .filter(lc -> lc.suppressionTracking)
               .map(category -> category.option)
               .map(name -> "\"" + name + "\"")
               .collect(Collectors.joining(", "));

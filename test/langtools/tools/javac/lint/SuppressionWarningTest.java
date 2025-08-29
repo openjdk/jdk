@@ -76,7 +76,7 @@ public class SuppressionWarningTest extends TestRunner {
 
     // Test cases for testSuppressWarnings()
     public static final List<SuppressTest> SUPPRESS_WARNINGS_TEST_CASES = Stream.of(LintCategory.values())
-      .filter(category -> category.suppressionTracking)
+      .filter(category -> category.annotationSuppression)
       .map(category -> switch (category) {
         case AUXILIARYCLASS -> new SuppressTest(category,
             "compiler.warn.auxiliary.class.accessed.from.outside.of.its.source.file",
@@ -105,8 +105,6 @@ public class SuppressionWarningTest extends TestRunner {
             }
             """
         );
-
-        case CLASSFILE -> null; // skip, too hard to simluate
 
         case DANGLING_DOC_COMMENTS -> new SuppressTest(category,
             "compiler.warn.dangling.doc.comment",
@@ -246,8 +244,6 @@ public class SuppressionWarningTest extends TestRunner {
             }
             """
         );
-
-        case INCUBATING -> null; // skip, too hard to simluate reliably over time
 
         case LOSSY_CONVERSIONS -> new SuppressTest(category,
             "compiler.warn.possible.loss.of.precision",
@@ -457,6 +453,8 @@ public class SuppressionWarningTest extends TestRunner {
             """
         );
 
+        case SUPPRESSION -> null;       // special case, excluded from suppression warnings
+
         case IDENTITY -> new SuppressTest(category,
             "compiler.warn.attempt.to.synchronize.on.instance.of.value.based.class",
             null,
@@ -608,7 +606,7 @@ public class SuppressionWarningTest extends TestRunner {
           case "testSuppressWarnings" ->        SUPPRESS_WARNINGS_TEST_CASES.stream()
                                                   .map(testCase -> new Object[] { testCase });
           case "testUselessAnnotation" ->       Stream.of(LintCategory.values())
-                                                  .filter(category -> category.suppressionTracking)
+                                                  .filter(category -> category != LintCategory.SUPPRESSION)
                                                   .map(category -> new Object[] { category });
           case "testSelfSuppression" ->         Stream.of(RAW, SUPPRESSION)
                                                   .map(category -> new Object[] { category });
