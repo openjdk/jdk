@@ -1073,6 +1073,7 @@ bool StringConcat::validate_control_flow() {
         // in order to prevent an unsafe transformation in eliminate_unneeded_control,
         // where the Bool would be replaced by a constant zero but the Phi stays live
         // as it is a parameter of the concatenation itself.
+        assert(ptr->in(1)->in(0)->in(1)->is_Bool(), "unexpected if shape");
         Node* v1 = ptr->in(1)->in(0)->in(1)->in(1)->in(1);
         Node* v2 = ptr->in(1)->in(0)->in(1)->in(1)->in(2);
         if (_multiple &&
