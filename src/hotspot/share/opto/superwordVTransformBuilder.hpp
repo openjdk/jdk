@@ -76,7 +76,7 @@ private:
 
   VTransformVectorNode* make_vector_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index);
-  VTransformNode* get_vtnode_or_wrap_as_input_scalar(Node* n);
+  VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
   void init_req_with_scalar(Node* n, VTransformNode* vtn, const int index);
   void init_req_with_vector(const Node_List* pack, VTransformNode* vtn, const int index);
   void set_all_req_with_scalars(Node* n, VTransformNode* vtn);

@@ -282,8 +282,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
-          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
-          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+          const VPointer& vp1 = vtn->vpointer();
+          const VPointer& vp2 = use->vpointer();
 #ifdef ASSERT
           if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
             tty->print_cr("\nViolated Weak Edge:");
@@ -630,7 +630,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        const VPointer& p = vtn->vpointer();
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           bool is_load = vtn->is_load_in_loop();
@@ -708,7 +708,27 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
-VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
@@ -861,7 +881,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
-  const VPointer& load_p = vpointer(apply_state.vloop_analyzer());
+  const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
     VPointer store_p(mem->as_Mem(), apply_state.vloop());
     if (store_p.never_overlaps_with(load_p)) {
@@ -983,7 +1003,24 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
   }
 }
 
-void VTransformScalarNode::print_spec() const {
+void VTransformMemopScalarNode::print_spec() const {
+  tty->print("node[%d %s] ", _node->_idx, _node->Name());
+  _vpointer.print_on(tty, false);
+}
+
+void VTransformDataScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformLoopPhiNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformCFGNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformOuterNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
@@ -1011,5 +1048,9 @@ void VTransformVectorNode::print_spec() const {
     tty->print("%d %s", n->_idx, n->Name());
   }
   tty->print("]");
+  if (is_load_or_store_in_loop()) {
+    tty->print(" ");
+    vpointer().print_on(tty, false);
+  }
 }
 #endif
