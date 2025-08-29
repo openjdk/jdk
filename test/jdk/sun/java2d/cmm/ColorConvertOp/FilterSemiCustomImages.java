@@ -40,6 +40,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE;
 import static java.awt.image.BufferedImage.TYPE_INT_BGR;
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
+import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
 
 /**
  * @test
@@ -54,7 +55,8 @@ public final class FilterSemiCustomImages {
 
     private static final int[] TYPES = {
             TYPE_INT_RGB, TYPE_INT_ARGB, TYPE_INT_ARGB_PRE, TYPE_INT_BGR,
-            TYPE_3BYTE_BGR, TYPE_4BYTE_ABGR, TYPE_4BYTE_ABGR_PRE
+            TYPE_3BYTE_BGR, TYPE_4BYTE_ABGR, TYPE_4BYTE_ABGR_PRE,
+            TYPE_USHORT_GRAY
     };
 
     private static final int[] CSS = {
