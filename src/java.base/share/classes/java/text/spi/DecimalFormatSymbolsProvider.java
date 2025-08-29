@@ -34,7 +34,7 @@ import java.util.spi.LocaleServiceProvider;
  * provide instances of the
  * {@link java.text.DecimalFormatSymbols DecimalFormatSymbols} class.
  *
- * <p>The requested {@code Locale} may contain an {@link
+ * <p>The requested {@code Locale} may contain an {@linkplain
  * Locale##def_locale_extension extension} for
  * specifying the desired numbering system. For example, {@code "ar-u-nu-arab"}
  * (in the BCP 47 language tag form) specifies Arabic with the Arabic-Indic

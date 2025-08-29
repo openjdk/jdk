@@ -84,7 +84,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </blockquote>
  *
  * <p>If the locale contains "rg" (region override)
- * {@link Locale##def_locale_extension Unicode extension},
+ * {@linkplain Locale##def_locale_extension Unicode extension},
  * the symbols are overridden for the designated region.
  *
  * <p>

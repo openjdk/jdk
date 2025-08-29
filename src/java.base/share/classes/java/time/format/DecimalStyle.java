@@ -150,7 +150,7 @@ public final class DecimalStyle {
      * <p>
      * This method provides access to locale sensitive decimal style symbols.
      * If the locale contains "nu" (Numbering System) and/or "rg"
-     * (Region Override) {@link Locale##def_locale_extension Unicode extensions},
+     * (Region Override) {@linkplain Locale##def_locale_extension Unicode extensions},
      * returned instance will reflect the values specified with
      * those extensions. If both "nu" and "rg" are specified, the value from
      * the "nu" extension supersedes the implicit one from the "rg" extension.

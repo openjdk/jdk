@@ -145,7 +145,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
 
     /**
      * Returns a localized name for the given
-     * {@link Locale##def_locale_extension Unicode extension} key,
+     * {@linkplain Locale##def_locale_extension Unicode extension} key,
      * and the given locale that is appropriate for display to the user.
      * If the name returned cannot be localized according to {@code locale},
      * this method returns null.
@@ -169,7 +169,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
 
     /**
      * Returns a localized name for the given
-     * {@link Locale##def_locale_extension Unicode extension} type,
+     * {@linkplain Locale##def_locale_extension Unicode extension} type,
      * and the given locale that is appropriate for display to the user.
      * If the name returned cannot be localized according to {@code locale},
      * this method returns null.

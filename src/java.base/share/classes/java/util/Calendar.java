@@ -129,7 +129,7 @@ import sun.util.spi.CalendarProvider;
  * parameters: the first day of the week and the minimal days in first week
  * (from 1 to 7).  These numbers are taken from the locale resource data or the
  * locale itself when a {@code Calendar} is constructed. If the designated
- * locale contains "fw" and/or "rg" {@link Locale##def_locale_extension
+ * locale contains "fw" and/or "rg" {@linkplain Locale##def_locale_extension
  * Unicode extensions}, the first day of the week will be obtained according to
  * those extensions. If both "fw" and "rg" are specified, the value from the "fw"
  * extension supersedes the implicit one from the "rg" extension.
@@ -1454,7 +1454,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
          * parameters haven't been given explicitly.
          * <p>
          * If the locale contains the time zone with "tz"
-         * {@link Locale##def_locale_extension Unicode extension},
+         * {@linkplain Locale##def_locale_extension Unicode extension},
          * and time zone hasn't been given explicitly, time zone in the locale
          * is used.
          *
@@ -1615,7 +1615,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * {@link Locale.Category#FORMAT FORMAT} locale.
      * <p>
      * If the locale contains the time zone with "tz"
-     * {@link Locale##def_locale_extension Unicode extension},
+     * {@linkplain Locale##def_locale_extension Unicode extension},
      * that time zone is used instead.
      *
      * @return a Calendar.
@@ -1647,7 +1647,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * in the default time zone with the given locale.
      * <p>
      * If the locale contains the time zone with "tz"
-     * {@link Locale##def_locale_extension Unicode extension},
+     * {@linkplain Locale##def_locale_extension Unicode extension},
      * that time zone is used instead.
      *
      * @param aLocale the locale for the week data
@@ -2632,7 +2632,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Returns an unmodifiable {@code Set} containing all calendar types
      * supported by {@code Calendar} in the runtime environment. The available
-     * calendar types can be used for the {@link Locale##def_locale_extension
+     * calendar types can be used for the {@linkplain Locale##def_locale_extension
      * Unicode locale extensions}.
      * The {@code Set} returned contains at least {@code "gregory"}. The
      * calendar types don't include aliases, such as {@code "gregorian"} for

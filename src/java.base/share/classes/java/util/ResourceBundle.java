@@ -3052,7 +3052,7 @@ public abstract class ResourceBundle {
          * {@code IllegalArgumentException} is thrown.</li>
          *
          * <li>If the {@code locale}'s language is one of the
-         * {@link Locale##legacy_language_codes Legacy language
+         * {@linkplain Locale##legacy_language_codes Legacy language
          * codes}, either old or new, then repeat the loading process
          * if needed, with the bundle name with the other language.
          * For example, "iw" for "he" and vice versa.
