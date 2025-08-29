@@ -117,7 +117,6 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
   }
 }
 
-//TODO: rename to non-vector?
 void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies) {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
