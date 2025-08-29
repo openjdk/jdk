@@ -5031,7 +5031,7 @@ int os::open(const char *path, int oflag, int mode) {
 
   // if opening files failed, errno has been set to indicate the problem
   if (fd == -1) {
-    log_debug(os)("os::open() failed to _wopen: errno->%ld.", errno);
+    log_debug(os)("os::open() failed to _wopen: errno->%s.", strerror(errno));
   }
   os::free(wide_path);
   os::free(path_to_target);
