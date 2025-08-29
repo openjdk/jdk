@@ -5873,25 +5873,10 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     if (!UseUnalignedLoadStores) {
       // align to 8 bytes, we know we are 4 byte aligned to start
       testptr(to, 4);
-      jccb(Assembler::zero, L_C_align);
-      movl(Address(to, 0), value);
-      addptr(to, 4);
-      subptr(count, 1<<shift);
-    }
-
-    BIND(L_C_align);
-    if (EnableX86ECoreOpts) {
-      // align 'big' arrays to 64 bytes (cache line size) to minimize split_stores
-      cmpptr(count, 256<<shift);
-      jcc(Assembler::below, L_fill_32_bytes);
-
-      BIND(L_align_64_bytes);
-      testptr(to, 0x3f); // low 7 bits shoud be zero
       jccb(Assembler::zero, L_fill_32_bytes);
       movl(Address(to, 0), value);
       addptr(to, 4);
       subptr(count, 1<<shift);
-      jmpb(L_align_64_bytes);
     }
 
     BIND(L_fill_32_bytes);
@@ -5923,8 +5908,27 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
 
           BIND(L_check_fill_64_bytes_avx2);
         }
+
+        // align data for 64-byte chunks
+        Label L_fill_64_bytes_loop, L_fill_64_start;
+        if (EnableX86ECoreOpts) {
+            // align 'big' arrays to 64 bytes (cache line size) to minimize split_stores
+            cmpptr(count, 256<<shift);
+            jcc(Assembler::below, L_fill_64_start);
+
+            align(16);
+
+            BIND(L_align_64_bytes);
+            testptr(to, 0x3f); // low 7 bits shoud be zero
+            jccb(Assembler::zero, L_fill_64_start);
+            movl(Address(to, 0), value);
+            addptr(to, 4);
+            subptr(count, 1<<shift);
+            jmpb(L_align_64_bytes);
+        }
+
         // Fill 64-byte chunks
-        Label L_fill_64_bytes_loop;
+        BIND(L_fill_64_start);
         vpbroadcastd(xtmp, xtmp, Assembler::AVX_256bit);
 
         subptr(count, 16 << shift);
