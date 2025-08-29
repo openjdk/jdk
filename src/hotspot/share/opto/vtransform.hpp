@@ -426,9 +426,6 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
-  virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
-  virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
-  virtual VTransformCFGNode* isa_CFG() { return nullptr; }
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
@@ -489,7 +486,6 @@ public:
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
 
-  virtual VTransformDataScalarNode* isa_DataScalar() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -506,7 +502,6 @@ public:
     assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
   }
 
-  virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -523,7 +518,6 @@ public:
     assert(_node->is_CFG(), "must be CFG node: %s", _node->Name());
   }
 
-  virtual VTransformCFGNode* isa_CFG() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "CFG"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
