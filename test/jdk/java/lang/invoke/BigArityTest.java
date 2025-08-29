@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,7 @@
 /* @test
  * @summary High arity invocations
  * @compile BigArityTest.java
- * @comment The reduced maximum node limit below avoids, in combination with
- *          -Xcomp, timeouts and excessive C2 memory consumption during
- *          compilation of some methods that both
- *            (1) have a large number of parameters, and
- *            (2) use JSR292 methods internally (which increases the
- *                MaxNodeLimit with a factor of 3)
- * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:MaxNodeLimit=20000
- *                                 -XX:-VerifyDependencies
- *                                 -XX:CompileCommand=memlimit,*.*,0
- *                                 -esa -DBigArityTest.ITERATION_COUNT=1
- *                                 test.java.lang.invoke.BigArityTest
+ * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -XX:CompileCommand=memlimit,*.*,0 -esa -DBigArityTest.ITERATION_COUNT=1 test.java.lang.invoke.BigArityTest
  */
 
 package test.java.lang.invoke;
