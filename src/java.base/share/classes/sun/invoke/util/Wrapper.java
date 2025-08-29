@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,6 +350,19 @@ public enum Wrapper {
             return w;
         }
         throw basicTypeError(type);
+    }
+
+    /**
+     * Return the primitive wrapper for the given char.  Does not return
+     * {@code OBJECT}. Returns {@code null} to allow flexible error messages.
+     * Dedicated for {@link BytecodeDescriptor}.
+     */
+    static Wrapper forPrimitiveTypeOrNull(char type) {
+        Wrapper w = FROM_CHAR[(type + (type >> 1)) & 0xf];
+        if (w != null && w != OBJECT && w.basicTypeChar == type) {
+            return w;
+        }
+        return null;
     }
 
     @DontInline
