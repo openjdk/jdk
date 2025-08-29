@@ -411,7 +411,7 @@ public final class ConstantBootstraps {
      * @param value the value to be converted, may be null
      * @return the converted value
      * @throws ClassCastException when {@code dstType} is {@code void}; when
-     *         {@code dstType} is reference, and the reference cast fails; or
+     *         {@code dstType} is a reference type, and the reference cast fails; or
      *         when {@code dstType} is primitive, and {@code value} is an
      *         instance of a reference type that is not a wrapper class
      * @since 15
