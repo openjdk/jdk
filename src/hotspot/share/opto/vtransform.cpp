@@ -708,7 +708,27 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
-VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformInputScalarNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
@@ -983,7 +1003,23 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
   }
 }
 
-void VTransformScalarNode::print_spec() const {
+void VTransformMemopScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformDataScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformLoopPhiNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformCFGNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformInputScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 

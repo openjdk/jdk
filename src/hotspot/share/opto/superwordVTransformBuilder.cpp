@@ -53,7 +53,19 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
-    VTransformScalarNode* vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, n);
+
+    VTransformNode* vtn = nullptr;
+    if (n->is_Load() || n->is_Store()) {
+      MemNode* mem = n->as_Mem();
+      const VPointer& mem_p = _vloop_analyzer.vpointers().vpointer(mem);
+      vtn = new (_vtransform.arena()) VTransformMemopScalarNode(_vtransform, mem, mem_p);
+    } else if (n->is_Phi()) {
+      vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, n->as_Phi());
+    } else if (n->is_CFG()) {
+      vtn = new (_vtransform.arena()) VTransformCFGNode(_vtransform, n);
+    } else {
+      vtn = new (_vtransform.arena()) VTransformDataScalarNode(_vtransform, n);
+    }
     map_node_to_vtnode(n, vtn);
   }
 }
@@ -105,11 +117,12 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
   }
 }
 
+//TODO: rename to non-vector?
 void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies) {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
-    VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
-    if (vtn == nullptr) { continue; }
+    VTransformNode* vtn = get_vtnode(n);
+    if (vtn->isa_Vector() != nullptr) { continue; }
     vtn_memory_dependencies.clear(); // Add every dependency only once per vtn.
 
     if (n->is_Load()) {
