@@ -45,7 +45,7 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
     jstring upcall_result = (jstring) return_value.l;
     const char *str = jni->GetStringUTFChars(upcall_result, nullptr);
     if (str == nullptr) {
-      fatal(jni ,"Failed to convert Java string to C string.");
+      fatal(jni, "Failed to convert Java string to C string.");
     }
     if (strcmp("MyNewString", str) != 0) {
       fatal(jni, "The upCall result value is incorrect.");
