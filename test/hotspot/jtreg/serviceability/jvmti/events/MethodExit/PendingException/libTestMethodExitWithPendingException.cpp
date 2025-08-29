@@ -60,20 +60,20 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   }
   jclass main_class = jni->FindClass("TestMethodExitWithPendingException");
   if (main_class == nullptr) {
-    fatal(jni,"Can't find TestMethodExitWithPendingException class.");
+    fatal(jni, "Can't find TestMethodExitWithPendingException class.");
     return;
   }
   jmethodID upcall_method = jni->GetStaticMethodID(main_class,
                                                    "upCall", "()Ljava/lang/String;");
   if (upcall_method == nullptr) {
-    fatal(jni,"Can't find upCall method.");
+    fatal(jni, "Can't find upCall method.");
   }
   // Call 'upCall' method while current thread has exception
   // that has been thrown but hasn't been caught yet.
   jstring upcall_result = (jstring) jni->CallStaticObjectMethod(main_class, upcall_method);
   const char *str = jni->GetStringUTFChars(upcall_result, nullptr);
   if (str == nullptr) {
-    fatal(jni ,"Failed to convert Java string to C string.");
+    fatal(jni, "Failed to convert Java string to C string.");
     return;
   }
   if (strcmp("MyNewString", str) != 0) {

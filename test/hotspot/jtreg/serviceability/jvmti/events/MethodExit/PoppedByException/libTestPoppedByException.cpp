@@ -36,7 +36,7 @@ cbMethodExit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jmethodID method,
       fatal(jni, "The method's was_popped_by_exception value is incorrect.");
     }
     if (return_value.l != nullptr) {
-      fatal(jni ,"return_value should be nullptr.");
+      fatal(jni, "return_value should be nullptr.");
     }
     method_exit_posted = true;
   }
