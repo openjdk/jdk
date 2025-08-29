@@ -58,7 +58,8 @@ public sealed interface MethodBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
-     * @throws IllegalArgumentException if the {@link ClassFile#ACC_STATIC
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}, or the {@link ClassFile#ACC_STATIC
      *         ACC_STATIC} flag is modified
      * @see AccessFlags
      * @see AccessFlag.Location#METHOD
@@ -74,7 +75,8 @@ public sealed interface MethodBuilder
      * @param flags the access flags, as a bit mask
      * @return this builder
      * @throws IllegalArgumentException if the {@link ClassFile#ACC_STATIC
-     *         ACC_STATIC} flag is modified
+     *         ACC_STATIC} flag is modified, or if any flag cannot be applied to
+     *         the {@link AccessFlag.Location#METHOD} location
      * @see AccessFlags
      * @see AccessFlag.Location#METHOD
      */
