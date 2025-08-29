@@ -700,12 +700,12 @@ public sealed interface StructuredTaskScope<T, R>
          *         }
          *     }
          *
-         *     var joiner = Joiner.all(new CancelAfterTwoFailures<String>());
+         *     var joiner = Joiner.allUntil(new CancelAfterTwoFailures<String>());
          * }
          *
          * <p> The following example uses {@code allUntil} to wait for all subtasks to
          * complete without any cancellation. This is similar to {@link #awaitAll()}
-         * except that it yields a stream of the completed subtasks.
+         * except that it yields a list of the completed subtasks.
          * {@snippet lang=java :
          *    <T> List<Subtask<T>> invokeAll(Collection<Callable<T>> tasks) throws InterruptedException {
          *        try (var scope = StructuredTaskScope.open(Joiner.<T>allUntil(_ -> false))) {

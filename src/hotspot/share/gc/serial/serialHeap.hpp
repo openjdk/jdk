@@ -118,14 +118,15 @@ private:
   void gc_prologue();
   void gc_epilogue(bool full);
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
-
-  void stop() override {};
 
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
@@ -211,7 +212,6 @@ public:
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;
@@ -222,33 +222,13 @@ public:
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
 
-  // The ScanningOption determines which of the roots
-  // the closure is applied to:
-  // "SO_None" does none;
-  enum ScanningOption {
-    SO_None                =  0x0,
-    SO_AllCodeCache        =  0x8,
-    SO_ScavengeCodeCache   = 0x10
-  };
-
  public:
-  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
-  void process_roots(ScanningOption so,
-                     OopClosure* strong_roots,
-                     CLDClosure* strong_cld_closure,
-                     CLDClosure* weak_cld_closure,
-                     NMethodToOopClosure* code_roots);
-
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 

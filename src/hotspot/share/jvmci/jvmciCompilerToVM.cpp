@@ -2277,7 +2277,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARG
   InstanceKlass* iklass = InstanceKlass::cast(klass);
   int java_fields, injected_fields;
   GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(iklass->fieldinfo_stream(), &java_fields, &injected_fields);
-  JVMCIObjectArray array = JVMCIENV->new_FieldInfo_array(fields->length(), JVMCIENV);
+  JVMCIObjectArray array = JVMCIENV->new_FieldInfo_array(fields->length(), JVMCI_CHECK_NULL);
   for (int i = 0; i < fields->length(); i++) {
     JVMCIObject field_info = JVMCIENV->new_FieldInfo(fields->adr_at(i), JVMCI_CHECK_NULL);
     JVMCIENV->put_object_at(array, i, field_info);
@@ -2890,11 +2890,12 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       JVMCIObject methodObject = thisEnv->get_HotSpotNmethod_method(obj);
       methodHandle mh(THREAD, thisEnv->asMethod(methodObject));
       jboolean isDefault = thisEnv->get_HotSpotNmethod_isDefault(obj);
+      jboolean profileDeopt = thisEnv->get_HotSpotNmethod_profileDeopt(obj);
       jlong compileIdSnapshot = thisEnv->get_HotSpotNmethod_compileIdSnapshot(obj);
       JVMCIObject name_string = thisEnv->get_InstalledCode_name(obj);
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
-      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, profileDeopt, compileIdSnapshot, JVMCI_CHECK_0);
       JVMCINMethodHandle nmethod_handle(THREAD);
       nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (result.is_null()) {
@@ -2983,13 +2984,21 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
   return JNIHandles::make_local(THREAD, executable);
 C2V_END
 
+// Checks that `index` denotes a non-injected field in `klass`
 static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
   if (!klass->is_instance_klass()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Expected non-primitive type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  if (index < 0 || index > iklass->total_fields_count()) {
+  if (index < 0 || index >= iklass->java_fields_count()) {
+    if (index >= 0 && index < iklass->total_fields_count()) {
+      fieldDescriptor fd(iklass, index);
+      if (fd.is_injected()) {
+        JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+            err_msg("Cannot get Field for injected %s.%s", klass->external_name(), fd.name()->as_C_string()));
+      }
+    }
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Field index %d out of bounds for %s", index, klass->external_name()));
   }
@@ -2999,7 +3008,7 @@ static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
 C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
   requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
   Klass* klass = UNPACK_PAIR(Klass, klass);
-  InstanceKlass* iklass = check_field(klass, index, JVMCIENV);
+  InstanceKlass* iklass = check_field(klass, index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(iklass, index);
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(THREAD, reflected);
@@ -3007,7 +3016,7 @@ C2V_END
 
 static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
                                               jint filter_length, jlong filter_klass_pointers,
-                                              JavaThread* THREAD, JVMCIEnv* JVMCIENV) {
+                                              JavaThread* THREAD, JVMCI_TRAPS) {
   // Get a ConstantPool object for annotation parsing
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
   reflect_ConstantPool::set_cp(jcp(), holder->constants());
@@ -3085,7 +3094,7 @@ C2V_END
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
-  InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCIENV);
+  InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(holder, index);
   return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END

@@ -140,7 +140,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   // Redefine Classes support
   void mark_on_stack();
-  void free_all();
+  void delete_all();
   void print_tty();
   void print(outputStream* st = tty);
 
@@ -381,7 +381,7 @@ public:
   }
 
   static bool is_compilation_disabled_forever() {
-    return _should_compile_new_jobs == shutdown_compilation;
+    return Atomic::load(&_should_compile_new_jobs) == shutdown_compilation;
   }
 
   static void wait_for_no_active_tasks();

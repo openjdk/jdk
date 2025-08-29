@@ -96,11 +96,11 @@ void IdealLoopTree::record_for_igvn() {
 //------------------------------compute_exact_trip_count-----------------------
 // Compute loop trip count if possible. Do not recalculate trip count for
 // split loops (pre-main-post) which have their limits and inits behind Opaque node.
-void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
-  if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt) {
+  if (!_head->as_Loop()->is_valid_counted_loop(loop_bt)) {
     return;
   }
-  CountedLoopNode* cl = _head->as_CountedLoop();
+  BaseCountedLoopNode* cl = _head->as_BaseCountedLoop();
   // Trip count may become nonexact for iteration split loops since
   // RCE modifies limits. Note, _trip_count value is not reset since
   // it is used to limit unrolling of main loop.
@@ -119,24 +119,62 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
   Node* init_n = cl->init_trip();
   Node* limit_n = cl->limit();
   if (init_n != nullptr && limit_n != nullptr) {
-    // Use longs to avoid integer overflow.
-    int stride_con = cl->stride_con();
-    const TypeInt* init_type = phase->_igvn.type(init_n)->is_int();
-    const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
-    jlong init_con = (stride_con > 0) ? init_type->_lo : init_type->_hi;
-    jlong limit_con = (stride_con > 0) ? limit_type->_hi : limit_type->_lo;
-    int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
-    jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
+    jlong stride_con = cl->stride_con();
+    const TypeInteger* init_type = phase->_igvn.type(init_n)->is_integer(loop_bt);
+    const TypeInteger* limit_type = phase->_igvn.type(limit_n)->is_integer(loop_bt);
+
+    // compute trip count
+    // It used to be computed as:
+    // max(1, limit_con - init_con + stride_m) / stride_con
+    // with stride_m = stride_con - (stride_con > 0 ? 1 : -1)
+    // for int counted loops only and by promoting all values to long to avoid overflow
+    // This implements the computation for int and long counted loops in a way that promotion to the next larger integer
+    // type is not needed to protect against overflow.
+    //
+    // Use unsigned longs to avoid overflow: number of iteration is a positive number but can be really large for
+    // instance if init_con = min_jint, limit_con = max_jint
+    jlong init_con = (stride_con > 0) ? init_type->lo_as_long() : init_type->hi_as_long();
+    julong uinit_con = init_con;
+    jlong limit_con = (stride_con > 0) ? limit_type->hi_as_long() : limit_type->lo_as_long();
+    julong ulimit_con = limit_con;
     // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
     // init <= limit (for stride_con < 0).
-    trip_count = MAX2(trip_count, (jlong)1);
-    if (trip_count < (jlong)max_juint) {
+    julong udiff = 1;
+    if (stride_con > 0 && limit_con > init_con) {
+      udiff = ulimit_con - uinit_con;
+    } else if (stride_con < 0 && limit_con < init_con) {
+      udiff = uinit_con - ulimit_con;
+    }
+    // The loop runs for one more iteration if the limit is (stride > 0 in this example):
+    // init + k * stride + small_value, 0 < small_value < stride
+    julong utrip_count = udiff / ABS(stride_con);
+    if (utrip_count * ABS(stride_con) != udiff) {
+      // Guaranteed to not overflow because it can only happen for ABS(stride) > 1 in which case, utrip_count can't be
+      // max_juint/max_julong
+      utrip_count++;
+    }
+
+#ifdef ASSERT
+    if (loop_bt == T_INT) {
+      // Use longs to avoid integer overflow.
+      jlong init_con = (stride_con > 0) ? init_type->is_int()->_lo : init_type->is_int()->_hi;
+      jlong limit_con = (stride_con > 0) ? limit_type->is_int()->_hi : limit_type->is_int()->_lo;
+      int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
+      jlong trip_count = (limit_con - init_con + stride_m) / stride_con;
+      // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
+      // init <= limit (for stride_con < 0).
+      trip_count = MAX2(trip_count, (jlong)1);
+      assert(checked_cast<juint>(trip_count) == checked_cast<juint>(utrip_count), "incorrect trip count computation");
+    }
+#endif
+
+    if (utrip_count < max_unsigned_integer(loop_bt)) {
       if (init_n->is_Con() && limit_n->is_Con()) {
         // Set exact trip count.
-        cl->set_exact_trip_count((uint)trip_count);
-      } else if (cl->unrolled_count() == 1) {
+        cl->set_exact_trip_count(utrip_count);
+      } else if (loop_bt == T_LONG || cl->as_CountedLoop()->unrolled_count() == 1) {
         // Set maximum trip count before unrolling.
-        cl->set_trip_count((uint)trip_count);
+        cl->set_trip_count(utrip_count);
       }
     }
   }
@@ -862,7 +900,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
 
   uint trip_count = cl->trip_count();
   // Note, max_juint is used to indicate unknown trip count.
-  assert(trip_count > 1, "one iteration loop should be optimized out already");
+  assert(trip_count > 1, "one-iteration loop should be optimized out already");
   assert(trip_count < max_juint, "exact trip_count should be less than max_juint.");
 
   // If nodes are depleted, some transform has miscalculated its needs.
@@ -1399,6 +1437,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopNode *post_head = nullptr;
   Node* post_incr = incr;
   Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head);
+  C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
 
   //------------------------------
   // Step B: Create Pre-Loop.
@@ -1613,8 +1652,10 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   Node *limit = main_end->limit();
 
   // In this case we throw away the result as we are not using it to connect anything else.
+  C->print_method(PHASE_BEFORE_POST_LOOP, 4, main_head);
   CountedLoopNode *post_head = nullptr;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
+  C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1848,7 +1889,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     if (loop_head->trip_count() < (uint)LoopUnrollLimit) {
-      tty->print("Unroll %d(%2d) ", loop_head->unrolled_count()*2, loop_head->trip_count());
+      tty->print("Unroll %d(" JULONG_FORMAT_W(2) ") ", loop_head->unrolled_count()*2, loop_head->trip_count());
     } else {
       tty->print("Unroll %d     ", loop_head->unrolled_count()*2);
     }
@@ -2101,7 +2142,7 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
   assert(cl->trip_count() > 0, "");
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("MaxUnroll  %d ", cl->trip_count());
+    tty->print("MaxUnroll  " JULONG_FORMAT " ", cl->trip_count());
     loop->dump_head();
   }
 #endif
@@ -3077,6 +3118,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
       return false;
     }
   }
+  phase->C->print_method(PHASE_BEFORE_REMOVE_EMPTY_LOOP, 4, cl);
   if (cl->is_pre_loop()) {
     // If the loop we are removing is a pre-loop then the main and post loop
     // can be removed as well.
@@ -3179,6 +3221,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   phase->_igvn.replace_input_of(cl->loopexit(), CountedLoopEndNode::TestValue, zero);
 
   phase->C->set_major_progress();
+  phase->C->print_method(PHASE_AFTER_REMOVE_EMPTY_LOOP, 4, final_iv);
   return true;
 }
 
@@ -3314,7 +3357,7 @@ void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_L
 }
 
 //------------------------------do_one_iteration_loop--------------------------
-// Convert one iteration loop into normal code.
+// Convert one-iteration loop into normal code.
 bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
     return false; // Only for counted loop
@@ -3331,6 +3374,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   }
 #endif
 
+  phase->C->print_method(PHASE_BEFORE_ONE_ITERATION_LOOP, 4, cl);
   Node *init_n = cl->init_trip();
   // Loop boundaries should be constant since trip count is exact.
   assert((cl->stride_con() > 0 && init_n->get_int() + cl->stride_con() >= cl->limit()->get_int()) ||
@@ -3340,6 +3384,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   // and all loop-invariant uses of the exit values will be correct.
   phase->_igvn.replace_node(cl->phi(), cl->init_trip());
   phase->C->set_major_progress();
+  phase->C->print_method(PHASE_AFTER_ONE_ITERATION_LOOP, 4, init_n);
   return true;
 }
 
@@ -3352,9 +3397,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     return false;
   }
   // Compute loop trip count if possible.
-  compute_trip_count(phase);
+  compute_trip_count(phase, T_INT);
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   if (do_one_iteration_loop(phase)) {
     return true;
   }

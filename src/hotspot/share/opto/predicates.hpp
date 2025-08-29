@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_PREDICATES_HPP
 #define SHARE_OPTO_PREDICATES_HPP
 
+#include "opto/c2_globals.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/predicates_enums.hpp"
@@ -44,12 +45,15 @@ class TemplateAssertionPredicate;
  * - Parse Predicate: Added during parsing to capture the current JVM state. This predicate represents a "placeholder"
  *                    above which Regular Predicates can be created later after parsing.
  *
- *                    There are initially three Parse Predicates for each loop:
- *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
- *                    - Profiled Loop Parse Predicate:    The Parse Predicate added for Profiled Loop Predicates.
- *                    - Loop Limit Check Parse Predicate: The Parse Predicate added for a Loop Limit Check Predicate.
+ *                    There are initially five Parse Predicates for each loop:
+ *                    - Loop Parse Predicate:               The Parse Predicate added for Loop Predicates.
+ *                    - Profiled Loop Parse Predicate:      The Parse Predicate added for Profiled Loop Predicates.
+ *                    - Loop Limit Check Parse Predicate:   The Parse Predicate added for a Loop Limit Check Predicate.
+ *                    - Short Running Loop Parse Predicate: The Parse Predicate added for the short running long loop check.
+ *                    - AutoVectorization Parse Predicate:  The Parse Predicate added for AutoVectorization runtime checks.
  * - Runtime Predicate: This term is used to refer to a Hoisted Check Predicate (either a Loop Predicate or a Profiled
- *                      Loop Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while
+ *                      Loop Predicate), a Loop Limit Check Predicate, a Short Running Long Loop Predicate, or a
+ *                      AutoVectorization Runtime Check Predicate. These predicates will be checked at runtime while
  *                      the Parse and Assertion Predicates are always removed before code generation (except for
  *                      Initialized Assertion Predicates which are kept in debug builds while being removed in product
  *                      builds).
@@ -73,6 +77,29 @@ class TemplateAssertionPredicate;
  *                           counted loop to avoid these overflow problems.
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
+ *     - Short:              This predicate is created when a long counted loop is transformed into an int counted
+ *       Running Long        loop. In general, that transformation requires an outer loop to guarantee that the new
+ *       Loop                loop nest iterates over the entire range of the loop before transformation. However, if the
+ *       Predicate           loop is speculated to run for a small enough number of iterations, the outer loop is not
+ *                           needed. This predicate is added to catch mis-speculation in this case. It also applies to
+ *                           int counted loops with long range checks for which a loop nest also needs to be created
+ *                           in the general case (so the transformation of long range checks to int range checks is
+ *                           legal).
+ *     - AutoVectorization:  This predicate is used for speculative runtime checks required for AutoVectorization.
+ *       Runtime Check       There are multiple reasons why we need a runtime check to allow vectorization:
+ *       Predicate           - Unknown aliasing:
+ *                             An important compoinent of AutoVectorization is proving that memory addresses do not
+ *                             alias, and can therefore be reordered. In some cases, this cannot be done statically
+ *                             and a runtime check is necessary.
+ *                           - Unknown alignment of native memory:
+ *                             While heap objects have 8-byte alignment, off-heap (native) memory often has no alignment
+ *                             guarantees. On platforms that require vectors to be aligned, we need to prove alignment.
+ *                             We cannot do that statically with native memory, hence we need a runtime check.
+ *                           The benefit of using a predicate is that we only have to compile the vectorized loop. If
+ *                           the runtime check fails, we simply deoptimize. Should we eventually recompile, then the
+ *                           predicate is not available any more, and we instead use a multiversioning approach with
+ *                           both a vectorized and a scalar loop, where the runtime determines which loop is taken.
+ *                           See: PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
  *                        Hoisted Check Predicate or the main-loop entry guard) but is required in order to fold away a
  *                        dead sub loop in which some data could be proven to be dead (by the type system) and replaced
@@ -149,19 +176,27 @@ class TemplateAssertionPredicate;
  *                    Predicates, and the associated Parse Predicate which all share the same uncommon trap. This block
  *                    could be empty if there were no Runtime Predicates created and the Parse Predicate was already
  *                    removed.
- *                    There are three different Predicate Blocks:
+ *                    There are five different Predicate Blocks:
+ *                    - Short Running Long    Groups the Short Running Long Loop Predicate (if created), and the
+ *                      Loop Predicate Block: Short Running Long Loop Parse Predicate together.
  *                    - Loop Predicate Block: Groups the Loop Predicates (if any), including the Assertion Predicates,
  *                                            and the Loop Parse Predicate (if not removed, yet) together.
  *                    - Profiled Loop         Groups the Profiled Loop Predicates (if any), including the Assertion
  *                      Predicate Block:      Predicates, and the Profiled Loop Parse Predicate (if not removed, yet)
  *                                            together.
+ *                    - AutoVectorization     Groups the AutoVectorization Runtime Check Predicates (if any), and the
+ *                      Runtime Check         AutoVectorization Runtime Check Parse Predicate together.
+ *                      Predicate Block:
  *                    - Loop Limit Check      Groups the Loop Limit Check Predicate (if created) and the Loop Limit
  *                      Predicate Block:      Check Parse Predicate (if not removed, yet) together.
  * - Regular Predicate Block: A block that only contains the Regular Predicates of a Predicate Block without the
  *                            Parse Predicate.
  *
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
- * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
+ * (predicates inside square brackets [] do not need to exist if there are no checks to hoist / insert):
+ *
+ *   [Short Running Long Loop Predicate] (at most one)                 \ Short Running Long
+ * Short Running Long Loop Parse Predicate                             / Loop Predicate Block
  *
  *   [Loop Predicate 1 + two Template Assertion Predicates]            \
  *   [Loop Predicate 2 + two Template Assertion Predicates]            |
@@ -174,6 +209,12 @@ class TemplateAssertionPredicate;
  *   ...                                                               | Predicate Block
  *   [Profiled Loop Predicate m + two Template Assertion Predicates]   |
  * Profiled Loop Parse Predicate                                       /
+ *
+ *   [AutoVectorization Runtime Check Predicate 1]                     \
+ *   [AutoVectorization Runtime Check Predicate 2]                     | AutoVectorization
+ *   ...                                                               | Runtime Check
+ *   [AutoVectorization Runtime Check Predicate l]                     | Predicate Block
+ * AutoVectorization Runtime Check Parse Predicate                     /
  *
  *   [Loop Limit Check Predicate] (at most one)                        \ Loop Limit Check
  * Loop Limit Check Parse Predicate                                    / Predicate Block
@@ -288,8 +329,6 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
-                                                       const ParsePredicateSuccessProj* success_proj);)
 
  public:
   ParsePredicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason)
@@ -320,8 +359,8 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
-                                          PhaseIdealLoop* phase) const;
+  ParsePredicate clone_to_loop(Node* new_control, bool rewire_uncommon_proj_phi_inputs, PhaseIdealLoop* phase) const;
+  NOT_PRODUCT(void trace_cloned_parse_predicate(bool is_false_path_loop) const;)
 
   void kill(PhaseIterGVN& igvn) const;
 };
@@ -776,8 +815,10 @@ class PredicateIterator : public StackObj {
     Node* current_node = _start_node;
     PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
     current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
-    current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    if (UseAutoVectorizationPredicate) {
+      PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
+      current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    }
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
         PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
@@ -786,7 +827,8 @@ class PredicateIterator : public StackObj {
       PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
       current_node = loop_predicate_iterator.for_each(predicate_visitor);
     }
-    return current_node;
+    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
+    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
   }
 };
 
@@ -953,6 +995,7 @@ class Predicates : public StackObj {
   const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
+  const PredicateBlock _short_running_long_loop_predicate_block;
   Node* const _entry;
 
  public:
@@ -965,7 +1008,9 @@ class Predicates : public StackObj {
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
-        _entry(_loop_predicate_block.entry()) {}
+        _short_running_long_loop_predicate_block(_loop_predicate_block.entry(),
+                                            Deoptimization::Reason_short_running_long_loop),
+        _entry(_short_running_long_loop_predicate_block.entry()) {}
   NONCOPYABLE(Predicates);
 
   // Returns the control input the first predicate if there are any predicates. If there are no predicates, the same
@@ -988,6 +1033,10 @@ class Predicates : public StackObj {
 
   const PredicateBlock* loop_limit_check_predicate_block() const {
     return &_loop_limit_check_predicate_block;
+  }
+
+  const PredicateBlock* short_running_long_loop_predicate_block() const {
+    return &_short_running_long_loop_predicate_block;
   }
 
   bool has_any() const {
@@ -1082,6 +1131,19 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
   }
 };
 
+// This class checks whether a node is in the loop body passed to the constructor.
+class NodeInSingleLoopBody : public NodeInLoopBody {
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _ilt;
+
+public:
+  NodeInSingleLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
+  }
+  NONCOPYABLE(NodeInSingleLoopBody);
+
+  bool check_node_in_loop_body(Node* node) const override;
+};
+
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
@@ -1158,10 +1220,11 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_false_path_loop) {
-    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
-                                                                                     is_false_path_loop, _phase);
+  ParsePredicate clone_parse_predicate(const ParsePredicate& parse_predicate, bool rewire_uncommon_proj_phi_inputs) {
+    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_loop(_old_target_loop_entry,
+                                                                          rewire_uncommon_proj_phi_inputs, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
+    return cloned_parse_predicate;
   }
 
   void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate);
@@ -1189,6 +1252,9 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override;
+
+  void clone_parse_predicate(const ParsePredicate &parse_predicate,
+                             bool is_false_path_loop);
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
