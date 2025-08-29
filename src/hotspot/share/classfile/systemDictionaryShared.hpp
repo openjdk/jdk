@@ -194,7 +194,7 @@ private:
   static void copy_linking_constraints_from_preimage(InstanceKlass* klass);
 
   template<typename Function>
-  static void iterate_all_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
+  static void iterate_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true

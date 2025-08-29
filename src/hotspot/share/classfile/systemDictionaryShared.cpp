@@ -216,24 +216,27 @@ bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeC
 }
 
 // <func> returns bool and takes a single parameter of Symbol*
-// - If <func> returns true for any name, this method terminates immediately.
-// - If <func> never returns true, we will iterate over all the names.
+// The return value indicates whether we want to keep on iterating or not.
 template<typename Function>
-void SystemDictionaryShared::iterate_all_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
+void SystemDictionaryShared::iterate_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
   int n = info->num_verifier_constraints();
+  bool cont; // continue iterating?
   for (int i = 0; i < n; i++) {
-    if (func(info->verifier_constraint_name_at(i))) {
-      return;
+    cont = func(info->verifier_constraint_name_at(i));
+    if (!cont) {
+      return; // early termination
     }
-    if (func(info->verifier_constraint_from_name_at(i))) {
-      return;
+    cont = func(info->verifier_constraint_from_name_at(i));
+    if (!cont) {
+      return; // early termination
     }
   }
 
   n = info->num_old_verifier_dependencies();
   for (int i = 0; i < n; i++) {
-    if (func(info->old_verifier_dependency_at(i))) {
-      return;
+    cont = func(info->old_verifier_dependency_at(i));
+    if (!cont) {
+      return; // early termination
     }
   }
 }
@@ -279,12 +282,12 @@ class SystemDictionaryShared::ExclusionCheckCandidates
     }
 
     if (CDSConfig::is_preserving_verification_dependencies()) {
-      SystemDictionaryShared::iterate_all_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
+      SystemDictionaryShared::iterate_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
         Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
         if (dependency_bottom_class != nullptr && dependency_bottom_class->is_instance_klass()) {
           add_candidate(InstanceKlass::cast(dependency_bottom_class));
         }
-        return false; // Keep iterating.
+        return true; // Keep iterating.
       });
     }
   }
@@ -486,14 +489,14 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
   if (CDSConfig::is_preserving_verification_dependencies()) {
     bool excluded = false;
 
-    iterate_all_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
+    iterate_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
       if (check_verification_dependency_exclusion(k, dependency_class_name)) {
         // If one of the verification dependency class has been excluded, the assignability checks
         // by the verifier may no longer be valid in the production run. For safety, exclude this class.
         excluded = true;
-        return true; // terminate iteration; k will be excluded
+        return false; // terminate iteration; k will be excluded
       } else {
-        return false; // keep iterating
+        return true; // keep iterating
       }
     });
 
