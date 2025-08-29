@@ -47,12 +47,7 @@ public class TestHeapFreeRatio {
     COMBINATION_INVALID
   }
 
-  private static void testMinMaxFreeRatio(String min, String max, Validation type) throws Exception {
-    OutputAnalyzer output = GCArguments.executeTestJava(
-        "-Xminf" + min,
-        "-Xmaxf" + max,
-        "-version");
-
+  private static void checkValidity(OutputAnalyzer output, String min, String max, Validation type) {
     switch (type) {
     case VALID:
       output.shouldNotContain("Error");
@@ -74,7 +69,7 @@ public class TestHeapFreeRatio {
       output.shouldHaveExitValue(1);
       break;
     case COMBINATION_INVALID:
-      output.shouldContain("must be less than or equal to MaxHeapFreeRatio");
+      output.shouldMatch("must be (less|greater) than or equal to M..HeapFreeRatio");
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;
@@ -83,6 +78,24 @@ public class TestHeapFreeRatio {
     }
 
     System.out.println(output.getOutput());
+  }
+
+  private static void testMinMaxFreeRatio_Reordered(String min, String max, Validation type) throws Exception {
+    OutputAnalyzer output = GCArguments.executeTestJava(
+        "-Xmaxf" + max,
+        "-Xminf" + min,
+        "-version");
+
+    checkValidity(output, min, max, type);
+  }
+
+  private static void testMinMaxFreeRatio(String min, String max, Validation type) throws Exception {
+    OutputAnalyzer output = GCArguments.executeTestJava(
+        "-Xminf" + min,
+        "-Xmaxf" + max,
+        "-version");
+
+    checkValidity(output, min, max, type);
   }
 
   public static void main(String args[]) throws Exception {
@@ -104,7 +117,7 @@ public class TestHeapFreeRatio {
     testMinMaxFreeRatio("-0.1", "0.5", Validation.OUT_OF_RANGE);
     testMinMaxFreeRatio( "1.1", "0.5", Validation.OUT_OF_RANGE);
     testMinMaxFreeRatio(
-                  "2147483647", "0.5", Validation.OUT_OF_RANGE);
+                   "2147483647", "0.5", Validation.OUT_OF_RANGE);
     testMinMaxFreeRatio(
                   "-2147483647", "0.5", Validation.OUT_OF_RANGE);
     testMinMaxFreeRatio( "0.1", "-0.5", Validation.OUT_OF_RANGE);
@@ -114,8 +127,20 @@ public class TestHeapFreeRatio {
     testMinMaxFreeRatio(
                    "0.1", "-2147483647", Validation.OUT_OF_RANGE);
 
-    testMinMaxFreeRatio( "0.5",  "0.1", Validation.COMBINATION_INVALID);
-    testMinMaxFreeRatio(  ".5",  ".10", Validation.COMBINATION_INVALID);
-    testMinMaxFreeRatio("0.12","0.100", Validation.COMBINATION_INVALID);
+    testMinMaxFreeRatio( "0.5",   "0.1", Validation.COMBINATION_INVALID);
+    testMinMaxFreeRatio(  ".5",   ".10", Validation.COMBINATION_INVALID);
+    testMinMaxFreeRatio("0.12", "0.100", Validation.COMBINATION_INVALID);
+
+    // Default range is [0.40, 0.70]
+    // setting minf to 0.80 violates minf < maxf
+    testMinMaxFreeRatio("0.80", "0.90", Validation.COMBINATION_INVALID);
+
+    // Options are re-ordered: -Xmaxf is given before -Xminf
+
+    // valid range, but acceptable only if maxf be set first
+    testMinMaxFreeRatio_Reordered("0.80", "0.90", Validation.VALID);
+
+    // although a valid range, but setting maxf first violates minf < maxf
+    testMinMaxFreeRatio_Reordered("0.10", "0.30", Validation.COMBINATION_INVALID);
   }
 }

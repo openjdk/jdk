@@ -2419,7 +2419,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         return JNI_EINVAL;
       } else {
         if (dmaxf < 0.0 || dmaxf > 1.0) {
-          JVMFlag::printError(true,"uintx MaxHeapFreeRatio=%s is outside the allowed range  [ 0.0 ... 1.0 ]\n", tail);
+          jio_fprintf(defaultStream::error_stream(),
+                      "-Xmaxf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                      option->optionString);
+          return JNI_EINVAL;
+        }
+        if (MinHeapFreeRatio > (uintx)(dmaxf * 100)) {
+          jio_fprintf(defaultStream::error_stream(),
+                      "-Xmaxf value (%s) which is also used for MaxHeapFreeRatio must be greater than or equal to MinHeapFreeRatio (%3.2lf)\n",
+                      tail, MinHeapFreeRatio / 100.0);
           return JNI_EINVAL;
         }
         if (FLAG_SET_CMDLINE(MaxHeapFreeRatio, (uintx)(dmaxf * 100)) != JVMFlag::SUCCESS) {
@@ -2437,7 +2445,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         return JNI_EINVAL;
       } else {
         if (dminf < 0.0 || dminf > 1.0) {
-          JVMFlag::printError(true,"uintx MinHeapFreeRatio=%s is outside the allowed range [ 0.0 ... 1.0 ]\n", tail);
+          jio_fprintf(defaultStream::error_stream(),
+                      "-Xminf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                      tail);
+          return JNI_EINVAL;
+        }
+        if (MaxHeapFreeRatio < (uintx)(dminf * 100)) {
+          jio_fprintf(defaultStream::error_stream(),
+                      "-Xminf value (%s) which is also used for MinHeapFreeRatio must be less than or equal to MaxHeapFreeRatio (%3.2lf)\n",
+                      tail, MaxHeapFreeRatio / 100.0);
           return JNI_EINVAL;
         }
         if (FLAG_SET_CMDLINE(MinHeapFreeRatio, (uintx)(dminf * 100)) != JVMFlag::SUCCESS) {
