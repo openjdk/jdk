@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -666,7 +666,6 @@ innerclass innerClass java/awt/Component$BaselineResizeBehavior outerClass java/
 innerclass innerClass java/awt/Component$FlipBufferStrategy outerClass java/awt/Component innerClassName FlipBufferStrategy flags 4
 innerclass innerClass java/awt/Component$BltBufferStrategy outerClass java/awt/Component innerClassName BltBufferStrategy flags 4
 innerclass innerClass java/awt/Component$AccessibleAWTComponent outerClass java/awt/Component innerClassName AccessibleAWTComponent flags 404
-innerclass innerClass sun/awt/CausedFocusEvent$Cause outerClass sun/awt/CausedFocusEvent innerClassName Cause flags 4019
 field name TOP_ALIGNMENT descriptor F constantValue 0.0 flags 19
 field name CENTER_ALIGNMENT descriptor F constantValue 0.5 flags 19
 field name BOTTOM_ALIGNMENT descriptor F constantValue 1.0 flags 19
@@ -2116,7 +2115,6 @@ method name postProcessKeyEvent descriptor (Ljava/awt/event/KeyEvent;)Z flags 40
 
 class name java/awt/KeyboardFocusManager
 header extends java/lang/Object implements java/awt/KeyEventDispatcher,java/awt/KeyEventPostProcessor flags 421 classAnnotations @Ljdk/Profile+Annotation;(value=I4)
-innerclass innerClass sun/awt/CausedFocusEvent$Cause outerClass sun/awt/CausedFocusEvent innerClassName Cause flags 4019
 field name FORWARD_TRAVERSAL_KEYS descriptor I constantValue 0 flags 19
 field name BACKWARD_TRAVERSAL_KEYS descriptor I constantValue 1 flags 19
 field name UP_CYCLE_TRAVERSAL_KEYS descriptor I constantValue 2 flags 19
@@ -7473,7 +7471,6 @@ method name select descriptor (I)V flags 401
 
 class name java/awt/peer/ComponentPeer
 header extends java/lang/Object flags 601 classAnnotations @Ljdk/Profile+Annotation;(value=I4)@Lsun/Proprietary+Annotation;
-innerclass innerClass sun/awt/CausedFocusEvent$Cause outerClass sun/awt/CausedFocusEvent innerClassName Cause flags 4019
 innerclass innerClass java/awt/BufferCapabilities$FlipContents outerClass java/awt/BufferCapabilities innerClassName FlipContents flags 19
 field name SET_LOCATION descriptor I constantValue 1 flags 19
 field name SET_SIZE descriptor I constantValue 2 flags 19
@@ -15617,6 +15614,7 @@ method name <init> descriptor (Ljavax/swing/JSpinner;)V flags 1
 method name <init> descriptor (Ljavax/swing/JSpinner;Ljava/lang/String;)V flags 1
 method name getFormat descriptor ()Ljava/text/DecimalFormat; flags 1
 method name getModel descriptor ()Ljavax/swing/SpinnerNumberModel; flags 1
+method name setComponentOrientation descriptor (Ljava/awt/ComponentOrientation;)V flags 1
 
 class name javax/swing/JSplitPane
 header extends javax/swing/JComponent implements javax/accessibility/Accessible flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I4)
