@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,8 +350,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
 
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-        if (icon instanceof SynthIcon) {
-            SynthIcon si = (SynthIcon)icon;
+        if (icon instanceof SynthIcon si) {
             BufferedImage img = EffectUtils.createCompatibleTranslucentImage(
                     si.getIconWidth(), si.getIconHeight());
             Graphics2D gfx = img.createGraphics();
@@ -445,8 +444,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
             Container parent = toolbar.getParent();
             if (parent != null) {
                 LayoutManager m = parent.getLayout();
-                if (m instanceof BorderLayout) {
-                    BorderLayout b = (BorderLayout)m;
+                if (m instanceof BorderLayout b) {
                     Object con = b.getConstraints(toolbar);
                     if (con == SOUTH || con == EAST || con == WEST) {
                         return con;

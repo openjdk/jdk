@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,8 +197,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
             if (!Objects.equals(newValue, out.get(oldValue))) {
                 // Search for a static constant with this value;
                 Object e = (Object[])pd.getValue("enumerationValues");
-                if (e instanceof Object[] && Array.getLength(e) % 3 == 0) {
-                    Object[] a = (Object[])e;
+                if (e instanceof Object[] a && Array.getLength(e) % 3 == 0) {
                     for(int i = 0; i < a.length; i = i + 3) {
                         try {
                            Field f = type.getField((String)a[i]);

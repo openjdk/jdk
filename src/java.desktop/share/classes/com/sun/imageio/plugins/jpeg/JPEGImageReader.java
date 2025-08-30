@@ -1260,8 +1260,7 @@ public class JPEGImageReader extends ImageReader {
             minProgressivePass = param.getSourceMinProgressivePass();
             maxProgressivePass = param.getSourceMaxProgressivePass();
 
-            if (param instanceof JPEGImageReadParam) {
-                JPEGImageReadParam jparam = (JPEGImageReadParam) param;
+            if (param instanceof JPEGImageReadParam jparam) {
                 if (jparam.areTablesSet()) {
                     abbrevQTables = jparam.getQTables();
                     abbrevDCHuffmanTables = jparam.getDCHuffmanTables();

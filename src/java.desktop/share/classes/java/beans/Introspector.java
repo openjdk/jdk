@@ -529,8 +529,7 @@ public class Introspector {
             boolean cls = true;
             if (read != null) cls = cls && read.getGenericReturnType() instanceof Class;
             if (write != null) cls = cls && write.getGenericParameterTypes()[0] instanceof Class;
-            if (pd instanceof IndexedPropertyDescriptor) {
-                IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor) pd;
+            if (pd instanceof IndexedPropertyDescriptor ipd) {
                 Method readI = ipd.getIndexedReadMethod();
                 Method writeI = ipd.getIndexedWriteMethod();
                 if (readI != null) cls = cls && readI.getGenericReturnType() instanceof Class;

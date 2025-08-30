@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,11 +163,10 @@ public class PopupMenu extends Menu {
         if (localParent == null) {
             throw new NullPointerException("parent is null");
         }
-        if (!(localParent instanceof Component)) {
+        if (!(localParent instanceof Component compParent)) {
             throw new IllegalArgumentException(
                 "PopupMenus with non-Component parents cannot be shown");
         }
-        Component compParent = (Component)localParent;
         //Fixed 6278745: Incorrect exception throwing in PopupMenu.show() method
         //Exception was not thrown if compParent was not equal to origin and
         //was not Container

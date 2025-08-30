@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,8 +677,7 @@ static final class java_awt_Font_PersistenceDelegate extends PersistenceDelegate
                     style |= Font.ITALIC;
                 }
             } else if (key == TextAttribute.SIZE) {
-                if (value instanceof Number) {
-                    Number number = (Number) value;
+                if (value instanceof Number number) {
                     size = number.intValue();
                     if (size == number.floatValue()) {
                         count++;

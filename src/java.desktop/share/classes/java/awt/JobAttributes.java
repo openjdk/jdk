@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -949,10 +949,9 @@ public final class JobAttributes implements Cloneable {
      *          above criteria.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof JobAttributes)) {
+        if (!(obj instanceof JobAttributes rhs)) {
             return false;
         }
-        JobAttributes rhs = (JobAttributes)obj;
 
         if (fileName == null) {
             if (rhs.fileName != null) {

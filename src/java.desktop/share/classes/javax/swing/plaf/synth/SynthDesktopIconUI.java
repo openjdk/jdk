@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,10 +236,8 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
             if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
                 updateStyle((JInternalFrame.JDesktopIcon)evt.getSource());
             }
-        } else if (evt.getSource() instanceof JInternalFrame) {
-            JInternalFrame frame = (JInternalFrame)evt.getSource();
-            if (iconPane instanceof JToggleButton) {
-                JToggleButton button = (JToggleButton)iconPane;
+        } else if (evt.getSource() instanceof JInternalFrame frame) {
+            if (iconPane instanceof JToggleButton button) {
                 String prop = evt.getPropertyName();
                 if (prop == "title") {
                     button.setText((String)evt.getNewValue());
@@ -255,9 +253,8 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
 
     private final class Handler implements ActionListener {
         public void actionPerformed(ActionEvent evt) {
-            if (evt.getSource() instanceof JToggleButton) {
+            if (evt.getSource() instanceof JToggleButton button) {
                 // Either iconify the frame or deiconify and activate it.
-                JToggleButton button = (JToggleButton)evt.getSource();
                 try {
                     boolean selected = button.isSelected();
                     if (!selected && !frame.isIconifiable()) {

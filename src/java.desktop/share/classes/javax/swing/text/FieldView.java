@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,7 @@ public class FieldView extends PlainView {
 
             // horizontal adjustments
             Component c = getContainer();
-            if (c instanceof JTextField) {
-                JTextField field = (JTextField) c;
+            if (c instanceof JTextField field) {
                 BoundedRangeModel vis = field.getHorizontalVisibility();
                 int max = Math.max(hspan, bounds.width);
                 int value = vis.getValue();
@@ -104,7 +103,7 @@ public class FieldView extends PlainView {
                     // horizontally align the interior
                     int slop = bounds.width - 1 - hspan;
 
-                    int align = ((JTextField)c).getHorizontalAlignment();
+                    int align = field.getHorizontalAlignment();
                     if(Utilities.isLeftToRight(c)) {
                         if(align==LEADING) {
                             align = LEFT;
@@ -153,8 +152,7 @@ public class FieldView extends PlainView {
      */
     void updateVisibilityModel() {
         Component c = getContainer();
-        if (c instanceof JTextField) {
-            JTextField field = (JTextField) c;
+        if (c instanceof JTextField field) {
             BoundedRangeModel vis = field.getHorizontalVisibility();
             int hspan = (int) getPreferredSpan(X_AXIS);
             int extent = vis.getExtent();
