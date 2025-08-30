@@ -165,7 +165,7 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
 
 void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, TRAPS) {
   assert(klass->is_initialized(), "");
-  if (TrainingData::have_data() && klass->is_shared()) {
+  if (TrainingData::have_data() && klass->in_aot_cache()) {
     _training_replay_queue.push(klass, TrainingReplayQueue_lock, THREAD);
   }
 }

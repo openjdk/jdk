@@ -110,7 +110,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
   if (!is_builtin_loader) {
     // class may be loaded from shared archive
-    if (!k->is_shared()) {
+    if (!k->in_aot_cache()) {
       if (cfs == nullptr || cfs->source() == nullptr) {
         // CDS static dump only handles unregistered class with known source.
         return;

@@ -174,9 +174,9 @@ private:
 
 #if INCLUDE_CDS
   // Various attributes for shared classes. Should be zero for a non-shared class.
-  u2     _shared_class_flags;
+  u2 _shared_class_flags;
   enum CDSSharedClassFlags {
-    _is_shared_class                       = 1 << 0,  // shadows MetaspaceObj::is_shared
+    _in_aot_cache                          = 1 << 0,
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
@@ -377,13 +377,13 @@ protected:
     NOT_CDS(return false;)
   }
 
-  bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
-    CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
+  bool in_aot_cache() const                { // shadows MetaspaceObj::in_aot_cache)()
+    CDS_ONLY(return (_shared_class_flags & _in_aot_cache) != 0;)
     NOT_CDS(return false;)
   }
 
-  void set_is_shared() {
-    CDS_ONLY(_shared_class_flags |= _is_shared_class;)
+  void set_in_aot_cache() {
+    CDS_ONLY(_shared_class_flags |= _in_aot_cache;)
   }
 
   // Obtain the module or package for this class
@@ -609,7 +609,7 @@ public:
   virtual void remove_java_mirror();
 
   bool is_unshareable_info_restored() const {
-    assert(is_shared(), "use this for shared classes only");
+    assert(in_aot_cache(), "use this for shared classes only");
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;

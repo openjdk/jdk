@@ -365,8 +365,8 @@ address ArchiveBuilder::reserve_buffer() {
   if (CDSConfig::is_dumping_static_archive()) {
     my_archive_requested_bottom = _requested_static_archive_bottom;
   } else {
-    _mapped_static_archive_bottom = (address)MetaspaceObj::shared_metaspace_base();
-    _mapped_static_archive_top  = (address)MetaspaceObj::shared_metaspace_top();
+    _mapped_static_archive_bottom = (address)MetaspaceObj::aot_metaspace_base();
+    _mapped_static_archive_top  = (address)MetaspaceObj::aot_metaspace_top();
     assert(_mapped_static_archive_top >= _mapped_static_archive_bottom, "must be");
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
@@ -540,7 +540,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_shared_static(bottom)) {
+    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
     } else if (bottom->is_instance_klass()) {
@@ -553,7 +553,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
 
 ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref *ref) {
   address obj = ref->obj();
-  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(obj)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::in_aot_cache(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||

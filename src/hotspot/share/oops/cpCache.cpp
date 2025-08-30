@@ -584,7 +584,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
 #endif // INCLUDE_CDS
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
-  assert(!is_shared(), "shared caches are not deallocated");
+  assert(!in_aot_cache(), "objects in aot metaspace are not deallocated");
   data->remove_handle(_resolved_references);
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
