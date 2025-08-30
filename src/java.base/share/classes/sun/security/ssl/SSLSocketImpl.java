@@ -1346,7 +1346,9 @@ public final class SSLSocketImpl
     public SSLParameters getSSLParameters() {
         socketLock.lock();
         try {
-            return conContext.sslConfig.getSSLParameters();
+            HandshakeContext hc = conContext.handshakeContext;
+            return hc != null ? hc.sslConfig.getSSLParameters()
+                    : conContext.sslConfig.getSSLParameters();
         } finally {
             socketLock.unlock();
         }

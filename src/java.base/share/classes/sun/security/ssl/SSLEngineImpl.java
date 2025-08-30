@@ -1018,7 +1018,9 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     public SSLParameters getSSLParameters() {
         engineLock.lock();
         try {
-            return conContext.sslConfig.getSSLParameters();
+            HandshakeContext hc = conContext.handshakeContext;
+            return hc != null ? hc.sslConfig.getSSLParameters()
+                    : conContext.sslConfig.getSSLParameters();
         } finally {
             engineLock.unlock();
         }
