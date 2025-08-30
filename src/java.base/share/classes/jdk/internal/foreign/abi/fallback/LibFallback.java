@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ final class LibFallback {
     /**
      * Wrapper for {@code ffi_prep_cif}
      *
-     * @param returnType a pointer to an @{code ffi_type} describing the return type
+     * @param returnType a pointer to an {@code ffi_type} describing the return type
      * @param numArgs the number of arguments
      * @param paramTypes a pointer to an array of pointers, which each point to an {@code ffi_type} describing a
      *                parameter type
@@ -122,7 +122,7 @@ final class LibFallback {
     /**
      * Wrapper for {@code ffi_prep_cif_var}. The variadic version of prep_cif
      *
-     * @param returnType a pointer to an @{code ffi_type} describing the return type
+     * @param returnType a pointer to an {@code ffi_type} describing the return type
      * @param numFixedArgs the number of fixed arguments
      * @param numTotalArgs the number of total arguments
      * @param paramTypes a pointer to an array of pointers, which each point to an {@code ffi_type} describing a
