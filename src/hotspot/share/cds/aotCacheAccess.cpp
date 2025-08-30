@@ -23,11 +23,11 @@
  */
 
 #include "cds/aotCacheAccess.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/stringTable.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,7 +45,7 @@ size_t AOTCacheAccess::get_aot_code_region_size() {
   assert(CDSConfig::is_using_archive(), "must be");
   FileMapInfo* mapinfo = FileMapInfo::current_info();
   assert(mapinfo != nullptr, "must be");
-  return mapinfo->region_at(MetaspaceShared::ac)->used_aligned();
+  return mapinfo->region_at(AOTMetaspace::ac)->used_aligned();
 }
 
 bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {

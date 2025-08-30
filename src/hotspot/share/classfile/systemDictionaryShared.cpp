@@ -26,6 +26,7 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -38,7 +39,6 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classFileStream.hpp"
@@ -205,7 +205,7 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
 }
 
 bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
-  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::in_aot_cache(k)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(k)) {
     // We have reached a super type that's already in the base archive. Treat it
     // as "not excluded".
     return false;
@@ -300,7 +300,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
     } else if (CDSConfig::is_dumping_aot_linked_classes()) {
-      // Most loaded classes should have been speculatively linked by MetaspaceShared::link_class_for_cds().
+      // Most loaded classes should have been speculatively linked by AOTMetaspace::link_class_for_cds().
       // However, we do not speculatively link old classes, as they are not recorded by
       // SystemDictionaryShared::record_linking_constraint(). As a result, such an unlinked
       // class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
@@ -691,7 +691,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       return check_for_exclusion(ik, p);
     } else {
       // No need to check for is_linked() as all eligible classes should have
-      // already been linked in MetaspaceShared::link_class_for_cds().
+      // already been linked in AOTMetaspace::link_class_for_cds().
       // Can't take the lock as we are in safepoint.
       DumpTimeClassInfo* p = _dumptime_table->get(ik);
       if (p->is_excluded()) {
@@ -1124,7 +1124,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
     }
   }
 
-  if (!MetaspaceShared::in_aot_cache_dynamic_region(name)) {
+  if (!AOTMetaspace::in_aot_cache_dynamic_region(name)) {
     // The names of all shared classes in the static dict must also be in the
     // static archive
     record = static_dict->lookup(name, hash, 0);

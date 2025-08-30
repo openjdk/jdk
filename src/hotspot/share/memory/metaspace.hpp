@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
-class MetaspaceShared;
+class AOTMetaspace;
 class MetaspaceTracer;
 class Mutex;
 class outputStream;
@@ -43,7 +43,7 @@ class ReservedSpace;
 // (auxiliary stuff goes into MetaspaceUtils)
 class Metaspace : public AllStatic {
 
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
 
 public:
   enum MetadataType {

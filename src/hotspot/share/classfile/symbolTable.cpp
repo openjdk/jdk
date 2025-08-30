@@ -146,7 +146,7 @@ public:
            "refcount %d", value.refcount());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
-      // We have allocated with MetaspaceShared::symbol_space_alloc(). No deallocation is needed.
+      // We have allocated with AOTMetaspace::symbol_space_alloc(). No deallocation is needed.
       // Unreferenced Symbols will not be copied into the archive.
       return;
     }
@@ -185,7 +185,7 @@ private:
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
       DEBUG_ONLY(static void* last = nullptr);
-      void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
+      void* p = (void*)AOTMetaspace::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
       return p;

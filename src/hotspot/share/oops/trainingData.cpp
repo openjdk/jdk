@@ -23,7 +23,6 @@
  */
 
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
 #include "classfile/classLoaderData.hpp"
