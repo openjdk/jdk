@@ -32,6 +32,7 @@
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 
@@ -996,6 +997,11 @@ void JvmtiClassFileReconstituter::write_u8(u8 x) {
 
 void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
                                                  unsigned char* bytecodes) {
+  // We must copy bytecodes only from linked classes.
+  // Being linked guarantees we are not getting bytecodes at
+  // the same time the linking process is rewriting them.
+  guarantee(mh->method_holder()->is_linked(), "Bytecodes must be copied from a linked class");
+
   // use a BytecodeStream to iterate over the bytecodes. JVM/fast bytecodes
   // and the breakpoint bytecode are converted to their original bytecodes.
 
