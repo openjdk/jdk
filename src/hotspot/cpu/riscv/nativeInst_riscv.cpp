@@ -52,15 +52,15 @@ address NativeCall::destination() const {
   address addr = instruction_address();
   assert(NativeCall::is_at(addr), "unexpected code at call site");
 
-  address destination = MacroAssembler::target_addr_for_insn(addr);
+  address stub_addr = MacroAssembler::target_addr_for_insn(addr);
 
   CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
   nmethod *nm = (nmethod *)cb;
   assert(nm != nullptr, "Sanity");
-  assert(nm->stub_contains(destination), "Sanity");
-  assert(destination != nullptr, "Sanity");
-  return stub_address_destination_at(destination);
+  assert(nm->stub_contains(stub_addr), "Sanity");
+  assert(stub_addr!= nullptr, "Sanity");
+  return stub_address_destination_at(stub_addr);
 }
 
 address NativeCall::reloc_destination() {
@@ -89,6 +89,29 @@ void NativeCall::print() {
   tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(instruction_address()));
 }
 
+void NativeCall::optimize_call(address dest, bool mt_safe) {
+  // Skip over auipc + ld
+  address jal_pc = instruction_address() + 2 * NativeInstruction::instruction_size;
+  uint32_t *jal_pos = (uint32_t *)jal_pc;
+  // If reachable use JAL
+  if (Assembler::reachable_from_branch_at(jal_pc, dest)) {
+    int64_t distance = dest - jal_pc;
+    uint32_t new_jal = Assembler::encode_jal(ra, distance);
+    Atomic::store(jal_pos, new_jal);
+  } else if (!MacroAssembler::is_jalr_at(jal_pc)) { // The jalr is always identical: jalr ra, 0(t1)
+    uint32_t new_jal = Assembler::encode_jalr(ra, t1, 0);
+    Atomic::store(jal_pos, new_jal);
+  } else {
+    // No change to instruction stream
+    return;
+  }
+  // We changed instruction stream
+  if (mt_safe) {
+    OrderAccess::release();
+    ICache::invalidate_range(jal_pc, NativeInstruction::instruction_size);
+  }
+}
+
 bool NativeCall::set_destination_mt_safe(address dest) {
   assert(NativeCall::is_at(instruction_address()), "unexpected code at call site");
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
@@ -96,15 +119,17 @@ bool NativeCall::set_destination_mt_safe(address dest) {
          "concurrent code patching");
 
   address stub_addr = stub_address();
-  if (stub_addr != nullptr) {
-    set_stub_address_destination_at(stub_addr, dest);
-    return true;
-  }
+  assert(stub_addr != nullptr, "No stub?");
+  set_stub_address_destination_at(stub_addr, dest);
 
-  return false;
+  // patches jalr -> jal/jal -> jalr depeding on dest
+  optimize_call(dest, true);
+
+  return true;
 }
 
-bool NativeCall::reloc_set_destination(address dest) {
+// The argument passed in is the address to the stub containing the destination
+bool NativeCall::reloc_set_destination(address stub_addr) {
   address call_addr = instruction_address();
   assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
@@ -113,10 +138,12 @@ bool NativeCall::reloc_set_destination(address dest) {
 
   if (code->is_nmethod()) {
     // TODO: Need to revisit this when porting the AOT features.
-    assert(dest != nullptr, "Sanity");
-    assert(dest == trampoline_stub_Relocation::get_trampoline_for(call_addr,
-                                                          code->as_nmethod()), "Sanity");
-    MacroAssembler::pd_patch_instruction_size(call_addr, dest);
+    assert(stub_addr != nullptr, "Sanity");
+    assert(stub_addr == trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod()), "Sanity");
+    MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr); // patches auipc + ld to stub_addr
+
+    address dest = stub_address_destination_at(stub_addr);
+    optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depeding on dest
   }
 
   return true;
@@ -142,9 +169,9 @@ address NativeCall::stub_address() {
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
-  address dest = MacroAssembler::target_addr_for_insn(call_addr);
-  assert(code->contains(dest), "Sanity");
-  return dest;
+  address stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
+  assert(code->contains(stub_addr), "Sanity");
+  return stub_addr;
 }
 
 bool NativeCall::is_at(address addr) {
@@ -157,6 +184,15 @@ bool NativeCall::is_at(address addr) {
       (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
       (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
       (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
+      (MacroAssembler::extract_rd(addr + 2 * instr_size)   == x1)) {
+    return true;
+  }
+  if (MacroAssembler::is_auipc_at(addr) &&
+      MacroAssembler::is_ld_at(addr + instr_size) &&
+      MacroAssembler::is_jal_at(addr + 2 * instr_size) &&
+      (MacroAssembler::extract_rd(addr)                    == x6) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
       (MacroAssembler::extract_rd(addr + 2 * instr_size)   == x1)) {
     return true;
   }
