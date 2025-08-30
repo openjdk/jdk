@@ -38,10 +38,13 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
+import sun.nio.cs.UTF_8;
 
 /**
  * JdkConsole implementation based on the platform's TTY.
@@ -103,6 +106,36 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public char[] readPassword(Locale locale, String format, Object ... args) {
+        return readPassword0(false, locale, format, args);
+    }
+
+    // Dedicated entry for sun.security.util.Password.
+    private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
+    public static Optional<JdkConsoleImpl> passwordConsole() {
+        return INSTANCE.orElseSet(() -> {
+            // If there's already a proper console, throw an exception
+            if (System.console() != null) {
+                throw new IllegalStateException("Can’t create a dedicated password " +
+                    "console since a real console already exists");
+            }
+
+            // If stdin is NOT redirected, return a JdkConsoleImpl instance,
+            // otherwise null
+            return SharedSecrets.getJavaIOAccess().isStdinTty() ?
+                Optional.of(
+                    new JdkConsoleImpl(
+                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                Optional.empty();
+        });
+    }
+
+    // Dedicated entry for sun.security.util.Password.
+    public char[] readPasswordNoNewLine() {
+        return readPassword0(true, Locale.getDefault(Locale.Category.FORMAT), "");
+    }
+
+    private char[] readPassword0(boolean noNewLine, Locale locale, String format, Object ... args) {
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
@@ -146,7 +179,9 @@ public final class JdkConsoleImpl implements JdkConsole {
                         throw ioe;
                     }
                 }
-                pw.println();
+                if (!noNewLine) {
+                    pw.println();
+                }
             }
         }
         return passwd;
