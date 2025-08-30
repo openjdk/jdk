@@ -992,9 +992,13 @@ void ostream_exit() {
   if (tmp != &tty_preinit_stream && tmp != defaultStream::instance) {
     delete tmp;
   }
-  delete defaultStream::instance;
-  xtty = nullptr;
+  // Keep xtty usable as long as possible by ensuring we null it out before
+  // deleting anything.
+  defaultStream* ds = defaultStream::instance;
   defaultStream::instance = nullptr;
+  xtty = nullptr;
+  OrderAccess::fence(); // force visibility to concurrently executing threads
+  delete ds;
 }
 
 // ostream_abort() is called by os::abort() when VM is about to die.
