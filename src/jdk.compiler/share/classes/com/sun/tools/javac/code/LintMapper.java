@@ -77,7 +77,7 @@ import com.sun.tools.javac.util.Log;
  *
  * <p>
  * Validation events "bubble up" the source tree until either they are "caught" by a {@code @SuppressWarnings}
- * annotation, or they escape the file entirely. Being "caught" validates the corresponding suppression.
+ * annotation, or they escape the file entirely. Being caught validates the corresponding suppression.
  * A suppression that is never caught (i.e., never validated) is unnecessary.
  *
  * <p>
