@@ -536,6 +536,10 @@ public:
     return (Compile*) ciEnv::current()->compiler_data();
   }
 
+  uint stress_seed() const {
+    return _stress_seed;
+  }
+
   int interpreter_frame_size() const            { return _interpreter_frame_size; }
 
   PhaseOutput*      output() const              { return _output; }
