@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8286287 8288589
- * @summary Tests for *NoRepl() shared secret methods.
- * @run testng NoReplTest
+ * @summary Tests for *OrThrow() shared secret methods.
+ * @run testng OrThrowTest
  * @modules jdk.charsets
  */
 
@@ -39,17 +39,17 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import org.testng.annotations.Test;
 
 @Test
-public class NoReplTest {
+public class OrThrowTest {
     private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
     private final static String MALFORMED_WINDOWS_1252 = "\u0080\u041e";
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
 
     /**
-     * Verifies newStringNoRepl() throws a CharacterCodingException.
-     * The method is invoked by `Files.readString()` method.
+     * Verifies {@code uncheckedNewStringOrThrow()} throws a {@link CharacterCodingException}.
+     * The method is invoked by {@code Files.readString()} method.
      */
     @Test
-    public void newStringNoReplTest() throws IOException {
+    public void uncheckedNewStringOrThrowTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try (var fos = Files.newOutputStream(f)) {
             fos.write(MALFORMED_UTF16);
@@ -67,11 +67,11 @@ public class NoReplTest {
     }
 
     /**
-     * Verifies getBytesNoRepl() throws a CharacterCodingException.
-     * The method is invoked by `Files.writeString()` method.
+     * Verifies {@code uncheckedGetBytesOrThrow()} throws a {@link CharacterCodingException}.
+     * The method is invoked by {@code Files.writeString()} method.
      */
     @Test
-    public void getBytesNoReplTest() throws IOException {
+    public void uncheckedGetBytesOrThrowTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try {
             Files.writeString(f, MALFORMED_WINDOWS_1252, WINDOWS_1252);
