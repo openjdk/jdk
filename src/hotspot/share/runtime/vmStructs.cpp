@@ -772,13 +772,15 @@
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
                                                                                                                                      \
-  nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
+  nonstatic_field(CompileTask,                 _method_handle,                                UnloadableMethodHandle)                \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
   nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
+                                                                                                                                     \
+  nonstatic_field(UnloadableMethodHandle,      _method,                                       Method*)                               \
                                                                                                                                      \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
@@ -1266,6 +1268,7 @@
   declare_toplevel_type(FileMapHeader)                                    \
   declare_toplevel_type(CDSFileMapRegion)                                 \
   declare_toplevel_type(UpcallStub::FrameData)                            \
+  declare_toplevel_type(UnloadableMethodHandle)                           \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \
