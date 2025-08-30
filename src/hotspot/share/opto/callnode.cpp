@@ -1236,8 +1236,20 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
                                                          call_does_dispatch, not_used3);  // out-parameters
       if (!call_does_dispatch) {
-        // Register for late inlining.
-        cg->set_callee_method(callee);
+        ciMethod* old_callee = cg->callee_method();
+        if (old_callee == nullptr || old_callee == callee) {
+          // Register for late inlining.
+          cg->set_callee_method(callee);
+#ifdef ASSERT
+        } else {
+          // If callee has changed between inline attempts, check that it happens because of dynamic loading
+          Dependencies* deps = phase->C->dependencies();
+          MutexLocker ml(Compile_lock);
+          deps->encode_content_bytes();
+          assert(deps->validate_dependencies(phase->C->env()->task()) != Dependencies::end_marker,
+          "repeated inline attempt with different callee");
+#endif
+        }
         register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {
