@@ -55,8 +55,10 @@ public class TestStartupMessage {
              .shouldNotContain("Started recording")
              .shouldNotContain("Use jcmd");
 
-         // Known limitation.
-         // Can't turn off log with -Xlog:jfr+startup=warning
+        startJfrJvm("-Xlog:jfr+startup=warning")
+             .shouldNotContain("[jfr,startup")
+             .shouldNotContain("Started recording")
+             .shouldNotContain("Use jcmd");
 
          startJfrJvm()
              .shouldContain("[info][jfr,startup")
