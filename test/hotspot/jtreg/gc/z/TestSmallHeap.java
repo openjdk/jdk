@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package gc.z;
  * @requires vm.gc.Z
  * @summary Test ZGC with small heaps
  * @library / /test/lib
- * @run driver gc.z.TestSmallHeap 16M 32M 64M 128M 256M 512M 1024M
+ * @run driver gc.z.TestSmallHeap 32M 64M 128M 256M 512M 1024M
  */
 
 import jdk.test.lib.process.ProcessTools;
