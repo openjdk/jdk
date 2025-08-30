@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(3)
 public class Integers {
@@ -58,6 +58,9 @@ public class Integers {
     private int[] intsSmall;
     private int[] intsBig;
     private int[] res;
+    private int[] hexsTiny;
+    private int[] hexsSmall;
+    private int[] hexsBig;
 
     @Setup
     public void setup() {
@@ -68,11 +71,18 @@ public class Integers {
         intsSmall = new int[size];
         intsBig   = new int[size];
         res       = new int[size];
+        hexsTiny  = new int[size];
+        hexsSmall = new int[size];
+        hexsBig   = new int[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (r.nextInt(10000) - (5000));
             intsTiny[i] = r.nextInt(99);
             intsSmall[i] = 100 * i + i + 103;
             intsBig[i] = ((100 * i + i) << 24) + 4543 + i * 4;
+
+            hexsTiny[i] = r.nextInt(0xFF);
+            hexsSmall[i] = 0x100 * i + i + 0x103;
+            hexsBig[i] = ((0x100 * i + i) << 24) + 0x4543 + i * 4;
         }
     }
 
@@ -111,6 +121,27 @@ public class Integers {
     public void toStringBig(Blackhole bh) {
         for (int i : intsBig) {
             bh.consume(Integer.toString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringTiny(Blackhole bh) {
+        for (int i : hexsTiny) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (int i : hexsSmall) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringBig(Blackhole bh) {
+        for (int i : hexsBig) {
+            bh.consume(Integer.toHexString(i));
         }
     }
 
