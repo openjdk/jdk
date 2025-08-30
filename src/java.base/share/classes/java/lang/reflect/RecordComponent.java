@@ -198,7 +198,7 @@ public final class RecordComponent implements AnnotatedElement {
                                 annotations,
                                 SharedSecrets.getJavaLangAccess()
                                         .getConstantPool(getDeclaringRecord()),
-                                getDeclaringRecord());
+                                getDeclaringRecord(), true);
                     }
                     declaredAnnotations = declAnnos;
                 }

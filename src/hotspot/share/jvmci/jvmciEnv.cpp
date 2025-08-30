@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -1603,6 +1604,30 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
                                       (jint)fieldinfo->access_flags().as_field_flags(),
                                       (jint)fieldinfo->field_flags().as_uint(),
                                       (jint)fieldinfo->initializer_index());
+
+    return wrap(result);
+  }
+}
+
+JVMCIObject JVMCIEnv::new_HotSpotResolvedJavaRecordComponent(JVMCIObject declaringRecord, int index, RecordComponent* rc, JVMCI_TRAPS) {
+  JavaThread* THREAD = JavaThread::current();
+  if (is_hotspot()) {
+    JavaCallArguments args;
+    args.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(declaringRecord)));
+    args.push_int(index);
+    args.push_int(rc->name_index());
+    args.push_int(rc->descriptor_index());
+    Handle obj_h = JavaCalls::construct_new_instance(HotSpotJVMCI::HotSpotResolvedJavaRecordComponent::klass(),
+                                      vmSymbols::HotSpotResolvedJavaRecordComponent_constructor_signature(),
+                                      &args,
+                                      THREAD);
+    return wrap(obj_h());
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jobject result = jni()->NewObject(JNIJVMCI::HotSpotResolvedJavaRecordComponent::clazz(),
+                                      JNIJVMCI::HotSpotResolvedJavaRecordComponent::constructor(),
+                                      (jint)rc->name_index(),
+                                      (jint)rc->descriptor_index());
 
     return wrap(result);
   }

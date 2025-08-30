@@ -84,6 +84,9 @@
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
+  start_class(HotSpotResolvedJavaRecordComponent, jdk_vm_ci_hotspot_HotSpotResolvedJavaRecordComponent)       \
+    jvmci_constructor(HotSpotResolvedJavaRecordComponent, "(Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;III)V") \
+  end_class                                                                                                   \
   start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
     long_field(HotSpotMethodData, methodDataPointer)                                                          \
   end_class                                                                                                   \
@@ -166,6 +169,8 @@
   end_class                                                                                                   \
   start_class(ResolvedJavaMethod, jdk_vm_ci_meta_ResolvedJavaMethod)                                          \
   end_class                                                                                                   \
+  start_class(ResolvedJavaRecordComponent, jdk_vm_ci_meta_ResolvedJavaRecordComponent)                        \
+  end_class                                                                                                   \
   start_class(PrimitiveConstant, jdk_vm_ci_meta_PrimitiveConstant)                                            \
     object_field(PrimitiveConstant, kind, "Ljdk/vm/ci/meta/JavaKind;")                                        \
     long_field(PrimitiveConstant, primitive)                                                                  \
@@ -233,6 +238,10 @@
   start_class(VMSupport, jdk_internal_vm_VMSupport)                                                           \
     jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature) \
     jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, decodeAndThrowThrowable_signature) \
+    static_int_field(VMSupport, DECLARED_ANNOTATIONS)                                                         \
+    static_int_field(VMSupport, PARAMETER_ANNOTATIONS)                                                        \
+    static_int_field(VMSupport, TYPE_ANNOTATIONS)                                                             \
+    static_int_field(VMSupport, ANNOTATION_MEMBER_VALUE)                                                      \
   end_class                                                                                                   \
   start_class(ArrayIndexOutOfBoundsException, java_lang_ArrayIndexOutOfBoundsException)                       \
     jvmci_constructor(ArrayIndexOutOfBoundsException, "(Ljava/lang/String;)V")                                \

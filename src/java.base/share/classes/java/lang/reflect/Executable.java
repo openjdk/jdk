@@ -669,8 +669,8 @@ public abstract sealed class Executable extends AccessibleObject
                                 getAnnotationBytes(),
                                 SharedSecrets.getJavaLangAccess().
                                         getConstantPool(getDeclaringClass()),
-                                getDeclaringClass()
-                        );
+                                getDeclaringClass(),
+                                true);
                     }
                     declaredAnnotations = declAnnos;
                 }

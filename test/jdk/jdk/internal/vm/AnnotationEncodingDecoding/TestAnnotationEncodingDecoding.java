@@ -23,51 +23,49 @@
 
 /*
  * @test
- * @compile AnnotationTestInput.java MemberDeleted.java MemberTypeChanged.java
+ * @compile AnnotationTestInput.java MemberAdded.java MemberDeleted.java MemberTypeChanged.java
  * @modules java.base/jdk.internal.vm
  *          java.base/sun.reflect.annotation
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile alt/MemberDeleted.java alt/MemberTypeChanged.java
  * @run testng/othervm
  *      jdk.internal.vm.test.TestAnnotationEncodingDecoding
  */
 package jdk.internal.vm.test;
 
+import jdk.internal.vm.VMSupport;
+import jdk.internal.vm.VMSupport.AnnotationDecoder;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import sun.reflect.annotation.AnnotationSupport;
+import sun.reflect.annotation.ExceptionProxy;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeNotPresentExceptionProxy;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import sun.reflect.annotation.AnnotationSupport;
-import sun.reflect.annotation.AnnotationParser;
-import sun.reflect.annotation.ExceptionProxy;
-
-import jdk.internal.vm.VMSupport;
-import jdk.internal.vm.VMSupport.AnnotationDecoder;
 
 public class TestAnnotationEncodingDecoding {
 
     @Test
     public void encodeDecodeTest() throws Exception {
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredField("annotatedField"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.AnnotatedClass.class);
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredField("annotatedField"));
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.AnnotatedClass.class);
 
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"), true);
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"), false);
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"), false);
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"), true);
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"), false);
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("missingMember"));
+        checkDecodedEqualsEncoded(jdk.internal.vm.test.AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"), false);
     }
 
     private void checkDecodedEqualsEncoded(AnnotatedElement annotated) {
@@ -80,7 +78,13 @@ public class TestAnnotationEncodingDecoding {
             return;
         }
 
-        byte[] encoded = VMSupport.encodeAnnotations(List.of(annotations));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+        try (DataOutputStream dos = new DataOutputStream(baos)) {
+            VMSupport.encodeAnnotations(dos, List.of(annotations));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        byte[] encoded = baos.toByteArray();
         MyDecoder decoder = new MyDecoder();
         List<AnnotationConst> decoded = VMSupport.decodeAnnotations(encoded, decoder);
         int i = 0;
@@ -120,6 +124,7 @@ public class TestAnnotationEncodingDecoding {
             this.elements = Map.ofEntries(elements);
         }
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         AnnotationConst(Annotation a) {
             Map<String, Object> values = AnnotationSupport.memberValues(a);
             this.type = a.annotationType();
@@ -133,8 +138,7 @@ public class TestAnnotationEncodingDecoding {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof AnnotationConst) {
-                AnnotationConst that = (AnnotationConst) obj;
+            if (obj instanceof AnnotationConst that) {
                 return this.type.equals(that.type) &&
                         this.elements.equals(that.elements);
             }
@@ -148,10 +152,17 @@ public class TestAnnotationEncodingDecoding {
 
         private Object decodeValue(Object value) {
             Class<?> valueType = value.getClass();
-            if (value instanceof Enum) {
-                return new EnumConst(valueType, ((Enum<?>) value).name());
-            } else if (value instanceof Annotation) {
-                return new AnnotationConst((Annotation) value);
+            if (value instanceof Enum<?> e) {
+                return new EnumConst(valueType, e.name());
+            } else if (value instanceof Annotation a) {
+                return new AnnotationConst(a);
+            } else if (value instanceof Enum<?>[] ea) {
+                int len = ea.length;
+                String[] arr = new String[len];
+                for (int i = 0; i < len; i++) {
+                    arr[i] = ea[i].name();
+                }
+                return new EnumArrayConst(valueType.getComponentType(), List.of(arr));
             } else if (valueType.isArray()) {
                 int len = Array.getLength(value);
                 Object[] arr = new Object[len];
@@ -168,6 +179,33 @@ public class TestAnnotationEncodingDecoding {
 
         public Class<?> getType() {
             return type;
+        }
+    }
+
+    public static final class TypeAnnotationConst {
+        final TypeAnnotation.TypeAnnotationTargetInfo targetInfo;
+        final TypeAnnotation.LocationInfo locationInfo;
+        final AnnotationConst annotation;
+
+        TypeAnnotationConst(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, AnnotationConst annotation) {
+            this.targetInfo = targetInfo;
+            this.locationInfo = locationInfo;
+            this.annotation = annotation;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TypeAnnotationConst that) {
+                return this.targetInfo.equals(that.targetInfo) &&
+                        this.locationInfo.equals(that.locationInfo) &&
+                        this.annotation.equals(that.annotation);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + targetInfo + ";" + locationInfo + "}" + annotation;
         }
     }
 
@@ -207,8 +245,7 @@ public class TestAnnotationEncodingDecoding {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof EnumConst) {
-                EnumConst that = (EnumConst) obj;
+            if (obj instanceof EnumConst that) {
                 return this.type.equals(that.type) &&
                         this.name.equals(that.name);
             }
@@ -220,16 +257,40 @@ public class TestAnnotationEncodingDecoding {
             return type.getName() + "." + name;
         }
 
-        public Class<?> getEnumType() {
-            return type;
-        }
-
         public String getName() {
             return name;
         }
     }
 
-    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, ErrorConst> {
+    public static final class EnumArrayConst {
+        final Class<?> type;
+        final List<String> names;
+
+        public EnumArrayConst(Class<?> type, List<String> names) {
+            this.type = type;
+            this.names = names;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof EnumArrayConst that) {
+                return this.type.equals(that.type) &&
+                        this.names.equals(that.names);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "." + names;
+        }
+
+        public List<String> getNames() {
+            return names;
+        }
+    }
+
+    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, TypeAnnotationConst, EnumConst, EnumArrayConst, ErrorConst, ErrorConst> {
         @Override
         public Class<?> resolveType(String name) {
             try {
@@ -245,13 +306,29 @@ public class TestAnnotationEncodingDecoding {
         }
 
         @Override
-        public EnumConst newEnumValue(Class<?> enumType, String name) {
+        public TypeAnnotationConst newTypeAnnotation(TypeAnnotation.TypeAnnotationTargetInfo targetInfo, TypeAnnotation.LocationInfo locationInfo, AnnotationConst annotation) {
+            return new TypeAnnotationConst(targetInfo, locationInfo, annotation);
+        }
+
+        @Override
+        public EnumConst newEnum(Class<?> enumType, String name) {
             return new EnumConst(enumType, name);
         }
 
         @Override
-        public ErrorConst newErrorValue(String description) {
+        public EnumArrayConst newEnumArray(Class<?> enumType, List<String> names) {
+            return new EnumArrayConst(enumType, names);
+        }
+
+        @Override
+        public ErrorConst newMissingType(String typeName) {
+            String description = new TypeNotPresentExceptionProxy(typeName, null).toString();
             return new ErrorConst(description);
+        }
+
+        @Override
+        public ErrorConst newElementTypeMismatch(String foundType) {
+            return new ErrorConst("/* Warning type mismatch! \"" + foundType + "\" */");
         }
     }
 }

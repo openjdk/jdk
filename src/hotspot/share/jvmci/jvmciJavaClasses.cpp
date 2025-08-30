@@ -403,7 +403,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
   GET_JNI_CONSTRUCTOR(className, signature)
 
 extern "C" {
-  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
+  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass, jint declaredAnnotations, jint parameterAnnotations, jint typeAnnotations);
   jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
   jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle);
 }
