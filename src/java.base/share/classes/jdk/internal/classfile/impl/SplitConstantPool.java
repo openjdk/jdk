@@ -129,6 +129,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         if (bsmSize == 0)
             return false;
         int pos = buf.size();
+        Util.checkU2(bsmSize, "num bootstrap methods");
         if (parent != null && parentBsmSize != 0) {
             parent.writeBootstrapMethods(buf);
             for (int i = parentBsmSize; i < bsmSize; i++)
@@ -160,15 +161,14 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     void writeTo(BufWriterImpl buf) {
         int writeFrom = 1;
-        if (size() >= 65536) {
-            throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
-        }
-        buf.writeU2(size());
+        int mySize = size();
+        Util.checkU2(mySize, "constant pool count");
+        buf.writeU2(mySize);
         if (parent != null && buf.constantPool().canWriteDirect(this)) {
             parent.writeConstantPoolEntries(buf);
             writeFrom = parent.size();
         }
-        for (int i = writeFrom; i < size(); ) {
+        for (int i = writeFrom; i < mySize; ) {
             var info = (AbstractPoolEntry) entryByIndex(i);
             info.writeTo(buf);
             i += info.width();

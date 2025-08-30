@@ -276,9 +276,7 @@ public final class BufWriterImpl implements BufWriter {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         int utflen = utfLen(str, countNonZeroAscii);
-        if (utflen > 65535) {
-            throw new IllegalArgumentException("string too long");
-        }
+        Util.checkU2(utflen, "utf8 length");
         reserveSpace(utflen + 3);
 
         int offset = this.offset;
