@@ -5370,3 +5370,145 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
 void Compile::record_method_not_compilable_oom() {
   record_method_not_compilable(CompilationMemoryStatistic::failure_reason_memlimit());
 }
+
+#ifndef PRODUCT
+static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Node_List& candidates) {
+  // Follow non-control edges until we reach CFG nodes
+  for (uint i = 0; i < worklist.size(); i++) {
+    const Node* n = worklist.at(i);
+    for (uint j = 0; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in != nullptr && !in->is_Root()) {
+        if (in->is_CFG()) {
+          if (in->is_Multi()) {
+            candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
+          } else {
+            candidates.push(in);
+          }
+        } else {
+          worklist.push(in);
+        }
+      }
+    }
+  }
+}
+
+// Returns a candidate node whose CFG predecessors cover all other candidates
+static Node* pick_control(const Unique_Node_List& candidates) {
+  const uint num_candidates = candidates.size();
+  for (uint i = 0; i < num_candidates; i++) {
+    Node* candidate = candidates.at(i);
+    uint matching_predecessors = 0;
+    Unique_Node_List worklist;
+    worklist.push(candidate);
+
+    // Traverse backwards through the CFG
+    for (uint j = 0; j < worklist.size(); j++) {
+      Node* n = worklist.at(j);
+      if (n->is_Root()) {
+        continue;
+      }
+      for (uint k = 0; k < n->req(); k++) {
+        Node* pred = n->in(k);
+        if (pred == nullptr) {
+          continue;
+        }
+        // Skip backedge of loops to avoid cycles
+        if (n->is_Loop() && k == LoopNode::LoopBackControl) {
+          continue;
+        }
+        // Count candidates that we have encountered
+        if (candidates.member(pred) && !worklist.member(pred)) {
+          matching_predecessors++;
+        }
+
+        if (pred->is_CFG()) {
+          worklist.push(pred);
+        }
+      }
+    }
+    if (matching_predecessors == num_candidates - 1) {
+      return candidate;
+    }
+  }
+  ShouldNotReachHere();
+  return nullptr;
+}
+
+Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0, Node* parm1,
+                              Node* parm2, Node* parm3,
+                              Node* parm4, Node* parm5,
+                              Node* parm6) const {
+  Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
+  const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
+  Node *call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+
+  // find the most suitable control input
+  Unique_Node_List worklist, candidates;
+  if (parm0 != nullptr) { worklist.push(parm0);
+  if (parm1 != nullptr) { worklist.push(parm1);
+  if (parm2 != nullptr) { worklist.push(parm2);
+  if (parm3 != nullptr) { worklist.push(parm3);
+  if (parm4 != nullptr) { worklist.push(parm4);
+  if (parm5 != nullptr) { worklist.push(parm5);
+  if (parm6 != nullptr) { worklist.push(parm6);
+  /* close each nested if ===> */  } } } } } } }
+
+  find_candidate_control_inputs(worklist, candidates);
+  Node* control = nullptr;
+  if (candidates.size() == 0) {
+    control = C->start()->proj_out(TypeFunc::Control);
+  } else {
+    control = pick_control(candidates);
+  }
+
+  Node* frame_ptr = C->start()->proj_out(TypeFunc::FramePtr);
+
+  // we do not actually care about IO and memory as it uses neither
+  call->init_req(TypeFunc::Control,   control);
+  call->init_req(TypeFunc::I_O,       top());
+  call->init_req(TypeFunc::Memory,    top());
+  call->init_req(TypeFunc::FramePtr,  frame_ptr);
+  call->init_req(TypeFunc::ReturnAdr, top());
+
+  call->init_req(TypeFunc::Parms+0, str_node);
+  if (parm0 != nullptr) { call->init_req(TypeFunc::Parms+1, parm0);
+  if (parm1 != nullptr) { call->init_req(TypeFunc::Parms+2, parm1);
+  if (parm2 != nullptr) { call->init_req(TypeFunc::Parms+3, parm2);
+  if (parm3 != nullptr) { call->init_req(TypeFunc::Parms+4, parm3);
+  if (parm4 != nullptr) { call->init_req(TypeFunc::Parms+5, parm4);
+  if (parm5 != nullptr) { call->init_req(TypeFunc::Parms+6, parm5);
+  if (parm6 != nullptr) { call->init_req(TypeFunc::Parms+7, parm6);
+  /* close each nested if ===> */  } } } } } } }
+  assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
+
+  call = gvn->transform(call);
+  Node* call_control_proj = gvn->transform(new ProjNode(call, TypeFunc::Control));
+
+  GrowableArray<Node*> users_of_control;
+  for (DUIterator_Fast kmax, k = control->fast_outs(kmax); k < kmax; k++) {
+    Node* use = control->fast_out(k);
+    if (use->is_CFG() && use != control && use != call) {
+      users_of_control.push(use);
+    }
+  }
+
+  PhaseIterGVN* igvn = gvn->is_IterGVN();
+  for (int k = 0; k < users_of_control.length(); k++) {
+    Node* use = users_of_control.at(k);
+    for (uint j = 0; j < use->req(); j++) {
+      Node* def = use->in(j);
+      if (def == control) {
+        if (igvn != nullptr) {
+          igvn->replace_input_of(use, j, call_control_proj);
+        } else if (gvn != nullptr) {
+          use->set_req(j, call_control_proj);
+        }
+      }
+    }
+  }
+
+  return call;
+}
+#endif // !PRODUCT
