@@ -48,12 +48,12 @@
 // the single writer at a time restriction.  Use this only in
 // situations where GlobalCounter won't work for some reason.
 class SingleWriterSynchronizer {
-  volatile uint _enter;
-  volatile uint _exit[2];
-  volatile uint _waiting_for;
+  AtomicValue<uint> _enter;
+  AtomicValue<uint> _exit[2];
+  AtomicValue<uint> _waiting_for;
   Semaphore _wakeup;
 
-  DEBUG_ONLY(volatile uint _writers;)
+  DEBUG_ONLY(AtomicValue<uint> _writers;)
 
   NONCOPYABLE(SingleWriterSynchronizer);
 
@@ -87,15 +87,15 @@ public:
 };
 
 inline uint SingleWriterSynchronizer::enter() {
-  return Atomic::add(&_enter, 2u);
+  return _enter.add_then_fetch(2u);
 }
 
 inline void SingleWriterSynchronizer::exit(uint enter_value) {
-  uint exit_value = Atomic::add(&_exit[enter_value & 1], 2u);
+  uint exit_value = _exit[enter_value & 1].add_then_fetch(2u);
   // If this exit completes a synchronize request, wakeup possibly
   // waiting synchronizer.  Read of _waiting_for must follow the _exit
   // update.
-  if (exit_value == _waiting_for) {
+  if (exit_value == _waiting_for.load_relaxed()) {
     _wakeup.signal();
   }
 }
