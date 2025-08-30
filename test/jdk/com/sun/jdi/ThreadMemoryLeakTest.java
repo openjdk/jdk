@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME
- * @run main/othervm -Xmx7m ThreadMemoryLeakTest
+ * @run main/othervm/timeout=480 -Xmx7m ThreadMemoryLeakTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

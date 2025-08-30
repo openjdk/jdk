@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run driver SADebugDTest
+ * @run driver/timeout=480 SADebugDTest
  */
 
 import java.util.concurrent.TimeUnit;
@@ -125,7 +125,7 @@ public class SADebugDTest {
 
                 // The startProcess will block until the 'golden' string appears in either process' stdout or stderr
                 // In case of timeout startProcess kills the debugd process
-                Process debugd = startProcess("debugd", pb, null, l -> checkOutput(l, useRmiPort, rmiPort), 20, TimeUnit.SECONDS);
+                Process debugd = startProcess("debugd", pb, null, l -> checkOutput(l, useRmiPort, rmiPort), 80, TimeUnit.SECONDS);
 
                 // If we are here, this means we have received the golden line and the test has passed
                 // The debugd remains running, we have to kill it

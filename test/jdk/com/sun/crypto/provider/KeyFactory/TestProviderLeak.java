@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary com.sun.crypto.provider.SunJCE instance leak using KRB5 and
  *     LoginContext
  * @author Brad Wetmore
+ * @library /test/lib
  *
  * @run main/othervm -Xmx20m TestProviderLeak
  *
@@ -47,6 +48,7 @@ import javax.crypto.spec.*;
 import java.util.*;
 import java.util.concurrent.*;
 import jdk.test.lib.security.SecurityUtils;
+import jdk.test.lib.Utils;
 
 public class TestProviderLeak {
     private static final int MB = 1024 * 1024;
@@ -59,9 +61,7 @@ public class TestProviderLeak {
     static {
         int timeout = 5;
         try {
-            double timeoutFactor = Double.parseDouble(
-                    System.getProperty("test.timeout.factor", "1.0"));
-            timeout = (int) (timeout * timeoutFactor);
+            timeout = (int) (timeout * Utils.TIMEOUT_FACTOR);
         } catch (Exception e) {
             System.out.println("Warning: " + e);
         }
