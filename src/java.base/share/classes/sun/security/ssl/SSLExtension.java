@@ -458,6 +458,28 @@ enum SSLExtension implements SSLStringizer {
                                 null, null, null, null,
                                 KeyShareExtension.hrrStringizer),
 
+    // Extension defined in RFC 9001
+    CH_QUIC_TRANSPORT_PARAMETERS     (0x0039, "quic_transport_parameters",
+            SSLHandshake.CLIENT_HELLO,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            QuicTransportParametersExtension.chNetworkProducer,
+            QuicTransportParametersExtension.chOnLoadConsumer,
+            QuicTransportParametersExtension.chOnLoadAbsence,
+            null,
+            null,
+            // TODO properly stringize, rather than hex output.
+            null),
+    EE_QUIC_TRANSPORT_PARAMETERS     (0x0039, "quic_transport_parameters",
+            SSLHandshake.ENCRYPTED_EXTENSIONS,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            QuicTransportParametersExtension.eeNetworkProducer,
+            QuicTransportParametersExtension.eeOnLoadConsumer,
+            QuicTransportParametersExtension.eeOnLoadAbsence,
+            null,
+            null,
+            // TODO properly stringize, rather than hex output
+            null),
+
     // Extensions defined in RFC 5746 (TLS Renegotiation Indication Extension)
     CH_RENEGOTIATION_INFO   (0xff01, "renegotiation_info",
                                 SSLHandshake.CLIENT_HELLO,
@@ -820,7 +842,10 @@ enum SSLExtension implements SSLStringizer {
     private static Collection<String> getDisabledExtensions(
                 String propertyName) {
         String property = System.getProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        // this method is called from class initializer; logging here
+        // will occasionally pin threads and deadlock if called from a virtual thread
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+                && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                             property + "'");

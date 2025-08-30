@@ -25,13 +25,14 @@
  * @test
  * @summary Checks correct handling of Publishers that call onComplete without demand
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm CustomRequestPublisher
  */
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient.Builder;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
@@ -57,9 +58,12 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -70,10 +74,12 @@ public class CustomRequestPublisher implements HttpServerAdapters {
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     @DataProvider(name = "variants")
     public Object[][] variants() {
@@ -98,19 +104,26 @@ public class CustomRequestPublisher implements HttpServerAdapters {
                 { http2URI,  unknownSupplier, true },
                 { https2URI, fixedSupplier,   true,},
                 { https2URI, unknownSupplier, true },
+                { http3URI,  fixedSupplier,   true,},  // always use same client with h3
+                { http3URI,  unknownSupplier, true },  // always use same client with h3
         };
     }
 
     static final int ITERATION_COUNT = 10;
 
     /** Asserts HTTP Version, and SSLSession presence when applicable. */
-    static void assertVersionAndSession(HttpResponse response, String uri) {
-        if (uri.contains("http2") || uri.contains("https2"))
+    static void assertVersionAndSession(int step, HttpResponse response, String uri) {
+        if (uri.contains("http2") || uri.contains("https2")) {
             assertEquals(response.version(), HTTP_2);
-        else if (uri.contains("http1") || uri.contains("https1"))
+        } else if (uri.contains("http1") || uri.contains("https1")) {
             assertEquals(response.version(), HTTP_1_1);
-        else
+        } else if (uri.contains("http3")) {
+            if (step == 0) assertNotEquals(response.version(), HTTP_1_1);
+            else assertEquals(response.version(), HTTP_3,
+                    "unexpected response version on step " + step);
+        } else {
             fail("Unknown HTTP version in test for: " + uri);
+        }
 
         Optional<SSLSession> ssl = response.sslSession();
         if (uri.contains("https")) {
@@ -125,6 +138,28 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         }
     }
 
+    HttpClient.Builder newHttpClientBuilder(String uri) {
+        HttpClient.Builder builder;
+        if (uri.contains("/http3/")) {
+            builder = newClientBuilderForH3();
+            // ensure that the preferred version for the client
+            // is HTTP/3
+            builder.version(HTTP_3);
+        } else builder = HttpClient.newBuilder();
+        return builder.proxy(Builder.NO_PROXY);
+    }
+
+    HttpRequest.Builder newHttpRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (uri.contains("/http3/") && !http3TestServer.supportsH3DirectConnection()) {
+            // Ensure we don't attempt to connect to a
+            // potentially different server if HTTP/3 endpoint and
+            // HTTP/2 endpoint are not on the same port
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "variants")
     void test(String uri, Supplier<BodyPublisher> bpSupplier, boolean sameClient)
             throws Exception
@@ -132,10 +167,10 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
-                client = HttpClient.newBuilder().sslContext(sslContext).build();
+                client = newHttpClientBuilder(uri).sslContext(sslContext).build();
 
             BodyPublisher bodyPublisher = bpSupplier.get();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest request = newHttpRequestBuilder(uri)
                     .POST(bodyPublisher)
                     .build();
 
@@ -147,7 +182,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
                     "Expected 200, got:" + resp.statusCode());
             assertEquals(resp.body(), bodyPublisher.bodyAsString());
 
-            assertVersionAndSession(resp, uri);
+            assertVersionAndSession(i, resp, uri);
         }
     }
 
@@ -158,10 +193,10 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
-                client = HttpClient.newBuilder().sslContext(sslContext).build();
+                client = newHttpClientBuilder(uri).sslContext(sslContext).build();
 
             BodyPublisher bodyPublisher = bpSupplier.get();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest request = newHttpRequestBuilder(uri)
                     .POST(bodyPublisher)
                     .build();
 
@@ -174,7 +209,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
                     "Expected 200, got:" + resp.statusCode());
             assertEquals(resp.body(), bodyPublisher.bodyAsString());
 
-            assertVersionAndSession(resp, uri);
+            assertVersionAndSession(0, resp, uri);
         }
     }
 
@@ -325,10 +360,15 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        http3TestServer.addHandler(new HttpTestEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -337,6 +377,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
     }
 
 }

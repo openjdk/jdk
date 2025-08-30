@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
-import org.testng.TestException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
@@ -64,7 +63,6 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.function.BiPredicate;
 
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -220,18 +218,18 @@ public class TrailingHeadersTest {
         }
 
         @Override
-        public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content) {
             HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
             headersBuilder.setHeader(":method", "GET");
             headersBuilder.setHeader(":scheme", uri.getScheme());
             headersBuilder.setHeader(":authority", uri.getAuthority());
             headersBuilder.setHeader(":path", uri.getPath());
-            for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+            for (Map.Entry<String,List<String>> entry : reqHeaders.map().entrySet()) {
                 for (String value : entry.getValue())
                     headersBuilder.addHeader(entry.getKey(), value);
             }
             HttpHeaders combinedHeaders = headersBuilder.build();
-            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
+            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, rspHeaders, content);
             pp.setFlag(HeaderFrame.END_HEADERS);
 
             try {
@@ -311,7 +309,7 @@ public class TrailingHeadersTest {
 
         static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
 
-        private void pushPromise(Http2TestExchange exchange) {
+        private void pushPromise(Http2TestExchange exchange) throws IOException {
             URI requestURI = exchange.getRequestURI();
             URI uri = requestURI.resolve("/promise");
             InputStream is = new ByteArrayInputStream("Sample_Push_Data".getBytes(UTF_8));

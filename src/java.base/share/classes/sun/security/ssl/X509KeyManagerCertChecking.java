@@ -75,6 +75,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
 
     abstract boolean isCheckingDisabled();
 
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicServerAlias(String keyType,
+                                          X500Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
     // Entry point to do all certificate checks.
     protected EntryStatus checkAlias(int keyStoreIndex, String alias,
             Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
@@ -221,6 +230,26 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         return SSLAlgorithmConstraints.forEngine(engine, true);
+    }
+
+    // Gets algorithm constraints of QUIC TLS engine.
+    protected AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
+
+        if (checksDisabled) {
+            return null;
+        }
+
+        if (engine != null) {
+            SSLSession session = engine.getHandshakeSession();
+            if (session instanceof ExtendedSSLSession extSession) {
+                // QUIC TLS version is mandated to be always TLSv1.3
+                String[] peerSupportedSignAlgs =
+                        extSession.getPeerSupportedSignatureAlgorithms();
+                return SSLAlgorithmConstraints.forQUIC(engine,
+                        peerSupportedSignAlgs, true);
+            }
+        }
+        return SSLAlgorithmConstraints.forQUIC(engine, true);
     }
 
     // Algorithm constraints check.
