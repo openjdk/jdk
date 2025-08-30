@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-/*
+/**
  * Implements the AES cipher, which is based on the following sepcifications:
  *
  * i) https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
@@ -747,10 +747,10 @@ public final class AESCrypt extends SymmetricCipher {
     /**
      * Check algorithm and initalize round keys for decryption and encryption.
      * 
-     * @param decrypting indicates if encrypting ({@code false}) or decrypting
-     *      ({@code true}).
-     * @param algorithm the case insentive string name for the AES cipher.
-     * @param key the symmetric key material for encryption/decryption.
+     * @param decrypting [in] indicates if encrypting ({@code false}) or
+     *      decrypting ({@code true}).
+     * @param algorithm [in] the case insentive string name for the AES cipher.
+     * @param key [in] the symmetric key byte array for encryption/decryption.
      *
      * @throws InvalidKeyException if an incorrect algorithm is given or if
      * an invalid key size is provided.
@@ -778,8 +778,8 @@ public final class AESCrypt extends SymmetricCipher {
                     "Invalid key length (" + key.length + ").");
         }
         if (!Arrays.equals(prevKey, key)) {
-            expandedKey = genRKeys(rounds, key, nk);
-            invExpandedKey = invGenRKeys(expandedKey, rounds, nk);
+            expandedKey = genRKeys(key, nk);
+            invExpandedKey = invGenRKeys();
 
             if (sessionK == null) {
                 sessionK = new int[2][];
@@ -797,9 +797,17 @@ public final class AESCrypt extends SymmetricCipher {
         K = sessionK[decrypt];
     }
 
-    private int[] genRKeys(int r, byte[] key, int nk) {
+    /**
+     * Generate the cipher round keys.
+     *
+     * @param key [in] the symmetric key byte array.
+     * @param nk [in] the number of words in the key.
+     *
+     * @return w the cipher round keys.
+     */
+    private int[] genRKeys(byte[] key, int nk) {
         int len = WB, tmp, rW, SubWord, g;
-        int[] w = new int[len * (r + 1)];
+        int[] w = new int[len * (rounds + 1)];
 
         for (int i = 0; i < nk; i++) {
             w[i] = ((key[i * len] & 0xFF) << 24)
@@ -807,7 +815,7 @@ public final class AESCrypt extends SymmetricCipher {
                     | ((key[(i * len) + 2] & 0xFF) << 8)
                     | (key[(i * len) + 3] & 0xFF);
         }
-        for (int i = nk; i < len * (r + 1); i++) {
+        for (int i = nk; i < len * (rounds + 1); i++) {
             tmp = w[i - 1];
             if (i % nk == 0) {
                 rW = (tmp << 8) & 0xFFFFFF00 | (tmp >> 24) & 0x000000FF;
@@ -824,6 +832,14 @@ public final class AESCrypt extends SymmetricCipher {
         return w;
     }
 
+    /**
+     * Performs the inverse cipher mix column matrix multiplication per row.
+     *
+     * @param state [in, out] the round key for inverse mix column processing.
+     * @param idx [in] the column index of the round key to process.
+     *
+     * @return the processed round key row.
+     */
     private static int invMix(int[] state, int idx) {
         // Utilize lookup tables for the inverse mix column transformation to
         // help mitigate against timing attacks.
@@ -835,7 +851,7 @@ public final class AESCrypt extends SymmetricCipher {
         // Add columns
         return a0 ^ a1 ^ a2 ^ a3;
 
-        /*
+        /**
          * If we want to repurpose the inverse lookup tables for mix column
          * transform of the inverse expansion key - saves 4KB of memory with the
          * cost of 19.7% of decreased performance of key reinitialization:
@@ -851,7 +867,12 @@ public final class AESCrypt extends SymmetricCipher {
         */
     }
 
-    private static void invGenMix(int[] state) {
+    /**
+     * Performs the inverse cipher mix column on the round key.
+     *
+     * @param state [in, out] the round key for inverse mix column processing.
+     */
+    private static void invMixRKey(int[] state) {
         int len = WB;
         int[] mSum = new int[len];
 
@@ -863,40 +884,58 @@ public final class AESCrypt extends SymmetricCipher {
         System.arraycopy(mSum, 0, state, 0, len);
     }
 
-    private int[] invGenRKeys(int[] w, int r, int nk) {
+    /**
+     * Generate the inverse cipher round keys.
+     *
+     * @return w1 the inverse cipher round keys.
+     */
+    private int[] invGenRKeys() {
         int len = WB;
         int[] wM = new int[len];
-        int[] w1 = new int[w.length];
+        int[] w1 = new int[expandedKey.length];
 
-        // Intrinsics requires the inverse key expansion to be a circular shift
-        // to the right, resulting in the first two round keys without mix
-        // column transform.
-        for (int i = 1; i < r; i++) {
-            System.arraycopy(w, i * len, wM, 0, len);
-            invGenMix(wM);
-            System.arraycopy(wM, 0, w1, w.length - i * len, len);
+        // Intrinsics requires the inverse key expansion to be reverse order
+        // except for the first and last round key as the first two round keys
+        // without a mix column transform.
+        for (int i = 1; i < rounds; i++) {
+            System.arraycopy(expandedKey, i * len, wM, 0, len);
+            invMixRKey(wM);
+            System.arraycopy(wM, 0, w1, expandedKey.length - i * len, len);
         }
-        System.arraycopy(w, w.length - len, w1, len, len);
-        System.arraycopy(w, 0, w1, 0, len);
+        System.arraycopy(expandedKey, expandedKey.length - len, w1, len, len);
+        System.arraycopy(expandedKey, 0, w1, 0, len);
         Arrays.fill(wM, 0);
 
         return w1;
     }
 
+    /**
+     * Subtitute the byte as a step of key expansion.
+     *
+     * @param state [in] the targeted word for substituion.
+     * @param sub [in] the substitute table for cipher and inverse cipher.
+     *
+     * @return the substituted word.
+     */
     private int subByte(int state, byte[][] sub) {
         byte b0 = (byte) ((state >> 24) & 0xFF);
         byte b1 = (byte) ((state >> 16) & 0xFF);
         byte b2 = (byte) ((state >> 8) & 0xFF);
         byte b3 = (byte) (state & 0xFF);
 
-        state = ((sub[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
+        return ((sub[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
                 | ((sub[(b1 & 0xF0) >> 4][b1 & 0x0F] & 0xFF) << 16)
                 | ((sub[(b2 & 0xF0) >> 4][b2 & 0x0F] & 0xFF) << 8)
                 | (sub[(b3 & 0xF0) >> 4][b3 & 0x0F] & 0xFF);
-
-        return state;
     }
 
+    /**
+     * Add the round key to the block.
+     *
+     * @param state [in, out] the block to add the round key to.
+     * @param wi [in] the round key to add to the block.
+     * @param offset [in] the offset to the associated round key.
+     */
     private void addRoundKey(int[] state, int[] wi, int offset) {
         state[0] ^= wi[offset];
         state[1] ^= wi[offset + 1];
@@ -904,6 +943,13 @@ public final class AESCrypt extends SymmetricCipher {
         state[3] ^= wi[offset + 3];
     }
 
+    /**
+     * Convert byte array to integer array with specified offset.
+     *
+     * @param ti [out] the output of converted integers.
+     * @param s [in] the byte array to be converted to integers.
+     * @param so [in] the offset in the input byte array.
+     */
     private void initState(int[] ti, byte[] s, int so) {
         int len = WB;
 
@@ -917,6 +963,13 @@ public final class AESCrypt extends SymmetricCipher {
                 | ((s[so + 14] & 0xFF) << 8) | (s[so + 15] & 0xFF);
     }
 
+    /**
+     * Convert integer array to byte array with specified offset.
+     *
+     * @param s [out] the output of converted bytes.
+     * @param ti [in] the integer array to be converted to bytes.
+     * @param so [in] the offset of the output byte array.
+     */
     private void finalState(byte[] s, int[] ti, int so) {
         // The following statements are flattened for optimization purposes.
         s[so] = (byte) ((ti[0] >> 24) & 0xFF);
@@ -937,6 +990,15 @@ public final class AESCrypt extends SymmetricCipher {
         s[so + 15] = (byte) (ti[3] & 0xFF);
     }
 
+    /**
+     * Method for cipher processing of a round.
+     *
+     * @param state [in] the block to be processed.
+     * @param idx [in] the word index of the block.
+     * @param k [in] the round index.
+     *
+     * @return the processed word of the block.
+     */
     private int round(int[] state, int idx, int k) {
         int len = WB;
         int ek = expandedKey[((k + 1) * len) + idx];
@@ -951,6 +1013,15 @@ public final class AESCrypt extends SymmetricCipher {
         return a0 ^ a1 ^ a2 ^ a3 ^ ek;
     }
 
+    /**
+     * Method for inverse cipher processing of a round.
+     *
+     * @param state [in] the block to be processed.
+     * @param idx [in] the word index of the block.
+     * @param k [in] the round index.
+     *
+     * @return the processed word of the block.
+     */
     private int invRound(int[] state, int idx, int k) {
         int len = WB;
         int iek = invExpandedKey[(k + 2) * len + idx];
@@ -965,6 +1036,14 @@ public final class AESCrypt extends SymmetricCipher {
         return a0 ^ a1 ^ a2 ^ a3 ^ iek;
     }
 
+    /**
+     * Method for cipher processing of last round.
+     *
+     * @param state [in] the block to be processed.
+     * @param idx [in] the word index of the block.
+     *
+     * @return the processed word of the block.
+     */
     private int lastRound(int[] state, int idx) {
         int len = WB;
         int ek = expandedKey[(rounds * len) + idx];
@@ -979,6 +1058,14 @@ public final class AESCrypt extends SymmetricCipher {
         return a0 ^ a1 ^ a2 ^ a3 ^ ek;
     }
 
+    /**
+     * Method for inverse cipher processing of last round.
+     *
+     * @param state [in] the block to be processed.
+     * @param idx [in] the word index of the block.
+     *
+     * @return the processed word of the block.
+     */
     private int invLastRound(int[] state, int idx) {
         int len = WB;
         int ek = invExpandedKey[idx];
@@ -993,6 +1080,14 @@ public final class AESCrypt extends SymmetricCipher {
         return a0 ^ a1 ^ a2 ^ a3 ^ ek;
     }
 
+    /**
+     * Method for one block of encryption.
+     *
+     * @param p [in] the plaintext to be encrypted.
+     * @param po [in] the plaintext offset in the array of bytes.
+     * @param c [out] the encrypted ciphertext output.
+     * @param co [in] the ciphertext offset in the array of bytes.
+     */
     private void encryptJava(byte[] p, int po, byte[] c, int co) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
@@ -1014,6 +1109,14 @@ public final class AESCrypt extends SymmetricCipher {
         finalState(c, ti, co);
     }
 
+    /**
+     * Method for one block of decryption.
+     *
+     * @param c [in] the ciphertext to be decrypted.
+     * @param co [in] the ciphertext offset in the array of bytes.
+     * @param p [out] the decrypted plaintext output.
+     * @param po [in] the plaintext offset in the array of bytes.
+     */
     private void decryptJava(byte[] c, int co, byte[] p, int po) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
@@ -1035,20 +1138,58 @@ public final class AESCrypt extends SymmetricCipher {
         finalState(p, ti, po);
     }
 
+    /**
+     * Method for one block of encryption.
+     *
+     * @param plain [in] the plaintext to be encrypted.
+     * @param pOff [in] the plaintext offset in the array of bytes.
+     * @param cipher [out] the encrypted ciphertext output.
+     * @param cOff [in] the ciphertext offset in the array of bytes.
+     */
     public void encryptBlock(byte[] plain, int pOff, byte[] cipher, int cOff) {
         implEncryptBlock(plain, pOff, cipher, cOff);
     }
 
+    /**
+     * Method for one block of decryption.
+     *
+     * @param cipher [in] the ciphertext to be decrypted.
+     * @param cOff [in] the ciphertext offset in the array of bytes.
+     * @param plain [out] the decrypted plaintext output.
+     * @param pOff [in] the plaintext offset in the array of bytes.
+     */
     public void decryptBlock(byte[] cipher, int cOff, byte[] plain, int pOff) {
         implDecryptBlock(cipher, cOff, plain, pOff);
     }
 
+    /**
+     * Instrinsic method for one block of encryption.
+     *
+     * @param plain [in] the plaintext to be encrypted.
+     * @param pOff [in] the plaintext offset in the array of bytes.
+     * @param cipher [out] the encrypted ciphertext output.
+     * @param cOff [in] the ciphertext offset in the array of bytes.
+     *
+     * Note: {@code pOff} and {@code cOff} are not output parameters as
+     * classes like CipherCore increment offsets.
+     */
     @IntrinsicCandidate
     private void implEncryptBlock(byte[] plain, int pOff, byte[] cipher,
                                   int cOff) {
         encryptJava(plain, pOff, cipher, cOff);
     }
 
+    /**
+     * Instrinsic method for one block of decryption.
+     *
+     * @param cipher [in] the ciphertext to be decrypted.
+     * @param cOff [in] the ciphertext offset in the array of bytes.
+     * @param plain [out] the decrypted plaintext output.
+     * @param pOff [in] the plaintext offset in the array of bytes.
+     *
+     * Note: {@code cOff} and {@code pOff} are not output parameters as
+     * classes like CipherCore increment offsets.
+     */
     @IntrinsicCandidate
     private void implDecryptBlock(byte[] cipher, int cOff, byte[] plain,
                                   int pOff) {
