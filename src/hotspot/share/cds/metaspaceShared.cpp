@@ -124,7 +124,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 // These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
-// [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
+// [0] All classes are loaded in MetaspaceShared::load_classes(). All metadata are
 //     temporarily allocated outside of the shared regions.
 // [1] We enter a safepoint and allocate a buffer for the rw/ro regions.
 // [2] C++ vtables are copied into the rw region.
@@ -814,12 +814,10 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
   }
 }
 
-// Preload classes from a list, populate the shared spaces and dump to a
-// file.
-void MetaspaceShared::preload_and_dump(TRAPS) {
+void MetaspaceShared::dump_static_archive(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
- HandleMark hm(THREAD);
+  HandleMark hm(THREAD);
 
  if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
    tty->print_cr("==================== archived_training_data ** before dumping ====================");
@@ -827,7 +825,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
  }
 
   StaticArchiveBuilder builder;
-  preload_and_dump_impl(builder, THREAD);
+  dump_static_archive_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       aot_log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
@@ -893,7 +891,7 @@ void MetaspaceShared::get_default_classlist(char* default_classlist, const size_
                Arguments::get_java_home(), filesep, filesep);
 }
 
-void MetaspaceShared::preload_classes(TRAPS) {
+void MetaspaceShared::load_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
@@ -920,8 +918,8 @@ void MetaspaceShared::preload_classes(TRAPS) {
     }
   }
 
-  // Some classes are used at CDS runtime but are not loaded, and therefore archived, at
-  // dumptime. We can perform dummmy calls to these classes at dumptime to ensure they
+  // Some classes are used at CDS runtime but are not yet loaded at this point.
+  // We can perform dummmy calls to these classes at dumptime to ensure they
   // are archived.
   exercise_runtime_cds_code(CHECK);
 
@@ -937,10 +935,10 @@ void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
+void MetaspaceShared::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // We are running with -Xshare:dump
-    preload_classes(CHECK);
+    load_classes(CHECK);
 
     if (SharedArchiveConfigFile) {
       log_info(aot)("Reading extra data from %s ...", SharedArchiveConfigFile);
@@ -1993,7 +1991,9 @@ void MetaspaceShared::initialize_shared_spaces() {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
-    DynamicArchive::setup_array_klasses();
+    if (!CDSConfig::is_using_preloaded_classes()) {
+      DynamicArchive::setup_array_klasses();
+    }
   }
 
   LogStreamHandle(Info, aot) lsh;
