@@ -102,11 +102,6 @@ private:
   // old-gen.
   bool _is_heap_almost_full;
 
-  // Helper functions for allocation
-  HeapWord* attempt_allocation(size_t size,
-                               bool   is_tlab,
-                               bool   first_only);
-
   void do_full_collection(bool clear_all_soft_refs) override;
 
   // Does the "cause" of GC indicate that
