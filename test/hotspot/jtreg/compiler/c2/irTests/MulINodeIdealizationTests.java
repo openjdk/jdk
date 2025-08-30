@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,12 @@ public class MulINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"combineConstants", "moveConstants", "moveConstantsAgain",
-                 "multiplyZero", "multiplyZeroAgain", "distribute",
-                 "identity",  "identityAgain", "powerTwo",
-                 "powerTwoAgain", "powerTwoPlusOne", "powerTwoMinusOne",
-                 "negativeCancelledOut", "maxMin"})
+    @Run(test = { "combineConstants", "moveConstants", "moveConstantsAgain",
+            "multiplyZero", "multiplyZeroAgain", "distribute",
+            "identity", "identityAgain", "powerTwo", "powerTwoAgain",
+            "powerTwoPlusOne", "powerTwoMinusOne", "powerTwoPlusPowerTwo",
+            "negativePowerTwoPlusPowerTwo", "negativePowerTwoPlusOne",
+            "negativeCancelledOut", "maxMin" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -69,6 +70,9 @@ public class MulINodeIdealizationTests {
         Asserts.assertEQ(a * (1025 - 1)                 , powerTwoAgain(a));
         Asserts.assertEQ(a * (64 + 1)                   , powerTwoPlusOne(a));
         Asserts.assertEQ(a * (64 - 1)                   , powerTwoMinusOne(a));
+        Asserts.assertEQ(a * ((1 << 2) + (1 << 3))      , powerTwoPlusPowerTwo(a));
+        Asserts.assertEQ(a * -((1 << 3) + (1 << 4))     , negativePowerTwoPlusPowerTwo(a));
+        Asserts.assertEQ(a * -((1 << 3) + 1)            , negativePowerTwoPlusOne(a));
         Asserts.assertEQ((0 - a) * (0 - b)              , negativeCancelledOut(a, b));
         Asserts.assertEQ(Math.max(a, b) * Math.min(a, b), maxMin(a, b));
     }
@@ -165,6 +169,27 @@ public class MulINodeIdealizationTests {
     // Checks x * (2^n - 1) => (x << n) - x
     public int powerTwoMinusOne(int x) {
         return x * (64 - 1);
+    }
+
+    @Test
+    @IR(counts = { IRNode.MUL, "1" })
+    // Checks x * (2^m + 2^n) is not converted to (x << m) + (x << n)
+    public int powerTwoPlusPowerTwo(int x) {
+        return x * ((1 << 2) + (1 << 3));
+    }
+
+    @Test
+    @IR(counts = { IRNode.MUL, "1" })
+    // Checks x * -(2^m + 2^n) is not converted to -((x << m) + (x << n))
+    public int negativePowerTwoPlusPowerTwo(int x) {
+        return x * -((1 << 3) + (1 << 4));
+    }
+
+    @Test
+    @IR(counts = { IRNode.MUL, "1" })
+    // Checks x * (-(2^n+1)) is not converted to -((x << n) + x)
+    public int negativePowerTwoPlusOne(int x) {
+        return x * (-(1 + (1 << 3)));
     }
 
     @Test
