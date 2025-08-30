@@ -43,6 +43,7 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -228,7 +229,7 @@ private:
   shenandoah_padding(0);
   volatile size_t _committed;
   shenandoah_padding(1);
-
+  KlassInfoTable* _cit;
   void increase_used(const ShenandoahAllocRequest& req);
 
 public:
@@ -251,6 +252,13 @@ public:
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
+
+  // Create Shenandoah's KlassInfoTable.
+  // Used for JFR object count event support.
+  inline void set_cit(KlassInfoTable* cit);
+
+  // Return Shenandoah's KlassInfoTable.
+  inline KlassInfoTable* get_cit();
 
 // ---------- Periodic Tasks
 //

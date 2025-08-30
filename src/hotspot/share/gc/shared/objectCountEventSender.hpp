@@ -25,12 +25,12 @@
 #ifndef SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 #define SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 
-#include "gc/shared/gcTrace.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/heapInspection.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
 #if INCLUDE_SERVICES
 
 class KlassInfoEntry;
@@ -39,16 +39,22 @@ class Klass;
 class ObjectCountEventSender : public AllStatic {
   static bool _should_send_requestable_event;
 
-  template <typename T>
+  template <typename Event>
   static void send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp);
 
  public:
-  static void enable_requestable_event();
-  static void disable_requestable_event();
+  static inline void enable_requestable_event();
+  static inline void disable_requestable_event();
 
+  // Template parameter controls which JFR events are emitted:
+  // true  = ObjectCount events only (when ObjectCount event initiated the request)
+  // false = Both ObjectCount and ObjectCountAfterGC events
+  template <bool SeparateEventEmission>
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
+
   static bool should_send_event();
 };
+
 
 #endif // INCLUDE_SERVICES
 
