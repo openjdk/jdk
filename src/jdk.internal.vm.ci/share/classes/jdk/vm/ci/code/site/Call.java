@@ -30,7 +30,7 @@ import jdk.vm.ci.meta.InvokeTarget;
 /**
  * Represents a call in the code.
  */
-public final class Call extends Infopoint {
+public class Call extends Infopoint {
 
     /**
      * The target of the call.
