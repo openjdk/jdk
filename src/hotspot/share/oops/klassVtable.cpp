@@ -50,7 +50,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
+  return _klass->in_aot_cache() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
 }
 
 
@@ -163,7 +163,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
   // Note:  Arrays can have intermediate array supers.  Use java_super to skip them.
   InstanceKlass* super = _klass->java_super();
 
-  bool is_shared = _klass->is_shared();
+  bool in_aot_cache = _klass->in_aot_cache();
   Thread* current = Thread::current();
 
   if (!_klass->is_array_klass()) {
@@ -178,7 +178,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 #endif
 
   if (Universe::is_bootstrapping()) {
-    assert(!is_shared, "sanity");
+    assert(!in_aot_cache, "sanity");
     // just clear everything
     for (int i = 0; i < _length; i++) table()[i].clear();
     return;
@@ -1092,7 +1092,7 @@ void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
   if (m == nullptr) return;
 
 #ifdef ASSERT
-  if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
+  if (MetaspaceShared::in_aot_cache((void*)&_method) &&
      !MetaspaceShared::remapped_readwrite() &&
      m->method_holder()->verified_at_dump_time() &&
      klass->verified_at_dump_time()) {
@@ -1278,7 +1278,7 @@ int klassItable::assign_itable_indices_for_interface(InstanceKlass* klass) {
         // A shared method could have an initialized itable_index that
         // is < 0.
         assert(m->vtable_index() == Method::pending_itable_index ||
-               m->is_shared(),
+               m->in_aot_cache(),
                "set by initialize_vtable");
         m->set_itable_index(ime_num);
         // Progress to next itable entry

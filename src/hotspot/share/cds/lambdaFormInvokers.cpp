@@ -179,7 +179,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
       Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
       assert(klass != nullptr, "must already be loaded");
-      if (!klass->is_shared() && klass->shared_classpath_index() < 0) {
+      if (!klass->in_aot_cache() && klass->shared_classpath_index() < 0) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
@@ -223,7 +223,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   result->set_is_generated_shared_class();
-  if (!klass->is_shared()) {
+  if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }

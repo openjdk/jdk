@@ -321,7 +321,7 @@ void CppVtables::zero_archived_vtables() {
 }
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
-  assert(MetaspaceShared::is_in_shared_metaspace(m), "must be");
+  assert(MetaspaceShared::in_aot_cache(m), "must be");
   return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
          vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
 }
