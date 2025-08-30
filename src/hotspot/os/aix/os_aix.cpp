@@ -2716,5 +2716,8 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 #if INCLUDE_JFR
 
 void os::jfr_report_memory_info() {}
+void os::jfr_report_process_size() {}
+void os::jfr_report_libc_statistics() {}
+int os::num_process_threads() { return -1; }
 
 #endif // INCLUDE_JFR
