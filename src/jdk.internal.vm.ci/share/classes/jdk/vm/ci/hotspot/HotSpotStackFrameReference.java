@@ -29,27 +29,19 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class HotSpotStackFrameReference implements InspectedFrame {
 
-    private CompilerToVM compilerToVM;
     // set in the VM when materializeVirtualObjects is called
     @SuppressWarnings("unused") private boolean objectsMaterialized;
 
     // information used to find the stack frame
-    private long stackPointer;
+    private long startingFrameId;
     private int frameNumber;
+    private int vframeId;
 
     // information about the stack frame's contents
     private int bci;
     private HotSpotResolvedJavaMethod method;
     private Object[] locals;
     private boolean[] localIsVirtual;
-
-    public long getStackPointer() {
-        return stackPointer;
-    }
-
-    public int getFrameNumber() {
-        return frameNumber;
-    }
 
     @Override
     public Object getLocal(int index) {
@@ -63,10 +55,7 @@ public class HotSpotStackFrameReference implements InspectedFrame {
 
     @Override
     public void materializeVirtualObjects(boolean invalidateCode) {
-        if (Thread.currentThread().isVirtual()) {
-            throw new IllegalArgumentException("cannot materialize frames of a virtual thread");
-        }
-        compilerToVM.materializeVirtualObjects(this, invalidateCode);
+        CompilerToVM.compilerToVM().materializeVirtualObjects(this, invalidateCode);
     }
 
     @Override
@@ -91,7 +80,7 @@ public class HotSpotStackFrameReference implements InspectedFrame {
 
     @Override
     public String toString() {
-        return "HotSpotStackFrameReference [stackPointer=" + stackPointer + ", frameNumber=" + frameNumber + ", bci=" + bci + ", method=" + getMethod() + ", locals=" + Arrays.toString(locals) +
-                        ", localIsVirtual=" + Arrays.toString(localIsVirtual) + "]";
+        return "HotSpotStackFrameReference [startingFrameId=" + startingFrameId + ", frameNumber=" + frameNumber + ", vframeId=" + vframeId + ", bci=" + bci + ", method=" + getMethod() + ", locals=" + Arrays.toString(locals) +
+                        ", localIsVirtual=" + Arrays.toString(localIsVirtual) + ", objectsMaterialized=" + objectsMaterialized + "]";
     }
 }

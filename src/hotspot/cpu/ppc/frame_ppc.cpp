@@ -307,7 +307,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = get_deopt_original_pc();
+  address original_pc = get_deopt_original_pc(nullptr);
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
