@@ -31,6 +31,9 @@ on:
       platform:
         required: true
         type: string
+      runs-on:
+        required: true
+        type: string
       extra-conf-options:
         required: false
         type: string
@@ -45,7 +48,7 @@ on:
       msvc-toolset-version:
         required: true
         type: string
-      msvc-toolset-architecture:
+      architecture:
         required: true
         type: string
       configure-arguments:
@@ -67,7 +70,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2025
+    runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
         shell: bash
@@ -87,12 +90,14 @@ jobs:
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
+        with:
+          architecture: ${{ inputs.architecture }}
 
       - name: 'Get the BootJDK'
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
-          platform: windows-x64
+          platform: ${{ inputs.platform }}
 
       - name: 'Get JTReg'
         id: jtreg
@@ -106,7 +111,12 @@ jobs:
         id: toolchain-check
         run: |
           set +e
-          '/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          if [ "${{ inputs.architecture }}" = "ARM64" ]; then
+            vcvars="vcvarsarm64.bat"
+          else
+            vcvars="vcvars64.bat"
+          fi
+          "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/${vcvars}" -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
             echo "Toolchain is already installed"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT
@@ -120,7 +130,7 @@ jobs:
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
-            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
+            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.architecture }}
         if: steps.toolchain-check.outputs.toolchain-installed != 'true'
 
       - name: 'Configure'
