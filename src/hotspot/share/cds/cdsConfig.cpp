@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -104,6 +105,8 @@ void CDSConfig::ergo_initialize() {
   if (!is_dumping_heap()) {
     _is_dumping_full_module_graph = false;
   }
+
+  AOTMapLogger::ergo_initialize();
 }
 
 const char* CDSConfig::default_archive_path() {

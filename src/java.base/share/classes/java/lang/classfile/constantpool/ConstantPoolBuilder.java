@@ -397,12 +397,14 @@ public sealed interface ConstantPoolBuilder
 
     /**
      * {@return a {@link MethodHandleEntry} encoding a reference kind and
-     * referring to a {@link MemberRefEntry}}  The reference kind must be
+     * referring to a {@link MemberRefEntry}}  The reference kind is
      * in {@code [1, 9]}, and the {@code MemberRefEntry} is subject to
      * various restrictions based on the reference kind (JVMS {@jvms 4.4.8}).
      *
      * @param refKind the reference kind of the method handle
      * @param reference the {@code MemberRefEntry}
+     * @throws IllegalArgumentException if {@code refKind} is not {@link
+     *         java.lang.classfile##u1 u1}
      * @see MethodHandleInfo##refkinds Reference kinds
      * @see MethodHandleEntry#kind() MethodHandleEntry::kind
      * @see MethodHandleEntry#reference() MethodHandleEntry::reference

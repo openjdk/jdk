@@ -36,7 +36,6 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/quickSort.hpp"
 
 uint G1CollectionSet::groups_cur_length() const {
   assert(_inc_build_state == CSetBuildType::Inactive, "must be");
@@ -106,7 +105,7 @@ void G1CollectionSet::abandon_all_candidates() {
 }
 
 void G1CollectionSet::prepare_for_scan () {
-  groups()->prepare_for_scan();
+  _groups.prepare_for_scan();
 }
 
 void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
@@ -324,7 +323,10 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, _g1h->young_regions_cardset()->occupied());
+  size_t num_young_cards = _g1h->young_regions_cardset()->occupied();
+  _policy->record_card_rs_length(num_young_cards);
+
+  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, num_young_cards);
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
   double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
@@ -342,10 +344,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
   return remaining_time_ms;
-}
-
-static int compare_region_idx(const uint a, const uint b) {
-  return static_cast<int>(a-b);
 }
 
 // The current mechanism for evacuating pinned old regions is as below:
@@ -604,7 +602,6 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   assert(_optional_groups.num_regions() > 0,
          "Should only be called when there are optional regions");
 
-  uint num_groups_selected = 0;
   double total_prediction_ms = 0.0;
   G1CSetCandidateGroupList selected;
   for (G1CSetCandidateGroup* group : _optional_groups) {
@@ -620,16 +617,15 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     time_remaining_ms -= predicted_time_ms;
 
     num_regions_selected += group->length();
-    num_groups_selected++;
 
     add_group_to_collection_set(group);
     selected.append(group);
   }
 
   log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
-                            num_regions_selected, num_groups_selected);
+                            num_regions_selected, selected.length());
   // Remove selected groups from candidate list.
-  if (num_groups_selected > 0) {
+  if (selected.length() > 0) {
     _optional_groups.remove(&selected);
     candidates()->remove(&selected);
   }
@@ -688,7 +684,6 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   finalize_old_part(time_remaining_ms);
 
   stop_incremental_building();
-  QuickSort::sort(_regions, _regions_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
