@@ -92,7 +92,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <h3>Locale Extensions</h3>
  * Formatting behavior can be changed when using a locale that contains any of the following
- * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+ * {@linkplain Locale##def_locale_extension Unicode extensions},
  * <ul>
  * <li> "nu"
  * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">
@@ -110,7 +110,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <p>
  * For both "nu" and "cu", if they are specified in addition to "rg", the respective
  * values from the "nu" and "cu" extension supersede the implicit ones from the "rg" extension.
- * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * Although {@linkplain Locale##def_locale_extension Unicode extensions}
  * defines various keys and values, actual locale-sensitive service implementations
  * in a Java Runtime Environment might not support any particular Unicode locale
  * attributes or key/type pairs.
@@ -691,7 +691,7 @@ public abstract class NumberFormat extends Format  {
      * <p>If the specified locale contains the "{@code cf}" (
      * <a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
      * currency format style</a>)
-     * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extension},
      * the returned currency format uses the style if it is available.
      * Otherwise, the style uses the default "{@code standard}" currency format.
      * For example, if the style designates "{@code account}", negative
