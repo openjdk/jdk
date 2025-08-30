@@ -47,11 +47,43 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 import static java.lang.invoke.MethodTypeForm.*;
 
-/**
- * Helper class to assist the GenerateJLIClassesPlugin to get access to
- * generate classes ahead of time.
- */
-class GenerateJLIClassesHelper {
+/// Generates bound method handle species classes, and classes with methods that
+/// hold compiled lambda form bytecode ahead of time, so certain lambda forms
+/// no longer need to spin classes because they can find existing bytecode.
+/// Bytecode pre-generation reduces static initialization costs, footprint costs,
+/// and circular dependencies that may arise if a class is generated per
+/// LambdaForm by [InvokerBytecodeGenerator].
+///
+/// Since lambda forms and bound method handle species are closely tied to
+/// method types, which have many varieties, this generator needs logs to detect
+/// which method types are used, so our generation matches the actual usage.
+///
+/// This does not have comprehensive coverage of all lambda forms created in a
+/// Java Runtime. For example, forms created by {@link LambdaFormEditor} are
+/// not captured.
+///
+/// Currently, `GenerateJLIClassesPlugin` and the AOT process pre-generate with
+/// `GenerateJLIClassesHelper`. `GenerateJLIClassesPlugin` runs for JDK builds;
+/// in a JDK image, `javap` can check the actual content of the generated classes,
+/// such as: (Note to escape `$` in bash)
+/// ```
+/// javap -c -p -v java.lang.invoke.LambdaForm\$Holder
+/// javap -c -p -v java.lang.invoke.BoundMethodHandle\$Species_J
+/// ```
+/// The AOT process pregenerates in the end of the training run, and initializes
+/// the classes for linkage in assembly phase; see `regeneratedClasses.hpp`.
+///
+/// VarHandle has a similar pre-generation system for its forms, except it is
+/// done at source generation; they reside in [VarHandleGuards].
+///
+/// @see #generateHolderClasses(Stream)
+/// @see BoundMethodHandle.Specializer
+/// @see DelegatingMethodHandle.Holder
+/// @see DirectMethodHandle.Holder
+/// @see Invokers.Holder
+/// @see LambdaForm.Holder
+/// @see VarHandleGuards
+final class GenerateJLIClassesHelper {
     // Map from DirectMethodHandle method type name to index to LambdaForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
@@ -321,13 +353,21 @@ class GenerateJLIClassesHelper {
         }
     }
 
-    /*
-     * Returns a map of class name in internal form to the corresponding class bytes
-     * per the given stream of SPECIES_RESOLVE and LF_RESOLVE trace logs.
-     *
-     * Used by GenerateJLIClassesPlugin to pre-generate holder classes during
-     * jlink phase.
-     */
+    /// Returns a map of class name in internal form to the corresponding class
+    /// bytes.
+    ///
+    /// A few known lambda forms, such as field accessors, can be comprehensively
+    /// generated.  Most others lambda forms are associated with unique method
+    /// types; thus they are generated per the given stream of SPECIES_RESOLVE
+    /// and LF_RESOLVE trace logs, which are created according to {@link
+    /// MethodHandleStatics#TRACE_RESOLVE} configuration.
+    ///
+    /// The names of methods in the generated classes are internal tokens
+    /// recognized by [InvokerBytecodeGenerator#lookupPregenerated] and are
+    /// subject to change.
+    ///
+    /// @see MethodHandleStatics#traceLambdaForm
+    /// @see MethodHandleStatics#traceSpeciesType
     static Map<String, byte[]> generateHolderClasses(Stream<String> traces)  {
         Objects.requireNonNull(traces);
         HolderClassBuilder builder = new HolderClassBuilder();
