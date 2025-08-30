@@ -2448,7 +2448,7 @@ Java HotSpot VM.
 :   Sets the initial amount of memory that the JVM will use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option. The default value is
-    1.5625 percent.
+    0.2 percent.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
