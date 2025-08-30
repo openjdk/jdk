@@ -25,7 +25,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
@@ -56,7 +56,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = region_size_bytes * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = region_size_bytes * ShenandoahIgnoreGarbageThreshold / 100;
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
 
   size_t young_evac_reserve = heap->young_generation()->get_evacuation_reserve();
   size_t old_evac_reserve = heap->old_generation()->get_evacuation_reserve();
@@ -100,7 +99,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     ShenandoahHeapRegion* r = data[idx].get_region();
     assert(!cset->is_preselected(r->index()), "There should be no preselected regions during GLOBAL GC");
     bool add_region = false;
-    if (r->is_old() || (r->age() >= tenuring_threshold)) {
+    if (r->is_old() || heap->is_tenurable(r)) {
       size_t new_cset = old_cur_cset + r->get_live_data_bytes();
       if ((r->garbage() > garbage_threshold)) {
         while ((new_cset > max_old_cset) && (unaffiliated_young_regions > 0)) {
@@ -114,7 +113,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
         old_cur_cset = new_cset;
       }
     } else {
-      assert(r->is_young() && (r->age() < tenuring_threshold), "DeMorgan's law (assuming r->is_affiliated)");
+      assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
       size_t new_cset = young_cur_cset + r->get_live_data_bytes();
       size_t region_garbage = r->garbage();
       size_t new_garbage = cur_young_garbage + region_garbage;

@@ -28,9 +28,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -534,7 +533,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
 
   size_t old_consumed = 0;
@@ -558,7 +556,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // skip over regions that aren't regular young with some live data
       continue;
     }
-    if (r->age() >= tenuring_threshold) {
+    if (heap->is_tenurable(r)) {
       if ((r->garbage() < old_garbage_threshold)) {
         // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
         // reclaim the garbage; instead this region may be eligible for promotion-in-place to the
@@ -613,7 +611,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
+      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
         if (r->garbage() >= old_garbage_threshold) {
           promo_potential += r->get_live_data_bytes();
         }
