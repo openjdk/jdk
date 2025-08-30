@@ -36,6 +36,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.security.AlgorithmConstraints;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -72,7 +73,7 @@ import jdk.internal.access.SharedSecrets;
  * @author David Brownell
  */
 public final class SSLSocketImpl
-        extends BaseSSLSocketImpl implements SSLTransport {
+        extends BaseSSLSocketImpl implements SSLTransport, UserConstrained {
 
     /**
      * ERROR HANDLING GUIDELINES
@@ -925,6 +926,13 @@ public final class SSLSocketImpl
         } finally {
             handshakeLock.unlock();
         }
+    }
+
+    @Override
+    public AlgorithmConstraints getUserSpecifiedAlgorithmConstraints() {
+        HandshakeContext hc = conContext.handshakeContext;
+        return hc == null ? null
+                : hc.sslConfig.userSpecifiedAlgorithmConstraints;
     }
 
     /**

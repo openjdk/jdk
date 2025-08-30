@@ -151,41 +151,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return constraints == DEFAULT ? null : constraints;
     }
 
-    private static AlgorithmConstraints getUserSpecifiedConstraints(
-            SSLEngine engine) {
-        if (engine != null) {
-            // Note that the KeyManager or TrustManager implementation may be
-            // not implemented in the same provider as SSLSocket/SSLEngine.
-            // Please check the instance before casting to use SSLEngineImpl.
-            if (engine instanceof SSLEngineImpl) {
-                HandshakeContext hc =
-                        ((SSLEngineImpl)engine).conContext.handshakeContext;
-                if (hc != null) {
-                    return hc.sslConfig.userSpecifiedAlgorithmConstraints;
-                }
-            }
-
-            return engine.getSSLParameters().getAlgorithmConstraints();
+    private static AlgorithmConstraints getUserSpecifiedConstraints(Object o) {
+        if (o instanceof UserConstrained) {
+            return ((UserConstrained) o).getUserSpecifiedAlgorithmConstraints();
         }
 
-        return null;
-    }
+        if (o instanceof SSLSocket) {
+            return ((SSLSocket) o).getSSLParameters().getAlgorithmConstraints();
+        }
 
-    private static AlgorithmConstraints getUserSpecifiedConstraints(
-            SSLSocket socket) {
-        if (socket != null) {
-            // Note that the KeyManager or TrustManager implementation may be
-            // not implemented in the same provider as SSLSocket/SSLEngine.
-            // Please check the instance before casting to use SSLSocketImpl.
-            if (socket instanceof SSLSocketImpl) {
-                HandshakeContext hc =
-                        ((SSLSocketImpl)socket).conContext.handshakeContext;
-                if (hc != null) {
-                    return hc.sslConfig.userSpecifiedAlgorithmConstraints;
-                }
-            }
-
-            return socket.getSSLParameters().getAlgorithmConstraints();
+        if (o instanceof SSLEngine) {
+            return ((SSLEngine) o).getSSLParameters().getAlgorithmConstraints();
         }
 
         return null;
