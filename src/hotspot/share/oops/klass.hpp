@@ -188,6 +188,7 @@ private:
     _has_aot_safe_initializer              = 1 << 7, // has @AOTSafeClassInitializer annotation
     _is_runtime_setup_required             = 1 << 8, // has a runtimeSetup method to be called when
                                                      // this class is loaded from AOT cache
+    _force_aot_initialization              = 1 << 9, // has @AOTInitialize annotation
   };
 #endif
 
@@ -394,6 +395,15 @@ protected:
   }
   bool is_runtime_setup_required() const {
     CDS_ONLY(return (_aot_class_flags & _is_runtime_setup_required) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  // Indicates presence of @AOTInitialize
+  void set_force_aot_initialization() {
+    CDS_ONLY(_aot_class_flags |= _force_aot_initialization;)
+  }
+  bool force_aot_initialization() const {
+    CDS_ONLY(return (_aot_class_flags & _force_aot_initialization) != 0;)
     NOT_CDS(return false;)
   }
 
