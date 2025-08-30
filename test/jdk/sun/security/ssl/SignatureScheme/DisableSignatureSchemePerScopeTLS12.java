@@ -44,14 +44,16 @@ public class DisableSignatureSchemePerScopeTLS12 extends
     protected static final String HANDSHAKE_DISABLED_SIG = "rsa_pss_rsae_sha384";
 
     // Disabled for Certificate scope.
+    private static final String CERTIFICATE_DISABLED_ALG = "SHA384withECDSA";
     protected static final String CERTIFICATE_DISABLED_SIG = "ecdsa_secp384r1_sha384";
 
     // jdk.tls.disabledAlgorithms value
     // We differ from "HandshakeSignature" and "CertificateSignature" specified
     // in java.security to check case-insensitive matching.
-    protected static final String DISABLED_CONSTRAINTS =
-            HANDSHAKE_DISABLED_SIG + " usage HandShakesignature, "
-            + CERTIFICATE_DISABLED_SIG + " usage certificateSignature";
+    protected static final String DISABLED_CONSTRAINTS = HANDSHAKE_DISABLED_SIG
+            + " usage HandShakesignature, "
+            + CERTIFICATE_DISABLED_ALG
+            + " usage certificateSignature";
 
     protected DisableSignatureSchemePerScopeTLS12() throws Exception {
         super();

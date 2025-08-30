@@ -755,7 +755,12 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     other usage types defined in the jdk.certpath.disabledAlgorithms
 #     property. The usage type follows the keyword and more than one usage type
 #     can be specified with a whitespace delimiter.
-#     Example: "rsa_pkcs1_sha1 usage HandshakeSignature"
+#     Note that TLS signature scheme names can't be used as algorithms with
+#     CertificateSignature usage type, only certificate's signature algorithm
+#     or certificate's key algorithm are supported for this usage type.
+#     Examples:
+#       - rsa_pkcs1_sha1 usage HandshakeSignature
+#       - SHA1withRSA usage CertificateSignature
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
