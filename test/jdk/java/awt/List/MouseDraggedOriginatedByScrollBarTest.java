@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,41 +24,44 @@
 /*
  * @test
  * @bug 6240151
+ * @key headful
  * @summary XToolkit: Dragging the List scrollbar initiates DnD
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual MouseDraggedOriginatedByScrollBarTest
+ * @requires os.family == "linux"
+ * @run main MouseDraggedOriginatedByScrollBarTest
 */
 
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class MouseDraggedOriginatedByScrollBarTest {
-
-    private static final String INSTRUCTIONS = """
-            1) Click and drag the scrollbar of the list.
-            2) Keep dragging till the mouse pointer goes out the scrollbar.
-            3) The test failed if you see messages about events. The test passed if you don't.""";
+    static Frame frame;
+    static volatile Point loc;
+    static volatile List list;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("MouseDraggedOriginatedByScrollBarTest Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(MouseDraggedOriginatedByScrollBarTest::createTestUI)
-                .logArea()
-                .build()
-                .awaitAndCheck();
+        try {
+            createUI();
+            test();
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
-    private static Frame createTestUI() {
-        Frame frame = new Frame();
-        List list = new List(4, false);
+    private static void createUI() {
+        frame = new Frame();
+        list = new List(4, false);
 
         list.add("000");
         list.add("111");
@@ -77,27 +80,56 @@ public class MouseDraggedOriginatedByScrollBarTest {
             new MouseMotionAdapter(){
                 @Override
                 public void mouseDragged(MouseEvent me){
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse dragged " +
+                            "event detected.");
                 }
             });
 
         list.addMouseListener(
             new MouseAdapter() {
                 public void mousePressed(MouseEvent me) {
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse pressed " +
+                            "event detected.");
                 }
 
                 public void mouseReleased(MouseEvent me) {
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse released " +
+                            "event detected.");
                 }
 
                 public void mouseClicked(MouseEvent me){
-                    PassFailJFrame.log(me.toString());
+                    System.out.println(me.toString());
+                    throw new RuntimeException("Test failed. Mouse clicked " +
+                            "event detected.");
                 }
             });
 
         frame.setLayout(new FlowLayout());
         frame.pack();
-        return frame;
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private static void test() throws Exception {
+        Robot robot = new Robot();
+        robot.waitForIdle();
+        robot.delay(1000);
+        robot.setAutoWaitForIdle(true);
+
+        EventQueue.invokeAndWait(() -> {
+            Point p = list.getLocationOnScreen();
+            p.translate(list.getWidth(), 20);
+            loc = p;
+        });
+        robot.mouseMove(loc.x - 10, loc.y + 20);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        for (int i = 0; i < 30; i++) {
+            robot.mouseMove(loc.x, loc.y + 1);
+        }
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(100);
     }
 }
