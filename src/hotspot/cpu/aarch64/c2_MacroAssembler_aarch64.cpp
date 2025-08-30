@@ -2491,7 +2491,7 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_cmp(HS, pgtmp, T, ptrue, tmp2, tmp1);
   br(EQ, none);
   {
-    sve_cpy(tmp1, T, pgtmp, 0.5);
+    sve_fcpy(tmp1, T, pgtmp, 0.5);
     sve_fadd(tmp1, T, pgtmp, src);
     sve_frintm(dst, T, pgtmp, tmp1);
     // dst = floor(src + 0.5, ties to even)
