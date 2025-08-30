@@ -33,12 +33,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
@@ -82,6 +85,11 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     private final EventDirectoryStream directoryStream;
     private long maxSize;
     private Duration maxAge;
+    private final ReentrantLock lock = new ReentrantLock();
+    private volatile boolean closed;
+    private volatile boolean stopped;
+    private LocalStoppedListener localStoppedListener;
+    private LocalClosedListener localClosedListener;
 
     /**
      * Creates an event stream for the current JVM (Java Virtual Machine).
@@ -325,9 +333,41 @@ public final class RecordingStream implements AutoCloseable, EventStream {
 
     @Override
     public void close() {
-        directoryStream.setChunkCompleteHandler(null);
-        recording.close();
-        directoryStream.close();
+        try {
+            lock.lock();
+            if (closed) {
+                return;
+            }
+            if (localStoppedListener != null) {
+                FlightRecorder.removeListener(localStoppedListener);
+            }
+            if (localClosedListener != null) {
+                FlightRecorder.removeListener(localClosedListener);
+            }
+            recording.close();
+            closeInternal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void closeInternal() {
+        final boolean isHeldByCurrentThread = lock.isHeldByCurrentThread();
+        try {
+            if (!isHeldByCurrentThread) {
+                lock.lock();
+            }
+            if (closed) {
+                return;
+            }
+            directoryStream.setChunkCompleteHandler(null);
+            directoryStream.close();
+            closed = true;
+        } finally {
+            if (!isHeldByCurrentThread) {
+                lock.unlock();
+            }
+        }
     }
 
     @Override
@@ -339,6 +379,10 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     public void start() {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         long startNanos = pr.start();
+        this.localStoppedListener = new LocalStoppedListener(pr.getId(), this);
+        this.localClosedListener = new LocalClosedListener(pr.getId(), this);
+        FlightRecorder.addListener(localStoppedListener);
+        FlightRecorder.addListener(localClosedListener);
         updateOnCompleteHandler();
         directoryStream.start(startNanos);
     }
@@ -362,6 +406,10 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     public void startAsync() {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         long startNanos = pr.start();
+        this.localStoppedListener = new LocalStoppedListener(pr.getId(), this);
+        this.localClosedListener = new LocalClosedListener(pr.getId(), this);
+        FlightRecorder.addListener(localStoppedListener);
+        FlightRecorder.addListener(localClosedListener);
         updateOnCompleteHandler();
         directoryStream.startAsync(startNanos);
     }
@@ -389,18 +437,45 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @since 20
      */
     public boolean stop() {
-        boolean stopped = false;
         try {
-            try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
-                stopped = recording.stop();
-                directoryStream.setCloseOnComplete(false);
-                sb.setStreamEnd(recording.getStopTime().toEpochMilli());
+            lock.lock();
+            if (stopped) {
+                return true;
             }
+            if (localStoppedListener != null) {
+                FlightRecorder.removeListener(localStoppedListener);
+            }
+            recording.stop();
+            stopInternal(recording.getStopTime().toEpochMilli());
             directoryStream.awaitTermination();
-        } catch (InterruptedException | IOException e) {
+        } catch (InterruptedException e) {
             // OK, return
+        } finally {
+            lock.unlock();
         }
         return stopped;
+    }
+
+    private void stopInternal(long stopTime) {
+        final boolean isHeldByCurrentThread = lock.isHeldByCurrentThread();
+        try {
+            if (!isHeldByCurrentThread) {
+                lock.lock();
+            }
+            if (stopped) {
+                return;
+            }
+            try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
+                directoryStream.setCloseOnComplete(false);
+                sb.setStreamEnd(stopTime);
+                stopped = true;
+            } catch (Exception e) {
+            }
+        } finally {
+            if (!isHeldByCurrentThread) {
+                lock.unlock();
+            }
+        }
     }
 
     /**
@@ -479,6 +554,48 @@ public final class RecordingStream implements AutoCloseable, EventStream {
             directoryStream.setChunkCompleteHandler(null);
         } else {
             directoryStream.setChunkCompleteHandler(new ChunkConsumer(recording));
+        }
+    }
+
+    static final class LocalStoppedListener implements FlightRecorderListener {
+
+        private final long recordingId;
+        private final RecordingStream recordingStream;
+
+        public LocalStoppedListener(long recordingId, RecordingStream recordingStream) {
+            this.recordingId = recordingId;
+            this.recordingStream = recordingStream;
+        }
+
+        @Override
+        public void recordingStateChanged(Recording recording) {
+            if (this.recordingId != recording.getId()) {
+                return;
+            }
+            if (recording.getState() == RecordingState.STOPPED) {
+                recordingStream.stopInternal(recording.getStopTime().toEpochMilli());
+            }
+        }
+    }
+
+    static final class LocalClosedListener implements FlightRecorderListener {
+
+        private final long recordingId;
+        private final RecordingStream recordingStream;
+
+        public LocalClosedListener(long recordingId, RecordingStream recordingStream) {
+            this.recordingId = recordingId;
+            this.recordingStream = recordingStream;
+        }
+
+        @Override
+        public void recordingStateChanged(Recording recording) {
+            if (this.recordingId != recording.getId()) {
+                return;
+            }
+            if (recording.getState() == RecordingState.CLOSED) {
+                recordingStream.closeInternal();
+            }
         }
     }
 }

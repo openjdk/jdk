@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
-import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
@@ -179,13 +178,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
                     msg += "parser at " + endMillis + "ms (epoch), " + endNanos + "ns (epoch)";
                     logStreamEnd(msg);
                     return;
-                }
-
-                if (isRecordingStream()) {
-                    if (recording.getState() == RecordingState.STOPPED && !barrier.used()) {
-                        logStreamEnd("recording stopped externally.");
-                        return;
-                    }
                 }
 
                 if (repositoryFiles.hasFixedPath() && currentParser.isFinalChunk()) {
