@@ -25,6 +25,8 @@ package jdk.vm.ci.hotspot;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.security.ProtectionDomain;
 
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -1257,6 +1259,28 @@ final class CompilerToVM {
     }
 
     native HotSpotObjectConstantImpl getJavaMirror(HotSpotResolvedObjectTypeImpl type, long klassPointer);
+
+    /**
+     * Gets a {@link JavaConstant} wrapping the class loader for {@code klass}.
+     */
+    HotSpotObjectConstantImpl getLoader(HotSpotResolvedObjectTypeImpl klass) {
+        return getLoader(klass, klass.getKlassPointer());
+    }
+
+    native HotSpotObjectConstantImpl getLoader(HotSpotResolvedObjectTypeImpl type, long klassPointer);
+
+    /**
+     * Gets a {@link URL} denoting the code location for {@code klass}.
+     */
+    URL getCodeLocation(HotSpotResolvedObjectTypeImpl klass) {
+        ProtectionDomain pd = (ProtectionDomain) getProtectionDomain(klass, klass.getKlassPointer());
+        if (pd != null && pd.getCodeSource() != null) {
+            return pd.getCodeSource().getLocation();
+        }
+        return null;
+    }
+
+    native Object getProtectionDomain(HotSpotResolvedObjectTypeImpl type, long klassPointer);
 
     /**
      * Returns the length of the array if {@code object} represents an array or -1 otherwise.

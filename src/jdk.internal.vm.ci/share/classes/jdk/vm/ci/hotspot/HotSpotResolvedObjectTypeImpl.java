@@ -29,10 +29,12 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmClassModifiers;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
+import static jdk.vm.ci.meta.JavaConstant.NULL_POINTER;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,6 +81,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private volatile HotSpotResolvedObjectTypeImpl[] interfaces;
     private HotSpotConstantPool constantPool;
     private final JavaConstant mirror;
+    private final JavaConstant classLoader;
     private HotSpotResolvedObjectTypeImpl superClass;
 
     /**
@@ -135,6 +138,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         // and live across more than one compilation.
         try (HotSpotObjectConstantScope global = HotSpotObjectConstantScope.enterGlobalScope()) {
             this.mirror = runtime().compilerToVm.getJavaMirror(this);
+            this.classLoader = runtime().compilerToVm.getLoader(this);
             assert getName().charAt(0) != '[' || isArray() : getName();
         }
     }
@@ -389,6 +393,17 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     public boolean isEnum() {
         HotSpotResolvedObjectTypeImpl superclass = getSuperclass();
         return superclass != null && superclass.equals(runtime().getJavaLangEnum());
+    }
+
+    @Override
+    public boolean isRecord() {
+        HotSpotVMConfig config = config();
+        final long metaspaceRecordComponents = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassRecordComponentsOffset);
+        if (metaspaceRecordComponents != 0) {
+            HotSpotResolvedObjectTypeImpl superclass = getSuperclass();
+            return isLeaf() && superclass != null && superclass.equals(runtime().getJavaLangRecord());
+        }
+        return false;
     }
 
     @Override
@@ -677,6 +692,16 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public JavaConstant getLoader() {
+        return classLoader;
+    }
+
+    @Override
+    public URL getCodeLocation() {
+        return runtime().compilerToVm.getCodeLocation(this);
+    }
+
+    @Override
     protected HotSpotResolvedObjectTypeImpl getArrayType() {
         return runtime().compilerToVm.getArrayType((char) 0, this);
     }
@@ -740,6 +765,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         /**
          * Returns the name of this field as a {@link String}. If the field is an internal field the
          * name index is pointing into the vmSymbols table.
+         *
          * @param klass field's holder class
          */
         public String getName(HotSpotResolvedObjectTypeImpl klass) {
@@ -749,6 +775,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         /**
          * Returns the signature of this field as {@link String}. If the field is an internal field
          * the signature index is pointing into the vmSymbols table.
+         *
          * @param klass field's holder class
          */
         public String getSignature(HotSpotResolvedObjectTypeImpl klass) {
@@ -834,7 +861,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @param prepend an array to be prepended to the returned result
      */
     private HotSpotResolvedJavaField[] getFields(boolean retrieveStaticFields, HotSpotResolvedJavaField[] prepend) {
-        HotSpotVMConfig config = config();
         int resultCount = 0;
         int index = 0;
 
