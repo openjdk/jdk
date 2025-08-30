@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,22 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             }),
 
     // RFC 8879 - TLS Certificate Compression
-    COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate"),
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate",
+            (new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CompressedCertificate.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
+            (new Map.Entry[] {
+                    // Note that the producing of this message is delegated to
+                    // CertificateMessage producer.
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            })),
 
     // RFC 8870 - Encrypted Key Transport for DTLS/Secure RTP
     EKT_KEY                     ((byte)0x1A, "ekt_key"),
