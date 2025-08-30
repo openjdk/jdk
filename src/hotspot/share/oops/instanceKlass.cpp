@@ -575,7 +575,7 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
 }
 
 void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
-                                          const Klass* super_klass,
+                                          const InstanceKlass* super_klass,
                                           Array<InstanceKlass*>* local_interfaces,
                                           Array<InstanceKlass*>* transitive_interfaces) {
   // Only deallocate transitive interfaces if not empty, same as super class
@@ -584,7 +584,7 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
   if (ti != Universe::the_empty_instance_klass_array() && ti != local_interfaces) {
     // check that the interfaces don't come from super class
     Array<InstanceKlass*>* sti = (super_klass == nullptr) ? nullptr :
-                    InstanceKlass::cast(super_klass)->transitive_interfaces();
+                    super_klass->transitive_interfaces();
     if (ti != sti && ti != nullptr && !ti->is_shared()) {
       MetadataFactory::free_array<InstanceKlass*>(loader_data, ti);
     }
@@ -677,7 +677,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
-  deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
+  deallocate_interfaces(loader_data, java_super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
@@ -942,7 +942,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   JavaThread* jt = THREAD;
 
   // link super class before linking this class
-  Klass* super_klass = super();
+  InstanceKlass* super_klass = java_super();
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
@@ -957,8 +957,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       return false;
     }
 
-    InstanceKlass* ik_super = InstanceKlass::cast(super_klass);
-    ik_super->link_class_impl(CHECK_false);
+    super_klass->link_class_impl(CHECK_false);
   }
 
   // link all interfaces implemented by this class before linking this class
@@ -1805,15 +1804,15 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
 Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();
   for (int i = 0; i < n; i++) {
-    Klass* intf1 = local_interfaces()->at(i);
+    InstanceKlass* intf1 = local_interfaces()->at(i);
     assert(intf1->is_interface(), "just checking type");
     // search for field in current interface
-    if (InstanceKlass::cast(intf1)->find_local_field(name, sig, fd)) {
+    if (intf1->find_local_field(name, sig, fd)) {
       assert(fd->is_static(), "interface field must be static");
       return intf1;
     }
     // search for field in direct superinterfaces
-    Klass* intf2 = InstanceKlass::cast(intf1)->find_interface_field(name, sig, fd);
+    Klass* intf2 = intf1->find_interface_field(name, sig, fd);
     if (intf2 != nullptr) return intf2;
   }
   // otherwise field lookup fails
@@ -1832,8 +1831,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd)
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, fd);
+  { InstanceKlass* supr = java_super();
+    if (supr != nullptr) return supr->find_field(name, sig, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1852,8 +1851,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, is_static, fd);
+  { InstanceKlass* supr = java_super();
+    if (supr != nullptr) return supr->find_field(name, sig, is_static, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1872,12 +1871,12 @@ bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fie
 
 
 bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
-  Klass* klass = const_cast<InstanceKlass*>(this);
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->find_local_field_from_offset(offset, is_static, fd)) {
+    if (klass->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
-    klass = klass->super();
+    klass = klass->java_super();
   }
   return false;
 }
@@ -1920,7 +1919,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
@@ -1937,7 +1936,7 @@ static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
@@ -2232,17 +2231,17 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
                                               OverpassLookupMode overpass_mode,
                                               PrivateLookupMode private_mode) const {
   OverpassLookupMode overpass_local_mode = overpass_mode;
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    Method* const method = InstanceKlass::cast(klass)->find_method_impl(name,
-                                                                        signature,
-                                                                        overpass_local_mode,
-                                                                        StaticLookupMode::find,
-                                                                        private_mode);
+    Method* const method = klass->find_method_impl(name,
+                                                   signature,
+                                                   overpass_local_mode,
+                                                   StaticLookupMode::find,
+                                                   private_mode);
     if (method != nullptr) {
       return method;
     }
-    klass = klass->super();
+    klass = klass->java_super();
     overpass_local_mode = OverpassLookupMode::skip;   // Always ignore overpass methods in superclasses
   }
   return nullptr;
@@ -2252,12 +2251,12 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
 bool InstanceKlass::has_redefined_this_or_super() const {
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->has_been_redefined()) {
+    if (klass->has_been_redefined()) {
       return true;
     }
-    klass = klass->super();
+    klass = klass->java_super();
   }
   return false;
 }
@@ -3986,7 +3985,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(superklass()));
+                       p2i(this),  p2i(java_super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -3994,7 +3993,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
         debug_stream.print(" " PTR_FORMAT,
-                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+                           p2i(local_interfaces()->at(i)));
       }
     }
 
@@ -4207,18 +4206,16 @@ void InstanceKlass::oop_verify_on(oop obj, outputStream* st) {
   obj->oop_iterate(&blk);
 }
 
-
 // JNIid class for jfieldIDs only
 // Note to reviewers:
 // These JNI functions are just moved over to column 1 and not changed
 // in the compressed oops workspace.
-JNIid::JNIid(Klass* holder, int offset, JNIid* next) {
+JNIid::JNIid(InstanceKlass* holder, int offset, JNIid* next) {
   _holder = holder;
   _offset = offset;
   _next = next;
   DEBUG_ONLY(_is_static_field_id = false;)
 }
-
 
 JNIid* JNIid::find(int offset) {
   JNIid* current = this;
@@ -4237,11 +4234,10 @@ void JNIid::deallocate(JNIid* current) {
   }
 }
 
-
-void JNIid::verify(Klass* holder) {
+void JNIid::verify(InstanceKlass* holder) {
   int first_field_offset  = InstanceMirrorKlass::offset_of_static_fields();
   int end_field_offset;
-  end_field_offset = first_field_offset + (InstanceKlass::cast(holder)->static_field_size() * wordSize);
+  end_field_offset = first_field_offset + (holder->static_field_size() * wordSize);
 
   JNIid* current = this;
   while (current != nullptr) {
@@ -4554,7 +4550,7 @@ void ClassHierarchyIterator::next() {
   }
   _visit_subclasses = true; // reset
   while (_current->next_sibling() == nullptr && _current != _root) {
-    _current = _current->superklass(); // backtrack; no more sibling subclasses left
+    _current = _current->java_super(); // backtrack; no more sibling subclasses left
   }
   if (_current == _root) {
     // Iteration is over (back at root after backtracking). Invalidate the iterator.
