@@ -371,7 +371,8 @@ address ArchiveBuilder::reserve_buffer() {
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
-    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
+    // Zero is acceptable for _requested_static_archive_bottom. Using casts to avoid UBSAN complain of nullptr arithmetic.
+    _requested_static_archive_top = (address)((uintptr_t)_requested_static_archive_bottom + static_archive_size);
     my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
@@ -379,7 +380,8 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
 
-  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
+  // Zero is acceptable for my_archive_requested_bottom. Using casts to avoid UBSAN complain of nullptr arithmetic.
+  address my_archive_requested_top = (address)((uintptr_t)my_archive_requested_bottom + buffer_size);
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
@@ -1046,7 +1048,8 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(u4 offset) const {
-  address requested_addr = _requested_static_archive_bottom + offset;
+  // Zero is acceptable for _requested_static_archive_bottom. Using casts to avoid UBSAN complain of nullptr arithmetic.
+  address requested_addr = (address)((uintptr_t)_requested_static_archive_bottom + offset);
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");
   return buffered_addr;
@@ -1112,8 +1115,10 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = bottom + _buffer_to_requested_delta;
-    address new_top = top + _buffer_to_requested_delta;
+    // It is acceptable that new_bottom/new_top becomes zero.
+    // Using casts to avoid UBSAN complain on addition of non-zero pointers resulted in zero(nullptr).
+    address new_bottom = (address)((uintptr_t)bottom + _buffer_to_requested_delta);
+    address new_top = (address)((uintptr_t)top + _buffer_to_requested_delta);
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                    p2i(bottom), p2i(top),
@@ -1176,7 +1181,8 @@ void ArchiveBuilder::relocate_to_requested() {
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    _requested_static_archive_top = _requested_static_archive_bottom + my_archive_size;
+    // Zero is acceptable for _requested_static_archive_bottom. Using casts to avoid UBSAN complain of nullptr arithmetic.
+    _requested_static_archive_top = (address)((uintptr_t)_requested_static_archive_bottom + my_archive_size);
     RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {
