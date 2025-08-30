@@ -108,23 +108,24 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
-int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+void os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int result = os::vsnprintf(buf, len, fmt, args);
   va_end(args);
-  assert(result >= 0, "os::snprintf error");
   assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
-  return result;
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  assert(buf != nullptr || len == 0, "Valid buffer and length must be given");
+  assert(fmt != nullptr, "Missing format string");
   int result = permit_forbidden_function::vsnprintf(buf, len, fmt, args);
-  // If an encoding error occurred (result < 0) then it's not clear
+  // If an error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
+  if ((result < 0) && (len > 0) && (buf != nullptr)) {
     buf[len - 1] = '\0';
   }
+  assert(result >= 0, "os::vsnprintf error: %s", strerror(errno));
   return result;
 }
 

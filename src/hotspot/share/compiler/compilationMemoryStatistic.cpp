@@ -158,10 +158,10 @@ void FootprintTimeline::print_on(outputStream* st) const {
       st->print("%24s", e.info.text);
       col += 25; st->fill_to(col);
       char tmp[64];
-      os::snprintf(tmp, sizeof(tmp), "%9zu (%+zd)", e._bytes.cur, e._bytes.end_delta());
+      os::snprintf_checked(tmp, sizeof(tmp), "%9zu (%+zd)", e._bytes.cur, e._bytes.end_delta());
       st->print("%s ", tmp); // end
       col += 21; st->fill_to(col);
-      os::snprintf(tmp, sizeof(tmp), "%6u (%+d)", e._live_nodes.cur, e._live_nodes.end_delta());
+      os::snprintf_checked(tmp, sizeof(tmp), "%6u (%+d)", e._live_nodes.cur, e._live_nodes.end_delta());
       st->print("%s ", tmp); // end
       if (e._bytes.temporary_peak_size() > significant_peak_threshold) {
         col += 20; st->fill_to(col);

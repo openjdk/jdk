@@ -78,10 +78,10 @@ void CompressedKlassPointers::pre_initialize() {
 void CompressedKlassPointers::sanity_check_after_initialization() {
   // In expectation of an assert, prepare condensed info to be printed with the assert.
   char tmp[256];
-  os::snprintf(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
-      " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
-      RANGE2FMTARGS(_klass_range_start, _klass_range_end),
-      p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
+  os::snprintf_checked(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
+                       " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
+                       RANGE2FMTARGS(_klass_range_start, _klass_range_end),
+                       p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
 #define ASSERT_HERE(cond) assert(cond, " (%s)", tmp);
 #define ASSERT_HERE_2(cond, msg) assert(cond, msg " (%s)", tmp);
 

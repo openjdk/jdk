@@ -2113,7 +2113,7 @@ char* DumpMerger::get_writer_path(const char* base_path, int seq) {
   char* path = NEW_RESOURCE_ARRAY(char, buf_size);
   memset(path, 0, buf_size);
 
-  os::snprintf(path, buf_size, "%s.p%d", base_path, seq);
+  os::snprintf_checked(path, buf_size, "%s.p%d", base_path, seq);
 
   return path;
 }
