@@ -482,6 +482,7 @@
                                                                             \
   product_pd(size_t, HeapBaseMinAddress,                                    \
           "OS specific low limit for heap base address")                    \
+          range(64 * K, max_uintx)                                          \
           constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, PretenureSizeThreshold, 0,                                \
