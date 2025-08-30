@@ -361,8 +361,7 @@ HeapWord* SerialHeap::attempt_allocation(size_t size,
   return res;
 }
 
-HeapWord* SerialHeap::mem_allocate(size_t size,
-                                   bool* gc_overhead_limit_was_exceeded) {
+HeapWord* SerialHeap::mem_allocate(size_t size) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
 }
