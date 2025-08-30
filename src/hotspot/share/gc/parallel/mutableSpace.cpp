@@ -34,30 +34,26 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment) :
+MutableSpace::MutableSpace(size_t page_size) :
   _last_setup_region(),
-  _alignment(alignment),
+  _page_size(page_size),
   _bottom(nullptr),
   _top(nullptr),
-  _end(nullptr)
-{
-  assert(MutableSpace::alignment() % os::vm_page_size() == 0,
-         "Space should be aligned");
-}
+  _end(nullptr) {}
 
-void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
-  if (!mr.is_empty()) {
-    HeapWord *start = align_up(mr.start(), page_size);
-    HeapWord *end =   align_down(mr.end(), page_size);
-    if (end > start) {
-      size_t size = pointer_delta(end, start, sizeof(char));
-      if (clear_space) {
-        // Prefer page reallocation to migration.
-        os::disclaim_memory((char*)start, size);
-      }
-      os::numa_make_global((char*)start, size);
-    }
+void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
+  assert(is_aligned(mr.start(), page_size()), "precondition");
+  assert(is_aligned(mr.end(), page_size()), "precondition");
+
+  if (mr.is_empty()) {
+    return;
   }
+
+  if (clear_space) {
+    // Prefer page reallocation to migration.
+    os::disclaim_memory((char*) mr.start(), mr.byte_size());
+  }
+  os::numa_make_global((char*) mr.start(), mr.byte_size());
 }
 
 void MutableSpace::initialize(MemRegion mr,
@@ -105,20 +101,17 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
-    size_t page_size = alignment();
-
     if (UseNUMA) {
-      numa_setup_pages(head, page_size, clear_space);
-      numa_setup_pages(tail, page_size, clear_space);
+      numa_setup_pages(head, clear_space);
+      numa_setup_pages(tail, clear_space);
     }
 
     if (AlwaysPreTouch) {
-      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             pretouch_page_size, pretouch_workers);
+                             page_size(), pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             pretouch_page_size, pretouch_workers);
+                             page_size(), pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
