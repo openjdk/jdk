@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485 8333456 8335668
+ * @bug 8327640 8331485 8333456 8335668 8366400
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -160,6 +160,14 @@ public class LenientParseTest {
         assertEquals(1.23E45, successParse(fmt, "1.23E45.123", 7));
         assertEquals(1.23E45, successParse(fmt, "1.23E45.", 7));
         assertEquals(1.23E45, successParse(fmt, "1.23E45FOO3222", 7));
+    }
+
+    @Test // Non-localized, only run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void invalidPositionParseTest() {
+        // -1 index should fail properly. Ensure SIOOBE not thrown during
+        // affix matching when position may be less than 0
+        assertNull(assertDoesNotThrow(() -> new DecimalFormat().parse("1", new ParsePosition(-1))));
     }
 
     // ---- CurrencyFormat tests ----
