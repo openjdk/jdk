@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,24 @@
  * questions.
  */
 
-/* @test
-   @bug 6635110
-   @key headful
-   @summary GTK icons should not throw NPE when called by non-GTK UI
-   @author Peter Zhelezniakov
-   @run main Test6635110
+/*
+ * @test
+ * @bug 6635110
+ * @key headful
+ * @requires os.family == "linux"
+ * @summary GTK icons should not throw NPE when called by non-GTK UI
+ * @run main Test6635110
 */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Component;
 import java.awt.image.BufferedImage;
-import javax.swing.plaf.basic.*;
+
+import javax.swing.JMenu;
+import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.basic.BasicMenuUI;
+import javax.swing.plaf.basic.BasicToolBarUI;
 
 
 public class Test6635110 implements Runnable {
@@ -59,12 +65,8 @@ public class Test6635110 implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        } catch (Exception e) {
-            System.out.println("GTKLookAndFeel cannot be set, skipping this test");
-            return;
-        }
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+
         SwingUtilities.invokeAndWait(new Test6635110());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
-/* @test
-   @bug 6963870
-   @key headful
-   @summary Tests that GTKPainter.ListTableFocusBorder.getBorderInsets()
-            doesn't return null
-   @author Peter Zhelezniakov
-   @run main Test6963870
-*/
+/*
+ * @test
+ * @bug 6963870
+ * @key headful
+ * @requires os.family == "linux"
+ * @summary Tests that GTKPainter.ListTableFocusBorder.getBorderInsets()
+ *          doesn't return null
+ * @run main Test6963870
+ */
 
 import java.awt.Insets;
 import javax.swing.SwingUtilities;
@@ -60,14 +61,8 @@ public class Test6963870 implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        } catch (Exception e) {
-            System.out.println("GTKLookAndFeel cannot be set, skipping this test");
-            return;
-        }
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
 
         SwingUtilities.invokeAndWait(new Test6963870());
     }
 }
-

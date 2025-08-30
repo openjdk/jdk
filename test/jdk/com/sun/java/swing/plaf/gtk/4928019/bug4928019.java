@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 4928019
  * @key headful
+ * @requires os.family == "linux"
  * @summary Makes sure all the basic classes can be created with GTK.
- * @author Scott Violet
  */
 
 import javax.swing.*;
@@ -34,17 +34,8 @@ import javax.swing.plaf.basic.*;
 
 public class bug4928019 {
     public static void main(String[] args) throws Throwable {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        } catch (UnsupportedLookAndFeelException ex) {
-            System.err.println("GTKLookAndFeel is not supported on this platform." +
-                    " Test is considered passed.");
-            return;
-        } catch (ClassNotFoundException ex) {
-            System.err.println("GTKLookAndFeel class is not found." +
-                    " Test is considered passed.");
-            return;
-        }
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+
         new JButton() {
             public void updateUI() {
                 setUI(new BasicButtonUI());
