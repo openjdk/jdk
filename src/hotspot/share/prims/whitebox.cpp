@@ -126,8 +126,8 @@
 #endif
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
-#include "osContainer_linux.hpp"
 #include "os_linux.hpp"
+#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
