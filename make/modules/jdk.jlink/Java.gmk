@@ -29,6 +29,4 @@
 # upgrade_files_<module-name>.conf files
 COPY += .conf
 
-DISABLED_WARNINGS_java += suppression
-
 ################################################################################
