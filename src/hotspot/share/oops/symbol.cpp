@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
