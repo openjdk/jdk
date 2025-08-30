@@ -80,9 +80,13 @@ import jdk.internal.util.StaticProperty;
  * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
- * <p> Unless otherwise noted, {@linkplain java.nio.file##links symbolic links}
- * are automatically redirected to the <i>target</i> of the link, whether they
- * are provided by a pathname string or via a {@code File} object.
+ * <p> Many operating systems and file systems have support for
+ * {@linkplain java.nio.file##links symbolic links}.
+ * A symbolic link is a special file that serves as a reference to another file.
+ * Unless otherwise specified, symbolic links are transparent to applications
+ * and operations on files that are symbolic links are automatically redirected
+ * to the target of the link.  Methods that only operate on the abstract pathnam
+ * do not access the file system and thus do not resolve symbolic links.
  *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
  * the {@link #getParent} method of this class and consists of the pathname's
@@ -448,12 +452,12 @@ public class File
     /* -- Path-component accessors -- */
 
     /**
-     * Returns the name of the file or directory denoted by this abstract
+     * Returns the name component of this abstract
      * pathname.  This is just the last name in the pathname's name
      * sequence.  If the pathname's name sequence is empty, then the empty
      * string is returned.
      *
-     * @return  The name of the file or directory denoted by this abstract
+     * @return  The name component of this abstract
      *          pathname, or the empty string if this pathname's name sequence
      *          is empty
      */
@@ -835,7 +839,7 @@ public class File
     }
 
     /**
-     * Tests whether the file named by this abstract pathname is a hidden
+     * Tests whether the file denoted by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
      * UNIX systems, a file is considered to be hidden if its name begins with
      * a period character ({@code '.'}).  On Microsoft Windows systems, a file
@@ -935,7 +939,7 @@ public class File
      *
      * @return  {@code true} if the named file does not exist and was
      *          successfully created; {@code false} if the named file
-     *          already exists
+     *          already exists, including if it is a symbolic link
      *
      * @throws  IOException
      *          If an I/O error occurred
@@ -1291,7 +1295,7 @@ public class File
     }
 
     /**
-     * Sets the last-modified time of the file or directory named by this
+     * Sets the last-modified time of the file or directory denoted by this
      * abstract pathname.
      *
      * <p> All platforms support file-modification times to the nearest second,
@@ -1320,7 +1324,7 @@ public class File
     }
 
     /**
-     * Marks the file or directory named by this abstract pathname so that
+     * Marks the file or directory denoted by this abstract pathname so that
      * only read operations are allowed. After invoking this method the file
      * or directory will not change until it is either deleted or marked
      * to allow write access. On some platforms it may be possible to start the
@@ -1341,7 +1345,8 @@ public class File
     }
 
     /**
-     * Sets the owner's or everybody's write permission for this abstract
+     * Sets the owner's or everybody's write permission of the file or
+     * directory denoted by this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to modify files that
      * disallow write operations.
@@ -1375,7 +1380,8 @@ public class File
     }
 
     /**
-     * A convenience method to set the owner's write permission for this abstract
+     * A convenience method to set the owner's write permission for the file
+     * or directory denoted by this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to modify files that
      * disallow write operations.
@@ -1402,7 +1408,8 @@ public class File
     }
 
     /**
-     * Sets the owner's or everybody's read permission for this abstract
+     * Sets the owner's or everybody's read permission for the file or directory
+     * denoted by this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to read files that are
      * marked as unreadable.
@@ -1442,7 +1449,8 @@ public class File
     }
 
     /**
-     * A convenience method to set the owner's read permission for this abstract
+     * A convenience method to set the owner's read permission for the file
+     * or directory denoted by this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to read files that are
      * marked as unreadable.
@@ -1475,7 +1483,8 @@ public class File
     }
 
     /**
-     * Sets the owner's or everybody's execute permission for this abstract
+     * Sets the owner's or everybody's execute permission for the file or
+     * directory denoted by this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to execute files that are
      * not marked executable.
@@ -1515,7 +1524,8 @@ public class File
     }
 
     /**
-     * A convenience method to set the owner's execute permission for this
+     * A convenience method to set the owner's execute permission for the file
+     * or directory denoted by this
      * abstract pathname. On some platforms it may be possible to start the Java
      * virtual machine with special privileges that allow it to execute files
      * that are not marked executable.
@@ -1934,7 +1944,9 @@ public class File
      * Compares two abstract pathnames lexicographically.  The ordering
      * defined by this method depends upon the underlying system.  On UNIX
      * systems, alphabetic case is significant in comparing pathnames; on
-     * Microsoft Windows systems it is not.
+     * Microsoft Windows systems it is not.  This method only compares the
+     * abstract pathnames; it does not access the file system and the file is
+     * not required to exist.
      *
      * @param   pathname  The abstract pathname to be compared to this abstract
      *                    pathname
@@ -1958,11 +1970,9 @@ public class File
      * abstract pathname.  Whether or not two abstract
      * pathnames are equal depends upon the underlying operating system.
      * On UNIX systems, alphabetic case is significant in comparing pathnames;
-     * on Microsoft Windows systems it is not.
-     *
-     * @apiNote This method only tests whether the abstract pathnames are equal;
-     *          it does not access the file system and the file is not required
-     *          to exist.
+     * on Microsoft Windows systems it is not.  This method only tests whether
+     * the abstract pathnames are equal; it does not access the file system and
+     * the file is not required to exist.
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
