@@ -2588,75 +2588,70 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
                                           int version, int bci, Symbol* name) {
   ResourceMark rm;
 
-  // Get strings and string lengths
+  // Get strings.
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
   const char* klass_name  = holder->external_name();
-  int buf_len = (int)strlen(klass_name);
 
   char* method_name = name->as_C_string();
-  buf_len += (int)strlen(method_name);
 
   char* source_file_name = nullptr;
   Symbol* source = Backtrace::get_source_file_name(holder, version);
   if (source != nullptr) {
     source_file_name = source->as_C_string();
-    buf_len += (int)strlen(source_file_name);
   }
 
   char *module_name = nullptr, *module_version = nullptr;
   ModuleEntry* module = holder->module();
   if (module->is_named()) {
     module_name = module->name()->as_C_string();
-    buf_len += (int)strlen(module_name);
     if (module->version() != nullptr) {
       module_version = module->version()->as_C_string();
-      buf_len += (int)strlen(module_version);
     }
   }
 
-  // Allocate temporary buffer with extra space for formatting and line number
-  const size_t buf_size = buf_len + 64;
-  char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
+  // The string stream that will handle all of the formatting and outputting.
+  stringStream ss;
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  ss.print("\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != nullptr) {
     if (module_version != nullptr) {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      ss.print("%s@%s/", module_name, module_version);
     } else {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      ss.print("%s/", module_name);
     }
   }
 
   // The method can be null if the requested class version is gone
   Method* method = holder->method_with_orig_idnum(method_id, version);
   if (!version_matches(method, version)) {
-    strcat(buf, "Redefined)");
+    ss.print("Redefined)");
   } else {
     int line_number = Backtrace::get_line_number(method, bci);
     if (line_number == -2) {
-      strcat(buf, "Native Method)");
+      ss.print("Native Method)");
     } else {
       if (source_file_name != nullptr && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        ss.print("%s:%d)", source_file_name, line_number);
       } else if (source_file_name != nullptr) {
         // Just sourcename
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        ss.print("%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        ss.print("Unknown Source)");
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
-        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        ss.print("(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
     }
   }
 
-  st->print_cr("%s", buf);
+  ss.cr();
+  st->print_raw(ss.freeze(), ss.size());
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
