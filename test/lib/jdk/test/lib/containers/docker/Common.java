@@ -31,6 +31,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -98,6 +102,19 @@ public class Common {
     public static DockerRunOptions addWhiteBoxOpts(DockerRunOptions opts) {
         opts.addJavaOpts("-Xbootclasspath/a:/test-classes/whitebox.jar",
                          "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI");
+        return opts;
+    }
+
+    public static DockerRunOptions addTestClassPath(DockerRunOptions opts) {
+        int num = 0;
+        List<String> classPath = new ArrayList<>();
+        for (String item: Utils.TEST_CLASS_PATH.split(Pattern.quote(System.getProperty("path.separator")))) {
+           String name = String.format("/test_class_path_%d", num);
+           opts.addDockerOpts("--volume", String.format("%s:%s", item, name));
+           classPath.add(name);
+           num++;
+        }
+        opts.addJavaOpts("-cp", classPath.stream().collect(Collectors.joining(":")));
         return opts;
     }
 

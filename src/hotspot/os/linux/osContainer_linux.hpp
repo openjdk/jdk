@@ -40,6 +40,7 @@ class OSContainer: AllStatic {
  private:
   static bool   _is_initialized;
   static bool   _is_containerized;
+  static bool   _has_memory_limit;
   static int    _active_processor_count;
 
  public:
@@ -48,6 +49,7 @@ class OSContainer: AllStatic {
   static void print_container_helper(outputStream* st, jlong j, const char* metrics);
 
   static inline bool is_containerized();
+  static inline bool has_memory_limit();
   static const char * container_type();
 
   static jlong memory_limit_in_bytes();
@@ -78,6 +80,10 @@ class OSContainer: AllStatic {
 
 inline bool OSContainer::is_containerized() {
   return _is_containerized;
+}
+
+inline bool OSContainer::has_memory_limit() {
+  return _has_memory_limit;
 }
 
 #endif // OS_LINUX_OSCONTAINER_LINUX_HPP
