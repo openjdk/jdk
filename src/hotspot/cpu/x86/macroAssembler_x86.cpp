@@ -5908,12 +5908,28 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           BIND(L_check_fill_64_bytes_avx2);
         }
         // Fill 64-byte chunks
-        Label L_fill_64_bytes_loop;
         vpbroadcastd(xtmp, xtmp, Assembler::AVX_256bit);
 
         subptr(count, 16 << shift);
         jcc(Assembler::less, L_check_fill_32_bytes);
         align(16);
+
+        // align data for 64-byte chunks
+        Label L_fill_64_bytes_loop, L_align_64_bytes;
+        if (EnableX86ECoreOpts) {
+            // align 'big' arrays to 64 bytes (cache line size) to minimize split_stores
+            cmpptr(count, 256<<shift);
+            jcc(Assembler::below, L_fill_64_bytes_loop);
+            align(16);
+
+            BIND(L_align_64_bytes);
+            testptr(to, 0x3f); // low 7 bits shoud be zero
+            jccb(Assembler::zero, L_fill_64_bytes_loop);
+            movl(Address(to, 0), value);
+            addptr(to, 4);
+            subptr(count, 1<<shift);
+            jmpb(L_align_64_bytes);
+        }
 
         BIND(L_fill_64_bytes_loop);
         vmovdqu(Address(to, 0), xtmp);
