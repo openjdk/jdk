@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153029
+ * @bug 8153029 8360463
  * @library /test/lib
  * @run main ChaCha20CipherUnitTest
  * @summary Unit test for com.sun.crypto.provider.ChaCha20Cipher.
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -87,7 +88,7 @@ public class ChaCha20CipherUnitTest {
             } else {
                 System.out.println("Expected transformation: " + transformation);
             }
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             if (!expected) {
                 System.out.println("Unexpected transformation: " + transformation);
             } else {
