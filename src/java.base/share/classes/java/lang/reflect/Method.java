@@ -43,6 +43,8 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.MethodScope;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.AnnotationParser;
+import sun.reflect.annotation.EnumValue;
+import sun.reflect.annotation.EnumValueArray;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
 import java.nio.ByteBuffer;
@@ -195,6 +197,10 @@ public final class Method extends Executable {
     @Override
     byte[] getAnnotationBytes() {
         return annotations;
+    }
+
+    byte[] getAnnotationDefaultBytes() {
+        return annotationDefault;
     }
 
     /**
@@ -750,22 +756,10 @@ public final class Method extends Executable {
      * @jls 9.6.2 Defaults for Annotation Interface Elements
      */
     public Object getDefaultValue() {
-        if  (annotationDefault == null)
+        if  (annotationDefault == null) {
             return null;
-        Class<?> memberType = AnnotationType.invocationHandlerReturnType(
-            getReturnType());
-        Object result = AnnotationParser.parseMemberValue(
-            memberType, ByteBuffer.wrap(annotationDefault),
-            SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
-        if (result instanceof ExceptionProxy) {
-            if (result instanceof TypeNotPresentExceptionProxy proxy) {
-                throw new TypeNotPresentException(proxy.typeName(), proxy.getCause());
-            }
-            throw new AnnotationFormatError("Invalid default: " + this);
         }
-        return result;
+        return AnnotationParser.parseAnnotationDefault(this, annotationDefault, true);
     }
 
     /**
