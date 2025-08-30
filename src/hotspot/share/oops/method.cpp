@@ -152,11 +152,17 @@ void Method::release_C_heap_structures() {
 }
 
 address Method::get_i2c_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::throw_AbstractMethodError_entry();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_i2c_entry();
 }
 
 address Method::get_c2i_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_entry();
 }
@@ -1165,9 +1171,9 @@ void Method::clear_code() {
   // this may be null if c2i adapters have not been made yet
   // Only should happen at allocate time.
   if (adapter() == nullptr) {
-    _from_compiled_entry    = nullptr;
+    _from_compiled_entry = nullptr;
   } else {
-    _from_compiled_entry    = adapter()->get_c2i_entry();
+    _from_compiled_entry = adapter()->get_c2i_entry();
   }
   OrderAccess::storestore();
   _from_interpreted_entry = _i2i_entry;
@@ -1196,7 +1202,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!CDSConfig::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!CDSConfig::is_dumping_adapters()) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;
@@ -1277,9 +1283,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  if (_adapter == nullptr) {
+  if (is_abstract()) {
+    h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
+  } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
     assert(adapter()->is_linked(), "Adapter must have been linked");
+    h_method->_from_compiled_entry = adapter()->get_c2i_entry();
   }
 
   // ONLY USE the h_method now as make_adapter may have blocked
@@ -1300,6 +1309,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  assert(!mh->is_abstract(), "abstract methods do not have adapters");
   PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
 
   // Adapters for compiled code are made eagerly here.  They are fairly
@@ -1318,7 +1328,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   }
 
   mh->set_adapter_entry(adapter);
-  mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
 }
 
