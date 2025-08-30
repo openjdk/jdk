@@ -611,7 +611,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 #ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::load_ref_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register addr, bool narrow, bool maybe_null) {
+void ShenandoahBarrierSetAssembler::load_ref_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register addr, Register tmp, bool narrow, bool maybe_null) {
   if (!ShenandoahLoadRefBarrierStubC2::needs_barrier(node)) {
     return;
   }
@@ -620,7 +620,7 @@ void ShenandoahBarrierSetAssembler::load_ref_barrier_c2(const MachNode* node, Ma
   if (maybe_null) {
     __ cbz(obj, done);
   }
-  ShenandoahLoadRefBarrierStubC2* const stub = ShenandoahLoadRefBarrierStubC2::create(node, obj, addr, narrow);
+  ShenandoahLoadRefBarrierStubC2* const stub = ShenandoahLoadRefBarrierStubC2::create(node, obj, addr, tmp, narrow);
   // Don't preserve the obj across the runtime call, we override it from the return value anyway.
   stub->dont_preserve(obj);
   // Check if GC marking is in progress, otherwise we don't have to do anything.
@@ -689,22 +689,27 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
 
 void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
+  Register obj = _obj;
+  if (_narrow) {
+    __ decode_heap_oop(_tmp, _obj);
+    obj = _tmp;
+  }
   // Weak/phantom loads always need to go to runtime.
   if ((_node->barrier_data() & ShenandoahBarrierStrong) != 0) {
     // Check for object in cset.
     __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
-    __ lsr(rscratch1, _obj, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ lsr(rscratch1, obj, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ ldrb(rscratch2, Address(rscratch2, rscratch1));
     __ cbz(rscratch2, *continuation());
   }
   {
     SaveLiveRegisters save_registers(&masm, this);
-    if (c_rarg0 != _obj) {
+    if (c_rarg0 != obj) {
       if (c_rarg0 == _addr) {
         __ mov(rscratch1, _addr);
         _addr = rscratch1;
       }
-      __ mov(c_rarg0, _obj);
+      __ mov(c_rarg0, obj);
     }
     __ mov(c_rarg1, _addr);
 
@@ -728,6 +733,10 @@ void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
     __ blr(rscratch1);
     __ mov(_obj, r0);
   }
+  if (_narrow) {
+    __ encode_heap_oop(_obj);
+  }
+  __ b(*continuation());
 }
 
 void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {

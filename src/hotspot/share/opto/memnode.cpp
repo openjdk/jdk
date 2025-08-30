@@ -106,6 +106,7 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_unsafe_access) {
     st->print(" unsafe");
   }
+  st->print(" barrier: %u", _barrier_data);
 }
 
 void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st) {
@@ -872,8 +873,6 @@ uint8_t MemNode::barrier_data(const Node* n) {
     return n->as_LoadStore()->barrier_data();
   } else if (n->is_Mem()) {
     return n->as_Mem()->barrier_data();
-  } else if (n->is_DecodeN()) {
-    return n->as_DecodeN()->barrier_data();
   }
   return 0;
 }
@@ -1002,9 +1001,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   load->set_barrier_data(barrier_data);
   if (load->Opcode() == Op_LoadN) {
     Node* ld = gvn.transform(load);
-    DecodeNNode* decode = new DecodeNNode(ld, ld->bottom_type()->make_ptr());
-    decode->set_barrier_data(barrier_data);
-    return decode;
+    return new DecodeNNode(ld, ld->bottom_type()->make_ptr());
   }
 
   return load;

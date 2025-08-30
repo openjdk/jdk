@@ -89,21 +89,14 @@ class DecodeNarrowPtrNode : public TypeNode {
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
 class DecodeNNode : public DecodeNarrowPtrNode {
-  uint8_t _barrier_data;
   public:
   DecodeNNode(Node* value, const Type* type):
-  DecodeNarrowPtrNode(value, type), _barrier_data(0) {
+  DecodeNarrowPtrNode(value, type) {
     init_class_id(Class_DecodeN);
   }
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  void set_barrier_data(uint8_t barrier_data) {
-    _barrier_data = barrier_data;
-  }
-  uint8_t barrier_data() const {
-    return _barrier_data;
-  }
 };
 
 //------------------------------DecodeNKlass--------------------------------
