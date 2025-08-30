@@ -138,6 +138,7 @@ ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
       OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
       EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
       EXTRA_FILES := $(BUILD_JDK_JTREG_EXTRA_FILES), \
+      LIBS := $(LIBPTHREAD), \
   ))
 endif
 
