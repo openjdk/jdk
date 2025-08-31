@@ -73,7 +73,7 @@ public class TestSubwordTruncation {
     // Shorts
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortLeadingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -98,7 +98,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortTrailingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -123,7 +123,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortReverse(short[] in) {
         short[] res = new short[SIZE];
@@ -148,7 +148,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortBitCount(short[] in) {
         short[] res = new short[SIZE];
@@ -277,7 +277,7 @@ public class TestSubwordTruncation {
     // Bytes
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteLeadingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -302,7 +302,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteTrailingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -327,7 +327,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverse(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -352,7 +352,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];
