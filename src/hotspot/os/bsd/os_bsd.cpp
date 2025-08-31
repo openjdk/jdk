@@ -522,7 +522,7 @@ void os::init_system_properties_values() {
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
   os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
-          user_home_dir, Arguments::get_java_home());
+                       user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -1242,27 +1242,27 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch.endianess != arch_array[running_arch_index].endianess) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
     return nullptr;
   }
 
 #ifndef S390
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
     return nullptr;
   }
 #endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if (lib_arch.name!=nullptr) {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
-                 lib_arch.name, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
+                           lib_arch.name, arch_array[running_arch_index].name);
     } else {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
-                 lib_arch.code,
-                 arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
+                           lib_arch.code,
+                           arch_array[running_arch_index].name);
     }
   }
 
@@ -1364,13 +1364,13 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
     size = sizeof(build);
     int mib_build[] = { CTL_KERN, KERN_OSVERSION };
     if (sysctl(mib_build, 2, build, &size, nullptr, 0) < 0) {
-      snprintf(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
+      os::snprintf_checked(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
     } else {
-      snprintf(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
+      os::snprintf_checked(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
     }
   } else
 #endif
-  snprintf(buf, buflen, "%s %s", os, release);
+  os::snprintf_checked(buf, buflen, "%s %s", os, release);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -1447,14 +1447,14 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 #if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
-    snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
+    os::snprintf_checked(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
   } else {
-    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    NOT_AARCH64(os::snprintf_checked(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
     // aarch64 CPU doesn't report its speed
-    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
+    AARCH64_ONLY(os::snprintf_checked(buf, buflen, "\"%s\" %s", model, machine));
   }
 #else
-  snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
+  os::snprintf_checked(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
 #endif
 }
 
@@ -2156,7 +2156,7 @@ void os::set_native_thread_name(const char *name) {
   if (name != nullptr) {
     // Add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
-    snprintf(buf, sizeof(buf), "Java: %s", name);
+    (void) os::snprintf(buf, sizeof(buf), "Java: %s", name);
     pthread_setname_np(buf);
   }
 #endif
@@ -2490,7 +2490,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
     }
   }
 
