@@ -190,11 +190,7 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
 
-  // Memory allocation.   "gc_time_limit_was_exceeded" will
-  // be set to true if the adaptive size policy determine that
-  // an excessive amount of time is being spent doing collections
-  // and caused a null to be returned.  If a null is not returned,
-  // "gc_time_limit_was_exceeded" has an undefined meaning.
+  // Memory allocation.
   HeapWord* mem_allocate(size_t size) override;
 
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
