@@ -804,12 +804,20 @@ class os: AllStatic {
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
-  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
-  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
-  // Performs snprintf and asserts the result is non-negative (so there was not
-  // an encoding error) and that the output was not truncated.
-  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  // Performs vsnprintf and asserts the result is non-negative (so there was not
+  // an encoding error or any other kind of usage error).
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 0)
+  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args);
+  // Delegates to vsnprintf.
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 4)
+  static int snprintf(char* buf, size_t len, const char* fmt, ...);
+
+  // Delegates to snprintf and asserts that the output was not truncated.
+  ATTRIBUTE_PRINTF(3, 4)
+  static void snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);

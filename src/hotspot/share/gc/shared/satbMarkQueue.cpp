@@ -306,7 +306,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   int i = 0;
   while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
-    os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
+    os::snprintf_checked(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
     print_satb_buffer(buffer, buf, nd->index(), nd->capacity());
     nd = nd->next();
     i += 1;
@@ -321,7 +321,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
       _qset(qset), _buffer(buffer) {}
 
     virtual void do_thread(Thread* t) {
-      os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+      (void) os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
       _qset->satb_queue_for_thread(t).print(_buffer);
     }
   } closure(this, buffer);
