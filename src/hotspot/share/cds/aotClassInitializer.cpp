@@ -47,6 +47,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     ik = RegeneratedClasses::get_original_object(ik);
   }
 
+  check_aot_annotations(ik);
+
+  if (ik->force_aot_initialization()) {
+    assert(ik->is_initialized(), "must have been initialized before this check");
+  }
+
   if (!ik->is_initialized() && !ik->is_being_initialized()) {
     return false;
   }
@@ -214,6 +220,9 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     if (ik->has_aot_safe_initializer()) {
       return true;
     }
+    if (ik->force_aot_initialization()) {
+      return true;
+    }
   }
 
 #ifdef ASSERT
@@ -243,6 +252,61 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
     }
   }
 }
+
+template <typename FUNCTION>
+void check_aot_init_annotation_for_supertypes(InstanceKlass* ik, const char* annotation, FUNCTION func) {
+  if (log_is_enabled(Info, aot, init)) {
+    ResourceMark rm;
+    log_info(aot, init)("Found %s class %s", annotation, ik->external_name());
+  }
+
+  // If a type has this annotation, we require that
+  //   - all super classes have this annotation
+  //   - all super interfaces that have <clinit> must have this annotation
+  // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
+  // the current class' <clinit>.
+
+  InstanceKlass* super = ik->java_super();
+  if (super != nullptr && !func(super)) {
+    ResourceMark rm;
+    log_error(aot, init)("Missing %s in superclass %s for class %s",
+                         annotation, super->external_name(), ik->external_name());
+    AOTMetaspace::unrecoverable_writing_error();
+  }
+
+  int len = ik->local_interfaces()->length();
+  for (int i = 0; i < len; i++) {
+    InstanceKlass* intf = ik->local_interfaces()->at(i);
+    if (intf->interface_needs_clinit_execution_as_super() && !func(intf)) {
+      ResourceMark rm;
+      log_error(aot, init)("Missing %s in superinterface %s for class %s",
+                           annotation, intf->external_name(), ik->external_name());
+      AOTMetaspace::unrecoverable_writing_error();
+    }
+  }
+}
+
+void AOTClassInitializer::check_aot_annotations(InstanceKlass* ik) {
+  if (ik->has_aot_safe_initializer()) {
+    check_aot_init_annotation_for_supertypes(ik, "@AOTSafeClassInitializer", [&] (const InstanceKlass* supertype) {
+      return supertype->has_aot_safe_initializer();
+    });
+  } else {
+    // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
+    if (ik->is_runtime_setup_required()) {
+      ResourceMark rm;
+      log_error(aot, init)("@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
+                           ik->external_name());
+    }
+  }
+
+  if (ik->force_aot_initialization()) {
+    check_aot_init_annotation_for_supertypes(ik, "@AOTInitialize", [&] (const InstanceKlass* supertype) {
+      return supertype->force_aot_initialization();
+    });
+  }
+}
+
 
 #ifdef ASSERT
 void AOTClassInitializer::init_test_class(TRAPS) {

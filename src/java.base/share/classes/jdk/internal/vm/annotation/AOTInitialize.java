@@ -31,7 +31,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /// Indicates that the this class should be unconditionally initialized during
-/// the AOT assembly phase ...
+/// the AOT assembly phase ...doc needed .....
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

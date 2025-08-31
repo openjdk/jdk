@@ -5054,30 +5054,6 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
   return ik;
 }
 
-template <typename FUNCTION>
-void ClassFileParser::check_aot_init_annotation_for_supertypes(const char* annotation, FUNCTION func, TRAPS) {
-  // If a type has this annotation, we require that
-  //   - all super classes have this annotation
-  //   - all super interfaces that have <clinit> must have this annotation
-  // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-  // the current class' <clinit>.
-  if (_super_klass != nullptr) {
-    guarantee_property(func(_super_klass),
-                       "Missing %s for class %s",
-                       err_msg("%s in superclass %s", annotation, _super_klass->external_name()),
-                       CHECK);
-  }
-
-  int len = _local_interfaces->length();
-  for (int i = 0; i < len; i++) {
-    InstanceKlass* intf = _local_interfaces->at(i);
-    guarantee_property(func(intf) || !intf->interface_needs_clinit_execution_as_super(),
-                       "Missing %s for class %s",
-                       err_msg("%s in superinterface %s", annotation, intf->external_name()),
-                       CHECK);
-  }
-}
-
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
                                           bool changed_by_loadhook,
                                           const ClassInstanceInfo& cl_inst_info,
@@ -5185,35 +5161,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // Fill in field values obtained by parse_classfile_attributes
   if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
-
-  // AOT-related checks.
-  // Note we cannot check this in general due to instrumentation or module patching
-  if (CDSConfig::is_initing_classes_at_dump_time() || 1) {
-    // Check the aot initialization safe status.
-    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
-    // in the AOT assembly phase.
-    if (ik->has_aot_safe_initializer()) {
-      check_aot_init_annotation_for_supertypes("@AOTSafeClassInitializer", [&] (const InstanceKlass* supertype) {
-            return supertype->has_aot_safe_initializer();
-        }, CHECK);
-
-      if (log_is_enabled(Info, aot, init)) {
-        ResourceMark rm;
-        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
-      }
-    } else {
-      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
-      guarantee_property(!ik->is_runtime_setup_required(),
-                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
-                         CHECK);
-    }
-
-    if (ik->force_aot_initialization()) {
-      check_aot_init_annotation_for_supertypes("@AOTInitialize", [&] (const InstanceKlass* supertype) {
-            return supertype->force_aot_initialization();
-        }, CHECK);
-    }
-  }
 
   apply_parsed_class_attributes(ik);
 

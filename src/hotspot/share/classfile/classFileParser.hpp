@@ -487,9 +487,6 @@ class ClassFileParser {
 
   void update_class_name(Symbol* new_name);
 
-  template <typename FUNCTION>
-  void check_aot_init_annotation_for_supertypes(const char* annotation, FUNCTION func, TRAPS);
-
  public:
   ClassFileParser(ClassFileStream* stream,
                   Symbol* name,
