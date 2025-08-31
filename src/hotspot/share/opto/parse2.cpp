@@ -2262,14 +2262,14 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fadd:
     b = pop();
     a = pop();
-    c = _gvn.transform( new AddFNode(a,b) );
+    c = _gvn.transform( new AddFNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     push(c);
     break;
 
   case Bytecodes::_fmul:
     b = pop();
     a = pop();
-    c = _gvn.transform( new MulFNode(a,b) );
+    c = _gvn.transform( new MulFNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     push(c);
     break;
 
@@ -2368,14 +2368,14 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dadd:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new AddDNode(a,b) );
+    c = _gvn.transform( new AddDNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     push_pair(c);
     break;
 
   case Bytecodes::_dmul:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new MulDNode(a,b) );
+    c = _gvn.transform( new MulDNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     push_pair(c);
     break;
 
