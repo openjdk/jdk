@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -764,20 +765,23 @@ public final class AESCrypt extends SymmetricCipher {
                 && !algorithm.equalsIgnoreCase("Rijndael")) {
             throw new InvalidKeyException ("Invalid algorithm name.");
         }
-        if (key.length == AES_128_NKEYS) {
-            rounds = AES_128_ROUNDS;
-            nk = AES_128_NKEYS/WB;
-        } else if (key.length == AES_192_NKEYS) {
-            rounds = AES_192_ROUNDS;
-            nk = AES_192_NKEYS/WB;
-        } else if (key.length == AES_256_NKEYS) {
-            rounds = AES_256_ROUNDS;
-            nk = AES_256_NKEYS/WB;
-        } else {
-            throw new InvalidKeyException(
+        switch (key.length) {
+            case AES_128_NKEYS -> {
+                rounds = AES_128_ROUNDS;
+                nk = AES_128_NKEYS/WB;
+            }
+            case AES_192_NKEYS -> {
+                rounds = AES_192_ROUNDS;
+                nk = AES_192_NKEYS/WB;
+            }
+            case AES_256_NKEYS -> {
+                rounds = AES_256_ROUNDS;
+                nk = AES_256_NKEYS/WB;
+            }
+            default -> throw new InvalidKeyException(
                     "Invalid key length (" + key.length + ").");
         }
-        if (!Arrays.equals(prevKey, key)) {
+        if (!MessageDigest.isEqual(prevKey, key)) {
             expandedKey = genRKeys(key, nk);
             invExpandedKey = invGenRKeys();
 
