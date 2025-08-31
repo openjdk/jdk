@@ -75,7 +75,9 @@ import static com.sun.tools.javac.code.Lint.LintCategory.*;
 
 public class SuppressionWarningTest extends TestRunner {
 
-    // Test cases for testSuppressWarnings()
+    // Test cases for testSuppressWarnings(). Each test case triggers a warning the the corresponding
+    // lint category at a point in the source template which is nested inside two possible @SuppressWarnings
+    // annotations locations which are marked by "@INNER@" and "@OUTER@" markers.
     public static final List<SuppressTest> SUPPRESS_WARNINGS_TEST_CASES = Stream.of(LintCategory.values())
       .map(category -> switch (category) {
         case AUXILIARYCLASS -> new SuppressTest(category,
@@ -416,7 +418,7 @@ public class SuppressionWarningTest extends TestRunner {
             """
         );
 
-        // This test case requires special support; see testSuppressWarnings()
+        // This test case requires special module support; see testSuppressWarnings()
         case REQUIRES_AUTOMATIC -> new SuppressTest(category,
             "compiler.warn.requires.automatic",
             null,
@@ -428,7 +430,7 @@ public class SuppressionWarningTest extends TestRunner {
             """
         );
 
-        // This test case requires special support; see testSuppressWarnings()
+        // This test case requires special module support; see testSuppressWarnings()
         case REQUIRES_TRANSITIVE_AUTOMATIC -> new SuppressTest(category,
             "compiler.warn.requires.transitive.automatic",
             null,
@@ -597,7 +599,6 @@ public class SuppressionWarningTest extends TestRunner {
             """
         );
 
-        // This test case requires special support; see testSuppressWarnings()
         case PREVIEW -> new SuppressTest(category,
             "compiler.warn.preview.feature.use",
             new String[] {
@@ -643,25 +644,17 @@ public class SuppressionWarningTest extends TestRunner {
     }
 
     public static void main(String... args) throws Exception {
-        SuppressionWarningTest test = new SuppressionWarningTest();
+        new SuppressionWarningTest().runTests(m -> new Object[0]);
+    }
 
-        // Run parameterized tests
-        test.runTestsMulti(m -> switch (m.getName()) {
-          case "testSuppressWarnings" ->        SUPPRESS_WARNINGS_TEST_CASES.stream()
-                                                  .map(testCase -> new Object[] { testCase });
-          case "testUselessAnnotation",
-               "testUselessLintFlag" ->         Stream.of(LintCategory.values())
-                                                  .map(category -> new Object[] { category });
-          case "testSelfSuppression" ->         Stream.of(RAW, SUPPRESSION)
-                                                  .map(category -> new Object[] { category });
-          case "testOverloads" ->               Stream.<Object[]>of(new Object[0]);    // no parameters for this test
-          case "testThisEscape" ->              Stream.<Object[]>of(new Object[0]);    // no parameters for this test
-          default -> throw new AssertionError("missing params for " + m);
-        });
+// Tests
+
+    @Test
+    public void testSuppressWarnings() throws Exception {
+        testAll("testSuppressWarnings", this::testSuppressWarnings, SUPPRESS_WARNINGS_TEST_CASES);
     }
 
     // We are testing all combinations of nested @SuppressWarning annotations and lint flags
-    @Test
     public void testSuppressWarnings(SuppressTest test) throws Exception {
 
         // Setup directories
@@ -745,7 +738,7 @@ public class SuppressionWarningTest extends TestRunner {
               tb.writeJavaFiles(pkgRoot, source);
           }
 
-          // Try all combinations of lint flags
+          // Try all combinations of lint flags for <category> and SUPPRESSION
           for (boolean enableCategory : booleans) {                         // [-]category
             for (boolean enableSuppression : booleans) {                    // [-]suppression
 
@@ -755,12 +748,13 @@ public class SuppressionWarningTest extends TestRunner {
 
                 // Should we expect the "test.warningKey" warning to be emitted?
                 boolean expectCategoryWarning = category.annotationSuppression ?
-                  enableCategory && !outerAnnotation && !innerAnnotation : enableCategory;
+                  enableCategory && !outerAnnotation && !innerAnnotation :      // the warning must be enabled and not suppressed
+                  enableCategory;                                               // @SuppressWarnings has no effect at all
 
-                // Should we expect the SUPPRESSION warning to be emitted? (this is ignored for category SUPPRESSION)
+                // Should we expect the SUPPRESSION warning to be emitted?
                 boolean expectSuppressionWarning = category.annotationSuppression ?
-                  enableSuppression && outerAnnotation && innerAnnotation :   // only if both, outer is redundant
-                  enableSuppression && (outerAnnotation || innerAnnotation);  // either one is always redundant
+                  enableSuppression && outerAnnotation && innerAnnotation :     // only if both (then outer is redundant)
+                  enableSuppression && (outerAnnotation || innerAnnotation);    // either one is always redundant
 
                 // Prepare command line flags
                 ArrayList<String> flags = new ArrayList<>();
@@ -783,9 +777,8 @@ public class SuppressionWarningTest extends TestRunner {
                     flags.add("-Xlint:" + lints.stream().collect(Collectors.joining(",")));
 
                 // Test case description
-                String description = String.format("[%s] outer=%s inner=%s enable=%s flags=\"%s\"",
-                  category, outerAnnotation, innerAnnotation, enableCategory,
-                  flags.stream().collect(Collectors.joining(" ")));
+                String description = String.format("[%s] outer=%s inner=%s flags=\"%s\"",
+                  category, outerAnnotation, innerAnnotation, enableCategory, flags.stream().collect(Collectors.joining(" ")));
 
                 // Only print log if test case fails
                 StringWriter buf = new StringWriter();
@@ -842,9 +835,13 @@ public class SuppressionWarningTest extends TestRunner {
         } }
     }
 
-    // Test a @SuppressWarning annotation that suppresses nothing
     @Test
-    public void testUselessAnnotation(LintCategory category) throws Exception {
+    public void testUselessAnnotation() throws Exception {
+        testAll("testUselessAnnotation", this::testUselessAnnotation, List.of(LintCategory.values()));
+    }
+
+    // Test a @SuppressWarning annotation that suppresses nothing
+    private void testUselessAnnotation(LintCategory category) throws Exception {
         String warningKey = category != LintCategory.SUPPRESSION ?      // @SuppressWarnings("suppression") can never be useless!
           "compiler.warn.unnecessary.warning.suppression" : null;
         compileAndExpect(
@@ -858,18 +855,21 @@ public class SuppressionWarningTest extends TestRunner {
           String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
+    @Test
+    public void testSelfSuppression() throws Exception {
+        testAll("testSelfSuppression", this::testSelfSuppression, List.of(LintCategory.values()));
+    }
+
     // Test the suppression of SUPPRESSION itself, which should always work,
     // even when the same annotation uselessly suppresses some other category.
-    @Test
-    public void testSelfSuppression(LintCategory category) throws Exception {
+    private void testSelfSuppression(LintCategory category) throws Exception {
 
         // Test category and SUPPRESSION in the same annotation
         compileAndExpectSuccess(
           String.format(
             """
                 @SuppressWarnings({ \"%s\", \"%s\" })
-                public class Test {
-                }
+                public class Test { }
             """,
             category.option,        // this is actually a useless suppression
             SUPPRESSION.option),    // but this prevents us from reporting it
@@ -909,12 +909,14 @@ public class SuppressionWarningTest extends TestRunner {
           String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
-    // Test THIS_ESCAPE which has tricky control-flow based suppression
+    // Test THIS_ESCAPE which has tricky constructor control-flow based suppression
     @Test
-    public void testThisEscape() throws Exception {
+    public void testThisEscape1() throws Exception {
         compileAndExpectSuccess(
           """
           public class Test {
+              @SuppressWarnings("this-escape")
+              private int y = leak();
               public Test() {
                   this(0);
               }
@@ -922,52 +924,85 @@ public class SuppressionWarningTest extends TestRunner {
               private Test(int x) {
                   this.leak();
               }
-              protected void leak() { }
+              protected int leak() {
+                  return 0;
+              }
           }
           """,
           String.format("-Xlint:%s", THIS_ESCAPE.option),
           String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
-    public void compileAndExpect(String warningKey, String source, String... flags) throws Exception {
-        if (warningKey != null)
-            compileAndExpectWarning(warningKey, source, flags);
-        else
-            compileAndExpectSuccess(source, flags);
+    @Test
+    public void testThisEscape2() throws Exception {
+        compileAndExpect(
+          "compiler.warn.unnecessary.warning.suppression",
+          """
+          public class Test {
+              public Test() {
+                  this.leak();
+              }
+              @SuppressWarnings("this-escape")  // this does nothing -> "suppression" warning here
+              protected int leak() {
+                  return 0;
+              }
+          }
+          """,
+          String.format("-Xlint:%s", THIS_ESCAPE.option),
+          String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
-    public void compileAndExpectWarning(String warningKey, String source, String... flags) throws Exception {
+// Support Stuff
 
-        // Setup source & destination diretories
-        Path base = Paths.get("compileAndExpectWarning");
-        resetCompileDirectories(base);
-
-        // Write source file
-        tb.writeJavaFiles(getSourcesDir(base), source);
-
-        // Compile sources and verify we got the warning
-        List<String> log = compile(base, Task.Expect.FAIL, addWerror(flags));
-        if (log.stream().noneMatch(line -> line.contains(warningKey))) {
-            throw new AssertionError(String.format(
-              "did not find \"%s\" in log output:%n  %s",
-              warningKey, log.stream().collect(Collectors.joining("\n  "))));
+    // Run a test on a sequence of test cases
+    private <T> void testAll(String testName, TestRunner<T> test, Iterable<T> testCases) throws Exception {
+        int totalCount = 0;
+        int errorCount = 0;
+        for (T testCase : testCases) {
+            try {
+                test.run(testCase);
+                out.println(String.format("%s: %s: %s", testName, "PASSED", testCase));
+            } catch (Exception e) {
+                out.println(String.format("%s: %s: %s: %s", testName, "FAILED", testCase, e));
+                errorCount++;
+            }
+            totalCount++;
         }
+        if (errorCount > 0)
+            throw new Exception(String.format("%s: %d/%d test case(s) failed", testName, errorCount, totalCount));
     }
 
     public void compileAndExpectSuccess(String source, String... flags) throws Exception {
+        compileAndExpect(null, source, flags);
+    }
+
+    public void compileAndExpect(String warningKey, String source, String... flags) throws Exception {
 
         // Setup source & destination diretories
-        Path base = Paths.get("compileAndExpectSuccess");
+        Path base = Paths.get("compileAndExpect");
         resetCompileDirectories(base);
 
         // Write source file
         tb.writeJavaFiles(getSourcesDir(base), source);
 
-        // Compile sources and verify there is no log output
-        List<String> log = compile(base, Task.Expect.SUCCESS, addWerror(flags));
-        if (!log.isEmpty()) {
+        // Add -Werror flag so any warning causes compilation to fail
+        flags = Stream.concat(Stream.of(flags), Stream.of("-Werror")).toArray(String[]::new);
+
+        // Compile sources and verify we got the expected result
+        boolean expectSuccess = warningKey == null;
+        List<String> log = compile(base, expectSuccess ? Task.Expect.SUCCESS : Task.Expect.FAIL, flags);
+
+        // A successful compilation should not log any warnings
+        if (expectSuccess && !log.isEmpty()) {
             throw new AssertionError(String.format(
               "non-empty log output:%n  %s", log.stream().collect(Collectors.joining("\n  "))));
+        }
+
+        // A failed compilation should log the expected warning
+        if (!expectSuccess && log.stream().noneMatch(line -> line.contains(warningKey))) {
+            throw new AssertionError(String.format(
+              "did not find \"%s\" in log output:%n  %s",
+              warningKey, log.stream().collect(Collectors.joining("\n  "))));
         }
     }
 
@@ -1011,12 +1046,16 @@ public class SuppressionWarningTest extends TestRunner {
         Files.createDirectories(dir);
     }
 
-    private String[] addWerror(String[] flags) {
-        return Stream.concat(Stream.of(flags), Stream.of("-Werror")).toArray(String[]::new);
+// TestRunner
+
+    @FunctionalInterface
+    private interface TestRunner<T> {
+        void run(T testCase) throws Exception;
     }
 
 // SuppressTest
 
+    // A test case for testSuppressWarnings()
     private record SuppressTest(
         LintCategory category,          // The Lint category being tested
         String warningKey,              // Expected warning message key in compiler.properties
@@ -1025,6 +1064,11 @@ public class SuppressionWarningTest extends TestRunner {
     ) {
         SuppressTest(LintCategory category, String warningKey, String[] compileFlags, String... sources) {
             this(category, warningKey, List.of(compileFlags != null ? compileFlags : new String[0]), List.of(sources));
+        }
+
+        @Override
+        public String toString() {
+            return "SuppressTest[" + category + "]";
         }
     }
 
