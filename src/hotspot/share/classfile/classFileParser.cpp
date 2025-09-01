@@ -3808,7 +3808,7 @@ const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
                                                         const bool need_verify,
                                                         TRAPS) {
   assert(cp != nullptr, "invariant");
-  const InstanceKlass* super_klass = nullptr;
+  const Klass* super_klass = nullptr;
 
   if (super_class_index == 0) {
     guarantee_property(_class_name == vmSymbols::java_lang_Object(),
@@ -3824,7 +3824,7 @@ const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
     // However, make sure it is not an array type.
     bool is_array = false;
     if (cp->tag_at(super_class_index).is_klass()) {
-      super_klass = InstanceKlass::cast(cp->resolved_klass_at(super_class_index));
+      super_klass = cp->resolved_klass_at(super_class_index);
       if (need_verify)
         is_array = super_klass->is_array_klass();
     } else if (need_verify) {
@@ -3835,7 +3835,7 @@ const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
                         "Bad superclass name in class file %s", CHECK_NULL);
     }
   }
-  return super_klass;
+  return super_klass == nullptr ? nullptr : InstanceKlass::cast(super_klass);
 }
 
 OopMapBlocksBuilder::OopMapBlocksBuilder(unsigned int max_blocks) {
