@@ -68,7 +68,7 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
 #ifndef ASSERT
     // On debug builds, just keep searching the stack
     // in case we missed an @Scoped method further up
-    if (depth >= max_critical_stack_depth) {
+    if (!UseNewCode && depth >= max_critical_stack_depth) {
       break;
     }
 #endif
