@@ -28,7 +28,7 @@ package gc.z;
  * @requires vm.gc.Z
  * @summary Test ZGC with small heaps
  * @library / /test/lib
- * @run driver gc.z.TestSmallHeap 32M 64M 128M 256M 512M 1024M
+ * @run driver gc.z.TestSmallHeap 16M 32M 64M 128M 256M 512M 1024M
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -54,6 +54,8 @@ public class TestSmallHeap {
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
             ProcessTools.executeTestJava(
+                // Disable NUMA to avoid OOM with -Xmx16M after JDK-8359683
+                "-XX:-UseNUMA",
                 "-XX:+UseZGC",
                 "-Xlog:gc,gc+init,gc+reloc,gc+heap",
                 "-Xmx" + maxCapacity,
