@@ -1358,11 +1358,8 @@ public final class String
     /**
      * {@return a new {@link MalformedInputException} for the given malformed
      * ASCII string}
-     *
-     * @param <E> The exception type parameter to enable callers to avoid
-     *           having to declare the exception
      */
-    private static <E extends Exception> E malformedASCII(byte[] val) throws E {
+    private static MalformedInputException malformedASCII(byte[] val) throws MalformedInputException {
         int dp = StringCoding.countPositives(val, 0, val.length);
         return malformedInputException(dp, 1);
     }
@@ -1384,11 +1381,8 @@ public final class String
     /**
      * {@return a new {@link UnmappableCharacterException} for the given
      * malformed ASCII string}
-     *
-     * @param <E> The exception type parameter to enable callers to avoid
-     *          having to declare the exception
      */
-    private static <E extends Exception> E unmappableASCII(byte[] val) throws E {
+    private static UnmappableCharacterException unmappableASCII(byte[] val) throws UnmappableCharacterException {
         int dp = StringCoding.countPositives(val, 0, val.length);
         return unmappableCharacterException(dp);
     }
