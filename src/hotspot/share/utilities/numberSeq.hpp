@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_NUMBERSEQ_HPP
 #define SHARE_UTILITIES_NUMBERSEQ_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
 /**
