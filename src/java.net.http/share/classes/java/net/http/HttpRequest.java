@@ -26,10 +26,12 @@
 package java.net.http;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -776,6 +778,44 @@ public abstract class HttpRequest {
         public static BodyPublisher ofFile(Path path) throws FileNotFoundException {
             Objects.requireNonNull(path);
             return RequestPublishers.FilePublisher.create(path);
+        }
+
+        /**
+         * {@return a request body publisher whose body is the {@code length}
+         * content bytes read from the provided file {@code channel} starting
+         * from the specified {@code offset}}
+         * <p>
+         * This method and the returned {@code BodyPublisher} do not modify the
+         * {@code channel}'s position, and do not close the {@code channel}. The
+         * caller is expected to close the {@code channel} when no longer needed.
+         *
+         * @apiNote
+         * This method can be used to either publish just a region of a file as
+         * the request body or to publish different regions of a file
+         * concurrently. A typical usage would be to publish different regions
+         * of a file by creating a single instance of {@link FileChannel} and
+         * then send multiple concurrent {@code HttpRequest}s, each of which
+         * uses a new {@code ofFileChannel BodyPublisher} created from the same
+         * channel with a different, typically non-overlapping, range of bytes
+         * specified by offset and length.
+         *
+         * @param channel a file channel
+         * @param offset the offset of the first byte
+         * @param length the number of bytes to read from the file channel
+         *
+         * @throws IndexOutOfBoundsException if the specified byte range is
+         * found to be {@linkplain Objects#checkFromIndexSize(long, long, long)
+         * out of bounds} compared with the size of the file referred by the
+         * channel
+         *
+         * @throws IOException if the {@linkplain FileChannel#size() channel's
+         * size} cannot be determined or the {@code channel} is closed
+         *
+         * @since 26
+         */
+        public static BodyPublisher ofFileChannel(FileChannel channel, long offset, long length) throws IOException {
+            Objects.requireNonNull(channel, "channel");
+            return new RequestPublishers.FileChannelPublisher(channel, offset, length);
         }
 
         /**
