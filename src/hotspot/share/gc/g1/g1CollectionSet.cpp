@@ -405,7 +405,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
 #ifndef PRODUCT
-  bool add_at_least_one_optional_region = EvacuateAllOptionalRegions;
+  bool add_at_least_one_optional_region = G1EvacuateAllOptionalRegions;
 #endif
 
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
@@ -661,7 +661,7 @@ uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
                             num_regions_selected, optional_regions_count, total_prediction_ms);
 
 #ifndef PRODUCT
-  if (EvacuateAllOptionalRegions && num_regions_selected == optional_regions_count) {
+  if (G1EvacuateAllOptionalRegions && num_regions_selected == optional_regions_count) {
     log_debug(gc, ergo, cset)("All optional regions are scheduled to be evacuated");
   }
 #endif

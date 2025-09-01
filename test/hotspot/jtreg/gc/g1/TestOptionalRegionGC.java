@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8352969
- * @summary Verify that the EvacuateAllOptionalRegions flag forces G1
+ * @summary Verify that the G1EvacuateAllOptionalRegions flag forces G1
  *          to evacuate all of optional regions, improving testability.
  * @requires vm.gc.G1
  * @requires vm.debug
@@ -54,7 +54,7 @@ public class TestOptionalRegionGC {
       "-XX:+UseG1GC",
       "-XX:MaxTenuringThreshold=1",
       "-Xlog:gc+ergo+cset=trace",
-      "-XX:+EvacuateAllOptionalRegions",
+      "-XX:+G1EvacuateAllOptionalRegions",
       TestOptionalRegionGC.Action.class.getName());
   }
 
