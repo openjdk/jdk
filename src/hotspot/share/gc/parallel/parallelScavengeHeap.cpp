@@ -103,8 +103,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
 
   _size_policy = new PSAdaptiveSizePolicy(SpaceAlignment,
-                                          max_gc_pause_sec,
-                                          GCTimeRatio);
+                                          max_gc_pause_sec);
 
   assert((old_gen()->virtual_space()->high_boundary() ==
           young_gen()->virtual_space()->low_boundary()),
