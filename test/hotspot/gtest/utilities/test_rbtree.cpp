@@ -986,7 +986,7 @@ struct IntCmp {
 };
 
 TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
-  using TreeType = RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest>>;
+  using TreeType = RBTreeCHeap<int, unsigned, IntCmp, mtTest>;
   TreeType tree;
   const int i1 = 82924;
   const char* const s1 = "[82924] = 1";
