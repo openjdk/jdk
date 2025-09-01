@@ -1369,7 +1369,7 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_pre_entry);
 #endif
 #if INCLUDE_SHENANDOAHGC
-  SET_ADDRESS(_extrs, ShenandoahRuntime::write_ref_field_pre);
+  SET_ADDRESS(_extrs, ShenandoahRuntime::write_barrier_pre);
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom);
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
 #endif
