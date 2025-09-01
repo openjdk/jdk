@@ -51,9 +51,9 @@ public:
   class PositionComparator {
   public:
     static RBTreeOrdering cmp(position a, position b) {
-      if (a < b) return RBTreeOrdering::less;
-      if (a > b) return RBTreeOrdering::greater;
-      return RBTreeOrdering::equal;
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 

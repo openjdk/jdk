@@ -128,10 +128,10 @@ bool ZMappedCache::EntryCompare::less_than(const IntrusiveRBNode* a, const Intru
 RBTreeOrdering ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
   const ZVirtualMemory vmem = ZMappedCacheEntry::cast_to_entry(node)->vmem();
 
-  if (key < vmem.start()) { return RBTreeOrdering::less; }
-  if (key > vmem.end()) { return RBTreeOrdering::greater; }
+  if (key < vmem.start()) { return RBTreeOrdering::LT; }
+  if (key > vmem.end()) { return RBTreeOrdering::GT; }
 
-  return RBTreeOrdering::equal; // Containing
+  return RBTreeOrdering::EQ; // Containing
 }
 
 void ZMappedCache::Tree::verify() const {

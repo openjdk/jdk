@@ -37,9 +37,9 @@ public:
 
   struct Cmp {
     static RBTreeOrdering cmp(int a, int b) {
-      if (a < b) return RBTreeOrdering::less;
-      if (a > b) return RBTreeOrdering::greater;
-      return RBTreeOrdering::equal;
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
 
     static bool less_than(const RBTreeIntNode* a, const RBTreeIntNode* b) {
@@ -49,17 +49,17 @@ public:
 
   struct CmpInverse {
     static RBTreeOrdering cmp(int a, int b) {
-      if (a < b) return RBTreeOrdering::greater;
-      if (a > b) return RBTreeOrdering::less;
-      return RBTreeOrdering::equal;
+      if (a < b) return RBTreeOrdering::GT;
+      if (a > b) return RBTreeOrdering::LT;
+      return RBTreeOrdering::EQ;
     }
   };
 
   struct FCmp {
     static RBTreeOrdering cmp(float a, float b) {
-      if (a < b) return RBTreeOrdering::less;
-      if (a > b) return RBTreeOrdering::greater;
-      return RBTreeOrdering::equal;
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 
@@ -100,9 +100,9 @@ struct ArrayAllocator {
   struct IntrusiveCmp {
     static RBTreeOrdering cmp(int a, const IntrusiveTreeNode* b_node) {
       int b = IntrusiveHolder::cast_to_self(b_node)->key;
-      if (a < b) return RBTreeOrdering::less;
-      if (a > b) return RBTreeOrdering::greater;
-      return RBTreeOrdering::equal;
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
 
     // true if a < b
@@ -996,9 +996,9 @@ struct PtrCmp {
     const uintptr_t ai = p2u(a);
     const uintptr_t bi = p2u(b);
 
-    if (ai < bi) return RBTreeOrdering::less;
-    if (ai > bi) return RBTreeOrdering::greater;
-    return RBTreeOrdering::equal;
+    if (ai < bi) return RBTreeOrdering::LT;
+    if (ai > bi) return RBTreeOrdering::GT;
+    return RBTreeOrdering::EQ;
   }
 };
 
@@ -1033,9 +1033,9 @@ TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
 
 struct IntCmp {
   static RBTreeOrdering cmp(int a, int b) {
-    if (a < b) return RBTreeOrdering::less;
-    if (a > b) return RBTreeOrdering::greater;
-    return RBTreeOrdering::equal;
+    if (a < b) return RBTreeOrdering::LT;
+    if (a > b) return RBTreeOrdering::GT;
+    return RBTreeOrdering::EQ;
   }
 };
 

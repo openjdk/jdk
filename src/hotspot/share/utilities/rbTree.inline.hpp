@@ -123,10 +123,10 @@ inline IntrusiveRBNode* IntrusiveRBNode::next() {
   return const_cast<IntrusiveRBNode*>(static_cast<const IntrusiveRBNode*>(this)->next());
 }
 
-template <typename NodeType, typename NodeVerifier, typename USER_VERIFIER>
+template <typename NodeType, typename NODE_VERIFIER, typename USER_VERIFIER>
 inline void IntrusiveRBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited, NodeVerifier verifier, const USER_VERIFIER& extra_verifier) const {
+    size_t& tree_depth, bool expect_visited, NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const {
   assert(extra_verifier(static_cast<const NodeType*>(this)), "user provided verifier failed");
   assert(expect_visited != _visited, "node already visited");
   DEBUG_ONLY(_visited = !_visited);
@@ -196,8 +196,8 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
       const RBTreeOrdering parent_cmp = cmp(key, (NodeType*)hint_node->parent());
       // Move up until the parent would put us on the other side of the key.
       // Meaning we are in the correct subtree.
-      if ((parent_cmp != RBTreeOrdering::greater && hint_cmp == RBTreeOrdering::less) ||
-          (parent_cmp != RBTreeOrdering::less    && hint_cmp == RBTreeOrdering::greater)) {
+      if ((parent_cmp != RBTreeOrdering::GT && hint_cmp == RBTreeOrdering::LT) ||
+          (parent_cmp != RBTreeOrdering::LT    && hint_cmp == RBTreeOrdering::GT)) {
         hint_node = (NodeType*)hint_node->parent();
       } else {
         break;
@@ -215,12 +215,12 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
     NodeType* curr = (NodeType*)*insert_location;
     const RBTreeOrdering key_cmp_k = cmp(key, curr);
 
-    if (key_cmp_k == RBTreeOrdering::equal) {
+    if (key_cmp_k == RBTreeOrdering::EQ) {
       break;
     }
 
     parent = *insert_location;
-    if (key_cmp_k == RBTreeOrdering::less) {
+    if (key_cmp_k == RBTreeOrdering::LT) {
       insert_location = &curr->_left;
     } else {
       insert_location = &curr->_right;
@@ -662,8 +662,8 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
-template <typename NodeVerifier, typename USER_VERIFIER>
-inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NodeVerifier verifier, const USER_VERIFIER& extra_verifier) const {
+template <typename NODE_VERIFIER, typename USER_VERIFIER>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has %zu nodes but no root", _num_nodes);
     return;

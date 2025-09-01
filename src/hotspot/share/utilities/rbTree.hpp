@@ -35,9 +35,9 @@
 // An intrusive red-black tree is constructed with two template parameters:
 // K is the key type used.
 // COMPARATOR must have a static function `cmp(K a, const IntrusiveRBNode* b)` which returns:
-//     - RBTreeOrdering::less when a < b
-//     - RBTreeOrdering::equal when a == b
-//     - RBTreeOrdering::greater when a > b
+//     - RBTreeOrdering::LT when a < b
+//     - RBTreeOrdering::EQ when a == b
+//     - RBTreeOrdering::GT when a > b
 // A second static function `less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b)`
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
@@ -50,9 +50,9 @@
 // K is the key type stored in the tree nodes.
 // V is the value type stored in the tree nodes.
 // COMPARATOR must have a static function `cmp(K a, K b)` which returns:
-//     - RBTreeOrdering::less when a < b
-//     - RBTreeOrdering::equal when a == b
-//     - RBTreeOrdering::greater when a > b
+//     - RBTreeOrdering::LT when a < b
+//     - RBTreeOrdering::EQ when a == b
+//     - RBTreeOrdering::GT when a > b
 // A second static function `less_than(const RBNode<K, V>* a, const RBNode<K, V>* b)`
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
@@ -62,7 +62,7 @@
 // The tree will call a value's destructor when its node is removed.
 // Nodes are address stable and will not change during its lifetime.
 
-enum class RBTreeOrdering : int { less = -1, equal = 0, greater = 1 };
+enum class RBTreeOrdering : int { LT, EQ, GT };
 
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree;
@@ -125,10 +125,10 @@ private:
   // Returns left child (now parent)
   IntrusiveRBNode* rotate_right();
 
-  template <typename NodeType, typename NodeVerifier, typename USER_VERIFIER>
+  template <typename NodeType, typename NODE_VERIFIER, typename USER_VERIFIER>
   void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
               size_t& shortest_leaf_path, size_t& longest_leaf_path,
-              size_t& tree_depth, bool expect_visited, NodeVerifier verifier,
+              size_t& tree_depth, bool expect_visited, NODE_VERIFIER verifier,
               const USER_VERIFIER& extra_verifier) const;
 
 };
@@ -242,7 +242,7 @@ private:
 
   template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP>)>
   void assert_key_leq(K a, K b) const {
-    assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::greater, "key a must be less or equal to key b");
+    assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::GT, "key a must be less or equal to key b");
   }
 
   // True if node is black (nil nodes count as black)
@@ -267,8 +267,8 @@ private:
     }
   };
 
-  template <typename NodeVerifier, typename USER_VERIFIER>
-  void verify_self(NodeVerifier verifier, const USER_VERIFIER& extra_verifier) const;
+  template <typename NODE_VERIFIER, typename USER_VERIFIER>
+  void verify_self(NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const;
 
   struct default_printer {
     void operator()(outputStream* st, const NodeType* n, int depth) const {
@@ -451,7 +451,7 @@ public:
   template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR,
             ENABLE_IF(HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
   void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::less; }, extra_verifier);
+    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::LT; }, extra_verifier);
   }
 
   template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR,
@@ -477,6 +477,14 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 public:
   RBTree() : BaseType(), _allocator() {}
   ~RBTree() { remove_all(); }
+  RBTree(const RBTree& other) : BaseType(), _allocator() {
+    assert(std::is_copy_constructible<V>(), "Value type must be copy-constructible");
+    other.visit_in_order([&](auto node) {
+      this->upsert(node->key(), node->val());
+      return true;
+    });
+  }
+  RBTree& operator=(const RBTree& other) = delete;
 
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;
