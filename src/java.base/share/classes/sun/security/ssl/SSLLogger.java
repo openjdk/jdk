@@ -111,8 +111,15 @@ public final class SSLLogger {
                     // finally, if only "ssl" component is declared, then
                     // enable all subcomponents. "ssl" logs all activity
                     // except for the "data" and "packet" categories
-                    if (Opt.SSL.on && !Opt.isAnySubComponentEnabled()) {
-                        Opt.enableAllSubComponents();
+                    if (Opt.SSL.on &&
+                            EnumSet.allOf(Opt.class)
+                                    .stream()
+                                    .noneMatch(o -> o.on && o.isSubComponent)) {
+                        for (Opt opt : Opt.values()) {
+                            if (opt.isSubComponent) {
+                                opt.on = true;
+                            }
+                        }
                     }
                 }
             }
@@ -163,7 +170,8 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                     logger.log(level, () -> msg + ":\n" + SSLSimpleFormatter.formatParameters(params));
+                     logger.log(level, () -> msg + ":\n" +
+                             SSLSimpleFormatter.formatParameters(params));
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -196,30 +204,41 @@ public final class SSLLogger {
         System.err.println("all            turn on all debugging");
         System.err.println("ssl            turn on ssl debugging");
         System.err.println();
-        System.err.println("The following can be used with ssl:");
+        System.err.println("The following filters can be used with ssl:");
         System.err.println("\tdefaultctx   print default SSL initialization");
         System.err.println("\thandshake    print each handshake message");
+        System.err.println("\t    verbose   verbose handshake" +
+                                " message printing (widens handshake)");
         System.err.println("\tkeymanager   print key manager tracing");
         System.err.println("\trecord       enable per-record tracing");
+        System.err.println("\t    plaintext    hex dump of record" +
+                                " plaintext (widens record)");
+        System.err.println("\t    packet       print raw SSL/TLS" +
+                                " packets (widens record)");
         System.err.println("\trespmgr      print OCSP response tracing");
         System.err.println("\tsession      print session activity");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\tsslctx       print SSLContext tracing");
         System.err.println("\tsessioncache print session cache tracing");
-        System.err.println("\tkeymanager   print key manager tracing");
+        System.err.println("\tsslctx       print SSLContext tracing");
         System.err.println("\ttrustmanager print trust manager tracing");
-        System.err.println("\tpluggability print pluggability tracing");
-        System.err.println();
-        System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tverbose   verbose handshake message printing");
-        System.err.println();
-        System.err.println("\trecord debugging can be widened with:");
-        System.err.println("\tplaintext    hex dump of record plaintext");
-        System.err.println("\tpacket       print raw SSL/TLS packets");
         System.err.println();
         System.exit(0);
     }
 
+    /**
+     * Enum representing possible debug options for JSSE debugging.
+     *
+     * ALL and SSL are considered master components. Entries without an
+     * underscore ("_"), and not ALL or SSL, are subcomponents. Entries
+     * with an underscore ("_") denote options specific to subcomponents.
+     *
+     * Fields:
+     * - 'component': Lowercase name of the option.
+     * - 'isSubComponent': True for subcomponents.
+     * - 'on': Indicates whether the option is enabled. Some rule based logic
+     *         is used to determine value of this field.
+     *
+     * Enabling subcomponents fine-tunes (filters) debug output.
+     */
     public enum Opt {
         ALL,
         DEFAULTCTX,
@@ -231,42 +250,20 @@ public final class SSLLogger {
         RECORD_PLAINTEXT,
         RESPMGR,
         SESSION,
+        SESSIONCACHE, // placeholder for 8344685
         SSLCTX,
         TRUSTMANAGER,
         SSL; // define ssl last, helps with sslctx matching later.
 
         final String component;
+        final boolean isSubComponent;
         boolean on;
 
         Opt() {
-            this.component = this.toString().toLowerCase(Locale.ROOT);
-        }
-
-        public static boolean isAnySubComponentEnabled() {
-            for (Opt option : subComponentList()) {
-                if (option.on) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static void enableAllSubComponents() {
-            for (Opt option: subComponentList()) {
-                option.on = true;
-            }
-        }
-
-        public static List<Opt> subComponentList() {
-            List<Opt> subComponents = new ArrayList<>();
-            for (Opt option : values()) {
-                if (option.component.contains("_")
-                        || option.equals(ALL) || option.equals(SSL)) {
-                    continue;
-                }
-                subComponents.add(option);
-            }
-            return subComponents;
+            this.component = this.toString().toLowerCase(Locale.ENGLISH);
+            this.isSubComponent = !(component.contains("_") ||
+                    component.equals("all") ||
+                    component.equals("ssl"));
         }
     }
 
@@ -321,8 +318,9 @@ public final class SSLLogger {
 
     private static class SSLSimpleFormatter {
         private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
-        private static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern(PATTERN, Locale.ENGLISH)
-                                                                                 .withZone(ZoneId.systemDefault());
+        private static final DateTimeFormatter dateTimeFormat =
+                DateTimeFormatter.ofPattern(PATTERN, Locale.ENGLISH)
+                        .withZone(ZoneId.systemDefault());
 
         private static final MessageFormat basicCertFormat = new MessageFormat(
                 """

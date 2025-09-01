@@ -74,7 +74,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("verbose", List.of("Ignore unsupported cipher suite:"));
         debugMessages.put("help",
                 List.of("print this help message and exit",
-                        "debugging can be widened with:"));
+                        "verbose handshake message printing"));
         debugMessages.put("java.security.debug",
                 List.of("properties\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:",
                         "certpath\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:"));
