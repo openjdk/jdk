@@ -107,7 +107,7 @@ private:
   Node *_next_node;
 
   // Use this for an unconditional branch delay slot
-  Node *_unconditional_delay_slot;
+//  Node *_unconditional_delay_slot;
 
   // Pointer to a Nop
   MachNopNode *_nop;
@@ -2200,13 +2200,13 @@ bool Scheduling::NodeFitsInBundle(Node *n) {
   uint n_idx = n->_idx;
 
   // If this is the unconditional delay instruction, then it fits
-  if (n == _unconditional_delay_slot) {
-#ifndef PRODUCT
-    if (_cfg->C->trace_opto_output())
-      tty->print("#     NodeFitsInBundle [%4d]: TRUE; is in unconditional delay slot\n", n->_idx);
-#endif
-    return (true);
-  }
+//  if (n == _unconditional_delay_slot) {
+//#ifndef PRODUCT
+//    if (_cfg->C->trace_opto_output())
+//      tty->print("#     NodeFitsInBundle [%4d]: TRUE; is in unconditional delay slot\n", n->_idx);
+//#endif
+//    return (true);
+//  }
 
   // If the node cannot be scheduled this cycle, skip it
   if (_current_latency[n_idx] > _bundle_cycle_number) {
@@ -2557,7 +2557,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
   }
 
   // If this was placed in the delay slot, ignore it
-  if (n != _unconditional_delay_slot) {
+//  if (n != _unconditional_delay_slot) {
 
     if (delay == 0) {
       if (node_pipeline->hasMultipleBundles()) {
@@ -2595,7 +2595,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
     // Remember this node for later
     if (n->is_Mach())
       _next_node = n;
-  }
+//  }
 
   // It's possible to have a BoxLock in the graph and in the _bbs mapping but
   // not in the bb->_nodes array.  This happens for debug-info-only BoxLocks.
@@ -2648,7 +2648,7 @@ void Scheduling::ComputeUseCount(const Block *bb) {
   _scheduled.clear();
 
   // No delay slot specified
-  _unconditional_delay_slot = nullptr;
+//  _unconditional_delay_slot = nullptr;
 
 #ifdef ASSERT
   for( uint i=0; i < bb->number_of_nodes(); i++ )
