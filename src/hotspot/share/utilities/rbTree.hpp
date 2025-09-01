@@ -452,6 +452,8 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 public:
   RBTree() : BaseType(), _allocator() {}
   RBTree(const RBTree& other) : BaseType(), _allocator() {
+    static_assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
+    static_assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
     other.visit_in_order([&](auto node) {
       this->upsert(node->key(), node->val());
       return true;
