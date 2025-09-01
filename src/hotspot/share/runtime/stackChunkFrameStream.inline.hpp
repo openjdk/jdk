@@ -35,6 +35,7 @@
 #include "oops/oop.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/devirtualizer.inline.hpp"
@@ -326,9 +327,7 @@ inline address StackChunkFrameStream<frame_kind>::orig_pc() const {
     return pc1;
   }
   nmethod* nm = cb()->as_nmethod();
-  if (nm->is_deopt_pc(pc1)) {
-    pc1 = *(address*)((address)unextended_sp() + nm->orig_pc_offset());
-  }
+  pc1 = frame::get_deopt_original_pc(nm, pc1, (address)unextended_sp());
 
   assert(pc1 != nullptr, "");
   assert(!nm->is_deopt_pc(pc1), "");
