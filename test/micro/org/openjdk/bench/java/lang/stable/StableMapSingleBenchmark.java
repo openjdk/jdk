@@ -36,6 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -61,6 +62,7 @@ public class StableMapSingleBenchmark {
 
     private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
     private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+    private static final Map<MyEnum, Optional<Integer>> MAP_ENUM_OPTIONAL = Map.ofLazy(EnumSet.allOf(MyEnum.class), e -> Optional.of(e.ordinal()));
     private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
     private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
@@ -90,6 +92,11 @@ public class StableMapSingleBenchmark {
     @Benchmark
     public int staticMapEnum() {
         return MAP_ENUM.get(MyEnum.BAR);
+    }
+
+    @Benchmark
+    public int staticMapEnumOptional() {
+        return MAP_ENUM_OPTIONAL.get(MyEnum.BAR).orElseThrow();
     }
 
     @Benchmark

@@ -109,6 +109,9 @@ final class StableCollections {
             extends ImmutableCollections.AbstractImmutableList<StableValue<E>>
             implements List<StableValue<E>>, ElementBackedList<E>, RandomAccess {
 
+        private static final AtomicInteger PRE_HASH_SEED =
+                new AtomicInteger(Long.hashCode(ImmutableCollections.SALT32L));
+
         @Stable
         private final E[] elements;
         // Keeping track of `size` separately reduces bytecode size compared to
@@ -125,10 +128,7 @@ final class StableCollections {
             this.size = size;
             this.mutexes = new Mutexes(size);
             super();
-            int h = 1;
-            h = 31 * h + System.identityHashCode(this);
-            h = 31 * h;
-            this.preHash = h;
+            this.preHash = 31 * PRE_HASH_SEED.getAndIncrement();
         }
 
         @ForceInline
@@ -506,6 +506,7 @@ final class StableCollections {
             return (E) UNSAFE.getReferenceAcquire(elements, offset);
         }
 
+        // @ValueBased cannot be used here as ImmutableCollections.SubList declares fields
         static final class StableSubList<E> extends ImmutableCollections.SubList<E>
                 implements LenientList<E> {
 
@@ -889,7 +890,8 @@ final class StableCollections {
 
         static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
 
-        // Inflated on demand
+        // Filled on demand and then discarded once it is not needed anymore.
+        // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
         private volatile Object[] mutexes;
         // Used to detect we have computed all elements and no longer need the `mutexes` array
         private volatile AtomicInteger counter;
@@ -901,6 +903,13 @@ final class StableCollections {
 
         @ForceInline
         private Object acquireMutex(long offset) {
+            assert mutexes != null;
+            // Check if there already is a mutex (Object or TOMB_STONE)
+            final Object mutex = UNSAFE.getReferenceVolatile(mutexes, offset);
+            if (mutex != null) {
+                return mutex;
+            }
+            // Protect against racy stores of mutexe candidates
             final Object candidate = new Mutexes.MutexObject(offset, Thread.currentThread().threadId());
             final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
             check(witness, offset);
@@ -931,7 +940,7 @@ final class StableCollections {
                 return mutex;
             }
             assert (mutex instanceof Mutexes.MutexObject(
-                    long offset, long tid
+                    long offset, long _
             )) && offset == realOffset :
                     mutex +
                             ", realOffset = " + realOffset +
