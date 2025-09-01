@@ -525,8 +525,11 @@ bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKl
 bool SystemDictionaryShared::check_verification_dependency_exclusion(InstanceKlass* k, Symbol* dependency_class_name) {
   Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
   if (dependency_bottom_class == nullptr) {
-    // The new verifier was checking if dependency_class_name is assignable to an interface, and found
-    // the answer without resolving dependency_class_name.
+    // No class of the dependency_class_name has not yet been loaded. This happens when the new verifier was checking
+    // if dependency_class_name is assignable to an interface, and found the answer without resolving
+    // dependency_class_name.
+    //
+    // Since this class is not even loaded, it surely cannot be excluded.
     return false;
   } else if (dependency_bottom_class->is_instance_klass()) {
     if (is_dependency_excluded(k, InstanceKlass::cast(dependency_bottom_class), "verification dependency")) {
