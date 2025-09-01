@@ -365,6 +365,20 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                             -1, -1L, handshakeFrag.slice())
                     );
 
+                    // From RFC 8446:
+                    // "Implementations MUST verify that all messages immediately preceding a key change
+                    // align with a record boundary; if not, then they MUST terminate the
+                    // connection with an "unexpected_message" alert. Because the
+                    // ClientHello, EndOfEarlyData, ServerHello, Finished, and KeyUpdate
+                    // messages can immediately precede a key change, implementations
+                    // MUST send these messages in alignment with a record boundary."
+                    if (nextPos < fragLim & SSLHandshake.precedesKeyChange(handshakeType)) {
+                        throw new SSLProtocolException(
+                                "The handshake message of type " + SSLHandshake.nameOf(handshakeType) +
+                                        " must end on a Record boundary."
+                        );
+                    }
+
                     handshakeFrag.position(nextPos);
                     handshakeFrag.limit(fragLim);
                 }

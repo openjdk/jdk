@@ -532,6 +532,14 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         return false;
     }
 
+    static boolean precedesKeyChange(byte id) {
+        return id == SSLHandshake.CLIENT_HELLO.id ||
+                id == SSLHandshake.END_OF_EARLY_DATA.id ||
+                id == SERVER_HELLO.id ||
+                id == FINISHED.id ||
+                id == KEY_UPDATE.id;
+    }
+
     static final void kickstart(HandshakeContext context) throws IOException {
         if (context instanceof ClientHandshakeContext) {
             // For initial handshaking, including session resumption,
