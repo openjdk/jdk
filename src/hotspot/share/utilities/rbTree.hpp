@@ -61,7 +61,6 @@
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
 //     - false otherwise
-// ALLOCATOR must check for oom and exit, as RBTree does not handle the allocation failing.
 // K needs to be of a type that is trivially destructible.
 // The tree will call a value's destructor when its node is removed.
 // Nodes are address stable and will not change during its lifetime.
