@@ -988,7 +988,7 @@ NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
 int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char* iface, const char* counter) const {
   char buf[128];
 
-  snprintf(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
+  os::snprintf_checked(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
 
   int fd = os::open(buf, O_RDONLY, 0);
   if (fd == -1) {

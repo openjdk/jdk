@@ -59,6 +59,8 @@ public class TestIncludesAreSorted {
                     "share/metaprogramming",
                     "share/oops",
                     "share/opto",
+                    "share/precompiled",
+                    "share/prims",
                     "share/services",
                     "share/utilities"
     };
