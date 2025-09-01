@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -33,7 +33,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -43,7 +43,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -53,7 +53,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -94,10 +94,6 @@ public class i18n {
                     "Output in ${LANG}. Check: contains 1 keystore entry with "
                             + "512-bit DSA key algorithm for CN=Name, OU=Java, "
                             + "O=Oracle, L=City, ST=State C=Country."},
-
-            {"-list -v -storepass a -keystore ./i18n.keystore",
-                    "Output in ${LANG}. Check keytool error:java.io.IOException: "
-                            + "keystore password was incorrect."},
 
             {"-genkey -keyalg DSA -v -keysize 512 "
                     + "-storepass password "

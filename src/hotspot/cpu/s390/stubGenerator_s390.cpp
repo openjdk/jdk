@@ -164,15 +164,16 @@ class StubGenerator: public StubCodeGenerator {
 
       // Save non-volatile registers to ABI of caller frame.
       BLOCK_COMMENT("save registers, push frame {");
-      __ z_stmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_std(Z_F8, 96, Z_SP);
-      __ z_std(Z_F9, 104, Z_SP);
-      __ z_std(Z_F10, 112, Z_SP);
-      __ z_std(Z_F11, 120, Z_SP);
-      __ z_std(Z_F12, 128, Z_SP);
-      __ z_std(Z_F13, 136, Z_SP);
-      __ z_std(Z_F14, 144, Z_SP);
-      __ z_std(Z_F15, 152, Z_SP);
+      __ save_return_pc();
+      __ z_stmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_std(Z_F8, 80, Z_SP);
+      __ z_std(Z_F9, 88, Z_SP);
+      __ z_std(Z_F10, 96, Z_SP);
+      __ z_std(Z_F11, 104, Z_SP);
+      __ z_std(Z_F12, 112, Z_SP);
+      __ z_std(Z_F13, 120, Z_SP);
+      __ z_std(Z_F14, 128, Z_SP);
+      __ z_std(Z_F15, 136, Z_SP);
 
       //
       // Push ENTRY_FRAME including arguments:
@@ -337,15 +338,16 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lg(r_arg_result_type, result_type_offset, r_entryframe_fp);
 
       // Restore non-volatiles.
-      __ z_lmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_ld(Z_F8, 96, Z_SP);
-      __ z_ld(Z_F9, 104, Z_SP);
-      __ z_ld(Z_F10, 112, Z_SP);
-      __ z_ld(Z_F11, 120, Z_SP);
-      __ z_ld(Z_F12, 128, Z_SP);
-      __ z_ld(Z_F13, 136, Z_SP);
-      __ z_ld(Z_F14, 144, Z_SP);
-      __ z_ld(Z_F15, 152, Z_SP);
+      __ restore_return_pc();
+      __ z_lmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_ld(Z_F8, 80, Z_SP);
+      __ z_ld(Z_F9, 88, Z_SP);
+      __ z_ld(Z_F10, 96, Z_SP);
+      __ z_ld(Z_F11, 104, Z_SP);
+      __ z_ld(Z_F12, 112, Z_SP);
+      __ z_ld(Z_F13, 120, Z_SP);
+      __ z_ld(Z_F14, 128, Z_SP);
+      __ z_ld(Z_F15, 136, Z_SP);
       BLOCK_COMMENT("} restore");
 
       //
@@ -1576,11 +1578,13 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_arraycopy_stubs() {
 
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
+
     // Note: the disjoint stubs must be generated first, some of
     // the conjoint stubs use them.
-
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubId::stubgen_jbyte_disjoint_arraycopy_id);
     StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubId::stubgen_jshort_disjoint_arraycopy_id);
@@ -3308,12 +3312,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 
