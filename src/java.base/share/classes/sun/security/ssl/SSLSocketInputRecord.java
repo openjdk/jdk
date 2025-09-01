@@ -372,7 +372,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                     // ClientHello, EndOfEarlyData, ServerHello, Finished, and KeyUpdate
                     // messages can immediately precede a key change, implementations
                     // MUST send these messages in alignment with a record boundary."
-                    if (nextPos < fragLim & SSLHandshake.precedesKeyChange(handshakeType)) {
+                    if (helloVersion.useTLS13PlusSpec() &&
+                            nextPos < fragLim && SSLHandshake.precedesKeyChange(handshakeType)) {
                         throw new SSLProtocolException(
                                 "The handshake message of type " + SSLHandshake.nameOf(handshakeType) +
                                         " must end on a Record boundary."
