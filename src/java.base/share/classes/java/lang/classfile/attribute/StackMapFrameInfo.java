@@ -34,8 +34,8 @@ import java.lang.constant.ClassDesc;
 import java.util.List;
 
 import jdk.internal.classfile.impl.StackMapDecoder;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.StackMapGenerator;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * Models a stack map frame in a {@link StackMapTableAttribute StackMapTable}

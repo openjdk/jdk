@@ -48,7 +48,6 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.classfile.ClassFile.*;
-import static java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo.ITEM_TOP;
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
@@ -186,11 +185,9 @@ public final class StackMapGenerator {
             ITEM_BOGUS = -1;
 
     public static final int
-            SAME_FRAME_START = 0,
             SAME_FRAME_END = 63,
             SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
             SAME_LOCALS_1_STACK_ITEM_FRAME_END = 127,
-            RESERVED_START = 128,
             RESERVED_END = 246,
             SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
             CHOP_FRAME_START = 248,
