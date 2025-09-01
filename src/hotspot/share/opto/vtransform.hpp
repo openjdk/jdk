@@ -60,8 +60,11 @@
 
 typedef int VTransformNodeIDX;
 class VTransformNode;
-class VTransformScalarNode;
-class VTransformInputScalarNode;
+class VTransformMemopScalarNode;
+class VTransformDataScalarNode;
+class VTransformLoopPhiNode;
+class VTransformCFGNode;
+class VTransformOuterNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
@@ -422,8 +425,8 @@ public:
     return false;
   }
 
-  virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
-  virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
+  virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
+  virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
@@ -434,7 +437,7 @@ public:
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); }
+  virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
 
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
 
@@ -448,34 +451,92 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
-// Identity transform for scalar nodes.
-class VTransformScalarNode : public VTransformNode {
+// Identity transform for scalar loads and stores.
+class VTransformMemopScalarNode : public VTransformNode {
+private:
+  MemNode* _node;
+  const VPointer _vpointer;
+public:
+  VTransformMemopScalarNode(VTransform& vtransform, MemNode* n, const VPointer& vpointer) :
+    VTransformNode(vtransform, n->req()), _node(n), _vpointer(vpointer)
+  {
+    assert(node()->is_Load() || node()->is_Store(), "must be memop");
+  }
+
+  MemNode* node() const { return _node; }
+  virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
+
+  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
+  virtual bool is_load_or_store_in_loop() const override { return true; }
+
+  virtual const VPointer& vpointer() const override { return _vpointer; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for scalar data nodes.
+class VTransformDataScalarNode : public VTransformNode {
 private:
   Node* _node;
 public:
-  VTransformScalarNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n) {}
-  Node* node() const { return _node; }
-  virtual VTransformScalarNode* isa_Scalar() override { return this; }
-  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
-  virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
+  VTransformDataScalarNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
+  }
+
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for loop head phi nodes.
+class VTransformLoopPhiNode : public VTransformNode {
+private:
+  PhiNode* _node;
+public:
+  VTransformLoopPhiNode(VTransform& vtransform, PhiNode* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
+  }
+
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for CFG nodes.
+class VTransformCFGNode : public VTransformNode {
+private:
+  Node* _node;
+public:
+  VTransformCFGNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(_node->is_CFG(), "must be CFG node: %s", _node->Name());
+  }
+
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "CFG"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 // Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
 // Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
 // we must wrap the inputs that are outside the loop into special vtnodes, too.
-class VTransformInputScalarNode : public VTransformScalarNode {
+class VTransformOuterNode : public VTransformNode {
+private:
+  Node* _node;
 public:
-  VTransformInputScalarNode(VTransform& vtransform, Node* n) :
-    VTransformScalarNode(vtransform, n) {}
-  virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
-  virtual bool is_load_in_loop() const override { return false; }
-  virtual bool is_load_or_store_in_loop() const override { return false; }
-  NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
+  VTransformOuterNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n) {}
+
+  virtual VTransformOuterNode* isa_Outer() override { return this; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
@@ -598,7 +659,7 @@ public:
 
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
@@ -632,12 +693,12 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
 
-    // We can ignore input nodes, they are outside the loop.
-    if (vtn->isa_InputScalar() != nullptr) { continue; }
+    // We must ignore nodes outside the loop.
+    if (vtn->isa_Outer() != nullptr) { continue; }
 
-    VTransformScalarNode* scalar = vtn->isa_Scalar();
-    if (scalar != nullptr && scalar->node()->is_Mem()) {
-      callback(scalar->node()->as_Mem());
+    VTransformMemopScalarNode* scalar = vtn->isa_MemopScalar();
+    if (scalar != nullptr) {
+      callback(scalar->node());
     }
 
     VTransformVectorNode* vector = vtn->isa_Vector();
