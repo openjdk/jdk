@@ -1177,7 +1177,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
   if (klass->is_instance_klass()) {
     // Regular instance klass, fill in all local interfaces
     for (int index = 0; index < size; index++) {
-      Klass* k = InstanceKlass::cast(klass)->local_interfaces()->at(index);
+      InstanceKlass* k = InstanceKlass::cast(klass)->local_interfaces()->at(index);
       result->obj_at_put(index, k->java_mirror());
     }
   } else {
