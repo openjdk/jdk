@@ -65,7 +65,7 @@ bool klassVtable::is_preinitialized_vtable() {
 // treated as any other public method in C for method over-ride purposes.
 void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
-    GrowableArray<Method*>* all_mirandas, const Klass* super,
+    GrowableArray<Method*>* all_mirandas, const InstanceKlass* super,
     Array<Method*>* methods, AccessFlags class_flags, u2 major_version,
     Handle classloader, Symbol* classname, Array<InstanceKlass*>* local_interfaces) {
   NoSafepointVerifier nsv;
@@ -346,7 +346,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       break;
     }
     // if no override found yet, continue to search up
-    superk = superk->super() == nullptr ? nullptr : InstanceKlass::cast(superk->super());
+    superk = superk->java_super();
   }
 
   return superk;
@@ -631,7 +631,7 @@ void klassVtable::initialize_vtable_and_check_constraints(TRAPS) {
 // However, the vtable entries are filled in at link time, and therefore
 // the superclass' vtable may not yet have been filled in.
 bool klassVtable::needs_new_vtable_entry(Method* target_method,
-                                         const Klass* super,
+                                         const InstanceKlass* super,
                                          Handle classloader,
                                          Symbol* classname,
                                          AccessFlags class_flags,
@@ -683,7 +683,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
   // a new entry
   Symbol* name = target_method->name();
   Symbol* signature = target_method->signature();
-  const Klass* k = super;
+  const InstanceKlass* k = super;
   Method* super_method = nullptr;
   InstanceKlass *holder = nullptr;
   Method* recheck_method =  nullptr;
@@ -722,7 +722,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
 
     // Start with lookup result and continue to search up, for versions supporting transitive override
     if (major_version >= VTABLE_TRANSITIVE_OVERRIDE_VERSION) {
-      k = superk->super(); // haven't found an override match yet; continue to look
+      k = superk->java_super(); // haven't found an override match yet; continue to look
     } else {
       break;
     }
@@ -741,9 +741,8 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
   // miranda method in the super, whose entry it should re-use.
   // Actually, to handle cases that javac would not generate, we need
   // this check for all access permissions.
-  const InstanceKlass *sk = InstanceKlass::cast(super);
-  if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::DefaultsLookupMode::find) != nullptr) {
+  if (super->has_miranda_methods()) {
+    if (super->lookup_method_in_all_interfaces(name, signature, Klass::DefaultsLookupMode::find) != nullptr) {
       return false; // found a matching miranda; we do not need a new entry
     }
   }
@@ -775,7 +774,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
   if (holder->is_interface()) {
     assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(holder) , "this class should implement the interface");
-    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->super(), klass()->is_interface())) {
+    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->java_super(), klass()->is_interface())) {
       return true;
     }
   }
@@ -837,7 +836,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // Part of the Miranda Rights in the US mean that if you do not have
 // an attorney one will be appointed for you.
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
-                             Array<Method*>* default_methods, const Klass* super,
+                             Array<Method*>* default_methods, const InstanceKlass* super,
                              bool is_interface) {
   if (m->is_static() || m->is_private() || m->is_overpass()) {
     return false;
@@ -866,12 +865,11 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   // Overpasses may or may not exist for supers for pass 1,
   // they should have been created for pass 2 and later.
 
-  for (const Klass* cursuper = super; cursuper != nullptr; cursuper = cursuper->super())
-  {
-     Method* found_mth = InstanceKlass::cast(cursuper)->find_local_method(name, signature,
-                                                                          Klass::OverpassLookupMode::find,
-                                                                          Klass::StaticLookupMode::skip,
-                                                                          Klass::PrivateLookupMode::skip);
+  for (const InstanceKlass* cursuper = super; cursuper != nullptr; cursuper = cursuper->java_super()) {
+     Method* found_mth = cursuper->find_local_method(name, signature,
+                                                     Klass::OverpassLookupMode::find,
+                                                     Klass::StaticLookupMode::skip,
+                                                     Klass::PrivateLookupMode::skip);
      // Ignore non-public methods in java.lang.Object if klass is an interface.
      if (found_mth != nullptr && (!is_interface ||
          !SystemDictionary::is_nonpublic_Object_method(found_mth))) {
@@ -893,7 +891,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
 void klassVtable::add_new_mirandas_to_lists(
     GrowableArray<Method*>* new_mirandas, GrowableArray<Method*>* all_mirandas,
     Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
-    Array<Method*>* default_methods, const Klass* super, bool is_interface) {
+    Array<Method*>* default_methods, const InstanceKlass* super, bool is_interface) {
 
   // iterate thru the current interface's method to see if it a miranda
   int num_methods = current_interface_methods->length();
@@ -913,9 +911,8 @@ void klassVtable::add_new_mirandas_to_lists(
 
     if (!is_duplicate) { // we don't want duplicate miranda entries in the vtable
       if (is_miranda(im, class_methods, default_methods, super, is_interface)) { // is it a miranda at all?
-        const InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::DefaultsLookupMode::find) == nullptr) {
+        if (super->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::DefaultsLookupMode::find) == nullptr) {
           new_mirandas->append(im);
         }
         if (all_mirandas != nullptr) {
@@ -928,7 +925,7 @@ void klassVtable::add_new_mirandas_to_lists(
 
 void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
                                GrowableArray<Method*>* all_mirandas,
-                               const Klass* super,
+                               const InstanceKlass* super,
                                Array<Method*>* class_methods,
                                Array<Method*>* default_methods,
                                Array<InstanceKlass*>* local_interfaces,
@@ -962,7 +959,7 @@ void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
 int klassVtable::fill_in_mirandas(Thread* current, int initialized) {
   ResourceMark rm(current);
   GrowableArray<Method*> mirandas(20);
-  get_mirandas(&mirandas, nullptr, ik()->super(), ik()->methods(),
+  get_mirandas(&mirandas, nullptr, ik()->java_super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces(),
                klass()->is_interface());
   for (int i = 0; i < mirandas.length(); i++) {
