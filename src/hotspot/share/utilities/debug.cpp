@@ -335,7 +335,7 @@ class Command : public StackObj {
 
     if (JavaThread::active() == nullptr) {
       tty->print_cr("Failed: Current thread is not a java thread or the vm thread");
-      return  false;
+      return false;
     }
     return true;
   }
