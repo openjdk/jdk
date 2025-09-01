@@ -602,7 +602,6 @@ void Thread::SpinAcquire(volatile int * adr) {
 
 void Thread::SpinRelease(volatile int * adr) {
   assert(*adr != 0, "invariant");
-  OrderAccess::fence();      // guarantee at least release consistency.
   // Roach-motel semantics.
   // It's safe if subsequent LDs and STs float "up" into the critical section,
   // but prior LDs and STs within the critical section can't be allowed
@@ -613,5 +612,7 @@ void Thread::SpinRelease(volatile int * adr) {
   // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
   // the ST of 0 into the lock-word which releases the lock, so fence
   // more than covers this on all platforms.
-  *adr = 0;
+  // However, a full fence is an overkill on most platforms,
+  // the same effect can be achieved with Atomic::release_store().
+  Atomic::release_store(adr, 0);
 }
