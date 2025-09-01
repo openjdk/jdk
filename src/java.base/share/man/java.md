@@ -2501,10 +2501,9 @@ Java HotSpot VM.
 
 `-XX:MaxGCPauseMillis=`*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
-    soft goal, and the JVM will make its best effort to achieve it. The
-    specified value doesn't adapt to your heap size. By default, for G1 the
-    maximum pause time target is 200 milliseconds. The other generational
-    collectors do not use a pause time goal by default.
+    soft goal, and the JVM will make its best effort to achieve it. Only G1
+    and Parallel support a maximum GC pause time target. For G1, the default
+    maximum pause time target is 200 milliseconds.
 
     The following example shows how to set the maximum target pause time to 500
     ms:
