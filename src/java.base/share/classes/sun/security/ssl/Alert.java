@@ -188,7 +188,7 @@ public enum Alert {
             // "unexpected_message" alert."
             if (m.remaining() == 0) {
                 throw context.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "Invalid Alert message: no sufficient data");
+                        "Alert fragments must not be zero length.");
             }
 
             //  struct {

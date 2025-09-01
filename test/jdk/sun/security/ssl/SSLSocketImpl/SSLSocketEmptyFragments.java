@@ -351,9 +351,9 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         tests.executeTest(
                 tests::testEmptyHandshakeRecord, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
+                tests::testEmptyAlertNotHandshaking, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertDuringHandshake, SSLHandshakeException.class);
+                tests::testEmptyAlertDuringHandshake, SSLProtocolException.class);
         tests.executeTest(
                 tests::testEmptyChangeCipherSpecMessage, SSLProtocolException.class);
 
@@ -361,6 +361,6 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         tests.executeTest(
                 tests::testEmptyHandshakeRecord, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
+                tests::testEmptyAlertNotHandshaking, SSLProtocolException.class);
     }
 }
