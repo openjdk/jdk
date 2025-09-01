@@ -2145,7 +2145,6 @@ void ShenandoahFreeSet::clear() {
 void ShenandoahFreeSet::clear_internal() {
   shenandoah_assert_heaplocked();
   _partitions.make_all_regions_unavailable();
-  reset_bytes_allocated_since_gc_start();
   recompute_total_used</* UsedByMutatorChanged */ true,
                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
   recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
