@@ -611,12 +611,6 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 }
 
 
-// superklass links
-InstanceKlass* Klass::superklass() const {
-  assert(super() == nullptr || super()->is_instance_klass(), "must be instance klass");
-  return _super == nullptr ? nullptr : InstanceKlass::cast(_super);
-}
-
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
 // The log parameter is for clean_weak_klass_links to report unlinked classes.
@@ -679,11 +673,11 @@ void Klass::append_to_sibling_list() {
     assert_locked_or_safepoint(Compile_lock);
   }
   DEBUG_ONLY(verify();)
-  // add ourselves to superklass' subklass list
-  InstanceKlass* super = superklass();
+  // add ourselves to super' subklass list
+  InstanceKlass* super = java_super();
   if (super == nullptr) return;     // special case: class Object
   assert((!super->is_interface()    // interfaces cannot be supers
-          && (super->superklass() == nullptr || !is_interface())),
+          && (super->java_super() == nullptr || !is_interface())),
          "an interface can only be a subklass of Object");
 
   // Make sure there is no stale subklass head
@@ -692,7 +686,7 @@ void Klass::append_to_sibling_list() {
   for (;;) {
     Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
     if (prev_first_subklass != nullptr) {
-      // set our sibling to be the superklass' previous first subklass
+      // set our sibling to be the super' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
       set_next_sibling(prev_first_subklass);
     }

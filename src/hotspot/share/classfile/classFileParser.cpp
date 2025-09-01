@@ -4092,31 +4092,29 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
 
 void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != nullptr, "invariant");
-  const Klass* const super = this_klass->super();
+  const InstanceKlass* const super = this_klass->java_super();
 
   if (super != nullptr) {
-    const InstanceKlass* super_ik = InstanceKlass::cast(super);
-
     if (super->is_final()) {
-      classfile_icce_error("class %s cannot inherit from final class %s", super_ik, THREAD);
+      classfile_icce_error("class %s cannot inherit from final class %s", super, THREAD);
       return;
     }
 
-    if (super_ik->is_sealed()) {
+    if (super->is_sealed()) {
       stringStream ss;
       ResourceMark rm(THREAD);
-      if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
+      if (!super->has_as_permitted_subclass(this_klass, ss)) {
         classfile_icce_error(ss.as_string(), THREAD);
         return;
       }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
+      Reflection::verify_class_access(this_klass, super, false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
       char* msg = Reflection::verify_class_access_msg(this_klass,
-                                                      InstanceKlass::cast(super),
+                                                      super,
                                                       vca_result);
 
       // Names are all known to be < 64k so we know this formatted message is not excessively large.
@@ -4218,7 +4216,7 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
         // skip supers that don't have final methods.
         if (k->has_final_method()) {
           // lookup a matching method in the super class hierarchy
-          super_m = InstanceKlass::cast(k)->lookup_method(name, signature);
+          super_m = k->lookup_method(name, signature);
           if (super_m == nullptr) {
             break; // didn't find any match; get out
           }
