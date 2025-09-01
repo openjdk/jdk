@@ -28,7 +28,27 @@
  * @requires vm.jvmti
  * @library /test/lib
  * @compile SuspendWithObjectMonitorWait.java
- * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait
+ * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 1
+ */
+
+/*
+ * @test
+ * @bug 4413752 8262881
+ * @summary Test SuspendThread with ObjectMonitor wait.
+ * @requires vm.jvmti
+ * @library /test/lib
+ * @compile SuspendWithObjectMonitorWait.java
+ * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 2
+ */
+
+/*
+ * @test
+ * @bug 4413752 8262881
+ * @summary Test SuspendThread with ObjectMonitor wait.
+ * @requires vm.jvmti
+ * @library /test/lib
+ * @compile SuspendWithObjectMonitorWait.java
+ * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 3
  */
 
 import java.io.PrintStream;
@@ -87,6 +107,7 @@ public class SuspendWithObjectMonitorWait {
     native static int wait4ContendedEnter(SuspendWithObjectMonitorWaitWorker thr);
 
     public static void main(String[] args) throws Exception {
+        int test = Integer.parseInt(args[0]);
         try {
             System.loadLibrary(AGENT_LIB);
             log("Loaded library: " + AGENT_LIB);
@@ -122,7 +143,7 @@ public class SuspendWithObjectMonitorWait {
             }
         }
 
-        System.exit(run(timeMax, System.out) + exit_delta);
+        System.exit(run(timeMax, System.out, test) + exit_delta);
     }
 
     public static void logDebug(String mesg) {
@@ -141,8 +162,14 @@ public class SuspendWithObjectMonitorWait {
         System.exit(1);
     }
 
-    public static int run(int timeMax, PrintStream out) {
-        return (new SuspendWithObjectMonitorWait()).doWork(timeMax, out);
+    public static int run(int timeMax, PrintStream out, int test) {
+        switch (test) {
+            case 1: return (new SuspendWithObjectMonitorWait()).doWork1(timeMax, out);
+            case 2: return (new SuspendWithObjectMonitorWait()).doWork2(timeMax, out);
+            case 3: return (new SuspendWithObjectMonitorWait()).doWork3(timeMax, out);
+            default: throw new RuntimeException("Unknown test");
+        }
+
     }
 
     public static void checkTestState(int exp) {
@@ -153,7 +180,7 @@ public class SuspendWithObjectMonitorWait {
         }
     }
 
-    public int doWork(int timeMax, PrintStream out) {
+    public int doWork1(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
 
@@ -265,18 +292,261 @@ public class SuspendWithObjectMonitorWait {
 
         return 0;
     }
+
+    public int doWork2(int timeMax, PrintStream out) {
+        SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
+        SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+            testState = TS_INIT;  // starting the test loop
+
+            // launch the waiter thread
+            synchronized (barrierLaunch) {
+                waiter = new SuspendWithObjectMonitorWaitWorker("waiter");
+                waiter.start();
+
+                while (testState != TS_WAITER_RUNNING) {
+                    try {
+                        barrierLaunch.wait(0);  // wait until it is running
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            }
+
+            // launch the resumer thread
+            synchronized (barrierLaunch) {
+                resumer = new SuspendWithObjectMonitorWaitWorker("resumer", waiter);
+                resumer.start();
+
+                while (testState != TS_RESUMER_RUNNING) {
+                    try {
+                        barrierLaunch.wait(0);  // wait until it is running
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            }
+
+            checkTestState(TS_RESUMER_RUNNING);
+
+            // The waiter thread was synchronized on threadLock before it
+            // set TS_WAITER_RUNNING and notified barrierLaunch above so
+            // we cannot enter threadLock until the waiter thread calls
+            // threadLock.wait().
+            synchronized (threadLock) {
+                // notify waiter thread so it can try to reenter threadLock
+                testState = TS_READY_TO_NOTIFY;
+                threadLock.notify();
+
+                // wait for the waiter thread to block
+                logDebug("before contended enter wait");
+                int retCode = wait4ContendedEnter(waiter);
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI GetThreadState: "
+                                                + "retCode=" + retCode);
+                }
+                logDebug("done contended enter wait");
+
+                checkTestState(TS_READY_TO_NOTIFY);
+                testState = TS_CALL_SUSPEND;
+                logDebug("before suspend thread");
+                retCode = suspendThread(waiter);
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI SuspendThread: "
+                                                + "retCode=" + retCode);
+                }
+                logDebug("suspended thread");
+
+                //
+                // At this point, all of the child threads are running
+                // and we can get to meat of the test:
+                //
+                // - suspended threadLock waiter (trying to reenter)
+                // - a threadLock enter in the resumer thread
+                // - resumption of the waiter thread
+                // - a threadLock enter in the freshly resumed waiter thread
+                //
+
+                synchronized (barrierResumer) {
+                    checkTestState(TS_CALL_SUSPEND);
+
+                    // tell resumer thread to resume waiter thread
+                    testState = TS_READY_TO_RESUME;
+                    barrierResumer.notify();
+
+                    // Can't call checkTestState() here because the
+                    // resumer thread may have already resumed the
+                    // waiter thread.
+                }
+                try { Thread.sleep(1000);
+                } catch(Exception e) {}
+            }
+
+            try {
+                resumer.join(JOIN_MAX * 1000);
+                if (resumer.isAlive()) {
+                    System.err.println("Failure at " + count + " loops.");
+                    throw new InternalError("resumer thread is stuck");
+                }
+                waiter.join(JOIN_MAX * 1000);
+                if (waiter.isAlive()) {
+                    System.err.println("Failure at " + count + " loops.");
+                    throw new InternalError("waiter thread is stuck");
+                }
+            } catch (InterruptedException ex) {
+            }
+
+            checkTestState(TS_WAITER_DONE);
+        }
+
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                " seconds.");
+
+        return 0;
+    }
+
+    public int doWork3(int timeMax, PrintStream out) {
+        SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
+        SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+            testState = TS_INIT;  // starting the test loop
+
+            // launch the waiter thread
+            synchronized (barrierLaunch) {
+                waiter = new SuspendWithObjectMonitorWaitWorker("waiter", 1);
+                waiter.start();
+
+                while (testState != TS_WAITER_RUNNING) {
+                    try {
+                        barrierLaunch.wait(0);  // wait until it is running
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            }
+
+            // launch the resumer thread
+            synchronized (barrierLaunch) {
+                resumer = new SuspendWithObjectMonitorWaitWorker("resumer", waiter);
+                resumer.start();
+
+                while (testState != TS_RESUMER_RUNNING) {
+                    try {
+                        barrierLaunch.wait(0);  // wait until it is running
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            }
+
+            try { Thread.sleep(1000);
+            } catch(Exception e) {}
+
+            checkTestState(TS_RESUMER_RUNNING);
+
+            // The waiter thread was synchronized on threadLock before it
+            // set TS_WAITER_RUNNING and notified barrierLaunch above so
+            // we cannot enter threadLock until the waiter thread calls
+            // threadLock.wait().
+            synchronized (threadLock) {
+                // notify waiter thread so it can try to reenter threadLock
+                testState = TS_READY_TO_NOTIFY;
+                threadLock.notify();
+
+                // wait for the waiter thread to block
+                logDebug("before contended enter wait");
+                int retCode = wait4ContendedEnter(waiter);
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI GetThreadState: "
+                                                 + "retCode=" + retCode);
+                }
+                logDebug("done contended enter wait");
+
+                checkTestState(TS_READY_TO_NOTIFY);
+                testState = TS_CALL_SUSPEND;
+                logDebug("before suspend thread");
+                retCode = suspendThread(waiter);
+                if (retCode != 0) {
+                    throw new RuntimeException("error in JVMTI SuspendThread: "
+                                                + "retCode=" + retCode);
+                }
+                logDebug("suspended thread");
+
+                //
+                // At this point, all of the child threads are running
+                // and we can get to meat of the test:
+                //
+                // - suspended threadLock waiter (trying to reenter)
+                // - a threadLock enter in the resumer thread
+                // - resumption of the waiter thread
+                // - a threadLock enter in the freshly resumed waiter thread
+                //
+
+                synchronized (barrierResumer) {
+                    checkTestState(TS_CALL_SUSPEND);
+
+                    // tell resumer thread to resume waiter thread
+                    testState = TS_READY_TO_RESUME;
+                    barrierResumer.notify();
+
+                    // Can't call checkTestState() here because the
+                    // resumer thread may have already resumed the
+                    // waiter thread.
+                }
+                try { Thread.sleep(1000);
+                } catch(Exception e) {}
+            }
+
+            try {
+                resumer.join(JOIN_MAX * 1000);
+                if (resumer.isAlive()) {
+                    System.err.println("Failure at " + count + " loops.");
+                    throw new InternalError("resumer thread is stuck");
+                }
+                waiter.join(JOIN_MAX * 1000);
+                if (waiter.isAlive()) {
+                    System.err.println("Failure at " + count + " loops.");
+                    throw new InternalError("waiter thread is stuck");
+                }
+            } catch (InterruptedException ex) {
+            }
+
+            checkTestState(TS_WAITER_DONE);
+        }
+
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                " seconds.");
+
+        return 0;
+    }
 }
+
+
 
 class SuspendWithObjectMonitorWaitWorker extends Thread {
     private SuspendWithObjectMonitorWaitWorker target;  // target for resume operation
+    private final long waitTimeout;
 
     public SuspendWithObjectMonitorWaitWorker(String name) {
         super(name);
+        this.waitTimeout = 0;
+    }
+
+    public SuspendWithObjectMonitorWaitWorker(String name, long waitTimeout) {
+        super(name);
+        this.waitTimeout = waitTimeout;
     }
 
     public SuspendWithObjectMonitorWaitWorker(String name, SuspendWithObjectMonitorWaitWorker target) {
         super(name);
         this.target = target;
+        this.waitTimeout = 0;
     }
 
     native static int resumeThread(SuspendWithObjectMonitorWaitWorker thr);
@@ -311,7 +581,7 @@ class SuspendWithObjectMonitorWaitWorker extends Thread {
                 // waiter thread out of this threadLock.wait(0) call:
                 while (SuspendWithObjectMonitorWait.testState <= SuspendWithObjectMonitorWait.TS_READY_TO_NOTIFY) {
                     try {
-                        SuspendWithObjectMonitorWait.threadLock.wait(0);
+                        SuspendWithObjectMonitorWait.threadLock.wait(waitTimeout);
                     } catch (InterruptedException ex) {
                     }
                 }
