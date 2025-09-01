@@ -1925,7 +1925,7 @@ enum SSLCipher {
                 int i = pt.limit() - 1;
                 for (; i > 0 && pt.get(i) == 0; i--);
 
-                if (i < (pos + 1)) {
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
@@ -2444,7 +2444,7 @@ enum SSLCipher {
                 for (; i > 0 && pt.get(i) == 0; i--) {
                     // blank
                 }
-                if (i < (pos + 1)) {
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
