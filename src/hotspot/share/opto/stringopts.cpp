@@ -1080,7 +1080,7 @@ bool StringConcat::validate_control_flow() {
             ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
              (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
           for (SimpleDUIterator i(ptr); i.has_next(); i.next()) {
-            Node *use = i.get();
+            Node* use = i.get();
             if (use->is_Phi() && argument_set.test(use->_idx)) {
               fail = true;
               break;
