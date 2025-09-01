@@ -1246,12 +1246,6 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     workers->run_task(&cl, num_workers);
   }
 
-  {
-    // Clear current young only collection set. Survivor regions will be added
-    // to the set during evacuation.
-    g1h->young_regions_cset_group()->clear();
-  }
-
   if (initial_evacuation) {
     pt->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
   } else {

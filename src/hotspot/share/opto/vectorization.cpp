@@ -23,9 +23,14 @@
  */
 
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/noOverflowInt.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
@@ -257,13 +262,17 @@ void VLoopVPointers::print() const {
 //    - No Load-Load edges.
 //    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
 //      except if we can prove that the memory does not overlap.
+//    - Strong edge: must be respected.
+//    - Weak edge:   if we add a speculative aliasing check, we can violate
+//                   the edge, i.e. spaw the order.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
   const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
-  GrowableArray<int> memory_pred_edges;
+  GrowableArray<int> strong_memory_edges;
+  GrowableArray<int> weak_memory_edges;
 
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
@@ -275,7 +284,8 @@ void VLoopDependencyGraph::construct() {
     // In forward order (reverse of reverse), visit all memory nodes in the slice.
     for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
       MemNode* n1 = slice_nodes.at(j);
-      memory_pred_edges.clear();
+      strong_memory_edges.clear();
+      weak_memory_edges.clear();
 
       const VPointer& p1 = _vpointers.vpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
@@ -286,15 +296,20 @@ void VLoopDependencyGraph::construct() {
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
         const VPointer& p2 = _vpointers.vpointer(n2);
+
+        // If we can prove that they will never overlap -> drop edge.
         if (!p1.never_overlaps_with(p2)) {
-          // Possibly overlapping memory
-          memory_pred_edges.append(_body.bb_idx(n2));
+          if (p1.can_make_speculative_aliasing_check_with(p2)) {
+            weak_memory_edges.append(_body.bb_idx(n2));
+          } else {
+            strong_memory_edges.append(_body.bb_idx(n2));
+          }
         }
       }
-      if (memory_pred_edges.is_nonempty()) {
+      if (strong_memory_edges.is_nonempty() || weak_memory_edges.is_nonempty()) {
         // Data edges are taken implicitly from the C2 graph, thus we only add
         // a dependency node if we have memory edges.
-        add_node(n1, memory_pred_edges);
+        add_node(n1, strong_memory_edges, weak_memory_edges);
       }
     }
     slice_nodes.clear();
@@ -305,16 +320,18 @@ void VLoopDependencyGraph::construct() {
   NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
 }
 
-void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
-  DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
+  DependencyNode* dn = new (_arena) DependencyNode(n, strong_memory_edges, weak_memory_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
 int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
   int max_pred_depth = 0;
   if (!n->is_Phi()) { // ignore backedge
+    // We must compute the dependence graph depth with all edges (including the weak edges), so that
+    // the independence queries work correctly, no matter if we check independence with or without
+    // weak edges.
     for (PredsIterator it(*this, n); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
@@ -358,8 +375,13 @@ void VLoopDependencyGraph::print() const {
     const DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
-      for (uint j = 0; j < dn->memory_pred_edges_length(); j++) {
-        Node* pred = _body.body().at(dn->memory_pred_edge(j));
+      for (uint j = 0; j < dn->num_strong_memory_edges(); j++) {
+        Node* pred = _body.body().at(dn->strong_memory_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
+      }
+      tty->print(" | weak:");
+      for (uint j = 0; j < dn->num_weak_memory_edges(); j++) {
+        Node* pred = _body.body().at(dn->weak_memory_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
       tty->print_cr("]");
@@ -367,11 +389,18 @@ void VLoopDependencyGraph::print() const {
   }
   tty->cr();
 
-  tty->print_cr(" Complete dependency graph:");
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+  if (with_weak_memory_edges) {
+    tty->print_cr(" Complete dependency graph (with weak edges, because we cannot speculate):");
+  } else {
+    tty->print_cr(" Dependency graph without weak edges (because we can speculate):");
+  }
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
     for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      if (!with_weak_memory_edges && it.is_current_weak_memory_edge()) { continue; }
       Node* pred = it.current();
       tty->print("  %d %s", pred->_idx, pred->Name());
     }
@@ -381,16 +410,25 @@ void VLoopDependencyGraph::print() const {
 #endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& memory_pred_edges,
+                                                     GrowableArray<int>& strong_memory_edges,
+                                                     GrowableArray<int>& weak_memory_edges,
                                                      Arena* arena) :
     _node(n),
-    _memory_pred_edges_length(memory_pred_edges.length()),
-    _memory_pred_edges(nullptr)
+    _num_strong_memory_edges(strong_memory_edges.length()),
+    _num_weak_memory_edges(weak_memory_edges.length()),
+    _memory_edges(nullptr)
 {
-  assert(memory_pred_edges.is_nonempty(), "not empty");
-  uint bytes = memory_pred_edges.length() * sizeof(int);
-  _memory_pred_edges = (int*)arena->Amalloc(bytes);
-  memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
+  assert(strong_memory_edges.is_nonempty() || weak_memory_edges.is_nonempty(), "only generate DependencyNode if there are pred edges");
+  uint bytes_strong = strong_memory_edges.length() * sizeof(int);
+  uint bytes_weak = weak_memory_edges.length() * sizeof(int);
+  uint bytes_total = bytes_strong + bytes_weak;
+  _memory_edges = (int*)arena->Amalloc(bytes_total);
+  if (strong_memory_edges.length() > 0) {
+    memcpy(_memory_edges, strong_memory_edges.adr_at(0), bytes_strong);
+  }
+  if (weak_memory_edges.length() > 0) {
+    memcpy(_memory_edges + strong_memory_edges.length(), weak_memory_edges.adr_at(0), bytes_weak);
+  }
 }
 
 VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
@@ -400,34 +438,724 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
     _dependency_node(dependency_graph.dependency_node(node)),
     _current(nullptr),
     _is_current_memory_edge(false),
-    _next_pred(0),
-    _end_pred(node->req()),
-    _next_memory_pred(0),
-    _end_memory_pred((_dependency_node != nullptr) ? _dependency_node->memory_pred_edges_length() : 0)
+    _is_current_weak_memory_edge(false),
+    _next_data_edge(0),
+    _end_data_edge(node->req()),
+    _next_strong_memory_edge(0),
+    _end_strong_memory_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_memory_edges() : 0),
+    _next_weak_memory_edge(0),
+    _end_weak_memory_edge((_dependency_node != nullptr) ? _dependency_node->num_weak_memory_edges() : 0)
 {
   if (_node->is_Store() || _node->is_Load()) {
-    // Load: address
-    // Store: address, value
-    _next_pred = MemNode::Address;
+    // Ignore ctrl and memory, only address and value are data dependencies.
+    // Memory edges are already covered by the strong and weak memory edges.
+    // Load:  [ctrl, memory] address
+    // Store: [ctrl, memory] address, value
+    _next_data_edge = MemNode::Address;
   } else {
     assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
-    _next_pred = 1; // skip control
+    _next_data_edge = 1; // skip control
   }
   next();
 }
 
 void VLoopDependencyGraph::PredsIterator::next() {
-  if (_next_pred < _end_pred) {
-    _current = _node->in(_next_pred++);
+  if (_next_data_edge < _end_data_edge) {
+    _current = _node->in(_next_data_edge++);
     _is_current_memory_edge = false;
-  } else if (_next_memory_pred < _end_memory_pred) {
-    int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
+    _is_current_weak_memory_edge = false;
+  } else if (_next_strong_memory_edge < _end_strong_memory_edge) {
+    int pred_bb_idx = _dependency_node->strong_memory_edge(_next_strong_memory_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
     _is_current_memory_edge = true;
+    _is_current_weak_memory_edge = false;
+  } else if (_next_weak_memory_edge < _end_weak_memory_edge) {
+    int pred_bb_idx = _dependency_node->weak_memory_edge(_next_weak_memory_edge++);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
+    _is_current_memory_edge = true;
+    _is_current_weak_memory_edge = true;
   } else {
     _current = nullptr; // done
     _is_current_memory_edge = false;
+    _is_current_weak_memory_edge = false;
   }
+}
+
+// Computing aliasing runtime check using init and last of main-loop
+// -----------------------------------------------------------------
+//
+// We have two VPointer vp1 and vp2, and would like to create a runtime check that
+// guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
+// any iv value in the strided range r = [init, init + iv_stride, .. limit).
+// Remember that vp1 and vp2 both represent a region in memory, starting at a
+// "pointer", and extending for "size" bytes:
+//
+//   vp1(iv) = [p1(iv), size1)
+//   vp2(iv) = [p2(iv), size2)
+//
+//       |---size1--->           |-------size2------->
+//       |                       |
+//     p1(iv)                  p2(iv)
+//
+// In each iv value (intuitively: for each iteration), we check that there is no
+// overlap:
+//
+//   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
+//
+// This would allow situations where for some iv p1 is lower than p2, and for
+// other iv p1 is higher than p2. This is not very useful in practice. We can
+// strengthen the condition, which will make the check simpler later:
+//
+//   for all iv in r: p1(iv) + size1 <= p2(iv)                    (P1-BEFORE-P2)
+//   OR
+//   for all iv in r: p2(iv) + size2 <= p1(iv)                    (P1-AFTER-P2)
+//
+// Note: apart from this strengthening, the checks we derive below are byte accurate,
+//       i.e. they are equivalent to the conditions above. This means we have NO case
+//       where:
+//       1) The check passes (predicts no overlap) but the pointers do actually overlap.
+//          This would be bad because we would wrongly vectorize, possibly leading to
+//          wrong results.
+//       2) The check does not pass (predicts overlap) but the pointers do not overlap.
+//          This would be suboptimal, as we would not be able to vectorize, and either
+//          trap (with predicate), or go into the slow-loop (with multiversioning).
+//
+//
+// We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
+// pointer p:
+//   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
+//   (c1) with v = iv and scale_v = iv_scale
+//   (C2) with r = [init, init + iv_stride, .. last - stride_v, last], which is the set
+//        of possible iv values in the loop, with "init" the first iv value, and "last"
+//        the last iv value which is closest to limit.
+//        Note: iv_stride > 0  ->  limit - iv_stride <= last < limit
+//              iv_stride < 0  ->  limit < last <= limit - iv_stride
+//        We have to be a little careful, and cannot just use "limit" instead of "last" as
+//        the last value in r, because the iv never reaches limit in the main-loop, and
+//        so we are not sure if the memory access at p(limit) is still in bounds.
+//        For now, we just assume that we can compute init and limit, and we will derive
+//        the computation of these values later on.
+//   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
+//        the program has undefined behaviour already.
+//   (C4) abs(iv_scale * iv_stride) < 2^31 is given by the checks in
+//        VPointer::init_are_scale_and_stride_not_too_large.
+//
+// Hence, it follows that we can see p and vp as linear functions of iv in r, i.e. for
+// all iv values in the loop:
+//   p(iv)  = p(init)  - init * iv_scale + iv * iv_scale
+//   vp(iv) = vp(init) - init * iv_scale + iv * iv_scale
+//
+// Hence, p1 and p2 have the linear form:
+//   p1(iv)  = p1(init) - init * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-INIT)
+//   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
+//
+// With the (Alternative Corrolary P) we get the alternative linar form:
+//   p1(iv)  = p1(last) - last * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-LAST)
+//   p2(iv)  = p2(last) - last * iv_scale2 + iv * iv_scale2
+//
+//
+// We can now use this linearity to construct aliasing runtime checks, depending on the
+// different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
+// functions. In the following graphs, the x-axis denotes the values of iv, from init to
+// last. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
+// can be seen as having two bands that should not overlap.
+//
+//       Case 1                     Case 2                     Case 3
+//       parallel lines             same sign slope            different sign slope
+//                                  but not parallel
+//
+//       +---------+                +---------+                +---------+
+//       |         |                |        #|                |#        |
+//       |         |                |       # |                |  #      |
+//       |        #|                |      #  |                |    #    |
+//       |      #  |                |     #   |                |      #  |
+//       |    #    |                |    #    |                |        #|
+//       |  # ^    |                |   #     |                |        ^|
+//       |#   |   #|                |  #      |                |        ||
+//       |    v #  |                | #       |                |        v|
+//       |    #    |                |#       #|                |        #|
+//       |  #      |                |^     #  |                |      #  |
+//       |#        |                ||   #    |                |    #    |
+//       |         |                |v #      |                |  #      |
+//       |         |                |#        |                |#        |
+//       +---------+                +---------+                +---------+
+//
+//
+// Case 1: parallel lines, i.e. iv_scale = iv_scale1 = iv_scale2
+//
+//   p1(iv)  = p1(init)  - init * iv_scale + iv * iv_scale
+//   p2(iv)  = p2(init)  - init * iv_scale + iv * iv_scale
+//
+//   Given this, it follows:
+//     p1(iv) + size1 <= p2(iv)      <==>      p1(init) + size1 <= p2(init)
+//     p2(iv) + size2 <= p1(iv)      <==>      p2(init) + size2 <= p1(init)
+//
+//   Hence, we do not have to check the condition for every iv, but only for init.
+//
+//   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+//   ----- is equivalent to -----      ---- is equivalent to ------
+//          (P1-BEFORE-P2)         OR         (P1-AFTER-P2)
+//
+//
+// Case 2 and 3: different slopes, i.e. iv_scale1 != iv_scale2
+//
+//   Without loss of generality, we assume iv_scale1 < iv_scale2.
+//   (Otherwise, we just swap p1 and p2).
+//
+//   If iv_stride >= 0, i.e. init <= iv <= last:
+//     (iv - init) * iv_scale1 <= (iv - init) * iv_scale2
+//     (iv - last) * iv_scale1 >= (iv - last) * iv_scale2                 (POS-STRIDE)
+//   If iv_stride <= 0, i.e. last <= iv <= init:
+//     (iv - init) * iv_scale1 >= (iv - init) * iv_scale2
+//     (iv - last) * iv_scale1 <= (iv - last) * iv_scale2                 (NEG-STRIDE)
+//
+//   Below, we show that these conditions are equivalent:
+//
+//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(last) + size2 <= p1(last)      (if iv_stride >= 0)   |
+//       p1(last) + size1 <= p2(last)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
+//       ---- are equivalent to -----                            |    ---- are equivalent to -----                            |
+//              (P1-BEFORE-P2)                                   |           (P1-AFTER-P2)                                    |
+//                                                               |                                                            |
+//   Proof:                                                      |                                                            |
+//                                                               |                                                            |
+//     Assume: (P1-BEFORE-P2)                                    |  Assume: (P1-AFTER-P2)                                     |
+//       for all iv in r: p1(iv) + size1 <= p2(iv)               |    for all iv in r: p2(iv) + size2 <= p1(iv)               |
+//       => And since init and last in r =>                      |    => And since init and last in r =>                      |
+//       p1(init) + size1 <= p2(init)                            |    p2(init) + size2 <= p1(init)                            |
+//       p1(last) + size1 <= p2(last)                            |    p2(last) + size2 <= p1(last)                            |
+//                                                               |                                                            |
+//                                                               |                                                            |
+//     Assume: p1(init) + size1 <= p2(init)                      |  Assume: p2(last) + size2 <= p1(last)                      |
+//        and: iv_stride >= 0                                    |     and: iv_stride >= 0                                    |
+//                                                               |                                                            |
+//          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
+//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(last) - last * iv_scale2 + iv * iv_scale2 |
+//                           ------ apply (POS-STRIDE) --------- |                        ------ apply (POS-STRIDE) --------- |
+//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(last) - last * iv_scale1 + iv * iv_scale1 |
+//          -- assumption --                                     |       -- assumption --                                     |
+//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(last) - last * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
+//        =         p2(iv)                                       |     =         p1(iv)                                       |
+//                                                               |                                                            |
+//                                                               |                                                            |
+//     Assume: p1(last) + size1 <= p2(last)                      |  Assume: p2(init) + size2 <= p1(init)                      |
+//        and: iv_stride <= 0                                    |     and: iv_stride <= 0                                    |
+//                                                               |                                                            |
+//          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
+//                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//        = size1 + p1(last) - last * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
+//                           ------ apply (NEG-STRIDE) --------- |                        ------ apply (NEG-STRIDE) --------- |
+//       <= size1 + p1(last) - last * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
+//          -- assumption --                                     |       -- assumption --                                     |
+//       <=         p2(last) - last * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//        =         p2(iv)                                       |     =         p1(iv)                                       |
+//                                                               |                                                            |
+//
+//   The obtained conditions already look very simple. However, we would like to avoid
+//   computing 4 addresses (p1(init), p1(last), p2(init), p2(last)), and would instead
+//   prefer to only compute 2 addresses, and derive the other two from the distance (span)
+//   between the pointers at init and last. Using (LINEAR-FORM-INIT), we get:
+//
+//     p1(last) = p1(init) - init * iv_scale1 + last * iv_scale1                 (SPAN-1)
+//                         --------------- defines -------------
+//                p1(init) + span1
+//
+//     p2(last) = p2(init) - init * iv_scale2 + last * iv_scale2                 (SPAN-2)
+//                         --------------- defines -------------
+//                p1(init) + span2
+//
+//     span1 = - init * iv_scale1 + last * iv_scale1 = (last - init) * iv_scale1
+//     span2 = - init * iv_scale2 + last * iv_scale2 = (last - init) * iv_scale2
+//
+//   Thus, we can use the conditions below:
+//     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+//     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+//
+//   Below, we visualize the conditions, so that the reader can gain an intuitiion.
+//   For simplicity, we only show the case with iv_stride > 0. Also, remember that
+//   iv_scale1 < iv_scale2.
+//
+//                             +---------+                     +---------+
+//                             |        #|                     |        #| <-- p1(init) + span1
+//                             |       # |  ^ span2    span1 ^ |      # ^|
+//                             |      #  |  |                | |    #   ||
+//                             |     #   |  |                | |  #     v| <-- p2(init) + span2 + size2
+//                             |    #    |  |                v |#       #|
+//                             |   #     |  |          span2 ^ |       # |
+//                             |  #      |  |                | |      #  |
+//                             | #       |  |                | |     #   |
+//        p2(init)         --> |#       #|  v                | |    #    |
+//                             |^     #  |  ^ span1          | |   #     |
+//                             ||   #    |  |                | |  #      |
+//        p1(init) + size1 --> |v #      |  |                | | #       |
+//                             |#        |  v                v |#        |
+//                             +---------+                     +---------+
+//
+// -------------------------------------------------------------------------------------------------------------------------
+//
+// Computing the last iv value in a loop
+// -------------------------------------
+//
+// Let us define a helper function, that computes the last iv value in a loop,
+// given variable init and limit values, and a constant stride. If the loop
+// is never entered, we just return the init value.
+//
+//   LAST(init, stride, limit), where stride > 0:   |  LAST(init, stride, limit), where stride < 0:
+//     last = init                                  |  last = init
+//     for (iv = init; iv < limit; iv += stride)    |  for (iv = init; iv > limit; iv += stride)
+//       last = iv                                  |    last = iv
+//
+// It follows that for some k:
+//    last = init + k * stride
+//
+// If the loop is not entered, we can set k=0.
+//
+// If the loop is entered:
+//   last is very close to limit:
+//     stride > 0  ->  limit - stride <= last < limit
+//     stride < 0  ->  limit < last <= limit - stride
+//
+//     If stride > 0:
+//         limit        - stride                   <= last              <   limit
+//         limit        - stride                   <= init + k * stride <   limit
+//         limit - init - stride                   <=        k * stride <   limit - init
+//         limit - init - stride - 1               <         k * stride <=  limit - init - 1
+//        (limit - init - stride - 1) / stride     <         k          <= (limit - init - 1) / stride
+//        (limit - init          - 1) / stride - 1 <         k          <= (limit - init - 1) / stride
+//     -> k = (limit - init - 1) / stride
+//     -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
+//        Note: to incorporate the case where the loop is not entered (init >= limit), we see
+//              that the divident is zero or negative, and so the result will be zero or
+//              negative. Thus, we can just clamp k to zero, or last to init, so that we get
+//              a solution that also works when the loop is not entered:
+//
+//              k = (limit - init - 1) / abs(stride)
+//              last = MAX(init, init + k * stride)
+//
+//     If stride < 0:
+//         limit                               <  last              <=   limit        - stride
+//         limit                               <  init + k * stride <=   limit        - stride
+//         limit - init                        <         k * stride <=   limit - init - stride
+//         limit - init + 1                    <=        k * stride <    limit - init - stride + 1
+//        (limit - init + 1) /     stride      >=        k          >   (limit - init - stride + 1) /     stride
+//       -(limit - init + 1) / abs(stride)     >=        k          >  -(limit - init - stride + 1) / abs(stride)
+//       -(limit - init + 1) / abs(stride)     >=        k          >  -(limit - init          + 1) / abs(stride) - 1
+//        (init - limit - 1) / abs(stride)     >=        k          >   (init - limit          - 1) / abs(stride) - 1
+//        (init - limit - 1) / abs(stride)     >=        k          >   (init - limit          - 1) / abs(stride) - 1
+//     -> k = (init - limit - 1) / abs(stride)
+//     -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
+//        Note: to incorporate the case where the loop is not entered (init <= limit), we see
+//              that the divident is zero or negative, and so the result will be zero or
+//              negative. Thus, we can just clamp k to zero, or last to init, so that we get
+//              a solution that also works when the loop is not entered:
+//
+//              k = (init - limit - 1) / abs(stride)
+//              last = MIN(init, init + k * stride)
+//
+// Now we can put it all together:
+//   LAST(init, stride, limit)
+//     If stride > 0:
+//       k = (limit - init - 1) / abs(stride)
+//       last = MAX(init, init + k * stride)
+//     If stride < 0:
+//       k = (init - limit - 1) / abs(stride)
+//       last = MIN(init, init + k * stride)
+//
+// We will have to consider the implications of clamping to init when the loop is not entered
+// at the use of LAST further down.
+//
+// -------------------------------------------------------------------------------------------------------------------------
+//
+// Computing init and last for the main-loop
+// -----------------------------------------
+//
+// As we have seen above, we always need the "init" of the main-loop. And if "iv_scale1 != iv_scale2", then we
+// also need the "last" of the main-loop. These values need to be pre-loop invariant, because the check is
+// to be performed before the pre-loop (at the predicate or multiversioning selector_if). It will be helpful
+// to recall the iv structure in the pre and main-loop:
+//
+//                  | iv = pre_init
+//                  |
+//   Pre-Loop       | +----------------+
+//                  phi                |
+//                   |                 |  -> pre_last: last iv value in pre-loop
+//                   + pre_iv_stride   |
+//                   |-----------------+
+//                   | exit check: < pre_limit
+//                   |
+//                   | iv = main_init = init
+//                   |
+//   Main-Loop       | +------------------------------+
+//                   phi                              |
+//                    |                               | -> last: last iv value in main-loop
+//                    + main_iv_stride = iv_stride    |
+//                    |-------------------------------+
+//                    | exit check: < main_limit = limit
+//
+// Unfortunately, the init (aka. main_init) is not pre-loop invariant, rather it is only available
+// after the pre-loop. We will have to compute:
+//
+//   pre_last = LAST(pre_init, pre_iv_stride, pre_limit)
+//   init = pre_last + pre_iv_stride
+//
+// If we need "last", we unfortunately must compute it as well:
+//
+//   last = LAST(init, iv_stride, limit)
+//
+//
+// These computations assume that we indeed do enter the main-loop - otherwise
+// it does not make sense to talk about the "last main iteration". Of course
+// entering the main-loop implies that we entered the pre-loop already. But
+// what happens if we check the aliasing runtime check, but later would never
+// enter the main-loop?
+//
+// First: no matter if we pass or fail the aliasing runtime check, we will
+// not get wrong results. If we fail the check, we end up in the less optimized
+// slow-loop. If we pass the check, and we don't enter the main-loop, we
+// never rely on the aliasing check, after all only the vectorized main-loop
+// (and the vectorized post-loop) rely on the aliasing check.
+//
+// But: The worry is that we may fail the aliasing runtime check "spuriously",
+// i.e. even though we would never enter the main-loop, and that this could have
+// unfortunate side-effects (for example deopting unnecessarily). Let's
+// look at the two possible cases:
+//  1) We would never even enter the pre-loop.
+//     There are only predicates between the aliasing runtime check and the pre-loop,
+//     so a predicate would have to fail. These are rather rare cases. If we
+//     are using multiversioning for the aliasing runtime check, we would
+//     immediately fail the predicate in either the slow or fast loop, so
+//     the decision of the aliasing runtime check does not matter. But if
+//     we are using a predicate for the aliaing runtime check, then we may
+//     end up deopting twice: once for the aliasing runtime check, and then
+//     again for the other predicate. This would not be great, but again,
+//     failing predicates are rare in the first place.
+//
+//  2) We would enter the pre-loop, but not the main-loop.
+//     The pre_last must be accurate, because we are entering the pre-loop.
+//     But then we fail the zero-trip guard of the main-loop. Thus, for the
+//     main-loop, the init lies "after" the limit. Thus, the computed last
+//     for the main-loop equals the init. This means that span1 and span2
+//     are zero. Hence, p1(init) and p2(init) would have to alias for the
+//     aliasing runtime check to fail. Hence, it would not be surprising
+//     at all if we deopted because of the aliasing runtime check.
+//
+bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
+  const VPointer& vp1 = *this;
+  const VPointer& vp2 = other;
+
+  if (!_vloop.use_speculative_aliasing_checks()) { return false; }
+
+  // Both pointers need a nice linear form, otherwise we cannot formulate the check.
+  if (!vp1.is_valid() || !vp2.is_valid()) { return false; }
+
+  // The pointers always overlap -> a speculative check would always fail.
+  if (vp1.always_overlaps_with(vp2)) { return false; }
+
+  // The pointers never overlap -> a speculative check would always succeed.
+  assert(!vp1.never_overlaps_with(vp2), "ensured by caller");
+
+  // The speculative aliasing check happens either at the AutoVectorization predicate
+  // or at the multiversion_if. That is before the pre-loop. From the construction of
+  // VPointer, we already know that all its variables (except iv) are pre-loop invariant.
+  //
+  // For the computation of main_init, we also need the pre_limit, and so we need
+  // to check that this value is pre-loop invariant. In the case of non-equal iv_scales,
+  // we also need the main_limit in the aliasing check, and so this value must then
+  // also be pre-loop invariant.
+  Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* pre_limit = pre_limit_opaq->in(1);
+  Node* main_limit = _vloop.cl()->limit();
+
+  if (!_vloop.is_pre_loop_invariant(pre_limit)) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not pre-loop independent!");
+    }
+#endif
+    return false;
+  }
+
+  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_pre_loop_invariant(main_limit)) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not pre-loop independent!");
+    }
+#endif
+    return false;
+  }
+
+  return true;
+}
+
+// For description and derivation see "Computing the last iv value in a loop".
+// Note: the iv computations here should not overflow. But out of an abundance
+//       of caution, we compute everything in long anyway.
+Node* make_last(Node* initL, jint stride, Node* limitL, PhaseIdealLoop* phase) {
+  PhaseIterGVN& igvn = phase->igvn();
+
+  Node* abs_strideL = igvn.longcon(abs(stride));
+  Node* strideL = igvn.longcon(stride);
+
+  // If in some rare case the limit is "before" init, then
+  // this subtraction could overflow. Doing the calculations
+  // in long prevents this. Below, we clamp the "last" value
+  // back to init, which gets us back into the safe int range.
+  Node* diffL = (stride > 0) ? new SubLNode(limitL, initL)
+                             : new SubLNode(initL, limitL);
+  Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
+  Node* k = new DivLNode(nullptr, diffL_m1, abs_strideL);
+
+  // Compute last = init + k * iv_stride
+  Node* k_mul_stride = new MulLNode(k, strideL);
+  Node* last = new AddLNode(initL, k_mul_stride);
+
+  // Make sure that the last does not lie "before" init.
+  Node* last_clamped = MaxNode::build_min_max_long(&igvn, initL, last, stride > 0);
+
+  phase->register_new_node_with_ctrl_of(diffL,        initL);
+  phase->register_new_node_with_ctrl_of(diffL_m1,     initL);
+  phase->register_new_node_with_ctrl_of(k,            initL);
+  phase->register_new_node_with_ctrl_of(k_mul_stride, initL);
+  phase->register_new_node_with_ctrl_of(last,         initL);
+  phase->register_new_node_with_ctrl_of(last_clamped, initL);
+
+  return last_clamped;
+}
+
+BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) {
+  Node* a_plus_b = new AddLNode(a, b);
+  Node* cmp = CmpNode::make(a_plus_b, c, T_LONG, true);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::le);
+  phase->register_new_node_with_ctrl_of(a_plus_b, a);
+  phase->register_new_node_with_ctrl_of(cmp, a);
+  phase->register_new_node_with_ctrl_of(bol, a);
+  return bol;
+}
+
+BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) const {
+  // Ensure iv_scale1 <= iv_scale2.
+  const VPointer& vp1 = (this->iv_scale() <= other.iv_scale()) ? *this : other;
+  const VPointer& vp2 = (this->iv_scale() <= other.iv_scale()) ? other :*this ;
+  assert(vp1.iv_scale() <= vp2.iv_scale(), "ensured by swapping if necessary");
+
+  assert(vp1.can_make_speculative_aliasing_check_with(vp2), "sanity");
+
+  PhaseIdealLoop* phase = _vloop.phase();
+  PhaseIterGVN& igvn = phase->igvn();
+
+  // init (aka main_init): compute it from the the pre-loop structure.
+  // As described above, we cannot just take the _vloop.cl().init_trip(), because that
+  // value is pre-loop dependent, and we need a pre-loop independent value, so we can
+  // have it available at the predicate / multiversioning selector_if.
+  // For this, we need to be sure that the pre_limit is pre-loop independent as well,
+  // see can_make_speculative_aliasing_check_with.
+  Node* pre_init = _vloop.pre_loop_end()->init_trip();
+  jint pre_iv_stride = _vloop.pre_loop_end()->stride_con();
+  Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* pre_limit = pre_limit_opaq->in(1);
+  assert(_vloop.is_pre_loop_invariant(pre_init),  "needed for aliasing check before pre-loop");
+  assert(_vloop.is_pre_loop_invariant(pre_limit), "needed for aliasing check before pre-loop");
+
+  Node* pre_initL = new ConvI2LNode(pre_init);
+  Node* pre_limitL = new ConvI2LNode(pre_limit);
+  phase->register_new_node_with_ctrl_of(pre_initL, pre_init);
+  phase->register_new_node_with_ctrl_of(pre_limitL, pre_init);
+
+  Node* pre_lastL = make_last(pre_initL, pre_iv_stride, pre_limitL, phase);
+
+  Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
+  phase->register_new_node_with_ctrl_of(main_initL, pre_init);
+
+  Node* main_init = new ConvL2INode(main_initL);
+  phase->register_new_node_with_ctrl_of(main_init, pre_init);
+
+  Node* p1_init = vp1.make_pointer_expression(main_init);
+  Node* p2_init = vp2.make_pointer_expression(main_init);
+  Node* size1 = igvn.longcon(vp1.size());
+  Node* size2 = igvn.longcon(vp2.size());
+
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
+    tty->print("pre_init:  "); pre_init->dump();
+    tty->print("pre_limit: "); pre_limit->dump();
+    tty->print("pre_lastL: "); pre_lastL->dump();
+    tty->print("main_init: "); main_init->dump();
+    tty->print_cr("p1_init:");
+    p1_init->dump_bfs(5, nullptr, "");
+    tty->print_cr("p2_init:");
+    p2_init->dump_bfs(5, nullptr, "");
+  }
+#endif
+
+  BoolNode* condition1 = nullptr;
+  BoolNode* condition2 = nullptr;
+  if (vp1.iv_scale() == vp2.iv_scale()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  Same iv_scale(%d) -> parallel lines -> simple conditions:", vp1.iv_scale());
+      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
+      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
+    }
+#endif
+    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
+    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
+  } else {
+    assert(vp1.iv_scale() < vp2.iv_scale(), "assumed in proof, established above by swapping");
+
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  Different iv_scale -> lines with different slopes -> more complex conditions:");
+      tty->print_cr("  p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1  (if iv_stride >= 0)");
+      tty->print_cr("  p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)          (if iv_stride <= 0)");
+      tty->print_cr("  ---------------- condition1 ----------------      --------------- condition2 -----------------");
+    }
+#endif
+
+    // last (aka main_last): compute from main-loop structure.
+    jint main_iv_stride = _vloop.iv_stride();
+    Node* main_limit = _vloop.cl()->limit();
+    assert(_vloop.is_pre_loop_invariant(main_limit), "needed for aliasing check before pre-loop");
+
+    Node* main_limitL = new ConvI2LNode(main_limit);
+    phase->register_new_node_with_ctrl_of(main_limitL, pre_init);
+
+    Node* main_lastL = make_last(main_initL, main_iv_stride, main_limitL, phase);
+
+    // Compute span1 = (last - init) * iv_scale1
+    //         span2 = (last - init) * iv_scale2
+    Node* last_minus_init = new SubLNode(main_lastL, main_initL);
+    Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
+    Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
+    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
+    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
+
+    phase->register_new_node_with_ctrl_of(last_minus_init, pre_init);
+    phase->register_new_node_with_ctrl_of(span1,           pre_init);
+    phase->register_new_node_with_ctrl_of(span2,           pre_init);
+
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print("main_limitL: "); main_limitL->dump();
+      tty->print("main_lastL: "); main_lastL->dump();
+      tty->print("p1_init: "); p1_init->dump();
+      tty->print("p2_init: "); p2_init->dump();
+      tty->print("size1: "); size1->dump();
+      tty->print("size2: "); size2->dump();
+      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
+      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
+    }
+#endif
+
+    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
+    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
+    phase->register_new_node_with_ctrl_of(p1_init_plus_span1, pre_init);
+    phase->register_new_node_with_ctrl_of(p2_init_plus_span2, pre_init);
+    if (_vloop.iv_stride() >= 0) {
+      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase);
+      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase);
+    } else {
+      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
+      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
+    }
+  }
+
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("condition1:");
+    condition1->dump_bfs(5, nullptr, "");
+    tty->print_cr("condition2:");
+    condition2->dump_bfs(5, nullptr, "");
+  }
+#endif
+
+  // Construct "condition1 OR condition2". Convert the bol value back to an int value
+  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
+  // to two setbe instructions which capture the condition bits to a register, meaning
+  // we only have a single branch in the end.
+  Node* zero = igvn.intcon(0);
+  Node* one  = igvn.intcon(1);
+  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+  phase->register_new_node_with_ctrl_of(cmov1, main_initL);
+  phase->register_new_node_with_ctrl_of(cmov2, main_initL);
+
+  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+  phase->register_new_node_with_ctrl_of(c1_or_c2, main_initL);
+  phase->register_new_node_with_ctrl_of(cmp, main_initL);
+  phase->register_new_node_with_ctrl_of(bol, main_initL);
+
+  return bol;
+}
+
+Node* VPointer::make_pointer_expression(Node* iv_value) const {
+  assert(is_valid(), "must be valid");
+
+  PhaseIdealLoop* phase = _vloop.phase();
+  PhaseIterGVN& igvn = phase->igvn();
+  Node* iv = _vloop.iv();
+  Node* ctrl = phase->get_ctrl(iv_value);
+
+  auto maybe_add = [&] (Node* n1, Node* n2, BasicType bt) {
+    if (n1 == nullptr) { return n2; }
+    Node* add = AddNode::make(n1, n2, bt);
+    phase->register_new_node(add, ctrl);
+    return add;
+  };
+
+  Node* expression = nullptr;
+  mem_pointer().for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
+    Node* node = nullptr;
+    if (s.is_con()) {
+      // Long constant.
+      NoOverflowInt con = s.scaleI() * s.scaleL();
+      node = igvn.longcon(con.value());
+    } else {
+      // Long variable.
+      assert(s.scaleI().is_one(), "must be long variable");
+      Node* scaleL = igvn.longcon(s.scaleL().value());
+      Node* variable = (s.variable() == iv) ? iv_value : s.variable();
+      if (variable->bottom_type()->isa_ptr() != nullptr) {
+        variable = new CastP2XNode(nullptr, variable);
+        phase->register_new_node(variable, ctrl);
+      }
+      node = new MulLNode(scaleL, variable);
+      phase->register_new_node(node, ctrl);
+    }
+    expression = maybe_add(expression, node, T_LONG);
+  });
+
+  int max_int_group = mem_pointer().max_int_group();
+  for (int int_group = 1; int_group <= max_int_group; int_group++) {
+    Node* int_expression = nullptr;
+    NoOverflowInt int_group_scaleL;
+    mem_pointer().for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
+      Node* node = nullptr;
+      if (s.is_con()) {
+        node = igvn.intcon(s.scaleI().value());
+      } else {
+        Node* scaleI = igvn.intcon(s.scaleI().value());
+        Node* variable = (s.variable() == iv) ? iv_value : s.variable();
+        node = new MulINode(scaleI, variable);
+        phase->register_new_node(node, ctrl);
+      }
+      int_group_scaleL = s.scaleL(); // remember for multiplication after ConvI2L
+      int_expression = maybe_add(int_expression, node, T_INT);
+    });
+    assert(int_expression != nullptr, "no empty int group");
+    int_expression = new ConvI2LNode(int_expression);
+    phase->register_new_node(int_expression, ctrl);
+    Node* scaleL = igvn.longcon(int_group_scaleL.value());
+    int_expression = new MulLNode(scaleL, int_expression);
+    phase->register_new_node(int_expression, ctrl);
+    expression = maybe_add(expression, int_expression, T_LONG);
+  }
+
+  return expression;
 }
 
 #ifndef PRODUCT

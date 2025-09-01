@@ -316,7 +316,7 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_instance
       block->set_offset(fs.offset());
       all_fields->append(block);
     }
-    ik = ik->super() == nullptr ? nullptr : InstanceKlass::cast(ik->super());
+    ik = ik->java_super() == nullptr ? nullptr : ik->java_super();
   }
   assert(last_offset == -1 || last_offset > 0, "Sanity");
   if (last_offset > 0 &&
