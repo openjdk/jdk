@@ -406,8 +406,7 @@ OGLBlitSwToTexture(SurfaceDataRasInfo *srcInfo, OGLPixelFormat *pf,
 
     // in case pixel stride is not a multiple of scanline stride the copy
     // has to be done line by line (see 6207877)
-    if (pf != NULL) {
-            if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
+    if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
         jint width = dx2 - dx1;
         jint height = dy2 - dy1;
         GLvoid *pSrc = srcInfo->rasBase;
@@ -423,7 +422,6 @@ OGLBlitSwToTexture(SurfaceDataRasInfo *srcInfo, OGLPixelFormat *pf,
         j2d_glTexSubImage2D(dstOps->textureTarget, 0,
                             dx1, dy1, dx2-dx1, dy2-dy1,
                             pf->format, pf->type, srcInfo->rasBase);
-    }
     }
     if (adjustAlpha) {
         // restore scale/bias to their original values
