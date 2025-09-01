@@ -366,7 +366,8 @@ public abstract class HttpClient implements AutoCloseable {
         public Builder followRedirects(Redirect policy);
 
         /**
-         * Requests a specific HTTP protocol version where possible.
+         * Sets the default preferred HTTP protocol version for requests
+         * issued by this client.
          *
          * <p> If this method is not invoked prior to {@linkplain #build()
          * building}, then newly built clients will prefer {@linkplain
@@ -382,8 +383,8 @@ public abstract class HttpClient implements AutoCloseable {
          * <br>
          * If set to {@linkplain Version#HTTP_3 HTTP/3}, the version {@linkplain
          * HttpClient##ProtocolVersionSelection may be downgraded to HTTP/2 or
-         * HTTP/1.1 until it is known to the client that the origin server
-         * supports HTTP/3}.
+         * HTTP/1.1}, if an HTTP/3 connection can't be established with the origin
+         * server.
          *
          * @implNote Other constraints may also affect the {@linkplain
          * HttpClient##ProtocolVersionSelection selection of the actual protocol version}.
