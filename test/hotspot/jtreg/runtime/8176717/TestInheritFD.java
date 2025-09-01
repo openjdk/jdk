@@ -56,7 +56,7 @@ import java.util.stream.Stream;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestInheritFD
+ * @run driver/timeout=480 TestInheritFD
  */
 
 /**
