@@ -110,7 +110,7 @@ private:
 //  Node *_unconditional_delay_slot;
 
   // Pointer to a Nop
-  MachNopNode *_nop;
+//  MachNopNode *_nop;
 
   // Length of the current bundle, in instructions
   uint _bundle_instr_count;
@@ -129,7 +129,7 @@ public:
   Scheduling(Arena *arena, Compile &compile);
 
   // Destructor
-  NOT_PRODUCT( ~Scheduling(); )
+//  NOT_PRODUCT( ~Scheduling(); )
 
   // Step ahead "i" cycles
   void step(uint i);
@@ -194,10 +194,10 @@ public:
 #ifndef PRODUCT
 private:
   // Gather information on size of nops relative to total
-  uint _branches, _unconditional_delays;
+//  uint _branches, _unconditional_delays;
 
   static uint _total_nop_size, _total_method_size;
-  static uint _total_branches, _total_unconditional_delays;
+//  static uint _total_branches, _total_unconditional_delays;
   static uint _total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+1];
 
 public:
@@ -1472,7 +1472,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   }
 
   // Now fill in the code buffer
-  Node* delay_slot = nullptr;
+//  Node* delay_slot = nullptr;
   for (uint i = 0; i < nblocks; i++) {
     Block* block = C->cfg()->get_block(i);
     _block = block;
@@ -1619,7 +1619,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 //          bool delay_slot_is_used = valid_bundle_info(n) &&
 //                                    C->output()->node_bundling(n)->use_unconditional_delay();
           if (/*!delay_slot_is_used &&*/ mach->may_be_short_branch()) {
-            assert(delay_slot == nullptr, "not expecting delay slot node");
+//            assert(delay_slot == nullptr, "not expecting delay slot node");
             int br_size = n->size(C->regalloc());
             int offset = blk_starts[block_num] - current_offset;
             if (block_num >= i) {
@@ -2031,8 +2031,8 @@ void PhaseOutput::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_s
 #ifndef PRODUCT
 uint Scheduling::_total_nop_size = 0;
 uint Scheduling::_total_method_size = 0;
-uint Scheduling::_total_branches = 0;
-uint Scheduling::_total_unconditional_delays = 0;
+//uint Scheduling::_total_branches = 0;
+//uint Scheduling::_total_unconditional_delays = 0;
 uint Scheduling::_total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+1];
 #endif
 
@@ -2050,13 +2050,13 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
           _bundle_instr_count(0),
           _bundle_cycle_number(0),
           _bundle_use(0, 0, resource_count, &_bundle_use_elements[0])
-#ifndef PRODUCT
-        , _branches(0)
-        , _unconditional_delays(0)
-#endif
+//#ifndef PRODUCT
+//        , _branches(0)
+//        , _unconditional_delays(0)
+//#endif
 {
   // Create a MachNopNode
-  _nop = new MachNopNode();
+//  _nop = new MachNopNode();
 
   // Save the count
   _node_bundling_limit = compile.unique();
@@ -2087,13 +2087,13 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   _next_node = block->get_node(block->number_of_nodes() - 1);
 }
 
-#ifndef PRODUCT
-// Scheduling destructor
-Scheduling::~Scheduling() {
-  _total_branches             += _branches;
-  _total_unconditional_delays += _unconditional_delays;
-}
-#endif
+//#ifndef PRODUCT
+//// Scheduling destructor
+//Scheduling::~Scheduling() {
+//  _total_branches             += _branches;
+//  _total_unconditional_delays += _unconditional_delays;
+//}
+//#endif
 
 // Step ahead "i" cycles
 void Scheduling::step(uint i) {
@@ -3572,7 +3572,7 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
     }
 
     // For all instructions
-    Node *delay = nullptr;
+//    Node *delay = nullptr;
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       if (VMThread::should_terminate()) {
         cut_short = true;
@@ -3648,7 +3648,7 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
       st->bol(); // Make sure we start on a new line
     }
     st->cr(); // one empty line between blocks
-    assert(cut_short || delay == nullptr, "no unconditional delay branch");
+//    assert(cut_short || delay == nullptr, "no unconditional delay branch");
   } // End of per-block dump
 
   if (cut_short)  st->print_cr("*** disassembly is cut short ***");
