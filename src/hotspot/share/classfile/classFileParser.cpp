@@ -3820,9 +3820,6 @@ void ClassFileParser::check_super_class(ConstantPool* const cp,
                        super_class_index,
                        CHECK);
 
-    // Ioi note: remove this in final commit.
-    assert(!cp->tag_at(super_class_index).is_klass(), "should not have been resolved");
-
     // The class name should be legal because it is checked when parsing constant pool.
     // However, make sure it is not an array type.
     if (need_verify) {
