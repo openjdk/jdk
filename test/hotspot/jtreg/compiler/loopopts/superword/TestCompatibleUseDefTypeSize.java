@@ -404,7 +404,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
                   IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
@@ -442,7 +442,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
                   IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
