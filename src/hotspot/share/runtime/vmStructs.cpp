@@ -321,7 +321,7 @@
   /* JNI IDs */                                                                                                                      \
   /***********/                                                                                                                      \
                                                                                                                                      \
-  nonstatic_field(JNIid,                       _holder,                                       Klass*)                                \
+  nonstatic_field(JNIid,                       _holder,                                       InstanceKlass*)                        \
   nonstatic_field(JNIid,                       _next,                                         JNIid*)                                \
   nonstatic_field(JNIid,                       _offset,                                       int)                                   \
                                                                                                                                      \
