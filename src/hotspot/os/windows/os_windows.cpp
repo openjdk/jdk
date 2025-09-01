@@ -4819,6 +4819,8 @@ int os::stat(const char *path, struct stat *sbuf) {
     DWORD errcode = ::GetLastError();
     if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
+    } else {
+      _set_errno(0);
     }
     log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
     os::free(wide_path);
