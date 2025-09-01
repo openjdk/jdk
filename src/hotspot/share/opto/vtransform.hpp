@@ -341,7 +341,7 @@ public:
     vtransform.graph().add_vtnode(this);
   }
 
-  void set_req(uint i, VTransformNode* n) {
+  void init_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
