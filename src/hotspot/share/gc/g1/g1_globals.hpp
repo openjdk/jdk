@@ -370,7 +370,7 @@
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
                                                                             \
-  product(bool, EvacuateAllOptionalRegions, false, DIAGNOSTIC,              \
+  develop(bool, EvacuateAllOptionalRegions, false,                          \
           "Force to evacuate all optional regions.")                        \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \

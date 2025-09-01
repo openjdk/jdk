@@ -404,6 +404,10 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
+#ifndef PRODUCT
+  bool add_at_least_one_optional_region = EvacuateAllOptionalRegions;
+#endif
+
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
@@ -418,6 +422,16 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
       print_finish_message("Maximum number of regions reached", true);
       break;
     }
+
+#ifndef PRODUCT
+    if (add_at_least_one_optional_region) {
+        add_at_least_one_optional_region = false;
+        _optional_groups.append(group);
+        prepare_optional_group(group, num_optional_regions);
+        num_optional_regions += group->length();
+        continue;
+    }
+#endif
 
     double predicted_time_ms = group->predict_group_total_time_ms();
 
@@ -641,8 +655,16 @@ uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
 
   double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
 
+  time_remaining_ms -= total_prediction_ms;
+
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_regions_selected, optional_regions_count, total_prediction_ms);
+
+#ifndef PRODUCT
+  if (EvacuateAllOptionalRegions && num_regions_selected == optional_regions_count) {
+    log_debug(gc, ergo, cset)("All optional regions are scheduled to be evacuated");
+  }
+#endif
   return num_regions_selected;
 }
 
