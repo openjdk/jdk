@@ -69,7 +69,7 @@ public class TestHeapFreeRatio {
       output.shouldHaveExitValue(1);
       break;
     case COMBINATION_INVALID:
-      output.shouldMatch("must be (less|greater) than or equal to M..HeapFreeRatio");
+      output.shouldMatch("must be (less|greater) than or equal to the implicit -Xm..f value");
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;

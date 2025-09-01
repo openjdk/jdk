@@ -2426,7 +2426,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
         if (MinHeapFreeRatio > (uintx)(dmaxf * 100)) {
           jio_fprintf(defaultStream::error_stream(),
-                      "-Xmaxf value (%s) which is also used for MaxHeapFreeRatio must be greater than or equal to MinHeapFreeRatio (%3.2lf)\n",
+                      "-Xmaxf value (%s) must be greater than or equal to the implicit -Xmaxf value (%3.2lf)\n",
                       tail, MinHeapFreeRatio / 100.0);
           return JNI_EINVAL;
         }
@@ -2452,7 +2452,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
         if (MaxHeapFreeRatio < (uintx)(dminf * 100)) {
           jio_fprintf(defaultStream::error_stream(),
-                      "-Xminf value (%s) which is also used for MinHeapFreeRatio must be less than or equal to MaxHeapFreeRatio (%3.2lf)\n",
+                      "-Xminf value (%s) must be less than or equal to the implicit -Xmaxf value (%3.2lf)\n",
                       tail, MaxHeapFreeRatio / 100.0);
           return JNI_EINVAL;
         }
