@@ -24,7 +24,7 @@
 /* @test
  * @bug 8352969
  * @summary Verify that the EvacuateAllOptionalRegions flag forces G1
- *          to evacuate all of optional regions, improving testability. 
+ *          to evacuate all of optional regions, improving testability.
  * @requires vm.gc.G1
  * @requires vm.debug
  * @library /test/lib
@@ -68,8 +68,8 @@ public class TestOptionalRegionGC {
     private static final int MIN_OBJECT_SIZE = 64 * 1024;
     private static final int MAX_OBJECT_SIZE = 120 * 1024;
     private static final int NUM_OBJECTS = 1200;
-      
-    public static void main(String [] args) throws Exception { 
+
+    public static void main(String [] args) throws Exception {
       // Remove garbage from VM initialization.
       wb.fullGC();
       Random rand = new Random(42);
@@ -90,6 +90,6 @@ public class TestOptionalRegionGC {
       wb.youngGC();
       // Perform the "Mixed" GC.
       wb.youngGC();
-	}
+    }
   }
 }

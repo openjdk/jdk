@@ -819,7 +819,7 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
 #ifndef PRODUCT
   if (EvacuateAllOptionalRegions) {
     target_pause_time_ms = DBL_MAX;
-  }	
+  }
 #endif
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
