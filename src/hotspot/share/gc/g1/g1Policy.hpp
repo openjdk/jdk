@@ -139,10 +139,6 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_card_rs_length(size_t num_cards) {
-    _card_rs_length = num_cards;
-  }
-
   double cur_pause_start_sec() const {
     return _cur_pause_start_sec;
   }
