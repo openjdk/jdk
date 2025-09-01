@@ -1512,13 +1512,13 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       Node* n = block->get_node(j);
 
       // See if delay slots are supported
-      if (valid_bundle_info(n) && node_bundling(n)->used_in_unconditional_delay()) {
-        assert(delay_slot == nullptr, "no use of delay slot node");
-        assert(n->size(C->regalloc()) == Pipeline::instr_unit_size(), "delay slot instruction wrong size");
-
-        delay_slot = n;
-        continue;
-      }
+//      if (valid_bundle_info(n) && node_bundling(n)->used_in_unconditional_delay()) {
+//        assert(delay_slot == nullptr, "no use of delay slot node");
+//        assert(n->size(C->regalloc()) == Pipeline::instr_unit_size(), "delay slot instruction wrong size");
+//
+//        delay_slot = n;
+//        continue;
+//      }
 
       // If this starts a new instruction group, then flush the current one
       // (but allow split bundles)
@@ -1616,9 +1616,9 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           // Try to replace long branch if delay slot is not used,
           // it is mostly for back branches since forward branch's
           // distance is not updated yet.
-          bool delay_slot_is_used = valid_bundle_info(n) &&
-                                    C->output()->node_bundling(n)->use_unconditional_delay();
-          if (!delay_slot_is_used && mach->may_be_short_branch()) {
+//          bool delay_slot_is_used = valid_bundle_info(n) &&
+//                                    C->output()->node_bundling(n)->use_unconditional_delay();
+          if (/*!delay_slot_is_used &&*/ mach->may_be_short_branch()) {
             assert(delay_slot == nullptr, "not expecting delay slot node");
             int br_size = n->size(C->regalloc());
             int offset = blk_starts[block_num] - current_offset;
@@ -1754,42 +1754,42 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       }
 
       // See if this instruction has a delay slot
-      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        guarantee(delay_slot != nullptr, "expecting delay slot node");
-
-        // Back up 1 instruction
-        masm->code()->set_insts_end(masm->code()->insts_end() - Pipeline::instr_unit_size());
-
-        // Save the offset for the listing
-#if defined(SUPPORT_OPTO_ASSEMBLY)
-        if ((node_offsets != nullptr) && (delay_slot->_idx < node_offset_limit)) {
-          node_offsets[delay_slot->_idx] = masm->offset();
-        }
-#endif
-
-        // Support a SafePoint in the delay slot
-        if (delay_slot->is_MachSafePoint()) {
-          MachNode *mach = delay_slot->as_Mach();
-          // !!!!! Stubs only need an oopmap right now, so bail out
-          if (!mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == nullptr) {
-            // Write the oopmap directly to the code blob??!!
-            delay_slot = nullptr;
-            continue;
-          }
-
-          int adjusted_offset = current_offset - Pipeline::instr_unit_size();
-          non_safepoints.observe_safepoint(mach->as_MachSafePoint()->jvms(),
-                                           adjusted_offset);
-          // Generate an OopMap entry
-          Process_OopMap_Node(mach, adjusted_offset);
-        }
-
-        // Insert the delay slot instruction
-        delay_slot->emit(masm, C->regalloc());
-
-        // Don't reuse it
-        delay_slot = nullptr;
-      }
+//      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
+//        guarantee(delay_slot != nullptr, "expecting delay slot node");
+//
+//        // Back up 1 instruction
+//        masm->code()->set_insts_end(masm->code()->insts_end() - Pipeline::instr_unit_size());
+//
+//        // Save the offset for the listing
+//#if defined(SUPPORT_OPTO_ASSEMBLY)
+//        if ((node_offsets != nullptr) && (delay_slot->_idx < node_offset_limit)) {
+//          node_offsets[delay_slot->_idx] = masm->offset();
+//        }
+//#endif
+//
+//        // Support a SafePoint in the delay slot
+//        if (delay_slot->is_MachSafePoint()) {
+//          MachNode *mach = delay_slot->as_Mach();
+//          // !!!!! Stubs only need an oopmap right now, so bail out
+//          if (!mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == nullptr) {
+//            // Write the oopmap directly to the code blob??!!
+//            delay_slot = nullptr;
+//            continue;
+//          }
+//
+//          int adjusted_offset = current_offset - Pipeline::instr_unit_size();
+//          non_safepoints.observe_safepoint(mach->as_MachSafePoint()->jvms(),
+//                                           adjusted_offset);
+//          // Generate an OopMap entry
+//          Process_OopMap_Node(mach, adjusted_offset);
+//        }
+//
+//        // Insert the delay slot instruction
+//        delay_slot->emit(masm, C->regalloc());
+//
+//        // Don't reuse it
+//        delay_slot = nullptr;
+//      }
 
     } // End for all instructions in block
 
@@ -2837,7 +2837,7 @@ void Scheduling::DoScheduling() {
         Node *n = bb->get_node(j);
         if( valid_bundle_info(n) ) {
           Bundle *bundle = node_bundling(n);
-          if (bundle->instr_count() > 0 || bundle->flags() > 0) {
+          if (bundle->instr_count() > 0/* || bundle->flags() > 0*/) {
             tty->print("*** Bundle: ");
             bundle->dump();
           }
@@ -3581,10 +3581,10 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
       n = block->get_node(j);
       if (valid_bundle_info(n)) {
         Bundle* bundle = node_bundling(n);
-        if (bundle->used_in_unconditional_delay()) {
-          delay = n;
-          continue;
-        }
+//        if (bundle->used_in_unconditional_delay()) {
+//          delay = n;
+//          continue;
+//        }
         if (bundle->starts_bundle()) {
           starts_bundle = '+';
         }
@@ -3619,26 +3619,26 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
 
       // If we have an instruction with a delay slot, and have seen a delay,
       // then back up and print it
-      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        // Coverity finding - Explicit null dereferenced.
-        guarantee(delay != nullptr, "no unconditional delay instruction");
-        if (WizardMode) delay->dump();
-
-        if (node_bundling(delay)->starts_bundle())
-          starts_bundle = '+';
-        if ((pcs != nullptr) && (n->_idx < pc_limit)) {
-          pc = pcs[n->_idx];
-          st->print("%*.*x", pc_digits, pc_digits, pc);
-        } else {
-          st->fill_to(pc_digits);
-        }
-        st->print(" %c ", starts_bundle);
-        starts_bundle = ' ';
-        st->fill_to(prefix_len);
-        delay->format(C->regalloc(), st);
-        st->cr();
-        delay = nullptr;
-      }
+//      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
+//        // Coverity finding - Explicit null dereferenced.
+//        guarantee(delay != nullptr, "no unconditional delay instruction");
+//        if (WizardMode) delay->dump();
+//
+//        if (node_bundling(delay)->starts_bundle())
+//          starts_bundle = '+';
+//        if ((pcs != nullptr) && (n->_idx < pc_limit)) {
+//          pc = pcs[n->_idx];
+//          st->print("%*.*x", pc_digits, pc_digits, pc);
+//        } else {
+//          st->fill_to(pc_digits);
+//        }
+//        st->print(" %c ", starts_bundle);
+//        starts_bundle = ' ';
+//        st->fill_to(prefix_len);
+//        delay->format(C->regalloc(), st);
+//        st->cr();
+//        delay = nullptr;
+//      }
 
       // Dump the exception table as well
       if( n->is_Catch() && (Verbose || WizardMode) ) {

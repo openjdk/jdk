@@ -978,16 +978,6 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   fprintf(fp_cpp, "#ifndef PRODUCT\n");
   fprintf(fp_cpp, "void Bundle::dump(outputStream *st) const {\n");
-  fprintf(fp_cpp, "  static const char * bundle_flags[] = {\n");
-  fprintf(fp_cpp, "    \"\",\n");
-  fprintf(fp_cpp, "    \"use nop delay\",\n");
-  fprintf(fp_cpp, "    \"use unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"use conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in all conditional delays\",\n");
-  fprintf(fp_cpp, "  };\n\n");
-
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
   // Don't add compound resources to the list of resource names
   const char* resource;
@@ -1002,12 +992,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // See if the same string is in the table
   fprintf(fp_cpp, "  bool needs_comma = false;\n\n");
-  fprintf(fp_cpp, "  if (_flags) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s\", bundle_flags[_flags]);\n");
-  fprintf(fp_cpp, "    needs_comma = true;\n");
-  fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  if (instr_count()) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s%%d instr%%s\", needs_comma ? \", \" : \"\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
+  fprintf(fp_cpp, "    st->print(\"%%d instr%%s\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
   fprintf(fp_cpp, "    needs_comma = true;\n");
   fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  uint r = resources_used();\n");

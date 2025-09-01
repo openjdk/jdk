@@ -1064,49 +1064,18 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   uint rshift = rescount;
 
   fprintf(fp_hpp, "protected:\n");
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _unused_delay                   = 0x%x,\n", 0);
-  fprintf(fp_hpp, "    _use_nop_delay                  = 0x%x,\n", 1);
-  fprintf(fp_hpp, "    _use_unconditional_delay        = 0x%x,\n", 2);
-  fprintf(fp_hpp, "    _use_conditional_delay          = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_conditional_delay      = 0x%x,\n", 4);
-  fprintf(fp_hpp, "    _used_in_unconditional_delay    = 0x%x,\n", 5);
-  fprintf(fp_hpp, "    _used_in_all_conditional_delays = 0x%x,\n", 6);
-  fprintf(fp_hpp, "\n");
-  fprintf(fp_hpp, "    _use_delay                      = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_delay                  = 0x%x\n",  4);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  uint _flags          : 3,\n");
-  fprintf(fp_hpp, "       _starts_bundle  : 1,\n");
+  fprintf(fp_hpp, "  uint _starts_bundle  : 1,\n");
   fprintf(fp_hpp, "       _instr_count    : %d,\n",   mshift);
   fprintf(fp_hpp, "       _resources_used : %d;\n",   rshift);
   fprintf(fp_hpp, "public:\n");
-  fprintf(fp_hpp, "  Bundle() : _flags(_unused_delay), _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
+  fprintf(fp_hpp, "  Bundle() : _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
   fprintf(fp_hpp, "  void set_instr_count(uint i) { _instr_count  = i; }\n");
   fprintf(fp_hpp, "  void set_resources_used(uint i) { _resources_used   = i; }\n");
-  fprintf(fp_hpp, "  void clear_usage() { _flags = _unused_delay; }\n");
   fprintf(fp_hpp, "  void set_starts_bundle() { _starts_bundle = true; }\n");
 
-  fprintf(fp_hpp, "  uint flags() const { return (_flags); }\n");
   fprintf(fp_hpp, "  uint instr_count() const { return (_instr_count); }\n");
   fprintf(fp_hpp, "  uint resources_used() const { return (_resources_used); }\n");
   fprintf(fp_hpp, "  bool starts_bundle() const { return (_starts_bundle != 0); }\n");
-
-  fprintf(fp_hpp, "  void set_use_nop_delay() { _flags = _use_nop_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_unconditional_delay() { _flags = _use_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_conditional_delay() { _flags = _use_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_unconditional_delay() { _flags = _used_in_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_conditional_delay() { _flags = _used_in_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_all_conditional_delays() { _flags = _used_in_all_conditional_delays; }\n");
-
-  fprintf(fp_hpp, "  bool use_nop_delay() { return (_flags == _use_nop_delay); }\n");
-  fprintf(fp_hpp, "  bool use_unconditional_delay() { return (_flags == _use_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool use_conditional_delay() { return (_flags == _use_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_unconditional_delay() { return (_flags == _used_in_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_conditional_delay() { return (_flags == _used_in_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_all_conditional_delays() { return (_flags == _used_in_all_conditional_delays); }\n");
-  fprintf(fp_hpp, "  bool use_delay() { return ((_flags & _use_delay) != 0); }\n");
-  fprintf(fp_hpp, "  bool used_in_delay() { return ((_flags & _used_in_delay) != 0); }\n\n");
 
   fprintf(fp_hpp, "#ifndef PRODUCT\n");
   fprintf(fp_hpp, "  void dump(outputStream *st = tty) const;\n");
