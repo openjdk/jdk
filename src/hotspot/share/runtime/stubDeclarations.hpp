@@ -672,6 +672,8 @@
   do_entry(initial, dcos, dcos, dcos)                                   \
   do_stub(initial, dtan)                                                \
   do_entry(initial, dtan, dtan, dtan)                                   \
+  do_stub(initial, dsinh)                                               \
+  do_entry(initial, dsinh, dsinh, dsinh)                                \
   do_stub(initial, dtanh)                                               \
   do_entry(initial, dtanh, dtanh, dtanh)                                \
   do_stub(initial, dcbrt)                                               \
@@ -883,6 +885,9 @@
   do_stub(final, verify_oop)                                            \
   do_entry(final, verify_oop, verify_oop_subroutine_entry,              \
            verify_oop_subroutine_entry)                                 \
+  do_stub(final, unsafecopy_common)                                     \
+  do_entry(final, unsafecopy_common, unsafecopy_common_exit,            \
+           unsafecopy_common_exit)                                      \
   do_stub(final, jbyte_arraycopy)                                       \
   do_entry_init(final, jbyte_arraycopy, jbyte_arraycopy,                \
                 jbyte_arraycopy, StubRoutines::jbyte_copy)              \

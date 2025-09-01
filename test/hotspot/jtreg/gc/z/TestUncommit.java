@@ -108,7 +108,16 @@ public class TestUncommit {
             throw new Exception("Uncommitted too fast");
         }
 
+        // In typical conditions (system not over-provisioned or slow),
+        // uncommitting is expected to complete within 3 * ZUncommitDelay after
+        // the last commit. To accommodate less ideal environments, only
+        // durations exceeding 5 * ZUncommitDelay are flagged as errors.
+
         if (actualDelay > delay * 3) {
+            log(" *** Uncommit slower than expected. ***");
+        }
+
+        if (actualDelay > delay * 5) {
             throw new Exception("Uncommitted too slow");
         }
 

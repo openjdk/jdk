@@ -126,8 +126,8 @@
 #endif
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
-#include "osContainer_linux.hpp"
 #include "os_linux.hpp"
+#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -1502,12 +1502,6 @@ WB_END
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
-#if INCLUDE_G1GC || INCLUDE_SERIALGC
-  if (UseG1GC || UseSerialGC) {
-    // Needs to be cleared explicitly for G1 and Serial GC.
-    Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
-  }
-#endif // INCLUDE_G1GC || INCLUDE_SERIALGC
 WB_END
 
 WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
@@ -2511,13 +2505,16 @@ WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
-  LINUX_ONLY(return os::Linux::physical_memory();)
-  return os::physical_memory();
+  LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
+  return static_cast<jlong>(os::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)
 WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
-  return os::available_memory();
+  size_t avail_mem = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::available_memory(avail_mem);
+  return static_cast<jlong>(avail_mem);
 WB_END
 
 // Physical swap of the host machine (including containers), Linux only.

@@ -114,12 +114,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
  * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
  * on parsing behavior.
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
  *
  * <h3>Special Values</h3>
  * <ul>
@@ -302,7 +296,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * #setMaximumIntegerDigits(int)} can be used to manually adjust the maximum
  * integer digits.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A {@code DecimalFormat} pattern contains a positive and negative
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
@@ -313,7 +307,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * serves only to specify the negative prefix and suffix; the number of digits,
  * minimal digits, and other characteristics are all the same as the positive
  * pattern. That means that {@code "#,##0.0#;(#)"} produces precisely
- * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}.
+ * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}. In
+ * {@link NumberFormat##leniency lenient parsing} mode, loose matching of the
+ * minus sign pattern is enabled, following the LDML’s
+ * <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <p>The prefixes, suffixes, and various symbols used for infinity, digits,
  * grouping separators, decimal separators, etc. may be set to arbitrary
@@ -416,6 +414,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
+ *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
@@ -651,17 +656,10 @@ public class DecimalFormat extends NumberFormat {
             return result;
         }
 
-        /* Detecting whether a double is negative is easy with the exception of
-         * the value -0.0.  This is a double which has a zero mantissa (and
-         * exponent), but a negative sign bit.  It is semantically distinct from
-         * a zero with a positive sign bit, and this distinction is important
-         * to certain kinds of computations.  However, it's a little tricky to
-         * detect, since (-0.0 == 0.0) and !(-0.0 < 0.0).  How then, you may
-         * ask, does it behave distinctly from +0.0?  Well, 1/(-0.0) ==
-         * -Infinity.  Proper detection of -0.0 is needed to deal with the
+        /* Proper detection of -0.0 is needed to deal with the
          * issues raised by bugs 4106658, 4106667, and 4147706.  Liu 7/6/98.
          */
-        boolean isNegative = ((number < 0.0) || (number == 0.0 && 1/number < 0.0)) ^ (multiplier < 0);
+        boolean isNegative = Double.doubleToRawLongBits(number) < 0 ^ multiplier < 0;
 
         if (multiplier != 1) {
             number *= multiplier;
@@ -2195,6 +2193,9 @@ public class DecimalFormat extends NumberFormat {
      *   and are not digits that occur within the numerical portion
      * </ul>
      * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
+     * <p>
      * The subclass returned depends on the value of {@link #isParseBigDecimal}
      * as well as on the string being parsed.
      * <ul>
@@ -2391,10 +2392,8 @@ public class DecimalFormat extends NumberFormat {
         boolean gotPositive, gotNegative;
 
         // check for positivePrefix; take longest
-        gotPositive = text.regionMatches(position, positivePrefix, 0,
-                positivePrefix.length());
-        gotNegative = text.regionMatches(position, negativePrefix, 0,
-                negativePrefix.length());
+        gotPositive = matchAffix(text, position, positivePrefix);
+        gotNegative = matchAffix(text, position, negativePrefix);
 
         if (gotPositive && gotNegative) {
             if (positivePrefix.length() > negativePrefix.length()) {
@@ -2430,15 +2429,13 @@ public class DecimalFormat extends NumberFormat {
         // When lenient, text only needs to contain the suffix.
         if (!isExponent) {
             if (gotPositive) {
-                boolean containsPosSuffix =
-                        text.regionMatches(position, positiveSuffix, 0, positiveSuffix.length());
+                boolean containsPosSuffix = matchAffix(text, position, positiveSuffix);
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
                 gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
-                boolean containsNegSuffix =
-                        text.regionMatches(position, negativeSuffix, 0, negativeSuffix.length());
+                boolean containsNegSuffix = matchAffix(text, position, negativeSuffix);
                 boolean endsWithNegSuffix =
                         containsNegSuffix && text.length() == position + negativeSuffix.length();
                 gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
@@ -3505,6 +3502,54 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         if (needQuote) buffer.append('\'');
+    }
+
+    /**
+     * {@return true if the text matches the affix}
+     * In lenient mode, lenient minus signs also match the hyphen-minus
+     * (U+002D). Package-private access, as this is called from
+     * CompactNumberFormat.
+     *
+     * Note: Minus signs in the supplementary character range or normalization
+     * equivalents are not matched, as they may alter the affix length.
+     */
+    boolean matchAffix(String text, int position, String affix) {
+        var alen = affix.length();
+        var tlen = text.length();
+
+        if (alen == 0) {
+            // always match with an empty affix, as affix is optional
+            return true;
+        }
+        if (position >= tlen) {
+            return false;
+        }
+        if (parseStrict) {
+            return text.regionMatches(position, affix, 0, alen);
+        }
+
+        var lms = symbols.getLenientMinusSigns();
+        int i = 0;
+        int limit = Math.min(tlen, position + alen);
+        for (; position + i < limit; i++) {
+            char t = text.charAt(position + i);
+            char a = affix.charAt(i);
+            int tIndex = lms.indexOf(t);
+            int aIndex = lms.indexOf(a);
+            // Non LMS. Match direct
+            if (tIndex < 0 && aIndex < 0) {
+                if (t != a) {
+                    return false;
+                }
+            } else {
+                // By here, at least one LMS. Ensure both LMS.
+                if (tIndex < 0 || aIndex < 0) {
+                    return false;
+                }
+            }
+        }
+        // Return true if entire affix was matched
+        return i == alen;
     }
 
     /**

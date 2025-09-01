@@ -1487,19 +1487,16 @@ jint Arguments::set_ergonomics_flags() {
 }
 
 size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  size_t max_allocatable;
-  size_t result = limit;
-  if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    // The AggressiveHeap check is a temporary workaround to avoid calling
-    // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
-    // selected. This works because AggressiveHeap implies UseParallelGC
-    // where we know the ratio will be 1. Once the AggressiveHeap option is
-    // removed, this can be cleaned up.
-    size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-    size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
-    result = MIN2(result, max_allocatable / fraction);
-  }
-  return result;
+  // The AggressiveHeap check is a temporary workaround to avoid calling
+  // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
+  // selected. This works because AggressiveHeap implies UseParallelGC
+  // where we know the ratio will be 1. Once the AggressiveHeap option is
+  // removed, this can be cleaned up.
+  size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
+  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
+  size_t max_allocatable = os::commit_memory_limit();
+
+  return MIN2(limit, max_allocatable / fraction);
 }
 
 // Use static initialization to get the default before parsing
@@ -1520,13 +1517,13 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      phys_mem = os::physical_memory();
+      phys_mem = static_cast<julong>(os::physical_memory());
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
       phys_mem = (julong)MaxRAM;
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(os::physical_memory()), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
 
@@ -1648,7 +1645,8 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  julong total_memory = os::physical_memory();
+  size_t phys_mem = os::physical_memory();
+  julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {
     jio_fprintf(defaultStream::error_stream(),
