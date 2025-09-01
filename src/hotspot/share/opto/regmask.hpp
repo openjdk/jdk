@@ -125,7 +125,7 @@ class RegMask {
   // In rare situations (e.g., "more than 90+ parameters on Intel"), we need to
   // extend the register mask with dynamically allocated memory. We keep the
   // base statically allocated _RM_UP, and arena allocate the extended mask
-  // (RM_UP_EXT) separately. Another, perhaps more elegant, option would be to
+  // (_RM_UP_EXT) separately. Another, perhaps more elegant, option would be to
   // have two subclasses of RegMask, where one is statically allocated and one
   // is (entirely) dynamically allocated. Given that register mask extension is
   // rare, we decided to use the current approach (_RM_UP and _RM_UP_EXT) to
