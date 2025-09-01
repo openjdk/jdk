@@ -23,7 +23,6 @@
  */
 
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
-#include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/flags/jvmFlag.hpp"
