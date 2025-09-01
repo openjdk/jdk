@@ -533,8 +533,9 @@ static void clear_method_tracer_klasses() {
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
-  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
-    return;
+  if (!used(klass) && klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+    SET_TRANSIENT(klass);
+    assert(used(klass), "invariant");
   }
   if (JfrKlassUnloading::on_unload(klass)) {
     if (JfrTraceId::has_sticky_bit(klass)) {
@@ -1047,19 +1048,15 @@ class MethodIteratorHost {
  private:
   MethodCallback _method_cb;
   KlassCallback _klass_cb;
-  KlassUsedPredicate _klass_used_predicate;
-  MethodUsedPredicate _method_used_predicate;
   MethodFlagPredicate<leakp> _method_flag_predicate;
  public:
   MethodIteratorHost(JfrCheckpointWriter* writer) :
     _method_cb(writer, unloading(), false),
     _klass_cb(writer, unloading(), false),
-    _klass_used_predicate(current_epoch()),
-    _method_used_predicate(current_epoch()),
     _method_flag_predicate(current_epoch()) {}
 
   bool operator()(KlassPtr klass) {
-    if (_method_used_predicate(klass)) {
+    if (klass->is_instance_klass()) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
       while (ik != nullptr) {
         const int len = ik->methods()->length();
@@ -1074,7 +1071,7 @@ class MethodIteratorHost {
         ik = ik->previous_versions();
       }
     }
-    return _klass_used_predicate(klass) ? _klass_cb(klass) : true;
+    return _klass_cb(klass);
   }
 
   int count() const { return _method_cb.count(); }
@@ -1279,10 +1276,11 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   _class_unload = class_unload;
   _flushpoint = flushpoint;
   if (_artifacts == nullptr) {
-    _artifacts = new JfrArtifactSet(class_unload);
+    _artifacts = new JfrArtifactSet(class_unload, previous_epoch());
   } else {
-    _artifacts->initialize(class_unload);
+    _artifacts->initialize(class_unload, previous_epoch());
   }
+  assert(current_epoch() || _leakp_writer != nullptr, "invariant");
   assert(_artifacts != nullptr, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");
 }

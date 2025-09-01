@@ -225,10 +225,10 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   // add super and interfaces first
-  Klass* super = klass->super();
+  InstanceKlass* super = klass->java_super();
   if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
-    resolve_shared_class(InstanceKlass::cast(super), loader_data, domain, CHECK);
+    resolve_shared_class(super, loader_data, domain, CHECK);
   }
 
   Array<InstanceKlass*>* ifs = klass->local_interfaces();

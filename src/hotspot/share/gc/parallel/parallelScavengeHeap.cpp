@@ -32,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -102,8 +103,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
 
   _size_policy = new PSAdaptiveSizePolicy(SpaceAlignment,
-                                          max_gc_pause_sec,
-                                          GCTimeRatio);
+                                          max_gc_pause_sec);
 
   assert((old_gen()->virtual_space()->high_boundary() ==
           young_gen()->virtual_space()->low_boundary()),
@@ -310,11 +310,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
         return result;
       }
 
-      // If certain conditions hold, try allocating from the old gen.
-      if (!is_tlab && !should_alloc_in_eden(size)) {
-        result = old_gen()->cas_allocate_noexpand(size);
-        if (result != nullptr) {
-          return result;
+      // Try allocating from the old gen for non-TLAB in certain scenarios.
+      if (!is_tlab) {
+        if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
+          result = old_gen()->cas_allocate_noexpand(size);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
     }
@@ -859,6 +861,8 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
 
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
