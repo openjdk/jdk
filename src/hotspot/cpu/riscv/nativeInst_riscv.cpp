@@ -122,7 +122,7 @@ bool NativeCall::set_destination_mt_safe(address dest) {
   assert(stub_addr != nullptr, "No stub?");
   set_stub_address_destination_at(stub_addr, dest);
 
-  // patches jalr -> jal/jal -> jalr depeding on dest
+  // patches jalr -> jal/jal -> jalr depending on dest
   optimize_call(dest, true);
 
   return true;
@@ -143,7 +143,7 @@ bool NativeCall::reloc_set_destination(address stub_addr) {
     MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr); // patches auipc + ld to stub_addr
 
     address dest = stub_address_destination_at(stub_addr);
-    optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depeding on dest
+    optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depending on dest
   }
 
   return true;
