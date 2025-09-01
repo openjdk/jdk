@@ -794,8 +794,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // Create the pipeline class description
 
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
 
   fprintf(fp_cpp, "const Pipeline_Use_Element Pipeline_Use::elaborated_elements[%d] = {\n", _pipeline->_rescount);
   for (int i1 = 0; i1 < _pipeline->_rescount; i1++) {
@@ -895,12 +895,11 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "(uint)stage_%s", _pipeline->_stages.name(maxWriteStage));
     else
       fprintf(fp_cpp, "((uint)stage_%s)+%d", _pipeline->_stages.name(maxWriteStage), maxMoreInstrs);
-    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s, %s,\n",
+    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s,\n",
       paramcount,
       pipeclass->hasFixedLatency() ? "true" : "false",
       pipeclass->fixedLatency(),
       pipeclass->InstructionCount(),
-      pipeclass->hasBranchDelay() ? "true" : "false",
       pipeclass->hasMultipleBundles() ? "true" : "false",
       pipeclass->forceSerialization() ? "true" : "false",
       pipeclass->mayHaveNoCode() ? "true" : "false" );

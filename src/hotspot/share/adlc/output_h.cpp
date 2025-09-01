@@ -935,8 +935,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     _pipeline->_variableSizeInstrs ? 1 : 0);
   fprintf(fp_hpp, "    _fixed_size_instructions = %d,\n",
     _pipeline->_variableSizeInstrs ? 0 : 1);
-  fprintf(fp_hpp, "    _branch_has_delay_slot = %d,\n",
-    _pipeline->_branchHasDelaySlot ? 1 : 0);
   fprintf(fp_hpp, "    _max_instrs_per_bundle = %d,\n",
     _pipeline->_maxInstrsPerBundle);
   fprintf(fp_hpp, "    _max_bundles_per_cycle = %d,\n",
@@ -983,7 +981,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  const unsigned char                   _fixed_latency;\n");
   fprintf(fp_hpp, "  const unsigned char                   _instruction_count;\n");
   fprintf(fp_hpp, "  const bool                            _has_fixed_latency;\n");
-  fprintf(fp_hpp, "  const bool                            _has_branch_delay;\n");
   fprintf(fp_hpp, "  const bool                            _has_multiple_bundles;\n");
   fprintf(fp_hpp, "  const bool                            _force_serialization;\n");
   fprintf(fp_hpp, "  const bool                            _may_have_no_code;\n");
@@ -998,7 +995,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "           bool                            has_fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            instruction_count,\n");
-  fprintf(fp_hpp, "           bool                            has_branch_delay,\n");
   fprintf(fp_hpp, "           bool                            has_multiple_bundles,\n");
   fprintf(fp_hpp, "           bool                            force_serialization,\n");
   fprintf(fp_hpp, "           bool                            may_have_no_code,\n");
@@ -1011,7 +1007,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  , _fixed_latency(fixed_latency)\n");
   fprintf(fp_hpp, "  , _instruction_count(instruction_count)\n");
   fprintf(fp_hpp, "  , _has_fixed_latency(has_fixed_latency)\n");
-  fprintf(fp_hpp, "  , _has_branch_delay(has_branch_delay)\n");
   fprintf(fp_hpp, "  , _has_multiple_bundles(has_multiple_bundles)\n");
   fprintf(fp_hpp, "  , _force_serialization(force_serialization)\n");
   fprintf(fp_hpp, "  , _may_have_no_code(may_have_no_code)\n");
@@ -1046,8 +1041,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "    return (_resource_use._count); }\n\n");
   fprintf(fp_hpp, "  uint instructionCount() const {\n");
   fprintf(fp_hpp, "    return (_instruction_count); }\n\n");
-  fprintf(fp_hpp, "  bool hasBranchDelay() const {\n");
-  fprintf(fp_hpp, "    return (_has_branch_delay); }\n\n");
   fprintf(fp_hpp, "  bool hasMultipleBundles() const {\n");
   fprintf(fp_hpp, "    return (_has_multiple_bundles); }\n\n");
   fprintf(fp_hpp, "  bool forceSerialization() const {\n");

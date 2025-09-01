@@ -387,7 +387,6 @@ public:
   int        _classcnt;           // Number of classes
 
   bool       _variableSizeInstrs; // Indicates if this architecture has variable sized instructions
-  bool       _branchHasDelaySlot; // Indicates that branches have delay slot instructions
   int        _maxInstrsPerBundle; // Indicates the maximum number of instructions for ILP
   int        _maxBundlesPerCycle; // Indicates the maximum number of bundles for ILP
   int        _instrUnitSize;      // The minimum instruction unit size, in bytes
@@ -499,7 +498,6 @@ public:
   int               _fixed_latency;     // Always takes this number of cycles
   int               _instruction_count; // Number of instructions in first bundle
   bool              _has_multiple_bundles;  // Indicates if 1 or multiple bundles
-  bool              _has_branch_delay_slot; // Has branch delay slot as last instruction
   bool              _force_serialization;   // This node serializes relative to surrounding nodes
   bool              _may_have_no_code;      // This node may generate no code based on register allocation
 
@@ -518,13 +516,11 @@ public:
 
   void setInstructionCount(int i)    { _instruction_count = i; }
   void setMultipleBundles(bool b)    { _has_multiple_bundles = b; }
-  void setBranchDelay(bool s)        { _has_branch_delay_slot = s; }
   void setForceSerialization(bool s) { _force_serialization = s; }
   void setMayHaveNoCode(bool s)      { _may_have_no_code = s; }
 
   int  InstructionCount()   const { return _instruction_count; }
   bool hasMultipleBundles() const { return _has_multiple_bundles; }
-  bool hasBranchDelay()     const { return _has_branch_delay_slot; }
   bool forceSerialization() const { return _force_serialization; }
   bool mayHaveNoCode()      const { return _may_have_no_code; }
 

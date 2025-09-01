@@ -2223,8 +2223,8 @@ bool Scheduling::NodeFitsInBundle(Node *n) {
   uint instruction_count = node_pipeline->instructionCount();
   if (node_pipeline->mayHaveNoCode() && n->size(_regalloc) == 0)
     instruction_count = 0;
-  else if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
-    instruction_count++;
+//  else if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
+//    instruction_count++;
 
   if (_bundle_instr_count + instruction_count > Pipeline::_max_instrs_per_cycle) {
 #ifndef PRODUCT
@@ -2439,96 +2439,96 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
   // Check for instructions to be placed in the delay slot. We
   // do this before we actually schedule the current instruction,
   // because the delay slot follows the current instruction.
-  if (Pipeline::_branch_has_delay_slot &&
-      node_pipeline->hasBranchDelay() &&
-      !_unconditional_delay_slot) {
-
-    uint siz = _available.size();
-
-    // Conditional branches can support an instruction that
-    // is unconditionally executed and not dependent by the
-    // branch, OR a conditionally executed instruction if
-    // the branch is taken.  In practice, this means that
-    // the first instruction at the branch target is
-    // copied to the delay slot, and the branch goes to
-    // the instruction after that at the branch target
-    if ( n->is_MachBranch() ) {
-
-      assert( !n->is_MachNullCheck(), "should not look for delay slot for Null Check" );
-      assert( !n->is_Catch(),         "should not look for delay slot for Catch" );
-
-#ifndef PRODUCT
-      _branches++;
-#endif
-
-      // At least 1 instruction is on the available list
-      // that is not dependent on the branch
-      for (uint i = 0; i < siz; i++) {
-        Node *d = _available[i];
-        const Pipeline *avail_pipeline = d->pipeline();
-
-        // Don't allow safepoints in the branch shadow, that will
-        // cause a number of difficulties
-        if ( avail_pipeline->instructionCount() == 1 &&
-             !avail_pipeline->hasMultipleBundles() &&
-             !avail_pipeline->hasBranchDelay() &&
-             Pipeline::instr_has_unit_size() &&
-             d->size(_regalloc) == Pipeline::instr_unit_size() &&
-             NodeFitsInBundle(d) &&
-             !node_bundling(d)->used_in_delay()) {
-
-          if (d->is_Mach() && !d->is_MachSafePoint()) {
-            // A node that fits in the delay slot was found, so we need to
-            // set the appropriate bits in the bundle pipeline information so
-            // that it correctly indicates resource usage.  Later, when we
-            // attempt to add this instruction to the bundle, we will skip
-            // setting the resource usage.
-            _unconditional_delay_slot = d;
-            node_bundling(n)->set_use_unconditional_delay();
-            node_bundling(d)->set_used_in_unconditional_delay();
-            _bundle_use.add_usage(avail_pipeline->resourceUse());
-            _current_latency[d->_idx] = _bundle_cycle_number;
-            _next_node = d;
-            ++_bundle_instr_count;
-#ifndef PRODUCT
-            _unconditional_delays++;
-#endif
-            break;
-          }
-        }
-      }
-    }
-
-    // No delay slot, add a nop to the usage
-    if (!_unconditional_delay_slot) {
-      // See if adding an instruction in the delay slot will overflow
-      // the bundle.
-      if (!NodeFitsInBundle(_nop)) {
-#ifndef PRODUCT
-        if (_cfg->C->trace_opto_output())
-          tty->print("#  *** STEP(1 instruction for delay slot) ***\n");
-#endif
-        step(1);
-      }
-
-      _bundle_use.add_usage(_nop->pipeline()->resourceUse());
-      _next_node = _nop;
-      ++_bundle_instr_count;
-    }
-
-    // See if the instruction in the delay slot requires a
-    // step of the bundles
-    if (!NodeFitsInBundle(n)) {
-#ifndef PRODUCT
-      if (_cfg->C->trace_opto_output())
-        tty->print("#  *** STEP(branch won't fit) ***\n");
-#endif
-      // Update the state information
-      _bundle_instr_count = 0;
-      _bundle_cycle_number += 1;
-      _bundle_use.step(1);
-    }
-  }
+//  if (Pipeline::_branch_has_delay_slot &&
+//      node_pipeline->hasBranchDelay() &&
+//      !_unconditional_delay_slot) {
+//
+//    uint siz = _available.size();
+//
+//    // Conditional branches can support an instruction that
+//    // is unconditionally executed and not dependent by the
+//    // branch, OR a conditionally executed instruction if
+//    // the branch is taken.  In practice, this means that
+//    // the first instruction at the branch target is
+//    // copied to the delay slot, and the branch goes to
+//    // the instruction after that at the branch target
+//    if ( n->is_MachBranch() ) {
+//
+//      assert( !n->is_MachNullCheck(), "should not look for delay slot for Null Check" );
+//      assert( !n->is_Catch(),         "should not look for delay slot for Catch" );
+//
+//#ifndef PRODUCT
+//      _branches++;
+//#endif
+//
+//      // At least 1 instruction is on the available list
+//      // that is not dependent on the branch
+//      for (uint i = 0; i < siz; i++) {
+//        Node *d = _available[i];
+//        const Pipeline *avail_pipeline = d->pipeline();
+//
+//        // Don't allow safepoints in the branch shadow, that will
+//        // cause a number of difficulties
+//        if ( avail_pipeline->instructionCount() == 1 &&
+//             !avail_pipeline->hasMultipleBundles() &&
+//             !avail_pipeline->hasBranchDelay() &&
+//             Pipeline::instr_has_unit_size() &&
+//             d->size(_regalloc) == Pipeline::instr_unit_size() &&
+//             NodeFitsInBundle(d) &&
+//             !node_bundling(d)->used_in_delay()) {
+//
+//          if (d->is_Mach() && !d->is_MachSafePoint()) {
+//            // A node that fits in the delay slot was found, so we need to
+//            // set the appropriate bits in the bundle pipeline information so
+//            // that it correctly indicates resource usage.  Later, when we
+//            // attempt to add this instruction to the bundle, we will skip
+//            // setting the resource usage.
+//            _unconditional_delay_slot = d;
+//            node_bundling(n)->set_use_unconditional_delay();
+//            node_bundling(d)->set_used_in_unconditional_delay();
+//            _bundle_use.add_usage(avail_pipeline->resourceUse());
+//            _current_latency[d->_idx] = _bundle_cycle_number;
+//            _next_node = d;
+//            ++_bundle_instr_count;
+//#ifndef PRODUCT
+//            _unconditional_delays++;
+//#endif
+//            break;
+//          }
+//        }
+//      }
+//    }
+//
+//    // No delay slot, add a nop to the usage
+//    if (!_unconditional_delay_slot) {
+//      // See if adding an instruction in the delay slot will overflow
+//      // the bundle.
+//      if (!NodeFitsInBundle(_nop)) {
+//#ifndef PRODUCT
+//        if (_cfg->C->trace_opto_output())
+//          tty->print("#  *** STEP(1 instruction for delay slot) ***\n");
+//#endif
+//        step(1);
+//      }
+//
+//      _bundle_use.add_usage(_nop->pipeline()->resourceUse());
+//      _next_node = _nop;
+//      ++_bundle_instr_count;
+//    }
+//
+//    // See if the instruction in the delay slot requires a
+//    // step of the bundles
+//    if (!NodeFitsInBundle(n)) {
+//#ifndef PRODUCT
+//      if (_cfg->C->trace_opto_output())
+//        tty->print("#  *** STEP(branch won't fit) ***\n");
+//#endif
+//      // Update the state information
+//      _bundle_instr_count = 0;
+//      _bundle_cycle_number += 1;
+//      _bundle_use.step(1);
+//    }
+//  }
 
   // Get the number of instructions
   uint instruction_count = node_pipeline->instructionCount();
@@ -2579,8 +2579,8 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
       }
     }
 
-    if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
-      _bundle_instr_count++;
+//    if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
+//      _bundle_instr_count++;
 
     // Set the node's latency
     _current_latency[n->_idx] = _bundle_cycle_number;
@@ -3274,14 +3274,14 @@ void Scheduling::print_statistics() {
   tty->print("\n");
 
   // Print the number of branch shadows filled
-  if (Pipeline::_branch_has_delay_slot) {
-    tty->print("Of %d branches, %d had unconditional delay slots filled",
-               _total_branches, _total_unconditional_delays);
-    if (_total_branches > 0)
-      tty->print(", for %.2f%%",
-                 ((double)_total_unconditional_delays) / ((double)_total_branches) * 100.0);
-    tty->print("\n");
-  }
+//  if (Pipeline::_branch_has_delay_slot) {
+//    tty->print("Of %d branches, %d had unconditional delay slots filled",
+//               _total_branches, _total_unconditional_delays);
+//    if (_total_branches > 0)
+//      tty->print(", for %.2f%%",
+//                 ((double)_total_unconditional_delays) / ((double)_total_branches) * 100.0);
+//    tty->print("\n");
+//  }
 
   uint total_instructions = 0, total_bundles = 0;
 
