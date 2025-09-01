@@ -240,6 +240,10 @@ final class StableCollections {
 
             @Override
             public T orElseSet(Object key, FunctionHolder<?> functionHolder) {
+                final T t = contentsAcquire();
+                if (t != null) {
+                    return t;
+                }
                 final Object mutex = acquireMutex();
                 if (mutex == Mutexes.TOMB_STONE) {
                     return contentsAcquire();
@@ -252,24 +256,15 @@ final class StableCollections {
                 if (mutex == Mutexes.TOMB_STONE) {
                     return contentsAcquire();
                 }
-                preventReentry(mutex);
-                synchronized (mutex) {
-                    // If there was another winner that succeeded,
-                    // the contents is guaranteed to be set
-                    final T t = contentsPlain();  // Plain semantics suffice here
-                    if (t == null) {
-                        final T newValue = supplier.get();
-                        Objects.requireNonNull(newValue);
-                        // The mutex is not reentrant so we know newValue should be returned
-                        set(newValue);
-                        return newValue;
-                    }
-                    return t;
-                }
+                return orElseSetSlowPath(mutex, supplier, null);
             }
 
             @Override
             public T orElseSet(int input, FunctionHolder<?> functionHolder) {
+                final T t = contentsAcquire();
+                if (t != null) {
+                    return t;
+                }
                 final Object mutex = acquireMutex();
                 if (mutex == Mutexes.TOMB_STONE) {
                     return contentsAcquire();
@@ -603,11 +598,18 @@ final class StableCollections {
         @Stable
         private final Class<K> enumType;
         @Stable
-        private final int min;
+        // We are using a wrapper class here to be able to use a min value of zero that
+        // is also stable.
+        private final Integer min;
         @Stable
         private final IntPredicate member;
 
-        public StableEnumMap(int size, Class<K> enumType, int min, int backingSize, IntPredicate member,  Function<? super K, ? extends V> mapper) {
+        public StableEnumMap(int size,
+                             Class<K> enumType,
+                             int min,
+                             int backingSize,
+                             IntPredicate member,
+                             Function<? super K, ? extends V> mapper) {
             this.delegate = DenseStableList.ofDenseList(backingSize);
             this.enumType = enumType;
             this.min = min;
@@ -619,15 +621,18 @@ final class StableCollections {
         @ForceInline
         public boolean containsKey(Object o) {
             return enumType.isAssignableFrom(o.getClass())
-                    && member.test(enumType.cast(o).ordinal());
+                    && member.test(((Enum<?>) o).ordinal());
         }
 
         @Override
         @ForceInline
         InternalStableValue<V> stableValue(Object key) {
-            if (containsKey(key)) {
-                final int index = indexFor(enumType.cast(key));
-                return delegate.get(index);
+            if (enumType.isAssignableFrom(key.getClass())) {
+                final int ordinal = ((Enum<?>) key).ordinal();
+                if (member.test(ordinal)) {
+                    final int index = indexFor(ordinal);
+                    return delegate.get(index);
+                }
             }
             return null;
         }
@@ -644,7 +649,7 @@ final class StableCollections {
                             .filter(e -> StableEnumMap.this.member.test(e.ordinal()))
                             .map(k -> (Entry<K, InternalStableValue<V>>)
                                     new KeyValueHolder<>(k,
-                                            (InternalStableValue<V>) StableEnumMap.this.delegate.get(indexFor(k))))
+                                            (InternalStableValue<V>) StableEnumMap.this.delegate.get(indexFor(k.ordinal()))))
                             .iterator();
                 }
 
@@ -655,8 +660,9 @@ final class StableCollections {
             };
         }
 
-        private int indexFor(Enum<?> e) {
-            return e.ordinal() - min;
+        @ForceInline
+        private int indexFor(int ordinal) {
+            return ordinal - min;
         }
 
     }

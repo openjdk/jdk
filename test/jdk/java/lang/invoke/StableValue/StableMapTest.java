@@ -59,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class StableMapTest {
 
+
     enum Value {
         // Zero is here so that we have enums with ordinals before the first one
         // actually used in input sets (i.e. ZERO is not in the input set)
@@ -509,6 +510,16 @@ final class StableMapTest {
         final var overridden = Value.THIRTEEN;
         Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(overridden), MAPPER);
         assertEquals(MAPPER.apply(overridden), enumMap.get(overridden), enumMap.toString());
+    }
+
+    @Test
+    void enumAliasing() {
+        enum MyEnum {FOO, BAR}
+        enum MySecondEnum{BAZ, QUX}
+        Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+        assertEquals(MyEnum.BAR.ordinal(), mapEnum.get(MyEnum.BAR));
+        // Make sure class is checked, not just `ordinal()`
+        assertNull(mapEnum.get(MySecondEnum.QUX));
     }
 
     // Support constructs

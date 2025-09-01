@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring Stable Map performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -59,14 +60,21 @@ public class StableMapSingleBenchmark {
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
     private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
+    private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
     private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
     private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
+    private final Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
     private final Function<Integer, Integer> function = map::get;
 
     @Benchmark
     public int map() {
         return map.get(1);
+    }
+
+    @Benchmark
+    public int mapEnum() {
+        return mapEnum.get(MyEnum.BAR);
     }
 
     @Benchmark
@@ -80,8 +88,15 @@ public class StableMapSingleBenchmark {
     }
 
     @Benchmark
+    public int staticMapEnum() {
+        return MAP_ENUM.get(MyEnum.BAR);
+    }
+
+    @Benchmark
     public int staticIntFunction() {
         return FUNCTION.apply(1);
     }
+
+    private enum MyEnum {FOO, BAR}
 
 }
