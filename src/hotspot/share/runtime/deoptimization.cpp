@@ -1647,26 +1647,17 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
         if (exec_mode == Unpack_none) {
-          if (LockingMode == LM_LEGACY && mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
-            // With exec_mode == Unpack_none obj may be thread local and locked in
-            // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
-            markWord dmw = mark.displaced_mark_helper();
-            mark.locker()->set_displaced_header(markWord::encode((BasicLock*) nullptr));
-            obj->set_mark(dmw);
-          }
           if (mark.has_monitor()) {
             // defer relocking if the deoptee thread is currently waiting for obj
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              if (LockingMode == LM_LEGACY) {
-                mon_info->lock()->set_displaced_header(markWord::unused_mark());
-              } else if (UseObjectMonitorTable) {
+              if (UseObjectMonitorTable) {
                 mon_info->lock()->clear_object_monitor_cache();
               }
 #ifdef ASSERT
               else {
-                assert(LockingMode == LM_MONITOR || !UseObjectMonitorTable, "must be");
+                assert(!UseObjectMonitorTable, "must be");
                 mon_info->lock()->set_bad_metadata_deopt();
               }
 #endif
@@ -1676,29 +1667,24 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           }
         }
         BasicLock* lock = mon_info->lock();
-        if (LockingMode == LM_LIGHTWEIGHT) {
-          // We have lost information about the correct state of the lock stack.
-          // Entering may create an invalid lock stack. Inflate the lock if it
-          // was fast_locked to restore the valid lock stack.
-          if (UseObjectMonitorTable) {
-            // UseObjectMonitorTable expects the BasicLock cache to be either a
-            // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
-            // to nullptr.
-            lock->clear_object_monitor_cache();
-          }
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                                deoptee_thread, thread);
-          }
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
-          assert(obj->mark().has_monitor(), "must be");
-          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
-        } else {
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
+        // We have lost information about the correct state of the lock stack.
+        // Entering may create an invalid lock stack. Inflate the lock if it
+        // was fast_locked to restore the valid lock stack.
+        if (UseObjectMonitorTable) {
+          // UseObjectMonitorTable expects the BasicLock cache to be either a
+          // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
+          // to nullptr.
+          lock->clear_object_monitor_cache();
         }
+        ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
+        if (deoptee_thread->lock_stack().contains(obj())) {
+            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                              deoptee_thread, thread);
+        }
+        assert(mon_info->owner()->is_locked(), "object must be locked now");
+        assert(obj->mark().has_monitor(), "must be");
+        assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }

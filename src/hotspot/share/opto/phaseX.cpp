@@ -1669,7 +1669,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //
     // Found (linux x64 only?) with:
     //   serviceability/sa/ClhsdbThreadContext.java
-    //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    //   -XX:+UnlockExperimentalVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_StrEquals:
       return false;
 
