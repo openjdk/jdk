@@ -900,6 +900,15 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       }
       return should_be_excluded_impl(ik, p);
     } else {
+      // When called within the CDS safepoint, the correctness of this function
+      // relies on the call to MetaspaceShared::link_all_loaded_classes()
+      // that happened right before we enter the CDS safepoint.
+      //
+      // Do not call this function in other types of safepoints. For example, if this
+      // is called in a GC safepoint, a klass may be improperly excluded because some
+      // of its verifyer dependencies have not yet been linked.
+      assert(CDSConfig::is_at_cds_safepoint(), "Do not call this function in any other safepoint");
+
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in MetaspaceShared::link_class_for_cds().
       // Can't take the lock as we are in safepoint.
