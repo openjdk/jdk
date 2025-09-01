@@ -95,7 +95,7 @@ public class TestDefaultArchiveLoading {
     }
 
     private static boolean isArchiveAvailable(char coops, char coh,
-                                                 String archiveSuffix) throws Exception {
+                                              String archiveSuffix) throws Exception {
         Path archive= archivePath(archiveSuffix);
         return Files.exists(archive);
     }
