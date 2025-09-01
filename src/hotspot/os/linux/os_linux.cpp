@@ -157,7 +157,7 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-julong os::Linux::_physical_memory = 0;
+size_t os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
@@ -232,15 +232,16 @@ julong os::Linux::available_memory_in_container() {
   return avail_mem;
 }
 
-julong os::available_memory() {
-  return Linux::available_memory();
+bool os::available_memory(size_t& value) {
+  return Linux::available_memory(value);
 }
 
-julong os::Linux::available_memory() {
+bool os::Linux::available_memory(size_t& value) {
   julong avail_mem = available_memory_in_container();
   if (avail_mem != static_cast<julong>(-1L)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    return avail_mem;
+    value = static_cast<size_t>(avail_mem);
+    return true;
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
@@ -255,66 +256,88 @@ julong os::Linux::available_memory() {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    avail_mem = free_memory();
+    size_t free_mem = 0;
+    if (!free_memory(free_mem)) {
+      return false;
+    }
+    avail_mem = static_cast<julong>(free_mem);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  return avail_mem;
+  value = static_cast<size_t>(avail_mem);
+  return true;
 }
 
-julong os::free_memory() {
-  return Linux::free_memory();
+bool os::free_memory(size_t& value) {
+  return Linux::free_memory(value);
 }
 
-julong os::Linux::free_memory() {
+bool os::Linux::free_memory(size_t& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   julong free_mem = available_memory_in_container();
   if (free_mem != static_cast<julong>(-1L)) {
     log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    return free_mem;
+    value = static_cast<size_t>(free_mem);
+    return true;
   }
 
-  sysinfo(&si);
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return false;
+  }
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  return free_mem;
+  value = static_cast<size_t>(free_mem);
+  return true;
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   if (OSContainer::is_containerized()) {
-    if (OSContainer::memory_limit_in_bytes() > 0) {
-      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
+    jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
+    if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
+      value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
+      return true;
     }
-  }
+  } // fallback to the host swap space if the container did return the unbound value of -1
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
+    return false;
   }
-  return  (jlong)(si.totalswap * si.mem_unit);
+  value = static_cast<size_t>(si.totalswap * si.mem_unit);
+  return true;
 }
 
-static jlong host_free_swap() {
+static bool host_free_swap_f(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
+    return false;
   }
-  return (jlong)(si.freeswap * si.mem_unit);
+  value = static_cast<size_t>(si.freeswap * si.mem_unit);
+  return true;
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
-  assert(host_free_swap_val >= 0, "sysinfo failed?");
+  size_t total_swap_space = 0;
+  size_t host_free_swap = 0;
+  if (!os::total_swap_space(total_swap_space) || !host_free_swap_f(host_free_swap)) {
+    return false;
+  }
+  size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
-        return 0;
+        value = 0;
+        return true;
       }
       jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       jlong mem_usage = OSContainer::memory_usage_in_bytes();
@@ -322,30 +345,31 @@ jlong os::free_swap_space() {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          return free_swap >= 0 ? free_swap : 0;
+          value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
+          return true;
         }
       }
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  return host_free_swap_val;
+  value = host_free_swap_val;
+  return true;
 }
 
-julong os::physical_memory() {
-  jlong phys_mem = 0;
+size_t os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return mem_limit;
+      return static_cast<size_t>(mem_limit);
     }
   }
 
-  phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
+  size_t phys_mem = Linux::physical_memory();
+  log_trace(os)("total system memory: %zu", phys_mem);
   return phys_mem;
 }
 
@@ -520,7 +544,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
+  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
@@ -1848,32 +1872,32 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if (lib_arch.name != nullptr) {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load %s .so on a %s platform)",
-                 lib_arch.name, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load %s .so on a %s platform)",
+                           lib_arch.name, arch_array[running_arch_index].name);
     } else {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s platform)",
-                 lib_arch.code, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load this .so (machine code=0x%x) on a %s platform)",
+                           lib_arch.code, arch_array[running_arch_index].name);
     }
     return nullptr;
   }
 
   if (lib_arch.endianness != arch_array[running_arch_index].endianness) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: endianness mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: endianness mismatch)");
     return nullptr;
   }
 
   // ELF file class/capacity : 0 - invalid, 1 - 32bit, 2 - 64bit
   if (lib_arch.elf_class > 2 || lib_arch.elf_class < 1) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: invalid ELF file class)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: invalid ELF file class)");
     return nullptr;
   }
 
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-               " (Possible cause: architecture word width mismatch, can't load %d-bit .so on a %d-bit platform)",
-               (int) lib_arch.elf_class * 32, arch_array[running_arch_index].elf_class * 32);
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                         " (Possible cause: architecture word width mismatch, can't load %d-bit .so on a %d-bit platform)",
+                         (int) lib_arch.elf_class * 32, arch_array[running_arch_index].elf_class * 32);
     return nullptr;
   }
 
@@ -2548,11 +2572,13 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   sysinfo(&si);
-
-  st->print(", physical " UINT64_FORMAT "k",
-            os::physical_memory() >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            os::available_memory() >> 10);
+  size_t phys_mem = physical_memory();
+  st->print(", physical %zuk",
+            phys_mem >> 10);
+  size_t avail_mem = 0;
+  (void)os::available_memory(avail_mem);
+  st->print("(%zuk free)",
+            avail_mem >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
   st->print("(" UINT64_FORMAT "k free)",
@@ -2613,10 +2639,10 @@ static void print_sys_devices_cpu_info(outputStream* st) {
       char hbuf_type[60];
       char hbuf_size[60];
       char hbuf_coherency_line_size[80];
-      snprintf(hbuf_level, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/level", i);
-      snprintf(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
-      snprintf(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
-      snprintf(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
+      os::snprintf_checked(hbuf_level, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/level", i);
+      os::snprintf_checked(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
+      os::snprintf_checked(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
+      os::snprintf_checked(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
       if (os::file_exists(hbuf_level)) {
         _print_ascii_file_h("cache level", hbuf_level, st);
         _print_ascii_file_h("cache type", hbuf_type, st);
@@ -4217,7 +4243,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   char fname[24];
   int retpid = -1;
 
-  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  os::snprintf_checked(fname, sizeof(fname), "/proc/%d/status", vmid);
   FILE *fp = os::fopen(fname, "r");
 
   if (fp) {
@@ -4797,7 +4823,7 @@ uint os::processor_id() {
 void os::set_native_thread_name(const char *name) {
   if (Linux::_pthread_setname_np) {
     char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    snprintf(buf, sizeof(buf), "%s", name);
+    (void) os::snprintf(buf, sizeof(buf), "%s", name);
     buf[sizeof(buf) - 1] = '\0';
     const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
@@ -5008,7 +5034,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
-  snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
+  os::snprintf_checked(proc_name, 64, "/proc/self/task/%d/stat", tid);
   fp = os::fopen(proc_name, "r");
   if (fp == nullptr) return -1;
   statlen = fread(stat, 1, 2047, fp);
@@ -5394,7 +5420,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
     }
   }
 

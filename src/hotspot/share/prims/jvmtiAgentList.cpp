@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"

@@ -1476,7 +1476,7 @@ public:
 
 // Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
 static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
-  InstanceKlass* super = klass->superklass();
+  InstanceKlass* super = klass->java_super();
   if (super != nullptr) {
     get_reassigned_fields(super, fields, is_jvmci);
   }
@@ -2926,8 +2926,6 @@ void Deoptimization::print_statistics() {
           if (counter != 0) {
             char name[1*K];
             Bytecodes::Code bc = (Bytecodes::Code)(counter & LSB_MASK);
-            if (bc_case == BC_CASE_LIMIT && (int)bc == 0)
-              bc = Bytecodes::_illegal;
             os::snprintf_checked(name, sizeof(name), "%s/%s/%s",
                     trap_reason_name(reason),
                     trap_action_name(action),
