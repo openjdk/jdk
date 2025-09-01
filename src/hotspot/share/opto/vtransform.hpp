@@ -451,7 +451,7 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
-// Identity ransform for scalar loads and stores.
+// Identity transform for scalar loads and stores.
 class VTransformMemopScalarNode : public VTransformNode {
 private:
   MemNode* _node;
