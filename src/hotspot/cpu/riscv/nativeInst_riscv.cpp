@@ -57,9 +57,9 @@ address NativeCall::destination() const {
   CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
   nmethod *nm = (nmethod *)cb;
-  assert(nm != nullptr, "Sanity");
   assert(nm->stub_contains(stub_addr), "Sanity");
-  assert(stub_addr!= nullptr, "Sanity");
+  assert(stub_addr != nullptr, "Sanity");
+
   return stub_address_destination_at(stub_addr);
 }
 
@@ -93,14 +93,15 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   // Skip over auipc + ld
   address jal_pc = instruction_address() + 2 * NativeInstruction::instruction_size;
   uint32_t *jal_pos = (uint32_t *)jal_pc;
+  assert(is_aligned(jal_pos, NativeInstruction::instruction_size), "Must be naturally aligned");
   // If reachable use JAL
   if (Assembler::reachable_from_branch_at(jal_pc, dest)) {
     int64_t distance = dest - jal_pc;
     uint32_t new_jal = Assembler::encode_jal(ra, distance);
     Atomic::store(jal_pos, new_jal);
   } else if (!MacroAssembler::is_jalr_at(jal_pc)) { // The jalr is always identical: jalr ra, 0(t1)
-    uint32_t new_jal = Assembler::encode_jalr(ra, t1, 0);
-    Atomic::store(jal_pos, new_jal);
+    uint32_t new_jalr = Assembler::encode_jalr(ra, t1, 0);
+    Atomic::store(jal_pos, new_jalr);
   } else {
     // No change to instruction stream
     return;
@@ -108,6 +109,7 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   // We changed instruction stream
   if (mt_safe) {
     OrderAccess::release();
+    // IC invalidation happens after we changed the instruction stream.
     ICache::invalidate_range(jal_pc, NativeInstruction::instruction_size);
   }
 }
@@ -120,8 +122,8 @@ bool NativeCall::set_destination_mt_safe(address dest) {
 
   address stub_addr = stub_address();
   assert(stub_addr != nullptr, "No stub?");
-  set_stub_address_destination_at(stub_addr, dest);
-
+  set_stub_address_destination_at(stub_addr, dest); // release
+  // optimize_call happens after we stored new address in addr stub.
   // patches jalr -> jal/jal -> jalr depending on dest
   optimize_call(dest, true);
 
