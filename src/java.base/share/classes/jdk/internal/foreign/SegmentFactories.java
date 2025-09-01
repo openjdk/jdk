@@ -198,7 +198,7 @@ public class SegmentFactories {
         }
         // Always allocate at least some memory so that zero-length segments have distinct
         // non-zero addresses.
-        alignedSize = Math.max(1, alignedSize);
+        alignedSize = Math.max(Long.BYTES, alignedSize);
 
         long allocationSize;
         long allocationBase;
