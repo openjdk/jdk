@@ -321,8 +321,7 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
                 GLvoid *pSrc = PtrCoord(srcInfo->rasBase,
                                         sx, srcInfo->pixelStride,
                                         sy, srcInfo->scanStride);
-                                        if (pf != NULL) {
-                                                            if (slowPath) {
+                if (slowPath) {
                     jint tmph = sh;
                     while (tmph > 0) {
                         j2d_glTexSubImage2D(GL_TEXTURE_2D, 0,
@@ -338,8 +337,6 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
                                         pf->format, pf->type,
                                         pSrc);
                 }
-                                        }
-
 
                 // the texture image is "right side up", so we align the
                 // upper-left texture corner with the upper-left quad corner
