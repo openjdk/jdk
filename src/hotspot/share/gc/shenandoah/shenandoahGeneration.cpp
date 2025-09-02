@@ -581,6 +581,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
           r->save_top_before_promote();
           size_t remnant_bytes = r->free();
           size_t remnant_words = remnant_bytes / HeapWordSize;
+          assert(ShenandoahHeap::min_fill_size() <= PLAB::min_size(), "Implementation makes invalid assumptions");
           if (remnant_words >= ShenandoahHeap::min_fill_size()) {
             ShenandoahHeap::fill_with_object(original_top, remnant_words);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
@@ -598,6 +599,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
               if (i > pip_high_mutator_idx) {
                 pip_high_mutator_idx = i;
               }
+              pip_mutator_regions++;
+              pip_mutator_bytes += remnant_bytes;
             } else if (p == ShenandoahFreeSetPartitionId::Collector) {
               collector_regions_to_pip++;
               if (i < pip_low_collector_idx) {
@@ -606,23 +609,18 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
               if (i > pip_high_collector_idx) {
                 pip_high_collector_idx = i;
               }
+              pip_collector_regions++;
+              pip_collector_bytes += remnant_bytes;
             } else {
               assert((p == ShenandoahFreeSetPartitionId::NotFree) && (remnant_words < heap->plab_min_size()),
                      "Should be NotFree if not in Collector or Mutator partitions");
-              // In this case, we'll count the remnant_bytes as used even though we will not create a fill object.
+              // In this case, the memory is already counted as used and the region has already been retired.  There is
+              // no need for further adjustments to used.  Further, the remnant memory for this region will not be
+              // unallocated or made available to OldCollector after pip.
+              remnant_bytes = 0;
             }
             promote_in_place_pad += remnant_bytes;
             free_set->prepare_to_promote_in_place(i, remnant_bytes);
-            if (remnant_bytes >= min_remnant_size) {
-              if (p == ShenandoahFreeSetPartitionId::Mutator) {
-                pip_mutator_regions++;
-                pip_mutator_bytes += remnant_bytes;
-              } else {
-                assert(p == ShenandoahFreeSetPartitionId::Collector, "sanity");
-                pip_collector_regions++;
-                pip_collector_bytes += remnant_bytes;
-              }
-            }
           } else {
             // Since the remnant is so small that this region has already been retired, we don't have to worry about any
             // accidental allocations occurring within this region before the region is promoted in place.

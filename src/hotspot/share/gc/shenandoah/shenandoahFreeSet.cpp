@@ -177,11 +177,19 @@ void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t m
                                                 size_t collector_regions, size_t collector_bytes) {
   shenandoah_assert_heaplocked();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  assert(_partitions.available_in(ShenandoahFreeSetPartitionId::Collector) >= collector_regions * region_size_bytes,
-         "Cannot transfer capacity unless the memory is available");
 
-  // We've transferred all the collector regions into the mutator partition, so only adjust Mutator totals
-  _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, mutator_regions + collector_regions);
+  // We have removed all of these regions from their respective partition. Each pip region is "in" the NotFree partition.
+  // We want to account for all pip pad memory as if it had been consumed from within the Mutator partition.
+  //
+  // After we finish promote in place, the pad memory will be deallocated and made available within the OldCollector
+  // region.  At that time, we will transfer the used memory from the Mutator partition to the OldCollector parttion,
+  // and then we will unallocate the pad memory.
+
+
+  _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, mutator_regions);
+  _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Collector, collector_regions);
+  // We're behaving as if all pip collector regions have been transferred into the Mutator partition.  So account for
+  // all the pad bytes as if they reside in the mutator region.
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, mutator_bytes + collector_bytes);
 
   // Regions may be promoted in place from either the Mutator or Collector partition.  When we prepare to promote
