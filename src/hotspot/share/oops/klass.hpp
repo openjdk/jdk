@@ -297,7 +297,6 @@ protected:
   Klass* subklass(bool log = false) const;
   Klass* next_sibling(bool log = false) const;
 
-  InstanceKlass* superklass() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 
   void set_next_link(Klass* k) { _next_link = k; }
