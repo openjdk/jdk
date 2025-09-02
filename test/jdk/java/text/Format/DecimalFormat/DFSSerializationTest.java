@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class DFSSerializationTest {
 
     @Nested
-    class versionTest {
+    class VersionTests {
 
         // Ensure correct monetarySeparator and exponential field defaults
         // Reads monetary from decimal, and sets exponential to 'E'
