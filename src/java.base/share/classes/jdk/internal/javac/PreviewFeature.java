@@ -76,7 +76,7 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         MODULE_IMPORTS, //remove when the boot JDK is JDK 25
         KEY_DERIVATION, //remove when the boot JDK is JDK 25
-        @JEP(number = -1, title = "Stable Values", status = "Second Preview")
+        @JEP(number = 8359894, title = "Stable Values", status = "Second Preview")
         STABLE_VALUES,
         @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
         PEM_API,
