@@ -474,7 +474,7 @@ public:
       return true;
     }
     RBNode<K, V>* root = (RBNode<K, V>*)this->_root;
-    (RBNode<K, V>*)other._root = other.allocate_node(root->key());
+    (RBNode<K, V>*&)other._root = other.allocate_node(root->key());
     if (other._root == nullptr) return false;
     (RBNode<K, V>*)other._root->val() = root->val();
 
