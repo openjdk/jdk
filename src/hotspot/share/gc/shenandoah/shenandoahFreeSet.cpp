@@ -1718,7 +1718,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   } else if ((result != nullptr) && in_new_region) {
     _partitions.one_region_is_no_longer_empty(orig_partition);
   }
-  
+
   switch (orig_partition) {
   case ShenandoahFreeSetPartitionId::Mutator:
     recompute_total_used</* UsedByMutatorChanged */ true,
