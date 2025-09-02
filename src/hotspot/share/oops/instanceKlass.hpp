@@ -918,7 +918,7 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
-  // This shadows Klass::super(). The _super of an InstanceKlass is
+  // This hides Klass::super(). The _super of an InstanceKlass is
   // always an InstanceKlass (or nullptr)
   InstanceKlass* super() const {
     return (Klass::super() == nullptr) ? nullptr : InstanceKlass::cast(Klass::super());

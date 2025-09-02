@@ -1571,8 +1571,7 @@ void klassVtable::verify(outputStream* st, bool forced) {
   // verify consistency with superKlass vtable
   Klass* super = _klass->super();
   if (super != nullptr) {
-    InstanceKlass* sk = InstanceKlass::cast(super); // why are we sure this is InstanceKlass??
-    klassVtable vt = sk->vtable();
+    klassVtable vt = super->vtable();
     for (int i = 0; i < vt.length(); i++) {
       verify_against(st, &vt, i);
     }
