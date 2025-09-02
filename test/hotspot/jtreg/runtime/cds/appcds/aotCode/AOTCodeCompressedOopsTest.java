@@ -32,12 +32,12 @@
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *             JavacBenchApp
  *             JavacBenchApp$ClassFile
  *             JavacBenchApp$FileManager
  *             JavacBenchApp$SourceFile
- * @run driver AOTCodeCompressedOopsTest
+ * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
 import java.util.ArrayList;
