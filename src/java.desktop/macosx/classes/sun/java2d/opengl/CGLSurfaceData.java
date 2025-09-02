@@ -110,7 +110,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
      * This surface serves as a buffer attached to a CGLLayer and
      * the layer redirects all painting to the buffer's graphics.
      */
-    public static class CGLLayerSurfaceData extends CGLSurfaceData {
+    public static final class CGLLayerSurfaceData extends CGLSurfaceData {
 
         private final CGLLayer layer;
 
@@ -152,7 +152,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
      * SurfaceData object representing an off-screen buffer (either a FBO or
      * Texture).
      */
-    public static class CGLOffScreenSurfaceData extends CGLSurfaceData {
+    public static final class CGLOffScreenSurfaceData extends CGLSurfaceData {
 
         private final Image offscreenImage;
 

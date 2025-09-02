@@ -28,15 +28,16 @@
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ciEnv;
 class ciBaseObject;
@@ -95,7 +96,7 @@ public:
 
   // TrainingDataLocker is used to guard read/write operations on non-MT-safe data structures.
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
-  // It is also a part of the TD collection termination protocol (see the "spanshot" field).
+  // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
     static volatile bool _snapshot; // If true we're not allocating new training data
     static int _lock_mode;
@@ -104,7 +105,7 @@ public:
 #if INCLUDE_CDS
       assert(_lock_mode != 0, "Forgot to call TrainingDataLocker::initialize()");
       if (_lock_mode > 0) {
-        TrainingData_lock->lock();
+        TrainingData_lock->lock_without_safepoint_check();
       }
 #endif
     }
@@ -172,7 +173,7 @@ public:
   // A set of TD objects that we collect during the training run.
   class TrainingDataSet {
     friend TrainingData;
-    ResizeableResourceHashtable<const Key*, TrainingData*,
+    ResizeableHashTable<const Key*, TrainingData*,
                                 AnyObj::C_HEAP, MemTag::mtCompiler,
                                 &TrainingData::Key::hash,
                                 &TrainingData::Key::equals>
@@ -228,7 +229,7 @@ public:
   // A widget to ensure that we visit TD object only once (TD objects can have pointer to
   // other TD object that are sometimes circular).
   class Visitor {
-    ResizeableResourceHashtable<TrainingData*, bool> _visited;
+    ResizeableHashTable<TrainingData*, bool> _visited;
   public:
     Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
     bool is_visited(TrainingData* td) {
@@ -286,7 +287,12 @@ private:
   static bool is_klass_loaded(Klass* k) {
     if (have_data()) {
       // If we're running in AOT mode some classes may not be loaded yet
-      return !k->is_instance_klass() || InstanceKlass::cast(k)->is_loaded();
+      if (k->is_objArray_klass()) {
+        k = ObjArrayKlass::cast(k)->bottom_klass();
+      }
+      if (k->is_instance_klass()) {
+        return InstanceKlass::cast(k)->is_loaded();
+      }
     }
     return true;
   }
@@ -425,7 +431,6 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
-  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 
@@ -448,7 +453,6 @@ class KlassTrainingData : public TrainingData {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
   }
-
  public:
   Symbol* name() const {
     precond(has_holder());

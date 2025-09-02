@@ -29,6 +29,7 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -49,7 +50,6 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/modules.hpp"
@@ -63,8 +63,8 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -98,9 +98,9 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 
 #include <sys/stat.h>
 
@@ -179,7 +179,7 @@ class DumpClassListCLDClosure : public CLDClosure {
   static const int MAX_TABLE_SIZE = 61333;
 
   fileStream *_stream;
-  ResizeableResourceHashtable<InstanceKlass*, bool,
+  ResizeableHashTable<InstanceKlass*, bool,
                               AnyObj::C_HEAP, mtClassShared> _dumped_classes;
 
   void dump(InstanceKlass* ik) {
@@ -246,7 +246,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
   size_t alignment = MetaspaceShared::core_region_alignment();
-  if (UseCompressedClassPointers) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
     alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
 
@@ -326,6 +326,24 @@ void MetaspaceShared::initialize_for_static_dump() {
 // Called by universe_post_init()
 void MetaspaceShared::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
+    FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+
+    if (AOTMapLogger::is_logging_at_bootstrap()) {
+      // The map logging needs to be done here, as it requires some stubs on Windows,
+      // which are not generated until the end of init_globals().
+      AOTMapLogger::runtime_log(static_mapinfo, dynamic_mapinfo);
+    }
+
+    // Close any open file descriptors. However, mmap'ed pages will remain in memory.
+    static_mapinfo->close();
+    static_mapinfo->unmap_region(MetaspaceShared::bm);
+
+    if (dynamic_mapinfo != nullptr) {
+      dynamic_mapinfo->close();
+      dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+    }
+
     int size = AOTClassLocationConfig::runtime()->length();
     if (size > 0) {
       CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
@@ -837,11 +855,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       struct stat st;
       if (os::stat(AOTCache, &st) != 0) {
         tty->print_cr("AOTCache creation failed: %s", AOTCache);
-        vm_exit(0);
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
-        vm_exit(0);
       }
+      vm_direct_exit(0);
     }
   }
 }
@@ -1288,6 +1305,10 @@ void MetaspaceShared::report_loading_error(const char* format, ...) {
   LogStream ls_cds(level, LogTagSetMapping<LOG_TAGS(cds)>::tagset());
 
   LogStream& ls = CDSConfig::new_aot_flags_used() ? ls_aot : ls_cds;
+  if (!ls.is_enabled()) {
+    return;
+  }
+
   va_list ap;
   va_start(ap, format);
 
@@ -1601,8 +1622,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
       // Set up compressed Klass pointer encoding: the encoding range must
       //  cover both archive and class space.
-      const address encoding_base = (address)mapped_base_address;
-      const address klass_range_start = encoding_base + prot_zone_size;
+      const address klass_range_start = (address)mapped_base_address;
       const size_t klass_range_size = (address)class_space_rs.end() - klass_range_start;
       if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
         // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
@@ -1613,13 +1633,19 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // mapping start (including protection zone), shift should be the shift used at archive generation time.
         CompressedKlassPointers::initialize_for_given_encoding(
           klass_range_start, klass_range_size,
-          encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
+          klass_range_start, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
+        assert(CompressedKlassPointers::base() == klass_range_start, "must be");
       } else {
         // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
+        assert(CompressedKlassPointers::base() == nullptr ||
+               CompressedKlassPointers::base() == klass_range_start, "must be");
       }
-      CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);
+      // Establish protection zone, but only if we need one
+      if (CompressedKlassPointers::base() == klass_range_start) {
+        CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
+      }
 
       // map_or_load_heap_region() compares the current narrow oop and klass encodings
       // with the archived ones, so it must be done after all encodings are determined.
@@ -1947,6 +1973,7 @@ class CountSharedSymbols : public SymbolClosure {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables.
@@ -1962,19 +1989,11 @@ void MetaspaceShared::initialize_shared_spaces() {
   Universe::load_archived_object_instances();
   AOTCodeCache::initialize();
 
-  // Close the mapinfo file
-  static_mapinfo->close();
-
-  static_mapinfo->unmap_region(MetaspaceShared::bm);
-
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
-    dynamic_mapinfo->close();
-    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   LogStreamHandle(Info, aot) lsh;
@@ -2014,10 +2033,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 
     TrainingData::print_archived_training_data_on(tty);
 
-    if (AOTCodeCache::is_on_for_use()) {
-      tty->print_cr("\n\nAOT Code");
-      AOTCodeCache::print_on(tty);
-    }
+    AOTCodeCache::print_on(tty);
 
     // collect shared symbols and strings
     CountSharedSymbols cl;

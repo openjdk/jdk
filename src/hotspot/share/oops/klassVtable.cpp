@@ -40,8 +40,8 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/flags/flagSetting.hpp"
-#include "runtime/java.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
 
@@ -65,7 +65,7 @@ bool klassVtable::is_preinitialized_vtable() {
 // treated as any other public method in C for method over-ride purposes.
 void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
-    GrowableArray<Method*>* all_mirandas, const Klass* super,
+    GrowableArray<Method*>* all_mirandas, const InstanceKlass* super,
     Array<Method*>* methods, AccessFlags class_flags, u2 major_version,
     Handle classloader, Symbol* classname, Array<InstanceKlass*>* local_interfaces) {
   NoSafepointVerifier nsv;
@@ -346,7 +346,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       break;
     }
     // if no override found yet, continue to search up
-    superk = superk->super() == nullptr ? nullptr : InstanceKlass::cast(superk->super());
+    superk = superk->java_super();
   }
 
   return superk;
@@ -631,7 +631,7 @@ void klassVtable::initialize_vtable_and_check_constraints(TRAPS) {
 // However, the vtable entries are filled in at link time, and therefore
 // the superclass' vtable may not yet have been filled in.
 bool klassVtable::needs_new_vtable_entry(Method* target_method,
-                                         const Klass* super,
+                                         const InstanceKlass* super,
                                          Handle classloader,
                                          Symbol* classname,
                                          AccessFlags class_flags,
@@ -683,7 +683,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
   // a new entry
   Symbol* name = target_method->name();
   Symbol* signature = target_method->signature();
-  const Klass* k = super;
+  const InstanceKlass* k = super;
   Method* super_method = nullptr;
   InstanceKlass *holder = nullptr;
   Method* recheck_method =  nullptr;
@@ -722,7 +722,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
 
     // Start with lookup result and continue to search up, for versions supporting transitive override
     if (major_version >= VTABLE_TRANSITIVE_OVERRIDE_VERSION) {
-      k = superk->super(); // haven't found an override match yet; continue to look
+      k = superk->java_super(); // haven't found an override match yet; continue to look
     } else {
       break;
     }
@@ -741,9 +741,8 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
   // miranda method in the super, whose entry it should re-use.
   // Actually, to handle cases that javac would not generate, we need
   // this check for all access permissions.
-  const InstanceKlass *sk = InstanceKlass::cast(super);
-  if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::DefaultsLookupMode::find) != nullptr) {
+  if (super->has_miranda_methods()) {
+    if (super->lookup_method_in_all_interfaces(name, signature, Klass::DefaultsLookupMode::find) != nullptr) {
       return false; // found a matching miranda; we do not need a new entry
     }
   }
@@ -775,7 +774,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
   if (holder->is_interface()) {
     assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(holder) , "this class should implement the interface");
-    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->super(), klass()->is_interface())) {
+    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->java_super(), klass()->is_interface())) {
       return true;
     }
   }
@@ -837,7 +836,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // Part of the Miranda Rights in the US mean that if you do not have
 // an attorney one will be appointed for you.
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
-                             Array<Method*>* default_methods, const Klass* super,
+                             Array<Method*>* default_methods, const InstanceKlass* super,
                              bool is_interface) {
   if (m->is_static() || m->is_private() || m->is_overpass()) {
     return false;
@@ -866,12 +865,11 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   // Overpasses may or may not exist for supers for pass 1,
   // they should have been created for pass 2 and later.
 
-  for (const Klass* cursuper = super; cursuper != nullptr; cursuper = cursuper->super())
-  {
-     Method* found_mth = InstanceKlass::cast(cursuper)->find_local_method(name, signature,
-                                                                          Klass::OverpassLookupMode::find,
-                                                                          Klass::StaticLookupMode::skip,
-                                                                          Klass::PrivateLookupMode::skip);
+  for (const InstanceKlass* cursuper = super; cursuper != nullptr; cursuper = cursuper->java_super()) {
+     Method* found_mth = cursuper->find_local_method(name, signature,
+                                                     Klass::OverpassLookupMode::find,
+                                                     Klass::StaticLookupMode::skip,
+                                                     Klass::PrivateLookupMode::skip);
      // Ignore non-public methods in java.lang.Object if klass is an interface.
      if (found_mth != nullptr && (!is_interface ||
          !SystemDictionary::is_nonpublic_Object_method(found_mth))) {
@@ -893,7 +891,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
 void klassVtable::add_new_mirandas_to_lists(
     GrowableArray<Method*>* new_mirandas, GrowableArray<Method*>* all_mirandas,
     Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
-    Array<Method*>* default_methods, const Klass* super, bool is_interface) {
+    Array<Method*>* default_methods, const InstanceKlass* super, bool is_interface) {
 
   // iterate thru the current interface's method to see if it a miranda
   int num_methods = current_interface_methods->length();
@@ -913,9 +911,8 @@ void klassVtable::add_new_mirandas_to_lists(
 
     if (!is_duplicate) { // we don't want duplicate miranda entries in the vtable
       if (is_miranda(im, class_methods, default_methods, super, is_interface)) { // is it a miranda at all?
-        const InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::DefaultsLookupMode::find) == nullptr) {
+        if (super->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::DefaultsLookupMode::find) == nullptr) {
           new_mirandas->append(im);
         }
         if (all_mirandas != nullptr) {
@@ -928,7 +925,7 @@ void klassVtable::add_new_mirandas_to_lists(
 
 void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
                                GrowableArray<Method*>* all_mirandas,
-                               const Klass* super,
+                               const InstanceKlass* super,
                                Array<Method*>* class_methods,
                                Array<Method*>* default_methods,
                                Array<InstanceKlass*>* local_interfaces,
@@ -962,7 +959,7 @@ void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
 int klassVtable::fill_in_mirandas(Thread* current, int initialized) {
   ResourceMark rm(current);
   GrowableArray<Method*> mirandas(20);
-  get_mirandas(&mirandas, nullptr, ik()->super(), ik()->methods(),
+  get_mirandas(&mirandas, nullptr, ik()->java_super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces(),
                klass()->is_interface());
   for (int i = 0; i < mirandas.length(); i++) {
@@ -1180,38 +1177,42 @@ void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
     Method* interface_method = supers->at(i); // method overridden
 
     if (target != nullptr && interface_method != nullptr) {
-      InstanceKlass* method_holder = target->method_holder();
-      InstanceKlass* interf = interface_method->method_holder();
-      HandleMark hm(THREAD);
-      Handle method_holder_loader(THREAD, method_holder->class_loader());
-      Handle interface_loader(THREAD, interf->class_loader());
+      // Do not check loader constraints for overpass methods because overpass
+      // methods are created by the jvm to throw exceptions.
+      if (!target->is_overpass()) {
+        InstanceKlass* method_holder = target->method_holder();
+        InstanceKlass* interf = interface_method->method_holder();
+        HandleMark hm(THREAD);
+        Handle method_holder_loader(THREAD, method_holder->class_loader());
+        Handle interface_loader(THREAD, interf->class_loader());
 
-      if (method_holder_loader() != interface_loader()) {
-        ResourceMark rm(THREAD);
-        Symbol* failed_type_symbol =
-          SystemDictionary::check_signature_loaders(target->signature(),
-                                                    _klass,
-                                                    method_holder_loader,
-                                                    interface_loader,
-                                                    true);
-        if (failed_type_symbol != nullptr) {
-          stringStream ss;
-          ss.print("loader constraint violation in interface itable"
-                   " initialization for class %s: when selecting method '",
-                   _klass->external_name());
-          interface_method->print_external_name(&ss),
-          ss.print("' the class loader %s for super interface %s, and the class"
-                   " loader %s of the selected method's %s, %s have"
-                   " different Class objects for the type %s used in the signature (%s; %s)",
-                   interf->class_loader_data()->loader_name_and_id(),
-                   interf->external_name(),
-                   method_holder->class_loader_data()->loader_name_and_id(),
-                   method_holder->external_kind(),
-                   method_holder->external_name(),
-                   failed_type_symbol->as_klass_external_name(),
-                   interf->class_in_module_of_loader(false, true),
-                   method_holder->class_in_module_of_loader(false, true));
-          THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+        if (method_holder_loader() != interface_loader()) {
+          ResourceMark rm(THREAD);
+          Symbol* failed_type_symbol =
+            SystemDictionary::check_signature_loaders(target->signature(),
+                                                      _klass,
+                                                      method_holder_loader,
+                                                      interface_loader,
+                                                      true);
+          if (failed_type_symbol != nullptr) {
+            stringStream ss;
+            ss.print("loader constraint violation in interface itable"
+                     " initialization for class %s: when selecting method '",
+                     _klass->external_name());
+            interface_method->print_external_name(&ss),
+              ss.print("' the class loader %s for super interface %s, and the class"
+                       " loader %s of the selected method's %s, %s have"
+                       " different Class objects for the type %s used in the signature (%s; %s)",
+                       interf->class_loader_data()->loader_name_and_id(),
+                       interf->external_name(),
+                       method_holder->class_loader_data()->loader_name_and_id(),
+                       method_holder->external_kind(),
+                       method_holder->external_name(),
+                       failed_type_symbol->as_klass_external_name(),
+                       interf->class_in_module_of_loader(false, true),
+                       method_holder->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+          }
         }
       }
     }
@@ -1333,11 +1334,9 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
                                                                Klass::PrivateLookupMode::skip);
     }
-    if (target == nullptr || !target->is_public() || target->is_abstract() || target->is_overpass()) {
-      assert(target == nullptr || !target->is_overpass() || target->is_public(),
-             "Non-public overpass method!");
+    if (target == nullptr || !target->is_public() || target->is_abstract()) {
       // Entry does not resolve. Leave it empty for AbstractMethodError or other error.
-      if (!(target == nullptr) && !target->is_public()) {
+      if (target != nullptr && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
             initialize(_klass, Universe::throw_illegal_access_error());

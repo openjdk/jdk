@@ -25,10 +25,10 @@
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/movenode.hpp"
 
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
@@ -461,6 +461,9 @@ bool SuperWord::transform_loop() {
 //    inserting scalar promotion, vector creation from multiple scalars, and
 //    extraction of scalar values from vectors.
 //
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check. See VTransform::add_speculative_check
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
@@ -832,12 +835,18 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   Node* shallow = d1 > d2 ? s2 : s1;
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
+
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -869,9 +878,16 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
     worklist.push(n); // start traversal at all nodes in nodes list
     nodes_set.set(_body.bb_idx(n));
   }
+
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
+
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
@@ -1936,6 +1952,7 @@ bool SuperWord::schedule_and_apply() const {
   VTransformTrace trace(_vloop.vtrace(),
                         is_trace_superword_rejections(),
                         is_trace_align_vector(),
+                        _vloop.is_trace_speculative_aliasing_analysis(),
                         _vloop.is_trace_speculative_runtime_checks(),
                         is_trace_superword_info());
 #endif
@@ -1989,7 +2006,8 @@ void VTransform::apply() {
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
-  apply_speculative_runtime_checks();
+  apply_speculative_alignment_runtime_checks();
+  apply_speculative_aliasing_runtime_checks();
   C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
 
   apply_vectorization();
@@ -2090,19 +2108,14 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
 
 void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
+  VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
-                                              vtnode_idx_to_transformed_node);
+    VTransformApplyResult result = vtn->apply(apply_state);
     NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
 
-    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
@@ -2535,6 +2548,87 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
+// Returns true if the given operation can be vectorized with "truncation" where the upper bits in the integer do not
+// contribute to the result. This is true for most arithmetic operations, but false for operations such as
+// leading/trailing zero count.
+static bool can_subword_truncate(Node* in, const Type* type) {
+  if (in->is_Load() || in->is_Store() || in->is_Convert() || in->is_Phi()) {
+    return true;
+  }
+
+  int opc = in->Opcode();
+
+  // If the node's base type is a subword type, check an additional set of nodes.
+  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
+    switch (opc) {
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
+      return true;
+    }
+  }
+
+  // Can be truncated:
+  switch (opc) {
+  case Op_AddI:
+  case Op_SubI:
+  case Op_MulI:
+  case Op_AndI:
+  case Op_OrI:
+  case Op_XorI:
+    return true;
+  }
+
+#ifdef ASSERT
+  // While shifts have subword vectorized forms, they require knowing the precise type of input loads so they are
+  // considered non-truncating.
+  if (VectorNode::is_shift_opcode(opc)) {
+    return false;
+  }
+
+  // Vector nodes should not truncate.
+  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Cannot be truncated:
+  switch (opc) {
+  case Op_AbsI:
+  case Op_DivI:
+  case Op_ModI:
+  case Op_MinI:
+  case Op_MaxI:
+  case Op_CMoveI:
+  case Op_Conv2B:
+  case Op_RotateRight:
+  case Op_RotateLeft:
+  case Op_PopCountI:
+  case Op_ReverseBytesI:
+  case Op_ReverseI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+  case Op_IsFiniteF:
+  case Op_IsFiniteD:
+  case Op_IsInfiniteF:
+  case Op_IsInfiniteD:
+  case Op_CmpLTMask:
+  case Op_RoundF:
+  case Op_RoundD:
+  case Op_ExtractS:
+  case Op_ExtractC:
+  case Op_ExtractB:
+    return false;
+  default:
+    // If this assert is hit, that means that we need to determine if the node can be safely truncated,
+    // and then add it to the list of truncating nodes or the list of non-truncating ones just above.
+    // In product, we just return false, which is always correct.
+    assert(false, "Unexpected node in SuperWord truncation: %s", NodeClassNames[in->Opcode()]);
+  }
+#endif
+
+  // Default to disallowing vector truncation
+  return false;
+}
+
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
   if (_vloop.is_trace_vector_element_type()) {
@@ -2589,18 +2683,19 @@ void VLoopTypes::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (!can_subword_truncate(in, vt)) {
               Node* load = in->in(1);
-              if (load->is_Load() &&
+              // For certain operations such as shifts and abs(), use the size of the load if it exists
+              if ((VectorNode::is_shift_opcode(op) || op == Op_AbsI) && load->is_Load() &&
                   _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
               } else if (op != Op_LShiftI) {
-                // Widen type to int to avoid the creation of vector nodes. Note
+                // Widen type to the node type to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
-                vt = TypeInt::INT;
+                vt = container_type(in);
               }
             }
             set_velt_type(in, vt);
@@ -2974,7 +3069,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const bool is_sub = iv_scale * iv_stride > 0;
 
   // 1.1: con
-  Node* xbic = igvn().intcon(is_sub ? -con : con);
+  Node* xbic = phase()->intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar = SUM(invar_summands)
@@ -2991,7 +3086,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       phase()->register_new_node(invar_variable, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
-    Node* invar_scale_con = igvn().intcon(invar_scale);
+    Node* invar_scale_con = phase()->intcon(invar_scale);
     TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
@@ -3043,7 +3138,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 2: Compute (14):
   //    XBIC = xbic / abs(iv_scale)
   //    The division is executed as shift
-  Node* log2_abs_iv_scale = igvn().intcon(exact_log2(abs(iv_scale)));
+  Node* log2_abs_iv_scale = phase()->intcon(exact_log2(abs(iv_scale)));
   Node* XBIC = new URShiftINode(xbic, log2_abs_iv_scale);
   phase()->register_new_node(XBIC, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_iv_scale);
@@ -3068,7 +3163,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                    = XBIC_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
   //    a bitmask operation.
-  Node* mask_AW = igvn().intcon(AW-1);
+  Node* mask_AW = phase()->intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBIC_OP_old_limit, mask_AW);
   phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);

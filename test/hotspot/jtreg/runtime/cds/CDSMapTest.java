@@ -25,6 +25,7 @@
  * @test
  * @bug 8308903
  * @summary Test the contents of -Xlog:aot+map
+ * @requires vm.flagless
  * @requires vm.cds
  * @library /test/lib
  * @run driver CDSMapTest
@@ -33,6 +34,8 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.util.ArrayList;
 
 public class CDSMapTest {
@@ -46,32 +49,55 @@ public class CDSMapTest {
     }
 
     public static void doTest(boolean compressed) throws Exception {
-        ArrayList<String> dumpArgs = new ArrayList<>();
+        ArrayList<String> vmArgs = new ArrayList<>();
 
         // Use the same heap size as make/Images.gmk
-        dumpArgs.add("-Xmx128M");
+        vmArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
             // These options are available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
-            dumpArgs.add("-XX:" + sign + "UseCompressedOops");
+            vmArgs.add("-XX:" + sign + "UseCompressedOops");
         }
 
-        dump(dumpArgs);
+        String archiveFile = dump(vmArgs);
+        exec(vmArgs, archiveFile);
+
     }
 
     static int id = 0;
-    static void dump(ArrayList<String> args, String... more) throws Exception {
+
+    // Create a map file when creating the archive
+    static String dump(ArrayList<String> args) throws Exception {
         String logName = "SharedArchiveFile" + (id++);
         String archiveName = logName + ".jsa";
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xlog:cds=debug")
+            // filesize=0 ensures that a large map file not broken up in multiple files.
             .addPrefix("-Xlog:aot+map=debug,aot+map+oops=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
-            .addSuffix(args)
-            .addSuffix(more);
+            .addSuffix(args);
         CDSTestUtils.createArchiveAndCheck(opts);
+
+        CDSMapReader.MapFile mapFile = CDSMapReader.read(mapName);
+        CDSMapReader.validate(mapFile);
+
+        return archiveName;
+    }
+
+    // Create a map file when using the archive
+    static void exec(ArrayList<String> vmArgs, String archiveFile) throws Exception {
+        String mapName = archiveFile + ".exec.map";
+        vmArgs.add("-XX:SharedArchiveFile=" + archiveFile);
+        vmArgs.add("-Xlog:cds=debug");
+        vmArgs.add("-Xshare:on");
+        vmArgs.add("-Xlog:aot+map=debug,aot+map+oops=trace:file=" + mapName + ":none:filesize=0");
+        vmArgs.add("--version");
+        String[] cmdLine = vmArgs.toArray(new String[vmArgs.size()]);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "exec");
+        out.shouldHaveExitValue(0);
 
         CDSMapReader.MapFile mapFile = CDSMapReader.read(mapName);
         CDSMapReader.validate(mapFile);

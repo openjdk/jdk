@@ -934,7 +934,7 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  os::vsnprintf(msg, max_msg_size, format, ap);
+  (void) os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
@@ -1210,7 +1210,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
   }
 }
 
-JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jboolean profileDeopt, jlong compileId, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
 
   JVMCIObject methodObject = get_jvmci_method(method, JVMCI_CHECK_(JVMCIObject()));
@@ -1230,11 +1230,12 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(methodObject)));
     jargs.push_oop(nameStr);
     jargs.push_int(isDefault);
+    jargs.push_int(profileDeopt);
     jargs.push_long(compileId);
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, ik,
                             vmSymbols::object_initializer_name(),
-                            vmSymbols::method_string_bool_long_signature(),
+                            vmSymbols::method_string_bool_bool_long_signature(),
                             &jargs, CHECK_(JVMCIObject()));
     return wrap(obj_h());
   } else {
@@ -1749,7 +1750,7 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nmethod::ChangeReason change_reason, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nmethod::InvalidationReason invalidation_reason, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
@@ -1772,7 +1773,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nm
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant(change_reason);
+    nm->make_not_entrant(invalidation_reason);
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1781,7 +1782,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nm
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant(change_reason);
+    nm->make_not_entrant(invalidation_reason);
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 

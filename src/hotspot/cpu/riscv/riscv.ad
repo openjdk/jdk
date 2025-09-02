@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1368,14 +1368,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and fp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  {
-    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();  // 4 bytes
-  }
-
   assert_cond(C != nullptr);
 
   if (C->clinit_barrier_on_entry()) {
@@ -1493,7 +1485,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1804,7 +1796,6 @@ void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
 
-  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
   // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
   assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
@@ -1994,17 +1985,31 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
@@ -2269,10 +2274,6 @@ encode %{
   enc_class riscv_enc_mov_p1(iRegP dst) %{
     Register dst_reg = as_Register($dst$$reg);
     __ mv(dst_reg, 1);
-  %}
-
-  enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
-    __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class riscv_enc_mov_n(iRegN dst, immN src) %{
@@ -2822,21 +2823,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() ==
-             ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
@@ -4799,18 +4785,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mv  $dst, $con\t# load ptr constant one, #@loadConP1" %}
 
   ins_encode(riscv_enc_mov_p1(dst));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Byte Map Base Constant
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-  ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# Byte Map Base, #@loadByteMapBase" %}
-
-  ins_encode(riscv_enc_mov_byte_map_base(dst));
 
   ins_pipe(ialu_imm);
 %}
@@ -8199,7 +8173,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
-  
+ 
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
@@ -8435,6 +8409,17 @@ instruct castVV(vReg dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castVVMask(vRegMask dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 // ============================================================================
 // Convert Instructions
 
@@ -8569,7 +8554,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
 instruct reinterpretS2HF(fRegF dst, iRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
-  format %{ "fmv.h.x $dst, $src" %}
+  format %{ "fmv.h.x $dst, $src\t# reinterpretS2HF" %}
   ins_encode %{
     __ fmv_h_x($dst$$FloatRegister, $src$$Register);
   %}
@@ -8589,7 +8574,7 @@ instruct convF2HFAndS2HF(fRegF dst, fRegF src)
 instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
 %{
   match(Set dst (ReinterpretHF2S src));
-  format %{ "fmv.x.h $dst, $src" %}
+  format %{ "fmv.x.h $dst, $src\t# reinterpretHF2S" %}
   ins_encode %{
     __ fmv_x_h($dst$$Register, $src$$FloatRegister);
   %}
@@ -11036,45 +11021,9 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
-                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
-%{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
-
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register,
-                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-// using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
-%{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
-
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
                                 iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
@@ -11089,10 +11038,10 @@ instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
   ins_pipe(pipe_serial);
 %}
 
+// using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
                                   iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 

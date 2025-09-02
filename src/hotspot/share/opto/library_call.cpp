@@ -23,8 +23,8 @@
  */
 
 #include "asm/macroAssembler.hpp"
-#include "ci/ciUtilities.inline.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -47,8 +47,8 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
-#include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -135,6 +135,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 
   // The intrinsic bailed out
   assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
+  assert(jvms->map() == kit.map(), "Out of sync JVM state");
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
@@ -244,6 +245,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
@@ -518,8 +520,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isHidden:
-  case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
+  case vmIntrinsics::_getSuperclass:            return inline_native_Class_query(intrinsic_id());
 
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_floatToIntBits:
@@ -564,7 +565,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
-  case vmIntrinsics::_Reference_get:            return inline_reference_get();
+  case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
@@ -938,7 +939,11 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
 }
 
 // Emit range checks for the given String.value byte array
-void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node* count, bool char_count) {
+void LibraryCallKit::generate_string_range_check(Node* array,
+                                                 Node* offset,
+                                                 Node* count,
+                                                 bool char_count,
+                                                 bool halt_on_oob) {
   if (stopped()) {
     return; // already stopped
   }
@@ -956,10 +961,17 @@ void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node
   generate_limit_guard(offset, count, load_array_length(array), bailout);
 
   if (bailout->req() > 1) {
-    PreserveJVMState pjvms(this);
-    set_control(_gvn.transform(bailout));
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    if (halt_on_oob) {
+      bailout = _gvn.transform(bailout)->as_Region();
+      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+      Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
+      C->root()->add_req(halt);
+    } else {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(bailout));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
   }
 }
 
@@ -1117,6 +1129,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
 
 //------------------------------inline_countPositives------------------------------
+// int java.lang.StringCoding#countPositives0(byte[] ba, int off, int len)
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1128,13 +1141,14 @@ bool LibraryCallKit::inline_countPositives() {
   Node* offset     = argument(1);
   Node* len        = argument(2);
 
-  ba = must_be_not_null(ba, true);
-
-  // Range checks
-  generate_string_range_check(ba, offset, len, false);
-  if (stopped()) {
-    return true;
+  if (VerifyIntrinsicChecks) {
+    ba = must_be_not_null(ba, true);
+    generate_string_range_check(ba, offset, len, false, true);
+    if (stopped()) {
+      return true;
+    }
   }
+
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
@@ -1575,9 +1589,14 @@ bool LibraryCallKit::inline_string_toBytesU() {
     Node* src_start = array_element_address(value, offset, T_CHAR);
     Node* dst_start = basic_plus_adr(newcopy, arrayOopDesc::base_offset_in_bytes(T_BYTE));
 
-    // Check if src array address is aligned to HeapWordSize (dst is always aligned)
-    const TypeInt* toffset = gvn().type(offset)->is_int();
-    bool aligned = toffset->is_con() && ((toffset->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+    // Check if dst array address is aligned to HeapWordSize
+    bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+    // If true, then check if src array address is aligned to HeapWordSize
+    if (aligned) {
+      const TypeInt* toffset = gvn().type(offset)->is_int();
+      aligned = toffset->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) +
+                                       toffset->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+    }
 
     // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
     const char* copyfunc_name = "arraycopy";
@@ -1658,8 +1677,8 @@ bool LibraryCallKit::inline_string_getCharsU() {
     // Check if array addresses are aligned to HeapWordSize
     const TypeInt* tsrc = gvn().type(src_begin)->is_int();
     const TypeInt* tdst = gvn().type(dst_begin)->is_int();
-    bool aligned = tsrc->is_con() && ((tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
-                   tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+    bool aligned = tsrc->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) + tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
+                   tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) + tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
 
     // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
     const char* copyfunc_name = "arraycopy";
@@ -1719,18 +1738,15 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   }
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
 
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
-  destruct_map_clone(old_map);
+  old_state.discard();
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -1797,7 +1813,7 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
 
   const TypePtr* no_memory_effects = nullptr;
-  Node* trig = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
+  Node* trig = make_runtime_call(RC_LEAF | RC_PURE, call_type, funcAddr, funcName,
                                  no_memory_effects,
                                  a, top(), b, b ? top() : nullptr);
   Node* value = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
@@ -1884,6 +1900,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dtan() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
       runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
+  case vmIntrinsics::_dsinh:
+    return StubRoutines::dsinh() != nullptr ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsinh(), "dsinh") : false;
   case vmIntrinsics::_dtanh:
     return StubRoutines::dtanh() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") : false;
@@ -2368,6 +2387,47 @@ DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
   }
 }
 
+LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
+  _kit(kit),
+  _sp(kit->sp()),
+  _jvms(kit->jvms()),
+  _map(kit->clone_map()),
+  _discarded(false)
+{
+  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = kit->control()->fast_out(i);
+    if (out->is_CFG()) {
+      _ctrl_succ.push(out);
+    }
+  }
+}
+
+LibraryCallKit::SavedState::~SavedState() {
+  if (_discarded) {
+    _kit->destruct_map_clone(_map);
+    return;
+  }
+  _kit->jvms()->set_map(_map);
+  _kit->jvms()->set_sp(_sp);
+  _map->set_jvms(_kit->jvms());
+  _kit->set_map(_map);
+  _kit->set_sp(_sp);
+  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = _kit->control()->fast_out(i);
+    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
+      _kit->_gvn.hash_delete(out);
+      out->set_req(0, _kit->C->top());
+      _kit->C->record_for_igvn(out);
+      --i; --imax;
+      _kit->_gvn.hash_find_insert(out);
+    }
+  }
+}
+
+void LibraryCallKit::SavedState::discard() {
+  _discarded = true;
+}
+
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
   if (callee()->is_static())  return false;  // caller must have the capability!
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
@@ -2429,8 +2489,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   offset = ConvL2X(offset);
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
 
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
@@ -2439,8 +2498,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
-      set_map(old_map);
-      set_sp(old_sp);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2458,8 +2515,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
-    set_map(old_map);
-    set_sp(old_sp);
     return false; // off-heap access with zero address
   }
 
@@ -2469,8 +2524,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
-    set_map(old_map);
-    set_sp(old_sp);
     return false; // not supported
   }
 
@@ -2489,8 +2542,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
     if ((bt == T_OBJECT) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses
-      set_map(old_map);
-      set_sp(old_sp);
       return false;
     }
     mismatched = (bt != type);
@@ -2498,7 +2549,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  destruct_map_clone(old_map);
+  old_state.discard();
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2734,8 +2785,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
   Node* adr = make_unsafe_address(base, offset,type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2744,12 +2794,10 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (bt != T_ILLEGAL &&
       (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
-  destruct_map_clone(old_map);
+  old_state.discard();
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
@@ -3240,7 +3288,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   lease_compare_io->init_req(_true_path, i_o());
   lease_compare_io->init_req(_false_path, input_io_state);
 
-  lease_result_value->init_req(_true_path, null()); // if the lease was returned, return 0.
+  lease_result_value->init_req(_true_path, _gvn.longcon(0)); // if the lease was returned, return 0L.
   lease_result_value->init_req(_false_path, arg); // if not lease, return new updated position.
 
   RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
@@ -3975,10 +4023,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = null();
     return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
     break;
-  case vmIntrinsics::_getClassAccessFlags:
-    prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
-    return_type = TypeInt::CHAR;
-    break;
   default:
     fatal_unexpected_iid(id);
     break;
@@ -4072,11 +4116,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (!stopped()) {
       query_value = load_mirror_from_klass(kls);
     }
-    break;
-
-  case vmIntrinsics::_getClassAccessFlags:
-    p = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-    query_value = make_load(nullptr, p, TypeInt::CHAR, T_CHAR, MemNode::unordered);
     break;
 
   default:
@@ -6102,6 +6141,9 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
 }
 
 //-------------inline_encodeISOArray-----------------------------------
+// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
@@ -6112,8 +6154,14 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   Node *dst_offset  = argument(3);
   Node *length      = argument(4);
 
-  src = must_be_not_null(src, true);
-  dst = must_be_not_null(dst, true);
+  // Cast source & target arrays to not-null
+  if (VerifyIntrinsicChecks) {
+    src = must_be_not_null(src, true);
+    dst = must_be_not_null(dst, true);
+    if (stopped()) {
+      return true;
+    }
+  }
 
   const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
   const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
@@ -6128,6 +6176,15 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
+  }
+
+  // Check source & target bounds
+  if (VerifyIntrinsicChecks) {
+    generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true);
+    generate_string_range_check(dst, dst_offset, length, false, true);
+    if (stopped()) {
+      return true;
+    }
   }
 
   Node* src_start = array_element_address(src, src_offset, T_CHAR);
@@ -6580,6 +6637,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   memory_phi = _gvn.transform(memory_phi);
   result_phi = _gvn.transform(result_phi);
 
+  record_for_igvn(exit_block);
+  record_for_igvn(memory_phi);
+  record_for_igvn(result_phi);
+
   set_control(exit_block);
   set_all_memory(memory_phi);
   set_result(result_phi);
@@ -6914,9 +6975,9 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   return true;
 }
 
-//----------------------------inline_reference_get----------------------------
+//----------------------------inline_reference_get0----------------------------
 // public T java.lang.ref.Reference.get();
-bool LibraryCallKit::inline_reference_get() {
+bool LibraryCallKit::inline_reference_get0() {
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   // Get the argument:

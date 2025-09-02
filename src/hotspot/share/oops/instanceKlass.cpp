@@ -50,8 +50,8 @@
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "logging/log.hpp"
 #include "klass.inline.hpp"
+#include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -61,8 +61,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -78,8 +78,8 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -472,7 +472,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   assert(loader_data != nullptr, "invariant");
 
   InstanceKlass* ik;
-  const bool use_class_space = parser.klass_needs_narrow_id();
+  const bool use_class_space = UseClassMetaspaceForAllClasses || parser.klass_needs_narrow_id();
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
@@ -575,7 +575,7 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
 }
 
 void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
-                                          const Klass* super_klass,
+                                          const InstanceKlass* super_klass,
                                           Array<InstanceKlass*>* local_interfaces,
                                           Array<InstanceKlass*>* transitive_interfaces) {
   // Only deallocate transitive interfaces if not empty, same as super class
@@ -584,7 +584,7 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
   if (ti != Universe::the_empty_instance_klass_array() && ti != local_interfaces) {
     // check that the interfaces don't come from super class
     Array<InstanceKlass*>* sti = (super_klass == nullptr) ? nullptr :
-                    InstanceKlass::cast(super_klass)->transitive_interfaces();
+                    super_klass->transitive_interfaces();
     if (ti != sti && ti != nullptr && !ti->is_shared()) {
       MetadataFactory::free_array<InstanceKlass*>(loader_data, ti);
     }
@@ -677,7 +677,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
-  deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
+  deallocate_interfaces(loader_data, java_super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
@@ -685,6 +685,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
     MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
   set_fieldinfo_stream(nullptr);
+
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
+  }
+  set_fieldinfo_search_table(nullptr);
 
   if (fields_status() != nullptr && !fields_status()->is_shared()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
@@ -937,7 +942,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   JavaThread* jt = THREAD;
 
   // link super class before linking this class
-  Klass* super_klass = super();
+  InstanceKlass* super_klass = java_super();
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
@@ -952,8 +957,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       return false;
     }
 
-    InstanceKlass* ik_super = InstanceKlass::cast(super_klass);
-    ik_super->link_class_impl(CHECK_false);
+    super_klass->link_class_impl(CHECK_false);
   }
 
   // link all interfaces implemented by this class before linking this class
@@ -1111,7 +1115,7 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+using InitializationErrorTable = HashTable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
 static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
@@ -1786,13 +1790,12 @@ FieldInfo InstanceKlass::field(int index) const {
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
-    Symbol* f_name = fs.name();
-    Symbol* f_sig  = fs.signature();
-    if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
-      return true;
-    }
+  JavaFieldStream fs(this);
+  if (fs.lookup(name, sig)) {
+    assert(fs.name() == name, "name must match");
+    assert(fs.signature() == sig, "signature must match");
+    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    return true;
   }
   return false;
 }
@@ -1801,15 +1804,15 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
 Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();
   for (int i = 0; i < n; i++) {
-    Klass* intf1 = local_interfaces()->at(i);
+    InstanceKlass* intf1 = local_interfaces()->at(i);
     assert(intf1->is_interface(), "just checking type");
     // search for field in current interface
-    if (InstanceKlass::cast(intf1)->find_local_field(name, sig, fd)) {
+    if (intf1->find_local_field(name, sig, fd)) {
       assert(fd->is_static(), "interface field must be static");
       return intf1;
     }
     // search for field in direct superinterfaces
-    Klass* intf2 = InstanceKlass::cast(intf1)->find_interface_field(name, sig, fd);
+    Klass* intf2 = intf1->find_interface_field(name, sig, fd);
     if (intf2 != nullptr) return intf2;
   }
   // otherwise field lookup fails
@@ -1828,8 +1831,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd)
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, fd);
+  { InstanceKlass* supr = java_super();
+    if (supr != nullptr) return supr->find_field(name, sig, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1848,8 +1851,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, is_static, fd);
+  { InstanceKlass* supr = java_super();
+    if (supr != nullptr) return supr->find_field(name, sig, is_static, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1868,12 +1871,12 @@ bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fie
 
 
 bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
-  Klass* klass = const_cast<InstanceKlass*>(this);
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->find_local_field_from_offset(offset, is_static, fd)) {
+    if (klass->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
-    klass = klass->super();
+    klass = klass->java_super();
   }
   return false;
 }
@@ -1916,7 +1919,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
@@ -1933,7 +1936,7 @@ static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = java_super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
@@ -2228,17 +2231,17 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
                                               OverpassLookupMode overpass_mode,
                                               PrivateLookupMode private_mode) const {
   OverpassLookupMode overpass_local_mode = overpass_mode;
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    Method* const method = InstanceKlass::cast(klass)->find_method_impl(name,
-                                                                        signature,
-                                                                        overpass_local_mode,
-                                                                        StaticLookupMode::find,
-                                                                        private_mode);
+    Method* const method = klass->find_method_impl(name,
+                                                   signature,
+                                                   overpass_local_mode,
+                                                   StaticLookupMode::find,
+                                                   private_mode);
     if (method != nullptr) {
       return method;
     }
-    klass = klass->super();
+    klass = klass->java_super();
     overpass_local_mode = OverpassLookupMode::skip;   // Always ignore overpass methods in superclasses
   }
   return nullptr;
@@ -2248,12 +2251,12 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
 bool InstanceKlass::has_redefined_this_or_super() const {
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->has_been_redefined()) {
+    if (klass->has_been_redefined()) {
       return true;
     }
-    klass = klass->super();
+    klass = klass->java_super();
   }
   return false;
 }
@@ -2391,13 +2394,26 @@ jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, in
   return new_id;
 }
 
+// Allocate the jmethodID cache.
+static jmethodID* create_jmethod_id_cache(size_t size) {
+  jmethodID* jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+  memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
+  // cache size is stored in element[0], other elements offset by one
+  jmeths[0] = (jmethodID)size;
+  return jmeths;
+}
+
+// When reading outside a lock, use this.
+jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
+  return Atomic::load_acquire(&_methods_jmethod_ids);
+}
+
+void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
+  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+}
+
 // Lookup or create a jmethodID.
-// This code is called by the VMThread and JavaThreads so the
-// locking has to be done very carefully to avoid deadlocks
-// and/or other cache consistency problems.
-//
-jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
-  Method* method = method_h();
+jmethodID InstanceKlass::get_jmethod_id(Method* method) {
   int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
 
@@ -2418,15 +2434,12 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
 
   if (jmeths == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-    jmeths = methods_jmethod_ids_acquire();
+    jmeths = _methods_jmethod_ids;
     // Still null?
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
-      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
-      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      jmeths[0] = (jmethodID)size;
+      jmeths = create_jmethod_id_cache(size);
       jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
 
       // publish jmeths
@@ -2456,10 +2469,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
     if (old_size < size + 1) {
       // Allocate a larger one and copy entries to the new one.
       // They've already been updated to point to new methods where applicable (i.e., not obsolete).
-      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
-      memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
-      // The cache size is stored in element[0]; the other elements are offset by one.
-      new_cache[0] = (jmethodID)size;
+      jmethodID* new_cache = create_jmethod_id_cache(size);
 
       for (int i = 1; i <= (int)old_size; i++) {
         new_cache[i] = cache[i];
@@ -2470,23 +2480,29 @@ void InstanceKlass::update_methods_jmethod_cache() {
   }
 }
 
-// Figure out how many jmethodIDs haven't been allocated, and make
-// sure space for them is pre-allocated.  This makes getting all
-// method ids much, much faster with classes with more than 8
+// Make a jmethodID for all methods in this class.  This makes getting all method
+// ids much, much faster with classes with more than 8
 // methods, and has a *substantial* effect on performance with jvmti
 // code that loads all jmethodIDs for all classes.
-void InstanceKlass::ensure_space_for_methodids(int start_offset) {
-  int new_jmeths = 0;
-  int length = methods()->length();
-  for (int index = start_offset; index < length; index++) {
-    Method* m = methods()->at(index);
-    jmethodID id = m->find_jmethod_id_or_null();
-    if (id == nullptr) {
-      new_jmeths++;
-    }
+void InstanceKlass::make_methods_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  jmethodID* jmeths = _methods_jmethod_ids;
+  if (jmeths == nullptr) {
+    jmeths = create_jmethod_id_cache(idnum_allocated_count());
+    release_set_methods_jmethod_ids(jmeths);
   }
-  if (new_jmeths != 0) {
-    Method::ensure_jmethod_ids(class_loader_data(), new_jmeths);
+
+  int length = methods()->length();
+  for (int index = 0; index < length; index++) {
+    Method* m = methods()->at(index);
+    int idnum = m->method_idnum();
+    assert(!m->is_old(), "should not have old methods or I'm confused");
+    jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+    if (!m->is_overpass() &&  // skip overpasses
+        id == nullptr) {
+      id = Method::make_jmethod_id(class_loader_data(), m);
+      Atomic::release_store(&jmeths[idnum + 1], id);
+    }
   }
 }
 
@@ -2610,6 +2626,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_fieldinfo_stream);
+  it->push(&_fieldinfo_search_table);
   // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 
@@ -2710,6 +2727,8 @@ void InstanceKlass::remove_unshareable_info() {
   DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 void InstanceKlass::remove_unshareable_flags() {
@@ -2816,6 +2835,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2914,7 +2935,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   JNIid::deallocate(jni_ids());
   set_jni_ids(nullptr);
 
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
+  jmethodID* jmeths = _methods_jmethod_ids;
   if (jmeths != nullptr) {
     release_set_methods_jmethod_ids(nullptr);
     FreeHeap(jmeths);
@@ -3492,7 +3513,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
     nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
     if (inv != nullptr && inv->is_in_use()) {
-      inv->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_of_lower_level);
+      inv->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL);
     }
   }
 }
@@ -3760,6 +3781,11 @@ void InstanceKlass::print_on(outputStream* st) const {
     map++;
   }
   st->cr();
+
+  if (fieldinfo_search_table() != nullptr) {
+    st->print_cr(BULLET"---- field info search table:");
+    FieldInfoStream::print_search_table(st, _constants, _fieldinfo_stream, _fieldinfo_search_table);
+  }
 }
 
 void InstanceKlass::print_value_on(outputStream* st) const {
@@ -3959,7 +3985,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(superklass()));
+                       p2i(this),  p2i(java_super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -3967,7 +3993,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
         debug_stream.print(" " PTR_FORMAT,
-                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+                           p2i(local_interfaces()->at(i)));
       }
     }
 
@@ -4180,18 +4206,16 @@ void InstanceKlass::oop_verify_on(oop obj, outputStream* st) {
   obj->oop_iterate(&blk);
 }
 
-
 // JNIid class for jfieldIDs only
 // Note to reviewers:
 // These JNI functions are just moved over to column 1 and not changed
 // in the compressed oops workspace.
-JNIid::JNIid(Klass* holder, int offset, JNIid* next) {
+JNIid::JNIid(InstanceKlass* holder, int offset, JNIid* next) {
   _holder = holder;
   _offset = offset;
   _next = next;
   DEBUG_ONLY(_is_static_field_id = false;)
 }
-
 
 JNIid* JNIid::find(int offset) {
   JNIid* current = this;
@@ -4210,11 +4234,10 @@ void JNIid::deallocate(JNIid* current) {
   }
 }
 
-
-void JNIid::verify(Klass* holder) {
+void JNIid::verify(InstanceKlass* holder) {
   int first_field_offset  = InstanceMirrorKlass::offset_of_static_fields();
   int end_field_offset;
-  end_field_offset = first_field_offset + (InstanceKlass::cast(holder)->static_field_size() * wordSize);
+  end_field_offset = first_field_offset + (holder->static_field_size() * wordSize);
 
   JNIid* current = this;
   while (current != nullptr) {
@@ -4261,17 +4284,14 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
-// This nulls out jmethodIDs for all methods in 'klass'
-// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
-// during class unloading.
-// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
-// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
-// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
-// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
-void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+// This nulls out the jmethodID for all obsolete methods in the previous version of the 'klass'.
+// These obsolete methods only exist in the previous version and we're about to delete the memory for them.
+// The jmethodID for these are deallocated when we unload the class, so this doesn't remove them from the table.
+void InstanceKlass::clear_obsolete_jmethod_ids(InstanceKlass* klass) {
   Array<Method*>* method_refs = klass->methods();
   for (int k = 0; k < method_refs->length(); k++) {
     Method* method = method_refs->at(k);
+    // Only need to clear obsolete methods.
     if (method != nullptr && method->is_obsolete()) {
       method->clear_jmethod_id();
     }
@@ -4321,7 +4341,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
-      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
+      clear_obsolete_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(nullptr);   // point next to null
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't
@@ -4530,7 +4550,7 @@ void ClassHierarchyIterator::next() {
   }
   _visit_subclasses = true; // reset
   while (_current->next_sibling() == nullptr && _current != _root) {
-    _current = _current->superklass(); // backtrack; no more sibling subclasses left
+    _current = _current->java_super(); // backtrack; no more sibling subclasses left
   }
   if (_current == _root) {
     // Iteration is over (back at root after backtracking). Invalidate the iterator.

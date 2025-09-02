@@ -53,7 +53,13 @@ class Block_Array : public ArenaObj {
   ReallocMark _nesting;         // Safety checks for arena reallocation
 protected:
   Block **_blocks;
-  void grow( uint i );          // Grow array node to fit
+  void maybe_grow(uint i) {
+    _nesting.check(_arena);     // Check if a potential reallocation in the arena is safe
+    if (i >= Max()) {
+      grow(i);
+    }
+  }
+  void grow(uint i);            // Grow array node to fit
 
 public:
   Block_Array(Arena *a) : _size(OptoBlockListSize), _arena(a) {
@@ -68,7 +74,7 @@ public:
   Block *operator[] ( uint i ) const // Lookup, or assert for not mapped
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
-  void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
+  void map( uint i, Block *n ) { maybe_grow(i); _blocks[i] = n; }
   uint Max() const { DEBUG_ONLY(return _limit); return _size; }
 };
 

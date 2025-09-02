@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ public class B6644726 {
         // Let's test the default path
         lst.add("myCookie1=foo");
         // Then some alternate expires format
-        lst.add("myCookie2=bar; path=/dir; expires=Tue, 19 Aug 2025 16:00:00 GMT");
-        lst.add("myCookie3=test; path=/dir; expires=Tue Aug 19 2025 16:00:00 GMT-0100");
+        lst.add("myCookie2=bar; path=/dir; expires=Fri, 19 Aug 4242 16:00:00 GMT");
+        lst.add("myCookie3=test; path=/dir; expires=Fri Aug 19 4242 16:00:00 GMT-0100");
         // Then Netscape draft cookies and domains
         lst.add("myCookie4=test; domain=.sun.com; path=/dir/foo");
         HashMap<String, List<String>> map = new HashMap<String, List<String>>();
@@ -64,7 +64,8 @@ public class B6644726 {
         List<HttpCookie> cookies = cs.getCookies();
         // There should be 5 cookies if all dates parsed correctly
         if (cookies.size() != 5) {
-            fail("Should have 5 cookies. Got only "+ cookies.size() + ", expires probably didn't parse correctly");
+            fail("unexpected cookies: " + cookies + ", should have 5 cookies. Got only "
+                    + cookies.size() + ", expires probably didn't parse correctly");
         }
         // Check Path for first Cookie
         for (HttpCookie c : cookies) {

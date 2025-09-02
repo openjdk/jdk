@@ -848,39 +848,56 @@ jlong os::elapsed_frequency() {
 }
 
 
-julong os::available_memory() {
-  return win32::available_memory();
+bool os::available_memory(size_t& value) {
+  return win32::available_memory(value);
 }
 
-julong os::free_memory() {
-  return win32::available_memory();
+bool os::free_memory(size_t& value) {
+  return win32::available_memory(value);
 }
 
-julong os::win32::available_memory() {
+bool os::win32::available_memory(size_t& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-
-  return (julong)ms.ullAvailPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullAvailPhys);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullTotalPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullAvailPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-julong os::physical_memory() {
+size_t os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -897,13 +914,6 @@ size_t os::rss() {
   return rss;
 }
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  MEMORYSTATUSEX ms;
-  ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  *limit = (size_t)ms.ullAvailVirtual;
-  return true;
-}
 
 int os::active_processor_count() {
   // User has overridden the number of active processors
@@ -1194,19 +1204,36 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
   FILETIME kernel;
   FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
   }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
 }
 
 jlong os::javaTimeMillis() {
@@ -1401,7 +1428,7 @@ void os::die() {
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
-    snprintf(name, MAX_PATH, "<not available>");
+    os::snprintf_checked(name, MAX_PATH, "<not available>");
   }
 
   JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
@@ -1417,7 +1444,7 @@ void  os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     if (tl == 0) {
-      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+      os::snprintf_checked(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
     JFR_ONLY(unload_event.set_error_msg(buf);)
   }
@@ -1712,6 +1739,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -1808,14 +1841,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load %s-bit .dll on a %s-bit platform",
-                 lib_arch_str, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load %s-bit .dll on a %s-bit platform",
+                         lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                 lib_arch, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                         lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -2244,6 +2277,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
@@ -2623,14 +2658,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2751,19 +2784,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
-
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
 
     if (in_java) {
       switch (exception_code) {
@@ -3195,7 +3215,7 @@ int os::create_file_for_heap(const char* dir) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
   assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
@@ -3291,6 +3311,51 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+size_t os::commit_memory_limit() {
+  BOOL is_in_job_object = false;
+  BOOL res = IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to determine whether the process is running in a job failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling IsProcessInJob.
+    return SIZE_MAX;
+  }
+
+  if (!is_in_job_object) {
+    // Not limited by a Job Object
+    return SIZE_MAX;
+  }
+
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+  res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling QueryInformationJobObject.
+    return SIZE_MAX;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) {
+    return jeli.ProcessMemoryLimit;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_JOB_MEMORY) {
+    return jeli.JobMemoryLimit;
+  }
+
+  // No limit
+  return SIZE_MAX;
+}
+
+size_t os::reserve_memory_limit() {
+  // Virtual address space cannot be limited on Windows.
+  return SIZE_MAX;
 }
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
@@ -3900,7 +3965,7 @@ int os::current_process_id() {
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
-julong os::win32::_physical_memory           = 0;
+size_t os::win32::_physical_memory           = 0;
 
 bool   os::win32::_is_windows_server         = false;
 
@@ -4130,8 +4195,11 @@ void os::win32::initialize_system_info() {
 
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
-  GlobalMemoryStatusEx(&ms);
-  _physical_memory = ms.ullTotalPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res != TRUE) {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
+  }
+  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.

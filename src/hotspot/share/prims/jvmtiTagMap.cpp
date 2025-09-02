@@ -42,7 +42,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -61,13 +60,13 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/timerTrace.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "utilities/objectBitSet.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/objectBitSet.inline.hpp"
 
 typedef ObjectBitSet<mtServiceability> JVMTIBitSet;
 
@@ -944,6 +943,7 @@ class IterateOverHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateOverHeapObjectClosure::do_object(oop o) {
+  assert(o != nullptr, "Heap iteration should never produce null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
@@ -953,7 +953,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   }
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (o != nullptr && o->klass()->java_mirror() == nullptr) {
+  if (o->klass()->java_mirror() == nullptr) {
     log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
                          o->klass()->external_name());
     return;
@@ -1032,6 +1032,7 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateThroughHeapObjectClosure::do_object(oop obj) {
+  assert(obj != nullptr, "Heap iteration should never produce null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
@@ -1039,7 +1040,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (is_filtered_by_klass_filter(obj, klass())) return;
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (obj != nullptr &&   obj->klass()->java_mirror() == nullptr) {
+  if (obj->klass()->java_mirror() == nullptr) {
     log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
@@ -2778,7 +2779,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
   // Preloaded classes and loader from the system dictionary
   blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
-  CLDToOopClosure cld_closure(&blk, false);
+  CLDToOopClosure cld_closure(&blk, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
   if (blk.stopped()) {
     return false;

@@ -38,6 +38,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -281,6 +282,7 @@ CollectedHeap::CollectedHeap() :
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
+  _vmthread_cpu_time(0),
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
 {
@@ -601,6 +603,13 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
   initialize_serviceability();
+}
+
+void CollectedHeap::before_exit() {
+  print_tracing_info();
+
+  // Stop any on-going concurrent work and prepare for exit.
+  stop();
 }
 
 #ifndef PRODUCT

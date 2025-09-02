@@ -186,9 +186,6 @@ private:
     _is_generated_shared_class             = 1 << 5,
     // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
     _has_aot_initialized_mirror            = 1 << 6,
-    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
-    // method during the production run?
-    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
@@ -300,7 +297,6 @@ protected:
   Klass* subklass(bool log = false) const;
   Klass* next_sibling(bool log = false) const;
 
-  InstanceKlass* superklass() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 
   void set_next_link(Klass* k) { _next_link = k; }
@@ -377,15 +373,6 @@ protected:
   }
   bool has_aot_initialized_mirror() const {
     CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
-    NOT_CDS(return false;)
-  }
-
-  void set_is_runtime_setup_required() {
-    assert(has_aot_initialized_mirror(), "sanity");
-    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
-  }
-  bool is_runtime_setup_required() const {
-    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -734,10 +721,10 @@ public:
 
   void clean_subklass();
 
+  // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
-  static void clean_subklass_tree() {
-    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
-  }
+  // Clean out unnecessary weak klass links from the given InstanceKlass.
+  static void clean_weak_instanceklass_links(InstanceKlass* ik);
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
