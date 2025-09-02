@@ -2113,7 +2113,7 @@ char* DumpMerger::get_writer_path(const char* base_path, int seq) {
   char* path = NEW_RESOURCE_ARRAY(char, buf_size);
   memset(path, 0, buf_size);
 
-  os::snprintf(path, buf_size, "%s.p%d", base_path, seq);
+  os::snprintf_checked(path, buf_size, "%s.p%d", base_path, seq);
 
   return path;
 }
@@ -2612,7 +2612,10 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
     // For the OOM handling we may already be limited in memory.
     // Lets ensure we have at least 20MB per thread.
-    julong max_threads = os::free_memory() / (20 * M);
+    size_t free_memory = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::free_memory(free_memory);
+    julong max_threads = free_memory / (20 * M);
     if (num_dump_threads > max_threads) {
       num_dump_threads = MAX2<uint>(1, (uint)max_threads);
     }
