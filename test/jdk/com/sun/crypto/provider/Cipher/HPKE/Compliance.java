@@ -32,6 +32,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 
 import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
 import static javax.crypto.spec.HPKEParameterSpec.KDF_HKDF_SHA256;
@@ -142,6 +143,7 @@ public class Compliance {
         Asserts.assertTrue(spec.withAuthKey(kp.getPrivate()).withPsk(psk, psk_id).toString().contains("mode_auth_psk}"));
 
         var c1 = Cipher.getInstance("HPKE");
+        Asserts.assertThrows(NoSuchAlgorithmException.class, () -> Cipher.getInstance("HPKE/None/NoPadding"));
 
         // Still at BEGIN, not initialized
         Asserts.assertEQ(c1.getIV(), null);

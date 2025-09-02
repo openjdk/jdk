@@ -41,9 +41,12 @@ import java.util.Objects;
  * arbitrary-sized plaintexts with a recipient's public key. It combines a key
  * encapsulation mechanism (KEM), a key derivation function (KDF), and an
  * authenticated encryption with additional data (AEAD) cipher.
- *
+ * <p>
  * The <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
- * standard algorithm name</a> for the cipher is "HPKE".
+ * standard algorithm name</a> for the cipher is "HPKE". Unlike most other
+ * ciphers, HPKE is not expressed as a transformation string of the form
+ * "algorithm/mode/padding". Therefore, the argument to {@code Cipher.getInstance}
+ * must be the single algorithm name "HPKE".
  * <p>
  * In HPKE, the sender's {@code Cipher} is always initialized with the
  * recipient's public key in {@linkplain Cipher#ENCRYPT_MODE encrypt mode},
