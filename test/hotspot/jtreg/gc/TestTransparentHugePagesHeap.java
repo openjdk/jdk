@@ -64,7 +64,16 @@ import jdk.test.lib.Platform;
 
 import jtreg.SkippedException;
 
-// Check that we get THP for the heap
+// We verify that the heap can be backed by THP by looking at the
+// THPeligible field for the heap section in /proc/self/smaps. This
+// field indicates if a mapping can use THP.
+// THP mode 'always': this field is 1 whenever huge pages can be used
+// THP mode 'madvise': this field is 1 if the mapping has been madvised
+// as MADV_HUGEPAGE. In the JVM that should happen when the flag
+// -XX:+UseTransparentHugePages is specified.
+//
+// Note: we don't verify if the heap is backed by huge pages because we
+// can't now if the underlying system have any available.
 public class TestTransparentHugePagesHeap {
 
     public static void main(String args[]) throws Exception {
@@ -86,13 +95,6 @@ public class TestTransparentHugePagesHeap {
         oa.shouldHaveExitValue(0);
     }
 
-    // We verify that the heap can be backed by THP by looking at the
-    // THPeligible field for the heap section in /proc/self/smaps. This
-    // field indicates if a mapping can use THP.
-    // THP mode 'always': this field is 1 whenever huge pages can be used
-    // THP mode 'madvise': this field is 1 if the mapping has been madvised
-    // as MADV_HUGEPAGE. In the JVM that should happen when the flag
-    // -XX:+UseTransparentHugePages is specified.
     class VerifyTHPEnabledForHeap {
 
         public static void main(String args[]) throws Exception {
@@ -100,31 +102,30 @@ public class TestTransparentHugePagesHeap {
             Path smaps = makeSmapsCopy();
 
             final Pattern heapSection = Pattern.compile("^" + heapAddress + ".*");
-            final Pattern thpEligible = Pattern.compile("THPeligible:\\s+1\\s*");
-            final Pattern vmFlags     = Pattern.compile("VmFlags.*");
+            final Pattern thpEligible = Pattern.compile("THPeligible:\\s+(\\d)\\s*");
 
             Scanner smapsFile = new Scanner(smaps);
             while (smapsFile.hasNextLine()) {
                 Matcher heapMatcher = heapSection.matcher(smapsFile.nextLine());
 
                 if (heapMatcher.matches()) {
-                    // Found heap section, verify that it is THP eligible
+                    // Found the first heap section, verify that it is THP eligible
                     while (smapsFile.hasNextLine()) {
-                        String line = smapsFile.nextLine();
+                        Matcher m = thpEligible.matcher(smapsFile.nextLine());
+                        if (m.matches()) {
+                            if (Integer.parseInt(m.group(1)) == 1) {
+                                // THPeligible is 1, heap can be backed by huge pages
+                                return;
+                            }
 
-                        Matcher m;
-                        if ((m = thpEligible.matcher(line)).matches()) {
-                            // Heap is THP eligible
-                            return;
-                        } else if ((m = vmFlags.matcher(line)).matches()) {
-                            // Reached end of heap segment
-                            throw new RuntimeException("Heap segement is not THPeligible");
+                            throw new RuntimeException("First heap section at 0x" + heapAddress + " is not THPeligible");
                         }
                     }
                 }
             }
+
             // Failed to verify THP for heap
-            throw new RuntimeException("Could not find heap segment in smaps file");
+            throw new RuntimeException("Could not find heap section in smaps file");
         }
 
         private static String readHeapAddressInLog() throws Exception {
