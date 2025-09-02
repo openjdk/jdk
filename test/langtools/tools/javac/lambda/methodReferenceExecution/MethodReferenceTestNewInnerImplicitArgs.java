@@ -55,7 +55,7 @@ public class MethodReferenceTestNewInnerImplicitArgs {
     }
 
     @Test
-    public static void testConstructorReferenceImplicitParameters() {
+    public void testConstructorReferenceImplicitParameters() {
         String title = "Hey";
         String a2 = "!!!";
         class MS extends S {

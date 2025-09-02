@@ -42,14 +42,14 @@ public class TypeVariableCastTest {
     }
 
     @Test
-    static void testMethodF() {
+    void testMethodF() {
         Assertions.assertThrows(ClassCastException.class, () -> {
             f();
         });
     }
 
     @Test
-    static void testMethodG() {
+    void testMethodG() {
         Assertions.assertThrows(ClassCastException.class, () -> {
             g();
         });
