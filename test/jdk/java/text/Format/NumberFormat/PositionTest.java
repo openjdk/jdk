@@ -35,7 +35,7 @@ attribution to Taligent may not be removed.
 
 /*
  * @test
- * @bug 4109023 4153060 4153061
+ * @bug 4109023 4153060 4153061 8366400
  * @summary test ParsePosition and FieldPosition
  * @run junit PositionTest
  */
