@@ -73,7 +73,7 @@ import jtreg.SkippedException;
 // -XX:+UseTransparentHugePages is specified.
 //
 // Note: we don't verify if the heap is backed by huge pages because we
-// can't now if the underlying system have any available.
+// can't know if the underlying system have any available.
 public class TestTransparentHugePagesHeap {
 
     public static void main(String args[]) throws Exception {
