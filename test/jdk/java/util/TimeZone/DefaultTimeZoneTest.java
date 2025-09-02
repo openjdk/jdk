@@ -108,8 +108,8 @@ public class DefaultTimeZoneTest  {
         var panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         // Time zone ID label
-        var tzid = new JLabel("Time zone ID: " + SDF.getTimeZone().getID(), SwingConstants.CENTER);
-        tzid.setAlignmentX(Component.CENTER_ALIGNMENT);
+        var timeZoneID = new JLabel("Time zone ID: " + SDF.getTimeZone().getID(), SwingConstants.CENTER);
+        timeZoneID.setAlignmentX(Component.CENTER_ALIGNMENT);
         // Time label
         var label = new JLabel(SDF.format(new Date()), SwingConstants.CENTER);
         label.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -118,7 +118,7 @@ public class DefaultTimeZoneTest  {
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         // Add components with spacing
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        panel.add(tzid);
+        panel.add(timeZoneID);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(label);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -132,7 +132,7 @@ public class DefaultTimeZoneTest  {
             System.setProperty("user.timezone", "");
             TimeZone tz = TimeZone.getDefault();
             SDF.setTimeZone(tz);
-            tzid.setText("Time zone ID: " + tz.getID());
+            timeZoneID.setText("Time zone ID: " + tz.getID());
             label.setText(SDF.format(new Date()));
             contents.repaint();
         });
