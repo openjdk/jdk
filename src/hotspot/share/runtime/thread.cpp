@@ -609,9 +609,8 @@ void Thread::SpinRelease(volatile int * adr) {
   // Loads and stores in the critical section - which appear in program
   // order before the store that releases the lock - must also appear
   // before the store that releases the lock in memory visibility order.
-  // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
-  // the ST of 0 into the lock-word which releases the lock, so fence
-  // more than covers this on all platforms.
+  // So we need a #loadstore|#storestore "release" memory barrier before
+  // the ST of 0 into the lock-word which releases the lock.
   // However, a full fence is an overkill on most platforms,
   // the same effect can be achieved with Atomic::release_store().
   Atomic::release_store(adr, 0);
