@@ -703,7 +703,6 @@ public final class Connection implements Runnable {
                             tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
                         }
                     }
-                   // sock = null;
                 }
                 nparent = notifyParent;
             }
@@ -730,12 +729,6 @@ public final class Connection implements Runnable {
             if (debug)
                 System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
         }
-//        try {
-//            outStream.close();
-//        } catch (IOException ioEx) {
-//            if (debug)
-//                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
-//        }
     }
 
     // close socket
