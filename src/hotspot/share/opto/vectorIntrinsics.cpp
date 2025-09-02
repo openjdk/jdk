@@ -383,7 +383,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   // When using mask, mask use type needs to be VecMaskUseLoad.
   VectorMaskUseType mask_use_type = is_vector_mask(vbox_klass) ? VecMaskUseAll
                                       : is_masked_op ? VecMaskUseLoad : VecMaskNotUsed;
-  if ((sopc != 0) && !arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d is_masked_op=%d",
                     n, sopc, num_elem, type2name(elem_bt),
                     is_vector_mask(vbox_klass) ? 1 : 0, is_masked_op ? 1 : 0);
@@ -391,7 +391,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   // Return true if current platform has implemented the masked operation with predicate feature.
-  bool use_predicate = is_masked_op && sopc != 0 && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
+  bool use_predicate = is_masked_op && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
   if (is_masked_op && !use_predicate && !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=0 is_masked_op=1",
                     n, sopc, num_elem, type2name(elem_bt));
@@ -686,11 +686,20 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
-    log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
-                    num_elem, type2name(elem_bt),
-                    is_mask ? 1 : 0,
-                    bcast_mode);
-    return false; // not supported
+    // If the input long sets or unsets all lanes and Replicate is supported,
+    // generate a MaskAll or Replicate instead.
+
+    // The "maskAll" API uses the corresponding integer types for floating-point data.
+    BasicType maskall_bt = elem_bt == T_DOUBLE ? T_LONG : (elem_bt == T_FLOAT ? T_INT: elem_bt);
+    if (!(opc == Op_VectorLongToMask &&
+          VectorNode::is_maskall_type(bits_type, num_elem) &&
+          arch_supports_vector(Op_Replicate, num_elem, maskall_bt, checkFlags, true /*has_scalar_args*/))) {
+      log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
+                      num_elem, type2name(elem_bt),
+                      is_mask ? 1 : 0,
+                      bcast_mode);
+      return false; // not supported
+    }
   }
 
   Node* broadcast = nullptr;

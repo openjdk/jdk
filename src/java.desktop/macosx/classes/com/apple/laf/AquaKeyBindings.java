@@ -157,6 +157,9 @@ public final class AquaKeyBindings {
                         "shift alt KP_LEFT", null,
                         "shift alt RIGHT", null,
                         "shift alt KP_RIGHT", null,
+                        "alt BACK_SPACE", null,
+                        "ctrl W", null,
+                        "alt DELETE", null,
                 }));
     }
 

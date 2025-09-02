@@ -84,16 +84,16 @@ public sealed interface ClassModel
     ClassEntry thisClass();
 
     /**
-     * {@return the major version of this class}  It is in the range of unsigned
-     * short, {@code [0, 65535]}.
+     * {@return the major version of this class}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      *
      * @see ClassFileVersion
      */
     int majorVersion();
 
     /**
-     * {@return the minor version of this class}  It is in the range of unsigned
-     * short, {@code [0, 65535]}.
+     * {@return the minor version of this class}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      *
      * @see ClassFileVersion
      */

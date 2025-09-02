@@ -1630,6 +1630,64 @@ public:
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
 
+private:
+  // Class to keep track of wins in split_thru_phi.
+  class SplitThruPhiWins {
+  private:
+    // Region containing the phi we are splitting through.
+    const Node* _region;
+
+    // Sum of all wins regardless of where they happen. This applies to Loops phis as well as non-loop phis.
+    int _total_wins;
+
+    // For Loops, wins have different impact depending on if they happen on loop entry or on the backedge.
+    // Number of wins on a loop entry edge if the split is through a loop head,
+    // otherwise 0. Entry edge wins only pay dividends once on loop entry.
+    int _loop_entry_wins;
+    // Number of wins on a loop back-edge, which pay dividends on every iteration.
+    int _loop_back_wins;
+
+  public:
+    SplitThruPhiWins(const Node* region) :
+      _region(region),
+      _total_wins(0),
+      _loop_entry_wins(0),
+      _loop_back_wins(0) {};
+
+    void reset() {_total_wins = 0; _loop_entry_wins = 0; _loop_back_wins = 0;}
+    void add_win(int ctrl_index) {
+      if (_region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+        _loop_entry_wins++;
+      } else if (_region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+        _loop_back_wins++;
+      }
+      _total_wins++;
+    }
+    // Is this split profitable with respect to the policy?
+    bool profitable(int policy) const {
+      assert(_region->is_Loop() || (_loop_entry_wins == 0 && _loop_back_wins == 0), "wins on loop edges without a loop");
+      assert(!_region->is_Loop() || _total_wins == _loop_entry_wins + _loop_back_wins, "missed some win");
+      // In general this means that the split has to have more wins than specified
+      // in the policy. However, for loops we need to take into account where the
+      // wins happen. We need to be careful when splitting, because splitting nodes
+      // related to the iv through the phi can sufficiently rearrange the loop
+      // structure to prevent RCE and thus vectorization. Thus, we only deem splitting
+      // profitable if the win of a split is not on the entry edge, as such wins
+      // only pay off once and have a high chance of messing up the loop structure.
+      return (_loop_entry_wins == 0 && _total_wins > policy) ||
+      // If there are wins on the entry edge but the backadge also has sufficient wins,
+      // there is sufficient profitability to spilt regardless of the risk of messing
+      // up the loop structure.
+             _loop_back_wins > policy ||
+      // If the policy is less than 0, a split is always profitable, i.e. we always
+      // split. This is needed when we split a node and then must also split a
+      // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
+             policy < 0;
+    }
+  };
+
+public:
+
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
   bool intrinsify_fill(IdealLoopTree* lpt);
@@ -1982,7 +2040,7 @@ class DataNodeGraph : public StackObj {
   DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
       : _phase(phase),
         _data_nodes(data_nodes),
-        // Use 107 as best guess which is the first resize value in ResizeableResourceHashtable::large_table_sizes.
+        // Use 107 as best guess which is the first resize value in ResizeableHashTable::large_table_sizes.
         _orig_to_new(107, MaxNodeLimit)
   {
 #ifdef ASSERT

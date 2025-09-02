@@ -77,7 +77,7 @@ public class SourceLauncherTest extends TestRunner {
         System.err.println("version: " + thisVersion);
     }
 
-    private final ToolBox tb;
+    final ToolBox tb;
     private static final String thisVersion = System.getProperty("java.specification.version");
 
     /*
@@ -716,39 +716,26 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     /*
-     * Tests in which main throws an exception without a stacktrace.
+     * Tests in which main throws a traceless exception.
      */
     @Test
-    public void testTargetException2(Path base) throws IOException {
+    public void testTracelessTargetException(Path base) throws IOException {
         tb.writeJavaFiles(base, """
-                public class TestLauncher {
-                    public static TestLauncher testCheckcast(Object arg) {
-                        return (TestLauncher)arg;
-                    }
-
-                    public static void main(String[] args) {
-                        // Warmup to trigger C2 compilation
-                        TestLauncher t = new TestLauncher();
-                        for (int i = 0; i < 10_000; ++i) {
-                            testCheckcast(t);
-                            try {
-                                testCheckcast(42);
-                            } catch (Exception e) {
-                                // Expected
-                            }
-                        }
-                        // This will throw a ClassCastException without
-                        // a stack trace if OmitStackTraceInFastThrow
-                        // is enabled (default)
-                        testCheckcast(42);
-                    }
+            class TestLauncherException extends RuntimeException {
+                TestLauncherException() {
+                    super("No trace", null, true, false); // No writable trace
                 }
-                """);
-        Path file = base.resolve("TestLauncher.java");
-        Result r = run(file, Collections.emptyList(), List.of("3"));
-        checkEmpty("stdout", r.stdOut);
-        checkEmpty("stderr", r.stdErr);
-        checkTrace("exception", r.exception, "java.lang.ClassCastException");
+
+                public static void main(String... args) {
+                    throw new TestLauncherException();
+                }
+            }
+            """);
+        Path file = base.resolve("TestLauncherException.java");
+        SourceLauncherTest.Result r = run(file, List.of(), List.of("3"));
+        checkEmpty("stdout", r.stdOut());
+        checkEmpty("stderr", r.stdErr());
+        checkTrace("exception", r.exception(), "TestLauncherException: No trace");
     }
 
     @Test

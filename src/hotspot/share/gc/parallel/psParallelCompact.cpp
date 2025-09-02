@@ -685,6 +685,9 @@ void PSParallelCompact::post_compact()
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 
+  // Need to clear claim bits for the next full-gc (marking and adjust-pointers).
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
@@ -966,18 +969,10 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
+  assert(ref_processor() != nullptr, "Sanity");
 
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
-
-  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
-}
-
-// This method contains no policy. You should probably
-// be calling invoke() instead.
-bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  assert(ref_processor() != nullptr, "Sanity");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -1288,9 +1283,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       ClassLoaderDataGraph::purge(true /* at_safepoint */);
       DEBUG_ONLY(MetaspaceUtils::verify();)
     }
-
-    // Need to clear claim bits for the next mark.
-    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {
