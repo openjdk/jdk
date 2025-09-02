@@ -158,11 +158,9 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @param withDefaultCertPathConstraints whether or not to apply the
      *                                       default certpath algorithm constraints too
      * @return a AlgorithmConstraints instance
-     * @throws NullPointerException if {@code engine} is null
      */
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
                                         boolean withDefaultCertPathConstraints) {
-        Objects.requireNonNull(engine, "QuicTLSEngine");
         final AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(engine);
         return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
@@ -181,12 +179,10 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @param withDefaultCertPathConstraints whether or not to apply the default certpath
      *                                       algorithm constraints too
      * @return a AlgorithmConstraints instance
-     * @throws NullPointerException if {@code engine} is null
      */
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
                                         String[] supportedAlgorithms,
                                         boolean withDefaultCertPathConstraints) {
-        Objects.requireNonNull(engine, "QuicTLSEngine");
         final AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(engine);
         return new SSLAlgorithmConstraints(
