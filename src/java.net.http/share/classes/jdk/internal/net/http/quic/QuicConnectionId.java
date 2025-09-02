@@ -136,7 +136,7 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return hashCode;
     }
 
