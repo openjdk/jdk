@@ -181,7 +181,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
             // we will return a slice.
             int todeliver = (int)(end - offset);
 
-            assert end == Math.addExact(offset, todeliver);
+            assert end == offset + todeliver;
             // update the offset with the new position
             this.offset = end;
             // cleanup the queue
