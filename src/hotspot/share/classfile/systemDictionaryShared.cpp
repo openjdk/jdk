@@ -1179,6 +1179,12 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   }
 }
 
+void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
+  get_archive(is_static_archive)->_builtin_dictionary.iterate([&] (const RunTimeClassInfo* record) {
+      classes->append(record->klass());
+    });
+}
+
 class SharedDictionaryPrinter : StackObj {
   outputStream* _st;
   int _index;
