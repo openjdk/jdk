@@ -2501,10 +2501,9 @@ Java HotSpot VM.
 
 `-XX:MaxGCPauseMillis=`*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
-    soft goal, and the JVM will make its best effort to achieve it. The
-    specified value doesn't adapt to your heap size. By default, for G1 the
-    maximum pause time target is 200 milliseconds. The other generational
-    collectors do not use a pause time goal by default.
+    soft goal, and the JVM will make its best effort to achieve it. Only G1
+    and Parallel support a maximum GC pause time target. For G1, the default
+    maximum pause time target is 200 milliseconds.
 
     The following example shows how to set the maximum target pause time to 500
     ms:
@@ -2809,9 +2808,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as
