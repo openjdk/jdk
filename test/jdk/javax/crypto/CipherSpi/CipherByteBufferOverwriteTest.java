@@ -69,68 +69,68 @@ public class CipherByteBufferOverwriteTest {
         ALLOCATE, DIRECT, WRAP, MEMORY_SEGMENT;
     }
 
-    private static Arena arena = Arena.ofConfined();
-
     public static void main(String[] args) throws Exception {
+        transformation = args[0];
+        int offset = Integer.parseInt(args[1]);
+        boolean useRO = Boolean.parseBoolean(args[2]);
 
-        try {
-            transformation = args[0];
-            int offset = Integer.parseInt(args[1]);
-            boolean useRO = Boolean.parseBoolean(args[2]);
+        if (transformation.equalsIgnoreCase("AES/GCM/NoPadding")) {
+            params = new GCMParameterSpec(16 * 8, new byte[16]);
+        } else {
+            params = new IvParameterSpec(new byte[16]);
+        }
+        // an all-zeros plaintext is the easiest way to demonstrate the issue,
+        // but it fails with any plaintext, of course
+        byte[] expectedPT = new byte[PLAINTEXT_SIZE];
+        byte[] buf = new byte[offset + CIPHERTEXT_BUFFER_SIZE];
+        System.arraycopy(expectedPT, 0, buf, 0, PLAINTEXT_SIZE);
 
-            if (transformation.equalsIgnoreCase("AES/GCM/NoPadding")) {
-                params = new GCMParameterSpec(16 * 8, new byte[16]);
-            } else {
-                params = new IvParameterSpec(new byte[16]);
-            }
-            // an all-zeros plaintext is the easiest way to demonstrate the issue,
-            // but it fails with any plaintext, of course
-            byte[] expectedPT = new byte[PLAINTEXT_SIZE];
-            byte[] buf = new byte[offset + CIPHERTEXT_BUFFER_SIZE];
-            System.arraycopy(expectedPT, 0, buf, 0, PLAINTEXT_SIZE);
+        // generate expected cipher text using byte[] methods
+        Cipher c = Cipher.getInstance(transformation);
+        c.init(Cipher.ENCRYPT_MODE, KEY, params);
+        byte[] expectedCT = c.doFinal(expectedPT);
 
-            // generate expected cipher text using byte[] methods
-            Cipher c = Cipher.getInstance(transformation);
-            c.init(Cipher.ENCRYPT_MODE, KEY, params);
-            byte[] expectedCT = c.doFinal(expectedPT);
+        // Test#1: against ByteBuffer generated with allocate(int) call
+        prepareBuffers(BufferType.ALLOCATE, useRO, buf.length,
+                buf, 0, PLAINTEXT_SIZE, offset);
 
-            // Test#1: against ByteBuffer generated with allocate(int) call
-            prepareBuffers(BufferType.ALLOCATE, useRO, buf.length,
-                    buf, 0, PLAINTEXT_SIZE, offset);
+        runTest(offset, expectedPT, expectedCT);
+        System.out.println("\tALLOCATE: passed");
 
-            runTest(offset, expectedPT, expectedCT);
-            System.out.println("\tALLOCATE: passed");
+        // Test#2: against direct ByteBuffer
+        prepareBuffers(BufferType.DIRECT, useRO, buf.length,
+                buf, 0, PLAINTEXT_SIZE, offset);
 
-            // Test#2: against direct ByteBuffer
-            prepareBuffers(BufferType.DIRECT, useRO, buf.length,
-                    buf, 0, PLAINTEXT_SIZE, offset);
+        runTest(offset, expectedPT, expectedCT);
+        System.out.println("\tDIRECT: passed");
 
-            runTest(offset, expectedPT, expectedCT);
-            System.out.println("\tDIRECT: passed");
-
-            // Test#3: against ByteBuffer backed by MemorySegment
+        // Test#3: against ByteBuffer backed by MemorySegment
+        try (Arena arena = Arena.ofConfined()) {
             prepareBuffers(BufferType.MEMORY_SEGMENT, useRO, buf.length,
-                    buf, 0, PLAINTEXT_SIZE, offset);
+                    buf, 0, PLAINTEXT_SIZE, offset, arena);
             runTest(offset, expectedPT, expectedCT);
             System.out.println("\tMEMSEGMENT: passed");
-
-            // Test#4: against ByteBuffer wrapping existing array
-            prepareBuffers(BufferType.WRAP, useRO, buf.length,
-                    buf, 0, PLAINTEXT_SIZE, offset);
-
-            runTest(offset, expectedPT, expectedCT);
-            System.out.println("\tWRAP: passed");
-
-
-            System.out.println("All Tests Passed");
-        } finally {
-            arena.close();
         }
+
+        // Test#4: against ByteBuffer wrapping existing array
+        prepareBuffers(BufferType.WRAP, useRO, buf.length,
+                buf, 0, PLAINTEXT_SIZE, offset);
+
+        runTest(offset, expectedPT, expectedCT);
+        System.out.println("\tWRAP: passed");
+
+        System.out.println("All Tests Passed");
     }
 
     private static void prepareBuffers(BufferType type,
             boolean useRO, int bufSz, byte[] in, int inOfs, int inLen,
             int outOfs) {
+        prepareBuffers(type, useRO, bufSz, in, inOfs, inLen, outOfs, null);
+    }
+
+    private static void prepareBuffers(BufferType type,
+                                       boolean useRO, int bufSz, byte[] in, int inOfs, int inLen,
+                                       int outOfs, Arena arena) {
         switch (type) {
             case ALLOCATE:
                 outBuf = ByteBuffer.allocate(bufSz);

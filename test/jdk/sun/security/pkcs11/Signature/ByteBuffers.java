@@ -86,7 +86,7 @@ public class ByteBuffers extends PKCS11Test {
         verify(sig, signature, b4, random);
 
         // test 4: ByteBuffer from MemorySegment
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             ByteBuffer b5 = arena.allocate(t.length).asByteBuffer();
             b5.put(t);
             b5.clear();

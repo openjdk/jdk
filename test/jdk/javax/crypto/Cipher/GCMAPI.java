@@ -28,8 +28,8 @@
  * @author Brad Wetmore
  */
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 

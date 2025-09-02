@@ -82,7 +82,7 @@ public class ByteBuffers {
         }
 
         // test 4: ByteBuffer backed by a MemorySegment
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(t.length);
             ByteBuffer b5 = segment.asByteBuffer();
             b5.put(t);

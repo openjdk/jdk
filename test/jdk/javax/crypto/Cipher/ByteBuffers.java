@@ -64,7 +64,7 @@ public class ByteBuffers {
 
         byte[] outBytes = cipher.doFinal(t);
 
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             // create ByteBuffers for input (i1, i2, i3) and fill them
             ByteBuffer i0 = ByteBuffer.allocate(n + 256);
             i0.position(random.nextInt(256));

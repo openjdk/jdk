@@ -75,7 +75,7 @@ public class DirectBBRemaining {
         System.out.println("Output test results for every "
                 + outputFrequency + " tests...");
 
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             for (int size = 0; size <= testSizes; size++) {
                 boolean output = (size % outputFrequency) == 0;
                 if (output) {

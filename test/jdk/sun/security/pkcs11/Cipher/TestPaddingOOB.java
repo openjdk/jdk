@@ -75,7 +75,7 @@ public class TestPaddingOOB extends PKCS11Test {
 
         testWithBuffers(bs, plainArr, c, key, plainArr2, ByteBuffer::allocate);
 
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             testWithBuffers(bs, plainArr, c, key, plainArr2,
                     (size) -> arena.allocate(size).asByteBuffer());
         }

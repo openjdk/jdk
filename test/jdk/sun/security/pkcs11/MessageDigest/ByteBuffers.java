@@ -34,7 +34,8 @@
 
 import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.Provider;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.List;
@@ -98,7 +99,7 @@ public class ByteBuffers extends PKCS11Test {
             throw new Exception("Test 3 failed");
         }
 
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             ByteBuffer b5 = arena.allocate(n).asByteBuffer();
             b5.put(data);
             b5.clear();

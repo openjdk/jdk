@@ -32,10 +32,12 @@
  */
 
 import java.lang.foreign.Arena;
-import java.util.*;
-import java.nio.*;
+import java.util.Random;
+import java.util.Arrays;
+import java.nio.ByteBuffer;
 
-import java.security.*;
+import java.security.Provider;
+import java.security.Security;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -79,7 +81,7 @@ public class ByteBuffers {
         verify(mac, macValue, b4, random);
 
         // test 4: ByteBuffer from MemorySegment
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             ByteBuffer b5 = arena.allocate(t.length).asByteBuffer();
             b5.put(t);
             b5.clear();

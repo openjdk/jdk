@@ -135,7 +135,7 @@ public class TestSymmCiphers extends PKCS11Test {
     private static void test(Cipher cipher, int mode, SecretKey key,
             AlgorithmParameters params, int firstBlkSize,
             byte[] in, byte[] answer) throws Exception {
-        try(Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             // test setup
             long startTime, endTime;
             cipher.init(mode, key, params);
@@ -210,7 +210,7 @@ public class TestSymmCiphers extends PKCS11Test {
         }
     }
 
-    private static void execTest(Cipher cipher, byte[]answer,
+    private static void execTest(Cipher cipher, byte[] answer,
                                  ByteBuffer inbuf, ByteBuffer outbuf, String message) throws Exception {
         long startTime = System.nanoTime();
         cipher.update(inbuf, outbuf);
