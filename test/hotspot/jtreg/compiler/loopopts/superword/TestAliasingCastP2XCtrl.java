@@ -29,6 +29,7 @@
  *          from floating over a SafePoint that could move the oop,
  *          and render the cast value stale.
  *
+ * @requires vm.gc == "G1" | vm.gc == "null"
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCastP2XCtrl::test
