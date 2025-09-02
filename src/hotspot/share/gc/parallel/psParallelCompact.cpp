@@ -969,18 +969,10 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
+  assert(ref_processor() != nullptr, "Sanity");
 
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
-
-  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
-}
-
-// This method contains no policy. You should probably
-// be calling invoke() instead.
-bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  assert(ref_processor() != nullptr, "Sanity");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
