@@ -986,23 +986,23 @@ struct IntCmp {
 };
 
 TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
-  typedef RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
-    TreeType tree;
-    const int i1 = 82924;
-    const char* const s1 = "[82924] = 1";
-    const int i2 = -13591;
-    const char* const s2 = "[-13591] = 2";
-    const int i3 = 0;
-    const char* const s3 = "[0] = 3";
-    tree.upsert(i1, 1U);
-    tree.upsert(i2, 2U);
-    tree.upsert(i3, 3U);
-    stringStream ss;
-    tree.print_on(&ss);
-    const char* const N = nullptr;
-    ASSERT_NE(strstr(ss.base(), s1), N);
-    ASSERT_NE(strstr(ss.base(), s2), N);
-    ASSERT_NE(strstr(ss.base(), s3), N);
+  using TreeType = RBTreeCHeap<int, unsigned, IntCmp, mtTest>;
+  TreeType tree;
+  const int i1 = 82924;
+  const char* const s1 = "[82924] = 1";
+  const int i2 = -13591;
+  const char* const s2 = "[-13591] = 2";
+  const int i3 = 0;
+  const char* const s3 = "[0] = 3";
+  tree.upsert(i1, 1U);
+  tree.upsert(i2, 2U);
+  tree.upsert(i3, 3U);
+  stringStream ss;
+  tree.print_on(&ss);
+  const char* const N = nullptr;
+  ASSERT_NE(strstr(ss.base(), s1), N);
+  ASSERT_NE(strstr(ss.base(), s2), N);
+  ASSERT_NE(strstr(ss.base(), s3), N);
 }
 
 TEST_VM_F(RBTreeTest, IntrusiveTest) {
@@ -1079,3 +1079,15 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   }
 }
 
+struct OomAllocator {
+  void* allocate(size_t sz) {
+    return nullptr;
+  }
+  void free(void* ptr) {}
+};
+TEST_VM_F(RBTreeTest, AllocatorMayReturnNull) {
+  RBTree<int, int, Cmp, OomAllocator> rbtree;
+  bool success = rbtree.upsert(5, 5);
+  EXPECT_EQ(false, success);
+  // The test didn't exit the VM, so it was succesful.
+}

@@ -199,8 +199,8 @@ class VM_Version : public Abstract_VM_Version {
   union ExtCpuid8Ecx {
     uint32_t value;
     struct {
-      uint32_t cores_per_cpu : 8,
-                             : 24;
+      uint32_t threads_per_cpu : 8,
+                               : 24;
     } bits;
   };
 
@@ -276,7 +276,8 @@ class VM_Version : public Abstract_VM_Version {
         fast_short_rep_mov : 1,
                            : 9,
                  serialize : 1,
-                           : 5,
+                     hybrid: 1,
+                           : 4,
                    cet_ibt : 1,
                            : 2,
               avx512_fp16  : 1,
@@ -444,7 +445,8 @@ protected:
     decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
     decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
-    decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/
+    decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
+    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -877,6 +879,7 @@ public:
   static bool supports_avx512_fp16()  { return _features.supports_feature(CPU_AVX512_FP16); }
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
+  static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }

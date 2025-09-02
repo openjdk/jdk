@@ -162,6 +162,20 @@ inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
 }
 
 template <typename T, bool Parallel>
+template <typename Function, typename... Args>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_if(T* elem, Function predicate, Args&&... args) {
+  size_t index;
+  while (next_index(&index)) {
+    if (predicate(index_to_elem(index), args...)) {
+      *elem = index_to_elem(index);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next_index(size_t* index) {
   if (Parallel) {
     return next_parallel(index);
