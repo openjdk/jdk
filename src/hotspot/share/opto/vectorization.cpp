@@ -1125,7 +1125,7 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
       if (variable->bottom_type()->isa_ptr() != nullptr) {
-        // Make sure that ctrl is late enough, so that we do not
+        // Use a ctrl that is late enough, so that we do not
         // evaluate the cast before a SafePoint.
         variable = new CastP2XNode(ctrl, variable);
         phase->register_new_node(variable, ctrl);

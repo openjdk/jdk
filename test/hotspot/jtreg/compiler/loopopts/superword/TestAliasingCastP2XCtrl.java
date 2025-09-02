@@ -28,7 +28,6 @@
  *          the aliasing runtime check, preventing the CastP2X
  *          from floating over a SafePoint that could move the oop,
  *          and render the cast value stale.
- *
  * @requires vm.gc == "G1" | vm.gc == "null"
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
@@ -56,7 +55,7 @@
 /*
  * @test id=vanilla
  * @bug 8366490
- * @run driver compiler.loopopts.superword.TestAliasingCastP2XCtrl
+ * @run main compiler.loopopts.superword.TestAliasingCastP2XCtrl
  */
 
 package compiler.loopopts.superword;
