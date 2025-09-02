@@ -166,7 +166,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p);
   } else if (p0->is_Cmp()) {
     assert(p0->req() == 3, "is it true?");
-    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype);
+    // TODO: remove req above and below
+    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, p0->req(), prototype);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);

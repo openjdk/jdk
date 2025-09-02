@@ -676,8 +676,8 @@ struct VTransformBoolTest {
 // The Bool node takes care of "apply".
 class VTransformCmpVectorNode : public VTransformVectorNode {
 public:
-  VTransformCmpVectorNode(VTransform& vtransform, /* TODO: req*/const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, 3, prototype) {}
+  VTransformCmpVectorNode(VTransform& vtransform, int req, const VTransformVectorNodePrototype prototype) :
+    VTransformVectorNode(vtransform, req, prototype) {}
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
