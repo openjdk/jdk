@@ -461,11 +461,11 @@ public:
     enum Dir { Left, Right };
     struct node_pair { const RBNode<K, V>* current; RBNode<K, V>* other_parent; Dir d; };
     struct stack {
-      node_pair stack[64];
+      node_pair s[64];
       int idx = 0;
       stack() : idx(0) {}
-      node_pair pop() { idx--; return stack[idx]; };
-      void push(node_pair n) { stack[idx] = n; idx++; };
+      node_pair pop() { idx--; return s[idx]; };
+      void push(node_pair n) { s[idx] = n; idx++; };
       bool is_empty() { return idx == 0; };
     };
 
