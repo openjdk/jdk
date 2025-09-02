@@ -1982,7 +1982,7 @@ public class Attr extends JCTree.Visitor {
                         twrResult.check(resource, resource.type);
 
                         //check that resource type cannot throw InterruptedException
-                        checkAutoCloseable(resource.pos(), localEnv, resource.type);
+                        checkAutoCloseable(resource.pos(), localEnv, resource.type, true);
 
                         VarSymbol var = ((JCVariableDecl) resource).sym;
 
@@ -2031,7 +2031,7 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    void checkAutoCloseable(DiagnosticPosition pos, Env<AttrContext> env, Type resource) {
+    void checkAutoCloseable(DiagnosticPosition pos, Env<AttrContext> env, Type resource, boolean useSite) {
         if (!resource.isErroneous() &&
             types.asSuper(resource, syms.autoCloseableType.tsym) != null &&
             !types.isSameType(resource, syms.autoCloseableType)) { // Don't emit warning for AutoCloseable itself
@@ -2049,6 +2049,7 @@ public class Attr extends JCTree.Visitor {
                 log.popDiagnosticHandler(discardHandler);
             }
             if (close.kind == MTH &&
+                    (useSite || close.owner != syms.autoCloseableType.tsym) &&
                     close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
                     chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
                 log.warning(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
@@ -5647,7 +5648,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkImplementations(tree);
 
         //check that a resource implementing AutoCloseable cannot throw InterruptedException
-        checkAutoCloseable(tree.pos(), env, c.type);
+        checkAutoCloseable(tree.pos(), env, c.type, false);
 
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
             // Attribute declaration
