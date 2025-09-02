@@ -32,6 +32,8 @@
 
 #define PRAGMA_DEPRECATED_IGNORED PRAGMA_DISABLE_MSVC_WARNING(4996)
 
+#pragma deprecated(NULL)
+
 // This macro is used by the IMPORTED variants of FORBID_C_FUNCTION.
 //
 // Some, but not all, functions we want to forbid using must include a
