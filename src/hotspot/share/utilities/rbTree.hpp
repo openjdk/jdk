@@ -459,7 +459,7 @@ public:
     assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
     assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
     enum Dir { Left, Right };
-    struct node_pair { RBNode<K, V>* current; RBNode<K, V>* other_parent; Dir d; }
+    struct node_pair { RBNode<K, V>* current; RBNode<K, V>* other_parent; Dir d; };
     struct stack {
       node_pair stack[64];
       int idx = 0;
