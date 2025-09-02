@@ -1767,7 +1767,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     debug.log("calling subscriber.onError: %s", (Object) t);
                 subscriber.onError(t);
             } catch (Throwable x) {
-                Log.logError("Subscriber::onError threw exception: {0}", t);
+                Log.logError("Subscriber::onError threw exception: {0}", x);
             } finally {
                 cancelImpl(t, Http3Error.H3_REQUEST_CANCELLED);
                 responseData.clear();
