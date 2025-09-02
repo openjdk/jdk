@@ -350,8 +350,8 @@ public final class DynamicTable implements HeadersTable {
     public long toRelative(long absoluteId) {
         var readLock = lock.readLock();
         readLock.lock();
-        assert absoluteId < head;
         try {
+            assert absoluteId < head;
             return head - 1 - absoluteId;
         } finally {
             readLock.unlock();
