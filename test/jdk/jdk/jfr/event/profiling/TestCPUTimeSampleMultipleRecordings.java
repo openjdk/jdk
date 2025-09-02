@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.EventNames;
  * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.profiling.TestCPUTimeSampleMultipleRecordings
+ * @run main/timeout=480 jdk.jfr.event.profiling.TestCPUTimeSampleMultipleRecordings
  */
 public class TestCPUTimeSampleMultipleRecordings {
 

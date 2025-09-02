@@ -25,7 +25,7 @@
  * @requires vm.continuations
  * @library /test/lib
  * @bug 8345294
- * @run main/othervm/timeout=200/native --enable-native-access=ALL-UNNAMED Starvation 100000
+ * @run main/othervm/timeout=800/native --enable-native-access=ALL-UNNAMED Starvation 100000
  */
 
 import java.time.Duration;

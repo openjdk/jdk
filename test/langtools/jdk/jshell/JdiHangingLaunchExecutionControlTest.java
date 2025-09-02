@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Tests for JDI connector timeout failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @build HangingRemoteAgent
- * @run testng JdiHangingLaunchExecutionControlTest
+ * @run testng/timeout=480 JdiHangingLaunchExecutionControlTest
  */
 
 import org.testng.annotations.Test;
