@@ -492,6 +492,8 @@ public:
       } else {
         n.other_parent->_right = new_node;
       }
+      new_node->set_parent(n.other_parent);
+      new_node->_parent |= n.current->_parent & 0x1;
       visit_stack.push({n.current->_left, new_node, Left});
       visit_stack.push({n.current->_right, new_node, Right});
     }
