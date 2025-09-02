@@ -364,6 +364,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
     } else {
       // We are only printing the hierarchy of a specific class.
       if (strcmp(classname, cie->klass()->external_name()) == 0) {
+        assert(cie->klass()->is_instance_klass(), "elements array contains only instance klasses");
         KlassHierarchy::set_do_print_for_class_hierarchy(cie, &cit, print_subclasses);
       }
     }
