@@ -135,7 +135,7 @@ bool CgroupV1Controller::needs_hierarchy_adjustment() {
 }
 
 static inline
-void verbose_log(julong read_mem_limit, julong host_mem) {
+void verbose_log(julong read_mem_limit, size_t host_mem) {
   if (log_is_enabled(Debug, os, container)) {
     jlong mem_limit = (jlong)read_mem_limit; // account for negative values
     if (mem_limit < 0 || read_mem_limit >= host_mem) {
@@ -150,13 +150,13 @@ void verbose_log(julong read_mem_limit, julong host_mem) {
         // caps it at host_mem since Cg v1 has no value to represent 'max'.
         reason = "ignored";
       }
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value %zu",
                                reason, mem_limit, host_mem);
     }
   }
 }
 
-jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::read_memory_limit_in_bytes(size_t phys_mem) {
   julong memlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
   if (memlimit >= phys_mem) {
@@ -180,10 +180,10 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
  *    * -1 if there isn't any limit in place (note: includes values which exceed a physical
  *      upper bound)
  */
-jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
+jlong CgroupV1MemoryController::read_mem_swap(size_t host_swap) {
   julong memswlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
-  if (memswlimit >= host_total_memsw) {
+  if (memswlimit >= host_swap) {
     log_trace(os, container)("Memory and Swap Limit is: Unlimited");
     return (jlong)-1;
   } else {
@@ -191,7 +191,7 @@ jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
   }
 }
 
-jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) {
+jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) {
   jlong memory_swap = read_mem_swap(host_mem + host_swap);
   if (memory_swap == -1) {
     return memory_swap;
@@ -219,7 +219,7 @@ jlong memory_swap_usage_impl(CgroupController* ctrl) {
   return (jlong)memory_swap_usage;
 }
 
-jlong CgroupV1MemoryController::memory_and_swap_usage_in_bytes(julong phys_mem, julong host_swap) {
+jlong CgroupV1MemoryController::memory_and_swap_usage_in_bytes(size_t phys_mem, size_t host_swap) {
   jlong memory_sw_limit = memory_and_swap_limit_in_bytes(phys_mem, host_swap);
   jlong memory_limit = read_memory_limit_in_bytes(phys_mem);
   if (memory_sw_limit > 0 && memory_limit > 0) {
@@ -237,7 +237,7 @@ jlong CgroupV1MemoryController::read_mem_swappiness() {
   return (jlong)swappiness;
 }
 
-jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(size_t phys_mem) {
   julong memsoftlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.soft_limit_in_bytes", "Memory Soft Limit", memsoftlimit);
   if (memsoftlimit >= phys_mem) {
@@ -335,7 +335,7 @@ jlong CgroupV1MemoryController::kernel_memory_usage_in_bytes() {
   return (jlong)kmem_usage;
 }
 
-jlong CgroupV1MemoryController::kernel_memory_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::kernel_memory_limit_in_bytes(size_t phys_mem) {
   julong kmem_limit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.limit_in_bytes", "Kernel Memory Limit", kmem_limit);
   if (kmem_limit >= phys_mem) {
@@ -350,7 +350,7 @@ jlong CgroupV1MemoryController::kernel_memory_max_usage_in_bytes() {
   return (jlong)kmem_max_usage;
 }
 
-void CgroupV1MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
+void CgroupV1MemoryController::print_version_specific_info(outputStream* st, size_t phys_mem) {
   jlong kmem_usage = kernel_memory_usage_in_bytes();
   jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
   jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();

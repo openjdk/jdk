@@ -231,16 +231,16 @@ class CgroupCpuacctController: public CHeapObj<mtInternal> {
 // Pure virtual class representing version agnostic memory controllers
 class CgroupMemoryController: public CHeapObj<mtInternal> {
   public:
-    virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong read_memory_limit_in_bytes(size_t host_mem) = 0;
     virtual jlong memory_usage_in_bytes() = 0;
-    virtual jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) = 0;
-    virtual jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) = 0;
-    virtual jlong memory_soft_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) = 0;
+    virtual jlong memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) = 0;
+    virtual jlong memory_soft_limit_in_bytes(size_t host_mem) = 0;
     virtual jlong memory_throttle_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
-    virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
+    virtual void print_version_specific_info(outputStream* st, size_t host_mem) = 0;
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
     virtual const char* subsystem_path() = 0;

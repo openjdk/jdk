@@ -217,8 +217,7 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::Linux::available_memory_in_container() {
-  julong avail_mem = static_cast<julong>(-1L);
+bool os::Linux::available_memory_in_container(size_t& value) {
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     jlong mem_usage;
@@ -226,10 +225,11 @@ julong os::Linux::available_memory_in_container() {
       log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
     }
     if (mem_limit > 0 && mem_usage > 0) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      value = mem_limit > mem_usage ? (size_t)mem_limit - (size_t)mem_usage : 0;
+      return true;
     }
   }
-  return avail_mem;
+  return false;
 }
 
 bool os::available_memory(size_t& value) {
@@ -237,10 +237,10 @@ bool os::available_memory(size_t& value) {
 }
 
 bool os::Linux::available_memory(size_t& value) {
-  julong avail_mem = available_memory_in_container();
-  if (avail_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    value = static_cast<size_t>(avail_mem);
+  size_t avail_mem = 0;
+  if (available_memory_in_container(avail_mem)) {
+    log_trace(os)("available container memory: %zu", avail_mem);
+    value = avail_mem;
     return true;
   }
 
@@ -248,22 +248,22 @@ bool os::Linux::available_memory(size_t& value) {
   if (fp != nullptr) {
     char buf[80];
     do {
-      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &avail_mem) == 1) {
+      if (fscanf(fp, "MemAvailable: %zu kB", &avail_mem) == 1) {
         avail_mem *= K;
         break;
       }
     } while (fgets(buf, sizeof(buf), fp) != nullptr);
     fclose(fp);
   }
-  if (avail_mem == static_cast<julong>(-1L)) {
+  if (avail_mem == 0) {
     size_t free_mem = 0;
     if (!free_memory(free_mem)) {
       return false;
     }
-    avail_mem = static_cast<julong>(free_mem);
+    avail_mem = free_mem;
   }
-  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  value = static_cast<size_t>(avail_mem);
+  log_trace(os)("available memory: %zu", avail_mem);
+  value = avail_mem;
   return true;
 }
 
@@ -274,10 +274,10 @@ bool os::free_memory(size_t& value) {
 bool os::Linux::free_memory(size_t& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem = available_memory_in_container();
-  if (free_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<size_t>(free_mem);
+  size_t free_mem = 0;
+  if (available_memory_in_container(free_mem)) {
+    log_trace(os)("free container memory: %zu", free_mem);
+    value = free_mem;
     return true;
   }
 
@@ -285,9 +285,9 @@ bool os::Linux::free_memory(size_t& value) {
   if (ret != 0) {
     return false;
   }
-  free_mem = (julong)si.freeram * si.mem_unit;
-  log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  value = static_cast<size_t>(free_mem);
+  free_mem = static_cast<size_t>(si.freeram * si.mem_unit);
+  log_trace(os)("free memory: %zu", free_mem);
+  value = free_mem;
   return true;
 }
 
@@ -517,10 +517,10 @@ pid_t os::Linux::gettid() {
 
 // Returns the amount of swap currently configured, in bytes.
 // This can change at any time.
-julong os::Linux::host_swap() {
+size_t os::Linux::host_swap() {
   struct sysinfo si;
   sysinfo(&si);
-  return (julong)(si.totalswap * si.mem_unit);
+  return static_cast<size_t>((si.totalswap * si.mem_unit));
 }
 
 // Most versions of linux have a bug where the number of processors are

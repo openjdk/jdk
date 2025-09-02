@@ -65,10 +65,10 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   char* cg_path = os::strdup(orig);
   char* last_slash;
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  size_t phys_mem = os::Linux::physical_memory();
   char* limit_cg_path = nullptr;
   jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
-  jlong lowest_limit = limit < 0 ? phys_mem : limit;
+  jlong lowest_limit = limit < 0 ? static_cast<jlong>(phys_mem) : limit;
   julong orig_limit = ((julong)lowest_limit) != phys_mem ? lowest_limit : phys_mem;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path

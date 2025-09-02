@@ -2519,7 +2519,7 @@ WB_END
 
 // Physical swap of the host machine (including containers), Linux only.
 WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
-  LINUX_ONLY(return (jlong)os::Linux::host_swap();)
+  LINUX_ONLY(return static_cast<jlong>(os::Linux::host_swap());)
   return -1; // Not used/implemented on other platforms
 WB_END
 

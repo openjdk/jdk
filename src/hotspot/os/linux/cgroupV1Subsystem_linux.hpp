@@ -77,19 +77,19 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
-    jlong read_memory_limit_in_bytes(julong upper_bound) override;
+    jlong read_memory_limit_in_bytes(size_t host_mem) override;
     jlong memory_usage_in_bytes() override;
-    jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) override;
-    jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) override;
-    jlong memory_soft_limit_in_bytes(julong upper_bound) override;
+    jlong memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) override;
+    jlong memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) override;
+    jlong memory_soft_limit_in_bytes(size_t host_mem) override;
     jlong memory_throttle_limit_in_bytes() override;
     jlong memory_max_usage_in_bytes() override;
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
     jlong kernel_memory_usage_in_bytes();
-    jlong kernel_memory_limit_in_bytes(julong host_mem);
+    jlong kernel_memory_limit_in_bytes(size_t host_mem);
     jlong kernel_memory_max_usage_in_bytes();
-    void print_version_specific_info(outputStream* st, julong host_mem) override;
+    void print_version_specific_info(outputStream* st, size_t host_mem) override;
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
@@ -101,7 +101,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     const char* cgroup_path() override { return reader()->cgroup_path(); }
   private:
     jlong read_mem_swappiness();
-    jlong read_mem_swap(julong host_total_memsw);
+    jlong read_mem_swap(size_t host_swap);
 
   public:
     CgroupV1MemoryController(const CgroupV1Controller& reader)
