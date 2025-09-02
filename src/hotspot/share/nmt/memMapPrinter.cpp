@@ -273,6 +273,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st) {
   // Prepare NMT info cache. But only do so if we print individual mappings,
   // otherwise, we won't need it and can save that work.
   if (MemTracker::enabled()) {
+    MemTracker::NmtVirtualMemoryLocker nvml;
     nmt_info.fill_from_nmt();
   } else {
     st->print_cr("NMT is disabled. VM info not available.");

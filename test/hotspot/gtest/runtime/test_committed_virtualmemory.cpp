@@ -38,10 +38,16 @@ public:
 
     MemTracker::record_thread_stack(stack_end, stack_size);
 
-    VirtualMemoryTracker::Instance::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      VirtualMemoryTracker::Instance::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
+    }
 
     // snapshot current stack usage
-    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+    }
 
     ReservedMemoryRegion rmr_found;
     {
@@ -108,21 +114,27 @@ public:
     // trigger the test
     VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
-    ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    }
     ASSERT_TRUE(rmr_found.is_valid());
     ASSERT_EQ(rmr_found.base(), (address)base);
 
 
     bool precise_tracking_supported = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
-      if (cmr.size() == size) {
-        return false;
-      } else {
-        precise_tracking_supported = true;
-        check_covered_pages(cmr.base(), cmr.size(), (address)base, touch_pages, page_num);
-      }
-      return true;
-    });
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
+        if (cmr.size() == size) {
+          return false;
+        } else {
+          precise_tracking_supported = true;
+          check_covered_pages(cmr.base(), cmr.size(), (address)base, touch_pages, page_num);
+        }
+        return true;
+      });
+    }
 
     if (precise_tracking_supported) {
       // All touched pages should be committed
@@ -133,8 +145,10 @@ public:
 
     // Cleanup
     os::disclaim_memory(base, size);
-    VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
-    rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    {
+      VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
+      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+    }
     ASSERT_TRUE(!rmr_found.is_valid());
   }
 

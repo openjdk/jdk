@@ -59,7 +59,7 @@ namespace {
 
 static void diagnostic_print(VirtualMemoryTracker& vmt, const ReservedMemoryRegion& rmr) {
   LOG("In reserved region " PTR_FORMAT ", size %X:", p2i(rmr.base()), rmr.size());
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr, [&](CommittedMemoryRegion& region) {
+  vmt.tree()->visit_committed_regions(rmr, [&](CommittedMemoryRegion& region) {
     LOG("   committed region: " PTR_FORMAT ", size %X", p2i(region.base()), region.size());
     return true;
   });
