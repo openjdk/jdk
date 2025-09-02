@@ -412,6 +412,7 @@ public:
   template <typename F>
   void visit_in_order(F f);
 
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
   // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
@@ -451,16 +452,51 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 
 public:
   RBTree() : BaseType(), _allocator() {}
-  RBTree(const RBTree& other) : BaseType(), _allocator() {
-    static_assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
-    static_assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
-    other.visit_in_order([&](auto node) {
-      this->upsert(node->key(), node->val());
-      return true;
-    });
-  }
-  RBTree& operator=(const RBTree& other) = delete;
+  NONCOPYABLE(RBTree);
   ~RBTree() { remove_all(); }
+
+  bool copy_into(RBTree& other) {
+    assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
+    assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
+    enum Dir { Left, Right };
+    struct node_pair { NodeType* current; NodeType* other_parent; Dir d; }
+    struct stack {
+      node_pair stack[64];
+      int idx = 0;
+      stack() : idx(0) {}
+      node_pair pop() { idx--; return stack[idx]; };
+      void push(node_pair n) { stack[idx] = n; idx++; };
+      bool is_empty() { return idx == 0; };
+    };
+
+    stack visit_stack;
+    if (this->_root == nullptr)  {
+      return true;
+    }
+    other._root = other.allocate_node(this->_root->key());
+    if (other._root == nullptr) return false;
+    other._root->val() = this->_root->val();
+
+    visit_stack.push({this->_root->_left, other._root, Left});
+    visit_stack.push({this->_root->_right, other._root, Right});
+    while (!visit_stack.is_empty()) {
+      node_pair n = visit_stack.pop();
+      if (n.current == nullptr) continue;
+      NodeType* new_node = other.allocate_node(n.current->key());
+      new_node->val() = n.current->val();
+      if (new_node == nullptr) {
+        return false;
+      }
+      if (n.dir == Left) {
+        n.other_parent->_left = new_node;
+      } else {
+        n.other_parent->_right = new_node;
+      }
+      visit_stack.push({n.current->_left, new_node, Left});
+      visit_stack.push({n.current->_right, new_node, Right});
+    }
+    return true;
+  }
 
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;
