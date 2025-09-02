@@ -115,7 +115,7 @@ public class FloatingDecimal{
          * @param digits The digit array.
          * @return The number of valid digits copied into the array.
          */
-        int getDigits(char[] digits);
+        int getDigits(byte[] digits);
 
         /**
          * Indicates the sign of the value.
@@ -173,7 +173,7 @@ public class FloatingDecimal{
         }
 
         @Override
-        public int getDigits(char[] digits) {
+        public int getDigits(byte[] digits) {
             throw new IllegalArgumentException("Exceptional value does not have digits");
         }
 
@@ -255,7 +255,7 @@ public class FloatingDecimal{
         }
 
         @Override
-        public int getDigits(char[] digits) {
+        public int getDigits(byte[] digits) {
             System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
             return this.nDigits;
         }
