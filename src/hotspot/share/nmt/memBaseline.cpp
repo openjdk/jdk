@@ -125,12 +125,12 @@ bool MemBaseline::baseline_allocation_sites() {
   // The malloc sites are collected in size order
   _malloc_sites_order = by_size;
 
-  assert(_vma_allocs_replacement == nullptr, "must");
+  assert(_vma_allocations == nullptr, "must");
 
   {
     MemTracker::NmtVirtualMemoryLocker locker;
-    _vma_allocs_replacement = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
-    if (_vma_allocs_replacement == nullptr)  {
+    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
+    if (_vma_allocations == nullptr)  {
       return false;
     }
   }
@@ -172,7 +172,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
 
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
-  _vma_allocs_replacement->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  _vma_allocations->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     VirtualMemoryAllocationSite tmp(*rgn.call_stack(), rgn.mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
@@ -186,7 +186,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     }
     site->reserve_memory(rgn.size());
 
-    site->commit_memory(_vma_allocs_replacement->committed_size(rgn));
+    site->commit_memory(_vma_allocations->committed_size(rgn));
     return true;
   });
 

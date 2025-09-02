@@ -70,7 +70,7 @@ class MemBaseline {
   LinkedListImpl<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
-  RegionsTree* _vma_allocs_replacement;
+  RegionsTree* _vma_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
@@ -85,7 +85,7 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
-    _vma_allocs_replacement(nullptr),
+    _vma_allocations(nullptr),
     _baseline_type(Not_baselined) {
   }
 
@@ -111,8 +111,8 @@ class MemBaseline {
   // Virtual memory allocation iterator always returns in virtual memory
   // base address order.
   RegionsTree* virtual_memory_allocations() {
-    assert(_vma_allocs_replacement != nullptr, "Not detail baseline");
-    return _vma_allocs_replacement;
+    assert(_vma_allocations != nullptr, "Not detail baseline");
+    return _vma_allocations;
   }
 
   // Total reserved memory = total malloc'd memory + total reserved virtual
@@ -185,8 +185,8 @@ class MemBaseline {
 
     _malloc_sites.clear();
     _virtual_memory_sites.clear();
-    delete _vma_allocs_replacement;
-    _vma_allocs_replacement = nullptr;
+    delete _vma_allocations;
+    _vma_allocations = nullptr;
   }
 
  private:
