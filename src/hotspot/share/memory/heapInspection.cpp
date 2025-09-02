@@ -402,7 +402,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
 void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, KlassInfoTable* cit,
                                                       bool print_subclasses) {
   // Set do_print for all superclasses of this class.
-  Klass* super = ((InstanceKlass*)cie->klass())->java_super();
+  InstanceKlass* super = InstanceKlass::cast(cie->klass())->super();
   while (super != nullptr) {
     KlassInfoEntry* super_cie = cit->lookup(super);
     super_cie->set_do_print(true);

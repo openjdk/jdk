@@ -677,7 +677,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
-  deallocate_interfaces(loader_data, java_super(), local_interfaces(), transitive_interfaces());
+  deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
@@ -748,7 +748,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 bool InstanceKlass::is_record() const {
   return _record_components != nullptr &&
          is_final() &&
-         java_super() == vmClasses::Record_klass();
+         super() == vmClasses::Record_klass();
 }
 
 bool InstanceKlass::is_sealed() const {
@@ -763,9 +763,9 @@ bool InstanceKlass::is_sealed() const {
 // sealing conditions: it merely checks for a super of Enum.
 // This is sufficient for recognizing well-formed enums.
 bool InstanceKlass::is_enum_subclass() const {
-  InstanceKlass* s = java_super();
+  InstanceKlass* s = super();
   return (s == vmClasses::Enum_klass() ||
-          (s != nullptr && s->java_super() == vmClasses::Enum_klass()));
+          (s != nullptr && s->super() == vmClasses::Enum_klass()));
 }
 
 bool InstanceKlass::should_be_initialized() const {
@@ -829,7 +829,7 @@ void InstanceKlass::initialize(TRAPS) {
 void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const {
   assert(has_aot_initialized_mirror(), "must be");
 
-  InstanceKlass* s = java_super();
+  InstanceKlass* s = super();
   if (s != nullptr) {
     DEBUG_ONLY(ResourceMark rm);
     assert(s->is_initialized(), "super class %s of aot-inited class %s must have been initialized",
@@ -942,7 +942,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   JavaThread* jt = THREAD;
 
   // link super class before linking this class
-  InstanceKlass* super_klass = java_super();
+  InstanceKlass* super_klass = super();
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
@@ -1465,7 +1465,7 @@ void InstanceKlass::add_implementor(InstanceKlass* ik) {
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  InstanceKlass* super_ik = ik->java_super();
+  InstanceKlass* super_ik = ik->super();
   if (super_ik != nullptr && super_ik->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
@@ -1831,7 +1831,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd)
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { InstanceKlass* supr = java_super();
+  { InstanceKlass* supr = super();
     if (supr != nullptr) return supr->find_field(name, sig, fd);
   }
   // 4) otherwise field lookup fails
@@ -1851,7 +1851,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { InstanceKlass* supr = java_super();
+  { InstanceKlass* supr = super();
     if (supr != nullptr) return supr->find_field(name, sig, is_static, fd);
   }
   // 4) otherwise field lookup fails
@@ -1876,7 +1876,7 @@ bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDesc
     if (klass->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
   return false;
 }
@@ -1919,7 +1919,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = java_super();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
@@ -1936,7 +1936,7 @@ static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = java_super();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
@@ -2241,7 +2241,7 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
     if (method != nullptr) {
       return method;
     }
-    klass = klass->java_super();
+    klass = klass->super();
     overpass_local_mode = OverpassLookupMode::skip;   // Always ignore overpass methods in superclasses
   }
   return nullptr;
@@ -2256,7 +2256,7 @@ bool InstanceKlass::has_redefined_this_or_super() const {
     if (klass->has_been_redefined()) {
       return true;
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
   return false;
 }
@@ -2853,7 +2853,7 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
     return false;
   }
-  if (java_super() != nullptr && !java_super()->can_be_verified_at_dumptime()) {
+  if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
     return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
@@ -3985,7 +3985,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(java_super()));
+                       p2i(this),  p2i(super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
