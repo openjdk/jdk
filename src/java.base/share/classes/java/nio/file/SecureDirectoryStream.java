@@ -138,7 +138,8 @@ public interface SecureDirectoryStream<T>
     /**
      * Creates a new and empty file, failing if the file already exists.
      *
-     * <p>This method works in a similar manner to {@linkplain Files#createFile
+     * <p>This method works in exactly the manner specified by
+     * {@linkplain Files#createFile
      * Files.createFile}. If the {@code path} parameter is an {@linkplain
      * Path#isAbsolute absolute} path then it locates the file to create. If
      * the parameter is a relative path then it is located relative to this
@@ -168,7 +169,7 @@ public interface SecureDirectoryStream<T>
      *
      * @since 26
      */
-    Path createFile(Path path, FileAttribute<?>... attrs)
+    T createFile(T path, FileAttribute<?>... attrs)
         throws IOException;
 
     /**
@@ -204,7 +205,7 @@ public interface SecureDirectoryStream<T>
      *
      * @since 26
      */
-    Path createDirectory(Path dir, FileAttribute<?>... attrs)
+    T createDirectory(T dir, FileAttribute<?>... attrs)
         throws IOException;
 
     /**
@@ -246,7 +247,7 @@ public interface SecureDirectoryStream<T>
      *
      * @since 26
      */
-    Path createLink(T link, SecureDirectoryStream<T> targetdir, T existing)
+    T createLink(T link, SecureDirectoryStream<T> targetdir, T existing)
         throws IOException;
 
     /**
@@ -282,7 +283,7 @@ public interface SecureDirectoryStream<T>
      * @throws  IOException
      *          if an I/O error occurs
      */
-    Path createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
+    T createSymbolicLink(T link, T target, FileAttribute<?>... attrs)
         throws IOException;
 
     /**
@@ -309,7 +310,7 @@ public interface SecureDirectoryStream<T>
      * @throws  IOException
      *          if an I/O error occurs
      */
-    Path readSymbolicLink(Path link) throws IOException;
+    T readSymbolicLink(T link) throws IOException;
 
     /**
      * Deletes a file.
