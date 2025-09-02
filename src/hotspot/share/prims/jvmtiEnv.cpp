@@ -23,8 +23,8 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"

@@ -1962,7 +1962,8 @@ public:
 };
 
 void G1ConcurrentMark::verify_no_collection_set_oops() {
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
+         "should be at a safepoint or initializing");
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
   }
@@ -2981,6 +2982,7 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
 #define G1PPRL_LEN_H_FORMAT           "  %14s"
 #define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
+#define G1PPRL_GID_LIVENESS_FORMAT    "  %9.2f"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -3114,13 +3116,13 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSet
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
                           G1PPRL_GID_GCEFF_FORMAT
-                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_GID_LIVENESS_FORMAT
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(),
                           group->length(),
-                          group->gc_efficiency(),
-                          group->liveness(),
+                          group->length() > 0 ? group->gc_efficiency() : 0.0,
+                          group->length() > 0 ? group->liveness_percent() : 0.0,
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();

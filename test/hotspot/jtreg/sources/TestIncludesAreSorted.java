@@ -51,11 +51,17 @@ public class TestIncludesAreSorted {
                     "share/code",
                     "share/compiler",
                     "share/interpreter",
+                    "share/jfr",
                     "share/jvmci",
                     "share/libadt",
+                    "share/logging",
+                    "share/memory",
                     "share/metaprogramming",
                     "share/oops",
                     "share/opto",
+                    "share/precompiled",
+                    "share/prims",
+                    "share/runtime",
                     "share/services",
                     "share/utilities"
     };
