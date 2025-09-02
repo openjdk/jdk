@@ -3461,6 +3461,7 @@ Node* GraphKit::insert_reachability_fence(Node* referent) {
   assert(!referent->is_top(), "");
   Node* rf = _gvn.transform(new ReachabilityFenceNode(C, control(), referent));
   set_control(rf);
+  C->record_for_igvn(rf);
   return rf;
 }
 
