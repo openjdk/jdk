@@ -37,6 +37,8 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.border.EmptyBorder;
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -44,6 +46,7 @@ import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.GeneralPath;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -55,7 +58,7 @@ import java.awt.print.PrinterJob;
  * @key printer
  * @summary Printable.print method should reflect printer's DPI
  * @library /java/awt/regtesthelpers
- * @requires (os.family == "linux") | (os.family == "mac")
+ * @requires os.family == "mac"
  * @build PassFailJFrame
  * @run main/manual PrintablePrintDPI
  */
@@ -63,11 +66,11 @@ import java.awt.print.PrinterJob;
 public class PrintablePrintDPI implements Printable {
 
     private static final double PAPER_DPI = 72.0;
-    private static final int DEFAULT_PRINTER_DPI = 300;
+    private static final int DEFAULT_DOCUMENT_DPI = 300;
     private static final int UNITS = ResolutionSyntax.DPI;
 
     private static final String INSTRUCTIONS = """
-           This test checks printing DPI.
+           This test checks document DPI.
            To be able to run this test it is required to have a
            printer configured in your user environment.
            Test's steps:
@@ -75,7 +78,8 @@ public class PrintablePrintDPI implements Printable {
              - Choose a printer resolution.
              - Press 'Print' button.
            Visual inspection of the printed pages is needed.
-           A passing test will print choosen DPI on the printed page
+           A passing test will print chosen DPI on the printed page,
+           2 vertical and 2 horizontal lines.
            """;
 
     private final PrintService printService;
@@ -90,7 +94,7 @@ public class PrintablePrintDPI implements Printable {
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(300)
-                .title("Printing DPI test")
+                .title("Document DPI test")
                 .testUI(createTestWindow(availablePrintServices))
                 .build()
                 .awaitAndCheck();
@@ -142,7 +146,7 @@ public class PrintablePrintDPI implements Printable {
                     PrinterResolution[] supportedResolutions = (PrinterResolution[])ps
                             .getSupportedAttributeValues(PrinterResolution.class, null, null);
                     if (supportedResolutions == null || supportedResolutions.length == 0) {
-                        cbResolutions.addItem(new PrinterResolution(DEFAULT_PRINTER_DPI, DEFAULT_PRINTER_DPI, UNITS));
+                        cbResolutions.addItem(new PrinterResolution(DEFAULT_DOCUMENT_DPI, DEFAULT_DOCUMENT_DPI, UNITS));
                     } else {
                         for (PrinterResolution pr : supportedResolutions) {
                             cbResolutions.addItem(pr);
@@ -208,18 +212,89 @@ public class PrintablePrintDPI implements Printable {
         if (pageIndex > 0) {
             return NO_SUCH_PAGE;
         }
-        final int printOffset = 20;
         final int[] deviceRes = printerResolution.getResolution(ResolutionSyntax.DPI);
 
         Graphics2D g2 = (Graphics2D)graphics;
+
         double hRes = g2.getTransform().getScaleX() * PAPER_DPI;
         double vRes = g2.getTransform().getScaleY() * PAPER_DPI;
+
+        // Horizontal and vertical document resolution
+        g2.drawLine((int)pageFormat.getImageableX() + 5, (int)pageFormat.getImageableY() + 5,
+                (int)pageFormat.getImageableX() + 50, (int)pageFormat.getImageableY() + 5);
+        g2.drawString(Integer.toString((int)hRes),
+                (int)pageFormat.getImageableX() + 60,
+                (int)pageFormat.getImageableY() + 5 + g2.getFontMetrics().getHeight() / 2);
+
+        g2.drawLine((int)pageFormat.getImageableX() + 5, (int)pageFormat.getImageableY() + 5,
+                (int)pageFormat.getImageableX() + 5, (int)pageFormat.getImageableY() + 50);
+        g2.drawString(Integer.toString((int)vRes),
+                (int)pageFormat.getImageableX() + 5, (int)pageFormat.getImageableY() + 60);
+
         String msg = String.format(
                 "Expected DPI: %dx%d, actual: %dx%d.\n",
                 deviceRes[0], deviceRes[1], (int)hRes, (int)vRes);
         System.out.println(msg);
-        g2.drawString(msg, (int)(pageFormat.getImageableX() + printOffset),
-                (int)(pageFormat.getImageableY() + printOffset));
+
+        int msgX = (int)pageFormat.getImageableX() +
+                g2.getFontMetrics().stringWidth(Integer.toString((int)vRes)) + 20;
+        int msgY = (int)pageFormat.getImageableY() +
+                g2.getFontMetrics().getHeight() + 20;
+
+        g2.drawString(msg, msgX, msgY);
+        msgY += 20;
+        g2.drawString("ScaleX: " + g2.getTransform().getScaleX(), msgX, msgY);
+        msgY += 20;
+        g2.drawString("ScaleY: " + g2.getTransform().getScaleY(), msgX, msgY);
+
+        final float lineWidth = 0.2f;
+        double pageWidth = pageFormat.getWidth();
+        double xLeft = pageWidth / 10;
+        double yBase = pageFormat.getHeight() / 2;
+        double xBase = pageFormat.getWidth() / 2;
+        double yTop = yBase + 40;
+        double yBottom = pageFormat.getHeight() - pageFormat.getHeight() / 10;
+
+        g2.setStroke(new BasicStroke(lineWidth));
+
+        double xRight = pageWidth - xLeft;
+        g2.drawLine((int) xLeft, (int) yBase + 80,
+                (int) (xRight),(int) yBase + 80);
+        g2.drawLine((int) xBase, (int) yTop,
+                (int) (xBase),(int) yBottom);
+
+        GeneralPath line = new GeneralPath();
+        double halfLineWidth = lineWidth / 2.0f;
+        double yLine = yBase + 100;
+        double xLine = xBase + 20;
+        line.moveTo(xLeft, yLine);
+        line.lineTo(xLeft, yLine - halfLineWidth);
+        line.lineTo(xLine - halfLineWidth, yLine - halfLineWidth);
+        line.lineTo(xLine - halfLineWidth, yTop);
+        line.lineTo(xLine + halfLineWidth, yTop);
+        line.lineTo(xLine + halfLineWidth, yLine - halfLineWidth);
+        line.lineTo(xRight, yLine - halfLineWidth);
+        line.lineTo(xRight, yLine + halfLineWidth);
+        line.lineTo(xLine + halfLineWidth, yLine + halfLineWidth);
+        line.lineTo(xLine + halfLineWidth, yBottom);
+        line.lineTo(xLine - halfLineWidth, yBottom);
+        line.lineTo(xLine - halfLineWidth, yLine + halfLineWidth);
+        line.lineTo(xLeft, yLine + halfLineWidth );
+        line.closePath();
+        g2.clip(line);
+
+        g2.setColor(Color.RED);
+
+        line.reset();
+        line.moveTo(xLeft, yLine);
+        line.lineTo(xRight, yLine);
+        g2.draw(line);
+
+        line.reset();
+        line.moveTo(xBase + 20, yTop);
+        line.lineTo(xBase + 20, yBottom);
+        g2.draw(line);
+
         return PAGE_EXISTS;
     }
 }

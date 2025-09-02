@@ -31,6 +31,7 @@
 #import "ThreadUtilities.h"
 #import "GeomUtilities.h"
 #import "JNIUtilities.h"
+#import "CGraphicsDevice.h"
 
 static jclass sjc_CPrinterJob = NULL;
 static jclass sjc_PAbortEx = NULL;
@@ -106,16 +107,20 @@ static jclass sjc_PAbortEx = NULL;
     jlong context = ptr_to_jlong([printLoop context]);
     CGContextRef cgRef = (CGContextRef)[[printLoop context] graphicsPort];
 
-    //Scale to default device DPI
+    // Scale from the java document DPI to the user space DPI
     jdouble hRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getXRes);
     CHECK_EXCEPTION();
     jdouble vRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getYRes);
     CHECK_EXCEPTION();
     if (hRes > 0 && vRes > 0) {
-        double scaleX = DEFAULT_DEVICE_DPI/hRes;
-        double scaleY = DEFAULT_DEVICE_DPI/vRes;
-        if (scaleX != 1 && scaleY != 1) {
-            CGContextScaleCTM(cgRef, scaleX, scaleY);
+        double scaleX = DEFAULT_DEVICE_DPI / hRes;
+        double scaleY = DEFAULT_DEVICE_DPI / vRes;
+        if (scaleX != 1 || scaleY != 1) {
+            if ([[[NSPrintOperation currentOperation] printInfo] orientation] == NSPortraitOrientation) {
+                CGContextScaleCTM(cgRef, scaleX, scaleY);
+            } else {
+                CGContextScaleCTM(cgRef, scaleY, scaleX);
+            }
         }
     }
 

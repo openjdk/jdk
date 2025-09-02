@@ -27,6 +27,7 @@
 #import "ThreadUtilities.h"
 #include "GeomUtilities.h"
 #include "JNIUtilities.h"
+#include "CGraphicsDevice.h"
 
 
 static NSInteger architecture = -1;

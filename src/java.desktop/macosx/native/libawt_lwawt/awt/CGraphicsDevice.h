@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +22,10 @@
  * questions.
  */
 
-#import <Cocoa/Cocoa.h>
-#include "JNIUtilities.h"
 
-jobject CGToJavaRect(JNIEnv *env, CGRect rect);
-
-jobject NSToJavaRect(JNIEnv *env, NSRect rect);
-NSRect JavaToNSRect(JNIEnv *env, jobject rect);
-
-jobject NSToJavaPoint(JNIEnv *env, NSPoint point);
-NSPoint JavaToNSPoint(JNIEnv *env, jobject point);
-
-jobject NSToJavaSize(JNIEnv *env, NSSize size);
-NSSize JavaToNSSize(JNIEnv *env, jobject);
-
-NSPoint ConvertNSScreenPoint(JNIEnv *env, NSPoint point);
-NSRect ConvertNSScreenRect(JNIEnv *env, NSRect rect);
+/**
+ * Some default values for invalid CoreGraphics display ID.
+ */
+#define DEFAULT_DEVICE_WIDTH 1024
+#define DEFAULT_DEVICE_HEIGHT 768
+#define DEFAULT_DEVICE_DPI 72
