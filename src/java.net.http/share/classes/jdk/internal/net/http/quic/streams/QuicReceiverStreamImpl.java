@@ -507,7 +507,6 @@ final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicRec
 
     private void offer(StreamFrame frame) {
         var payload = frame.payload();
-        var isLast = frame.isLast();
         if (payload.hasRemaining()) {
             orderedQueue.add(payload.slice());
         }

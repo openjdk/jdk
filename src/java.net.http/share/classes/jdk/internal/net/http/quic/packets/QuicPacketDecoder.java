@@ -1194,9 +1194,6 @@ public class QuicPacketDecoder {
             throws IOException, QuicKeyUnavailableException, QuicTransportException {
         Objects.requireNonNull(buffer);
 
-        // Save in case we need to discard packet
-        int limit = buffer.limit();
-        int pos = buffer.position();
         assert buffer.order() == ByteOrder.BIG_ENDIAN;
         PacketType type = peekPacketType(buffer);
         PacketReader packetReader = new PacketReader(buffer, context, type);
