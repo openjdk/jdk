@@ -611,7 +611,5 @@ void Thread::SpinRelease(volatile int * adr) {
   // before the store that releases the lock in memory visibility order.
   // So we need a #loadstore|#storestore "release" memory barrier before
   // the ST of 0 into the lock-word which releases the lock.
-  // However, a full fence is an overkill on most platforms,
-  // the same effect can be achieved with Atomic::release_store().
   Atomic::release_store(adr, 0);
 }
