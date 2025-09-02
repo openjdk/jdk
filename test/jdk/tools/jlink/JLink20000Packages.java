@@ -54,7 +54,7 @@ import static java.lang.constant.ConstantDescs.CD_void;
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.*
- * @run main/othervm/timeout=1920 -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
+ * @run main/othervm -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
  */
 public class JLink20000Packages {
     private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
