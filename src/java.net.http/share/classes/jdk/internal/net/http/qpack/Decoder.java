@@ -71,7 +71,7 @@ import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class Decoder {
 
-    private static QPACK.Logger logger;
+    private final QPACK.Logger logger;
     private final DynamicTable dynamicTable;
     private final EncoderInstructionsReader encoderInstructionsReader;
     private final QueuingStreamPair decoderStreamPair;
@@ -109,7 +109,7 @@ public final class Decoder {
         long id = DECODERS_IDS.incrementAndGet();
         logger = QPACK.getLogger().subLogger("Decoder#" + id);
         if (logger.isLoggable(NORMAL)) {
-            logger.log(NORMAL, () -> format("New decoder"));
+            logger.log(NORMAL, () -> "New decoder");
         }
         dynamicTable = new DynamicTable(logger.subLogger("DynamicTable"), false);
         decoderStreamPair = streams.create(this::processEncoderInstruction);
