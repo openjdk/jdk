@@ -109,7 +109,11 @@ public final class JdkConsoleImpl implements JdkConsole {
         return readPassword0(false, locale, format, args);
     }
 
-    // Dedicated entry for sun.security.util.Password.
+    // These two methods are intended for sun.security.util.Password, so tools like keytool can
+    // use JdkConsoleImpl even when standard output is redirected. The Password class should first
+    // check if `System.console()` returns a Console instance and use it if available. Otherwise,
+    // it should call this method to obtain a JdkConsoleImpl. This ensures only one Console
+    // instance exists in the Java runtime.
     private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
     public static Optional<JdkConsoleImpl> passwordConsole() {
         return INSTANCE.orElseSet(() -> {
