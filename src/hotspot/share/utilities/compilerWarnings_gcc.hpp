@@ -34,7 +34,7 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING(optstring) _Pragma(STR(GCC diagnostic ignored optstring))
+#define PRAGMA_DISABLE_GCC_WARNING(option) _Pragma(STR(GCC diagnostic ignored option))
 
 #define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
@@ -70,6 +70,8 @@
 
 #define PRAGMA_DEPRECATED_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wdeprecated-declarations")
+
+#define __null _Pragma(STR(GCC warning "NULL is forbidden in HotSpot code")) nullptr
 
 // This macro is used by the NORETURN variants of FORBID_C_FUNCTION.
 //
