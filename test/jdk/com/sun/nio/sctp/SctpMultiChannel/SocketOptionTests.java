@@ -39,7 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import com.sun.nio.sctp.AbstractNotificationHandler;
 import com.sun.nio.sctp.Association;
-
 import com.sun.nio.sctp.AssociationChangeNotification;
 import com.sun.nio.sctp.AssociationChangeNotification.AssocChangeEvent;
 import com.sun.nio.sctp.HandlerResult;
