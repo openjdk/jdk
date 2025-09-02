@@ -63,6 +63,7 @@
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
+#include <new>
 #include <stdarg.h>
 #include <stdio.h>
 
