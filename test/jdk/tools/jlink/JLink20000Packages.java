@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
+ * @run main/othervm/timeout=1920 -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
  */
 public class JLink20000Packages {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")

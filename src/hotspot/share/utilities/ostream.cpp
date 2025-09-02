@@ -1077,11 +1077,11 @@ bufferedStream::~bufferedStream() {
 #ifndef PRODUCT
 
 #if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #elif defined(_WINDOWS)
 #include <Ws2tcpip.h>
 #endif

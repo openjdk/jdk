@@ -79,10 +79,22 @@ public class InputUITest extends UITesting {
             );
         for (var snippet : snippets.entrySet()) {
             doRunTest((inputSink, out) -> {
-                inputSink.write(snippet.getKey() + "\n");
-                inputSink.close(); // Does not work: inputSink.write("\u0004"); // CTRL + D
+                inputSink.write(snippet.getKey() + "\n" + CTRL_D);
                 waitOutput(out, patternQuote(snippet.getValue()), patternQuote("EndOfFileException"));
             }, false);
         }
+    }
+
+    public void testUserInputWithCtrlDAndMultipleSnippets() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("IO.readln()\n" + CTRL_D);
+            waitOutput(out, patternQuote("==> null"));
+            inputSink.write("IO.readln()\nAB\n");
+            waitOutput(out, patternQuote("==> \"AB\""));
+            inputSink.write("System.in.read()\n" + CTRL_D);
+            waitOutput(out, patternQuote("==> -1"));
+            inputSink.write("System.in.read()\nA\n");
+            waitOutput(out, patternQuote("==> 65"));
+        }, false);
     }
 }

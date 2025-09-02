@@ -55,8 +55,6 @@ CompileTask::CompileTask(int compile_id,
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
-  _waiting_count = 0;
-
   _is_complete = false;
   _is_success = false;
 
@@ -75,6 +73,7 @@ CompileTask::CompileTask(int compile_id,
   _arena_bytes = 0;
 
   _next = nullptr;
+  _prev = nullptr;
 
   Atomic::add(&_active_tasks, 1, memory_order_relaxed);
 }
