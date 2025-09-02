@@ -27,6 +27,8 @@
  * @summary Test Field.set and Lookup.unreflectSetter on final instance fields
  * @run junit/othervm --enable-final-field-mutation=ALL-UNNAMED -DwriteAccess=true MutateFinalsTest
  * @run junit/othervm --illegal-final-field-mutation=allow -DwriteAccess=true MutateFinalsTest
+ * @run junit/othervm --illegal-final-field-mutation=warn -DwriteAccess=true MutateFinalsTest
+ * @run junit/othervm --illegal-final-field-mutation=debug -DwriteAccess=true MutateFinalsTest
  * @run junit/othervm --illegal-final-field-mutation=deny -DwriteAccess=false MutateFinalsTest
  */
 

@@ -25,7 +25,14 @@
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
+import java.net.URL;
+import java.security.CodeSource;
+import java.util.Map;
+import java.util.Set;
+import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.FinalFieldMutationEvent;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -40,12 +47,6 @@ import sun.reflect.generics.repository.FieldRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ClassScope;
-import java.lang.annotation.Annotation;
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.Map;
-import java.util.Set;
-import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotation;
@@ -1424,7 +1425,7 @@ class Field extends AccessibleObject implements Member {
     private void checkAllowedToSetFinal(Class<?> caller, boolean unreflect) throws IllegalAccessException {
         assert isFinalInstanceInNormalClass();
 
-        // Check that package is open to caller.
+        // check that package is open to caller
         final Module moduleToCheck;
         if (caller != null) {
             if (!Modules.isStaticallyOpened(clazz.getModule(),
@@ -1434,15 +1435,20 @@ class Field extends AccessibleObject implements Member {
             }
             moduleToCheck = caller.getModule();
         } else {
-            // No Java caller, only allowed if field is public in exported package
+            // no java caller, only allowed if field is public in exported package
             if (!Reflection.verifyPublicMemberAccess(clazz, modifiers)) {
                 throw new IllegalAccessException(notAccessibleToNoCallerMessage(unreflect));
             }
             moduleToCheck = ClassLoaders.appClassLoader().getUnnamedModule();
         }
 
-        // check if illegal final field mutation is allowed or enabled for the module
+        // offer JFR event if final field mutation not denied
         var mode = ModuleBootstrap.illegalFinalFieldMutation();
+        if (mode != IllegalFinalFieldMutation.DENY) {
+            FinalFieldMutationEvent.offer(getDeclaringClass(), getName());
+        }
+
+        // check if illegal final field mutation is allowed or enabled for the module
         if (mode == IllegalFinalFieldMutation.ALLOW
                 || Modules.isFinalMutationEnabled(moduleToCheck)) {
             return;
@@ -1459,7 +1465,7 @@ class Field extends AccessibleObject implements Member {
                     VM.initialErr().printf("""
                             WARNING: %s
                             WARNING: Use --enable-final-field-mutation=%s to avoid a warning
-                            WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled";
+                            WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled
                             """, warningMsg, targetModule);
                 }
             }

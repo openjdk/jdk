@@ -80,6 +80,7 @@ public final class JDKEvents {
         InitialSecurityPropertyEvent.class,
         MethodTraceEvent.class,
         MethodTimingEvent.class,
+        jdk.internal.event.FinalFieldMutationEvent.class,
     };
 
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;

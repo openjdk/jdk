@@ -34,6 +34,7 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.FinalFieldMutationEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -77,6 +78,7 @@ final class MirrorEvents {
         register("jdk.internal.event.ErrorThrownEvent", ErrorThrownEvent.class);
         register("jdk.internal.event.ExceptionStatisticsEvent", ExceptionStatisticsEvent.class);
         register("jdk.internal.event.ExceptionThrownEvent", ExceptionThrownEvent.class);
+        register("jdk.internal.event.FinalFieldMutationEvent", FinalFieldMutationEvent.class);
     };
 
     private static void register(String eventClassName, Class<? extends MirrorEvent> mirrorClass) {
