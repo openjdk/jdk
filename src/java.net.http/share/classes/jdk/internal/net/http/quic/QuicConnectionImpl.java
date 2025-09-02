@@ -302,7 +302,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
     private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
 
-    private MaxInitialTimer maxInitialTimer;
+    private volatile MaxInitialTimer maxInitialTimer;
 
     static String dbgTag(QuicInstance quicInstance, String logTag) {
         return String.format("QuicConnection(%s, %s)",
