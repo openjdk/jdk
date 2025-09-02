@@ -58,9 +58,12 @@ public class Stresser implements ExecutionController {
     private String name;
     private long maxIterations;
     private long iterations;
+
+    // In nanoseconds
     private long startTime;
-    private long finishTime;
     private long currentTime;
+    private long stressTime;
+
     private PrintStream defaultOutput = System.out;
 
     /*
@@ -179,15 +182,15 @@ public class Stresser implements ExecutionController {
      */
     public void printExecutionInfo(PrintStream out) {
         println(out, "Completed iterations: " + iterations);
-        println(out, "Execution time: " + (currentTime - startTime) + " seconds");
+        println(out, "Execution time: " + (currentTime - startTime) / 1_000_000_000.0 + " seconds");
         if (!finished) {
             println(out, "Execution is not finished yet");
         } else if (forceFinish) {
             println(out, "Execution was forced to finish");
         } else if (maxIterations != 0 && iterations >= maxIterations) {
             println(out, "Execution finished because number of iterations was exceeded: " + iterations + " >= " + maxIterations);
-        } else if (finishTime != 0 && currentTime >= finishTime) {
-            println(out, "Execution finished because time was exceeded: " + (currentTime - startTime) + " >= " + (finishTime - startTime));
+        } else if (stressTime != 0 && (currentTime - startTime) >= stressTime) {
+            println(out, "Execution finished because time has exceeded stress time: " + stressTime / 1_000_000_000 + " seconds");
         }
     }
 
@@ -208,13 +211,8 @@ public class Stresser implements ExecutionController {
     public void start(long stdIterations) {
         maxIterations = stdIterations * options.getIterationsFactor();
         iterations = 0;
-        long stressTime = options.getTime();
-        startTime = System.currentTimeMillis();
-        if (stressTime == 0) {
-            finishTime = 0;
-        } else {
-            finishTime = startTime + stressTime * 1000;
-        }
+        stressTime = options.getTime() * 1_000_000_000;
+        startTime = System.nanoTime();
         finished = false;
         forceFinish = false;
         if (options.isDebugEnabled()) {
@@ -232,7 +230,7 @@ public class Stresser implements ExecutionController {
      * finally {} block.
      */
     public void finish() {
-        currentTime = System.currentTimeMillis();
+        currentTime = System.nanoTime();
         finished = true;
         if (options.isDebugEnabled()) {
             printExecutionInfo(defaultOutput);
@@ -255,10 +253,12 @@ public class Stresser implements ExecutionController {
      */
     public boolean iteration() {
         ++iterations;
+        boolean result = continueExecution();
+        // Call print at the end to show the most up-to-date info.
         if (options.isDebugDetailed()) {
             printExecutionInfo(defaultOutput);
         }
-        return continueExecution();
+        return result;
     }
 
     /**
@@ -267,14 +267,14 @@ public class Stresser implements ExecutionController {
      * @return true if execution needs to continue
      */
     public boolean continueExecution() {
-        currentTime = System.currentTimeMillis();
+        currentTime = System.nanoTime();
         if (startTime == 0) {
             throw new TestBug("Stresser is not started.");
         }
         return !forceFinish
                 && !finished
                 && (maxIterations == 0 || iterations < maxIterations)
-                && (finishTime == 0 || currentTime < finishTime);
+                && (stressTime == 0 || (currentTime - startTime) < stressTime);
     }
 
     /**
@@ -309,7 +309,7 @@ public class Stresser implements ExecutionController {
      * @return time
      */
     public long getExecutionTime() {
-        return System.currentTimeMillis() - startTime;
+        return (System.nanoTime() - startTime) / 1_000_000;
     }
 
     /**
@@ -318,11 +318,11 @@ public class Stresser implements ExecutionController {
      * @return time
      */
     public long getTimeLeft() {
-        long current = System.currentTimeMillis();
-        if (current >= finishTime) {
+        long elapsedTime = System.nanoTime() - startTime;
+        if (elapsedTime >= stressTime) {
             return 0;
         } else {
-            return finishTime - current;
+            return (stressTime - elapsedTime) / 1_000_000;
         }
     }
 

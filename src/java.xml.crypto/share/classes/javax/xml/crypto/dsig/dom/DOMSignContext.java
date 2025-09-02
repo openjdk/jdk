@@ -33,6 +33,7 @@ import javax.xml.crypto.dsig.XMLSignContext;
 import javax.xml.crypto.dsig.XMLSignature;
 import java.security.Key;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Signature;
 
@@ -51,9 +52,12 @@ import org.w3c.dom.Node;
  * instance to sign two different {@link XMLSignature} objects).
  *
  * @implNote
- * The JDK implementation supports the following property that can be set
+ * The JDK implementation supports the following properties that can be set
  * using the {@link #setProperty setProperty} method.
  * <ul>
+ *   <li><code>org.jcp.xml.dsig.internal.dom.SignatureProvider</code>: value
+ *       must be a {@link Provider}. If specified, the underlying {@code Signature}
+ *       will be instantiated from this provider.
  *   <li><code>jdk.xmldsig.SecureRandom</code>: value must be a
  *       {@link SecureRandom}. If specified, this object will be
  *       used to initialize the underlying {@code Signature} during signing
