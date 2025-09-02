@@ -66,7 +66,7 @@ public class Functions {
         var msg = "hello".getBytes(StandardCharsets.UTF_8);
         var msg2 = "goodbye".getBytes(StandardCharsets.UTF_8);
         var info = "info".getBytes(StandardCharsets.UTF_8);
-        var psk = new SecretKeySpec("this is a key".getBytes(StandardCharsets.UTF_8), "Generic");
+        var psk = new SecretKeySpec("K".repeat(32).getBytes(StandardCharsets.UTF_8), "Generic");
         var psk_id = "psk1".getBytes(StandardCharsets.UTF_8);
 
         for (var param : PARAMS) {

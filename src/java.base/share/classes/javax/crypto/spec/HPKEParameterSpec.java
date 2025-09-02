@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.AsymmetricKey;
 import java.security.Key;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Objects;
 
@@ -272,41 +273,53 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * For interoperability, RFC 9180 Section 7.2.1 recommends limiting
      * this value to a maximum of 64 bytes.
      *
-     * @param info application-supplied information. Must not be {@code null}.
-     *      If set to empty, the previous info is cleared.
+     * @param info application-supplied information.
      *      The contents of the array are copied to protect
      *      against subsequent modification.
      * @return a new {@code HPKEParameterSpec} object
      * @throws NullPointerException if {@code info} is {@code null}
+     * @throws IllegalArgumentException if {@code info} is empty.
      */
     public HPKEParameterSpec withInfo(byte[] info) {
+        Objects.requireNonNull(info);
+        if (info.length == 0) {
+            throw new IllegalArgumentException("info is empty");
+        }
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
-                Objects.requireNonNull(info).clone(), psk, psk_id, kS, encapsulation);
+                info.clone(), psk, psk_id, kS, encapsulation);
     }
 
     /**
      * Creates a new {@code HPKEParameterSpec} object with the specified
      * {@code psk} and {@code psk_id} values.
      * <p>
-     * For interoperability, RFC 9180 Section 7.2.1 recommends limiting both
-     * values to a maximum of 64 bytes.
+     * RFC 9180 Section 5.1.2 requires the PSK MUST have at least 32 bytes
+     * of entropy. For interoperability, RFC 9180 Section 7.2.1 recommends
+     * limiting the key size and identifier length to a maximum of 64 bytes.
      *
-     * @param psk pre-shared key. Set to {@code null} if no pre-shared key is used.
-     * @param psk_id identifier for PSK. Set to empty if no pre-shared key is used.
-     *               Must not be {@code null}. The contents of the array are copied
+     * @param psk pre-shared key
+     * @param psk_id identifier for PSK. The contents of the array are copied
      *               to protect against subsequent modification.
      * @return a new {@code HPKEParameterSpec} object
-     * @throws NullPointerException if {@code psk_id} is {@code null}
-     * @throws IllegalArgumentException if {@code psk} and {@code psk_id} are
-     *      not consistent, i.e. {@code psk} is not {@code null} but
-     *      {@code psk_id} is empty, or {@code psk} is {@code null} but
-     *      {@code psk_id} is not empty.
+     * @throws NullPointerException if {@code psk} or {@code psk_id} is {@code null}
+     * @throws IllegalArgumentException if {@code psk} is shorter than 32 bytes
+     *                                  or {@code psk_id} is empty
      */
     public HPKEParameterSpec withPsk(SecretKey psk, byte[] psk_id) {
+        Objects.requireNonNull(psk);
         Objects.requireNonNull(psk_id);
-        if (psk == null && psk_id.length != 0
-                || psk != null && psk_id.length == 0) {
-            throw new IllegalArgumentException("psk and psk_id do not match");
+        if (psk_id.length == 0) {
+            throw new IllegalArgumentException("psk_id is empty");
+        }
+        if ("RAW".equalsIgnoreCase(psk.getFormat())) {
+            // We can only check when psk is extractable. We can only
+            // check the length and not the real entropy size
+            var keyBytes = psk.getEncoded();
+            assert keyBytes != null;
+            Arrays.fill(keyBytes, (byte)0);
+            if (keyBytes.length < 32) {
+                throw new IllegalArgumentException("psk is too short");
+            }
         }
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id.clone(), kS, encapsulation);
@@ -316,17 +329,17 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * Creates a new {@code HPKEParameterSpec} object with the specified
      * key encapsulation message value that will be used by the recipient.
      *
-     * @param encapsulation the key encapsulation message. If set to
-     *      {@code null}, the previous key encapsulation message is cleared.
+     * @param encapsulation the key encapsulation message.
      *      The contents of the array are copied to protect against
      *      subsequent modification.
      *
      * @return a new {@code HPKEParameterSpec} object
+     * @throws NullPointerException if {@code encapsulation} is {@code null}
      */
     public HPKEParameterSpec withEncapsulation(byte[] encapsulation) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id, kS,
-                encapsulation == null ? null : encapsulation.clone());
+                Objects.requireNonNull(encapsulation).clone());
     }
 
     /**
@@ -338,13 +351,15 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * used to initialize an HPKE cipher with an unsupported mode, an
      * {@code InvalidAlgorithmParameterException} will be thrown at that time.
      *
-     * @param kS the authentication key. If set to {@code null}, the previous
-     *          authentication key is cleared.
+     * @param kS the authentication key
      * @return a new {@code HPKEParameterSpec} object
+     * @throws NullPointerException if {@code kS} is {@code null}
      */
     public HPKEParameterSpec withAuthKey(AsymmetricKey kS) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
-                info, psk, psk_id, kS, encapsulation);
+                info, psk, psk_id,
+                Objects.requireNonNull(kS),
+                encapsulation);
     }
 
     /**
