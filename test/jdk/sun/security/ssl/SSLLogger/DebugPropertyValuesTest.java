@@ -118,7 +118,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                         List.of("record", "ssl")),
                 // example of test where no "ssl" value is passed
                 // handshake debugging with verbose mode
-                // only verbose gets printed. Needs fixing (JDK-8044609)
+                // No debug logs should be printed
                 Arguments.of(List.of("-Djavax.net.debug=handshake:verbose"),
                         List.of()),
                 // another example of test where no "ssl" value is passed

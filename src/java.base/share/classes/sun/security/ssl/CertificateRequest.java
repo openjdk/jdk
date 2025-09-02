@@ -808,18 +808,22 @@ final class CertificateRequest {
                     .stream()
                     .map(ss -> ss.keyAlgorithm)
                     .distinct()
-                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
-                            hc.algorithmConstraints,                        //  we will be able to produce
-                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                    // Don't select a signature scheme unless we will be
+                    // able to produce a CertificateVerify message later
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(
+                            hc.algorithmConstraints,
+                            hc.peerRequestedSignatureSchemes,
                             ka, hc.negotiatedProtocol) != null
                             || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
-                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
+                                "Unable to produce CertificateVerify for" +
+                                        "key algorithm: " + ka))
                     .filter(ka -> {
                         var xa = X509Authentication.valueOfKeyAlgorithm(ka);
                         // Any auth object will have a set of allowed key types.
-                        // This set should share at least one common algorithm with
-                        // the CR's allowed key types.
-                        return xa != null && !Collections.disjoint(crKeyTypes, Arrays.asList(xa.keyTypes))
+                        // This set should share at least one common
+                        // algorithm with the CR's allowed key types.
+                        return xa != null && !Collections.disjoint(crKeyTypes,
+                                Arrays.asList(xa.keyTypes))
                                 || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
                                 "Unsupported key algorithm: " + ka);
                     })

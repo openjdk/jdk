@@ -76,7 +76,9 @@ public final class SSLLogger {
                     // help option calls exit(0)
                     help();
                 }
-                logger = new SSLConsoleLogger("javax.net.ssl", p);
+                // configure expanded logging mode in constructor
+                logger = new SSLConsoleLogger("javax.net.ssl",
+                        !p.contains("expand"));
                 if (p.contains("all")) {
                     Opt.ALL.on = true;
                 } else {
@@ -198,28 +200,39 @@ public final class SSLLogger {
 
     private static void help() {
         System.err.println();
-        System.err.println("help           print this help message and exit");
-        System.err.println("expand         expanded (less compact) output format");
+        System.err.printf("%-16s %s%n", "help",
+                "print this help message and exit");
+        System.err.printf("%-16s %s%n", "expand",
+                "expanded (less compact) output format");
         System.err.println();
-        System.err.println("all            turn on all debugging");
-        System.err.println("ssl            turn on ssl debugging");
+        System.err.printf("%-16s %s%n", "all", "turn on all debugging");
+        System.err.printf("%-16s %s%n", "ssl", "turn on ssl debugging");
         System.err.println();
         System.err.println("The following filters can be used with ssl:");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\thandshake    print each handshake message");
-        System.err.println("\t    verbose   verbose handshake" +
-                                " message printing (widens handshake)");
-        System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\trecord       enable per-record tracing");
-        System.err.println("\t    plaintext    hex dump of record" +
-                                " plaintext (widens record)");
-        System.err.println("\t    packet       print raw SSL/TLS" +
-                                " packets (widens record)");
-        System.err.println("\trespmgr      print OCSP response tracing");
-        System.err.println("\tsession      print session activity");
-        System.err.println("\tsessioncache print session cache tracing");
-        System.err.println("\tsslctx       print SSLContext tracing");
-        System.err.println("\ttrustmanager print trust manager tracing");
+        System.err.printf("    %-14s %s%n", "defaultctx",
+                "print default SSL initialization");
+        System.err.printf("    %-14s %s%n", "handshake",
+                "print each handshake message");
+        System.err.printf("      %-12s   %s%n", "verbose",
+                "-verbose handshake message printing (widens handshake)");
+        System.err.printf("    %-14s %s%n", "keymanager",
+                "print key manager tracing");
+        System.err.printf("    %-14s %s%n", "record",
+                "enable per-record tracing");
+        System.err.printf("      %-12s   %s%n", "packet",
+                "-print raw SSL/TLS packets (widens record)");
+        System.err.printf("      %-12s   %s%n", "plaintext",
+                "-hex dump of record plaintext (widens record)");
+        System.err.printf("    %-14s %s%n", "respmgr",
+                "print OCSP response tracing");
+        System.err.printf("    %-14s %s%n", "session",
+                "print session activity");
+        System.err.printf("    %-14s %s%n", "sessioncache",
+                "print session cache tracing");
+        System.err.printf("    %-14s %s%n", "sslctx",
+                "print SSLContext tracing");
+        System.err.printf("    %-14s %s%n", "trustmanager",
+                "print trust manager tracing");
         System.err.println();
         System.exit(0);
     }
@@ -271,10 +284,9 @@ public final class SSLLogger {
         private final String loggerName;
         private final boolean useCompactFormat;
 
-        SSLConsoleLogger(String loggerName, String options) {
+        SSLConsoleLogger(String loggerName, boolean useCompactFormat) {
             this.loggerName = loggerName;
-            options = options.toLowerCase(Locale.ENGLISH);
-            this.useCompactFormat = !options.contains("expand");
+            this.useCompactFormat = useCompactFormat;
         }
 
         @Override
