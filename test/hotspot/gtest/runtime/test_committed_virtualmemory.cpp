@@ -112,11 +112,11 @@ public:
     }
 
     // trigger the test
-    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
-
+    ReservedMemoryRegion rmr_found;
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
-      ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+      VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }
     ASSERT_TRUE(rmr_found.is_valid());
     ASSERT_EQ(rmr_found.base(), (address)base);
@@ -146,6 +146,7 @@ public:
     // Cleanup
     os::disclaim_memory(base, size);
     {
+      MemTracker::NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
       rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }

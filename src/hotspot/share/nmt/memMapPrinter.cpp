@@ -157,7 +157,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::Instance::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 
@@ -273,7 +273,6 @@ void MemMapPrinter::print_all_mappings(outputStream* st) {
   // Prepare NMT info cache. But only do so if we print individual mappings,
   // otherwise, we won't need it and can save that work.
   if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
     nmt_info.fill_from_nmt();
   } else {
     st->print_cr("NMT is disabled. VM info not available.");
