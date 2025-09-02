@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,10 +121,12 @@ public class AddTrustedCert extends SecmodTest {
     }
 
     private static boolean improperNSSVersion(Provider p) {
-        double nssVersion = getNSSVersion();
-        if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")
-                && nssVersion >= 3.28 && nssVersion < 3.35) {
-            return true;
+        String nssVersion = getNSSVersion();
+        if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")) {
+            int idx = nssVersion.indexOf(".");
+            double major = Double.parseDouble(nssVersion.substring(0, idx));
+            double minor = Double.parseDouble(nssVersion.substring(idx+1));
+            return major == 3 && (minor >= 28 && minor < 35);
         }
 
         return false;

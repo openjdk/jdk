@@ -324,9 +324,12 @@ public class TestKATForGCM extends PKCS11Test {
             System.out.println("Exception occured using " + p.getName() + " version " + p.getVersionStr());
 
             if (isNSS(p)) {
-                double ver = getNSSInfo("nss");
+                String ver = getNSSInfo("nss");
                 String osName = System.getProperty("os.name");
-                if (ver > 3.139 && ver < 3.15 && osName.equals("Linux")) {
+                int idx = ver.indexOf(".");
+                double major = Double.parseDouble(ver.substring(0, idx));
+                double minor = Double.parseDouble(ver.substring(idx+1));
+                if (major == 3 && minor > 13.9 && minor < 15 && osName.equals("Linux")) {
                     // warn about buggy behaviour on Linux with nss 3.14
                     System.out.println("Warning: old NSS " + ver + " might be problematic, consider upgrading it");
                 }
