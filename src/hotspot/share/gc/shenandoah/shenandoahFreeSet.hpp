@@ -535,6 +535,8 @@ public:
 
   HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
 
+  HeapWord* allocate_contiguous_cds(ShenandoahAllocRequest &req);
+
   void release_all_directly_allocatable_regions();
 
   void release_directly_allocatable_region(ShenandoahHeapRegion *region);

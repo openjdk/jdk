@@ -2175,6 +2175,12 @@ HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
   return allocate_contiguous(req, /*is_humongous*/true);
 }
 
+HeapWord* ShenandoahFreeSet::allocate_contiguous_cds(ShenandoahAllocRequest& req) {
+  assert(req.type() == ShenandoahAllocRequest::_alloc_cds, "Must be CDS alloc.");
+  ShenandoahHeapLocker locker(_heap->lock(), req.is_mutator_alloc());
+  return allocate_contiguous(req, /*is_humongous*/false);
+}
+
 template<bool IS_TLAB>
 HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
   uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region) {
@@ -2205,7 +2211,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
   assert(req.is_mutator_alloc(), "Must be mutator allocation");
   assert(req.is_young(), "Mutator allocations always come from young generation.");
   assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
-  assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
+  assert(req.type() == ShenandoahAllocRequest::_alloc_tlab ||
+         req.type() == ShenandoahAllocRequest::_alloc_shared ||
+         req.type() == ShenandoahAllocRequest::_alloc_cds,  "Must be");
 
   const uint start_idx = ShenandoahDirectlyAllocatableRegionAffinity::index();
   const uint max_probes = ShenandoahDirectAllocationMaxProbes;

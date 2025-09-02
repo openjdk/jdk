@@ -1051,7 +1051,11 @@ HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& re
   ShenandoahFreeSet* free_set = ShenandoahHeap::free_set();
   if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     in_new_region = true;
-    return free_set->allocate_humongous(req);
+    if (req.type() == ShenandoahAllocRequest::_alloc_cds) {
+      return free_set->allocate_contiguous_cds(req);
+    } else {
+      return free_set->allocate_humongous(req);
+    }
   }
   if (req.is_lab_alloc()) {
     return free_set->try_allocate_single_for_mutator<true>(req, in_new_region);
@@ -2835,7 +2839,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
 
   for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
     ShenandoahHeapRegion* r = get_region(idx);
-    assert(r->is_regular(), "Must be regular");
+    assert(r->is_regular(), "Must be regular, state: %s", r->region_state_to_string(r->state()));
     assert(r->is_young(), "Must be young");
     assert(idx == end_reg_idx || r->top() == r->end(),
            "All regions except the last one should be full: " PTR_FORMAT " " PTR_FORMAT,
