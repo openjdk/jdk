@@ -654,9 +654,11 @@ public:
 
 // Catch all for all element-wise vector operations.
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
+private:
+  const int _vector_opcode;
 public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, req, prototype) {}
+  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodePrototype prototype, const int vector_opcode) :
+    VTransformVectorNode(vtransform, req, prototype), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
@@ -672,21 +674,21 @@ struct VTransformBoolTest {
 
 // Cmp + Bool -> VectorMaskCmp
 // The Bool node takes care of "apply".
-class VTransformCmpVectorNode : public VTransformElementWiseVectorNode {
+class VTransformCmpVectorNode : public VTransformVectorNode {
 public:
   VTransformCmpVectorNode(VTransform& vtransform, /* TODO: req*/const VTransformVectorNodePrototype prototype) :
-    VTransformElementWiseVectorNode(vtransform, 3, prototype) {}
+    VTransformVectorNode(vtransform, 3, prototype) {}
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
 };
 
-class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
+class VTransformBoolVectorNode : public VTransformVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
   VTransformBoolVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, VTransformBoolTest test) :
-    VTransformElementWiseVectorNode(vtransform, 2, prototype), _test(test) {}
+    VTransformVectorNode(vtransform, 2, prototype), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

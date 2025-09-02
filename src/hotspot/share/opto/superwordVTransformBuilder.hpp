@@ -79,8 +79,8 @@ private:
   VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
   void init_req_with_scalar(Node* n, VTransformNode* vtn, const int index);
   void init_req_with_vector(const Node_List* pack, VTransformNode* vtn, const int index);
-  void set_all_req_with_scalars(Node* n, VTransformNode* vtn);
-  void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn);
+  void init_all_req_with_scalars(Node* n, VTransformNode* vtn);
+  void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn);
   void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
 };
 

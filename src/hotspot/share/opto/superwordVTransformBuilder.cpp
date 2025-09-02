@@ -93,6 +93,10 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     } else if (vtn->isa_ReductionVector() != nullptr) {
       init_req_with_scalar(p0,   vtn, 1); // scalar init
       init_req_with_vector(pack, vtn, 2); // vector
+    } else if (vtn->isa_CmpVector() ||
+               vtn->isa_BoolVector()) {
+      // TODO: could be the new default
+      init_all_req_with_vectors(pack, vtn);
     } else {
       assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above: %s", vtn->name());
       if (VectorNode::is_scalar_rotate(p0) &&
@@ -105,13 +109,13 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
         init_req_with_scalar(p0,   vtn, 2); // constant rounding mode
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        set_all_req_with_vectors(pack, vtn);
+        init_all_req_with_vectors(pack, vtn);
         VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
       } else {
-        set_all_req_with_vectors(pack, vtn);
+        init_all_req_with_vectors(pack, vtn);
       }
     }
   }
@@ -139,7 +143,7 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
       init_req_with_scalar(n, vtn, 0);
       continue;
     } else {
-      set_all_req_with_scalars(n, vtn);
+      init_all_req_with_scalars(n, vtn);
     }
   }
 }
@@ -173,7 +177,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, -1 /* TODO: */);
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
@@ -187,7 +191,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, -1 /*TODO:*/);
   }
   vtn->set_nodes(pack);
   return vtn;
@@ -295,7 +299,7 @@ void SuperWordVTransformBuilder::init_req_with_vector(const Node_List* pack, VTr
   vtn->init_req(j, req);
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNode* vtn) {
+void SuperWordVTransformBuilder::init_all_req_with_scalars(Node* n, VTransformNode* vtn) {
   assert(vtn->req() == n->req(), "scalars must have same number of reqs");
   for (uint j = 0; j < n->req(); j++) {
     Node* def = n->in(j);
@@ -304,7 +308,7 @@ void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNod
   }
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn) {
+void SuperWordVTransformBuilder::init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
   // Vectors have no ctrl, so ignore it.
