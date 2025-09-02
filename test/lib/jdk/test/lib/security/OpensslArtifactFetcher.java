@@ -50,7 +50,7 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      * @throws SkippedException if a valid version of OpenSSL cannot be found
-     * 	              or if OpenSSL is not available on the target platform
+     *         or if OpenSSL is not available on the target platform
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
