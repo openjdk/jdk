@@ -38,6 +38,11 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.BoxLayout;
+import javax.swing.Box;
+import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.BorderLayout;
 import java.awt.Window;
 import java.lang.reflect.InvocationTargetException;
@@ -49,6 +54,7 @@ public class DefaultTimeZoneTest  {
 
     private static final SimpleDateFormat SDF =
             new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzzz (XXX)");
+    static JLabel tzid;
     private static final String INSTRUCTIONS =
             """
             Tests the platform time zone detection on all platforms.
@@ -98,17 +104,36 @@ public class DefaultTimeZoneTest  {
 
     private static Window createTest() {
         var contents = new JFrame("DefaultTimeZoneTest");
-        var label = new JLabel(SDF.format(new Date()));
-        var panel = new JPanel();
-        var button = new JButton("Update Time Zone");
-        panel.add(button);
         contents.setSize(350, 250);
-        contents.add(label, BorderLayout.NORTH);
-        contents.add(panel, BorderLayout.CENTER);
+        // Panel with vertical layout
+        var panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+        // Time zone ID label
+        tzid = new JLabel("Time zone ID: " + SDF.getTimeZone().getID(), SwingConstants.CENTER);
+        tzid.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Time label
+        var label = new JLabel(SDF.format(new Date()), SwingConstants.CENTER);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Update button
+        var button = new JButton("Update Time Zone");
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Add components with spacing
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(tzid);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(label);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(button);
+        contents.add(panel);
+
         // Update default time zone on button click
         button.addActionListener(e -> {
+            // Clear JVM cached timezone and force reload from OS
+            TimeZone.setDefault(null);
+            System.setProperty("user.timezone", "");
             TimeZone tz = TimeZone.getDefault();
             SDF.setTimeZone(tz);
+            tzid.setText("Time zone ID: " + tz.getID());
             label.setText(SDF.format(new Date()));
             contents.repaint();
         });
