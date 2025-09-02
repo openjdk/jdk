@@ -241,12 +241,6 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
       // The timestamp of $JAVA_HOME/lib/modules is not checked at runtime.
       check_time = !is_jrt;
     }
-#ifdef _WINDOWS
-  } else if (errno == ERROR_FILE_NOT_FOUND || errno == ERROR_PATH_NOT_FOUND) {
-    // On Windows, the errno could be ERROR_PATH_NOT_FOUND (3) in case the directory
-    // path doesn't exist.
-    type = FileType::NOT_EXIST;
-#endif
   } else if (errno == ENOENT) {
     // We allow the file to not exist, as long as it also doesn't exist during runtime.
     type = FileType::NOT_EXIST;
