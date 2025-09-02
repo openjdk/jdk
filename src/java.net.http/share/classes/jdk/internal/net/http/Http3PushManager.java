@@ -370,55 +370,54 @@ final class Http3PushManager {
             throws IOException {
         if (!connection.acceptLargerPushPromise(null, pushId)) return false;
         PendingPushPromise<?> promise = addPushPromise(exchange, pushId, promiseHeaders);
-        boolean accepted = false;
-        if (promise != null) {
-            // A PendingPushPromise is returned only if there was no
-            // PushPromise present. If a PendingPushPromise is returned
-            // it should therefore have its exchange already set to the
-            // current exchange.
-            assert promise.exchange == exchange;
-            HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(
-                    exchange.getExchange().request(), promiseHeaders);
-            var acceptor = exchange.acceptPushPromise(pushId, pushReq);
-            accepted = acceptor != null;
-            if (accepted) {
-                @SuppressWarnings("unchecked")
-                var pppU = (PendingPushPromise<U>) promise;
-                var responseCF = pppU.responseCF;
-                assert responseCF == null;
-                boolean cancelled = false;
-                promiseLock.lock();
-                try {
-                    promise.pushReq = pushReq;
-                    pppU.responseCF = responseCF = acceptor.cf();
-                    // recheck to verify the push hasn't been cancelled already
-                    var check = promises.get(pushId);
-                    if (check instanceof CancelledPushPromise || check == null) {
-                        accepted = false; cancelled = true;
-                    } else {
-                        assert promise == check;
-                        pppU.handler = acceptor.bodyHandler();
-                    }
-                } finally {
-                    promiseLock.unlock();
-                }
-                if (accepted) {
-                    exchange.onPushRequestAccepted(pushId, responseCF);
-                    promise.accepted.complete(true);
-                    // if stream is available start parsing?
-                    tryReceivePromise(promise);
-                    return true;
-                } else if (cancelled){
-                    cancelPendingPushPromise(promise, null);
-                    // should be a no-op - in theory it should already
-                    // have been completed
-                    promise.accepted.complete(false);
-                    return false;
-                }
-            }
-            // nothing to do: the push should already have been cancelled.
+        if (promise == null) {
+            return false;
         }
-        return accepted;
+        // A PendingPushPromise is returned only if there was no
+        // PushPromise present. If a PendingPushPromise is returned
+        // it should therefore have its exchange already set to the
+        // current exchange.
+        assert promise.exchange == exchange;
+        HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(
+                exchange.getExchange().request(), promiseHeaders);
+        var acceptor = exchange.acceptPushPromise(pushId, pushReq);
+        if (acceptor == null) {
+            // nothing to do: the push should already have been cancelled.
+            return false;
+        }
+        @SuppressWarnings("unchecked")
+        var pppU = (PendingPushPromise<U>) promise;
+        var responseCF = pppU.responseCF;
+        assert responseCF == null;
+        boolean cancelled = false;
+        promiseLock.lock();
+        try {
+            promise.pushReq = pushReq;
+            pppU.responseCF = responseCF = acceptor.cf();
+            // recheck to verify the push hasn't been cancelled already
+            var check = promises.get(pushId);
+            if (check instanceof CancelledPushPromise || check == null) {
+                cancelled = true;
+            } else {
+                assert promise == check;
+                pppU.handler = acceptor.bodyHandler();
+            }
+        } finally {
+            promiseLock.unlock();
+        }
+        if (!cancelled) {
+            exchange.onPushRequestAccepted(pushId, responseCF);
+            promise.accepted.complete(true);
+            // if stream is available start parsing?
+            tryReceivePromise(promise);
+            return true;
+        } else {
+            cancelPendingPushPromise(promise, null);
+            // should be a no-op - in theory it should already
+            // have been completed
+            promise.accepted.complete(false);
+            return false;
+        }
     }
 
     /**
