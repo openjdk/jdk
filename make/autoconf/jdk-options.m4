@@ -481,6 +481,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 
 ################################################################################
 #
+# Static analyzer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
+[
+  UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
+      DESC: [enable the GCC static analyzer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if static analyzer is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        STATIC_ANALYZER_CFLAGS="-fanalyzer -Wno-analyzer-fd-leak"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $STATIC_ANALYZER_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $STATIC_ANALYZER_CFLAGS"
+      ])
+  AC_SUBST(STATIC_ANALYZER_ENABLED)
+])
+
+################################################################################
+#
 # LeakSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],

@@ -1476,7 +1476,7 @@ public:
 
 // Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
 static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
-  InstanceKlass* super = klass->superklass();
+  InstanceKlass* super = klass->java_super();
   if (super != nullptr) {
     get_reassigned_fields(super, fields, is_jvmci);
   }
