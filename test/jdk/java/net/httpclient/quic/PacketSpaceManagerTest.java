@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -181,7 +181,7 @@ public class PacketSpaceManagerTest {
 
         @Override
         public void encryptPacket(KeySpace keySpace, long packetNumber,
-                                  Function<Integer, ByteBuffer> headerGenerator,
+                                  IntFunction<ByteBuffer> headerGenerator,
                                   ByteBuffer packetPayload, ByteBuffer output)
                 throws QuicKeyUnavailableException, QuicTransportException {
             // this dummy QUIC TLS engine doesn't do any encryption.
