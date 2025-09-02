@@ -25,12 +25,11 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestSuperDefault
+ * @run junit MethodReferenceTestSuperDefault
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
@@ -61,20 +60,20 @@ interface DSPRB extends DSPRA {
 
 }
 
-@Test
 public class MethodReferenceTestSuperDefault implements DSPRB {
 
+    @Test
     public void testMethodReferenceSuper() {
         DSPRI q;
 
         q = DSPRB.super::xsA__;
-        assertEquals(q.m("*"), "A__xsA:*");
+        assertEquals("A__xsA:*", q.m("*"));
 
         q = DSPRB.super::xsAB_;
-        assertEquals(q.m("*"), "AB_xsB:*");
+        assertEquals("AB_xsB:*", q.m("*"));
 
         q = DSPRB.super::xs_B_;
-        assertEquals(q.m("*"), "_B_xsB:*");
+        assertEquals("_B_xsB:*", q.m("*"));
     }
 
 }

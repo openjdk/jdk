@@ -25,12 +25,11 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestTypeConversion
+ * @run junit MethodReferenceTestTypeConversion
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
@@ -40,21 +39,22 @@ class MethodReferenceTestTypeConversion_E<T> {
     T xI(T t) { return t; }
 }
 
-@Test
 public class MethodReferenceTestTypeConversion {
 
     interface ISi { int m(Short a); }
 
     interface ICc { char m(Character a); }
 
+    @Test
     public void testUnboxObjectToNumberWiden() {
         ISi q = (new MethodReferenceTestTypeConversion_E<Short>())::xI;
-        assertEquals(q.m((short)77), (short)77);
+        assertEquals((short)77, q.m((short)77));
     }
 
+    @Test
     public void testUnboxObjectToChar() {
         ICc q = (new MethodReferenceTestTypeConversion_E<Character>())::xI;
-        assertEquals(q.m('@'), '@');
+        assertEquals('@', q.m('@'));
     }
 
 }

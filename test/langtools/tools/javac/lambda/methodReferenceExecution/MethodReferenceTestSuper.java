@@ -25,12 +25,11 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestSuper
+ * @run junit MethodReferenceTestSuper
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
@@ -77,7 +76,6 @@ class SPRB extends SPRA {
 
 }
 
-@Test
 public class MethodReferenceTestSuper extends SPRB {
 
     String xsA_M(String s) {
@@ -93,26 +91,27 @@ public class MethodReferenceTestSuper extends SPRB {
         return "_BMxsM:" + s;
     }
 
+    @Test
     public void testMethodReferenceSuper() {
         SPRI q;
 
         q = super::xsA__;
-        assertEquals(q.m("*"), "A__xsA:*");
+        assertEquals("A__xsA:*", q.m("*"));
 
         q = super::xsA_M;
-        assertEquals(q.m("*"), "A_MxsA:*");
+        assertEquals("A_MxsA:*", q.m("*"));
 
         q = super::xsAB_;
-        assertEquals(q.m("*"), "AB_xsB:*");
+        assertEquals("AB_xsB:*", q.m("*"));
 
         q = super::xsABM;
-        assertEquals(q.m("*"), "ABMxsB:*");
+        assertEquals("ABMxsB:*", q.m("*"));
 
         q = super::xs_B_;
-        assertEquals(q.m("*"), "_B_xsB:*");
+        assertEquals("_B_xsB:*", q.m("*"));
 
         q = super::xs_BM;
-        assertEquals(q.m("*"), "_BMxsB:*");
+        assertEquals("_BMxsB:*", q.m("*"));
     }
 
 }

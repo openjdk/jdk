@@ -25,18 +25,16 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestSueCase1
+ * @run junit MethodReferenceTestSueCase1
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
  */
 
-@Test
 public class MethodReferenceTestSueCase1 {
 
     public interface Sam2<T> { public String get(T target, String s); }
@@ -46,7 +44,8 @@ public class MethodReferenceTestSueCase1 {
 
     String m() {  return var.get(new MethodReferenceTestSueCase1(), ""); }
 
+    @Test
     public void testSueCase1() {
-        assertEquals(m(), "2");
+        assertEquals("2", m());
     }
 }

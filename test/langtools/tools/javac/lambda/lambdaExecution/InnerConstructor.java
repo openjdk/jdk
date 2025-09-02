@@ -25,18 +25,18 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng InnerConstructor
+ * @run junit InnerConstructor
  */
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class InnerConstructor  {
 
+    @Test
     public void testLambdaWithInnerConstructor() {
-        assertEquals(seq1().m().toString(), "Cbl:nada");
-        assertEquals(seq2().m("rats").toString(), "Cbl:rats");
+        assertEquals("Cbl:nada", seq1().m().toString());
+        assertEquals("Cbl:rats", seq2().m("rats").toString());
     }
 
     Ib1 seq1() {

@@ -23,17 +23,16 @@
 
 package org.openjdk.tests.separate;
 
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 
 import static org.openjdk.tests.separate.SourceModel.Class;
 import static org.openjdk.tests.separate.SourceModel.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestHarness {
 
@@ -69,7 +68,7 @@ public class TestHarness {
         verboseLocal.set(Boolean.TRUE);
     }
 
-    @AfterMethod
+    @AfterEach
     public void reset() {
         if (!this.verbose) {
             verboseLocal.set(Boolean.FALSE);
@@ -87,7 +86,7 @@ public class TestHarness {
         return flags.toArray(new Compiler.Flags[0]);
     }
 
-    @AfterMethod
+    @AfterEach
     public void printError(ITestResult result) {
         if (result.getStatus() == ITestResult.FAILURE) {
             String clsName = result.getTestClass().getName();
@@ -193,7 +192,7 @@ public class TestHarness {
             Object res = m.invoke(null);
             assertNotNull(res);
             if (value != null) {
-                assertEquals(res, value);
+                assertEquals(value, res);
             }
         } catch (InvocationTargetException | IllegalAccessException e) {
             fail("Unexpected exception thrown: " + e.getCause(), e.getCause());

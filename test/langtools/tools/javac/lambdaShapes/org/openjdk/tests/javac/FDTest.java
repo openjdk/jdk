@@ -42,11 +42,11 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class FDTest {
 
@@ -63,7 +63,7 @@ public class FDTest {
     public static JavaCompiler comp;
     public static StandardJavaFileManager fm;
 
-    @BeforeSuite
+    @BeforeAll
     static void init() {
         // create default shared JavaCompiler - reused across multiple
         // compilations
@@ -72,7 +72,7 @@ public class FDTest {
         fm = comp.getStandardFileManager(null, null, null);
     }
 
-    @AfterSuite
+    @AfterAll
     static void teardown() throws IOException {
         fm.close();
     }
@@ -87,13 +87,13 @@ public class FDTest {
         teardown();
     }
 
-    @Test(dataProvider = "fdCases")
+    @ParameterizedTest
+    @MethodSource("caseGenerator")
     public void testOneCase(TestKind tk, Hierarchy hs)
             throws Exception {
         FDTest.runTest(tk, hs, comp, fm);
     }
 
-    @DataProvider(name = "fdCases")
     public Object[][] caseGenerator() {
         List<Pair<TestKind, Hierarchy>> cases = generateCases();
         Object[][] fdCases = new Object[cases.size()][];

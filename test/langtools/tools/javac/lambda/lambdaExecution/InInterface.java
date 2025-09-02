@@ -25,11 +25,11 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng InInterface
+ * @run junit InInterface
  */
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 interface LTII {
 
@@ -51,12 +51,12 @@ interface LTII {
 
 }
 
-@Test
 public class InInterface implements LTII {
 
+    @Test
     public void testLambdaInDefaultMethod() {
-        assertEquals(t1().m(), "yo");
-        assertEquals(t2().m("p"), "snurp");
+        assertEquals("yo", t1().m());
+        assertEquals("snurp", t2().m("p"));
     }
 
 }

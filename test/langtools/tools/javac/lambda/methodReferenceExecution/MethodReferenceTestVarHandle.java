@@ -24,16 +24,15 @@
 /**
  * @test
  * @summary test for VarHandle signature polymorphic methods
- * @run testng MethodReferenceTestVarHandle
+ * @run junit MethodReferenceTestVarHandle
  */
 
 import java.lang.invoke.*;
 import java.util.*;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class MethodReferenceTestVarHandle {
 
   interface Setter {
@@ -44,6 +43,7 @@ public class MethodReferenceTestVarHandle {
       int apply(int[] arr, int idx);
   }
 
+    @Test
   public void testSet() throws Throwable {
       VarHandle vh = MethodHandles.arrayElementVarHandle(int[].class);
 
@@ -54,6 +54,7 @@ public class MethodReferenceTestVarHandle {
       assertEquals(42, data[0]);
   }
 
+    @Test
   public void testGet() throws Throwable {
       VarHandle vh = MethodHandles.arrayElementVarHandle(int[].class);
 
