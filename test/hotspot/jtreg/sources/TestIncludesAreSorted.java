@@ -61,6 +61,7 @@ public class TestIncludesAreSorted {
                     "share/opto",
                     "share/precompiled",
                     "share/prims",
+                    "share/runtime",
                     "share/services",
                     "share/utilities"
     };

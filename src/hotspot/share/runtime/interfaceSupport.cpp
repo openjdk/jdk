@@ -22,7 +22,6 @@
  *
  */
 
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"

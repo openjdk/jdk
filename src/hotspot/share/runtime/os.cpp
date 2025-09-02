@@ -65,8 +65,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/threadService.hpp"
@@ -89,8 +89,8 @@
 # include <poll.h>
 #endif
 
-# include <signal.h>
 # include <errno.h>
+# include <signal.h>
 
 OSThread*         os::_starting_thread    = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;

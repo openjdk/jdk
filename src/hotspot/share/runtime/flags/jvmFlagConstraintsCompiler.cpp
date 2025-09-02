@@ -25,14 +25,14 @@
 #include "code/relocInfo.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "oops/metadata.hpp"
-#include "runtime/os.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/metadata.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 /**

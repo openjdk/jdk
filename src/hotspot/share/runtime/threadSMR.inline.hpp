@@ -29,8 +29,8 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "runtime/atomic.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/debug.hpp"

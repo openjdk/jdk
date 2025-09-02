@@ -23,8 +23,8 @@
  *
  */
 
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 
 const char* CPUTimeGroups::to_string(CPUTimeType val) {
   switch (val) {
