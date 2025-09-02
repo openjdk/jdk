@@ -125,7 +125,7 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
 }
 
 void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
-  assert(is_added_to_cset_group(), "pre-condition");
+  assert(has_cset_group(), "pre-condition");
 
   assert(_state != Untracked, "must be");
 
