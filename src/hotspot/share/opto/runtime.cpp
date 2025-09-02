@@ -1781,12 +1781,19 @@ static const TypeFunc* make_osr_end_Type() {
 }
 
 #ifndef PRODUCT
-void OptoRuntime::debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
-  const Type *type = Type::get_const_basic_type(parm->bottom_type()->basic_type());
-  if (type == TypePtr::NULL_PTR) { // half of long and double
+static void debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
+  const BasicType bt = parm->bottom_type()->basic_type();
+  fields[(*argp)++] = Type::get_const_basic_type(bt);
+  if (bt == T_LONG || bt == T_DOUBLE) {
     fields[(*argp)++] = Type::HALF;
-  } else {
-    fields[(*argp)++] = type;
+  }
+}
+
+static void update_arg_cnt(const Node* parm, int* arg_cnt) {
+  (*arg_cnt)++;
+  const BasicType bt = parm->bottom_type()->basic_type();
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    (*arg_cnt)++;
   }
 }
 
@@ -1795,13 +1802,13 @@ const TypeFunc* OptoRuntime::debug_print_Type(Node* parm0, Node* parm1,
                                         Node* parm4, Node* parm5,
                                         Node* parm6) {
   int argcnt = 1;
-  if (parm0 != nullptr) { argcnt++;
-  if (parm1 != nullptr) { argcnt++;
-  if (parm2 != nullptr) { argcnt++;
-  if (parm3 != nullptr) { argcnt++;
-  if (parm4 != nullptr) { argcnt++;
-  if (parm5 != nullptr) { argcnt++;
-  if (parm6 != nullptr) { argcnt++;
+  if (parm0 != nullptr) { update_arg_cnt(parm0, &argcnt);
+  if (parm1 != nullptr) { update_arg_cnt(parm1, &argcnt);
+  if (parm2 != nullptr) { update_arg_cnt(parm2, &argcnt);
+  if (parm3 != nullptr) { update_arg_cnt(parm3, &argcnt);
+  if (parm4 != nullptr) { update_arg_cnt(parm4, &argcnt);
+  if (parm5 != nullptr) { update_arg_cnt(parm5, &argcnt);
+  if (parm6 != nullptr) { update_arg_cnt(parm6, &argcnt);
   /* close each nested if ===> */  } } } } } } }
 
   // create input type (domain)

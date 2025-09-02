@@ -738,10 +738,6 @@ private:
   }
 
 #ifndef PRODUCT
-  private:
-  static void debug_print_convert_type(const Type** fields, int* argp, Node *parm);
-
-  public:
   // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
   // Note: we do not allow more than 7 node arguments as GraphKit::make_runtime_call only allows 8, and we need
   // one for the static string

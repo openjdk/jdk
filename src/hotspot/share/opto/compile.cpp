@@ -5435,6 +5435,14 @@ static Node* pick_control(const Unique_Node_List& candidates) {
   return nullptr;
 }
 
+static void debug_init_req(Node* call, Node* parm, Node* half, int* pos) {
+  call->init_req((*pos)++, parm);
+  const BasicType bt = parm->bottom_type()->basic_type();
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    call->init_req((*pos)++, half);
+  }
+}
+
 Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
                               Node* parm0, Node* parm1,
                               Node* parm2, Node* parm3,
@@ -5472,14 +5480,15 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   call->init_req(TypeFunc::FramePtr,  frame_ptr);
   call->init_req(TypeFunc::ReturnAdr, top());
 
-  call->init_req(TypeFunc::Parms+0, str_node);
-  if (parm0 != nullptr) { call->init_req(TypeFunc::Parms+1, parm0);
-  if (parm1 != nullptr) { call->init_req(TypeFunc::Parms+2, parm1);
-  if (parm2 != nullptr) { call->init_req(TypeFunc::Parms+3, parm2);
-  if (parm3 != nullptr) { call->init_req(TypeFunc::Parms+4, parm3);
-  if (parm4 != nullptr) { call->init_req(TypeFunc::Parms+5, parm4);
-  if (parm5 != nullptr) { call->init_req(TypeFunc::Parms+6, parm5);
-  if (parm6 != nullptr) { call->init_req(TypeFunc::Parms+7, parm6);
+  int pos = TypeFunc::Parms;
+  call->init_req(pos++, str_node);
+  if (parm0 != nullptr) { debug_init_req(call, parm0, top(), &pos);
+  if (parm1 != nullptr) { debug_init_req(call, parm1, top(), &pos);
+  if (parm2 != nullptr) { debug_init_req(call, parm2, top(), &pos);
+  if (parm3 != nullptr) { debug_init_req(call, parm3, top(), &pos);
+  if (parm4 != nullptr) { debug_init_req(call, parm4, top(), &pos);
+  if (parm5 != nullptr) { debug_init_req(call, parm5, top(), &pos);
+  if (parm6 != nullptr) { debug_init_req(call, parm6, top(), &pos);
   /* close each nested if ===> */  } } } } } } }
   assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
 
