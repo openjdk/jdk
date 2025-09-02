@@ -110,9 +110,13 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
         init_all_req_with_vectors(pack, vtn);
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(1)->isa_BoolVector();
+        // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
+        vtn->swap_req(1, 2);
+        vtn->swap_req(2, 3);
+        // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
+        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(3)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
-          vtn->swap_req(2, 3); // swap if test was negated.
+          vtn->swap_req(1, 2); // swap if test was negated.
         }
       } else {
         init_all_req_with_vectors(pack, vtn);
@@ -171,6 +175,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
+  } else if (p0->is_CMove()) {
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, Op_VectorBlend);
   } else if (_vloop_analyzer.reductions().is_marked_reduction(p0)) {
     vtn = new (_vtransform.arena()) VTransformReductionVectorNode(_vtransform, prototype);
   } else if (VectorNode::is_muladds2i(p0)) {
@@ -181,7 +187,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, -1 /* TODO: */);
   } else {
     assert(p0->req() == 3 ||
-           p0->is_CMove() ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
            VectorNode::is_reinterpret_opcode(opc) ||

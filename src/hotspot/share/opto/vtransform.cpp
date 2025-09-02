@@ -777,7 +777,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* first = _nodes.at(0);
   uint  vlen   = _prototype.vector_length();
   int   sopc   = _prototype.scalar_opcode();
+  int   vopc   = _vector_opcode;
   BasicType bt = _prototype.element_basic_type();
+  const TypeVect* vt = TypeVect::make(bt, vlen);
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
@@ -785,9 +787,12 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
+  // TODO: replace with unary / binary / ternary
+
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
-    vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
+    vn = VectorNode::make(vopc, in1, in2, in3, vt);
+    //vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
   } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
