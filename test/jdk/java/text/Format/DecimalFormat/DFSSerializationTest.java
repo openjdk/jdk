@@ -137,8 +137,10 @@ public class DFSSerializationTest {
         }
     }
 
-    // Previous versions of DFS could contain a null locale
-    // Ensure that a null locale does not cause failures for loading number data.
+    // Up-to-date DFS stream versions do not expect a null locale since the public
+    // API forbids it. However, this was not always the case and previous stream
+    // versions can contain a null locale. Thus, ensure that a null locale does
+    // not cause number data loading to fail.
     @Test
     public void nullableLocaleTest() {
         var bytes = ser(new DFSBuilder()
