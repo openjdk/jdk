@@ -138,7 +138,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current) {
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
     log_debug(training)("Replay training: %s", klass->external_name());
@@ -150,11 +150,11 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
       assert(klass->has_init_deps_processed(), "");
       if (AOTCompileEagerly) {
         ktd->iterate_comp_deps([&](CompileTrainingData* ctd) {
-          if (ctd->init_deps_left() == 0) {
+          if (ctd->init_deps_left_acquire() == 0) {
             MethodTrainingData* mtd = ctd->method();
             if (mtd->has_holder()) {
-              const methodHandle mh(THREAD, const_cast<Method*>(mtd->holder()));
-              CompilationPolicy::maybe_compile_early(mh, THREAD);
+              const methodHandle mh(current, const_cast<Method*>(mtd->holder()));
+              CompilationPolicy::maybe_compile_early(mh, current);
             }
           }
         });
@@ -163,10 +163,10 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
   }
 }
 
-void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
   if (TrainingData::have_data() && klass->is_shared()) {
-    _training_replay_queue.push(klass, TrainingReplayQueue_lock, THREAD);
+    _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }
 
@@ -181,11 +181,11 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
+void CompilationPolicy::replay_training_at_init_loop(JavaThread* current) {
   while (!CompileBroker::is_compilation_disabled_forever()) {
-    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
+    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, current);
     if (ik != nullptr) {
-      replay_training_at_init_impl(ik, THREAD);
+      replay_training_at_init_impl(ik, current);
     }
   }
 }
@@ -446,7 +446,7 @@ void CompilationPolicy::print_training_data_on(outputStream* st,  const char* pr
     if (ctd == nullptr) {
       st->print("null");
     } else {
-      st->print("%d", ctd->init_deps_left());
+      st->print("%d", ctd->init_deps_left_acquire());
     }
   }
 }
@@ -1172,7 +1172,7 @@ CompLevel CompilationPolicy::trained_transition_from_none(const methodHandle& me
   CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
   assert(ctd != nullptr, "Should have CTD for CompLevel_full_optimization");
   // With SkipTier2IfPossible and all deps satisfied, go to level 4 immediately
-  if (SkipTier2IfPossible && ctd->init_deps_left() == 0) {
+  if (SkipTier2IfPossible && ctd->init_deps_left_acquire() == 0) {
     if (method->method_data() == nullptr) {
       create_mdo(method, THREAD);
     }
@@ -1200,7 +1200,7 @@ CompLevel CompilationPolicy::trained_transition_from_limited_profile(const metho
   assert(training_has_profile, "Have to have a profile to be here");
   // Check if the method is ready
   CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
-  if (ctd != nullptr && ctd->init_deps_left() == 0) {
+  if (ctd != nullptr && ctd->init_deps_left_acquire() == 0) {
     if (method->method_data() == nullptr) {
       create_mdo(method, THREAD);
     }
