@@ -30,12 +30,13 @@
  *          and render the cast value stale.
  *
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCastP2XCtrl::test
  *      -XX:CompileCommand=dontinline,*TestAliasingCastP2XCtrl::allocateArrays
  *      -XX:-TieredCompilation
  *      -Xbatch
- *      -XX:+StressGCM
  *      -XX:+UseG1GC
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
  *      compiler.loopopts.superword.TestAliasingCastP2XCtrl
  */
 
@@ -43,10 +44,11 @@
  * @test id=fewer-flags
  * @bug 8366490
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCastP2XCtrl::test
  *      -XX:CompileCommand=dontinline,*TestAliasingCastP2XCtrl::allocateArrays
  *      -Xbatch
- *      -XX:+StressGCM
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
  *      compiler.loopopts.superword.TestAliasingCastP2XCtrl
  */
 
