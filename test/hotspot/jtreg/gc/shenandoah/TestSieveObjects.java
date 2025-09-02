@@ -103,7 +103,7 @@
  *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
  *      TestSieveObjects
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=480 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
  *      TestSieveObjects
