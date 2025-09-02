@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -331,7 +332,7 @@ public interface JavaLangAccess {
 
     /**
      * Constructs a new {@code String} by decoding the specified byte array
-     * using the specified {@code Charset}.
+     * using the specified {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
      * ownership of the byte array to the callee</b>, since the latter will not
@@ -342,22 +343,25 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
-     * {@return the sequence of bytes obtained by encoding the given string in
-     * the specified {@code Charset}}
+     * Encode the given string into a sequence of bytes using the specified
+     * {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array
      * must not be modified.</b>
+     * <p>
+     * This method throws {@code CharacterCodingException} instead of replacing
+     * when malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
-     * @throws NullPointerException If {@code s} or {@code cs} is null
+     * @return the encoded bytes
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -383,13 +387,13 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
+     * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
-     * @throws NullPointerException If {@code s} is null
-     * @throws CharacterCodingException For malformed input or unmappable characters
+     * @return the encoded bytes in utf8
+     * @throws IllegalArgumentException for malformed surrogates
      */
-    byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException;
+    byte[] getBytesUTF8NoRepl(String s);
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
