@@ -45,9 +45,14 @@ import javax.tools.ToolProvider;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestInstanceFactory;
+import org.junit.jupiter.api.extension.TestInstanceFactoryContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(LocalTestInstanceFactory.class)
 public class FDTest {
 
     public enum TestKind {
@@ -94,7 +99,7 @@ public class FDTest {
         FDTest.runTest(tk, hs, comp, fm);
     }
 
-    public Object[][] caseGenerator() {
+    public static Object[][] caseGenerator() {
         List<Pair<TestKind, Hierarchy>> cases = generateCases();
         Object[][] fdCases = new Object[cases.size()][];
         for (int i = 0; i < cases.size(); ++i) {
@@ -199,5 +204,11 @@ public class FDTest {
                 errorFound = true;
             }
         }
+    }
+}
+
+class LocalTestInstanceFactory implements TestInstanceFactory {
+    public Object createTestInstance(TestInstanceFactoryContext factoryContext, ExtensionContext extensionContext) {
+        return new FDTest();
     }
 }

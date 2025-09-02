@@ -21,9 +21,6 @@
  * questions.
  */
 
-// this test has been disabled because of timeout issues.
-// see JDK-8006746
-
 package org.openjdk.tests.vm;
 
 import java.util.*;
@@ -119,17 +116,8 @@ public class FDSeparateCompilationTest extends TestHarness {
         }
     }
 
-    @AfterEach
-    public void printCaseError(ITestResult result) {
-        if (result.getStatus() == ITestResult.FAILURE) {
-            Hierarchy hs = (Hierarchy)result.getParameters()[0];
-            System.out.println("Separate compilation case " + hs);
-            printCaseDetails(hs);
-        }
-    }
-
     @AfterAll
-    public void cleanupCompilerCache() {
+    public static void cleanupCompilerCache() {
         Compiler.purgeCache();
     }
 

@@ -86,16 +86,6 @@ public class TestHarness {
         return flags.toArray(new Compiler.Flags[0]);
     }
 
-    @AfterEach
-    public void printError(ITestResult result) {
-        if (result.getStatus() == ITestResult.FAILURE) {
-            String clsName = result.getTestClass().getName();
-            clsName = clsName.substring(clsName.lastIndexOf(".") + 1);
-            System.out.println("Test " + clsName + "." +
-                               result.getName() + " FAILED");
-        }
-    }
-
     private static final ConcreteMethod stdCM = ConcreteMethod.std("-1");
     private static final AbstractMethod stdAM =
             new AbstractMethod("int", stdMethodName);
