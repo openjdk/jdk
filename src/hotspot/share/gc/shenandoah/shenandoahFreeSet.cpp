@@ -1229,7 +1229,8 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _young_unaffiliated_regions(0),
   _global_unaffiliated_regions(0),
   _total_young_regions(0),
-  _total_global_regions(0)
+  _total_global_regions(0),
+  _mutator_bytes_allocated_since_gc_start(0)
 {
   clear_internal();
 }
