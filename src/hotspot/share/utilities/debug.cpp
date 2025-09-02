@@ -329,16 +329,6 @@ class Command : public StackObj {
     }
     return true;
   }
-
-  bool onJavaThread() {
-    if (!onThread()) return false;
-
-    if (JavaThread::active() == nullptr) {
-      tty->print_cr("Failed: Current thread is not a java thread or the vm thread");
-      return false;
-    }
-    return true;
-  }
 };
 
 int Command::level = 0;
@@ -451,11 +441,14 @@ extern "C" DEBUGEXPORT void pp(void* p) {
 extern "C" DEBUGEXPORT void findpc(intptr_t x);
 
 extern "C" DEBUGEXPORT void ps() { // print stack
-  Command c("ps");
-  if (!c.onJavaThread()) return;
-
   // Prints the stack of the current Java thread
+  Command c("ps");
+  if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
   tty->print(" for thread: ");
   p->print();
   tty->cr();
@@ -482,8 +475,12 @@ extern "C" DEBUGEXPORT void ps() { // print stack
 extern "C" DEBUGEXPORT void pfl() {
   // print frame layout
   Command c("pfl");
-  if (!c.onJavaThread()) return;
+  if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
   tty->print(" for thread: ");
   p->print();
   tty->cr();
@@ -494,8 +491,12 @@ extern "C" DEBUGEXPORT void pfl() {
 
 extern "C" DEBUGEXPORT void psf() { // print stack frames
   Command c("psf");
-  if (!c.onJavaThread()) return;
+  if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
   tty->print(" for thread: ");
   p->print();
   tty->cr();
