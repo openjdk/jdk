@@ -65,6 +65,7 @@ public class SocketCloseTest {
         props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         props.put(Context.PROVIDER_URL, "ldap://localhost:1389/o=example");
         props.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
+        props.put("com.sun.jndi.ldap.connect.timeout", 100+"");
         try {
             final DirContext ctx = new InitialDirContext(props);
         } catch (Exception e) {
@@ -141,19 +142,19 @@ public class SocketCloseTest {
 
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
-        private LdapOutputStream output = new LdapOutputStream();
-        private LdapInputStream input = new LdapInputStream();
-
-        public void connect(SocketAddress address, int timeout) {
-        }
-
-        public InputStream getInputStream() {
-            return input;
-        }
-
-        public OutputStream getOutputStream() {
-            return output;
-        }
+//        private LdapOutputStream output = new LdapOutputStream();
+//        private LdapInputStream input = new LdapInputStream();
+//
+//        public void connect(SocketAddress address, int timeout) {
+//        }
+//
+//        public InputStream getInputStream() {
+//            return input;
+//        }
+//
+//        public OutputStream getOutputStream() {
+//            return output;
+//        }
 
         public int closeMethodCalledCount() {
             return closeMethodCalled;
