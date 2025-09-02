@@ -522,7 +522,7 @@ public abstract sealed class BuffersReader {
                 } else {
                     var b = current;
                     long relased = bytes;
-                    bytes -= relased;
+                    bytes = 0;
                     limit -= relased;
                     var pos = buf.position();
                     assert b.limit == buf.limit();
