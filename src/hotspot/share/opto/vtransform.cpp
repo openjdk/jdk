@@ -158,11 +158,9 @@ void VTransform::apply_speculative_alignment_runtime_checks() {
 
     const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
     for (int i = 0; i < vtnodes.length(); i++) {
-      VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+      VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
       if (vtn == nullptr) { continue; }
-      MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
-      if (p0 == nullptr) { continue; }
-      const VPointer& vp = vpointer(p0);
+      const VPointer& vp = vtn->vpointer();
       if (vp.mem_pointer().base().is_object()) { continue; }
       assert(vp.mem_pointer().base().is_native(), "VPointer base must be object or native");
 
@@ -775,16 +773,11 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
-  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
-
-  if (first->is_Cmp()) {
-    // Cmp + Bool -> VectorMaskCmp
-    // Handled by Bool / VTransformBoolVectorNode, so we do not generate any nodes here.
-    return VTransformApplyResult::make_empty();
-  }
+  // TODO: refactor!
+  Node* first = _nodes.at(0);
+  uint  vlen   = _prototype.vector_length();
+  int   opc    = _prototype.scalar_opcode();
+  BasicType bt = _prototype.element_basic_type();
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
@@ -833,14 +826,13 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
 }
 
 VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& apply_state) const {
-  BoolNode* first = nodes().at(0)->as_Bool();
-  uint  vlen = nodes().length();
-  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
+  uint  vlen = _prototype.vector_length();
+  BasicType bt = _prototype.element_basic_type();
+  assert(_prototype.scalar_opcode() == Op_Bool, "");
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in_req(1)->isa_ElementWiseVector();
-  assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
-         "bool vtn expects cmp vtn as input");
+  VTransformCmpVectorNode* vtn_cmp = in_req(1)->isa_CmpVector();
+  assert(vtn_cmp != nullptr, "bool vtn expects cmp vtn as input");
 
   Node* cmp_in1 = apply_state.transformed_node(vtn_cmp->in_req(1));
   Node* cmp_in2 = apply_state.transformed_node(vtn_cmp->in_req(2));
@@ -855,10 +847,11 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
-  Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
-  BasicType bt = first->bottom_type()->basic_type();
+  uint  vlen = _prototype.vector_length();
+  int   opc  = _prototype.scalar_opcode();
+  // TODO: investigate the difference here!
+  //BasicType bt = first->bottom_type()->basic_type();
+  BasicType bt = _prototype.element_basic_type();
 
   Node* init = apply_state.transformed_node(in_req(1));
   Node* vec  = apply_state.transformed_node(in_req(2));
@@ -869,6 +862,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
+  // TODO: consider refactoring too
   LoadNode* first = nodes().at(0)->as_Load();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -899,6 +893,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& apply_state) const {
+  // TODO: consider refactoring too
   StoreNode* first = nodes().at(0)->as_Store();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -916,10 +911,12 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
 
 void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  Node* first = nodes().at(0);
+  // TODO: refactor
+  Node* first = _nodes.at(0);
 
   register_new_node_from_vectorization(apply_state, vn, first);
 
+  // TODO: refactor
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
     phase->igvn().replace_node(n, vn);

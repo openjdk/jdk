@@ -94,7 +94,7 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       init_req_with_scalar(p0,   vtn, 1); // scalar init
       init_req_with_vector(pack, vtn, 2); // vector
     } else {
-      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
+      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above: %s", vtn->name());
       if (VectorNode::is_scalar_rotate(p0) &&
           p0->in(2)->is_Con() &&
           Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
@@ -149,27 +149,31 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   int opc = p0->Opcode();
+  const VTransformVectorNodePrototype prototype = VTransformVectorNodePrototype::make_from_pack(pack, _vloop_analyzer);
   VTransformVectorNode* vtn = nullptr;
 
   if (p0->is_Load()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size, vector_p);
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p);
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size, vector_p);
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p);
+  } else if (p0->is_Cmp()) {
+    assert(p0->req() == 3, "is it true?");
+    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
-    vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, pack_size, kind);
+    vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
   } else if (_vloop_analyzer.reductions().is_marked_reduction(p0)) {
-    vtn = new (_vtransform.arena()) VTransformReductionVectorNode(_vtransform, pack_size);
+    vtn = new (_vtransform.arena()) VTransformReductionVectorNode(_vtransform, prototype);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, pack_size);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype);
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
@@ -183,7 +187,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), pack_size);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype);
   }
   vtn->set_nodes(pack);
   return vtn;
