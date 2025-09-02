@@ -453,11 +453,12 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
       // Link the class to avoid races with the rewriter. This will call the verifier also
       // on the class. Linking is done already below in VM_RedefineClasses below, but we need
       // to keep that for other VM_RedefineClasses callers.
-      ik->link_class(current_thread);
-      if (current_thread->has_pending_exception()) {
+      JavaThread* THREAD = current_thread;
+      ik->link_class(THREAD);
+      if (HAS_PENDING_EXCEPTION) {
         // Retransform/JVMTI swallows error messages. Using this class will rerun the verifier in a context
         // that propagates the VerifyError, if thrown.
-        current_thread->clear_pending_exception();
+        CLEAR_PENDING_EXCEPTION;
         return JVMTI_ERROR_INVALID_CLASS;
       }
 
@@ -3439,9 +3440,10 @@ JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char**
   (*bytecode_count_ptr) = size;
   // get byte codes
   // Make sure the class is verified and rewritten first.
-  mh->method_holder()->link_class(current_thread);
-  if (current_thread->has_pending_exception()) {
-    current_thread->clear_pending_exception();
+  JavaThread* THREAD = current_thread;
+  mh->method_holder()->link_class(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
     return JVMTI_ERROR_INVALID_CLASS;
   }
   JvmtiClassFileReconstituter::copy_bytecodes(mh, *bytecodes_ptr);

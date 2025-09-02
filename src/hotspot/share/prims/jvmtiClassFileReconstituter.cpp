@@ -32,7 +32,6 @@
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/synchronizer.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 
