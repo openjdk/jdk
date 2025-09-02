@@ -60,8 +60,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * your {@code DecimalFormat} and modify it.
  *
  * <p>The "rg" (region override), "nu" (numbering system), and "cu" (currency)
- * {@code Locale} <a href="../util/Locale.html#def_locale_extension">Unicode
- * extensions</a> are supported which may override values within the symbols.
+ * {@code Locale} {@linkplain Locale##def_locale_extension Unicode
+ * extensions} are supported which may override values within the symbols.
  * For both "nu" and "cu", if they are specified in addition to "rg" by the
  * backing {@code Locale}, the respective values from the "nu" and "cu" extension
  * supersede the implicit ones from the "rg" extension.
