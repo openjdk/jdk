@@ -3013,6 +3013,55 @@ public class JavacParserTest extends TestCase {
                      }""");
     }
 
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotations() throws IOException {
+        String code = """
+                      package tests;
+                      class ListUtilsTest {
+                          void test(List<@AlphaChars <@StringLength(int value = 5)String> s){
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION, "-XDdev"),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testVeryBrokenTypeWithAnnotations: " + codes,
+                     List.of("3:32:compiler.err.illegal.start.of.type",
+                             "3:51:compiler.err.dot.class.expected",
+                             "3:57:compiler.err.expected2",
+                             "3:60:compiler.err.expected2",
+                             "3:61:compiler.err.expected2",
+                             "3:67:compiler.err.not.stmt",
+                             "3:70:compiler.err.expected",
+                             "5:2:compiler.err.premature.eof"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     class ListUtilsTest {
+                         \n\
+                         void test(List<@AlphaChars (ERROR: (ERROR)<@StringLength(int) value, (ERROR)> = 5), (ERROR: )> <error>) {
+                             (ERROR: String > s);
+                             {
+                             }
+                         }
+                     }""");
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)

@@ -1101,6 +1101,10 @@ public class JavacParser implements Parser {
             syntaxError(result.pos, Errors.RestrictedTypeNotAllowedHere(restrictedTypeName));
         }
 
+        if ((lastmode & TYPE) == 0) {
+            result = F.Erroneous(List.of(result));
+        }
+
         return result;
     }
 
@@ -1428,6 +1432,7 @@ public class JavacParser implements Parser {
     protected JCExpression term3() {
         int pos = token.pos;
         JCExpression t;
+        int startMode = mode;
         List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
         switch (token.kind) {
         case QUES:
@@ -1757,6 +1762,9 @@ public class JavacParser implements Parser {
             }
             // Not reachable.
         default:
+            if (typeArgs != null && (startMode & TYPE) != 0) {
+                return F.at(pos).TypeApply(F.Erroneous(), typeArgs);
+            }
             return illegal();
         }
         return term3Rest(t, typeArgs);
