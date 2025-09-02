@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8238274
+ * @key intermittent
  * @summary Potential leak file descriptor for SCTP
  * @requires (os.family == "linux")
  * @library /test/lib
