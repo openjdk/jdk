@@ -621,7 +621,7 @@ public:
 
 
   Node* approximate_origin() const { return _approximate_origin; }
-  int scalar_opcode() const { return _scalar_opcode; } // TODO: rename usages to sopc
+  int scalar_opcode() const { return _scalar_opcode; }
   uint vector_length() const { return _vector_length; }
   BasicType element_basic_type() const { return _element_basic_type; }
   //const TypePtr* adr_type() const { return _adr_type; } // TODO: ?

@@ -776,7 +776,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   // TODO: refactor!
   Node* first = _nodes.at(0);
   uint  vlen   = _prototype.vector_length();
-  int   opc    = _prototype.scalar_opcode();
+  int   sopc   = _prototype.scalar_opcode();
   BasicType bt = _prototype.element_basic_type();
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
@@ -788,37 +788,37 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
     vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
-  } else if (VectorNode::is_convert_opcode(opc)) {
+  } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
-    int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
+    int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
-  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+  } else if (VectorNode::is_reinterpret_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     const TypeVect* vt = TypeVect::make(bt, vlen);
     vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    opc = Op_RShiftI;
-    vn = VectorNode::make(opc, in1, in2, vlen, bt);
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+    sopc = Op_RShiftI;
+    vn = VectorNode::make(sopc, in1, in2, vlen, bt);
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
-    VectorNode* long_vn = VectorNode::make(opc, in1, nullptr, vlen, T_LONG);
+    VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
     register_new_node_from_vectorization(apply_state, long_vn, first);
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
-             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
+             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
     assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
-    vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
+    vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD  ||
-           opc == Op_FmaF  ||
-           opc == Op_FmaHF ||
-           opc == Op_SignumF ||
-           opc == Op_SignumD,
+    assert(sopc == Op_FmaD  ||
+           sopc == Op_FmaF  ||
+           sopc == Op_FmaHF ||
+           sopc == Op_SignumF ||
+           sopc == Op_SignumD,
            "element wise operation must be from this list");
-    vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
+    vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
@@ -848,7 +848,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
   uint  vlen = _prototype.vector_length();
-  int   opc  = _prototype.scalar_opcode();
+  int   sopc  = _prototype.scalar_opcode();
   // TODO: investigate the difference here!
   //BasicType bt = first->bottom_type()->basic_type();
   BasicType bt = _prototype.element_basic_type();
@@ -856,7 +856,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   Node* init = apply_state.transformed_node(in_req(1));
   Node* vec  = apply_state.transformed_node(in_req(2));
 
-  ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
+  ReductionNode* vn = ReductionNode::make(sopc, nullptr, init, vec, bt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
@@ -868,7 +868,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = first->in(MemNode::Address);
-  int   opc  = first->Opcode();
+  int   sopc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
   BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
 
@@ -885,7 +885,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen, bt,
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
@@ -899,11 +899,11 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = first->in(MemNode::Address);
-  int   opc  = first->Opcode();
+  int   sopc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
 
   Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
-  StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
+  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
