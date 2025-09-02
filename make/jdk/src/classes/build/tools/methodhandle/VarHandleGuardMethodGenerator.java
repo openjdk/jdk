@@ -50,7 +50,7 @@ import java.util.stream.Stream;
  * VarHandle.
  * <p>
  * The generated class essentially encapsulates pre-compiled LambdaForms,
- * one for each method, for the most set of common method signatures.
+ * one for each method, for the most common set of method signatures.
  * This reduces static initialization costs, footprint costs, and circular
  * dependencies that may arise if a class is generated per LambdaForm.
  * <p>
@@ -60,7 +60,7 @@ import java.util.stream.Stream;
  * static field, or array access).
  * If there are 4 unique operation signatures, 5 basic types (Object, int,
  * long, float, double), and 3 shapes then a maximum of 60 methods will be
- * generated.  However, the number is likely to be less since there
+ * generated.  However, the number is likely to be less since there may
  * be duplicate signatures.
  * <p>
  * Each method is annotated with @LambdaForm.Compiled to inform the runtime
