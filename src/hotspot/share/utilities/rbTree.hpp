@@ -456,10 +456,11 @@ public:
   ~RBTree() { remove_all(); }
 
   bool copy_into(RBTree& other) const {
+    assert(other.size() == 0, "You can only copy into an empty RBTree");
     assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
     assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
-    enum Dir { Left, Right };
-    struct node_pair { const RBNode<K, V>* current; RBNode<K, V>* other_parent; Dir d; };
+    enum class Dir { Left, Right };
+    struct node_pair { const IntrusiveRBNode* current; IntrusiveRBNode* other_parent; Dir dir; };
     struct stack {
       node_pair s[64];
       int idx = 0;
@@ -473,31 +474,32 @@ public:
     if (this->_root == nullptr)  {
       return true;
     }
-    RBNode<K, V>* root = (RBNode<K, V>*)this->_root;
-    (RBNode<K, V>*&)other._root = other.allocate_node(root->key());
+    RBNode<K, V>* root = static_cast<RBNode<K, V>*>(this->_root);
+    other._root = other.allocate_node(root->key(), root->val());
     if (other._root == nullptr) return false;
-    (RBNode<K, V>*)other._root->val() = root->val();
 
-    visit_stack.push({this->_root->_left, other._root, Left});
-    visit_stack.push({this->_root->_right, other._root, Right});
+    visit_stack.push({this->_root->_left, other._root, Dir::Left});
+    visit_stack.push({this->_root->_right, other._root, Dir::Right});
     while (!visit_stack.is_empty()) {
       node_pair n = visit_stack.pop();
-      if (n.current == nullptr) continue;
-      RBNode<K, V>* new_node = other.allocate_node(n.current->key());
-      new_node->val() = n.current->val();
+      const RBNode<K, V>* current = static_cast<const RBNode<K, V>*>(n.current);
+      if (current == nullptr) continue;
+      RBNode<K, V>* new_node = other.allocate_node(current->key(), current->val());
       if (new_node == nullptr) {
         return false;
       }
-      if (n.dir == Left) {
+      if (n.dir == Dir::Left) {
         n.other_parent->_left = new_node;
       } else {
         n.other_parent->_right = new_node;
       }
       new_node->set_parent(n.other_parent);
       new_node->_parent |= n.current->_parent & 0x1;
-      visit_stack.push({n.current->_left, new_node, Left});
-      visit_stack.push({n.current->_right, new_node, Right});
+      visit_stack.push({n.current->_left, new_node, Dir::Left});
+      visit_stack.push({n.current->_right, new_node, Dir::Right});
     }
+    other._num_nodes = this->_num_nodes;
+    DEBUG_ONLY(other._expected_visited = this->_expected_visited);
     return true;
   }
 
