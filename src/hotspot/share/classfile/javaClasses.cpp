@@ -1886,8 +1886,9 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
-         JavaThread::current()->thread_state() == _thread_in_vm,
-         "Java Thread is not running in vm");
+         JavaThread::current()->thread_state() == _thread_in_vm ||
+         JavaThread::current() == java_lang_Thread::thread(java_thread),
+         "unsafe call to java_lang_Thread::get_thread_status()?");
   GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
@@ -2618,14 +2619,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
-
+  int buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
   // Print module information
   if (module_name != nullptr) {
     if (module_version != nullptr) {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     } else {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     }
   }
 
@@ -2640,13 +2643,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != nullptr && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else if (source_file_name != nullptr) {
         // Just sourcename
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
