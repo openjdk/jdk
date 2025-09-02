@@ -142,19 +142,6 @@ public class SocketCloseTest {
 
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
-//        private LdapOutputStream output = new LdapOutputStream();
-//        private LdapInputStream input = new LdapInputStream();
-//
-//        public void connect(SocketAddress address, int timeout) {
-//        }
-//
-//        public InputStream getInputStream() {
-//            return input;
-//        }
-//
-//        public OutputStream getOutputStream() {
-//            return output;
-//        }
 
         public int closeMethodCalledCount() {
             return closeMethodCalled;
