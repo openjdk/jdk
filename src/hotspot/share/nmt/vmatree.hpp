@@ -31,6 +31,7 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
 #include "utilities/rbTree.inline.hpp"
 #include <cstdint>
 
@@ -227,6 +228,7 @@ private:
 public:
   VMATree() : _tree() {}
   VMATree(const VMATree& other) : _tree() {
+    assert(other._tree.copy_into(_tree), "VMATree dies on OOM");
   }
   VMATree& operator=(VMATree const&) = delete;
 
