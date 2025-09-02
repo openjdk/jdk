@@ -11,7 +11,7 @@ void GCTracer::report_object_count() {
   if (!ObjectCountEventSender::should_send_event()) {
     return;
   }
-  
+
   T* heap = T::heap();
   KlassInfoTable* cit = heap->get_cit();
 
