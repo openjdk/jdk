@@ -28,7 +28,7 @@
  * @summary make sure Generic is accepted by all KeyAgreement implementations
  * @run main Generic builtin
  * @run main/othervm Generic nss
- * @run main/othervm -DCUSTOM_P11_CONFIG_VARIANT=sensitive Generic nss
+ * @run main/othervm -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt Generic nss
  */
 import jdk.test.lib.Asserts;
 

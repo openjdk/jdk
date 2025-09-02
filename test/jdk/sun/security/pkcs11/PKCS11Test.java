@@ -199,6 +199,17 @@ public abstract class PKCS11Test {
         if (PKCS11_BASE != null) {
             return PKCS11_BASE;
         }
+        String customBaseDir = System.getProperty("CUSTOM_P11_CONFIG_BASE_DIR");
+        if (customBaseDir != null) {
+            File base = new File(customBaseDir);
+            if (!base.exists()) {
+                throw new RuntimeException(
+                        "Directory specified by CUSTOM_P11_CONFIG_BASE_DIR does not exist: "
+                                + base.getAbsolutePath());
+            }
+            PKCS11_BASE = base.getAbsolutePath();
+            return PKCS11_BASE;
+        }
         File cwd = new File(System.getProperty("test.src", ".")).getCanonicalFile();
         while (true) {
             File file = new File(cwd, "TEST.ROOT");
@@ -455,52 +466,38 @@ public abstract class PKCS11Test {
     }
 
     /**
-     * Return the full path of a configuration file that will be used
-     * to configure the PKCS11 provider.
+     * Prepares the NSS configuration file hierarchy, then returns the
+     * path of the configuration file that should be used to configure
+     * the PKCS11 provider.
      *
-     * By default, the directory is that returned by copyNssFiles,
-     * "./nss", and the file is "p11-nss.txt", resulting in the full
-     * path "./nss/p11-nss.txt".
+     * By default, the contents of the directory
+     * "test/jdk/sun/security/pkcs11/nss" are copied to the jtreg
+     * scratch directory ("."), and "./nss/p11-nss.txt" is returned.
      *
-     * This value can be adjusted using the following system
-     * properties:
+     * The following system properties modify the default behavior:
+     *
+     * CUSTOM_P11_CONFIG_BASE_DIR: The path of a custom configuration
+     * file hierarchy; overrides the default,
+     * "test/jdk/sun/security/pkcs11".
      *
      * CUSTOM_P11_CONFIG_NAME: The name of a custom configuration
-     * file; overrides the default "p11-nss.txt".
+     * file; overrides the default, "p11-nss.txt".  Note that some
+     * test cases set CUSTOM_P11_CONFIG_NAME using -D in jtreg @run
+     * tags; for those test cases, setting this property on the
+     * top-level jtreg command line has no effect.
      *
-     * CUSTOM_P11_CONFIG: The absolute path of a custom configuration
-     * file; overrides the default "./nss/p11-nss.txt".  Takes
-     * precedence over CUSTOM_P11_CONFIG_NAME if both are specified.
+     * CUSTOM_P11_CONFIG: The path of a custom configuration file;
+     * overrides the default "./nss/p11-nss.txt".  This takes
+     * precedence over CUSTOM_P11_CONFIG_NAME.  Tests that hard-code
+     * CUSTOM_P11_CONFIG_NAME in jtreg @run tags may not work
+     * correctly when CUSTOM_P11_CONFIG is set on the top-level jtreg
+     * command line.
      *
-     * CUSTOM_P11_CONFIG_VARIANT: The variant of the base
-     * configuration file name to use.
+     * CUSTOM_DB_DIR: The path of a custom database directory;
+     * overrides the default, "./nss/db".
      *
-     * A hyphen followed by the CUSTOM_P11_CONFIG_VARIANT string will
-     * be inserted before the "." in the file extension, or appended
-     * to the file name if it is extensionless.
-     *
-     * Providers can have related configurations with multiple
-     * variants, for example, p11-nss.txt and p11-nss-sensitive.txt.
-     * The CUSTOM_P11_CONFIG_VARIANT property allows test authors to
-     * select in which of the related configurations the provider
-     * should run.
-     *
-     * For example, setting -DCUSTOM_P11_CONFIG_VARIANT=sensitive,
-     * (and no other CUSTOM_P11_CONFIG_* properties), will cause this
-     * method to return "./nss/p11-nss-sensitive.txt".
-     *
-     * CUSTOM_P11_CONFIG and CUSTOM_P11_CONFIG_NAME are also
-     * influenced by CUSTOM_P11_CONFIG_VARIANT.  For example the
-     * settings "-DCUSTOM_P11_CONFIG=/tmp/p11-nss.txt
-     * -DCUSTOM_P11_CONFIG_VARIANT=sensitive" will cause this method
-     * to return "/tmp/p11-nss-sensitive.txt".
-     *
-     * CUSTOM_P11_CONFIG_VARIANT is primarily meant to be set in test
-     * case @run arguments.  The test can then specify whether it
-     * needs the provider to be configured with a specific variant,
-     * while still allowing the user of the test suite to specify a
-     * custom set of configuration file variants by setting
-     * CUSTOM_P11_CONFIG on the jtreg command line.
+     * CUSTOM_P11_LIBRARY_NAME: The name of a custom provider library
+     * to load; overrides the default, "softokn3".
      */
     public static String getNssConfig() throws Exception {
         String libdir = getNSSLibDir();
@@ -526,26 +523,9 @@ public abstract class PKCS11Test {
         String customConfigName = System.getProperty("CUSTOM_P11_CONFIG_NAME", "p11-nss.txt");
         System.setProperty("pkcs11test.nss.lib", libfile);
         System.setProperty("pkcs11test.nss.db", dbdir);
-        String configFilePath = (customConfig != null) ?
+        return (customConfig != null) ?
                 customConfig :
                 nssConfigDir + SEP + customConfigName;
-        String customConfigVariant = System.getProperty("CUSTOM_P11_CONFIG_VARIANT");
-        if (customConfigVariant != null) {
-            // If the file name has an extension, prepend
-            // -{CUSTOM_P11_CONFIG_VARIANT} before its "."; for
-            // example, .../p11-nss.txt becomes
-            // .../p11-nss-sensitive.txt.  If the file name has no
-            // extension, append -{CUSTOM_P11_CONFIG_VARIANT}; for
-            // example: .../p11-nss becomes .../p11-nss-sensitive.
-            configFilePath = configFilePath.replaceFirst(
-                    "(\\.[^\\.]*)?$", "-" + customConfigVariant + "$1");
-        }
-        if (!new File(configFilePath).exists()) {
-            throw new RuntimeException("Configuration file does not exist: "
-                                       + configFilePath);
-        }
-        System.out.println("Configuration file: " + configFilePath);
-        return configFilePath;
     }
 
     // Generate a vector of supported elliptic curves of a given provider
