@@ -46,14 +46,15 @@ import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
 /**
- * Container class for stable collections. Not part of the public API.
+ * Container class for computed collections and dense {@code List<StableValue<T>}
+ * implementations. Not part of the public API.
  */
-final class StableCollections {
+final class ComputedCollections {
 
     /**
      * No instances.
      */
-    private StableCollections() { }
+    private ComputedCollections() { }
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -88,12 +89,12 @@ final class StableCollections {
 
         @Override
         public int indexOf(Object o) {
-            return StableCollections.indexOf(this, o);
+            return ComputedCollections.indexOf(this, o);
         }
 
         @Override
         public int lastIndexOf(Object o) {
-            return StableCollections.lastIndexOf(this, o);
+            return ComputedCollections.lastIndexOf(this, o);
         }
 
         @SafeVarargs
@@ -150,12 +151,12 @@ final class StableCollections {
 
         @Override
         public int indexOf(Object o) {
-            return StableCollections.indexOf(this, o);
+            return ComputedCollections.indexOf(this, o);
         }
 
         @Override
         public int lastIndexOf(Object o) {
-            return StableCollections.lastIndexOf(this, o);
+            return ComputedCollections.lastIndexOf(this, o);
         }
 
         @ForceInline
@@ -367,16 +368,16 @@ final class StableCollections {
      * @param <E> element type
      */
     @ValueBased
-    static final class Aarch64StableList<E> extends StableList<E> {
+    static final class Aarch64ComputedList<E> extends ComputedList<E> {
 
-        private Aarch64StableList(int size, IntFunction<? extends E> mapper) {
+        private Aarch64ComputedList(int size, IntFunction<? extends E> mapper) {
             super(size, mapper);
         }
 
     }
 
     @jdk.internal.ValueBased
-    static sealed class StableList<E>
+    static sealed class ComputedList<E>
             extends ImmutableCollections.AbstractImmutableList<E>
             implements LenientList<E>, ElementBackedList<E> {
 
@@ -391,7 +392,7 @@ final class StableCollections {
         @Stable
         private final Mutexes mutexes;
 
-        private StableList(int size, IntFunction<? extends E> mapper) {
+        private ComputedList(int size, IntFunction<? extends E> mapper) {
             this.elements = newGenericArray(size);
             this.size = size;
             this.mapperHolder = new FunctionHolder<>(mapper, size);
@@ -542,7 +543,7 @@ final class StableCollections {
                 return ((LenientList<E>) root).getLenient(offset + index);
             }
 
-            static <E> ImmutableCollections.SubList<E> fromStableList(StableList<E> list, int fromIndex, int toIndex) {
+            static <E> ImmutableCollections.SubList<E> fromStableList(ComputedList<E> list, int fromIndex, int toIndex) {
                 return new StableSubList<>(list, fromIndex, toIndex - fromIndex);
             }
 
@@ -591,8 +592,8 @@ final class StableCollections {
         E getLenient(int i);
     }
 
-    static final class StableEnumMap<K extends Enum<K>, V>
-            extends AbstractStableMap<K, V> {
+    static final class ComputedEnumMap<K extends Enum<K>, V>
+            extends AbstractComputedMap<K, V> {
 
         @Stable
         private final DenseStableList<V> delegate;
@@ -605,12 +606,12 @@ final class StableCollections {
         @Stable
         private final IntPredicate member;
 
-        public StableEnumMap(int size,
-                             Class<K> enumType,
-                             int min,
-                             int backingSize,
-                             IntPredicate member,
-                             Function<? super K, ? extends V> mapper) {
+        public ComputedEnumMap(int size,
+                               Class<K> enumType,
+                               int min,
+                               int backingSize,
+                               IntPredicate member,
+                               Function<? super K, ? extends V> mapper) {
             this.delegate = DenseStableList.ofDenseList(backingSize);
             this.enumType = enumType;
             this.min = min;
@@ -647,16 +648,16 @@ final class StableCollections {
                 public Iterator<Entry<K, InternalStableValue<V>>> iterator() {
                     final K[] constants = enumType.getEnumConstants();
                     return Arrays.stream(constants)
-                            .filter(e -> StableEnumMap.this.member.test(e.ordinal()))
+                            .filter(e -> ComputedEnumMap.this.member.test(e.ordinal()))
                             .map(k -> (Entry<K, InternalStableValue<V>>)
                                     new KeyValueHolder<>(k,
-                                            (InternalStableValue<V>) StableEnumMap.this.delegate.get(indexFor(k.ordinal()))))
+                                            (InternalStableValue<V>) ComputedEnumMap.this.delegate.get(indexFor(k.ordinal()))))
                             .iterator();
                 }
 
                 @Override
                 public int size() {
-                    return StableEnumMap.this.size();
+                    return ComputedEnumMap.this.size();
                 }
             };
         }
@@ -668,13 +669,13 @@ final class StableCollections {
 
     }
 
-    static final class StableMap<K, V>
-            extends AbstractStableMap<K, V> {
+    static final class ComputedMap<K, V>
+            extends AbstractComputedMap<K, V> {
 
         @Stable
         private final Map<K, InternalStableValue<V>> delegate;
 
-        public StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        public ComputedMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.delegate = StableUtil.map(keys);
             super(keys.size(), mapper);
         }
@@ -685,7 +686,7 @@ final class StableCollections {
         @Override Set<Entry<K, InternalStableValue<V>>> stableEntrySet() { return delegate.entrySet(); }
     }
 
-    static sealed abstract class AbstractStableMap<K, V>
+    static sealed abstract class AbstractComputedMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         @Stable
@@ -693,7 +694,7 @@ final class StableCollections {
         @Stable
         private final FunctionHolder<Function<? super K, ? extends V>> mapperHolder;
 
-        private AbstractStableMap(int size, Function<? super K, ? extends V> mapper) {
+        private AbstractComputedMap(int size, Function<? super K, ? extends V> mapper) {
             this.size = size;
             this.mapperHolder = new FunctionHolder<>(mapper, size);
             super();
@@ -712,7 +713,7 @@ final class StableCollections {
         // Public methods
         @Override public final int              size() { return size; }
         @Override public final boolean          isEmpty() { return size == 0; }
-        @Override public final Set<Entry<K, V>> entrySet() { return StableMapEntrySet.of(this); }
+        @Override public final Set<Entry<K, V>> entrySet() { return ComputedMapEntrySet.of(this); }
 
         @ForceInline
         @Override
@@ -730,17 +731,17 @@ final class StableCollections {
         }
 
         @jdk.internal.ValueBased
-        static final class StableMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
+        static final class ComputedMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
 
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final AbstractStableMap<K, V> outer;
+            private final AbstractComputedMap<K, V> outer;
 
             @Stable
             private final Set<Entry<K, InternalStableValue<V>>> delegateEntrySet;
 
-            private StableMapEntrySet(AbstractStableMap<K, V> outer) {
+            private ComputedMapEntrySet(AbstractComputedMap<K, V> outer) {
                 this.outer = outer;
                 this.delegateEntrySet = outer.stableEntrySet();
                 super();
@@ -756,8 +757,8 @@ final class StableCollections {
             }
 
             // For @ValueBased
-            private static <K, V> StableMapEntrySet<K, V> of(AbstractStableMap<K, V> outer) {
-                return new StableMapEntrySet<>(outer);
+            private static <K, V> ComputedMapEntrySet<K, V> of(AbstractComputedMap<K, V> outer) {
+                return new ComputedMapEntrySet<>(outer);
             }
 
             @jdk.internal.ValueBased
@@ -766,12 +767,12 @@ final class StableCollections {
                 // Use a separate field for the outer class in order to facilitate
                 // a @Stable annotation.
                 @Stable
-                private final StableMapEntrySet<K, V> outer;
+                private final ComputedMapEntrySet<K, V> outer;
 
                 @Stable
                 private final Iterator<Entry<K, InternalStableValue<V>>> delegateIterator;
 
-                private LazyMapIterator(StableMapEntrySet<K, V> outer) {
+                private LazyMapIterator(ComputedMapEntrySet<K, V> outer) {
                     this.outer = outer;
                     this.delegateIterator = outer.delegateEntrySet.iterator();
                     super();
@@ -783,7 +784,7 @@ final class StableCollections {
                 public Entry<K, V> next() {
                     final Entry<K, InternalStableValue<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
-                    return new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder);
+                    return new ComputedEntry<>(k, inner.getValue(), outer.outer.mapperHolder);
                 }
 
                 @Override
@@ -793,23 +794,23 @@ final class StableCollections {
                                 @Override
                                 public void accept(Entry<K, InternalStableValue<V>> inner) {
                                     final K k = inner.getKey();
-                                    action.accept(new StableEntry<>(k, inner.getValue(), outer.outer.mapperHolder));
+                                    action.accept(new ComputedEntry<>(k, inner.getValue(), outer.outer.mapperHolder));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
                 }
 
                 // For @ValueBased
-                private static <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
+                private static <K, V> LazyMapIterator<K, V> of(ComputedMapEntrySet<K, V> outer) {
                     return new LazyMapIterator<>(outer);
                 }
 
             }
         }
 
-        private record StableEntry<K, V>(K getKey, // trick
-                                         InternalStableValue<V> stableValue,
-                                         FunctionHolder<Function<? super K, ? extends V>> mapperHolder) implements Entry<K, V> {
+        private record ComputedEntry<K, V>(K getKey, // trick
+                                           InternalStableValue<V> stableValue,
+                                           FunctionHolder<Function<? super K, ? extends V>> mapperHolder) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
             @Override public V      getValue() { return stableValue.orElseSet(getKey(), mapperHolder); }
@@ -831,18 +832,18 @@ final class StableCollections {
 
         @Override
         public Collection<V> values() {
-            return StableMapValues.of(this);
+            return ComputedMapValues.of(this);
         }
 
         @jdk.internal.ValueBased
-        static final class StableMapValues<V> extends ImmutableCollections.AbstractImmutableCollection<V> {
+        static final class ComputedMapValues<V> extends ImmutableCollections.AbstractImmutableCollection<V> {
 
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final AbstractStableMap<?, V> outer;
+            private final AbstractComputedMap<?, V> outer;
 
-            private StableMapValues(AbstractStableMap<?, V> outer) {
+            private ComputedMapValues(AbstractComputedMap<?, V> outer) {
                 this.outer = outer;
                 super();
             }
@@ -863,8 +864,8 @@ final class StableCollections {
             }
 
             // For @ValueBased
-            private static <V> StableMapValues<V> of(AbstractStableMap<?, V> outer) {
-                return new StableMapValues<>(outer);
+            private static <V> ComputedMapValues<V> of(AbstractComputedMap<?, V> outer) {
+                return new ComputedMapValues<>(outer);
             }
 
         }
@@ -997,7 +998,7 @@ final class StableCollections {
         for (int i = 0; i < self.size(); i++) {
             final Object e = self.getLenient(i);
             if (e == self) {
-                sj.add("(this StableCollection)");
+                sj.add("(this ComputedCollection)");
             } else {
                 sj.add(StandardStableValue.render(e));
             }
@@ -1005,21 +1006,21 @@ final class StableCollections {
         return sj.toString();
     }
 
-    public static <E> List<E> ofLazyList(int size,
-                                         IntFunction<? extends E> mapper) {
+    public static <E> List<E> ofComputedList(int size,
+                                             IntFunction<? extends E> mapper) {
         return Architecture.isAARCH64()
-                ? new Aarch64StableList<>(size, mapper)
-                : new StableList<>(size, mapper);
+                ? new Aarch64ComputedList<>(size, mapper)
+                : new ComputedList<>(size, mapper);
     }
 
-    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
-                                             Function<? super K, ? extends V> mapper) {
-        return new StableMap<>(keys, mapper);
+    public static <K, V> Map<K, V> ofComputedMap(Set<K> keys,
+                                                 Function<? super K, ? extends V> mapper) {
+        return new ComputedMap<>(keys, mapper);
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, E extends Enum<E>, V> Map<K, V> ofLazyEnumMap(Set<K> keys,
-                                                                    Function<? super K, ? extends V> mapper) {
+    public static <K, E extends Enum<E>, V> Map<K, V> ofComputedMapWithEnumKeys(Set<K> keys,
+                                                                                Function<? super K, ? extends V> mapper) {
         // The input set is not empty
         final Class<E> enumType = ((E) keys.iterator().next()).getDeclaringClass();
         final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
@@ -1033,7 +1034,7 @@ final class StableCollections {
         }
         final int backingSize = max - min + 1;
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Map<K, V>) new StableEnumMap<>(keys.size(), enumType, min, backingSize, member, (Function<E, V>) mapper);
+        return (Map<K, V>) new ComputedEnumMap<>(keys.size(), enumType, min, backingSize, member, (Function<E, V>) mapper);
     }
 
 }

@@ -22,10 +22,10 @@
  */
 
 /* @test
- * @summary Basic tests for StableMap methods
+ * @summary Basic tests for ComputedMap methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableMapTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedMapTest
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -57,7 +57,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableMapTest {
+final class ComputedMapTest {
 
 
     enum Value {
@@ -98,12 +98,12 @@ final class StableMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void factoryInvariants(Set<Value> set) {
-        assertThrows(NullPointerException.class, () -> Map.ofLazy(set, null), set.getClass().getSimpleName());
-        assertThrows(NullPointerException.class, () -> Map.ofLazy(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> Map.ofComputed(set, null), set.getClass().getSimpleName());
+        assertThrows(NullPointerException.class, () -> Map.ofComputed(null, MAPPER));
         Set<Value> setWithNull = new HashSet<>();
         setWithNull.add(KEY);
         setWithNull.add(null);
-        assertThrows(NullPointerException.class, () -> Map.ofLazy(setWithNull, MAPPER));
+        assertThrows(NullPointerException.class, () -> Map.ofComputed(setWithNull, MAPPER));
     }
 
     @ParameterizedTest
@@ -126,7 +126,7 @@ final class StableMapTest {
     @MethodSource("nonEmptySets")
     void get(Set<Value> set) {
         StableTestUtil.CountingFunction<Value, Integer> cf = new StableTestUtil.CountingFunction<>(MAPPER);
-        var lazy = Map.ofLazy(set, cf);
+        var lazy = Map.ofComputed(set, cf);
         int cnt = 1;
         for (Value v : set) {
             assertEquals(MAPPER.apply(v), lazy.get(v));
@@ -143,7 +143,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = Map.ofLazy(set, cif);
+        var cached = Map.ofComputed(set, cif);
         assertThrows(UnsupportedOperationException.class, () -> cached.get(KEY));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.get(KEY));
@@ -238,7 +238,7 @@ final class StableMapTest {
     @MethodSource("nonEmptySets")
     void circular(Set<Value> set) {
         final AtomicReference<Map<?, ?>> ref = new AtomicReference<>();
-        Map<Value, Map<?, ?>> cached = Map.ofLazy(set, _ -> ref.get());
+        Map<Value, Map<?, ?>> cached = Map.ofComputed(set, _ -> ref.get());
         ref.set(cached);
         cached.get(KEY);
         var toString = cached.toString();
@@ -430,7 +430,7 @@ final class StableMapTest {
 
     @Test
     void nullResult() {
-        var map = Map.ofLazy(Set.of(0), _ -> null);
+        var map = Map.ofComputed(Set.of(0), _ -> null);
         assertThrows(NullPointerException.class, () -> map.getOrDefault(0, 1));;
         assertTrue(map.containsKey(0));
     }
@@ -439,7 +439,7 @@ final class StableMapTest {
     @MethodSource("allSets")
     void functionHolder(Set<Value> set) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofLazy(set, cif);
+        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
 
@@ -459,7 +459,7 @@ final class StableMapTest {
     @MethodSource("allSets")
     void functionHolderViaEntrySet(Set<Value> set) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofLazy(set, cif);
+        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
 
@@ -479,7 +479,7 @@ final class StableMapTest {
     @MethodSource("allSets")
     void underlyingRefViaEntrySetForEach(Set<Value> set) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofLazy(set, cif);
+        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
 
@@ -497,18 +497,18 @@ final class StableMapTest {
 
     @Test
     void usesOptimizedVersion() {
-        Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(KEY), Value::asInt);
+        Map<Value, Integer> enumMap = Map.ofComputed(EnumSet.of(KEY), Value::asInt);
         assertTrue(enumMap.getClass().getName().contains("Enum"), enumMap.getClass().getName());
-        Map<Value, Integer> emptyMap = Map.ofLazy(EnumSet.noneOf(Value.class), Value::asInt);
+        Map<Value, Integer> emptyMap = Map.ofComputed(EnumSet.noneOf(Value.class), Value::asInt);
         assertFalse(emptyMap.getClass().getName().contains("Enum"), emptyMap.getClass().getName());
-        Map<Value, Integer> regularMap = Map.ofLazy(Set.of(KEY), Value::asInt);
+        Map<Value, Integer> regularMap = Map.ofComputed(Set.of(KEY), Value::asInt);
         assertFalse(regularMap.getClass().getName().contains("Enum"), regularMap.getClass().getName());
     }
 
     @Test
     void overriddenEnum() {
         final var overridden = Value.THIRTEEN;
-        Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(overridden), MAPPER);
+        Map<Value, Integer> enumMap = Map.ofComputed(EnumSet.of(overridden), MAPPER);
         assertEquals(MAPPER.apply(overridden), enumMap.get(overridden), enumMap.toString());
     }
 
@@ -516,7 +516,7 @@ final class StableMapTest {
     void enumAliasing() {
         enum MyEnum {FOO, BAR}
         enum MySecondEnum{BAZ, QUX}
-        Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+        Map<MyEnum, Integer> mapEnum = Map.ofComputed(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
         assertEquals(MyEnum.BAR.ordinal(), mapEnum.get(MyEnum.BAR));
         // Make sure class is checked, not just `ordinal()`
         assertNull(mapEnum.get(MySecondEnum.QUX));
@@ -557,7 +557,7 @@ final class StableMapTest {
 
 
     static Map<Value, Integer> newMap(Set<Value> set) {
-        return Map.ofLazy(set, MAPPER);
+        return Map.ofComputed(set, MAPPER);
     }
     static Map<Value, Integer> newRegularMap(Set<Value> set) {
         return set.stream()

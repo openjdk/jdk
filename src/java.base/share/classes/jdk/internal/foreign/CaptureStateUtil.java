@@ -79,7 +79,7 @@ public final class CaptureStateUtil {
             }
         };
 
-        SEGMENT_EXTRACTION_HANDLE_CACHE = Map.ofLazy(inputs, segmentExtractionHandle);
+        SEGMENT_EXTRACTION_HANDLE_CACHE = Map.ofComputed(inputs, segmentExtractionHandle);
     }
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
@@ -347,7 +347,7 @@ public final class CaptureStateUtil {
     };
 
     private static final List<MethodHandle> HANDLES_CACHE =
-            List.ofLazy(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
+            List.ofComputed(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 

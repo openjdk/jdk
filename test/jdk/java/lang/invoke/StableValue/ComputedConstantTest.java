@@ -22,11 +22,11 @@
  */
 
 /* @test
- * @summary Basic tests for StableSupplier methods
+ * @summary Basic tests for ComputedConstant methods
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
  * @compile StableTestUtil.java
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED StableSupplierTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstantTest
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -38,13 +38,13 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableSupplierTest {
+final class ComputedConstantTest {
 
     private static final Supplier<Integer> SUPPLIER = () -> 42;
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> Supplier.ofCaching(null));
+        assertThrows(NullPointerException.class, () -> ComputedConstant.of(null));
     }
 
     @Test
@@ -54,7 +54,7 @@ final class StableSupplierTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = Supplier.ofCaching(cs);
+        var cached = ComputedConstant.of(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -64,17 +64,11 @@ final class StableSupplierTest {
     }
 
     @Test
-    void deduplicate() {
-         var cached = Supplier.ofCaching(SUPPLIER);
-         assertSame(cached, Supplier.ofCaching(cached));
-    }
-
-    @Test
     void exception() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = Supplier.ofCaching(cs);
+        var cached = ComputedConstant.of(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -84,26 +78,26 @@ final class StableSupplierTest {
 
     @Test
     void circular() {
-        final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
-        Supplier<Supplier<?>> cached = Supplier.ofCaching(ref::get);
+        final AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
+        ComputedConstant<ComputedConstant<?>> cached = ComputedConstant.of(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
-        assertTrue(toString.startsWith("(this StableSupplier)"));
+        assertTrue(toString.startsWith("(this ComputedConstant)"));
         assertDoesNotThrow(cached::hashCode);
     }
 
     @Test
     void equality() {
-        Supplier<Integer> f0 = Supplier.ofCaching(SUPPLIER);
-        Supplier<Integer> f1 = Supplier.ofCaching(SUPPLIER);
+        ComputedConstant<Integer> f0 = ComputedConstant.of(SUPPLIER);
+        ComputedConstant<Integer> f1 = ComputedConstant.of(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = Supplier.ofCaching(SUPPLIER);
+        ComputedConstant<Integer> f0 = ComputedConstant.of(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());
@@ -112,7 +106,7 @@ final class StableSupplierTest {
     @Test
     void functionHolder() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
-        var f1 = Supplier.ofCaching(cs);
+        var f1 = ComputedConstant.of(cs);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
         assertEquals(1, holder.counter());
@@ -128,7 +122,7 @@ final class StableSupplierTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var f1 = Supplier.ofCaching(cs);
+        var f1 = ComputedConstant.of(cs);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
         assertEquals(1, holder.counter());

@@ -119,7 +119,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return new HashSet<>();
     }
 
-    private final Supplier<Map<String, Object>> lookup = Supplier.ofCaching(
+    private final ComputedConstant<Map<String, Object>> lookup = ComputedConstant.of(
             new Supplier<>() { public Map<String, Object> get() { return lookup0(); }});
 
     private Map<String, Object> lookup0() {
@@ -134,7 +134,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return temp;
     }
 
-    private final Supplier<Set<String>> keyset = Supplier.ofCaching(
+    private final ComputedConstant<Set<String>> keyset = ComputedConstant.of(
             new Supplier<>() { public Set<String> get() { return keyset0(); }});
 
     private Set<String> keyset0() {

@@ -59,13 +59,13 @@ public class StableSupplierBenchmark {
 
     private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
     private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = Supplier.ofCaching(() -> VALUE);
-    private static final Supplier<Integer> SUPPLIER2 = Supplier.ofCaching(() -> VALUE);
+    private static final ComputedConstant<Integer> SUPPLIER = ComputedConstant.of(() -> VALUE);
+    private static final ComputedConstant<Integer> SUPPLIER2 = ComputedConstant.of(() -> VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final Supplier<Integer> supplier = Supplier.ofCaching(() -> VALUE);
-    private final Supplier<Integer> supplier2 = Supplier.ofCaching(() -> VALUE2);
+    private final ComputedConstant<Integer> supplier = ComputedConstant.of(() -> VALUE);
+    private final ComputedConstant<Integer> supplier2 = ComputedConstant.of(() -> VALUE2);
 
     @Benchmark
     public int stable() {

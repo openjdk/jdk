@@ -30,33 +30,34 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.function.Supplier;
 
 /**
- * Implementation of a stable supplier.
+ * The implementation of {@linkplain ComputedConstant}.
  * <p>
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T> the return type
+ * @param <T> the type of the constant
  */
-public record StableSupplier<T>(StandardStableValue<T> delegate,
-                                FunctionHolder<Supplier<? extends T>> mapperHolder) implements Supplier<T> {
+public record ComputedConstantImpl<T>(StandardStableValue<T> delegate,
+                                      FunctionHolder<Supplier<? extends T>> mapperHolder) implements ComputedConstant<T> {
 
     @ForceInline
     @Override public T get() { return delegate.orElseSet(null, mapperHolder); }
+    @Override public boolean isSet() { return delegate.isSet(); }
 
     // Object methods
     @Override public int     hashCode() { return System.identityHashCode(this); }
     @Override public boolean equals(Object obj) { return obj == this; }
     @Override public String  toString() {
                    final Object t = delegate.contentsAcquire();
-                   return t == this ? "(this StableSupplier)" : StandardStableValue.render(t);
+                   return t == this ? "(this ComputedConstant)" : StandardStableValue.render(t);
               }
 
+    public static <T> ComputedConstantImpl<T> ofPreset(T constant) {
+        return new ComputedConstantImpl<>(StandardStableValue.ofPreset(constant), null);
+    }
 
-    @SuppressWarnings("unchecked")
-    public static <T> StableSupplier<T> of(Supplier<? extends T> original) {
-        return original instanceof StableSupplier<? extends T> stableSupplier
-                ? (StableSupplier<T>) stableSupplier // We are already stable
-                : new StableSupplier<>(StandardStableValue.of(), new FunctionHolder<>(original, 1));
+    public static <T> ComputedConstantImpl<T> of(Supplier<? extends T> original) {
+        return new ComputedConstantImpl<>(StandardStableValue.of(), new FunctionHolder<>(original, 1));
     }
 
 }

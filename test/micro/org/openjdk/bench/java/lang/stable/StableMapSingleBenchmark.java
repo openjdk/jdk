@@ -60,13 +60,13 @@ public class StableMapSingleBenchmark {
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
-    private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
-    private static final Map<MyEnum, Optional<Integer>> MAP_ENUM_OPTIONAL = Map.ofLazy(EnumSet.allOf(MyEnum.class), e -> Optional.of(e.ordinal()));
+    private static final Map<Integer, Integer> MAP = Map.ofComputed(SET, Function.identity());
+    private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofComputed(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+    private static final Map<MyEnum, Optional<Integer>> MAP_ENUM_OPTIONAL = Map.ofComputed(EnumSet.allOf(MyEnum.class), e -> Optional.of(e.ordinal()));
     private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
-    private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
-    private final Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+    private final Map<Integer, Integer> map = Map.ofComputed(SET, Function.identity());
+    private final Map<MyEnum, Integer> mapEnum = Map.ofComputed(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
     private final Function<Integer, Integer> function = map::get;
 
     @Benchmark

@@ -41,7 +41,6 @@ import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.util.concurrent.TimeUnit.*;
@@ -75,8 +74,8 @@ public class VarHandleHolderBenchmark {
     private static final VarHandle VH_X = VAR_HANDLE_FUNCTION.apply("x");
     private static final VarHandle VH_Y = VAR_HANDLE_FUNCTION.apply("y");
 
-    private static final Supplier<VarHandle> SV_X = Supplier.ofCaching(() -> VAR_HANDLE_FUNCTION.apply("x"));
-    private static final Supplier<VarHandle> SV_Y = Supplier.ofCaching(() -> VAR_HANDLE_FUNCTION.apply("y"));
+    private static final ComputedConstant<VarHandle> SV_X = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("x"));
+    private static final ComputedConstant<VarHandle> SV_Y = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("y"));
 
     private static final Map<String, VarHandle> U_MAP = Map.of(
             "x", VH_X,
@@ -86,7 +85,7 @@ public class VarHandleHolderBenchmark {
             "x", LAYOUT.varHandle(groupElement("x")),
             "y", LAYOUT.varHandle(groupElement("y")));
 
-    private static final Map<String, VarHandle> S_MAP = Map.ofLazy(
+    private static final Map<String, VarHandle> S_MAP = Map.ofComputed(
             Set.of("x", "y"),
             VAR_HANDLE_FUNCTION);
 

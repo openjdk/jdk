@@ -27,7 +27,6 @@ package java.util;
 
 import jdk.internal.javac.PreviewFeature;
 
-import java.lang.StableValue;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1751,11 +1750,11 @@ public interface Map<K, V> {
     }
 
     /**
-     * {@return a new lazy, stable map with the provided {@code keys}}
+     * {@return a new on-demand-computed map with the provided {@code keys}}
      * <p>
      * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
-     * keys are known at construction. The map's values are computed via the provided
-     * {@code mapper} when they are first accessed
+     * keys are known at construction. The map's values are computed on demand via the
+     * provided {@code mapper} when they are first accessed
      * (e.g., via {@linkplain Map#get(Object) Map::get}).
      * <p>
      * The provided {@code mapper} function is guaranteed to be successfully invoked
@@ -1769,21 +1768,21 @@ public interface Map<K, V> {
      * <p>
      * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
      * will be thrown. Hence, just like other unmodifiable maps created via the
-     * {@code Map::of} factories, a lazy map cannot contain {@code null} values. Clients
+     * {@code Map::of} factories, a computed map cannot contain {@code null} values. Clients
      * that want to use nullable values can wrap values into an {@linkplain Optional}
      * holder.
      * <p>
      * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
-     * also lazy and stable.
+     * also computed on demand.
      * <p>
      * The returned map is unmodifiable and does not implement the
      * {@linkplain Collection##optional-operations optional operations} in the
      * {@linkplain Map} interface.
      * <p>
-     * If the provided {@code mapper} recursively calls the returned map for
+     * If the provided {@code mapper} recursively calls the returned computed map for
      * the same key, an {@linkplain IllegalStateException} will be thrown.
      *
-     * @param keys   the (non-null) keys in the returned map
+     * @param keys   the (non-null) keys in the returned computed map
      * @param mapper to invoke whenever an associated value is first accessed
      *               (may return {@code null})
      * @param <K>    the type of keys maintained by the returned map
@@ -1791,23 +1790,23 @@ public interface Map<K, V> {
      * @throws NullPointerException if the provided set of {@code inputs} contains a
      *                              {@code null} element.
      *
-     * @see StableValue
+     * @see ComputedConstant
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-    static <K, V> Map<K, V> ofLazy(Set<? extends K> keys,
-                                   Function<? super K, ? extends V> mapper) {
+    static <K, V> Map<K, V> ofComputed(Set<? extends K> keys,
+                                       Function<? super K, ? extends V> mapper) {
         // Protect against TOC-TOU attacks.
         // Also, implicit null check of `keys` and all its elements
         final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(mapper);
         if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
             @SuppressWarnings("unchecked")
-            var enumMap = (Map<K, V>) StableCollections.ofLazyEnumMap(keyCopies, mapper);
+            var enumMap = (Map<K, V>) ComputedCollections.ofComputedMapWithEnumKeys(keyCopies, mapper);
             return enumMap;
         } else {
             // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-            return StableCollections.ofLazyMap(keyCopies, mapper);
+            return ComputedCollections.ofComputedMap(keyCopies, mapper);
         }
     }
 

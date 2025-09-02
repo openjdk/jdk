@@ -28,7 +28,6 @@ package java.util;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
-import java.lang.StableValue;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
@@ -1197,10 +1196,10 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * {@return a new lazy, stable list with the provided {@code size}}
+     * {@return a new on-demand-computed list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
-     * with the provided {@code size}. The list's elements are computed via the
+     * with the provided {@code size}. The list's elements are computed on demand via the
      * provided {@code mapper} when they are first accessed
      * (e.g., via {@linkplain List#get(int) List::get}).
      * <p>
@@ -1214,12 +1213,12 @@ public interface List<E> extends SequencedCollection<E> {
      * <p>
      * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
      * will be thrown. Hence, just like other unmodifiable lists created via the
-     * {@code List::of} factories, a lazy list cannot contain {@code null}
+     * {@code List::of} factories, a computed list cannot contain {@code null}
      * elements. Clients that want to use nullable values can wrap elements into
      * an {@linkplain Optional} holder.
      * <p>
      * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
-     * of the returned list are also lazy and stable.
+     * of the returned list are also computed on demand.
      * <p>
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
@@ -1228,25 +1227,25 @@ public interface List<E> extends SequencedCollection<E> {
      * {@linkplain Collection##optional-operation optional operations} in the
      * {@linkplain List} interface.
      * <p>
-     * If the provided {@code mapper} recursively calls the returned list for the
+     * If the provided {@code mapper} recursively calls the returned computed list for the
      * same index, an {@linkplain IllegalStateException} will be thrown.
      *
-     * @param size   the size of the returned list
+     * @param size   the size of the returned computed list
      * @param mapper to invoke whenever an element is first accessed
      *               (may not return {@code null})
      * @param <E>    the type of elements in the returned list
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      *
-     * @see StableValue
+     * @see ComputedConstant
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-    static <E> List<E> ofLazy(int size,
-                              IntFunction<? extends E> mapper) {
+    static <E> List<E> ofComputed(int size,
+                                  IntFunction<? extends E> mapper) {
         Utils.checkNonNegativeArgument(size, "size");
         Objects.requireNonNull(mapper);
         // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return StableCollections.ofLazyList(size, mapper);
+        return ComputedCollections.ofComputedList(size, mapper);
     }
 
 }

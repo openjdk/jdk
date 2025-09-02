@@ -122,18 +122,18 @@ import java.util.function.Supplier;
  *
  * <h2 id="stable-functions">Stable Functions</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
- * <em>stable supplier</em> is a supplier that computes a value and then caches it into
- * a backing stable value storage for subsequent use. A stable supplier is created via the
- * {@linkplain Supplier#ofCaching(Supplier) Supplier.ofCaching()} factory, by
- * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
- * is first accessed:
+ * <em>computed constant</em> is a supplier that computes a value and then caches it into
+ * a backing stable value storage for subsequent use. A computed constant is created via
+ * the {@linkplain ComputedConstant#of(Supplier) ComputedConstant.of()} factory, by
+ * providing an underlying {@linkplain Supplier} which is invoked when the
+ * computed constant is first accessed:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *     private final Supplier<Logger> logger =
- *             // @link substring="ofCaching" target="Supplier#ofCaching(Supplier)" :
- *             Supplier.ofCaching( () -> Logger.getLogger(Component.class) );
+ *     private final ComputedConstant<Logger> logger =
+ *             // @link substring="of" target="ComputedConstant#of(Supplier)" :
+ *             ComputedConstant.of( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -141,7 +141,7 @@ import java.util.function.Supplier;
  *     }
  * }
  *}
- * A stable supplier encapsulates access to its backing stable value storage. This means
+ * A computed constant encapsulates access to its backing stable value storage. This means
  * that code inside {@code Component} can obtain the logger object directly from the
  * stable supplier, without having to go through an accessor method like {@code getLogger()}.
  *
@@ -160,7 +160,7 @@ import java.util.function.Supplier;
  *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO = v -> 1 << v;
  *
  *     // @link substring="ofLazy" target="List#ofLazy(int,IntFunction)" :
- *     private static final List<Integer> POWER_OF_TWO = List.ofLazy(SIZE, UNDERLYING_POWER_OF_TWO);
+ *     private static final List<Integer> POWER_OF_TWO = List.ofComputed(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.get(a);
@@ -244,7 +244,7 @@ import java.util.function.Supplier;
  *
  *     private static final int MAX_SIZE_INT = 46;
  *
- *     private static final List<Integer> FIB = List.ofLazy(MAX_SIZE_INT, Fibonacci::fib);
+ *     private static final List<Integer> FIB = List.ofComputed(MAX_SIZE_INT, Fibonacci::fib);
  *
  *     public static int fib(int n) {
  *         return n < 2
@@ -346,7 +346,7 @@ import java.util.function.Supplier;
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the
  *           <em>array reference</em> as a stable value but <em>not its components</em>.
- *           Instead, a {@linkplain List#ofLazy(int, IntFunction) a stable list} of arbitrary
+ *           Instead, a {@linkplain List#ofComputed(int, IntFunction) a stable list} of arbitrary
  *           depth can be used, which provides stable components. More generally, a
  *           stable value can hold other stable values of arbitrary depth and still
  *           provide transitive constantness.

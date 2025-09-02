@@ -22,10 +22,10 @@
  */
 
 /* @test
- * @summary Basic tests for StableList methods
+ * @summary Basic tests for ComputedList methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableListTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedListTest
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -56,7 +56,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableListTest {
+final class ComputedListTest {
 
     private static final int ZERO = 0;
     private static final int INDEX = 7;
@@ -65,8 +65,8 @@ final class StableListTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> List.ofLazy(SIZE, null));
-        assertThrows(IllegalArgumentException.class, () -> List.ofLazy(-1, IDENTITY));
+        assertThrows(NullPointerException.class, () -> List.ofComputed(SIZE, null));
+        assertThrows(IllegalArgumentException.class, () -> List.ofComputed(-1, IDENTITY));
     }
 
     @Test
@@ -84,7 +84,7 @@ final class StableListTest {
     @Test
     void get() {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
-        var lazy = List.ofLazy(SIZE, cif);
+        var lazy = List.ofComputed(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
             assertEquals(i + 1, cif.cnt());
@@ -98,7 +98,7 @@ final class StableListTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = List.ofLazy(SIZE, cif);
+        var lazy = List.ofComputed(SIZE, cif);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
@@ -117,7 +117,7 @@ final class StableListTest {
         for (int i = 0; i < SIZE; i++) {
             actual[INDEX] = 100 + i;
         }
-        var list = List.ofLazy(INDEX, IDENTITY);
+        var list = List.ofComputed(INDEX, IDENTITY);
         assertSame(actual, list.toArray(actual));
         Integer[] expected = IntStream.range(0, SIZE)
                 .mapToObj(i -> i < INDEX ? i : null)
@@ -162,7 +162,7 @@ final class StableListTest {
     @Test
     void toStringTest() {
         assertEquals("[]", newEmptyList().toString());
-        var list = List.ofLazy(2, IDENTITY);
+        var list = List.ofComputed(2, IDENTITY);
         assertEquals("[.unset, .unset]", list.toString());
         list.get(0);
         assertEquals("[0, .unset]", list.toString());
@@ -187,7 +187,7 @@ final class StableListTest {
 
     @Test
     void equalsPartialEvaluationTest() {
-        var list = List.ofLazy(2, IDENTITY);
+        var list = List.ofComputed(2, IDENTITY);
         assertFalse(list.equals(List.of(0)));
         assertEquals("[0, .unset]", list.toString());
         assertTrue(list.equals(List.of(0, 1)));
@@ -267,7 +267,7 @@ final class StableListTest {
 
     @Test
     void sublistReversedToString() {
-        var actual = List.ofLazy(4, IDENTITY);
+        var actual = List.ofComputed(4, IDENTITY);
         var expected = List.of(0, 1, 2, 3);
         for (UnaryOperation op : List.of(
                 new UnaryOperation("subList", l -> l.subList(1, 3)),
@@ -299,7 +299,7 @@ final class StableListTest {
                             op0 + " -> " + className(view1) + ", " +
                             op1 + " -> " + className(view2) + ", " +
                             op2 + " -> " + className3;
-                    assertTrue(className3.contains("Stable"), transitions);
+                    assertTrue(className3.contains("Computed"), transitions);
                     assertUnevaluated(list);
                     assertUnevaluated(view1);
                     assertUnevaluated(view2);
@@ -312,7 +312,7 @@ final class StableListTest {
     @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
-        var lazy = List.ofLazy(SIZE, i -> ref.get().apply(i));
+        var lazy = List.ofComputed(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
         assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
@@ -422,7 +422,7 @@ final class StableListTest {
     @Test
     void functionHolder() {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
-        List<Integer> f1 = List.ofLazy(SIZE, cif);
+        List<Integer> f1 = List.ofComputed(SIZE, cif);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
         for (int i = 0; i < SIZE; i++) {
@@ -519,11 +519,11 @@ final class StableListTest {
     }
 
     static List<Integer> newList() {
-        return List.ofLazy(SIZE, IDENTITY);
+        return List.ofComputed(SIZE, IDENTITY);
     }
 
     static List<Integer> newEmptyList() {
-        return List.ofLazy(ZERO, IDENTITY);
+        return List.ofComputed(ZERO, IDENTITY);
     }
 
     static List<Integer> newRegularList() {
