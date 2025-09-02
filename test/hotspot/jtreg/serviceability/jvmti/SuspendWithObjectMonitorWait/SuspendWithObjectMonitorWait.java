@@ -180,6 +180,7 @@ public class SuspendWithObjectMonitorWait {
         }
     }
 
+    // Default scenario, the resumer thread is always able to grab the threadLock once notified by the main thread.
     public int doWork1(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
@@ -293,6 +294,7 @@ public class SuspendWithObjectMonitorWait {
         return 0;
     }
 
+    // Notify the resumer while holding the threadLock
     public int doWork2(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
@@ -408,6 +410,7 @@ public class SuspendWithObjectMonitorWait {
         return 0;
     }
 
+    // Suspend on the re-entry path of wait.
     public int doWork3(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
