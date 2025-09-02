@@ -32,11 +32,10 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
@@ -137,7 +136,7 @@ sealed abstract class QuicKeyManager
     }
 
     void encryptPacket(final long packetNumber,
-                       final Function<Integer, ByteBuffer> headerGenerator,
+                       final IntFunction<ByteBuffer> headerGenerator,
                        final ByteBuffer packetPayload,
                        final ByteBuffer output)
             throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {
@@ -659,7 +658,7 @@ sealed abstract class QuicKeyManager
 
         @Override
         void encryptPacket(final long packetNumber,
-                           final Function<Integer, ByteBuffer> headerGenerator,
+                           final IntFunction<ByteBuffer> headerGenerator,
                            final ByteBuffer packetPayload,
                            final ByteBuffer output)
                 throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {

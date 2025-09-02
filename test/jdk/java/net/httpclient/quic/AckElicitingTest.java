@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -153,7 +154,7 @@ public class AckElicitingTest {
 
         @Override
         public void encryptPacket(KeySpace keySpace, long packetNumber,
-                                  Function<Integer, ByteBuffer> headerGenerator,
+                                  IntFunction<ByteBuffer> headerGenerator,
                                   ByteBuffer packetPayload, ByteBuffer output)
                 throws QuicKeyUnavailableException, QuicTransportException {
             // this dummy QUIC TLS engine doesn't do any encryption.

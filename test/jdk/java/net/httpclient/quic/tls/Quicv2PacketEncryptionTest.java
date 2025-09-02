@@ -37,7 +37,7 @@ import javax.net.ssl.SSLContext;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static jdk.internal.net.quic.QuicVersion.QUIC_V2;
 import static org.testng.Assert.assertEquals;
@@ -152,14 +152,14 @@ public class Quicv2PacketEncryptionTest {
     private static final String ENCRYPTED_ONERTT_PAYLOAD =
             "5558b1c60ae7b6b932bc27d786f4bc2bb20f2162ba";
 
-    private static final class FixedHeaderContent implements Function<Integer, ByteBuffer> {
+    private static final class FixedHeaderContent implements IntFunction<ByteBuffer> {
         private final ByteBuffer header;
         private FixedHeaderContent(ByteBuffer header) {
             this.header = header;
         }
 
         @Override
-        public ByteBuffer apply(final Integer keyphase) {
+        public ByteBuffer apply(final int keyphase) {
             // ignore keyphase
             return this.header;
         }

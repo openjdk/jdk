@@ -53,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.*;
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.*;
@@ -336,7 +336,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     @Override
     public void encryptPacket(final KeySpace keySpace, final long packetNumber,
-                              final Function<Integer, ByteBuffer> headerGenerator,
+                              final IntFunction<ByteBuffer> headerGenerator,
                               final ByteBuffer packetPayload, final ByteBuffer output)
             throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException {
         final QuicKeyManager keyManager = keyManager(keySpace);

@@ -67,7 +67,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 import static jdk.internal.net.http.quic.packets.QuicPacketNumbers.computePacketNumberLength;
@@ -232,7 +232,7 @@ public class PacketEncodingTest {
 
         @Override
         public void encryptPacket(KeySpace keySpace, long packetNumber,
-                                  Function<Integer, ByteBuffer> headerGenerator,
+                                  IntFunction<ByteBuffer> headerGenerator,
                                   ByteBuffer packetPayload, ByteBuffer output)
                 throws QuicKeyUnavailableException, QuicTransportException {
             // this dummy QUIC TLS engine doesn't do any encryption.

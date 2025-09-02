@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
@@ -1666,7 +1666,7 @@ public class QuicPacketEncoder {
 
         // generates packet header and is capable of inserting a key phase into the header
         // when appropriate
-        private static final class HeaderGenerator implements Function<Integer, ByteBuffer> {
+        private static final class HeaderGenerator implements IntFunction<ByteBuffer> {
             private final PacketType packetType;
             private final ByteBuffer header;
 
@@ -1676,7 +1676,7 @@ public class QuicPacketEncoder {
             }
 
             @Override
-            public ByteBuffer apply(final Integer keyPhase) {
+            public ByteBuffer apply(final int keyPhase) {
                 // we use key phase only in 1-RTT packet header
                 if (packetType != PacketType.ONERTT) {
                     assert keyPhase == 0 : "unexpected key phase " + keyPhase

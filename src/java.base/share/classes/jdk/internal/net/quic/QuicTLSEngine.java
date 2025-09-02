@@ -32,8 +32,7 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 /**
  * One instance of these per QUIC connection. Configuration methods not shown
@@ -180,8 +179,8 @@ public interface QuicTLSEngine {
      * <p>
      * Once the keys for a particular {@code keySpace} have been discarded, the
      * keySpace will no longer be able to
-     * {@linkplain #encryptPacket(KeySpace, long, ByteBuffer, int, ByteBuffer,
-     * Consumer) encrypt} or
+     * {@linkplain #encryptPacket(KeySpace, long, IntFunction,
+     * ByteBuffer, ByteBuffer) encrypt} or
      * {@linkplain #decryptPacket(KeySpace, long, int, ByteBuffer, int, ByteBuffer)
      * decrypt} packets.
      *
@@ -292,7 +291,7 @@ public interface QuicTLSEngine {
      *
      * @param keySpace Packet key space
      * @param packetNumber full packet number
-     * @param headerGenerator a {@link Function} which takes a key phase and returns
+     * @param headerGenerator an {@link IntFunction} which takes a key phase and returns
      *                        the packet header
      * @param packetPayload buffer containing unencrypted packet payload
      * @param output buffer into which the encrypted packet payload will be written
@@ -301,7 +300,7 @@ public interface QuicTLSEngine {
      *          in exceeding the AEAD cipher confidentiality limit
      */
     void encryptPacket(KeySpace keySpace, long packetNumber,
-                       Function<Integer, ByteBuffer> headerGenerator,
+                       IntFunction<ByteBuffer> headerGenerator,
                        ByteBuffer packetPayload,
                        ByteBuffer output)
             throws QuicKeyUnavailableException, QuicTransportException, ShortBufferException;
