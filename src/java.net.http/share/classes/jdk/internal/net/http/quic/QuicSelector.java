@@ -192,6 +192,9 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
             super.wakeup();
             synchronized (waiter) {
                 wakeups++;
+                // there's only one thread that can be waiting
+                // on waiter - the thread that executes the run()
+                // method.
                 waiter.notify();
             }
         }

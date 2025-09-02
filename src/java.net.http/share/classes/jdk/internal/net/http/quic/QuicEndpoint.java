@@ -445,8 +445,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
          * @param readyOps The operations that are ready for this endpoint.
          */
         public void selected(int readyOps) {
+            var key = this.key;
             try {
-                var key = this.key;
                 if (key == null) {
                     // null keys have been observed here.
                     // key can only be null if it's been cancelled, by detach()
