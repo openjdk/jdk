@@ -225,7 +225,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  _heap->reset_bytes_allocated_since_gc_start();
+  if (gc_mode() != servicing_old) {
+    _heap->reset_bytes_allocated_since_gc_start();
+  }
 
   MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
