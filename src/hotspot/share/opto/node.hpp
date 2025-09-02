@@ -2092,6 +2092,7 @@ public:
 
 Op_IL(Add)
 Op_IL(And)
+Op_IL(Or)
 Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)
@@ -2103,6 +2104,8 @@ Op_IL(Div)
 Op_IL(Mod)
 Op_IL(UDiv)
 Op_IL(UMod)
+Op_IL(Max)
+Op_IL(Min)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

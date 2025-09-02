@@ -1541,6 +1541,78 @@ static bool is_counted_loop_cmp(Node *cmp) {
          n->in(0)->as_CountedLoop()->phi() == n;
 }
 
+// For comparisons of the form op(a, b) < 0 or op(a, b) >= 0,
+// it might be enough to compare a < 0 or a >= 0 (or b < 0 or b >= 0) instead.
+// As a special case, xor requires negating the test
+// if one argument is known to be negative: -1 ^ b < 0 <==> b >= 0
+// but not if it is known to be nonnegative: 0 ^ b < 0 <==> b <  0
+static Node* simplify_sign_invariant_comparison_input(PhaseGVN* phase, BoolNode* bool_node) {
+  Node* cmp = bool_node->in(1);
+  int cop = cmp->Opcode();
+  if (cop != Op_CmpI && cop != Op_CmpL) {
+    return nullptr;
+  }
+  BasicType bt = cop == Op_CmpI ? T_INT : T_LONG;
+  Node* in_op = cmp->in(1);
+  int in_opc = in_op->Opcode();
+  if (in_opc != Op_And(bt) && in_opc != Op_Or(bt) && in_opc != Op_Xor(bt) &&
+      in_opc != Op_Max(bt) && in_opc != Op_Min(bt)) {
+    return nullptr;
+  }
+  Node* lhs = in_op->in(1);
+  Node* rhs = in_op->in(2);
+  const TypeInteger* lhs_type = phase->type(in_op->in(1))->isa_integer(bt);
+  const TypeInteger* rhs_type = phase->type(in_op->in(2))->isa_integer(bt);
+  if (lhs_type == nullptr || rhs_type == nullptr) {
+    return nullptr;
+  }
+  Node* replacement = nullptr;
+  bool negate_test = false;
+  if (in_opc == Op_And(bt) || in_opc == Op_Max(bt)) {
+    // x & y >= 0 is true for x < 0 iff y >= 0
+    // max(x, y) >= 0 is true for x < 0 iff y >= 0
+    if (lhs_type->hi_as_long() < 0) {
+      replacement = rhs;
+    } else if (rhs_type->hi_as_long() < 0) {
+      replacement = lhs;
+    }
+  } else if (in_opc == Op_Or(bt) || in_opc == Op_Min(bt)) {
+    // x | y >= 0 is true for x >= 0 iff y >= 0
+    // min(x, y) >= 0 is true for x >= 0 iff y >= 0
+    if (lhs_type->lo_as_long() >= 0) {
+      replacement = rhs;
+    } else if (rhs_type->lo_as_long() >= 0) {
+      replacement = lhs;
+    }
+  } else if (in_opc == Op_Xor(bt)) {
+    // x ^ y >= 0 is true for x >= 0 iff y >= 0
+    // x ^ y >= 0 is true for x <  0 iff y <  0 (need to negate test)
+    if (lhs_type->lo_as_long() >= 0) {
+      replacement = rhs;
+    } else if (rhs_type->lo_as_long() >= 0) {
+      replacement = lhs;
+    } else if (lhs_type->hi_as_long() < 0) {
+      replacement = rhs;
+      negate_test = true;
+    } else if (rhs_type->hi_as_long() < 0) {
+      replacement = lhs;
+      negate_test = true;
+    }
+  } else {
+    assert(false, "unexpected opcode: %s", in_op->Name());
+  }
+
+  if (replacement != nullptr) {
+    Node* new_cmp = cmp->clone();
+    new_cmp->set_req(1, replacement);
+    new_cmp->set_req(2, cmp->in(2));
+    new_cmp = phase->transform(new_cmp);
+    BoolTest new_test = negate_test ? bool_node->_test.negate() : bool_node->_test;
+    return new BoolNode(new_cmp, new_test._test);
+  }
+  return nullptr; // no change
+}
+
 //------------------------------Ideal------------------------------------------
 Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool tst (cmp con x)" into "bool ~tst (cmp x con)".
@@ -1581,6 +1653,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     cmp->swap_edges(1, 2);
     cmp = phase->transform( cmp );
     return new BoolNode( cmp, _test.commute() );
+  }
+
+  if ((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
+    (cmp2->find_int_con(1) == 0 || cmp2->find_long_con(1) == 0)) {
+    Node* result = simplify_sign_invariant_comparison_input(phase, this);
+    if (result != nullptr) {
+      return result;
+    }
   }
 
   // Change "bool eq/ne (cmp (cmove (bool tst (cmp2)) 1 0) 0)" into "bool tst/~tst (cmp2)"
