@@ -54,7 +54,6 @@ public class DefaultTimeZoneTest  {
 
     private static final SimpleDateFormat SDF =
             new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzzz (XXX)");
-    static JLabel tzid;
     private static final String INSTRUCTIONS =
             """
             Tests the platform time zone detection on all platforms.
@@ -109,7 +108,7 @@ public class DefaultTimeZoneTest  {
         var panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         // Time zone ID label
-        tzid = new JLabel("Time zone ID: " + SDF.getTimeZone().getID(), SwingConstants.CENTER);
+        var tzid = new JLabel("Time zone ID: " + SDF.getTimeZone().getID(), SwingConstants.CENTER);
         tzid.setAlignmentX(Component.CENTER_ALIGNMENT);
         // Time label
         var label = new JLabel(SDF.format(new Date()), SwingConstants.CENTER);
