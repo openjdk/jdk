@@ -795,8 +795,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     //vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
   } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
-    int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
-    vn = VectorCastNode::make(vopc, in1, bt, vlen);
+    vn = VectorNode::make(vopc, in1, in2, vt);
+    //int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
+    //vn = VectorCastNode::make(vopc, in1, bt, vlen);
   } else if (VectorNode::is_reinterpret_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -1054,5 +1055,6 @@ void VTransformVectorNode::print_spec() const {
     tty->print(" ");
     vpointer().print_on(tty, false);
   }
+  // TODO: prototype? Drop some others?
 }
 #endif
