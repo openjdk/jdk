@@ -85,8 +85,9 @@ import jdk.internal.util.StaticProperty;
  * A symbolic link is a special file that serves as a reference to another file.
  * Unless otherwise specified, symbolic links are transparent to applications
  * and operations on files that are symbolic links are automatically redirected
- * to the target of the link.  Methods that only operate on the abstract pathnam
- * do not access the file system and thus do not resolve symbolic links.
+ * to the target of the link.  Methods that only operate on the abstract
+ * pathname do not access the file system and thus do not resolve symbolic
+ * links.
  *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
  * the {@link #getParent} method of this class and consists of the pathname's
