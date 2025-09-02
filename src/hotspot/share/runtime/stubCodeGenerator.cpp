@@ -22,7 +22,6 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"

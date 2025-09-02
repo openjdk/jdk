@@ -86,7 +86,7 @@ import static org.testng.Assert.fail;
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm AsFileDownloadTest
+ * @run testng/othervm/timeout=480 AsFileDownloadTest
  */
 public class AsFileDownloadTest {
 

@@ -61,8 +61,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
  * @modules java.net.http/jdk.internal.net.http.common
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer ReferenceTracker
- * @run main/othervm  CancelledResponse
- * @run main/othervm  CancelledResponse SSL
+ * @run main/othervm/timeout=480 CancelledResponse
+ * @run main/othervm/timeout=480 CancelledResponse SSL
  */
 
 /**
