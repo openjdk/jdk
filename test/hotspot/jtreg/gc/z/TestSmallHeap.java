@@ -54,7 +54,7 @@ public class TestSmallHeap {
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
             ProcessTools.executeTestJava(
-                // Disable NUMA to avoid OOM with -Xmx16M after JDK-8359683
+                // Disable NUMA to avoid potential OOM after JDK-8359683
                 "-XX:-UseNUMA",
                 "-XX:+UseZGC",
                 "-Xlog:gc,gc+init,gc+reloc,gc+heap",
