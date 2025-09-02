@@ -188,20 +188,23 @@ void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t m
 
   _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, mutator_regions);
   _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Collector, collector_regions);
-  // We're behaving as if all pip collector regions have been transferred into the Mutator partition.  So account for
-  // all the pad bytes as if they reside in the mutator region.
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, mutator_bytes + collector_bytes);
 
-  // Regions may be promoted in place from either the Mutator or Collector partition.  When we prepare to promote
-  // in place, we removed the allocatable region from its original partition and treat the region as if its fully
-  // used.  However, we did not adjust the "total region count".
-  // Now that we are "accounting" for the pip regions, any region that was promoted from the Collector partition
-  // is transferred into the Mutator partition.  When the region is eventually promoted, we'll adjust the tallies
-  // as if this region had originated in the Mutator partition.
+  // Increase used by remnant fill objects placed in both Mutator and Collector partitions
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, mutator_bytes);
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, collector_bytes);
+
+  // Now transfer all of the memory contained within Collector pip regions from the Collector to the Mutator.
+  // Each of these regions is treated as fully used, even though some of the region's memory may be artifically used,
+  // to be recycled and put into allocatable OldCollector partition after the region has been promoted in place.
   _partitions.transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId::Collector, ShenandoahFreeSetPartitionId::Mutator,
                                              collector_regions);
 
   // Conservatively, act as if we've promoted from both Mutator and Collector partitions
+  recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
+                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
+                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
+                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
+                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
   recompute_total_young_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ true>();
   recompute_total_global_used</* UsedByMutatorChanged */ true, /* UsedByCollectorChanged */ true,
                               /* UsedByOldCollectorChanged */ false>();
