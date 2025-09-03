@@ -2124,7 +2124,6 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
-
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
@@ -2133,24 +2132,21 @@ public final class System {
                 return String.newStringWithLatin1Bytes(bytes);
             }
 
-            public String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringOrThrow(bytes, cs);
+            public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringNoRepl(bytes, cs);
             }
-
             public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-
             public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-
-            public byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesOrThrow(s, cs);
+            public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesNoRepl(s, cs);
             }
 
-            public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
-                return String.getBytesUTF8OrThrow(s);
+            public byte[] getBytesUTF8NoRepl(String s) {
+                return String.getBytesUTF8NoRepl(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
