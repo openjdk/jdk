@@ -45,7 +45,6 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
