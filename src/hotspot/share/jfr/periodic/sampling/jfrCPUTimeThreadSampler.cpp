@@ -182,7 +182,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
       factor = 2;
     }
     if (factor > 1) {
-      u4 new_capacity = capacity * factor > CPU_TIME_QUEUE_MAX_CAPACITY ? CPU_TIME_QUEUE_MAX_CAPACITY : capacity * factor;
+      u4 new_capacity = MIN2(CPU_TIME_QUEUE_MAX_CAPACITY, capacity * factor);
       set_capacity(new_capacity);
     }
   }
@@ -618,6 +618,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     }
   } else {
     queue.increment_lost_samples();
+    queue.increment_lost_samples_due_to_queue_full();
   }
 
   if (jt->thread_state() == _thread_in_native) {
