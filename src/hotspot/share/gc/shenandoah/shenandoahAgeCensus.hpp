@@ -37,6 +37,8 @@
 #define CENSUS_NOISE(x) x
 #define NO_CENSUS_NOISE(x)
 
+class LogStream;
+
 struct ShenandoahNoiseStats {
   size_t skipped;   // Volume of objects skipped
   size_t aged;      // Volume of objects from aged regions
@@ -67,7 +69,7 @@ struct ShenandoahNoiseStats {
     young   += other.young;
   }
 
-  void print(size_t total);
+  void print(LogStream& ls, size_t total);
 };
 #else  // SHENANDOAH_CENSUS_NOISE
 #define CENSUS_NOISE(x)
