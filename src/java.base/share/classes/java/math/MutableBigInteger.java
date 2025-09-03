@@ -2037,7 +2037,7 @@ class MutableBigInteger {
                     s.intLen = 1;
                 } else {
                     // Discard wrong integer bits from the initial estimate
-                    // The radicand has Math.getExponent(rad)+1 integer bits, but only
+                    // The reduced radicand rad has Math.getExponent(rad)+1 integer bits, but only
                     // the first Double.PRECISION leftmost bits are correct
                     // We scale the corresponding wrong bits of approx in the fraction part.
                     int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
@@ -2054,9 +2054,9 @@ class MutableBigInteger {
                     s.intLen = 1;
                 }
 
-                /* The Newton's recurrence roughly duplicates the correct bits at each iteration.
+                /* The Newton's recurrence roughly doubles the correct bits at each iteration.
                  * Instead of shifting the approximate root into the original range right now,
-                 * we only duplicate its bit length and then refine it with Newton's recurrence,
+                 * we only double its bit length and then refine it with Newton's recurrence,
                  * using a congruent shifted radicand, in order to avoid computing and
                  * carrying trash bits in the approximate root.
                  * The shifted radicand is determined by the same reasoning used to get the
