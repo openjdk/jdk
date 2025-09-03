@@ -361,13 +361,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     void operator()(JavaThread* current);
     bool exited() { return _om_exited; }
   };
-  class ClearSuccOnSuspend {
-   protected:
-    ObjectMonitor* _om;
-   public:
-    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
-    void operator()(JavaThread* current);
-  };
 
   bool      enter_is_async_deflating();
   void      notify_contended_enter(JavaThread *current);

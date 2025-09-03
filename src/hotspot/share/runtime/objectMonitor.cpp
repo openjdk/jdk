@@ -322,15 +322,6 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
-  if (current->is_suspended()) {
-    if (_om->has_successor(current)) {
-      _om->clear_successor();
-      OrderAccess::fence(); // always do a full fence when successor is cleared
-    }
-  }
-}
-
 #define assert_mark_word_consistency()                                         \
   assert(UseObjectMonitorTable || object()->mark() == markWord::encode(this),  \
          "object mark must match encoded this: mark=" INTPTR_FORMAT            \
@@ -1831,9 +1822,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
     assert(current->thread_state() == _thread_in_vm, "invariant");
 
-    {
-      ClearSuccOnSuspend csos(this);
-      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, false /* allow_suspend */);
+    {     
+      ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (!node._notified) {
