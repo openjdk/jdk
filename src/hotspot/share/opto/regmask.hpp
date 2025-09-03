@@ -32,6 +32,27 @@
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+//------------------------------RegMask----------------------------------------
+// The register mask data structure (RegMask) provides a representation
+// of sets of OptoReg::Name (i.e., machine registers and stack slots). The data
+// structure tracks register availability and allocations during code
+// generation, in particular during register allocation. Internally, RegMask
+// uses a compact bitset representation. Further documentation, including an
+// illustrative example, is available in source code comments throughout this
+// file.
+
+// The ADLC defines 3 macros, RM_SIZE, RM_SIZE_MIN, and FORALL_BODY.
+// RM_SIZE is the base size of a register mask in 32-bit words.
+// RM_SIZE_MIN is the theoretical minimum size of a register mask in 32-bit
+// words.
+// FORALL_BODY replicates a BODY macro once per word in the register mask.
+// The usage is somewhat clumsy and limited to the regmask.[h,c]pp files.
+// However, it means the ADLC can redefine the unroll macro and all loops
+// over register masks will be unrolled by the correct amount.
+//
+// The ADL file describes how to print the machine-specific registers, as well
+// as any notion of register classes.
+
 class LRG;
 
 // To avoid unbounded RegMask growth and to be able to statically compute a
@@ -51,20 +72,6 @@ static unsigned int find_lowest_bit(uintptr_t mask) {
 static unsigned int find_highest_bit(uintptr_t mask) {
   return count_leading_zeros(mask) ^ (BitsPerWord - 1U);
 }
-
-//------------------------------RegMask----------------------------------------
-// The ADL file describes how to print the machine-specific registers, as well
-// as any notion of register classes.  We provide a register mask, which is
-// just a collection of Register numbers.
-
-// The ADLC defines 3 macros, RM_SIZE, RM_SIZE_MIN, and FORALL_BODY.
-// RM_SIZE is the base size of a register mask in 32-bit words.
-// RM_SIZE_MIN is the theoretical minimum size of a register mask in 32-bit
-// words.
-// FORALL_BODY replicates a BODY macro once per word in the register mask.
-// The usage is somewhat clumsy and limited to the regmask.[h,c]pp files.
-// However, it means the ADLC can redefine the unroll macro and all loops
-// over register masks will be unrolled by the correct amount.
 
 class RegMask {
 
@@ -92,8 +99,8 @@ class RegMask {
   // never grow past this size.
   static const unsigned int RM_SIZE_MAX =
       (((RM_SIZE_MIN << 5) +                // Slots for machine registers
-        (max_method_parameter_length * 2) + // Slots for incoming arguments
-        (max_method_parameter_length * 2) + // Slots for outgoing arguments
+        (max_method_parameter_length * 2) + // Slots for incoming arguments (from caller)
+        (max_method_parameter_length * 2) + // Slots for outgoing arguments (to callee)
         BoxLockNode_SLOT_LIMIT +            // Slots for locks
         64                                  // Padding, reserved words, etc.
         ) + 31) >> 5; // Number of bits -> number of 32-bit words
@@ -146,9 +153,10 @@ class RegMask {
 
 #ifdef ASSERT
   // Register masks may get shallowly copied without the use of constructors,
-  // which is problematic when dealing with the externally allocated memory for
-  // _RM_UP_EXT. Therefore, we need some sanity checks to ensure we have not
-  // missed any such cases. The below variables enable such checks.
+  // for example as part of `Node::clone`. This is problematic when dealing with
+  // the externally allocated memory for _RM_UP_EXT. Therefore, we need some
+  // sanity checks to ensure we have addressed all such cases. The below
+  // variables enable such checks.
   //
   // The original address of the _RM_UP_EXT variable, set when using
   // constructors. If we get copied/cloned, &_RM_UP_EXT will no longer equal
@@ -180,6 +188,7 @@ class RegMask {
   // the two marks can still be 0. We do not guarantee that the watermarks are
   // optimal. If _hwm < _lwm, the register mask is necessarily empty. Indeed,
   // when we construct empty register masks, we set _hwm = 0 and _lwm = max.
+  // The watermarks do not concern _all_stack-registers.
   unsigned int _lwm;
   unsigned int _hwm;
 
@@ -227,7 +236,7 @@ class RegMask {
   //                                  RM_UP                               RM_UP_EXT
   //          \_______________________________________________________________________________/
   //                                                  |
-  //                                              _rm_size
+  //                                       _rm_size = _offset = 5
 
   // Access word i in the register mask.
   const uintptr_t& rm_up(unsigned int i) const {
