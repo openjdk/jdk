@@ -65,8 +65,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/threadService.hpp"
@@ -89,8 +89,8 @@
 # include <poll.h>
 #endif
 
-# include <signal.h>
 # include <errno.h>
+# include <signal.h>
 
 OSThread*         os::_starting_thread    = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
@@ -108,23 +108,24 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
-int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+void os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int result = os::vsnprintf(buf, len, fmt, args);
   va_end(args);
-  assert(result >= 0, "os::snprintf error");
   assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
-  return result;
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  assert(buf != nullptr || len == 0, "Valid buffer and length must be given");
+  assert(fmt != nullptr, "Missing format string");
   int result = permit_forbidden_function::vsnprintf(buf, len, fmt, args);
-  // If an encoding error occurred (result < 0) then it's not clear
+  // If an error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
+  if ((result < 0) && (len > 0) && (buf != nullptr)) {
     buf[len - 1] = '\0';
   }
+  assert(result >= 0, "os::vsnprintf error: %s", strerror(errno));
   return result;
 }
 
@@ -1183,9 +1184,10 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
 #endif // PRODUCT
   get_summary_cpu_info(buf, buflen);
   st->print("%s, ", buf);
-  size_t mem = physical_memory()/G;
+  size_t phys_mem = physical_memory();
+  size_t mem = phys_mem/G;
   if (mem == 0) {  // for low memory systems
-    mem = physical_memory()/M;
+    mem = phys_mem/M;
     st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
     st->print("%d cores, %zuG, ", processor_count(), mem);
@@ -1940,10 +1942,10 @@ bool os::is_server_class_machine() {
   //     We allow some part (1/8?) of the memory to be "missing",
   //     based on the sizes of DIMMs, and maybe graphics cards.
   const julong missing_memory   = 256UL * M;
-
+  size_t phys_mem = os::physical_memory();
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
-      (os::physical_memory() >= (server_memory - missing_memory))) {
+      (phys_mem >= (server_memory - missing_memory))) {
     const unsigned int logical_processors =
       VM_Version::logical_processors_per_package();
     if (logical_processors > 1) {
@@ -2202,16 +2204,24 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-julong os::used_memory() {
+bool os::used_memory(size_t& value) {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
-      return mem_usage;
+      value = static_cast<size_t>(mem_usage);
+      return true;
+    } else {
+      return false;
     }
   }
 #endif
-  return os::physical_memory() - os::available_memory();
+  size_t avail_mem = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::available_memory(avail_mem);
+  size_t phys_mem = os::physical_memory();
+  value = phys_mem - avail_mem;
+  return true;
 }
 
 
