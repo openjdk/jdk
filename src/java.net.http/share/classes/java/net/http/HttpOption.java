@@ -52,7 +52,7 @@ import java.net.http.HttpRequest.Builder;
  *
  * @param <T> The {@linkplain #type() type of the option value}
  *
- * @since TBD
+ * @since 26
  */
 public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
     /**
@@ -119,7 +119,7 @@ public sealed interface HttpOption<T> permits HttpRequestOptionImpl {
      * version} is {@linkplain Version#HTTP_3 HTTP/3}, no HTTP/3 exchange will
      * be established and the {@code Http3DiscoveryMode} is ignored.
      *
-     * @since TBD
+     * @since 26
      */
     enum Http3DiscoveryMode {
         /**

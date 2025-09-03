@@ -54,7 +54,7 @@ import java.util.Objects;
  * @see HttpClient#sendAsync(HttpRequest, BodyHandler)
  * @see HttpClient#sendAsync(HttpRequest, BodyHandler, PushPromiseHandler)
  *
- * @since TBD
+ * @since 26
  */
 public final class StreamLimitException extends IOException {
 

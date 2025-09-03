@@ -24,9 +24,7 @@
 /*
  * @test
  * @bug 8343442
- * @ignore
- * @summary Test for `@since` in java.net.http module - ignored
- *          temporarily on the http3 branch since we have @since TBD
+ * @summary Test for `@since` in java.net.http module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker java.net.http
  */

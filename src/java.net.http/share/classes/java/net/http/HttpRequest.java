@@ -103,7 +103,7 @@ public abstract class HttpRequest {
      * The default implementation of this method returns {@link Optional#empty()}
      * if {@code option} is non-null, otherwise throws {@link NullPointerException}.
      *
-     * @since TBD
+     * @since 26
      */
     public <T> Optional<T> getOption(HttpOption<T> option) {
         Objects.requireNonNull(option);
@@ -206,7 +206,7 @@ public abstract class HttpRequest {
          *
          * @see HttpRequest#getOption(HttpOption)
          *
-         * @since TBD
+         * @since 26
          */
         public default <T> Builder setOption(HttpOption<T> option, T value) { return this; }
 
