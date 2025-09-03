@@ -1058,19 +1058,32 @@ void VTransformPopulateIndexNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("%d-pack[", _nodes.length());
-  for (int i = 0; i < _nodes.length(); i++) {
-    Node* n = _nodes.at(i);
-    if (i > 0) {
-      tty->print(", ");
-    }
-    tty->print("%d %s", n->_idx, n->Name());
-  }
-  tty->print("]");
+  tty->print("Prototype[orig=[%d %s] sopc=%s vlen=%d element_bt=%s]",
+             _prototype.approximate_origin()->_idx,
+             _prototype.approximate_origin()->Name(),
+             NodeClassNames[_prototype.scalar_opcode()],
+             _prototype.vector_length(),
+             type2name(_prototype.element_basic_type()));
   if (is_load_or_store_in_loop()) {
     tty->print(" ");
     vpointer().print_on(tty, false);
   }
-  // TODO: prototype? Drop some others?
+}
+
+void VTransformElementWiseVectorNode::print_spec() const {
+  VTransformVectorNode::print_spec();
+  tty->print(" vopc=%s", NodeClassNames[_vector_opcode]);
+}
+
+void VTransformReinterpretVectorNode::print_spec() const {
+  VTransformVectorNode::print_spec();
+  tty->print(" src_bt=%s", type2name(_src_bt));
+}
+
+void VTransformBoolVectorNode::print_spec() const {
+  VTransformVectorNode::print_spec();
+  const BoolTest bt(_test._mask);
+  tty->print(" test=");
+  bt.dump_on(tty);
 }
 #endif

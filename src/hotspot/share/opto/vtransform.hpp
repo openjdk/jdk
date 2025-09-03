@@ -628,7 +628,7 @@ public:
   //const TypePtr* adr_type() const { return _adr_type; } // TODO: ?
 };
 
-// Base class for all vector vtnodes.
+// Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 protected:
   const VTransformVectorNodePrototype _prototype;
@@ -663,7 +663,7 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
-  //  TODO: print_spec
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformReinterpretVectorNode : public VTransformVectorNode {
@@ -674,7 +674,7 @@ public:
     VTransformVectorNode(vtransform, 2, prototype), _src_bt(src_bt) {}
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
-  //  TODO: print_spec
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 struct VTransformBoolTest {
@@ -694,7 +694,6 @@ public:
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
-  //  TODO: print_spec
 };
 
 class VTransformBoolVectorNode : public VTransformVectorNode {
@@ -707,7 +706,7 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
-  //  TODO: print_spec
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformReductionVectorNode : public VTransformVectorNode {
