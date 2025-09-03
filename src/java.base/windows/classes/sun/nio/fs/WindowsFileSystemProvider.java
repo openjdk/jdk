@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
@@ -418,8 +419,89 @@ class WindowsFileSystemProvider
         }
     }
 
+    // contains file attributes and its handle
+    // the attributes' key is valid as long as the handle remains open
+    private record AttrsAndHandle(WindowsFileAttributes attrs, long handle) {}
+
+    // find the attributes of the last accessible link in the chain
+    private AttrsAndHandle lastFileAttrs(WindowsPath path)
+        throws IOException, WindowsException
+    {
+        var fileAttrs = new HashSet<WindowsFileAttributes>();
+        WindowsFileAttributes lastFileAttrs = null;
+        long handle = 0L;
+        while (path != null) {
+            long h = 0L;
+            try {
+                h = path.openForReadAttributeAccess(false);
+            } catch (WindowsException x) {
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND)
+                    throw x;
+                break;
+            }
+
+            WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(h);
+            if (attrs == null || !attrs.isSymbolicLink()) {
+                CloseHandle(h);
+                break;
+            }
+
+            if (!fileAttrs.add(attrs)) {
+                CloseHandle(h);
+                if (handle != 0L)
+                    CloseHandle(handle);
+                throw new FileSystemLoopException("Looping symbolic link");
+            }
+
+            lastFileAttrs = attrs;
+            if (handle != 0L)
+                CloseHandle(handle);
+            handle = h;
+
+            String target = WindowsLinkSupport.readLink(path);
+            path = WindowsPath.parse(path.getFileSystem(), target);
+        }
+
+        return lastFileAttrs == null
+            ? null : new AttrsAndHandle(lastFileAttrs, handle);
+    }
+
+    // find the key by following links
+    private AttrsAndHandle fileAttrs(WindowsPath file)
+        throws WindowsException
+    {
+        long h = 0L;
+        try {
+            h = file.openForReadAttributeAccess(true);
+        } catch (WindowsException x) {
+            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                x.lastError() != ERROR_PATH_NOT_FOUND &&
+                x.lastError() != ERROR_CANT_RESOLVE_FILENAME)
+                throw x;
+        }
+
+        if (h != 0L) {
+            WindowsFileAttributes attrs = null;
+            try {
+                attrs = WindowsFileAttributes.readAttributes(h);
+            } catch (WindowsException x) {
+                CloseHandle(h);
+                throw x;
+            }
+
+            if (attrs != null)
+                return new AttrsAndHandle(attrs, h);
+
+            CloseHandle(h);
+        }
+
+        return null;
+    }
+
     @Override
     public boolean isSameFile(Path obj1, Path obj2) throws IOException {
+        // toWindowsPath verifies its argument is a non-null WindowsPath
         WindowsPath file1 = WindowsPath.toWindowsPath(obj1);
         if (file1.equals(obj2))
             return true;
@@ -429,54 +511,35 @@ class WindowsFileSystemProvider
             return false;
         WindowsPath file2 = (WindowsPath)obj2;
 
-        // open both files and see if they are the same
-        long h1 = 0L;
+        AttrsAndHandle ah1 = null;
         try {
-            h1 = file1.openForReadAttributeAccess(true);
-        } catch (WindowsException x) {
-            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
-                x.lastError() != ERROR_PATH_NOT_FOUND)
-                x.rethrowAsIOException(file1);
-        }
-
-        // if file1 does not exist, it cannot equal file2
-        if (h1 == 0L)
-            return false;
-
-        try {
-            WindowsFileAttributes attrs1 = null;
-            try {
-                attrs1 = WindowsFileAttributes.readAttributes(h1);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(file1);
-            }
-            long h2 = 0L;
-            try {
-                h2 = file2.openForReadAttributeAccess(true);
-            } catch (WindowsException x) {
-                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
-                    x.lastError() != ERROR_PATH_NOT_FOUND)
-                    x.rethrowAsIOException(file2);
-            }
-
-            // if file2 does not exist, it cannot equal file1, which does
-            if (h2 == 0L)
-                return false;
-
-            try {
-                WindowsFileAttributes attrs2 = null;
+            ah1 = fileAttrs(file1);
+            if (ah1 == null)
+                ah1 = lastFileAttrs(file1);
+            if (ah1 != null) {
+                WindowsFileAttributes attrs = ah1.attrs();
+                AttrsAndHandle ah2 = null;
                 try {
-                    attrs2 = WindowsFileAttributes.readAttributes(h2);
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(file2);
+                     ah2 = fileAttrs(file2);
+                     if (ah2 == null)
+                         ah2 = lastFileAttrs(file2);
+                     if (ah2 != null)
+                         return ah1.attrs().equals(ah2.attrs());
+                } catch (WindowsException y) {
+                    y.rethrowAsIOException(file2);
+                } finally {
+                    if (ah2 != null)
+                        CloseHandle(ah2.handle());
                 }
-                return WindowsFileAttributes.isSameFile(attrs1, attrs2);
-            } finally {
-                CloseHandle(h2);
             }
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(file1);
         } finally {
-            CloseHandle(h1);
+            if (ah1 != null)
+                CloseHandle(ah1.handle());
         }
+
+        return false;
     }
 
     @Override
