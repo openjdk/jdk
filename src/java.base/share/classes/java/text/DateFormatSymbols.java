@@ -149,7 +149,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     public DateFormatSymbols(Locale locale)
     {
-        initializeData(locale);
+        initializeData(Objects.requireNonNull(locale,
+            "locale should not be null"));
     }
 
     /**
