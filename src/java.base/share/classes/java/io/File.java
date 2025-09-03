@@ -118,8 +118,8 @@ import jdk.internal.util.StaticProperty;
  *
  * </ul>
  *
- * <p> Instances of this class may or may not denote an actual file-system
- * object such as a file or a directory.  If it does denote such an object
+ * <p> Instances of this class may or may not locate an actual file-system
+ * object such as a file or a directory.  If it does locate such an object
  * then that object resides in a <i>partition</i>.  A partition is an
  * operating system-specific portion of storage for a file system.  A single
  * storage device (e.g. a physical disk-drive, flash memory, CD-ROM) may
@@ -597,7 +597,7 @@ public class File
      * symbolic links, and converting drive letters to a standard case (on
      * Microsoft Windows platforms).
      *
-     * <p> Every pathname that denotes an existing file or directory has a
+     * <p> Every pathname that locates an existing file or directory has a
      * unique canonical form.  Every pathname that denotes a nonexistent file
      * or directory also has a unique canonical form.  The canonical form of
      * the pathname of a nonexistent file or directory may be different from
@@ -606,7 +606,7 @@ public class File
      * file or directory may be different from the canonical form of the same
      * pathname after the file or directory is deleted.
      *
-     * @return  The canonical pathname string denoting the same file or
+     * @return  The canonical pathname string locating the same file or
      *          directory as this abstract pathname
      *
      * @throws  IOException
@@ -628,7 +628,7 @@ public class File
      * Returns the canonical form of this abstract pathname.  Equivalent to
      * <code>new&nbsp;File(this.{@link #getCanonicalPath})</code>.
      *
-     * @return  The canonical pathname string denoting the same file or
+     * @return  The canonical pathname string locating the same file or
      *          directory as this abstract pathname
      *
      * @throws  IOException
@@ -903,7 +903,7 @@ public class File
 
     /**
      * Returns the length of the file located by this abstract pathname.
-     * The return value is unspecified if this pathname denotes a directory.
+     * The return value is unspecified if this pathname locates a directory.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that {@code 0L} is returned, or where several attributes of the same file
@@ -914,7 +914,7 @@ public class File
      * @return  The length, in bytes, of the file located by this abstract
      *          pathname, or {@code 0L} if the file does not exist.  Some
      *          operating systems may return {@code 0L} for pathnames
-     *          denoting system-dependent entities such as devices or pipes.
+     *          locating system-dependent entities such as devices or pipes.
      */
     public long length() {
         if (isInvalid()) {
@@ -956,8 +956,8 @@ public class File
 
     /**
      * Deletes the file or directory located by this abstract pathname.  If
-     * this pathname denotes a directory, then the directory must be empty in
-     * order to be deleted.  If this pathname denotes a symbolic link, then the
+     * this pathname locates a directory, then the directory must be empty in
+     * order to be deleted.  If this pathname locates a symbolic link, then the
      * link itself, not its target, will be deleted.
      *
      * <p> Note that the {@link java.nio.file.Files} class defines the {@link
@@ -978,7 +978,7 @@ public class File
     /**
      * Requests that the file or directory located by this abstract
      * pathname be deleted when the virtual machine terminates.
-     * If this pathname denotes a symbolic link, then the
+     * If this pathname locates a symbolic link, then the
      * link itself, not its target, will be deleted.
      * Files (or directories) are deleted in the reverse order that
      * they are registered. Invoking this method to delete a file or
@@ -1010,10 +1010,10 @@ public class File
      * Returns an array of strings naming the files and directories in the
      * directory located by this abstract pathname.
      *
-     * <p> If this abstract pathname does not denote a directory, then this
+     * <p> If this abstract pathname does not locate a directory, then this
      * method returns {@code null}.  Otherwise an array of strings is
      * returned, one for each file or directory in the directory.  Names
-     * denoting the directory itself and the directory's parent directory are
+     * locating the directory itself and the directory's parent directory are
      * not included in the result.  Each string is a file name rather than a
      * complete path.
      *
@@ -1030,7 +1030,7 @@ public class File
      * @return  An array of strings naming the files and directories in the
      *          directory located by this abstract pathname.  The array will be
      *          empty if the directory is empty.  Returns {@code null} if
-     *          this abstract pathname does not denote a directory, or if an
+     *          this abstract pathname does not locate a directory, or if an
      *          I/O error occurs.
      */
     public String[] list() {
@@ -1045,7 +1045,7 @@ public class File
      * @return  An array of strings naming the files and directories in the
      *          directory located by this abstract pathname.  The array will be
      *          empty if the directory is empty.  Returns {@code null} if
-     *          this abstract pathname does not denote a directory, or if an
+     *          this abstract pathname does not locate a directory, or if an
      *          I/O error occurs.
      */
     private final String[] normalizedList() {
@@ -1073,7 +1073,7 @@ public class File
      * and only if the value {@code true} results when the {@link
      * FilenameFilter#accept FilenameFilter.accept(File,&nbsp;String)} method
      * of the filter is invoked on this abstract pathname and the name of a
-     * file or directory in the directory that it denotes.
+     * file or directory in the directory that it locates.
      *
      * @param  filter
      *         A filename filter
@@ -1082,7 +1082,7 @@ public class File
      *          directory located by this abstract pathname that were accepted
      *          by the given {@code filter}.  The array will be empty if the
      *          directory is empty or if no names were accepted by the filter.
-     *          Returns {@code null} if this abstract pathname does not denote
+     *          Returns {@code null} if this abstract pathname does not locate
      *          a directory, or if an I/O error occurs.
      *
      * @see java.nio.file.Files#newDirectoryStream(Path,String)
@@ -1102,13 +1102,13 @@ public class File
     }
 
     /**
-     * Returns an array of abstract pathnames denoting the files in the
+     * Returns an array of abstract pathnames locating the files in the
      * directory located by this abstract pathname.
      *
-     * <p> If this abstract pathname does not denote a directory, then this
+     * <p> If this abstract pathname does not locate a directory, then this
      * method returns {@code null}.  Otherwise an array of {@code File} objects
      * is returned, one for each file or directory in the directory.  Pathnames
-     * denoting the directory itself and the directory's parent directory are
+     * locating the directory itself and the directory's parent directory are
      * not included in the result.  Each resulting abstract pathname is
      * constructed from this abstract pathname using the {@link #File(File,
      * String) File(File,&nbsp;String)} constructor.  Therefore if this
@@ -1126,10 +1126,10 @@ public class File
      * directory. This may use less resources when working with very large
      * directories.
      *
-     * @return  An array of abstract pathnames denoting the files and
+     * @return  An array of abstract pathnames locating the files and
      *          directories in the directory located by this abstract pathname.
      *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
+     *          {@code null} if this abstract pathname does not locate a
      *          directory, or if an I/O error occurs.
      *
      * @since  1.2
@@ -1146,7 +1146,7 @@ public class File
     }
 
     /**
-     * Returns an array of abstract pathnames denoting the files and
+     * Returns an array of abstract pathnames locating the files and
      * directories in the directory located by this abstract pathname that
      * satisfy the specified filter.  The behavior of this method is the same
      * as that of the {@link #listFiles()} method, except that the pathnames in
@@ -1156,15 +1156,15 @@ public class File
      * the {@link FilenameFilter#accept
      * FilenameFilter.accept(File,&nbsp;String)} method of the filter is
      * invoked on this abstract pathname and the name of a file or directory in
-     * the directory that it denotes.
+     * the directory that it locates.
      *
      * @param  filter
      *         A filename filter
      *
-     * @return  An array of abstract pathnames denoting the files and
+     * @return  An array of abstract pathnames locating the files and
      *          directories in the directory located by this abstract pathname.
      *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
+     *          {@code null} if this abstract pathname does not locate a
      *          directory, or if an I/O error occurs.
      *
      * @since  1.2
@@ -1182,7 +1182,7 @@ public class File
     }
 
     /**
-     * Returns an array of abstract pathnames denoting the files and
+     * Returns an array of abstract pathnames locating the files and
      * directories in the directory located by this abstract pathname that
      * satisfy the specified filter.  The behavior of this method is the same
      * as that of the {@link #listFiles()} method, except that the pathnames in
@@ -1195,10 +1195,10 @@ public class File
      * @param  filter
      *         A file filter
      *
-     * @return  An array of abstract pathnames denoting the files and
+     * @return  An array of abstract pathnames locating the files and
      *          directories in the directory located by this abstract pathname.
      *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
+     *          {@code null} if this abstract pathname does not locate a
      *          directory, or if an I/O error occurs.
      *
      * @since  1.2
@@ -1261,7 +1261,7 @@ public class File
 
     /**
      * Renames the file located by this abstract pathname.  If this pathname
-     * denotes a symbolic link, then the link itself, not its target, will be
+     * locates a symbolic link, then the link itself, not its target, will be
      * renamed.
      *
      * <p> Many aspects of the behavior of this method are inherently
@@ -1848,7 +1848,7 @@ public class File
      * to have any effect upon the temporary directory used by this method.
      *
      * <p> If the {@code directory} argument is not {@code null} and its
-     * abstract pathname is valid and denotes an existing, writable directory,
+     * abstract pathname is valid and locates an existing, writable directory,
      * then the file will be created in that directory. Otherwise the file will
      * not be created and an {@code IOException} will be thrown.  Under no
      * circumstances will a directory be created at the location specified by
@@ -1865,7 +1865,7 @@ public class File
      *                    {@code null} if the default temporary-file
      *                    directory is to be used
      *
-     * @return  An abstract pathname denoting a newly-created empty file
+     * @return  An abstract pathname locating a newly-created empty file
      *
      * @throws  IllegalArgumentException
      *          If the {@code prefix} argument contains fewer than three
@@ -1922,7 +1922,7 @@ public class File
      *                    name; may be {@code null}, in which case the
      *                    suffix {@code ".tmp"} will be used
      *
-     * @return  An abstract pathname denoting a newly-created empty file
+     * @return  An abstract pathname locating a newly-created empty file
      *
      * @throws  IllegalArgumentException
      *          If the {@code prefix} argument contains fewer than three
