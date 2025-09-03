@@ -166,4 +166,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             return true;
         }
     }
+    protected void cleanup(){
+        f.dispose();
+    }
 }
