@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -3025,7 +3025,7 @@ public class JavacParserTest extends TestCase {
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
-                List.of("--enable-preview", "--source", SOURCE_VERSION, "-XDdev"),
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
 
@@ -3060,6 +3060,20 @@ public class JavacParserTest extends TestCase {
                              }
                          }
                      }""");
+    }
+
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotationsMinimal() throws IOException {
+        String code = """
+                      B<@C<@D(e f=
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
     }
 
     void run(String[] args) throws Exception {

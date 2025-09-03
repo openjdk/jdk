@@ -1102,6 +1102,7 @@ public class JavacParser implements Parser {
         }
 
         if ((lastmode & TYPE) == 0) {
+            //if the mode was switched to expression while expecting type, wrap with Erroneous:
             result = F.Erroneous(List.of(result));
         }
 
