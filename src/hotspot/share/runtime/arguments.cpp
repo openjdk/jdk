@@ -2426,7 +2426,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
         if (MinHeapFreeRatio > (uintx)(dmaxf * 100)) {
           jio_fprintf(defaultStream::error_stream(),
-                      "-Xmaxf value (%s) must be greater than or equal to the implicit -Xmaxf value (%3.2lf)\n",
+                      "-Xmaxf value (%s) must be greater than or equal to the implicit -Xminf value (%3.2lf)\n",
                       tail, MinHeapFreeRatio / 100.0);
           return JNI_EINVAL;
         }
