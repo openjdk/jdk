@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270139 8361445
+ * @bug 8270139 8361445 8365314
  * @summary Verify error recovery w.r.t. annotations
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -224,4 +224,28 @@ public class AnnotationRecovery extends TestRunner {
         }
     }
 
+    @Test //JDK-8365314
+    public void testSuppressWarningsMissingAttribute() throws Exception {
+        String code = """
+                      @SuppressWarnings
+                      public class Test {
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:1:1: compiler.err.annotation.missing.default.value: java.lang.SuppressWarnings, value",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
 }
