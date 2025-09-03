@@ -946,10 +946,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       OLD_CFLAGS="$CFLAGS"
       CFLAGS="$CFLAGS -march=armv8-a+sve"
       AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
           [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
+            #include <arm_sve.h>
+            svfloat64_t a() {}
+          ],
+          [
+            svint32_t r = svdup_n_s32(1)
           ])],
           [
             AC_MSG_RESULT([yes])
