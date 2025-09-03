@@ -33,6 +33,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
@@ -178,6 +179,7 @@ void G1ConcurrentRefineSweepState::start_work() {
 bool G1ConcurrentRefineSweepState::swap_global_card_table() {
   assert_state(State::SwapGlobalCT);
 
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Global Card Table Swap");
   set_state_start_time();
 
   {
@@ -200,6 +202,8 @@ bool G1ConcurrentRefineSweepState::swap_global_card_table() {
 
 bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
   assert_state(State::SwapJavaThreadsCT);
+
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Java Thread CT swap");
 
   set_state_start_time();
 
@@ -224,6 +228,8 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
 
 bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
   assert_state(State::SynchronizeGCThreads);
+
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine GC Thread CT swap");
 
   set_state_start_time();
 
@@ -265,18 +271,20 @@ bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
 
 void G1ConcurrentRefineSweepState::snapshot_heap(bool concurrent) {
   if (concurrent) {
+    GCTraceTime(Info, gc, refine) tm("Concurrent Refine Snapshot Heap");
+
     assert_state(State::SnapshotHeap);
 
     set_state_start_time();
+
+    snapshot_heap_into(_sweep_table);
+
+    advance_state(State::SweepRT);
   } else {
     assert_state(State::Idle);
     assert_at_safepoint();
-  }
 
-  snapshot_heap_into(_sweep_table);
-
-  if (concurrent) {
-    advance_state(State::SweepRT);
+    snapshot_heap_into(_sweep_table);
   }
 }
 
@@ -288,6 +296,8 @@ void G1ConcurrentRefineSweepState::sweep_refinement_table_start() {
 
 bool G1ConcurrentRefineSweepState::sweep_refinement_table_step() {
   assert_state(State::SweepRT);
+
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Table Step");
 
   G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
 

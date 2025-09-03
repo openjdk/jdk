@@ -301,6 +301,7 @@ public:
   bool wait_for_heap_lock() const { return _heap_was_locked; }
 
   uint num_threads_wanted() const { return _num_threads_wanted; }
+  uint max_num_threads() const { return _thread_control.max_num_threads(); }
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);

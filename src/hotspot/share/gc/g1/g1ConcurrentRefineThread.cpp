@@ -29,6 +29,7 @@
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "runtime/cpuTimeCounters.hpp"
@@ -69,6 +70,7 @@ void G1ConcurrentRefineThread::run_service() {
       // blocked. In that case we wait for adjustment to succeed.
       Ticks adjust_start = Ticks::now();
       if (cr()->adjust_num_threads_periodically()) {
+        GCTraceTime(Info, gc, refine) tm("Concurrent Refine Cycle");
         do_refinement();
       } else {
         log_debug(gc, refine)("Concurrent Refine Adjust Only (#threads wanted: %u adjustment_needed: %s wait_for_heap_lock: %s) %.2fms",
@@ -140,7 +142,6 @@ void G1ConcurrentRefineThread::do_refinement() {
   G1ConcurrentRefineSweepState& state = _cr->sweep_state();
 
   state.start_work();
-  log_debug(gc, refine)("Concurrent Refine Work Start (threads wanted: %u)", _cr->num_threads_wanted());
 
   // Swap card tables.
 
@@ -149,21 +150,18 @@ void G1ConcurrentRefineThread::do_refinement() {
     log_debug(gc, refine)("GC pause after Global Card Table Swap");
     return;
   }
-  log_debug(gc, refine)("Concurrent Refine Global Card Table Swap");
 
   // 2. Java threads
   if (!state.swap_java_threads_ct()) {
     log_debug(gc, refine)("GC pause after Java Thread CT swap");
     return;
   }
-  log_debug(gc, refine)("Concurrent Refine Java Thread CT swap");
 
   // 3. GC threads
   if (!state.swap_gc_threads_ct()) {
     log_debug(gc, refine)("GC pause after GC Thread CT swap");
     return;
   }
-  log_debug(gc, refine)("Concurrent Refine GC Thread CT swap");
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   jlong epoch_yield_duration = g1h->yield_duration_in_refinement_epoch();
@@ -173,10 +171,11 @@ void G1ConcurrentRefineThread::do_refinement() {
 
   // 4. Snapshot heap.
   state.snapshot_heap();
-  log_debug(gc, refine)("Concurrent Refine Snapshot Heap");
 
   // 5. Sweep refinement table until done
   bool interrupted_by_gc = false;
+
+  log_info(gc, task)("Concurrent Refine Sweep Using %u of %u Workers", _cr->num_threads_wanted(), _cr->max_num_threads());
 
   state.sweep_refinement_table_start();
   while (true) {
@@ -205,6 +204,8 @@ void G1ConcurrentRefineThread::do_refinement() {
   }
 
   if (!interrupted_by_gc) {
+    GCTraceTime(Info, gc, refine) tm("Concurrent Refine Complete Work");
+
     state.add_yield_during_sweep_duration(total_yield_during_sweep_duration);
 
     state.complete_work(true);
