@@ -56,6 +56,7 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
+    boolean upgrade;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -91,6 +92,7 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
+        this.upgrade = isUpgradeRequest(reqHdrs);
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
@@ -120,6 +122,13 @@ class ExchangeImpl {
 
     private boolean isHeadRequest() {
         return HEAD.equals(getRequestMethod());
+    }
+
+    // check if Upgrade connection
+    private static boolean isUpgradeRequest(Headers headers) {
+        var values = headers.get("Connection");
+        return values != null
+            && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
     public void close () {
@@ -155,7 +164,9 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (reqContentLen == -1L) {
+        if (upgrade) {
+            uis = ris;
+        } else if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream (this, ris);
             uis = uis_orig;
         } else {
@@ -215,8 +226,17 @@ class ExchangeImpl {
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
         /* check for response type that is not allowed to send a body */
+        if (rCode == 101) {
+            logger.log(Level.DEBUG, () -> "switching protocols");
 
-        if ((rCode>=100 && rCode <200) /* informational */
+            if (contentLen != 0) {
+                String msg = "sendResponseHeaders: rCode = " + rCode
+                        + ": forcing contentLen = 0";
+                logger.log(Level.WARNING, msg);
+            }
+            contentLen = 0;
+
+        } else if ((rCode>=100 && rCode <200) /* informational */
             ||(rCode == 204)           /* no content */
             ||(rCode == 304))          /* not modified */
         {
@@ -243,7 +263,11 @@ class ExchangeImpl {
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
             if (contentLen == 0) {
-                if (http10) {
+
+                if (upgrade) {
+                    o.setWrappedStream(ros);
+                    close = true;
+                } else if (http10) {
                     o.setWrappedStream (new UndefLengthOutputStream (this, ros));
                     close = true;
                 } else {
@@ -284,6 +308,8 @@ class ExchangeImpl {
         if (noContentToSend) {
             ros.flush();
             close();
+        } else if (upgrade) {
+            ros.flush();
         }
         server.logReply (rCode, req.requestLine(), null);
     }
