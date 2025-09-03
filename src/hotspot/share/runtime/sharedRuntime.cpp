@@ -42,8 +42,8 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -2510,7 +2510,6 @@ static void print_table_statistics() {
 
 // ---------------------------------------------------------------------------
 // Implementation of AdapterHandlerLibrary
-AdapterHandlerEntry* AdapterHandlerLibrary::_abstract_method_handler = nullptr;
 AdapterHandlerEntry* AdapterHandlerLibrary::_no_arg_handler = nullptr;
 AdapterHandlerEntry* AdapterHandlerLibrary::_int_arg_handler = nullptr;
 AdapterHandlerEntry* AdapterHandlerLibrary::_obj_arg_handler = nullptr;
@@ -2546,28 +2545,11 @@ static void post_adapter_creation(const AdapterBlob* new_adapter,
   }
 }
 
-void AdapterHandlerLibrary::create_abstract_method_handler() {
-  assert_lock_strong(AdapterHandlerLibrary_lock);
-  // Create a special handler for abstract methods.  Abstract methods
-  // are never compiled so an i2c entry is somewhat meaningless, but
-  // throw AbstractMethodError just in case.
-  // Pass wrong_method_abstract for the c2i transitions to return
-  // AbstractMethodError for invalid invocations.
-  address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
-  _abstract_method_handler = AdapterHandlerLibrary::new_entry(AdapterFingerPrint::allocate(0, nullptr));
-  _abstract_method_handler->set_entry_points(SharedRuntime::throw_AbstractMethodError_entry(),
-                                             wrong_method_abstract,
-                                             wrong_method_abstract,
-                                             nullptr);
-}
-
 void AdapterHandlerLibrary::initialize() {
   {
     ResourceMark rm;
-    MutexLocker mu(AdapterHandlerLibrary_lock);
     _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
-    create_abstract_method_handler();
   }
 
 #if INCLUDE_CDS
@@ -2627,9 +2609,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
-  if (method->is_abstract()) {
-    return _abstract_method_handler;
-  }
   int total_args_passed = method->size_of_parameters(); // All args on stack
   if (total_args_passed == 0) {
     return _no_arg_handler;
@@ -2727,6 +2706,7 @@ void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicT
 #endif /* ASSERT*/
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
+  assert(!method->is_abstract(), "abstract methods do not have adapters");
   // Use customized signature handler.  Need to lock around updates to
   // the _adapter_handler_table (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
@@ -3496,13 +3476,6 @@ void AdapterHandlerLibrary::print_statistics() {
 }
 
 #endif /* PRODUCT */
-
-bool AdapterHandlerLibrary::is_abstract_method_adapter(AdapterHandlerEntry* entry) {
-  if (entry == _abstract_method_handler) {
-    return true;
-  }
-  return false;
-}
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
