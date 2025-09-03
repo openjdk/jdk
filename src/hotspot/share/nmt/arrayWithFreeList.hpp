@@ -26,6 +26,7 @@
 #define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
 #include "utilities/growableArray.hpp"
+
 #include <type_traits>
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
