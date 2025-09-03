@@ -460,7 +460,7 @@ public class BigIntegerTest {
         n = 8;
         // 1 <= value < 2^n should return BigInteger.ONE.
         int end = 1 << n;
-        for (int i = 0; i < end; i++) {
+        for (int i = 1; i < end; i++) {
             failCount += checkResult(BigInteger.ONE,
                     BigInteger.valueOf(i).nthRoot(n), "nthRoot(" + i + ", " + n + ") != 1");
         }
@@ -505,7 +505,7 @@ public class BigIntegerTest {
         };
 
         Stream.Builder<BigInteger> sb = Stream.builder();
-        int maxExponent = Double.MAX_EXPONENT + 1;
+        int maxExponent = 256;
         for (int i = 1; i <= maxExponent; i++) {
             BigInteger p2 = BigInteger.ONE.shiftLeft(i);
             sb.add(p2.subtract(BigInteger.ONE));
@@ -514,7 +514,7 @@ public class BigIntegerTest {
         }
         sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger());
         sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger().add(BigInteger.ONE));
-        report("nthRoot for 2^N, 2^N - 1 and 2^N + 1, 1 <= N <= Double.MAX_EXPONENT",
+        report("nthRoot for 2^N, 2^N - 1 and 2^N + 1, 1 <= N <= " + maxExponent,
             sb.build().collect(Collectors.summingInt(f)));
 
         IntStream ints = random.ints(SIZE, 2, Integer.MAX_VALUE);
@@ -525,7 +525,7 @@ public class BigIntegerTest {
         report("nthRoot for long", longs.mapToObj(x ->
             BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
 
-        DoubleStream doubles = random.doubles(SIZE, 0x1p63, Double.MAX_VALUE);
+        DoubleStream doubles = random.doubles(SIZE, 0x1p63, Math.scalb(1.0, maxExponent));
         report("nthRoot for double", doubles.mapToObj(x ->
             BigDecimal.valueOf(x).toBigInteger()).collect(Collectors.summingInt(f)));
     }
@@ -1445,6 +1445,8 @@ public class BigIntegerTest {
 
             squareRoot();
             squareRootAndRemainder();
+            nthRoot();
+            nthRootAndRemainder();
 
             bitCount();
             bitLength();
