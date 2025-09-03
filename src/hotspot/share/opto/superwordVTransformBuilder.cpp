@@ -93,12 +93,7 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     } else if (vtn->isa_ReductionVector() != nullptr) {
       init_req_with_scalar(p0,   vtn, 1); // scalar init
       init_req_with_vector(pack, vtn, 2); // vector
-    } else if (vtn->isa_CmpVector() ||
-               vtn->isa_BoolVector()) {
-      // TODO: could be the new default
-      init_all_req_with_vectors(pack, vtn);
-    } else {
-      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above: %s", vtn->name());
+    } else if (vtn->isa_ElementWiseVector() != nullptr) {
       if (VectorNode::is_scalar_rotate(p0) &&
           p0->in(2)->is_Con() &&
           Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
@@ -121,6 +116,8 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else {
         init_all_req_with_vectors(pack, vtn);
       }
+    } else {
+      init_all_req_with_vectors(pack, vtn);
     }
   }
 }

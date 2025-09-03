@@ -104,7 +104,7 @@ bool VTransformGraph::schedule() {
   }
 
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_trace._info) {
     print_schedule();
   }
 #endif
