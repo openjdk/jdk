@@ -1073,9 +1073,12 @@ bool StringConcat::validate_control_flow() {
         // in order to prevent an unsafe transformation in eliminate_unneeded_control,
         // where the Bool would be replaced by a constant zero but the Phi stays live
         // as it is a parameter of the concatenation itself.
-        assert(ptr->in(1)->in(0)->in(1)->is_Bool(), "unexpected if shape");
-        Node* v1 = ptr->in(1)->in(0)->in(1)->in(1)->in(1);
-        Node* v2 = ptr->in(1)->in(0)->in(1)->in(1)->in(2);
+        Node* iff = ptr->in(1)->in(0);
+        Node* bol = iff->in(1);
+        Node* cmp = bol->in(1);
+        assert(cmp->is_Cmp(), "unexpected if shape");
+        Node* v1 = cmp->in(1);
+        Node* v2 = cmp->in(2);
         if (_multiple &&
             ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
              (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
