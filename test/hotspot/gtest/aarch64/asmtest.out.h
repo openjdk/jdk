@@ -971,8 +971,8 @@
     __ sve_cpy(z5, __ D, p0, -32768, false);           //       mov     z5.d, p0/z, -32768
     __ sve_cpy(z10, __ B, p0, -1, false);              //       mov     z10.b, p0/z, -1
     __ sve_cpy(z11, __ S, p0, -1, false);              //       mov     z11.s, p0/z, -1
-    __ sve_fcpy(z11, __ S, p0, 0.5);                   //       fcpy    z11.s, p0/m, #0.5
-    __ sve_fcpy(z11, __ S, p0, -1.0);                  //       fcpy    z11.s, p0/m, #-1.0
+    __ sve_cpy(z11, __ S, p0, 0.5);                    //       fcpy    z11.s, p0/m, #0.5
+    __ sve_cpy(z11, __ S, p0, -1.0);                   //       fcpy    z11.s, p0/m, #-1.0
     __ sve_inc(r0, __ S);                              //       incw    x0
     __ sve_dec(r1, __ H);                              //       dech    x1
     __ sve_lsl(z0, __ B, z1, 7);                       //       lsl     z0.b, z1.b, #7
