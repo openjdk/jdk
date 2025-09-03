@@ -36,7 +36,6 @@
  * @test id=dynamic
  * @bug 8362566
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
- * @requires vm.cds.default.archive.available
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build jdk.test.whitebox.WhiteBox
