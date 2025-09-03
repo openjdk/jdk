@@ -9,9 +9,12 @@ import java.text.Collator;
 import java.util.Comparator;
 
 class T8365676 {
-    <T extends Comparator<Integer>> void test() {
+    // T and P should have equivalent members
+    <T extends Comparator<Object>, P extends Object & Comparator<Object>>
+    void test() {
         Comparator.reverseOrder();
         Collator.reverseOrder(); // Fails
+        P.reverseOrder(); // Fails
         T.reverseOrder(); // Should fail
     }
 }

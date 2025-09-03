@@ -4572,13 +4572,16 @@ public class Attr extends JCTree.Visitor {
                     // JLS 4.9 specifies the members are derived by inheritance.
                     // We skip inducing a whole class by filtering members that
                     // can never be inherited:
-                    // 1. Private members
-                    // 2. Interface static methods
-                    Symbol sym2 = sym.isPrivate()
-                        ? rs.new AccessError(env, site, sym)
-                        : (sym.owner.isInterface() && sym.kind == MTH && (sym.flags() & STATIC) != 0)
-                            ? rs.new SymbolNotFoundError(ABSENT_MTH)
-                            : sym;
+                    Symbol sym2;
+                    if (sym.isPrivate()) {
+                        // Private members
+                        sym2 = rs.new AccessError(env, site, sym);
+                    } else if (sym.owner.isInterface() && sym.kind == MTH && (sym.flags() & STATIC) != 0) {
+                        // Interface static methods
+                        sym2 = rs.new SymbolNotFoundError(ABSENT_MTH);
+                    } else {
+                        sym2 = sym;
+                    }
                     rs.accessBase(sym2, pos, location, site, name, true);
                     return sym;
                 }
