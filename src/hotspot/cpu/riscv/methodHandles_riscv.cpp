@@ -98,8 +98,10 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
   __ verify_method_ptr(method);
   if (VerifyMethodHandles) {
     Label L_ok;
+    assert_different_registers(method, t0, t1);
     const Register method_holder = t1;
     __ load_method_holder(method_holder, method);
+
     switch (iid) {
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
