@@ -122,6 +122,9 @@ final class Histogram {
 
     public void addFields(List<Field> fields) {
         this.fields.addAll(fields);
+        for (Field field : fields) {
+            field.functionFactory = Function.createFactory(field);
+        }
     }
 
     public void add(RecordedEvent e, FilteredType type, List<Field> sourceFields) {
@@ -168,7 +171,7 @@ final class Histogram {
     private Function[] createFunctions() {
         Function[] functions = new Function[fields.size()];
         for (int i = 0; i < functions.length; i++) {
-            functions[i] = Function.create(fields.get(i));
+            functions[i] = fields.get(i).functionFactory.newFunction();
         }
         return functions;
     }
