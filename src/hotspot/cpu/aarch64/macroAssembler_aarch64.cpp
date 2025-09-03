@@ -6261,7 +6261,12 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   assert(wordSize <= BlockZeroingLowLimit, "increase BlockZeroingLowLimit");
   address result = nullptr;
-  if (UseBlockZeroing && cnt > (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
+  // We do not check UseBlockZeroing here because this is delegated to the
+  // zero_blocks stub function that wraps the core logic of zero_words
+  // and necessary unrolled str/stp expanding when the condition is not met.
+  // This approach also helps prevent sudden increases in code cache size
+  // when zeroing large memory areas in many places.
+  if (cnt > (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
     mov(r10, base); mov(r11, cnt);
     result = zero_words(r10, r11);
   } else {

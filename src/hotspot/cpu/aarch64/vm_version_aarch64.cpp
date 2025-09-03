@@ -454,7 +454,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
   if (!UseBlockZeroing && !FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-    warning("BlockZeroingLowLimit will not work when UseBlockZeroing is false");
+    warning("BlockZeroingLowLimit has been ignored because UseBlockZeroing is disabled");
+    FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::zva_length());
   }
 
   if (VM_Version::supports_sve2()) {
