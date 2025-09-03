@@ -26,24 +26,24 @@ package compiler.c2;
 /*
  * @test
  * @bug 8290892
- * @summary Test diagnostic modes for Reference.reachabilityFence support 
+ * @summary Test diagnostic modes for Reference.reachabilityFence support
  *
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions 
- *                   -XX:+StressReachabilityFences -XX:-OptimizeReachabilityFences -XX:-PreserveReachabilityFencesOnConstants 
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressReachabilityFences -XX:-OptimizeReachabilityFences -XX:-PreserveReachabilityFencesOnConstants
  *                     compiler.c2.TestReachabilityFenceFlags
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions 
- *                   -XX:+StressReachabilityFences -XX:-OptimizeReachabilityFences -XX:+PreserveReachabilityFencesOnConstants 
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressReachabilityFences -XX:-OptimizeReachabilityFences -XX:+PreserveReachabilityFencesOnConstants
  *                     compiler.c2.TestReachabilityFenceFlags
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions 
- *                   -XX:+StressReachabilityFences -XX:+OptimizeReachabilityFences -XX:-PreserveReachabilityFencesOnConstants 
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressReachabilityFences -XX:+OptimizeReachabilityFences -XX:-PreserveReachabilityFencesOnConstants
  *                     compiler.c2.TestReachabilityFenceFlags
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions 
- *                   -XX:+StressReachabilityFences -XX:+OptimizeReachabilityFences -XX:+PreserveReachabilityFencesOnConstants 
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressReachabilityFences -XX:+OptimizeReachabilityFences -XX:+PreserveReachabilityFencesOnConstants
  *                     compiler.c2.TestReachabilityFenceFlags
  */
 public class TestReachabilityFenceFlags {
