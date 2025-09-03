@@ -24,18 +24,7 @@
 package gc.stress;
 
 /*
- * @test TestReclaimStringsLeaksMemory
- * @bug 8180048
- * @summary Ensure that during a Full GC interned string memory is reclaimed completely.
- * @requires vm.gc == "null"
- * @requires !vm.debug
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory
- */
-
-/*
- * @test TestReclaimStringsLeaksMemorySerial
+ * @test id=Serial
  * @bug 8180048
  * @summary Ensure that during a Full GC interned string memory is reclaimed completely with SerialGC.
  * @requires vm.gc.Serial
@@ -46,7 +35,7 @@ package gc.stress;
  */
 
 /*
- * @test TestReclaimStringsLeaksMemoryParallel
+ * @test id=Parallel
  * @bug 8180048
  * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ParallelGC.
  * @requires vm.gc.Parallel
@@ -57,7 +46,7 @@ package gc.stress;
  */
 
 /*
- * @test TestReclaimStringsLeaksMemoryG1
+ * @test id=G1
  * @bug 8180048
  * @summary Ensure that during a Full GC interned string memory is reclaimed completely with G1GC.
  * @requires vm.gc.G1
@@ -65,6 +54,28 @@ package gc.stress;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ */
+
+/*
+ * @test id=Shenandoah
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ShenandoahGC.
+ * @requires vm.gc.Shenandoah
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseShenandoahGC
+ */
+
+/*
+ * @test id=Z
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ZGC.
+ * @requires vm.gc.Z
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseZGC
  */
 
 import java.util.Arrays;
