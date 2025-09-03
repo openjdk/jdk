@@ -714,7 +714,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                     result.add(new ElementSuggestionImpl(null, booleanKeyword, true, cursor, () -> null));
                                 }
                             }
-                                
                         }
                         break;
                     }
@@ -2616,6 +2615,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         public Set<CompletionContext> completionContext() {
             return completionContext;
         }
-        
+
     }
 }
