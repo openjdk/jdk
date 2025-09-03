@@ -947,7 +947,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
               case CatchProjNode::fall_through_index: projs->fallthrough_catchproj = cpn; break;
               case CatchProjNode::catch_all_index:    projs->catchall_catchproj    = cpn; break;
               default: {
-                assert(cpn->_con > 1, ""); // exception table; rethrow case
+                assert(cpn->_con > 1, "not an exception table projection"); // exception table; rethrow case
               }
             }
           }
@@ -966,7 +966,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
             assert(projs->exobj == nullptr, "only one");
             projs->exobj = e;
           } else  {
-            assert(e->in(0)->as_CatchProj()->_con > 1, ""); // exception table for rethrow case
+            assert(e->in(0)->as_CatchProj()->_con > 1, "not an exception table projection"); // exception table for rethrow case
           }
         }
       }
