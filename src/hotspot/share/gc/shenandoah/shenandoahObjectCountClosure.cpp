@@ -4,9 +4,9 @@
 #if INCLUDE_JFR
 
 void ShenandoahObjectCountClosure::merge_table(KlassInfoTable* global_cit) {
-  assert(_cit != nullptr, "The thread-local KlassInfoTables are not initialized");
+  assert(_cit != nullptr, "The thread-local KlassInfoTable is not initialized");
   assert(global_cit != nullptr, "Shenandoah KlassInfoTable is not initialized");
-  MutexLocker x(TableMerge_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker x(ObjectCountMerge_lock, Mutex::_no_safepoint_check_flag);
   bool success = global_cit->merge(_cit);
 
   // Clear the _cit in the closure to ensure it won't be used again.

@@ -75,11 +75,11 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     if (object_count_enabled && !ShenandoahHeap::heap()->mode()->is_generational()) {
       KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
       KlassInfoTable local_cit(false);
-      ShenandoahObjectCountClosure _count(&local_cit);
+      ShenandoahObjectCountClosure count(&local_cit);
       using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
-      Closure cl(q, rp, old_q, &_count);
+      Closure cl(q, rp, old_q, &count);
       mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-      _count.merge_table(global_cit);
+      count.merge_table(global_cit);
     } else
 #endif // INCLUDE_JFR
     {
