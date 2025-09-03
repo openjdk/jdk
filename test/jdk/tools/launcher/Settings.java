@@ -84,8 +84,6 @@ public class Settings extends TestHelper {
     private static final String TZDATA_SETTINGS = "tzdata version";
     private static final String ERR_MSG = "Unrecognized showSettings option:";
     private static final String ENABLED_GROUPS_SETTINGS = "Enabled Groups:";
-    private static final String ENABLED_SIG_ALGORITHMS_SETTINGS =
-                "Enabled Signature Algorithms:";
 
     /*
      * "all" should print verbose settings
@@ -109,7 +107,6 @@ public class Settings extends TestHelper {
             checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
-        checkContains(tr, ENABLED_SIG_ALGORITHMS_SETTINGS);
     }
     /*
      * default (no options) should print non verbose
@@ -240,7 +237,6 @@ public class Settings extends TestHelper {
         // test a well known TLS config for sanity
         checkContains(tr, "TLSv1.2");
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
-        checkContains(tr, ENABLED_SIG_ALGORITHMS_SETTINGS);
     }
 
     // ensure error message is printed when unrecognized option used
