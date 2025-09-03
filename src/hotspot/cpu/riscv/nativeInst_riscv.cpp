@@ -33,6 +33,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -91,17 +92,17 @@ void NativeCall::print() {
 
 void NativeCall::optimize_call(address dest, bool mt_safe) {
   // Skip over auipc + ld
-  address jal_pc = instruction_address() + 2 * NativeInstruction::instruction_size;
-  uint32_t *jal_pos = (uint32_t *)jal_pc;
-  assert(is_aligned(jal_pos, NativeInstruction::instruction_size), "Must be naturally aligned");
+  address jmp_ins_pc = instruction_address() + 2 * NativeInstruction::instruction_size;
+  // Rutime calls may be unaligned, but they are never changed after relocation.
+  assert(!mt_safe || is_aligned(jmp_ins_pc, NativeInstruction::instruction_size), "Must be naturally aligned: %p", jmp_ins_pc);
   // If reachable use JAL
-  if (Assembler::reachable_from_branch_at(jal_pc, dest)) {
-    int64_t distance = dest - jal_pc;
+  if (Assembler::reachable_from_branch_at(jmp_ins_pc, dest)) {
+    int64_t distance = dest - jmp_ins_pc;
     uint32_t new_jal = Assembler::encode_jal(ra, distance);
-    Atomic::store(jal_pos, new_jal);
-  } else if (!MacroAssembler::is_jalr_at(jal_pc)) { // The jalr is always identical: jalr ra, 0(t1)
+    Atomic::store((uint32_t *)jmp_ins_pc, new_jal);
+  } else if (!MacroAssembler::is_jalr_at(jmp_ins_pc)) { // The jalr is always identical: jalr ra, 0(t1)
     uint32_t new_jalr = Assembler::encode_jalr(ra, t1, 0);
-    Atomic::store(jal_pos, new_jalr);
+    Atomic::store((uint32_t *)jmp_ins_pc, new_jalr);
   } else {
     // No change to instruction stream
     return;
@@ -110,7 +111,7 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   if (mt_safe) {
     OrderAccess::release();
     // IC invalidation happens after we changed the instruction stream.
-    ICache::invalidate_range(jal_pc, NativeInstruction::instruction_size);
+    ICache::invalidate_range(jmp_ins_pc, NativeInstruction::instruction_size);
   }
 }
 
