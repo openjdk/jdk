@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class Jdb implements AutoCloseable {
     // wait time before check jdb output (in ms)
     private static final long sleepTime = 1000;
     // max time to wait for  jdb output (in ms)
-    private static final long timeout = Utils.adjustTimeout(120000);
+    private static final long timeout = Utils.adjustTimeout(60000);
 
     // pattern for message of a breakpoint hit
     public static final String BREAKPOINT_HIT = "Breakpoint hit:";
