@@ -415,7 +415,7 @@ public abstract class SourceCodeAnalysis {
          * Interpret {@link ANNOTATION_TYPE}s as annotation uses. Typically means
          * they should be prefixed with {@code @}.
          */
-        TYPES_AS_ANNOTATION,
+        TYPES_AS_ANNOTATIONS,
         /**
          * The context is in a qualified expression (like member access). Simple
          * names only should be used.

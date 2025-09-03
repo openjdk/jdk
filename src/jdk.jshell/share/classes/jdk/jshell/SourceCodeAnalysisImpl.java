@@ -307,7 +307,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             }
                         }
                         case ANNOTATION_TYPE -> {
-                            if (state.completionContext().contains(CompletionContext.TYPES_AS_ANNOTATION)) {
+                            if (state.completionContext().contains(CompletionContext.TYPES_AS_ANNOTATIONS)) {
                                 boolean hasAnyAttributes =
                                         ElementFilter.methodsIn(el.getEnclosedElements())
                                                      .stream()
@@ -333,7 +333,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
             return result;
         };
-        return completionSuggestionsImpl(code, cursor, convertor);
+        try {
+            return completionSuggestions(code, cursor, convertor);
+        } catch (Throwable exc) {
+            proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.completionSuggestions");
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -341,9 +346,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         suspendIndexing();
         try {
             return completionSuggestionsImpl(code, cursor, convertor);
-        } catch (Throwable exc) {
-            proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.completionSuggestions");
-            return Collections.emptyList();
         } finally {
             resumeIndexing();
         }
@@ -540,10 +542,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             break;
                         }
                         if (isAnnotation(tp)) {
+                            completionContext.add(CompletionContext.TYPES_AS_ANNOTATIONS);
+
                             if (getAnnotationAttributeNameOrNull(tp.getParentPath(), true) != null) {
                                 //nested annotation
-                                completionContext.add(CompletionContext.TYPES_AS_ANNOTATION);
-
                                 return completionSuggestionsImpl(inputCode, cursor - 1, (state, items) -> {
                                     CompletionState newState = new CompletionStateImpl(((CompletionStateImpl) state).scopeContent, completionContext);
                                     return suggestionConvertor.convert(newState,
@@ -557,7 +559,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                             Predicate<Element> accept = accessibility.and(STATIC_ONLY)
                                     .and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
-                            addElements(javadoc, scopeContent, accept, IS_PACKAGE.negate().and(smartTypeFilter), cursor, prefix, result);
+                            addElements(javadoc, scopeContent, accept, IS_PACKAGE.negate().and(smartTypeFilter), cursor - 1, prefix, result);
                             break;
                         }
                         ImportTree it = findImport(tp);
@@ -662,7 +664,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             if (relevantAttributeType.getKind() == TypeKind.DECLARED &&
                                 at.getTypes().asElement(relevantAttributeType) instanceof Element attributeTypeEl) {
                                 if (attributeTypeEl.getKind() == ElementKind.ANNOTATION_TYPE) {
-                                    completionContext.add(CompletionContext.TYPES_AS_ANNOTATION);
+                                    completionContext.add(CompletionContext.TYPES_AS_ANNOTATIONS);
 
                                     addElements(javadoc, List.of(attributeTypeEl), TRUE, TRUE, cursor, prefix, result);
                                     break;
