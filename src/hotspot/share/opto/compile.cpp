@@ -2112,6 +2112,7 @@ bool Compile::inline_incrementally_one() {
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
       if (should_stress_inlining()) {
+        // randomly add repeated inline attempt if stress-inlining
         cg->call_node()->set_generator(cg);
         C->igvn_worklist()->push(cg->call_node());
         should_stress = true;
