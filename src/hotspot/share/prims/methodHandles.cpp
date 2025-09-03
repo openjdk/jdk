@@ -1094,7 +1094,7 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
     // Reflection::verify_class_access can only handle instance classes.
     if (reference_klass != nullptr && reference_klass->is_instance_klass()) {
       // Emulate LinkResolver::check_klass_accessability.
-      Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
+      Klass* caller = java_lang_Class::as_Klass(caller_jh);
       // access check on behalf of the caller if this is not a public lookup
       // i.e. lookup mode is not UNCONDITIONAL
       if ((lookup_mode & LM_UNCONDITIONAL) == 0
@@ -1111,7 +1111,7 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
   }
 
   Klass* caller = caller_jh == nullptr ? nullptr :
-                     java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
+                     java_lang_Class::as_Klass(caller_jh);
   Handle resolved = MethodHandles::resolve_MemberName(mname, caller, lookup_mode,
                                                       speculative_resolve == JNI_TRUE,
                                                       CHECK_NULL);
@@ -1239,7 +1239,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   // caller->constants->copy_bootstrap_arguments_at performs a runtime
   // range check, but let's assert earlier as well.
   assert(start < end && start >= 0, "invariant");
-  Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
+  Klass* caller_k = java_lang_Class::as_Klass(caller_jh);
   if (caller_k == nullptr || !caller_k->is_instance_klass()) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
   }

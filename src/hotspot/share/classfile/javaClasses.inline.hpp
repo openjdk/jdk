@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
   string->byte_field_put(_coder_offset, coder);
@@ -289,6 +290,20 @@ inline Klass* java_lang_Class::as_Klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
   assert(k == nullptr || k->is_klass(), "type check");
   return k;
+}
+
+inline Klass* java_lang_Class::as_Klass(jobject java_class) {
+  return as_Klass(JNIHandles::resolve_non_null(java_class));
+}
+
+inline InstanceKlass* java_lang_Class::as_InstanceKlass(oop java_class) {
+  Klass* k = as_Klass(java_class);
+  assert(k == nullptr || k->is_instance_klass(), "type check");
+  return static_cast<InstanceKlass*>(k);
+}
+
+inline InstanceKlass* java_lang_Class::as_InstanceKlass(jobject java_class) {
+  return as_InstanceKlass(JNIHandles::resolve_non_null(java_class));
 }
 
 inline bool java_lang_Class::is_primitive(oop java_class) {

@@ -867,7 +867,7 @@ bool JfrJavaSupport::set_configuration(jobject clazz, jobject configuration, TRA
 
 bool JfrJavaSupport::is_instrumented(jobject clazz, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  const Klass* const k = java_lang_Class::as_Klass(resolve_non_null(clazz));
+  const Klass* const k = java_lang_Class::as_Klass(clazz);
   assert(k->is_instance_klass(), "invariant");
   return JfrEventClassTransformer::is_instrumented(InstanceKlass::cast(k));
 }

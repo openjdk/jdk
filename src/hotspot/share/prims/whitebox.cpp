@@ -1155,7 +1155,7 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
 WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   Method* clinit = ik->class_initializer();
   if (clinit == nullptr || clinit->method_holder()->is_not_initialized()) {
     return false;
@@ -1935,18 +1935,18 @@ WB_ENTRY(void, WB_ForceClassLoaderStatsSafepoint(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   return (jlong) ik->constants();
 WB_END
 
 WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   objArrayOop resolved_refs= ik->constants()->resolved_references();
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
 WB_END
 
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
     return -1;
@@ -1955,7 +1955,7 @@ WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1964,7 +1964,7 @@ WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint in
 WB_END
 
 WB_ENTRY(jint, WB_getMethodEntriesLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
     return -1;
@@ -1973,7 +1973,7 @@ WB_ENTRY(jint, WB_getMethodEntriesLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1982,7 +1982,7 @@ WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint i
 WB_END
 
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1991,7 +1991,7 @@ WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(klass);
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -2154,7 +2154,7 @@ WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject st
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
-  return (jboolean)AOTMetaspace::in_aot_cache(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  return (jboolean)AOTMetaspace::in_aot_cache(java_lang_Class::as_Klass(clazz));
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
@@ -2162,12 +2162,11 @@ WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
 WB_END
 
 WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
-  Klass *k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
-  if (!k->is_instance_klass()) {
-    return;
+  Klass *k = java_lang_Class::as_Klass(clazz);
+  if (k->is_instance_klass()) {
+    InstanceKlass *ik = InstanceKlass::cast(k);
+    ik->link_class(THREAD); // may throw verification error
   }
-  InstanceKlass *ik = InstanceKlass::cast(k);
-  ik->link_class(THREAD); // may throw verification error
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
@@ -2385,10 +2384,8 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != nullptr && strlen(field_name) > 0, "Field name not valid");
 
-  //Get the class of our object
-  Klass* arg_klass = object->klass();
-  //Turn it into an instance-klass
-  InstanceKlass* ik = InstanceKlass::cast(arg_klass);
+  //Only non-array oops have fields. Don't call this function on arrays!
+  InstanceKlass* ik = InstanceKlass::cast(object->klass());
 
   //Create symbols to look for in the class
   TempNewSymbol name_symbol = SymbolTable::new_symbol(field_name);
@@ -2430,7 +2427,7 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 
 void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
   ResourceMark rm;
-  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(wbclass));
+  Klass* klass = java_lang_Class::as_Klass(wbclass);
   const char* klass_name = klass->external_name();
 
   ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
@@ -2572,7 +2569,7 @@ WB_ENTRY(jlong, WB_ResolvedMethodItemsCount(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
+  Klass* k = java_lang_Class::as_Klass(mirror);
   // Return size in bytes.
   return k->size() * wordSize;
 WB_END
@@ -3035,7 +3032,7 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
   {
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(wbclass)));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(wbclass);
       Handle loader(THREAD, ik->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));

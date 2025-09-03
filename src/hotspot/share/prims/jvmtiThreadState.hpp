@@ -28,6 +28,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/instanceKlass.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/javaThread.hpp"
@@ -208,7 +209,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used to send class being redefined/retransformed and kind of transform
   // info to the class file load hook event handler.
-  Klass*                _class_being_redefined;
+  InstanceKlass*        _class_being_redefined;
   JvmtiClassLoadKind    _class_load_kind;
   GrowableArray<Klass*>* _classes_being_redefined;
 
@@ -371,7 +372,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // when class file load hook event is posted.
   // It is set while loading redefined class and cleared before the
   // class file load hook event is posted.
-  inline void set_class_being_redefined(Klass* k, JvmtiClassLoadKind kind) {
+  inline void set_class_being_redefined(InstanceKlass* k, JvmtiClassLoadKind kind) {
     _class_being_redefined = k;
     _class_load_kind = kind;
   }
@@ -381,7 +382,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     _class_load_kind = jvmti_class_load_kind_load;
   }
 
-  inline Klass* get_class_being_redefined() {
+  inline InstanceKlass* get_class_being_redefined() {
     return _class_being_redefined;
   }
 
@@ -420,12 +421,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   //   used by the verifier, so there is no extra performance issue with it.
 
  private:
-  Klass* _the_class_for_redefinition_verification;
-  Klass* _scratch_class_for_redefinition_verification;
+  InstanceKlass* _the_class_for_redefinition_verification;
+  InstanceKlass* _scratch_class_for_redefinition_verification;
 
  public:
-  inline void set_class_versions_map(Klass* the_class,
-                                     Klass* scratch_class) {
+  inline void set_class_versions_map(InstanceKlass* the_class,
+                                     InstanceKlass* scratch_class) {
     _the_class_for_redefinition_verification = the_class;
     _scratch_class_for_redefinition_verification = scratch_class;
   }
@@ -434,7 +435,18 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static inline
   Klass* class_to_verify_considering_redefinition(Klass* klass,
-                                                    JavaThread *thread) {
+                                                  JavaThread *thread) {
+    if (!klass->is_instance_klass()) {
+      return klass;
+    } else {
+      return class_to_verify_considering_redefinition(InstanceKlass::cast(klass),
+                                                      thread);
+    }
+  }
+
+  static inline
+  InstanceKlass* class_to_verify_considering_redefinition(InstanceKlass* klass,
+                                                          JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state != nullptr && state->_the_class_for_redefinition_verification != nullptr) {
       if (state->_the_class_for_redefinition_verification == klass) {

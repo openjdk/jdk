@@ -293,8 +293,12 @@ class java_lang_Class : AllStatic {
 
   static void fixup_module_field(Klass* k, Handle module);
 
-  // Conversion
+  // Conversion -- java_class must not be null. The return value is null only if java_class is a primitive type.
+  static Klass* as_Klass(jobject java_class);
   static Klass* as_Klass(oop java_class);
+  static InstanceKlass* as_InstanceKlass(jobject java_class);
+  static InstanceKlass* as_InstanceKlass(oop java_class);
+
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);

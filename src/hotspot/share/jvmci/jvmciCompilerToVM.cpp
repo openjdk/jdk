@@ -687,7 +687,7 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
     return nullptr;
   }
   JVMCIKlassHandle klass(THREAD);
-  klass = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
+  klass = java_lang_Class::as_Klass(mirror);
   if (klass == nullptr) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "Primitive classes are unsupported");
   }
@@ -2607,7 +2607,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
   if (mirror == nullptr) {
     JVMCI_THROW_NULL(NullPointerException);
   }
-  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
+  Klass* klass = java_lang_Class::as_Klass(mirror);
   if (klass == nullptr || !klass->is_instance_klass()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "clazz is for primitive type");
   }
