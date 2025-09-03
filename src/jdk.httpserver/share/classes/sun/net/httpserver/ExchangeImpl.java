@@ -230,9 +230,9 @@ class ExchangeImpl {
             logger.log(Level.DEBUG, () -> "switching protocols");
 
             if (contentLen != 0) {
-                String msg = "sendResponseHeaders: rCode = " + rCode
-                        + ": forcing contentLen = 0";
-                logger.log(Level.WARNING, msg);
+                logger.log(
+                    Level.WARNING,
+                    () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
             }
             contentLen = 0;
 
