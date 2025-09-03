@@ -27,11 +27,11 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "nmt/memTag.hpp"
-#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/rbTree.inline.hpp"
+
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.

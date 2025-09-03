@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
  * @requires (vm.compMode != "Xcomp")
- * @run testng/othervm
+ * @run testng/othervm/timeout=480
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
- * @run testng/othervm -Djdk.httpclient.allowRestrictedHeaders=Host
+ * @run testng/othervm/timeout=480 -Djdk.httpclient.allowRestrictedHeaders=Host
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
  */
