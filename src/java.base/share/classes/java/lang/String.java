@@ -1348,7 +1348,7 @@ public final class String
      *           having to declare the exception
      */
     @SuppressWarnings("unchecked")
-    private static <E extends Exception> E malformedInputException(int offset, int length) throws E {
+    private static <E extends Exception> E malformedInputException(int offset, int length) {
         MalformedInputException mie = new MalformedInputException(length);
         String msg = "malformed input offset : " + offset + ", length : " + length;
         mie.initCause(new IllegalArgumentException(msg));
@@ -1359,7 +1359,7 @@ public final class String
      * {@return a new {@link MalformedInputException} for the given malformed
      * ASCII string}
      */
-    private static MalformedInputException malformedASCII(byte[] val) throws MalformedInputException {
+    private static MalformedInputException malformedASCII(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
         return malformedInputException(dp, 1);
     }
@@ -1371,7 +1371,7 @@ public final class String
      *           having to declare the exception
      */
     @SuppressWarnings("unchecked")
-    private static <E extends Exception> E unmappableCharacterException(int offset) throws E {
+    private static <E extends Exception> E unmappableCharacterException(int offset) {
         UnmappableCharacterException uce = new UnmappableCharacterException(1);
         String msg = "malformed input offset : " + offset + ", length : 1";
         uce.initCause(new IllegalArgumentException(msg, uce));
@@ -1382,7 +1382,7 @@ public final class String
      * {@return a new {@link UnmappableCharacterException} for the given
      * malformed ASCII string}
      */
-    private static UnmappableCharacterException unmappableASCII(byte[] val) throws UnmappableCharacterException {
+    private static UnmappableCharacterException unmappableASCII(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
         return unmappableCharacterException(dp);
     }
