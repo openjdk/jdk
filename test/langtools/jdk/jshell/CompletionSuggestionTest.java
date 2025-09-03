@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
@@ -875,5 +876,17 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("@AnnA(C|", true, "java.lang.annotation.RetentionPolicy.CLASS");
         assertEval("import static java.lang.annotation.RetentionPolicy.*;");
         assertCompletion("@AnnA(C|", true, "CLASS");
+    }
+
+    static {
+        try {
+            //disable reading of paramater names, to improve stability:
+            Class<?> analysisClass = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+            Field params = analysisClass.getDeclaredField("COMPLETION_EXTRA_PARAMETERS");
+            params.setAccessible(true);
+            params.set(null, List.of());
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }
