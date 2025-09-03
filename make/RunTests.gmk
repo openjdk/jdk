@@ -946,7 +946,8 @@ define SetupRunJtregTestBody
   JTREG_ALL_OPTIONS := $$(JTREG_JAVA_OPTIONS) $$(JTREG_VM_OPTIONS)
 
   JTREG_AUTO_PROBLEM_LISTS :=
-  JTREG_AUTO_TIMEOUT_FACTOR := 4
+  # Please reach consensus before changing this. It was not easy changing it to a `1`.
+  JTREG_AUTO_TIMEOUT_FACTOR := 1
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-Xcomp.txt

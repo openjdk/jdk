@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
  * @summary Stress test parking and unparking
  * @requires vm.debug != true
  * @library /test/lib
- * @run main/othervm/timeout=300 ParkALot 300000
+ * @run main/othervm/timeout=1200 ParkALot 300000
  */
 
 /*
  * @test
  * @requires vm.debug == true
  * @library /test/lib
- * @run main/othervm/timeout=300 ParkALot 100000
+ * @run main/othervm/timeout=1200 ParkALot 100000
  */
 
 import java.time.Instant;
