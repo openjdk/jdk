@@ -334,17 +334,6 @@ class ClassVerifier : public StackObj {
     bool* this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS);
 
-  // Used by ends_in_athrow() to push all handlers that contain bci onto the
-  // handler_stack, if the handler has not already been pushed on the stack.
-  void push_handlers(ExceptionTable* exhandlers,
-                     GrowableArray<u4>* handler_list,
-                     GrowableArray<u4>* handler_stack,
-                     u4 bci);
-
-  // Returns true if all paths starting with start_bc_offset end in athrow
-  // bytecode or loop.
-  bool ends_in_athrow(u4 start_bc_offset);
-
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
     bool in_try_block, bool* this_uninit, VerificationType return_type,

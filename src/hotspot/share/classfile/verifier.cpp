@@ -2442,25 +2442,6 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   }
 }
 
-// Look at the method's handlers.  If the bci is in the handler's try block
-// then check if the handler_pc is already on the stack.  If not, push it
-// unless the handler has already been scanned.
-void ClassVerifier::push_handlers(ExceptionTable* exhandlers,
-                                  GrowableArray<u4>* handler_list,
-                                  GrowableArray<u4>* handler_stack,
-                                  u4 bci) {
-  int exlength = exhandlers->length();
-  for(int x = 0; x < exlength; x++) {
-    if (bci >= exhandlers->start_pc(x) && bci < exhandlers->end_pc(x)) {
-      u4 exhandler_pc = exhandlers->handler_pc(x);
-      if (!handler_list->contains(exhandler_pc)) {
-        handler_stack->append_if_missing(exhandler_pc);
-        handler_list->append(exhandler_pc);
-      }
-    }
-  }
-}
-
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
