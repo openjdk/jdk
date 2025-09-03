@@ -26,6 +26,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
+#include "utilities/population_count.hpp"
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
@@ -115,4 +116,55 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
     return TypeInt::make(n);
   }
   return TypeInt::INT;
+}
+
+/*
+Lemma 1: For a given known bits information, _lo and _hi bounds of corresponding value
+        range are computed using following formulas :-
+        - _hi = ~ZEROS
+        - _lo = ONES
+Proof:-
+  - KnownBits.ZEROS and KnownBits.ONES are inferred out of common prefix of value range
+    delimiting bounds.
+
+  - Thus, ~ZEROS not only include set bits in the common prefix but optimistically assumes
+    that all other bits not included in common prefix are also set, thereby implicitly covering
+    the actual set bits at runtime.
+
+  - Consider following illustration which performs round trip translation
+    of a value range via knowbits information e.g.
+    A) Initial value range bounds to infer knownbits.
+      _lo = 0b11000100
+      _hi = 0b11000110
+      _common_prefix      = 0b11000100
+      _common_prefix_mask = 0b11111100
+      _known_bits.ones    = _lo & _common_prefix_mask  = 0b11000100
+      _known_bits.zeros   = ~_lo & _common_prefix_mask = 0b00111000
+
+    B) Now transform computed knownbits back to value range.
+      _new_lo = _known_bits.ones  = 0b11000100
+      _new_hi = ~known_bits.zeros = 0b11000111
+
+  - We now know that ~KnownBits.ZEROS >= UB >= LB >= KnownBits.ONES
+  - Therefore, popcount(~ZEROS) is guaranteed to be greater than popcount(ONES).
+  - Also, popcount(~ZEROS) >= Res.UB >= Res.LB >= popcount(ONES)
+*/
+
+const Type* PopCountINode::Value(PhaseGVN* phase) const {
+  const Type* t = phase->type(in(1));
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  KnownBits<juint> bits = t->isa_int()->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
+
+}
+
+const Type* PopCountLNode::Value(PhaseGVN* phase) const {
+  const Type* t = phase->type(in(1));
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  KnownBits<julong> bits = t->isa_long()->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
 }
