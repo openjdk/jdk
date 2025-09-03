@@ -2402,8 +2402,8 @@ public sealed interface CodeBuilder
      * variable by a constant.
      * <p>
      * This may also generate {@link Opcode#IINC_W wide iinc} instructions if
-     * {@code slot} exceeds {@code 255} or {@code val} exceeds the range of
-     * {@link TypeKind#BYTE byte}.
+     * {@code slot} exceeds the limit of {@link java.lang.classfile##u1 u1} or
+     * {@code val} exceeds the range of {@link TypeKind#BYTE byte}.
      *
      * @param slot the local variable slot
      * @param val the increment value
