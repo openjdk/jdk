@@ -1010,7 +1010,7 @@ bool StringConcat::validate_control_flow() {
           if (_multiple &&
               ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
                (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
-            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            // iftrue <- if <- bool <- cmpp <- resproj <- tostring
             fail = true;
             break;
           }
@@ -1069,7 +1069,7 @@ bool StringConcat::validate_control_flow() {
         // transforms the Region. Make sure it sees it.
 
         // First exclude the following pattern:
-        // append -> Phi -> Region -> (True, False) -> If -> Bool -> CmpP -> Proj (Result) -> toString;
+        // append <- Phi <- Region <- (True, False) <- If <- Bool <- CmpP <- Proj (Result) <- toString;
         // in order to prevent an unsafe transformation in eliminate_unneeded_control,
         // where the Bool would be replaced by a constant zero but the Phi stays live
         // as it is a parameter of the concatenation itself.
