@@ -182,9 +182,9 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
-  // Return true if this age is above the tenuring threshold.
+  // Return true if this age is at or above the tenuring threshold.
   bool is_tenurable(uint age) const {
-    return age > tenuring_threshold();
+    return age >= tenuring_threshold();
   }
 
   // Update the local age table for worker_id by size for
