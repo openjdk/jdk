@@ -35,8 +35,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -120,7 +122,7 @@ import java.util.function.Supplier;
  * as evaluation of the supplier may have side effects, for example, the call above to
  * {@code Logger.create()} may result in storage resources being prepared.
  *
- * <h2 id="stable-functions">Stable Functions</h2>
+ * <h2 id="computed-constant">Computed Constant</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>computed constant</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A computed constant is created via
@@ -144,12 +146,27 @@ import java.util.function.Supplier;
  * A computed constant encapsulates access to its backing stable value storage. This means
  * that code inside {@code Component} can obtain the logger object directly from the
  * stable supplier, without having to go through an accessor method like {@code getLogger()}.
+ *<p>
+ * Here is an example of how a rudimentary implementation of the {@code ComputedConstant}
+ * interface might look like if {@code ComputedConstant} was not a sealed interface:
  *
- * <h2 id="stable-collections">Stable Collections</h2>
+ *{@snippet lang = java:
+ * public record ComputedConstantImpl<T>(StableValue<T> delegate,
+ *                                       Supplier<? extends T> mapper) implements ComputedConstant<T> {
+ *
+ *         @Override public T get() { return delegate.orElseSet(mapper); }
+ *         @Override public boolean isSet() { return delegate.isSet(); }
+ * }
+ *
+ * ComputedConstant<Integer> cc = new ComputedConstantImpl<>(StableValue.of(), () -> 42);
+ * cc.get(); // 42
+ *}
+ *
+ * <h2 id="computed-collections">Computed Collections</h2>
  * Stable values can also be used as backing storage for
- * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>lazy stable list</em>
- * is an unmodifiable list, backed by an array of stable values. The lazy stable list's
- * elements are computed when they are first accessed, using a provided {@linkplain IntFunction}:
+ * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>computed list</em>
+ * is an unmodifiable list, backed by an array of stable values. The computed list's
+ * constant elements are computed when they are first accessed, using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
  * final class PowerOf2Util {
@@ -159,7 +176,7 @@ import java.util.function.Supplier;
  *     private static final int SIZE = 6;
  *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO = v -> 1 << v;
  *
- *     // @link substring="ofLazy" target="List#ofLazy(int,IntFunction)" :
+ *     // @link substring="ofComputed" target="List#ofComputed(int,IntFunction)" :
  *     private static final List<Integer> POWER_OF_TWO = List.ofComputed(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
@@ -171,8 +188,8 @@ import java.util.function.Supplier;
  *
  *}
  * <p>
- * Similarly, a <em>lazy stable map</em> is an unmodifiable map whose keys are known at
- * construction. The lazy stable map's values are computed when they are first accessed,
+ * Similarly, a <em>computed map</em> is an unmodifiable map whose keys are known at
+ * construction. The computed map's constant values are computed when they are first accessed,
  * using a provided {@linkplain Function}:
  *
  * {@snippet lang = java:
@@ -184,8 +201,8 @@ import java.util.function.Supplier;
  *
  *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 = i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     // @link substring="ofLazy" target="java.util.Map#ofLazy(Set,Function)" :
- *     private static final Map<Integer, INTEGER> LOG2 = Map.ofLazy(CACHED_KEYS, UNDERLYING_LOG2);
+ *     // @link substring="ofComputed" target="java.util.Map#ofComputed(Set,Function)" :
+ *     private static final Map<Integer, INTEGER> LOG2 = Map.ofComputed(CACHED_KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
  *          return LOG2.get(a);
@@ -255,7 +272,7 @@ import java.util.function.Supplier;
  * }
  *}
  * Both {@code FIB} and {@code Fibonacci::fib} recurse into each other. Because the
- * lazy stable list {@code FIB} caches intermediate results, the initial
+ * computed list {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
  * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
  * constant-fold expressions like {@code Fibonacci.fib(5)}.
@@ -360,6 +377,9 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the contents
  *
+ * @see ComputedConstant
+ * @see List#ofComputed(int, IntFunction)
+ * @see Map#ofComputed(Set, Function)
  * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)

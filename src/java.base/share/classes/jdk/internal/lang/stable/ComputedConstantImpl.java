@@ -44,6 +44,13 @@ public record ComputedConstantImpl<T>(StandardStableValue<T> delegate,
     @Override public T get() { return delegate.orElseSet(null, mapperHolder); }
     @Override public boolean isSet() { return delegate.isSet(); }
 
+    T orElseSet(Supplier<? extends T> supplier) {
+        if (mapperHolder != null) {
+            throw new UnsupportedOperationException();
+        }
+        return delegate.orElseSet(supplier);
+    }
+
     // Object methods
     @Override public int     hashCode() { return System.identityHashCode(this); }
     @Override public boolean equals(Object obj) { return obj == this; }
