@@ -179,10 +179,10 @@ void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   if (object_count_enabled && !ShenandoahHeap::heap()->mode()->is_generational()) {
     KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
     KlassInfoTable local_cit(false);
-    ShenandoahObjectCountClosure _count(&local_cit);
-    ShenandoahMarkRefsAndCountClosure<GENERATION> cl(q, _rp, old_q, &_count);
+    ShenandoahObjectCountClosure count(&local_cit);
+    ShenandoahMarkRefsAndCountClosure<GENERATION> cl(q, _rp, old_q, &count);
     _root_scanner.roots_do(&cl, worker_id);
-    _count.merge_table(global_cit);
+    count.merge_table(global_cit);
   } else
 #endif // INCLUDE_JFR
   {

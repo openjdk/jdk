@@ -129,10 +129,10 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       if (object_count_enabled) {
         KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
         KlassInfoTable local_cit(false);
-        ShenandoahObjectCountClosure _count(&local_cit);
-        ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &_count);
+        ShenandoahObjectCountClosure count(&local_cit);
+        ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &count);
         _root_scanner.roots_do(&init_mark, worker_id);
-        _count.merge_table(global_cit);
+        count.merge_table(global_cit);
       } else
 #endif // INCLUDE_JFR
       {

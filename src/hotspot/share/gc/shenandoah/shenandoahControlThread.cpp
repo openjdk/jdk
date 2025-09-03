@@ -230,8 +230,9 @@ void ShenandoahControlThread::run_service() {
 
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
-
+#if INCLUDE_JFR
       heap->set_cit(nullptr);
+#endif // INCLUDE_JFR
     }
 
     // Check if we have seen a new target for soft max heap size or if a gc was requested.

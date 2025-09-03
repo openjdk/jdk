@@ -87,7 +87,7 @@ extern Monitor* InitCompleted_lock;              // a lock used to signal thread
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
-extern Mutex*   TableMerge_lock;                 // a lock used to synchronize merging a thread-local table into a global table
+extern Mutex*   ObjectCountMerge_lock;           // a lock used to synchronize merging a thread-local object count histogram into a global one
 
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe

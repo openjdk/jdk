@@ -85,7 +85,7 @@ Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
 Monitor* Notify_lock                  = nullptr;
 Mutex*   ExceptionCache_lock          = nullptr;
-Mutex*   TableMerge_lock              = nullptr;
+Mutex*   ObjectCountMerge_lock        = nullptr;
 Mutex*   TrainingData_lock            = nullptr;
 Monitor* TrainingReplayQueue_lock     = nullptr;
 #ifndef PRODUCT
@@ -247,7 +247,7 @@ void mutex_init() {
   MUTEX_DEFN(SignatureHandlerLibrary_lock    , PaddedMutex  , safepoint);
   MUTEX_DEFN(SymbolArena_lock                , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(ExceptionCache_lock             , PaddedMutex  , safepoint);
-  MUTEX_DEFN(TableMerge_lock                 , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(ObjectCountMerge_lock           , PaddedMutex  , nosafepoint);
 #ifndef PRODUCT
   MUTEX_DEFN(FullGCALot_lock                 , PaddedMutex  , safepoint); // a lock to make FullGCALot MT safe
 #endif
