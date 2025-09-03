@@ -50,13 +50,6 @@ public abstract class AbstractPeer implements Peer {
     }
 
     /*
-     * Deletes log file if exists.
-     */
-    protected void deleteLog() throws IOException {
-        Utilities.deleteFile(getLogPath());
-    }
-
-    /*
      * The negotiated application protocol.
      */
     public String getNegoAppProtocol() throws SSLTestException {

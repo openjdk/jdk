@@ -148,7 +148,6 @@ public class JdkProcClient extends AbstractClient {
     @Override
     public void close() throws IOException {
         printLog();
-        deleteLog();
     }
 
     public static void main(String[] args) throws Exception {
