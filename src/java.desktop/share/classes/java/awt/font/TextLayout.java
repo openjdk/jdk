@@ -515,7 +515,6 @@ public final class TextLayout implements Cloneable {
         int start = text.getBeginIndex();
         int limit = text.getEndIndex();
         int len = limit - start;
-        text.first();
         char[] chars = new char[len];
         int n = 0;
         for (char c = text.first();
