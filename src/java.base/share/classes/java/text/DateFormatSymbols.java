@@ -346,6 +346,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
+        Objects.requireNonNull(locale, "locale should not be null");
         DateFormatSymbols dfs = getProviderInstance(locale);
         if (dfs != null) {
             return dfs;

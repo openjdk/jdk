@@ -211,5 +211,6 @@ public class IntlTestDateFormatSymbols
     @Test
     void nullLocaleTest() {
         assertThrows(NullPointerException.class, () -> new DateFormatSymbols(null));
+        assertThrows(NullPointerException.class, () -> DateFormatSymbols.getInstance(null));
     }
 }
