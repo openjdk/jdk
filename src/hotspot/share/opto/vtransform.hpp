@@ -593,6 +593,7 @@ public:
 // Bundle the information needed for vector nodes.
 class VTransformVectorNodePrototype : public StackObj {
 private:
+  // TODO: make fields const?
   Node* _approximate_origin; // for proper propagation of node notes
   int _scalar_opcode;
   uint _vector_length;
@@ -616,7 +617,7 @@ public:
     int vlen = pack->size();
     BasicType bt = vloop_analyzer.types().velt_basic_type(first);
     // TODO: // const TypePtr* adr_type = first->adr_type();
-    return VTransformVectorNodePrototype(first, opc, vlen, bt/*, adr_type*/); // TODO: ?
+    return VTransformVectorNodePrototype(first, opc, vlen, bt/*, adr_type*/); // TcDO: ?
   }
 
 
@@ -662,6 +663,18 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
+  //  TODO: print_spec
+};
+
+class VTransformReinterpretVectorNode : public VTransformVectorNode {
+private:
+  const BasicType _src_bt;
+public:
+  VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const BasicType src_bt) :
+    VTransformVectorNode(vtransform, 2, prototype), _src_bt(src_bt) {}
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
+  //  TODO: print_spec
 };
 
 struct VTransformBoolTest {
@@ -681,6 +694,7 @@ public:
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
+  //  TODO: print_spec
 };
 
 class VTransformBoolVectorNode : public VTransformVectorNode {
@@ -693,6 +707,7 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
+  //  TODO: print_spec
 };
 
 class VTransformReductionVectorNode : public VTransformVectorNode {

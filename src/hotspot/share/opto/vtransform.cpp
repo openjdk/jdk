@@ -799,9 +799,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     //int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
     //vn = VectorCastNode::make(vopc, in1, bt, vlen);
   } else if (VectorNode::is_reinterpret_opcode(sopc)) {
-    assert(first->req() == 2 && req() == 2, "only one input expected");
-    const TypeVect* vt = TypeVect::make(bt, vlen);
-    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
+    assert(false, "WIP");
+    //assert(first->req() == 2 && req() == 2, "only one input expected");
+    //const TypeVect* vt = TypeVect::make(bt, vlen);
+    //vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     sopc = Op_RShiftI;
     vn = VectorNode::make(sopc, in1, in2, vlen, bt);
@@ -826,6 +827,21 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
            "element wise operation must be from this list");
     vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
+
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
+}
+
+VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyState& apply_state) const {
+  uint  vlen   = _prototype.vector_length();
+  int   sopc   = _prototype.scalar_opcode();
+  BasicType bt = _prototype.element_basic_type();
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  assert(VectorNode::is_reinterpret_opcode(sopc), "scalar opcode must be reinterpret");
+
+  Node* in1 = apply_state.transformed_node(in_req(1));
+  const TypeVect* src_vt = TypeVect::make(_src_bt, vlen);
+  VectorNode* vn = new VectorReinterpretNode(in1, vt, src_vt);
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());

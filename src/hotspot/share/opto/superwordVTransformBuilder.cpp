@@ -186,9 +186,14 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, -1 /* TODO: */);
   } else if (VectorNode::is_convert_opcode(opc)) {
+    assert(p0->req() == 2, "convert should have 2 operands");
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
     int vopc = VectorCastNode::opcode(opc, def_bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    assert(p0->req() == 2, "reinterpret should have 2 operands");
+    BasicType src_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
+    vtn = new (_vtransform.arena()) VTransformReinterpretVectorNode(_vtransform, prototype, src_bt);
   } else {
     assert(p0->req() == 3 ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
