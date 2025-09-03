@@ -59,7 +59,7 @@ public class ComponentLostFocusTest {
     static volatile Point loc;
     static volatile int width;
     static volatile int top;
-    static CountDownLatch focusGainedLatch = new CountDownLatch(1);
+    static final CountDownLatch focusGainedLatch = new CountDownLatch(1);
 
     private static void createTestUI() {
 
@@ -154,7 +154,8 @@ public class ComponentLostFocusTest {
                                      getFocusOwner());
             if (!focusGainedLatch.await(5, TimeUnit.SECONDS)) {
                 captureScreen();
-                throw new RuntimeException("Waited too long, TextField got no focus! Test failed.");
+                throw new RuntimeException("Waited too long, " +
+                        "TextField got no focus! Test failed.");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
