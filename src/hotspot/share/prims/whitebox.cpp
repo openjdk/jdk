@@ -23,11 +23,11 @@
  */
 
 #include "cds.h"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/aotMetaspace.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"

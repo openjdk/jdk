@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"

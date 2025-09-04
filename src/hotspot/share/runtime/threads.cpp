@@ -25,10 +25,10 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/aotMetaspace.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"

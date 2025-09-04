@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"

@@ -23,8 +23,8 @@
  *
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/cdsConfig.hpp"
 #include "os_posix.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"

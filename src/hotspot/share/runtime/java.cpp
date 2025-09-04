@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
