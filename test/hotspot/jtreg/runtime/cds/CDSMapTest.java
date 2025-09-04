@@ -25,7 +25,6 @@
  * @test
  * @bug 8308903
  * @summary Test the contents of -Xlog:aot+map
- * @requires vm.flagless
  * @requires vm.cds
  * @library /test/lib
  * @run driver CDSMapTest
