@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,8 @@ class ResolvedMethodEntry {
   bool _has_table_index;
 #endif
 
+  // See comments in resolvedFieldEntry.hpp about copy_from and padding.
+  // We have unused padding on debug builds.
   void copy_from(const ResolvedMethodEntry& other) {
     _method = other._method;
     _entry_specific = other._entry_specific;
