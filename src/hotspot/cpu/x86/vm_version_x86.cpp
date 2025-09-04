@@ -2573,12 +2573,9 @@ void VM_Version::resolve_cpu_information_details(void) {
   _no_of_threads = os::processor_count();
 
   // find out number of threads per cpu package
-  int threads_per_package = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus;
-  if (threads_per_package == 0) {
-    // Fallback code to avoid div by zero in subsequent code.
-    // CPUID 0Bh (ECX = 1) might return 0 on older AMD processor (EPYC 7763 at least)
-    threads_per_package = threads_per_core() * cores_per_cpu();
-  }
+  // Use CPUID leaf 0Bh ECX = 1 if exists.
+  int threads_per_package = _cpuid_info.std_max_function >= 0xb ? _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus
+                                                                : threads_per_core() * cores_per_cpu();
 
   // use amount of threads visible to the process in order to guess number of sockets
   _no_of_sockets = _no_of_threads / threads_per_package;
