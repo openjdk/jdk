@@ -117,7 +117,12 @@ public class TestReinterpretAndCast {
 
     @Test
     @Arguments(setup = "setup1")
-    // TODO: IR rules
+    @IR(counts = {IRNode.LOAD_VECTOR_L,   IRNode.VECTOR_SIZE + "min(max_int, max_float, max_double, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_D2F, IRNode.VECTOR_SIZE + "min(max_int, max_float, max_double, max_long)", "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"}, // We have both L2D and F2I
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test1(long[] a, int[] b) {
 	for (int i = 0; i < SIZE; i++) {
 	    long   v0 = a[i];
@@ -152,7 +157,12 @@ public class TestReinterpretAndCast {
 
     @Test
     @Arguments(setup = "setup2")
-    // TODO: IR rules
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    IRNode.VECTOR_SIZE + "min(max_int, max_float, max_short)", "> 0",
+                  IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_int, max_float, max_short)", "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least I2F
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test2(int[] a, short[] b) {
 	for (int i = 0; i < SIZE; i++) {
             int v0 = a[i];
@@ -186,14 +196,24 @@ public class TestReinterpretAndCast {
 
     @Test
     @Arguments(setup = "setup3")
-    // TODO: IR rules
+    @IR(counts = {IRNode.LOAD_VECTOR_S,    IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_I2L,  IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least F2I
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test3(short[] a, long[] b) {
 	for (int i = 0; i < SIZE; i++) {
             short v0 = a[i];
             Float16 v1 = Float16.shortBitsToFloat16(v0);
             float v2 = v1.floatValue();
             int v3 = Float.floatToRawIntBits(v2);
+            // Reinterpret: float -> int
+            // Before fix:  int -> float
             long v4 = v3;
+            // Cast:        int -> long
+            // Before fix:  float -> long (wrong!)
             b[i] = v4;
 	}
     }
