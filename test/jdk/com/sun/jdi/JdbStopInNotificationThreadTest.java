@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,9 +113,11 @@ public class JdbStopInNotificationThreadTest extends JdbTest {
     private static final String DEBUGGEE_CLASS = JdbStopInNotificationThreadTestTarg.class.getName();
     private static final String PATTERN1_TEMPLATE = "^Breakpoint hit: \"thread=Notification Thread\", " +
             "JdbStopInNotificationThreadTestTarg\\$1\\.handleNotification\\(\\), line=%LINE_NUMBER.*\\R%LINE_NUMBER\\s+System\\.out\\.println\\(\"Memory usage low!!!\"\\);.*";
+    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx64M"};
 
     private JdbStopInNotificationThreadTest() {
-        super(DEBUGGEE_CLASS);
+        super(new LaunchOptions(DEBUGGEE_CLASS)
+                .addDebuggeeOptions(DEBUGGEE_OPTIONS));
     }
 
     public static void main(String argv[]) {
