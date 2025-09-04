@@ -42,7 +42,7 @@ import jdk.test.whitebox.WhiteBox;
 /*
  * Tests the sample queues increase in size as needed, when loss is recorded.
  * @test
- * @requires vm.hasJFR & os.family == "linux"
+ * @requires vm.hasJFR & os.family == "linux" & vm.debug
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @build  jdk.test.whitebox.WhiteBox
@@ -113,14 +113,28 @@ public class TestCPUTimeSampleQueueAutoSizes {
                     lossEvents.addEvent(new LossEvent(relativeTime, e.getLong("lostSamples")));
                 }
             });
+            WHITE_BOX.cpuSamplerSetOutOfStackWalking(false);
             rs.startAsync();
-            // launch first burst
-            Thread burstThread = new Thread(() -> runInBursts(10, 1000));
+            // this thread runs all along
+            Thread burstThread = new Thread(() -> WHITE_BOX.busyWait(11000));
             burstThread.setName(BURST_THREAD_NAME);
             burstThread.start();
-            // keep the out-of-start-sampler busy
-            runMiscThreads(11000);
-            burstThread.join();
+            // now we toggle out-of-stack-walking off, wait 1 second and then turn it on for 500ms a few times
+            for (int i = 0; i < 5; i++) {
+                boolean supported = WHITE_BOX.cpuSamplerSetOutOfStackWalking(false);
+                if (!supported) {
+                    System.out.println("Out-of-stack-walking not supported, skipping test");
+                    Asserts.assertFalse(true);
+                    return;
+                }
+                Thread.sleep(700);
+                long iterations = WHITE_BOX.cpuSamplerOutOfStackWalkingIterations();
+                WHITE_BOX.cpuSamplerSetOutOfStackWalking(true);
+                Thread.sleep(300);
+                while (WHITE_BOX.cpuSamplerOutOfStackWalkingIterations() == iterations) {
+                    Thread.sleep(50); // just to make sure the stack walking really ran
+                }
+            }
             rs.close();
             checkThatLossDecreased(lossEvents, lastSampleTimeMillis.get() - firstSampleTimeMillis.get());
         }
@@ -133,27 +147,8 @@ public class TestCPUTimeSampleQueueAutoSizes {
         }
         // check that there are at least 3 intervals
         Asserts.assertTrue(intervalLosses.size() > 2);
-        // check that the second to last interval has fewer lost samples than the first
+        // check that the second to last interval has far fewer lost samples than the first
         Asserts.assertTrue(intervalLosses.get(intervalLosses.size() - 2).lostSamples <
-                           intervalLosses.get(0).lostSamples);
-    }
-
-
-
-    static void runMiscThreads(int timeMs) throws Exception {
-        Thread[] threads = new Thread[Runtime.getRuntime().availableProcessors() - 1];
-        for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(() -> WHITE_BOX.busyWait(timeMs));
-            threads[i].start();
-        }
-        for (Thread thread : threads) {
-            thread.join();
-        }
-    }
-
-    static void runInBursts(int count, int burstMs) {
-        for (int i = 0; i < count; i++) {
-            WHITE_BOX.busyWait(burstMs);
-        }
+                           intervalLosses.get(0).lostSamples / 2);
     }
 }

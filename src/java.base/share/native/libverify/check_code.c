@@ -2763,7 +2763,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                                                                context->class,
                                                                operand);
             check_and_push_string_utf(context, signature);
-#ifdef DEBUG
+#ifdef ASSERT
             if (verify_verbose) {
                 print_formatted_fieldname(context, operand);
             }
