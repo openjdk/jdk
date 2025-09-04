@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,15 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@ParameterizedClass
+@MethodSource("caseGenerator")
 public class FDTest {
 
     public enum TestKind {
@@ -63,7 +66,7 @@ public class FDTest {
     public static JavaCompiler comp;
     public static StandardJavaFileManager fm;
 
-    @BeforeSuite
+    @BeforeAll
     static void init() {
         // create default shared JavaCompiler - reused across multiple
         // compilations
@@ -72,7 +75,7 @@ public class FDTest {
         fm = comp.getStandardFileManager(null, null, null);
     }
 
-    @AfterSuite
+    @AfterAll
     static void teardown() throws IOException {
         fm.close();
     }
@@ -87,14 +90,13 @@ public class FDTest {
         teardown();
     }
 
-    @Test(dataProvider = "fdCases")
-    public void testOneCase(TestKind tk, Hierarchy hs)
+    @Test
+    public void testOneCase()
             throws Exception {
         FDTest.runTest(tk, hs, comp, fm);
     }
 
-    @DataProvider(name = "fdCases")
-    public Object[][] caseGenerator() {
+    public static Object[][] caseGenerator() {
         List<Pair<TestKind, Hierarchy>> cases = generateCases();
         Object[][] fdCases = new Object[cases.size()][];
         for (int i = 0; i < cases.size(); ++i) {
@@ -126,8 +128,6 @@ public class FDTest {
     Hierarchy hs;
     DefenderTestSource source;
     DiagnosticChecker diagChecker;
-
-    public FDTest() {}
 
     FDTest(TestKind tk, Hierarchy hs) {
         this.tk = tk;
