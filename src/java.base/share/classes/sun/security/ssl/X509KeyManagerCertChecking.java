@@ -167,25 +167,17 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return null;
         }
 
-        if (socket != null && socket.isConnected() &&
-                socket instanceof SSLSocket sslSocket) {
-
+        if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
             SSLSession session = sslSocket.getHandshakeSession();
 
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
-
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        // Peer supported certificate signature algorithms
-                        // sent with "signature_algorithms_cert" TLS extension.
-                        peerSupportedSignAlgs =
-                                extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forSocket(
-                            sslSocket, peerSupportedSignAlgs, true);
-                }
+            if (session instanceof ExtendedSSLSession extSession
+                    && ProtocolVersion.useTLS12PlusSpec(
+                    extSession.getProtocol())) {
+                // Use peer supported certificate signature algorithms
+                // sent with "signature_algorithms_cert" TLS extension.
+                return SSLAlgorithmConstraints.forSocket(sslSocket,
+                        extSession.getPeerSupportedSignatureAlgorithms(),
+                        true);
             }
 
             return SSLAlgorithmConstraints.forSocket(sslSocket, true);
@@ -203,20 +195,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
 
         if (engine != null) {
             SSLSession session = engine.getHandshakeSession();
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
 
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        // Peer supported certificate signature algorithms
-                        // sent with "signature_algorithms_cert" TLS extension.
-                        peerSupportedSignAlgs =
-                                extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forEngine(
-                            engine, peerSupportedSignAlgs, true);
-                }
+            if (session instanceof ExtendedSSLSession extSession
+                    && ProtocolVersion.useTLS12PlusSpec(
+                    extSession.getProtocol())) {
+                // Use peer supported certificate signature algorithms
+                // sent with "signature_algorithms_cert" TLS extension.
+                return SSLAlgorithmConstraints.forEngine(engine,
+                        extSession.getPeerSupportedSignatureAlgorithms(),
+                        true);
             }
         }
 
