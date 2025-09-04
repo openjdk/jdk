@@ -1,0 +1,28 @@
+ShiftOutOfRange.java:14:18: compiler.warn.bit.shift.out.of.range: int, -1, 31
+ShiftOutOfRange.java:15:18: compiler.warn.bit.shift.out.of.range: int, 65535, 31
+ShiftOutOfRange.java:16:19: compiler.warn.bit.shift.out.of.range: int, -1, 31
+ShiftOutOfRange.java:17:15: compiler.warn.bit.shift.out.of.range: int, -1, 31
+ShiftOutOfRange.java:18:15: compiler.warn.possible.loss.of.precision: long, int
+ShiftOutOfRange.java:18:15: compiler.warn.bit.shift.out.of.range: int, -1, 31
+ShiftOutOfRange.java:19:16: compiler.warn.bit.shift.out.of.range: int, -1, 31
+ShiftOutOfRange.java:26:15: compiler.warn.possible.loss.of.precision: long, int
+ShiftOutOfRange.java:30:18: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:31:18: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:32:19: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:33:15: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:34:15: compiler.warn.possible.loss.of.precision: long, int
+ShiftOutOfRange.java:34:15: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:35:16: compiler.warn.bit.shift.out.of.range: int, 32, 0
+ShiftOutOfRange.java:42:18: compiler.warn.bit.shift.out.of.range: long, -1, 63
+ShiftOutOfRange.java:43:18: compiler.warn.bit.shift.out.of.range: long, 65535, 63
+ShiftOutOfRange.java:44:19: compiler.warn.bit.shift.out.of.range: long, -1, 63
+ShiftOutOfRange.java:45:15: compiler.warn.bit.shift.out.of.range: long, -1, 63
+ShiftOutOfRange.java:46:15: compiler.warn.bit.shift.out.of.range: long, -1, 63
+ShiftOutOfRange.java:47:16: compiler.warn.bit.shift.out.of.range: long, -1, 63
+ShiftOutOfRange.java:58:18: compiler.warn.bit.shift.out.of.range: long, 64, 0
+ShiftOutOfRange.java:59:18: compiler.warn.bit.shift.out.of.range: long, 64, 0
+ShiftOutOfRange.java:60:19: compiler.warn.bit.shift.out.of.range: long, 64, 0
+ShiftOutOfRange.java:61:15: compiler.warn.bit.shift.out.of.range: long, 64, 0
+ShiftOutOfRange.java:62:15: compiler.warn.bit.shift.out.of.range: long, 64, 0
+ShiftOutOfRange.java:63:16: compiler.warn.bit.shift.out.of.range: long, 64, 0
+27 warnings
