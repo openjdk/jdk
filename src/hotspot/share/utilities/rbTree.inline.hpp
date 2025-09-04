@@ -750,7 +750,7 @@ void AbstractRBTree<K, NodeType, COMPARATOR>::print_on(outputStream* st) const {
 }
 
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) {
+bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
   assert(other.size() == 0, "You can only copy into an empty RBTree");
   assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
   assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
