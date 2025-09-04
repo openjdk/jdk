@@ -636,6 +636,10 @@ public abstract class Process implements Closeable {
      * <p>
      * The process may already have exited or be in the process of exiting;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
+     * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
+     * is not available and the process is forcibly terminated.
+     * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
+     * the try-with-resources block allows the process time to clean up and exit.
      * <p>
      * Example using try-with-resources writing text to a process, reading back the
      * response, and closing the streams and process:
