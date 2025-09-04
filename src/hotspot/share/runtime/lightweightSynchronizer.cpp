@@ -766,14 +766,13 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
 }
 
 // LightweightSynchronizer::inflate_locked_or_imse is used to to get an inflated
-// ObjectMonitor* when lightweight locking is used. It is used from contexts
-// which require an inflated ObjectMonitor* for a monitor, and expects to throw
-// a java.lang.IllegalMonitorStateException if it is not held by the current
-// thread. Such as notify/wait and jni_exit. Lightweight locking keeps it invariant
-// that it only inflates if it is already locked by the current thread or the
-// current thread is in the process of entering. To maintain this invariant we
-// need to throw a java.lang.IllegalMonitorStateException before inflating if
-// the current thread is not the owner.
+// ObjectMonitor*. It is used from contexts which require an inflatedmonitor,
+// and expects to throw a java.lang.IllegalMonitorStateException if it is not
+// held by the current thread. Such as notify/wait and jni_exit.
+// Lightweight locking keeps it invariant that it only inflates if it is already
+// locked by the current thread or the current thread is in the process of entering.
+// To maintain this invariant we need to throw a java.lang.IllegalMonitorStateException
+// before inflating if the current thread is not the owner.
 // LightweightSynchronizer::inflate_locked_or_imse facilitates this.
 ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchronizer::InflateCause cause, TRAPS) {
   JavaThread* current = THREAD;
@@ -820,8 +819,8 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
 
 ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current) {
 
-  // The JavaThread* locking_thread parameter is only used by lightweight locking and
-  // requires that the locking_thread == Thread::current() or is suspended throughout
+  // The JavaThread* locking parameter requires that the
+  // locking_thread == JavaThread::current, or is suspended throughout
   // the call by some other mechanism.
   // Even with lightweight locking the thread might be nullptr when called from a non
   // JavaThread. (As may still be the case from FastHashCode). However it is only

@@ -538,8 +538,7 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
     // Not inflated so there can't be any waiters to notify.
     return;
   }
-  ObjectMonitor* monitor;
-  monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
+  ObjectMonitor* monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
   monitor->notify(CHECK);
 }
 
@@ -553,8 +552,7 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
     return;
   }
 
-  ObjectMonitor* monitor;
-  monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
+  ObjectMonitor* monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
   monitor->notifyAll(CHECK);
 }
 

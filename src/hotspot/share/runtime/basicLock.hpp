@@ -50,7 +50,6 @@ class BasicLock {
 
   static int displaced_header_offset_in_bytes() { return metadata_offset_in_bytes(); }
 
-  // For lightweight locking
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
