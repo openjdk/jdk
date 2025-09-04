@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8366401
+ * @bug 4068067 4101150 8366401
  * @summary Check serialization of DecimalFormatSymbols. That is, ensure the
  *          behavior for each stream version is correct during de-serialization.
  * @run junit/othervm --add-opens java.base/java.text=ALL-UNNAMED DFSSerializationTest
@@ -57,7 +57,7 @@ public class DFSSerializationTest {
         // Ensure correct monetarySeparator and exponential field defaults
         // Reads monetary from decimal, and sets exponential to 'E'
         @Test
-        public void version0Test() {
+        void version0Test() {
             var crafted = new DFSBuilder()
                     .setVer(0)
                     .set("monetarySeparator", '~')
@@ -76,7 +76,7 @@ public class DFSSerializationTest {
         // Note that other versions did allow a locale field, which was nullable.
         // E.g. see nullableLocaleTest which does not set locale when it is `null`
         @Test
-        public void version1Test() {
+        void version1Test() {
             var crafted = new DFSBuilder()
                     .setVer(1)
                     .set("locale", null)
@@ -89,7 +89,7 @@ public class DFSSerializationTest {
         // Version 2 did not have an exponential separator, and created it via exponent
         // char field.
         @Test
-        public void version2Test() {
+        void version2Test() {
             var crafted = new DFSBuilder()
                     .setVer(2)
                     .set("exponentialSeparator", null)
@@ -103,7 +103,7 @@ public class DFSSerializationTest {
         // Version 3 didn't have perMillText, percentText, and minusSignText.
         // These were created from the corresponding char equivalents.
         @Test
-        public void version3Test() {
+        void version3Test() {
             var crafted = new DFSBuilder()
                     .setVer(3)
                     .set("perMillText", null)
@@ -125,7 +125,7 @@ public class DFSSerializationTest {
         // Version 4 did not have monetaryGroupingSeparator. It should be based
         // off of groupingSeparator.
         @Test
-        public void version4Test() {
+        void version4Test() {
             var crafted = new DFSBuilder()
                     .setVer(4)
                     .set("monetaryGroupingSeparator", 'Z')
@@ -142,7 +142,7 @@ public class DFSSerializationTest {
     // the case and previous stream versions can contain a null locale. Thus,
     // ensure that a null locale does not cause number data loading to fail.
     @Test
-    public void nullableLocaleTest() {
+    void nullableLocaleTest() {
         var bytes = ser(new DFSBuilder()
                 .set("locale", null)
                 .set("minusSignText", "zFoo")
@@ -157,7 +157,7 @@ public class DFSSerializationTest {
     // readObject fails when the {@code char} and {@code String} representations
     // of percent, per mille, and/or minus sign disagree.
     @Test
-    public void disagreeingTextTest() {
+    void disagreeingTextTest() {
         var expected = "'char' and 'String' representations of either percent, " +
                 "per mille, and/or minus sign disagree.";
         assertEquals(expected, assertThrows(InvalidObjectException.class, () ->
@@ -179,7 +179,7 @@ public class DFSSerializationTest {
 
     // Ensure the serial version is updated to the current after de-serialization.
     @Test
-    public void updatedVersionTest() {
+    void updatedVersionTest() {
         var bytes = ser(new DFSBuilder().setVer(-25).build());
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         assertEquals(5, readField(dfs, "serialVersionOnStream"));
@@ -187,7 +187,7 @@ public class DFSSerializationTest {
 
     // Should set currency from 4217 code when it is valid.
     @Test
-    public void validIntlCurrencyTest() {
+    void validIntlCurrencyTest() {
         var bytes = ser(new DFSBuilder().set("intlCurrencySymbol", "JPY").build());
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         assertEquals(Currency.getInstance("JPY"), dfs.getCurrency());
@@ -195,7 +195,7 @@ public class DFSSerializationTest {
 
     // Should not set currency when 4217 code is invalid, it remains null.
     @Test
-    public void invalidIntlCurrencyTest() {
+    void invalidIntlCurrencyTest() {
         var bytes = ser(new DFSBuilder()
                 .set("intlCurrencySymbol", ">.,")
                 .set("locale", Locale.JAPAN)
@@ -203,6 +203,26 @@ public class DFSSerializationTest {
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         // Can not init off invalid 4217 code, remains null
         assertNull(dfs.getCurrency());
+    }
+
+    // Ensure the currency symbol is read properly
+    @Test
+    void currencySymbolTest() {
+        var crafted = new DecimalFormatSymbols();
+        crafted.setCurrencySymbol("*SpecialCurrencySymbol*");
+        var bytes = ser(crafted);
+        var dfs = assertDoesNotThrow(() -> deSer(bytes));
+        assertEquals("*SpecialCurrencySymbol*", dfs.getCurrencySymbol());
+    }
+
+    // Ensure the exponent separator is read properly
+    @Test
+    void exponentSeparatorTest() {
+        var crafted = new DecimalFormatSymbols();
+        crafted.setExponentSeparator("*SpecialExponentSeparator*");
+        var bytes = ser(crafted);
+        var dfs = assertDoesNotThrow(() -> deSer(bytes));
+        assertEquals("*SpecialExponentSeparator*", dfs.getExponentSeparator());
     }
 
 // Utilities ----
