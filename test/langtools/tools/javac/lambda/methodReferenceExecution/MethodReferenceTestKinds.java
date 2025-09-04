@@ -30,16 +30,11 @@
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestInstanceFactory;
-import org.junit.jupiter.api.extension.TestInstanceFactoryContext;
 
 /**
  * @author Robert Field
  */
 
-@ExtendWith(LocalTestInstanceFactory.class)
 public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
 
     interface S0 { String get(); }
@@ -68,16 +63,14 @@ public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
     static String staticMethod0() { return "SM:0"; }
     static String staticMethod1(MethodReferenceTestKinds x) { return "SM:1-" + x; }
 
-    MethodReferenceTestKinds(String val) {
-        super(val);
-    }
-
     MethodReferenceTestKinds() {
         super("blank");
     }
 
     MethodReferenceTestKinds inst(String val) {
-        return new MethodReferenceTestKinds(val);
+        var inst = new MethodReferenceTestKinds();
+        inst.val = val; // simulate `MethodReferenceTestKinds(String val)` constructor
+        return inst;
     }
 
     @Test
@@ -180,10 +173,4 @@ class MethodReferenceTestKindsSup extends MethodReferenceTestKindsBase {
         super(val);
     }
 
-}
-
-class LocalTestInstanceFactory implements TestInstanceFactory {
-    public Object createTestInstance(TestInstanceFactoryContext factoryContext, ExtensionContext extensionContext) {
-        return new MethodReferenceTestKinds();
-    }
 }
