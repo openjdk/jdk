@@ -3803,39 +3803,30 @@ AnnotationArray* ClassFileParser::allocate_annotations(const u1* const anno,
   return annotations;
 }
 
-const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
-                                                        const int super_class_index,
-                                                        const bool need_verify,
-                                                        TRAPS) {
+void ClassFileParser::check_super_class(ConstantPool* const cp,
+                                        const int super_class_index,
+                                        const bool need_verify,
+                                        TRAPS) {
   assert(cp != nullptr, "invariant");
-  const InstanceKlass* super_klass = nullptr;
 
   if (super_class_index == 0) {
     guarantee_property(_class_name == vmSymbols::java_lang_Object(),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
   } else {
     guarantee_property(valid_klass_reference_at(super_class_index),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
+
     // The class name should be legal because it is checked when parsing constant pool.
     // However, make sure it is not an array type.
-    bool is_array = false;
-    if (cp->tag_at(super_class_index).is_klass()) {
-      super_klass = InstanceKlass::cast(cp->resolved_klass_at(super_class_index));
-      if (need_verify)
-        is_array = super_klass->is_array_klass();
-    } else if (need_verify) {
-      is_array = (cp->klass_name_at(super_class_index)->char_at(0) == JVM_SIGNATURE_ARRAY);
-    }
     if (need_verify) {
-      guarantee_property(!is_array,
-                        "Bad superclass name in class file %s", CHECK_NULL);
+      guarantee_property(cp->klass_name_at(super_class_index)->char_at(0) != JVM_SIGNATURE_ARRAY,
+                        "Bad superclass name in class file %s", CHECK);
     }
   }
-  return super_klass;
 }
 
 OopMapBlocksBuilder::OopMapBlocksBuilder(unsigned int max_blocks) {
@@ -5667,10 +5658,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   // SUPERKLASS
   _super_class_index = stream->get_u2_fast();
-  _super_klass = parse_super_class(cp,
-                                   _super_class_index,
-                                   _need_verify,
-                                   CHECK);
+  check_super_class(cp,
+                    _super_class_index,
+                    _need_verify,
+                    CHECK);
 
   // Interfaces
   _itfs_len = stream->get_u2_fast();
@@ -5773,12 +5764,14 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_loader_data != nullptr, "invariant");
 
   if (_class_name == vmSymbols::java_lang_Object()) {
+    precond(_super_class_index == 0);
+    precond(_super_klass == nullptr);
     guarantee_property(_local_interfaces == Universe::the_empty_instance_klass_array(),
                        "java.lang.Object cannot implement an interface in class file %s",
                        CHECK);
-  }
-  // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && nullptr == _super_klass) {
+  } else {
+    // Set _super_klass after class file is parsed and format is checked
+    assert(_super_class_index > 0, "any class other than Object must have a super class");
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
@@ -5789,6 +5782,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     }
     Handle loader(THREAD, _loader_data->class_loader());
     if (loader.is_null() && super_class_name == vmSymbols::java_lang_Object()) {
+      // fast path to avoid lookup
       _super_klass = vmClasses::Object_klass();
     } else {
       _super_klass = (const InstanceKlass*)
