@@ -68,7 +68,7 @@ import javax.net.ssl.SSLEngine;
 public class PacketLossRetransmission extends DTLSOverDatagram {
     private static boolean isClient;
     private static byte handshakeType;
-    private static final int SHORT_TIMEOUT = 500;
+    private static final int TIMEOUT = 500;
 
     private boolean needPacketLoss = true;
 
@@ -77,7 +77,7 @@ public class PacketLossRetransmission extends DTLSOverDatagram {
         handshakeType = Byte.parseByte(args[1]);
 
         PacketLossRetransmission testCase = new PacketLossRetransmission();
-        testCase.setSocketTimeout(SHORT_TIMEOUT);
+        testCase.setSocketTimeout(TIMEOUT);
         testCase.runTest(testCase);
     }
 
