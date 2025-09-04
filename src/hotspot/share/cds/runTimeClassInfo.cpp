@@ -52,6 +52,14 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     }
   }
 
+  _num_old_verifier_dependencies = info.num_old_verifier_dependencies();
+  if (_num_old_verifier_dependencies > 0) {
+    u4* constraints = old_verifier_dependencies();
+    for (i = 0; i < _num_old_verifier_dependencies; i++) {
+      constraints[i] = builder->any_to_offset_u4(info.old_verifier_dependency_at(i));
+    }
+  }
+
   if (_num_loader_constraints > 0) {
     RTLoaderConstraint* ld_constraints = loader_constraints();
     for (i = 0; i < _num_loader_constraints; i++) {
