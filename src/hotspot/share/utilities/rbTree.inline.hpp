@@ -127,7 +127,8 @@ template <typename NodeType, typename NODE_VERIFIER, typename USER_VERIFIER>
 inline void IntrusiveRBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
     size_t& tree_depth, bool expect_visited, NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const {
-  assert(extra_verifier(static_cast<const NodeType*>(this)), "user provided verifier failed");
+  bool extra_verifier_result = extra_verifier(static_cast<const NodeType*>(this));
+  assert(extra_verifier_result, "user provided verifier failed");
   assert(expect_visited != _visited, "node already visited");
   DEBUG_ONLY(_visited = !_visited);
 
