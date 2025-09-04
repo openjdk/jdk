@@ -621,6 +621,7 @@ public class TagletManager {
         addStandardTaglet(new LinkTaglet(config, DocTree.Kind.LINK_PLAIN));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.CODE));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.LITERAL));
+        addStandardTaglet(new NoteTaglet(config, DocTree.Kind.NOTE));
         addStandardTaglet(new SnippetTaglet(config));
         addStandardTaglet(new IndexTaglet(config));
         addStandardTaglet(new SummaryTaglet(config));
