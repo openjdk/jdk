@@ -225,9 +225,10 @@ class ExchangeImpl {
         boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
-        /* check for response type that is not allowed to send a body */
-        if (rCode == 101) {
-            logger.log(Level.DEBUG, () -> "switching protocols");
+        boolean informational = rCode >= 100 && rCode < 200 ;
+
+        /* informational codes */
+        if (informational) {
 
             if (contentLen != 0) {
                 logger.log(
@@ -235,11 +236,8 @@ class ExchangeImpl {
                     () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
             }
             contentLen = 0;
-
-        } else if ((rCode>=100 && rCode <200) /* informational */
-            ||(rCode == 204)           /* no content */
-            ||(rCode == 304))          /* not modified */
-        {
+        /* check for response type that is not allowed to send a body */
+        } else if (rCode == 204 || rCode == 304) {
             if (contentLen != -1) {
                 String msg = "sendResponseHeaders: rCode = "+ rCode
                     + ": forcing contentLen = -1";
@@ -261,29 +259,29 @@ class ExchangeImpl {
             noContentToSend = true;
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
-        } else { /* not a HEAD request or 304 response */
-            if (contentLen == 0) {
-
-                if (upgrade) {
-                    o.setWrappedStream(ros);
-                    close = true;
-                } else if (http10) {
-                    o.setWrappedStream (new UndefLengthOutputStream (this, ros));
-                    close = true;
-                } else {
-                    rspHdrs.set ("Transfer-encoding", "chunked");
-                    o.setWrappedStream (new ChunkedOutputStream (this, ros));
-                }
+        } else if (contentLen == 0) {
+            if (upgrade) {
+                o.setWrappedStream(ros);
+                // auto-close the exchange when handler exits
+                close = true;
+            } else if (informational) {
+                // no body for informational responses
+            } else if (http10) {
+                o.setWrappedStream (new UndefLengthOutputStream (this, ros));
+                close = true;
             } else {
-                if (contentLen == -1) {
-                    noContentToSend = true;
-                    contentLen = 0;
-                }
-                if (!noContentLengthHeader) {
-                    rspHdrs.set("Content-length", Long.toString(contentLen));
-                }
-                o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
+                rspHdrs.set ("Transfer-encoding", "chunked");
+                o.setWrappedStream (new ChunkedOutputStream (this, ros));
             }
+        } else {
+            if (contentLen == -1) {
+                noContentToSend = true;
+                contentLen = 0;
+            }
+            if (!noContentLengthHeader) {
+                rspHdrs.set("Content-length", Long.toString(contentLen));
+            }
+            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         }
 
         // A custom handler can request that the connection be
@@ -303,12 +301,17 @@ class ExchangeImpl {
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;
         tmpout.writeTo(ros);
-        sentHeaders = true;
+        /**
+         * we don't want to set sentHeaders true if this is an
+         * informational response, as the real response is yet
+         * to be sent.
+         */
+        sentHeaders = !informational;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
             ros.flush();
             close();
-        } else if (upgrade) {
+        } else if (informational) {
             ros.flush();
         }
         server.logReply (rCode, req.requestLine(), null);

@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.*;
 
-public class InputRead101Test {
+public class InputRead1xxTest {
 
     private static final int msgCode = 101;
     private static final String someContext = "/context";
@@ -63,6 +63,48 @@ public class InputRead101Test {
     static {
         Logger.getLogger("").setLevel(Level.ALL);
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
+    }
+
+    @Test
+    public void testContinue() throws Exception {
+        System.out.println("testCloseOutputStream()");
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
+        ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
+        server.setExecutor(executor);
+        try {
+            server.createContext(
+                someContext,
+                msg -> {
+                    System.err.println("Handling request: " + msg.getRequestURI());
+                    byte[] reply = "Here is my reply!".getBytes(UTF_8);
+                    try {
+                        try {
+                            msg.getResponseHeaders().add("Header", "BeforeContinue");
+                            msg.sendResponseHeaders(100, -1);
+                            BufferedReader r = new BufferedReader(new InputStreamReader(msg.getRequestBody()));
+                            r.read();
+                            msg.sendResponseHeaders(200, reply.length);
+                            msg.getResponseBody().write(reply);
+                            msg.getResponseBody().close();
+                            Thread.sleep(50);
+                        } catch (IOException | InterruptedException ie) {
+                            ie.printStackTrace();
+                        }
+                    } finally {
+                        System.err.println("Request handled: " + msg.getRequestURI());
+                    }
+                });
+            server.start();
+            System.out.println("Server started at port " + server.getAddress().getPort());
+
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16, 100);
+        } finally {
+            System.out.println("shutting server down");
+            executor.shutdown();
+            server.stop(0);
+        }
+        System.out.println("Server finished.");
     }
 
     @Test
@@ -93,7 +135,7 @@ public class InputRead101Test {
             server.start();
             System.out.println("Server started at port " + server.getAddress().getPort());
 
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), -1);
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), -1, msgCode);
         } finally {
             System.out.println("shutting server down");
             executor.shutdown();
@@ -133,7 +175,7 @@ public class InputRead101Test {
             server.start();
             System.out.println("Server started at port " + server.getAddress().getPort());
 
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16);
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16, msgCode);
         } finally {
             System.out.println("shutting server down");
             executor.shutdown();
@@ -142,7 +184,7 @@ public class InputRead101Test {
         System.out.println("Server finished.");
     }
 
-    static void runRawSocketHttpClient(InetAddress address, int port, int contentLength)
+    static void runRawSocketHttpClient(InetAddress address, int port, int contentLength, int code)
         throws Exception {
         Socket socket = null;
         PrintWriter writer = null;
@@ -161,7 +203,11 @@ public class InputRead101Test {
             writer.print("Accept: */*" + CRLF);
             writer.print("Content-Length: " + contentLength + CRLF);
             writer.print("Connection: keep-alive" + CRLF);
-            writer.print("Connection: Upgrade" + CRLF);
+            if (code == 101) {
+                writer.print("Connection: Upgrade" + CRLF);
+            } else if (code == 100) {
+                writer.print("Expect: 100-continue" + CRLF);
+            }
             writer.print(CRLF); // Important, else the server will expect that
             // there's more into the request.
             writer.flush();
