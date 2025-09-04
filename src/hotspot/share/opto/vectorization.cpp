@@ -934,7 +934,7 @@ BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) 
   return bol;
 }
 
-BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) const {
+BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, Node* ctrl) const {
   // Ensure iv_scale1 <= iv_scale2.
   const VPointer& vp1 = (this->iv_scale() <= other.iv_scale()) ? *this : other;
   const VPointer& vp2 = (this->iv_scale() <= other.iv_scale()) ? other :*this ;
@@ -971,8 +971,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
-  Node* p1_init = vp1.make_pointer_expression(main_init);
-  Node* p2_init = vp2.make_pointer_expression(main_init);
+  Node* p1_init = vp1.make_pointer_expression(main_init, ctrl);
+  Node* p2_init = vp2.make_pointer_expression(main_init, ctrl);
   Node* size1 = igvn.longcon(vp1.size());
   Node* size2 = igvn.longcon(vp2.size());
 
@@ -1092,13 +1092,18 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   return bol;
 }
 
-Node* VPointer::make_pointer_expression(Node* iv_value) const {
+// Creates the long pointer expression, evaluated with iv = iv_value.
+// Since we are casting pointers to long with CastP2X, we must be careful
+// that the values do not cross SafePoints, where the oop could be moved
+// by GC, and the already cast value would not be updated, as it is not in
+// the oop-map. For this, we must set a ctrl that is late enough, so that we
+// cannot cross a SafePoint.
+Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
   assert(is_valid(), "must be valid");
 
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
   Node* iv = _vloop.iv();
-  Node* ctrl = phase->get_ctrl(iv_value);
 
   auto maybe_add = [&] (Node* n1, Node* n2, BasicType bt) {
     if (n1 == nullptr) { return n2; }
@@ -1120,7 +1125,9 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
       if (variable->bottom_type()->isa_ptr() != nullptr) {
-        variable = new CastP2XNode(nullptr, variable);
+        // Use a ctrl that is late enough, so that we do not
+        // evaluate the cast before a SafePoint.
+        variable = new CastP2XNode(ctrl, variable);
         phase->register_new_node(variable, ctrl);
       }
       node = new MulLNode(scaleL, variable);
