@@ -181,9 +181,9 @@ private:
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    _is_generated_shared_class             = 1 << 5, // This class was not loaded from a classfile in the module image
-                                                     // or classpath.
-    _has_aot_initialized_mirror            = 1 << 6, // archived mirror already initialized by AOT-cache assembly.
+    _is_aot_generated_class                = 1 << 5, // this class was not loaded from a classfile in the module image
+                                                     // or classpath, but was generated during AOT cache assembly.
+    _has_aot_initialized_mirror            = 1 << 6, // archived mirror already initialized by AOT cache assembly.
                                                      // no further need to call <clinit>
     _has_aot_safe_initializer              = 1 << 7, // has @AOTSafeClassInitializer annotation
     _is_runtime_setup_required             = 1 << 8, // has a runtimeSetup method to be called when
@@ -364,11 +364,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_is_generated_shared_class() {
-    CDS_ONLY(_aot_class_flags |= _is_generated_shared_class;)
+  void set_is_aot_generated_class() {
+    CDS_ONLY(_aot_class_flags |= _is_aot_generated_class;)
   }
-  bool is_generated_shared_class() const {
-    CDS_ONLY(return (_aot_class_flags & _is_generated_shared_class) != 0;)
+  bool is_aot_generated_class() const {
+    CDS_ONLY(return (_aot_class_flags & _is_aot_generated_class) != 0;)
     NOT_CDS(return false;)
   }
 
