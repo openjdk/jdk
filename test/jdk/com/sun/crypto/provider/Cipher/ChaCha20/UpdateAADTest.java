@@ -116,7 +116,7 @@ public class UpdateAADTest {
                 // Per the API the buffer's position and limit should be equal
                 if (buffer.position() != buffer.limit()) {
                     throw new RuntimeException("Buffer position and limit " +
-                            "should be equal but are not: b = " +
+                            "should be equal but are not: p = " +
                             buffer.position() + ", l = " + buffer.limit());
                 }
                 if (!expectedPass) {
