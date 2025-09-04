@@ -225,7 +225,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   // add super and interfaces first
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
     resolve_shared_class(super, loader_data, domain, CHECK);

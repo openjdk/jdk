@@ -191,8 +191,8 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (_dumped_classes.maybe_grow()) {
       log_info(aot, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
     }
-    if (ik->java_super()) {
-      dump(ik->java_super());
+    if (ik->super()) {
+      dump(ik->super());
     }
     Array<InstanceKlass*>* interfaces = ik->local_interfaces();
     int len = interfaces->length();

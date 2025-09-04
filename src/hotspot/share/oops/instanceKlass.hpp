@@ -918,8 +918,14 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
+  // This hides Klass::super(). The _super of an InstanceKlass is
+  // always an InstanceKlass (or nullptr)
+  InstanceKlass* super() const {
+    return (Klass::super() == nullptr) ? nullptr : InstanceKlass::cast(Klass::super());
+  }
+
   virtual InstanceKlass* java_super() const {
-    return (super() == nullptr) ? nullptr : cast(super());
+    return InstanceKlass::super();
   }
 
   // Sizing (in words)

@@ -238,7 +238,7 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     if (k->name()->equals("jdk/internal/event/Event")) {
       return true;
     }
-    k = k->java_super();
+    k = k->super();
   }
   return false;
 }
@@ -329,7 +329,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
-  InstanceKlass* super = k->java_super();
+  InstanceKlass* super = k->super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
     aot_log_warning(aot)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
@@ -571,7 +571,7 @@ bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
   if (k->has_been_redefined()) {
     return true;
   }
-  if (k->java_super() != nullptr && has_been_redefined(k->java_super())) {
+  if (k->super() != nullptr && has_been_redefined(k->super())) {
     return true;
   }
   Array<InstanceKlass*>* interfaces = k->local_interfaces();

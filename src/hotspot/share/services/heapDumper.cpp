@@ -765,7 +765,7 @@ class DumperSupport : AllStatic {
   // creates HPROF_GC_INSTANCE_DUMP record for the given object
   static void dump_instance(AbstractDumpWriter* writer, oop o, DumperClassCacheTable* class_cache);
   // creates HPROF_GC_CLASS_DUMP record for the given instance class
-  static void dump_instance_class(AbstractDumpWriter* writer, Klass* k);
+  static void dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik);
   // creates HPROF_GC_CLASS_DUMP record for a given array class
   static void dump_array_class(AbstractDumpWriter* writer, Klass* k);
 
@@ -1204,9 +1204,7 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, oop o, DumperClass
 }
 
 // creates HPROF_GC_CLASS_DUMP record for the given instance class
-void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
-  InstanceKlass* ik = InstanceKlass::cast(k);
-
+void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik) {
   // We can safepoint and do a heap dump at a point where we have a Klass,
   // but no java mirror class has been setup for it. So we need to check
   // that the class is at least loaded, to avoid crash from a null mirror.
@@ -1227,11 +1225,11 @@ void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
   writer->write_u4(STACK_TRACE_ID);
 
   // super class ID
-  InstanceKlass* java_super = ik->java_super();
-  if (java_super == nullptr) {
+  InstanceKlass* super = ik->super();
+  if (super == nullptr) {
     writer->write_objectID(oop(nullptr));
   } else {
-    writer->write_classID(java_super);
+    writer->write_classID(super);
   }
 
   writer->write_objectID(ik->class_loader());
@@ -1505,7 +1503,7 @@ class ClassDumper : public KlassClosure {
 
   void do_klass(Klass* k) {
     if (k->is_instance_klass()) {
-      DumperSupport::dump_instance_class(writer(), k);
+      DumperSupport::dump_instance_class(writer(), InstanceKlass::cast(k));
     } else {
       DumperSupport::dump_array_class(writer(), k);
     }
