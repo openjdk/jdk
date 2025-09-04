@@ -58,6 +58,7 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
+#include "opto/graphInvariants.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
@@ -697,7 +698,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _output(nullptr)
 #ifndef PRODUCT
       ,
-      _in_dump_cnt(0)
+      _in_dump_cnt(0),
+      _invariant_checker(GraphInvariantChecker::make_default())
 #endif
 {
   C = this;

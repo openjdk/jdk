@@ -29,84 +29,99 @@
 constexpr int LocalGraphInvariant::OutputStep;
 
 void LocalGraphInvariant::LazyReachableCFGNodes::fill() {
-  precond(live_nodes.size() == 0);
+  precond(_live_nodes.size() == 0);
 
   // We should have at least root, so we are sure it's not filled yet.
-  live_nodes.push(Compile::current()->root());
-  for (uint i = 0; i < live_nodes.size(); ++i) {
-    Node* n = live_nodes.at(i);
+  _live_nodes.push(Compile::current()->root());
+  for (uint i = 0; i < _live_nodes.size(); ++i) {
+    Node* n = _live_nodes.at(i);
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* out = n->fast_out(j);
       if (out->is_CFG()) {
-        live_nodes.push(out);
+        _live_nodes.push(out);
       }
     }
   }
 
-  postcond(live_nodes.size() > 0);
+  postcond(_live_nodes.size() > 0);
 }
 
 bool LocalGraphInvariant::LazyReachableCFGNodes::is_node_dead(const Node* n) {
-  if (live_nodes.size() == 0) {
+  if (_live_nodes.size() == 0) {
     fill();
   }
-  assert(live_nodes.size() > 0, "filling failed");
-  return !live_nodes.member(n);
+  assert(_live_nodes.size() > 0, "filling failed");
+  return !_live_nodes.member(n);
 }
 
-void print_path(const Node_List& steps, const GrowableArray<int>& path, stringStream& ss) {
-  const int path_len = path.length();
-  precond(steps.size() == static_cast<uint>(path_len) + 1);
-  if (path.is_empty()) {
-    ss.print_cr("At center node");
-    steps.at(0)->dump("\n", false, &ss);
-    return;
-  }
-  ss.print("At node\n   ");
-  steps.at(0)->dump("\n", false, &ss);
-  ss.print_cr("  From path:");
-  ss.print("    [center]");
-  steps.at(path_len)->dump("\n", false, &ss);
-  for (int i = 0; i < path_len; ++i) {
-    if (path.at(path_len - i - 1) >= 0) {
-      // It's an input
-      int input_nb = path.at(path_len - i - 1);
-      if (input_nb <= 9) {
-        ss.print(" ");
-      }
-      ss.print("     <-(%d)-", input_nb);
-
-    } else if (path.at(path_len - i - 1) == LocalGraphInvariant::OutputStep) {
-      // It's an output
-      ss.print("         -->");
-    } else {
-      ss.print("         ???");
-    }
-    steps.at(path_len - i - 1)->dump("\n", false, &ss);
-  }
-}
-
+/* A base class for checks expressed as data. Patterns are supposed to be local, centered around one node
+ * and compositional to express complex structures from simple properties.
+ * For instance, we have a pattern for saying "the first input of the center match P" where P is another
+ * Pattern. We end up with trees of patterns matching the graph.
+ */
 struct Pattern : ResourceObj {
   virtual bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream&) const = 0;
 };
 
-struct True : Pattern {
+/* This pattern just accepts any node. This is convenient mostly as leaves in a pattern tree.
+ * For instance `AtSingleOutputOfType(..., new TruePattern())` will make sure there is
+ * indeed a single output of the given type, but won't enforce anything on the said output.
+ */
+struct TruePattern : Pattern {
   bool check(const Node*, Node_List&, GrowableArray<int>&, stringStream&) const override {
     return true;
   }
 };
 
+/* This is semantically equivalent to `TruePattern` but will set the given reference to the node
+ * the pattern is matched against. This is useful to perform additional checks that would
+ * otherwise be hard or impossible to express as local patterns.
+ *
+ * For instance, one could write
+ * Node* first, second;
+ * And::make(
+ *   new AtInput(0, new Bind(first)),
+ *   new AtInput(1, new Bind(second))
+ * );
+ * [...] // run the pattern
+ * if (first == second) { // checking whether they are the same node
+ *
+ * Bindings are only honored if the overall pattern succeeds. Otherwise, don't assume anything reasonable
+ * has been set. Anyway, you don't need it: you already know it doesn't have the right shape.
+ */
 struct Bind : Pattern {
   explicit Bind(const Node*& binding) : _binding(binding) {}
   bool check(const Node* center, Node_List&, GrowableArray<int>&, stringStream&) const override {
     _binding = center;
     return true;
   }
+
+private:
   const Node*& _binding;
 };
 
+/* Matches multiple patterns at the same node.
+ *
+ * Evaluation order is guaranteed to be left-to-right. In particular, check a node has enough
+ * inputs before checking a property of a given input. This allows better reporting. E.g. if
+ * you know a node has 3 inputs and want patterns to be applied to each input, it would look like
+ * And::make(
+ *    new HasExactlyNInputs(3),
+ *    new AtInput(0, P0),
+ *    new AtInput(1, P1),
+ *    new AtInput(2, P2),
+ * )
+ * If we relied on `AtInput` to report too few inputs, it would give confusing error messages as
+ * the first `AtInput` can only know it expects at least one input, and seeing the message
+ * "Found 0 inputs, expected at least 1" is not very helpful, potentially confusing as it doesn't
+ * state what is actually expected: 3 inputs.
+ * It also is not able to express that a node has exactly a given number of inputs, and it is a
+ * significant difference whether we expect AT LEAST 3 inputs, or EXACTLY 3 inputs. Let's make
+ * things precise.
+ */
 struct And : Pattern {
 private:
+  GrowableArray<Pattern*> _checks;
   template <typename... PP>
   static void make_helper(And* a, Pattern* pattern, PP... others) {
     a->_checks.push(pattern);
@@ -130,23 +145,26 @@ public:
     }
     return true;
   }
-  GrowableArray<Pattern*> _checks;
 };
+
+void make_pretty_list_of_inputs(const Node* center, stringStream& ss) {
+  for (uint i = 0; i < center->req(); ++i) {
+    Node* in = center->in(i);
+    ss.print("  %d: ", i);
+    if (in == nullptr) {
+      ss.print_cr("nullptr");
+    } else {
+      in->dump("\n", false, &ss);
+    }
+  }
+}
 
 struct HasExactlyNInputs : Pattern {
   explicit HasExactlyNInputs(uint expect_req) : _expect_req(expect_req) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->req() != _expect_req) {
       ss.print_cr("Unexpected number of input. Expected: %d. Found: %d", _expect_req, center->req());
-      for (uint i = 0; i < center->req(); ++i) {
-        Node* in = center->in(i);
-        ss.print("  %d: ", i);
-        if (in == nullptr) {
-          ss.print_cr("nullptr");
-        } else {
-          in->dump("\n", false, &ss);
-        }
-      }
+      make_pretty_list_of_inputs(center, ss);
       return false;
     }
     return true;
@@ -159,15 +177,7 @@ struct HasAtLeastNInputs : Pattern {
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->req() < _expect_req) {
       ss.print_cr("Too small number of input. Expected: %d. Found: %d", _expect_req, center->req());
-      for (uint i = 0; i < center->req(); ++i) {
-        Node* in = center->in(i);
-        ss.print("  %d: ", i);
-        if (in == nullptr) {
-          ss.print_cr("nullptr");
-        } else {
-          in->dump("\n", false, &ss);
-        }
-      }
+      make_pretty_list_of_inputs(center, ss);
       return false;
     }
     return true;
@@ -175,6 +185,11 @@ struct HasAtLeastNInputs : Pattern {
   const uint _expect_req;
 };
 
+/* Check that a given pattern applies at the given input of the center.
+ *
+ * As explained above, it doesn't check (nicely) that inputs are in sufficient numbers.
+ * Use HasExactlyNInputs or HasAtLeastNInputs for that.
+ */
 struct AtInput : Pattern {
   AtInput(uint which_input, const Pattern* pattern) : _which_input(which_input), _pattern(pattern) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
@@ -194,6 +209,9 @@ struct AtInput : Pattern {
   const Pattern* const _pattern;
 };
 
+/* Check a node has the right type (as which C++ class, not as abstract value). Typically used with
+ * is_XXXNode methods.
+ */
 struct NodeClass : Pattern {
   explicit NodeClass(bool (Node::*type_check)() const) : _type_check(type_check) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
@@ -223,6 +241,12 @@ struct HasNOutputs : Pattern {
   const uint _expect_outcnt;
 };
 
+/* Given a is_XXXNode method pointer and a pattern P, this pattern checks that
+ * - only one output has the given type XXX
+ * - this one output matches P.
+ *
+ * Since outputs are not numbered, this is a convenient way to walk on the graph in the Def-Use direction.
+ */
 struct AtSingleOutputOfType : Pattern {
   AtSingleOutputOfType(bool (Node::*type_check)() const, const Pattern* pattern) : _type_check(type_check), _pattern(pattern) {
   }
@@ -253,6 +277,10 @@ struct AtSingleOutputOfType : Pattern {
   const Pattern* const _pattern;
 };
 
+/* A LocalGraphInvariant that mostly use a Pattern for checking.
+ *
+ * Can still override `check` to do more.
+ */
 struct PatternBasedCheck : LocalGraphInvariant {
   const Pattern* const _pattern;
   explicit PatternBasedCheck(const Pattern* pattern) : _pattern(pattern) {}
@@ -261,13 +289,15 @@ struct PatternBasedCheck : LocalGraphInvariant {
   }
 };
 
+/* Checks that If Nodes have exactly 2 outputs: IfTrue and IfFalse
+ */
 struct IfProjections : PatternBasedCheck {
   IfProjections()
       : PatternBasedCheck(
             And::make(
                 new HasNOutputs(2),
-                new AtSingleOutputOfType(&Node::is_IfTrue, new True()),
-                new AtSingleOutputOfType(&Node::is_IfFalse, new True()))) {
+                new AtSingleOutputOfType(&Node::is_IfTrue, new TruePattern()),
+                new AtSingleOutputOfType(&Node::is_IfFalse, new TruePattern()))) {
   }
   const char* name() const override {
     return "IfProjections";
@@ -288,6 +318,8 @@ struct IfProjections : PatternBasedCheck {
   }
 };
 
+/* Check that Phi has a Region as first input, and consistent arity
+ */
 struct PhiArity : PatternBasedCheck {
   const Node* region_node = nullptr;
   PhiArity()
@@ -320,6 +352,8 @@ struct PhiArity : PatternBasedCheck {
   }
 };
 
+/* Make sure each control node has the right amount of control successors: that is 1 for most cases, 2 for If nodes...
+ */
 struct ControlSuccessor : LocalGraphInvariant {
   const char* name() const override {
     return "ControlSuccessor";
@@ -330,14 +364,14 @@ struct ControlSuccessor : LocalGraphInvariant {
     }
 
     Node_List ctrl_succ;
-    uint cfg_out = 0;
     for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
       Node* out = center->fast_out(i);
       if (out->is_CFG()) {
-        cfg_out++;
         ctrl_succ.push(out);
       }
     }
+
+    uint cfg_out = ctrl_succ.size();
 
     if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region() || center->is_NeverBranch()) {
       if (cfg_out != 2) {
@@ -391,7 +425,9 @@ struct ControlSuccessor : LocalGraphInvariant {
   }
 };
 
-struct RegionSelfLoop : LocalGraphInvariant {
+/* Checks that Region Start and Root nodes' first input is a self loop, except for copy regions, which then must have only one non null input.
+ */
+struct SelfLoopInvariant : LocalGraphInvariant {
   const char* name() const override {
     return "RegionSelfLoop";
   }
@@ -407,25 +443,34 @@ struct RegionSelfLoop : LocalGraphInvariant {
 
     Node* self = center->in(LoopNode::Self);
 
-    if (center != self || (center->is_Region() && self == nullptr)) {
+    if (self != center || (center->is_Region() && self == nullptr)) {
       ss.print_cr("%s nodes' 0-th input must be itself or nullptr (for a copy Region).", center->Name());
       return CheckResult::FAILED;
     }
 
     if (self == nullptr) {
       // Must be a copy Region
-      Node_List non_null_inputs;
+      uint non_null_inputs_count = 0;
       for (uint i = 0; i < center->req(); i++) {
         if (center->in(i) != nullptr) {
-          non_null_inputs.push(center->in(i));
+          non_null_inputs_count++;
         }
       }
-      if (non_null_inputs.size() != 1) {
-        ss.print_cr("%s copy nodes must have exactly one non-null input. Found: %d.", center->Name(), non_null_inputs.size());
-        for (uint i = 0; i < non_null_inputs.size(); ++i) {
-          non_null_inputs.at(i)->dump("\n", false, &ss);
+      if (non_null_inputs_count != 1) {
+        // Should be a rare case, hence the second (but more expensive) traversal.
+        Node_List non_null_inputs;
+        for (uint i = 0; i < center->req(); i++) {
+          if (center->in(i) != nullptr) {
+            non_null_inputs.push(center->in(i));
+          }
         }
-        return CheckResult::FAILED;
+        if (non_null_inputs.size() != 1) {
+          ss.print_cr("%s copy nodes must have exactly one non-null input. Found: %d.", center->Name(), non_null_inputs.size());
+          for (uint i = 0; i < non_null_inputs.size(); ++i) {
+            non_null_inputs.at(i)->dump("\n", false, &ss);
+          }
+          return CheckResult::FAILED;
+        }
       }
     }
 
@@ -435,7 +480,7 @@ struct RegionSelfLoop : LocalGraphInvariant {
 
 // CountedLoopEnd -> IfTrue -> CountedLoop
 struct CountedLoopInvariants : PatternBasedCheck {
-  const Node* counted_loop = nullptr;
+  const Node* counted_loop_end = nullptr;
   CountedLoopInvariants()
       : PatternBasedCheck(
             And::make(
@@ -444,12 +489,12 @@ struct CountedLoopInvariants : PatternBasedCheck {
                     LoopNode::LoopBackControl,
                     And::make(
                         new NodeClass(&Node::is_IfTrue),
-                        new HasAtLeastNInputs(1),
+                        new HasExactlyNInputs(1),
                         new AtInput(
                             0,
                             And::make(
                                 new NodeClass(&Node::is_BaseCountedLoopEnd),
-                                new Bind(counted_loop))))))) {}
+                                new Bind(counted_loop_end))))))) {}
   const char* name() const override {
     return "CountedLoopInvariants";
   }
@@ -458,20 +503,20 @@ struct CountedLoopInvariants : PatternBasedCheck {
       return CheckResult::NOT_APPLICABLE;
     }
 
-    bool is_long = center->is_LongCountedLoop();
-
     CheckResult result = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
     if (result != CheckResult::VALID) {
       return result;
     }
-    assert(counted_loop != nullptr, "sanity");
-    if (is_long) {
-      if (counted_loop->is_CountedLoopEnd()) {
+    assert(counted_loop_end != nullptr, "sanity");
+    if (center->is_LongCountedLoop()) {
+      if (!counted_loop_end->is_LongCountedLoopEnd()) {
+        assert(counted_loop_end->is_CountedLoopEnd(), "Update the error message or add cases");
         ss.print_cr("A CountedLoopEnd is the backedge of a LongCountedLoop.");
         return CheckResult::FAILED;
       }
     } else {
-      if (counted_loop->is_LongCountedLoopEnd()) {
+      if (!counted_loop_end->is_CountedLoopEnd()) {
+        assert(counted_loop_end->is_LongCountedLoopEnd(), "Update the error message or add cases");
         ss.print_cr("A LongCountedLoopEnd is the backedge of a CountedLoop.");
         return CheckResult::FAILED;
       }
@@ -505,7 +550,7 @@ struct OuterStripMinedLoopInvariants : PatternBasedCheck {
                         &Node::is_OuterStripMinedLoop,
                         new AtSingleOutputOfType(
                             &Node::is_CountedLoop,
-                            new True()))))) {}
+                            new TruePattern()))))) {}
   const char* name() const override {
     return "OuterStripMinedLoopInvariants";
   }
@@ -537,14 +582,13 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
   }
 };
 
-
 GraphInvariantChecker* GraphInvariantChecker::make_default() {
   auto* checker = new GraphInvariantChecker();
 #define ADD_CHECKER(T) checker->_checks.push(new T())
   ADD_CHECKER(IfProjections);
   ADD_CHECKER(PhiArity);
   ADD_CHECKER(ControlSuccessor);
-  ADD_CHECKER(RegionSelfLoop);
+  ADD_CHECKER(SelfLoopInvariant);
   ADD_CHECKER(CountedLoopInvariants);
   ADD_CHECKER(OuterStripMinedLoopInvariants);
   ADD_CHECKER(MultiBranchNodeOut);
@@ -552,46 +596,76 @@ GraphInvariantChecker* GraphInvariantChecker::make_default() {
   return checker;
 }
 
-bool GraphInvariantChecker::run() const {
-  ResourceMark rm;
+void GraphInvariantChecker::print_path(const Node_List& steps, const GrowableArray<int>& path, stringStream& ss) {
+  const int path_len = path.length();
+  precond(steps.size() == static_cast<uint>(path_len) + 1);
+  if (path.is_empty()) {
+    ss.print_cr("At center node");
+    steps.at(0)->dump("\n", false, &ss);
+    return;
+  }
+  ss.print("At node\n   ");
+  steps.at(0)->dump("\n", false, &ss);
+  ss.print_cr("  From path:");
+  ss.print("    [center]");
+  steps.at(path_len)->dump("\n", false, &ss);
+  for (int i = 0; i < path_len; ++i) {
+    if (path.at(path_len - i - 1) >= 0) {
+      // It's an input
+      int input_nb = path.at(path_len - i - 1);
+      if (input_nb <= 9) {
+        ss.print(" ");
+      }
+      ss.print("     <-(%d)-", input_nb);
 
+    } else if (path.at(path_len - i - 1) == LocalGraphInvariant::OutputStep) {
+      // It's an output
+      ss.print("         -->");
+    } else {
+      ss.print("         ???");
+    }
+    steps.at(path_len - i - 1)->dump("\n", false, &ss);
+  }
+}
+
+bool GraphInvariantChecker::run() const {
   if (_checks.is_empty()) {
     return true;
   }
 
-  VectorSet enqueued;
-  Node_List worklist;
+  ResourceMark rm;
+  Unique_Node_List worklist;
   worklist.push(Compile::current()->root());
   Node_List steps;
   GrowableArray<int> path;
   stringStream ss;
   stringStream ss2;
-  // Sometimes, we get weird structure in dead code that will be cleaned up later. It typically happens
-  // when data dies, but control is not cleanup right away, possibly kept alive by un unreachable loop.
+  // Sometimes, we get weird structures in dead code that will be cleaned up later. It typically happens
+  // when data dies, but control is not cleaned up right away, possibly kept alive by an unreachable loop.
   // Since we don't want to eagerly traverse the whole graph to remove dead code in IGVN, we can accept
-  // weird structure in dead code.
+  // weird structures in dead code.
   // For CFG-related errors, we will compute the set of reachable CFG nodes and decide whether to keep
-  // the issue if the problematic node is reachable. This set of reachable node is thus computed lazily
+  // the issue if the problematic node is reachable. This set of reachable nodes is thus computed lazily
   // (and it seems not to happen often in practice), and shared across checks.
   LocalGraphInvariant::LazyReachableCFGNodes reachable_cfg_nodes;
   bool success = true;
 
-  while (worklist.size() > 0) {
-    Node* center = worklist.pop();
-    for (uint i = 0; i < center->req(); i++) {
-      Node* in = center->in(i);
-      if (in != nullptr && !enqueued.test_set(in->_idx)) {
+  for (uint i = 0; i < worklist.size(); ++i) {
+    Node* center = worklist.at(i);
+    for (uint j = 0; j < center->req(); ++j) {
+      Node* in = center->in(j);
+      if (in != nullptr) {
         worklist.push(in);
       }
     }
     uint failures = 0;
-    for (int i = 0; i < _checks.length(); ++i) {
-      switch (_checks.at(i)->check(center, reachable_cfg_nodes, steps, path, ss2)) {
+    for (int j = 0; j < _checks.length(); ++j) {
+      switch (_checks.at(j)->check(center, reachable_cfg_nodes, steps, path, ss2)) {
       case LocalGraphInvariant::CheckResult::FAILED:
         failures++;
         steps.push(center);
         print_path(steps, path, ss);
-        ss.print_cr("# %s:", _checks.at(i)->name());
+        ss.print_cr("# %s:", _checks.at(j)->name());
         ss.print_cr("%s", ss2.base());
         path.clear();
         steps.clear();
@@ -604,10 +678,11 @@ bool GraphInvariantChecker::run() const {
     }
     if (failures > 0) {
       success = false;
-      ttyLocker ttyl;
-      tty->print("%d failure%s for node\n", failures, failures == 1 ? "" : "s");
-      center->dump();
-      tty->print_cr("%s", ss.base());
+      stringStream ss3;
+      ss3.print("%d failure%s for node\n", failures, failures == 1 ? "" : "s");
+      center->dump("\n", false, &ss3);
+      ss3.print_cr("%s", ss.base());
+      tty->print("%s", ss3.base());
       ss.reset();
     }
   }

@@ -46,7 +46,6 @@ class     PhaseIterGVN;
 class       PhaseCCP;
 class   PhasePeephole;
 class   PhaseRegAlloc;
-class GraphInvariantChecker;
 
 
 //-----------------------------------------------------------------------------
@@ -612,7 +611,6 @@ protected:
   enum { _verify_window_size = 30 };
   Node* _verify_window[_verify_window_size];
   void verify_step(Node* n);
-  GraphInvariantChecker* _invariant_checker;
 #endif
 };
 

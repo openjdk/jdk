@@ -32,13 +32,19 @@
 // An invariant that needs only a local view of the graph, around a given node.
 class LocalGraphInvariant : public ResourceObj {
 public:
+  /* When an invariant applied at a given node (the center) goes wrong at another
+   * node, it is useful to show the path we took between them. OutputStep is used
+   * to signify that a node is the output of the previous one in the path.
+   * See LocalGraphInvariant::check for more details on paths.
+   */
   static constexpr int OutputStep = -1;
 
+  // See LocalGraphInvariant::check why we need that.
   struct LazyReachableCFGNodes {
     bool is_node_dead(const Node*);
   private:
     void fill();
-    Unique_Node_List live_nodes;
+    Unique_Node_List _live_nodes;
   };
 
   enum class CheckResult {
@@ -53,7 +59,7 @@ public:
   /* Check whether the invariant is true around the node [center]. The argument [steps] and [path] are initially empty.
    *
    * If the check fails steps and path must be filled with the path from the center to the failing node (where it's relevant to show).
-   * Given a list of node
+   * Given a list of nodes
    * center = N0 --[r1]--> ... --[rk]-> Nk
    * where the ri are the relation between consecutive nodes: either p-th input, or an output,
    * then:
@@ -61,13 +67,15 @@ public:
    * - path must have length k, and contain rk ... r1 where ri is:
    *   - a non-negative integer p for each step such that N{i-1} has Ni as p-th input (we need to follow an input edge)
    *   - the OUTPUT_STEP value in case N{i-1} has Ni as an output (we need to follow an output edge)
-   * The list are reversed to allow to easily fill them lazily on failure.
+   * The lists are reversed to allow to easily fill them lazily on failure.
    * In addition, if the check fails, it must write its error message in [ss].
    *
    * If the check succeeds or is not applicable, [steps], [path] and [ss] must be untouched.
    *
    * The parameter [live_nodes] is used to share the lazily computed set of CFG nodes reachable from root. This is because some
-   * checks don't apply to dead code, suppress their error if a violation is detected in dead code.
+   * checks don't apply to dead code, and we want to suppress their error if a violation is detected in dead code. Since it's
+   * rather unlikely to have such a violation (they are rare overall), and then we won't need to check whether a node is dead,
+   * it's better to have this set lazy.
    */
   virtual CheckResult check(const Node* center, LazyReachableCFGNodes& live_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const = 0;
 };
@@ -88,6 +96,10 @@ class GraphInvariantChecker : public ResourceObj {
 
 public:
   static GraphInvariantChecker* make_default();
+
+  // See LocalGraphInvariant::check for the requirements on the arguments.
+  // Fills parameter [ss] with pretty print of the path.
+  static void print_path(const Node_List& steps, const GrowableArray<int>& path, stringStream& ss);
   bool run() const;
 };
 #endif

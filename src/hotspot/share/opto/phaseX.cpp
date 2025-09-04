@@ -805,7 +805,6 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 {
   _iterGVN = true;
   assert(&_worklist == &igvn->_worklist, "sanity");
-  NOT_PRODUCT(_invariant_checker = GraphInvariantChecker::make_default());
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -842,8 +841,6 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : _delay_transform(false),
         n->is_Mem() )
       add_users_to_worklist(n);
   }
-
-  NOT_PRODUCT(_invariant_checker = GraphInvariantChecker::make_default());
 }
 
 void PhaseIterGVN::shuffle_worklist() {
@@ -992,7 +989,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   verify_optimize();
 #endif
   if (VerifyIdealGraph) {
-    assert(_invariant_checker->run(), "Ideal graph doesn't verify structural invariants.");
+    assert(C->_invariant_checker->run(), "Ideal graph doesn't verify structural invariants.");
   }
 }
 #endif /* PRODUCT */

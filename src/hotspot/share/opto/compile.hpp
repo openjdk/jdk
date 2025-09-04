@@ -100,6 +100,7 @@ class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
 class VerifyMeetResult;
+class GraphInvariantChecker;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -1314,6 +1315,8 @@ public:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+  NOT_PRODUCT(GraphInvariantChecker* _invariant_checker;)
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP
