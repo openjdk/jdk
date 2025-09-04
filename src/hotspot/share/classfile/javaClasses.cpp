@@ -2583,12 +2583,15 @@ class BacktraceIterator : public StackObj {
 };
 
 
-// Print stack trace element to resource allocated buffer
+// Print stack trace element to the specified output stream.
+// Historically, this was used for java_lang_Throwable and wrote everything to a raw buffer.
+// Presumably to avoid interleaving with other threads.
+// The current version retains that spirit by writing to a stringStream first before
+// flushing everything into the outputStream at once.
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
                                           int version, int bci, Symbol* name) {
   ResourceMark rm;
 
-  // Get strings.
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
   const char* klass_name  = holder->external_name();
 
@@ -2609,10 +2612,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     }
   }
 
-  // The string stream that will handle all of the formatting and outputting.
   stringStream ss;
-
-  // Print stack trace line in buffer
   ss.print("\tat %s.%s(", klass_name, method_name);
 
   // Print module information
