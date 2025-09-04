@@ -52,6 +52,7 @@ public final class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
