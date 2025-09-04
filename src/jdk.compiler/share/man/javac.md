@@ -452,7 +452,11 @@ file system locations may be directories, JAR files or JMOD files.
     categories, as well as non-lint warnings.
 
 <a id="option-Werror-custom">`-Werror:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
-:   Enables and/or disables specific categories of lint warnings that should terminate compilation.
+:   Specify lint categories for which warnings should terminate compilation. The keys
+    `all` and `none` include or exclude all categories (respectively); other keys include
+    the corresponding category, or exclude it if preceded by a hyphen (`-`). By default,
+    no categories are included. In order to terminate compilation, the category must also
+    be enabled (via [`-Xlint`](#option-Xlint-custom), if necessary).
     See [`-Xlint`](#option-Xlint-custom) below for the list of lint category keys.
 
 ### Extra Options
