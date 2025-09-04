@@ -113,6 +113,12 @@ public class UpdateAADTest {
 
             try {
                 cipher.updateAAD(buffer);
+                // Per the API the buffer's position and limit should be equal
+                if (buffer.position() != buffer.limit()) {
+                    throw new RuntimeException("Buffer position and limit " +
+                            "should be equal but are not: b = " +
+                            buffer.position() + ", l = " + buffer.limit());
+                }
                 if (!expectedPass) {
                     throw new RuntimeException(
                             "Expected failing test did not throw exception");
