@@ -261,7 +261,7 @@ public abstract class OverlappingTestBase {
                 embedder.setBackground(Color.RED);
                 embedder.setPreferredSize(new Dimension(150, 150));
                 container.add(embedder);
-                if(container instanceof Window){
+                if (container instanceof Window) {
                     ((Window) container).setLocationRelativeTo(null);
                 }
                 container.setVisible(true); // create peer
@@ -688,6 +688,7 @@ public abstract class OverlappingTestBase {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+    static class TestPassedException extends RuntimeException {
+    }
 }// class LWComboBox
-class TestPassedException extends RuntimeException {
-}
+

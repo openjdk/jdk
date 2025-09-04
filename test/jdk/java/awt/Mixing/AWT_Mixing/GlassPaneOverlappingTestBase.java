@@ -29,14 +29,10 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.FocusManager;
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
@@ -58,9 +54,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     private JFrame f = null;
     private volatile Point ancestorLoc;
 
-    {
-        multiFramesTest = false;
-    }
     /**
      * Setups GlassPane with lightweight component returned by {@link SimpleOverlappingTestBase#getSwingComponent() }
      * Called by base class.
@@ -101,11 +94,12 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     }
 
     public GlassPaneOverlappingTestBase() {
-        super();
+        this(true);
     }
 
     public GlassPaneOverlappingTestBase(boolean defaultClickValidation) {
         super(defaultClickValidation);
+        MULTI_FRAMES_TEST =false;
     }
 
     /**
@@ -147,9 +141,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         }
                     }
                 });
-            } catch (InterruptedException ex) {
-                fail(ex.getMessage());
-            } catch (InvocationTargetException ex) {
+            } catch (InterruptedException | InvocationTargetException ex) {
                 fail(ex.getMessage());
             }
             Point lLoc = testedComponent.getLocationOnScreen();

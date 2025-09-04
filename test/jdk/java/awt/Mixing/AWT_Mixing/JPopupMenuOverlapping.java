@@ -22,17 +22,18 @@
  */
 
 
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
+
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**

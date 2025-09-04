@@ -22,10 +22,23 @@
  */
 
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
-import javax.swing.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -299,6 +312,7 @@ public class MixingPanelsResizing {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+    static class TestPassedException extends RuntimeException {
+    }
 }// class JButtonInGlassPane
-class TestPassedException extends RuntimeException {
-}
+

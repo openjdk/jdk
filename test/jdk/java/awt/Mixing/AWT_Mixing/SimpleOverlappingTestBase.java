@@ -51,7 +51,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         testEmbeddedFrame = true;
     }
 
-    protected boolean multiFramesTest = true;
+    protected final boolean MULTI_FRAMES_TEST = true;
 
     /**
      * Event delivery validation. If set to true (default) tested lightweight component will be provided
@@ -177,7 +177,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         }
 
             clickAndBlink(robot, lLoc);
-            if(ancestor != null && multiFramesTest){
+            if (ancestor != null && MULTI_FRAMES_TEST) {
                 ancestor.dispose();
             }
 
