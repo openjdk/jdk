@@ -223,7 +223,6 @@ public final class Class<T> implements java.io.Serializable,
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
-    private static final int JAVA_CLASSNAME_MAX_LEN = 65535;
 
     private static native void registerNatives();
     static {
@@ -601,7 +600,8 @@ public final class Class<T> implements java.io.Serializable,
      */
     public static Class<?> forName(Module module, String name) {
         Objects.requireNonNull(module);
-        if (!classNameLengthIsValid(name)) {
+        Objects.requireNonNull(name);
+        if (!ModifiedUtf.classNameLengthIsValid(name)) {
             return null;
         }
 
@@ -4155,27 +4155,11 @@ public final class Class<T> implements java.io.Serializable,
          return classFileAccessFlags;
      }
 
-    // Checks whether the class name exceeds the maximum allowed length.
-    private static boolean classNameLengthIsValid(String name) {
-        Objects.requireNonNull(name);
-        // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
-        // If the string is short enough, it definitely fits.
-        int nameLen = name.length();
-        if (nameLen <= JAVA_CLASSNAME_MAX_LEN / 3) {
-            return true;
-        }
-        // Check exact Modified UTF-8 length.
-        // The check utfLen >= nameLen ensures we don't incorrectly return true in case of int overflow.
-        int utfLen = ModifiedUtf.utfLen(name, 0);
-        return utfLen <= JAVA_CLASSNAME_MAX_LEN && utfLen >= nameLen;
-    }
-
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
-        if (!classNameLengthIsValid(name)) {
+        if (!ModifiedUtf.classNameLengthIsValid(name)) {
             throw new ClassNotFoundException(
-            "Class name length exceeds limit of " + JAVA_CLASSNAME_MAX_LEN);
+                    "Class name length exceeds limit of " + ModifiedUtf.JAVA_CLASSNAME_MAX_LEN);
         }
     }
-
 }
