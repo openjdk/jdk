@@ -1819,7 +1819,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-
     assert(current->thread_state() == _thread_in_vm, "invariant");
     {     
       ThreadBlockInVM tbivm(current, false /* allow_suspend */);
