@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import jdk.test.lib.hexdump.HexPrinter;
  */
 public class DTLSOverDatagram {
 
-    private static final int SOCKET_TIMEOUT = 10 * 1000; // in millis
     private static final int BUFFER_SIZE = 1024;
     private static final int MAXIMUM_PACKET_SIZE = 1024;
 
@@ -78,6 +77,7 @@ public class DTLSOverDatagram {
     private final AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
 
     private final CountDownLatch serverStarted = new CountDownLatch(1);
+    private int socketTimeout = 10 * 1000; // in millis
     /*
      * =============================================================
      * The test case
@@ -476,6 +476,10 @@ public class DTLSOverDatagram {
         return null;
     }
 
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
     // run delegated tasks
     void runDelegatedTasks(SSLEngine engine) throws Exception {
         Runnable runnable;
@@ -529,8 +533,8 @@ public class DTLSOverDatagram {
         try (DatagramSocket serverSocket = new DatagramSocket(serverSocketAddress);
                 DatagramSocket clientSocket = new DatagramSocket(clientSocketAddress)) {
 
-            serverSocket.setSoTimeout(SOCKET_TIMEOUT);
-            clientSocket.setSoTimeout(SOCKET_TIMEOUT);
+            serverSocket.setSoTimeout(socketTimeout);
+            clientSocket.setSoTimeout(socketTimeout);
 
             InetSocketAddress serverSocketAddr = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), serverSocket.getLocalPort());
