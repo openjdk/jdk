@@ -72,23 +72,25 @@
 #define CONTAINER_READ_NUMBER_CHECKED(controller, filename, log_string, retval)       \
 {                                                                                     \
   bool is_ok;                                                                         \
-  is_ok = controller->read_number(filename, &retval);                                 \
+  is_ok = controller->read_number(filename, retval);                                  \
   if (!is_ok) {                                                                       \
     log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
-    return OSCONTAINER_ERROR;                                                         \
+    return false;                                                                     \
   }                                                                                   \
-  log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
+  log_trace(os, container)(log_string " is: %zu", retval);                            \
+  return true;                                                                        \
 }
 
 #define CONTAINER_READ_NUMBER_CHECKED_MAX(controller, filename, log_string, retval)   \
 {                                                                                     \
   bool is_ok;                                                                         \
-  is_ok = controller->read_number_handle_max(filename, &retval);                      \
+  is_ok = controller->read_number_handle_max(filename, retval);                       \
   if (!is_ok) {                                                                       \
     log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
-    return OSCONTAINER_ERROR;                                                         \
+    return false;                                                                     \
   }                                                                                   \
-  log_trace(os, container)(log_string " is: " JLONG_FORMAT, retval);                  \
+  log_trace(os, container)(log_string " is: %zd", retval);                            \
+  return true;                                                                        \
 }
 
 #define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval, buf_size) \
@@ -113,21 +115,21 @@ class CgroupController: public CHeapObj<mtInternal> {
     const char* mount_point() { return _mount_point; }
     virtual bool needs_hierarchy_adjustment() { return false; }
 
-    /* Read a numerical value as unsigned long
+    /* Read a numerical value as size_t
      *
      * returns: false if any error occurred. true otherwise and
-     * the parsed value is set in the provided julong pointer.
+     * the parsed value is set in the provided size_t reference.
      */
-    bool read_number(const char* filename, julong* result);
+    bool read_number(const char* filename, size_t& result);
 
     /* Convenience method to deal with numbers as well as the string 'max'
      * in interface files. Otherwise same as read_number().
      *
      * returns: false if any error occurred. true otherwise and
-     * the parsed value (which might be negative) is being set in
-     * the provided jlong pointer.
+     * the parsed value in the range [-1,SSIZE_MAX] is being set in
+     * the provided ssize_t reference. -1 means the value is unlimited.
      */
-    bool read_number_handle_max(const char* filename, jlong* result);
+    bool read_number_handle_max(const char* filename, ssize_t& result);
 
     /* Read a string of at most buf_size - 1 characters from the interface file.
      * The provided buffer must be at least buf_size in size so as to account
@@ -145,26 +147,27 @@ class CgroupController: public CHeapObj<mtInternal> {
      * parsing interface files like cpu.max which contain such tuples.
      *
      * returns: false if any error occurred. true otherwise and the parsed
-     * value of the appropriate tuple entry set in the provided jlong pointer.
+     * value of the appropriate tuple entry set in the provided ssize_t reference
+     * in the range [-1,SSIZE_MAX]. -1 means unlimited tuple value.
      */
-    bool read_numerical_tuple_value(const char* filename, bool use_first, jlong* result);
+    bool read_numerical_tuple_value(const char* filename, bool use_first, ssize_t& result);
 
     /* Read a numerical value from a multi-line interface file. The matched line is
      * determined by the provided 'key'. The associated numerical value is being set
-     * via the passed in julong pointer. Example interface file 'memory.stat'
+     * via the passed in size_t reference. Example interface file 'memory.stat'
      *
      * returns: false if any error occurred. true otherwise and the parsed value is
-     * being set in the provided julong pointer.
+     * being set in the provided size_t reference.
      */
-    bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+    bool read_numerical_key_value(const char* filename, const char* key, size_t& result);
 
   private:
-    static jlong limit_from_str(char* limit_str);
+    static bool limit_from_str(char* limit_str, ssize_t& value);
 };
 
 class CachedMetric : public CHeapObj<mtInternal>{
   private:
-    volatile jlong _metric;
+    volatile ssize_t _metric;
     volatile jlong _next_check_counter;
   public:
     CachedMetric() {
@@ -174,8 +177,8 @@ class CachedMetric : public CHeapObj<mtInternal>{
     bool should_check_metric() {
       return os::elapsed_counter() > _next_check_counter;
     }
-    jlong value() { return _metric; }
-    void set_value(jlong value, jlong timeout) {
+    ssize_t value() { return _metric; }
+    void set_value(ssize_t value, jlong timeout) {
       _metric = value;
       // Metric is unlikely to change, but we want to remain
       // responsive to configuration changes. A very short grace time
@@ -219,7 +222,7 @@ class CgroupCpuController: public CHeapObj<mtInternal> {
 // Pure virtual class representing version agnostic CPU accounting controllers
 class CgroupCpuacctController: public CHeapObj<mtInternal> {
   public:
-    virtual jlong cpu_usage_in_micros() = 0;
+    virtual ssize_t cpu_usage_in_micros() = 0;
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
     virtual const char* subsystem_path() = 0;
@@ -231,15 +234,15 @@ class CgroupCpuacctController: public CHeapObj<mtInternal> {
 // Pure virtual class representing version agnostic memory controllers
 class CgroupMemoryController: public CHeapObj<mtInternal> {
   public:
-    virtual jlong read_memory_limit_in_bytes(size_t host_mem) = 0;
-    virtual jlong memory_usage_in_bytes() = 0;
-    virtual jlong memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) = 0;
-    virtual jlong memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) = 0;
-    virtual jlong memory_soft_limit_in_bytes(size_t host_mem) = 0;
-    virtual jlong memory_throttle_limit_in_bytes() = 0;
-    virtual jlong memory_max_usage_in_bytes() = 0;
-    virtual jlong rss_usage_in_bytes() = 0;
-    virtual jlong cache_usage_in_bytes() = 0;
+    virtual ssize_t read_memory_limit_in_bytes(size_t host_mem) = 0;
+    virtual ssize_t memory_usage_in_bytes() = 0;
+    virtual ssize_t memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) = 0;
+    virtual ssize_t memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) = 0;
+    virtual ssize_t memory_soft_limit_in_bytes(size_t host_mem) = 0;
+    virtual ssize_t memory_throttle_limit_in_bytes() = 0;
+    virtual ssize_t memory_max_usage_in_bytes() = 0;
+    virtual ssize_t rss_usage_in_bytes() = 0;
+    virtual ssize_t cache_usage_in_bytes() = 0;
     virtual void print_version_specific_info(outputStream* st, size_t host_mem) = 0;
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
@@ -251,11 +254,11 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
-    jlong memory_limit_in_bytes();
+    ssize_t memory_limit_in_bytes();
     int active_processor_count();
 
-    virtual jlong pids_max() = 0;
-    virtual jlong pids_current() = 0;
+    virtual ssize_t pids_max() = 0;
+    virtual ssize_t pids_current() = 0;
     virtual bool is_containerized() = 0;
 
     virtual char * cpu_cpuset_cpus() = 0;
@@ -269,16 +272,16 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     int cpu_period();
     int cpu_shares();
 
-    jlong cpu_usage_in_micros();
+    ssize_t cpu_usage_in_micros();
 
-    jlong memory_usage_in_bytes();
-    jlong memory_and_swap_limit_in_bytes();
-    jlong memory_and_swap_usage_in_bytes();
-    jlong memory_soft_limit_in_bytes();
-    jlong memory_throttle_limit_in_bytes();
-    jlong memory_max_usage_in_bytes();
-    jlong rss_usage_in_bytes();
-    jlong cache_usage_in_bytes();
+    ssize_t memory_usage_in_bytes();
+    ssize_t memory_and_swap_limit_in_bytes();
+    ssize_t memory_and_swap_usage_in_bytes();
+    ssize_t memory_soft_limit_in_bytes();
+    ssize_t memory_throttle_limit_in_bytes();
+    ssize_t memory_max_usage_in_bytes();
+    ssize_t rss_usage_in_bytes();
+    ssize_t cache_usage_in_bytes();
     void print_version_specific_info(outputStream* st);
 };
 

@@ -45,20 +45,20 @@ class OSContainer: AllStatic {
  public:
   static void init();
   static void print_version_specific_info(outputStream* st);
-  static void print_container_helper(outputStream* st, jlong j, const char* metrics);
+  static void print_container_helper(outputStream* st, ssize_t j, const char* metrics, bool is_usage);
 
   static inline bool is_containerized();
   static const char * container_type();
 
-  static jlong memory_limit_in_bytes();
-  static jlong memory_and_swap_limit_in_bytes();
-  static jlong memory_and_swap_usage_in_bytes();
-  static jlong memory_soft_limit_in_bytes();
-  static jlong memory_throttle_limit_in_bytes();
-  static jlong memory_usage_in_bytes();
-  static jlong memory_max_usage_in_bytes();
-  static jlong rss_usage_in_bytes();
-  static jlong cache_usage_in_bytes();
+  static ssize_t memory_limit_in_bytes();
+  static ssize_t memory_and_swap_limit_in_bytes();
+  static ssize_t memory_and_swap_usage_in_bytes();
+  static ssize_t memory_soft_limit_in_bytes();
+  static ssize_t memory_throttle_limit_in_bytes();
+  static ssize_t memory_usage_in_bytes();
+  static ssize_t memory_max_usage_in_bytes();
+  static ssize_t rss_usage_in_bytes();
+  static ssize_t cache_usage_in_bytes();
 
   static int active_processor_count();
 
@@ -70,10 +70,10 @@ class OSContainer: AllStatic {
 
   static int cpu_shares();
 
-  static jlong cpu_usage_in_micros();
+  static ssize_t cpu_usage_in_micros();
 
-  static jlong pids_max();
-  static jlong pids_current();
+  static ssize_t pids_max();
+  static ssize_t pids_current();
 };
 
 inline bool OSContainer::is_containerized() {

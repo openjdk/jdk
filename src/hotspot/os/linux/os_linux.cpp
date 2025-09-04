@@ -219,10 +219,10 @@ static bool suppress_primordial_thread_resolution = false;
 
 bool os::Linux::available_memory_in_container(size_t& value) {
   if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
+    ssize_t mem_limit = OSContainer::memory_limit_in_bytes();
+    ssize_t mem_usage;
     if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+      log_debug(os, container)("container memory usage failed: %zd, using host value", mem_usage);
     }
     if (mem_limit > 0 && mem_usage > 0) {
       value = mem_limit > mem_usage ? (size_t)mem_limit - (size_t)mem_usage : 0;
@@ -244,18 +244,22 @@ bool os::Linux::available_memory(size_t& value) {
     return true;
   }
 
+  bool found_available_mem = false;
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp != nullptr) {
     char buf[80];
     do {
       if (fscanf(fp, "MemAvailable: %zu kB", &avail_mem) == 1) {
         avail_mem *= K;
+        found_available_mem = true;
         break;
       }
     } while (fgets(buf, sizeof(buf), fp) != nullptr);
     fclose(fp);
   }
-  if (avail_mem == 0) {
+  // Only enter the free memory block if we
+  // haven't found the available memory
+  if (!found_available_mem) {
     size_t free_mem = 0;
     if (!free_memory(free_mem)) {
       return false;
@@ -293,8 +297,8 @@ bool os::Linux::free_memory(size_t& value) {
 
 bool os::total_swap_space(size_t& value) {
   if (OSContainer::is_containerized()) {
-    jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
-    jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
+    ssize_t memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
+    ssize_t memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
     if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
       value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
@@ -331,19 +335,22 @@ bool os::free_swap_space(size_t& value) {
   }
   size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
-    jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    ssize_t mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
+    ssize_t mem_limit = OSContainer::memory_limit_in_bytes();
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
+      // using jlong as that is potentially out of range for ssize_t
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
         value = 0;
         return true;
       }
-      jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
-      jlong mem_usage = OSContainer::memory_usage_in_bytes();
+      ssize_t mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
+      ssize_t mem_usage = OSContainer::memory_usage_in_bytes();
       if (mem_swap_usage > 0 && mem_usage > 0) {
+        // using jlong as that is potentially out of range for ssize_t
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
+          // using jlong as that is potentially out of range for ssize_t
           jlong free_swap = delta_limit - delta_usage;
           value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
           return true;
@@ -351,8 +358,8 @@ bool os::free_swap_space(size_t& value) {
       }
     }
     // unlimited or not supported. Fall through to return host value
-    log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
+    log_trace(os,container)("os::free_swap_space: container_swap_limit=%zd"
+                            " container_mem_limit=%zd returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
   value = host_free_swap_val;
@@ -361,9 +368,9 @@ bool os::free_swap_space(size_t& value) {
 
 size_t os::physical_memory() {
   if (OSContainer::is_containerized()) {
-    jlong mem_limit;
+    ssize_t mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
-      log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
+      log_trace(os)("total container memory: %zd", mem_limit);
       return static_cast<size_t>(mem_limit);
     }
   }
@@ -2487,7 +2494,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no quota");
+    st->print_cr("no quota or unavailable");
   }
 
   i = OSContainer::cpu_period();
@@ -2495,7 +2502,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no period");
+    st->print_cr("no period or unavailable");
   }
 
   i = OSContainer::cpu_shares();
@@ -2503,25 +2510,25 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
+    st->print_cr("no shares or unavailable");
   }
 
-  jlong j = OSContainer::cpu_usage_in_micros();
+  ssize_t j = OSContainer::cpu_usage_in_micros();
   st->print("cpu_usage_in_micros: ");
   if (j >= 0) {
-    st->print_cr(JLONG_FORMAT, j);
+    st->print_cr("%zd", j);
   } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "no usage");
+    st->print_cr("unavailable");
   }
 
-  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::memory_throttle_limit_in_bytes(), "memory_throttle_limit_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::rss_usage_in_bytes(), "rss_usage_in_bytes");
-  OSContainer::print_container_helper(st, OSContainer::cache_usage_in_bytes(), "cache_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes", false /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes", false /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes", false /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::memory_throttle_limit_in_bytes(), "memory_throttle_limit_in_bytes", false /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes", true /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes", true /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::rss_usage_in_bytes(), "rss_usage_in_bytes", true /* is_usage */);
+  OSContainer::print_container_helper(st, OSContainer::cache_usage_in_bytes(), "cache_usage_in_bytes", true /* is_usage */);
 
   OSContainer::print_version_specific_info(st);
 
@@ -2530,17 +2537,15 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("unlimited or unavailable");
   }
 
   j = OSContainer::pids_current();
   st->print("current number of tasks: ");
   if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
+    st->print_cr("%zd", j);
   } else {
-    if (j == OSCONTAINER_ERROR) {
-      st->print_cr("not supported");
-    }
+    st->print_cr("unavailable");
   }
 
   return true;

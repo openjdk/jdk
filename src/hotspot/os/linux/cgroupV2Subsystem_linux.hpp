@@ -56,13 +56,15 @@ class CgroupV2CpuController: public CgroupCpuController {
   private:
     CgroupV2Controller _reader;
     CgroupV2Controller* reader() { return &_reader; }
+    bool cpu_period(ssize_t& value);
+    bool cpu_usage_in_micros(size_t& value);
   public:
     CgroupV2CpuController(const CgroupV2Controller& reader) : _reader(reader) {
     }
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
-    jlong cpu_usage_in_micros();
+    ssize_t cpu_usage_in_micros();
     bool is_read_only() override {
       return reader()->is_read_only();
     }
@@ -87,7 +89,7 @@ class CgroupV2CpuacctController: public CgroupCpuacctController {
     CgroupV2CpuacctController(CgroupV2CpuController* reader) : _reader(reader) {
     }
     // In cgroup v2, cpu usage is a part of the cpu controller.
-    jlong cpu_usage_in_micros() override {
+    ssize_t cpu_usage_in_micros() override {
       return reader()->cpu_usage_in_micros();
     }
     bool is_read_only() override {
@@ -110,19 +112,29 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
   private:
     CgroupV2Controller _reader;
     CgroupV2Controller* reader() { return &_reader; }
+    bool read_memory_limit_in_bytes(size_t phys_mem, ssize_t& result);
+    bool memory_and_swap_limit_in_bytes(size_t phys_mem, size_t host_swap, ssize_t& result);
+    bool memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap, size_t& result);
+    bool memory_soft_limit_in_bytes(size_t phys_mem, ssize_t& value);
+    bool memory_throttle_limit_in_bytes(ssize_t& value);
+    bool memory_usage_in_bytes(size_t& value);
+    bool memory_max_usage_in_bytes(size_t& value);
+    bool rss_usage_in_bytes(size_t& value);
+    bool cache_usage_in_bytes(size_t& value);
+
   public:
     CgroupV2MemoryController(const CgroupV2Controller& reader) : _reader(reader) {
     }
 
-    jlong read_memory_limit_in_bytes(size_t host_mem) override;
-    jlong memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) override;
-    jlong memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) override;
-    jlong memory_soft_limit_in_bytes(size_t host_mem) override;
-    jlong memory_throttle_limit_in_bytes() override;
-    jlong memory_usage_in_bytes() override;
-    jlong memory_max_usage_in_bytes() override;
-    jlong rss_usage_in_bytes() override;
-    jlong cache_usage_in_bytes() override;
+    ssize_t read_memory_limit_in_bytes(size_t host_mem) override;
+    ssize_t memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) override;
+    ssize_t memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) override;
+    ssize_t memory_soft_limit_in_bytes(size_t host_mem) override;
+    ssize_t memory_throttle_limit_in_bytes() override;
+    ssize_t memory_usage_in_bytes() override;
+    ssize_t memory_max_usage_in_bytes() override;
+    ssize_t rss_usage_in_bytes() override;
+    ssize_t cache_usage_in_bytes() override;
     void print_version_specific_info(outputStream* st, size_t host_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
@@ -151,6 +163,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CgroupCpuacctController* _cpuacct = nullptr;
 
     CgroupV2Controller* unified() { return &_unified; }
+    bool pids_max(ssize_t& value);
+    bool pids_current(size_t& value);
 
   public:
     CgroupV2Subsystem(CgroupV2MemoryController * memory,
@@ -160,8 +174,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
 
     char * cpu_cpuset_cpus() override;
     char * cpu_cpuset_memory_nodes() override;
-    jlong pids_max() override;
-    jlong pids_current() override;
+    ssize_t pids_max() override;
+    ssize_t pids_current() override;
 
     bool is_containerized() override;
 

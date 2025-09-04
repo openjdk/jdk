@@ -134,124 +134,119 @@ bool CgroupV1Controller::needs_hierarchy_adjustment() {
   return strcmp(_root, _cgroup_path) != 0;
 }
 
-static inline
-void verbose_log(julong read_mem_limit, size_t host_mem) {
-  if (log_is_enabled(Debug, os, container)) {
-    jlong mem_limit = (jlong)read_mem_limit; // account for negative values
-    if (mem_limit < 0 || read_mem_limit >= host_mem) {
-      const char *reason;
-      if (mem_limit == OSCONTAINER_ERROR) {
-        reason = "failed";
-      } else if (mem_limit == -1) {
-        reason = "unlimited";
-      } else {
-        assert(read_mem_limit >= host_mem, "Expected read value exceeding host_mem");
-        // Exceeding physical memory is treated as unlimited. This implementation
-        // caps it at host_mem since Cg v1 has no value to represent 'max'.
-        reason = "ignored";
-      }
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value %zu",
-                               reason, mem_limit, host_mem);
-    }
-  }
+bool CgroupV1MemoryController::read_memory_limit_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", result);
 }
 
-jlong CgroupV1MemoryController::read_memory_limit_in_bytes(size_t phys_mem) {
-  julong memlimit;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
-  if (memlimit >= phys_mem) {
-    verbose_log(memlimit, phys_mem);
-    return (jlong)-1;
+ssize_t CgroupV1MemoryController::read_memory_limit_in_bytes(size_t host_mem) {
+  size_t memlimit = 0;
+  if (!read_memory_limit_val(memlimit)) {
+    log_trace(os, container)("container memory limit failed, using host value %zu", host_mem);
+    return (ssize_t)-1; // treat as unlimited
+  }
+  if (memlimit >= host_mem) {
+    // Exceeding physical memory is treated as unlimited. This implementation
+    // caps it at host_mem since Cg v1 has no value to represent 'max'.
+    log_trace(os, container)("container memory limit ignored: %zu, using host value %zu",
+                              memlimit, host_mem);
+    return (ssize_t)-1; // unlimited
   } else {
-    verbose_log(memlimit, phys_mem);
-    return (jlong)memlimit;
+    return static_cast<ssize_t>(memlimit);
   }
 }
 
-/* read_mem_swap
+bool CgroupV1MemoryController::read_mem_swap(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", result);
+}
+
+/* memory_and_swap_limit_in_bytes
  *
  * Determine the memory and swap limit metric. Returns a positive limit value strictly
  * lower than the physical memory and swap limit iff there is a limit. Otherwise a
- * negative value is returned indicating the determined status.
+ * negative value is returned indicating an unlimited value.
  *
  * returns:
  *    * A number > 0 if the limit is available and lower than a physical upper bound.
- *    * OSCONTAINER_ERROR if the limit cannot be retrieved (i.e. not supported) or
- *    * -1 if there isn't any limit in place (note: includes values which exceed a physical
- *      upper bound)
+ *    * -1 if there isn't any limit in place. note: this includes values which exceed
+ *      a physical upper bound (or a failure to read from the interface files).
  */
-jlong CgroupV1MemoryController::read_mem_swap(size_t host_swap) {
-  julong memswlimit;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
-  if (memswlimit >= host_swap) {
-    log_trace(os, container)("Memory and Swap Limit is: Unlimited");
-    return (jlong)-1;
-  } else {
-    return (jlong)memswlimit;
+ssize_t CgroupV1MemoryController::memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) {
+  size_t total_mem_swap = host_mem + host_swap;
+  size_t memory_swap = 0;
+  bool mem_swap_read_failed = false;
+  if (!read_mem_swap(memory_swap)) {
+    mem_swap_read_failed = true;
   }
-}
-
-jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) {
-  jlong memory_swap = read_mem_swap(host_mem + host_swap);
-  if (memory_swap == -1) {
-    return memory_swap;
+  if (memory_swap >= total_mem_swap) {
+    log_trace(os, container)("Memory and Swap Limit is: Unlimited");
+    return (ssize_t)-1;
   }
   // If there is a swap limit, but swappiness == 0, reset the limit
   // to the memory limit. Do the same for cases where swap isn't
   // supported.
-  jlong swappiness = read_mem_swappiness();
-  if (swappiness == 0 || memory_swap == OSCONTAINER_ERROR) {
-    jlong memlimit = read_memory_limit_in_bytes(host_mem);
-    if (memory_swap == OSCONTAINER_ERROR) {
-      log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swap is not supported", memlimit);
+  size_t swappiness = 0;
+  if (!read_mem_swappiness(swappiness)) {
+    // assume no swap
+    mem_swap_read_failed = true;
+  }
+  if (swappiness == 0 || mem_swap_read_failed) {
+    ssize_t memlimit = read_memory_limit_in_bytes(host_mem);
+    if (mem_swap_read_failed) {
+      log_trace(os, container)("Memory and Swap Limit has been reset to %zd because swap is not supported", memlimit);
     } else {
-      log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swappiness is 0", memlimit);
+      log_trace(os, container)("Memory and Swap Limit has been reset to %zd because swappiness is 0", memlimit);
     }
     return memlimit;
   }
-  return memory_swap;
+  return static_cast<ssize_t>(memory_swap);
 }
 
 static inline
-jlong memory_swap_usage_impl(CgroupController* ctrl) {
-  julong memory_swap_usage;
-  CONTAINER_READ_NUMBER_CHECKED(ctrl, "/memory.memsw.usage_in_bytes", "mem swap usage", memory_swap_usage);
-  return (jlong)memory_swap_usage;
+bool memory_swap_usage_impl(CgroupController* ctrl, size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(ctrl, "/memory.memsw.usage_in_bytes", "mem swap usage", result);
 }
 
-jlong CgroupV1MemoryController::memory_and_swap_usage_in_bytes(size_t phys_mem, size_t host_swap) {
-  jlong memory_sw_limit = memory_and_swap_limit_in_bytes(phys_mem, host_swap);
-  jlong memory_limit = read_memory_limit_in_bytes(phys_mem);
+ssize_t CgroupV1MemoryController::memory_and_swap_usage_in_bytes(size_t phys_mem, size_t host_swap) {
+  ssize_t memory_sw_limit = memory_and_swap_limit_in_bytes(phys_mem, host_swap);
+  ssize_t memory_limit = read_memory_limit_in_bytes(phys_mem);
   if (memory_sw_limit > 0 && memory_limit > 0) {
-    jlong delta_swap = memory_sw_limit - memory_limit;
+    ssize_t delta_swap = memory_sw_limit - memory_limit;
     if (delta_swap > 0) {
-      return memory_swap_usage_impl(reader());
+      size_t swap_usage = 0;
+      if (!memory_swap_usage_impl(reader(), swap_usage)) {
+        return -1; // usage value error
+      }
+      return static_cast<ssize_t>(swap_usage);
     }
   }
   return memory_usage_in_bytes();
 }
 
-jlong CgroupV1MemoryController::read_mem_swappiness() {
-  julong swappiness;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.swappiness", "Swappiness", swappiness);
-  return (jlong)swappiness;
+bool CgroupV1MemoryController::read_mem_swappiness(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.swappiness", "Swappiness", result);
 }
 
-jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(size_t phys_mem) {
-  julong memsoftlimit;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.soft_limit_in_bytes", "Memory Soft Limit", memsoftlimit);
-  if (memsoftlimit >= phys_mem) {
+bool CgroupV1MemoryController::memory_soft_limit_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.soft_limit_in_bytes", "Memory Soft Limit", result);
+}
+
+ssize_t CgroupV1MemoryController::memory_soft_limit_in_bytes(size_t phys_mem) {
+  size_t mem_soft_limit = 0;
+  if (!memory_soft_limit_val(mem_soft_limit)) {
+    return (ssize_t)-1; // treat as unlimited
+  }
+  if (mem_soft_limit >= phys_mem) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
-    return (jlong)-1;
+    return (ssize_t)-1;
   } else {
-    return (jlong)memsoftlimit;
+    return static_cast<ssize_t>(mem_soft_limit);
   }
 }
 
-jlong CgroupV1MemoryController::memory_throttle_limit_in_bytes() {
+ssize_t CgroupV1MemoryController::memory_throttle_limit_in_bytes() {
   // Log this string at trace level so as to make tests happy.
   log_trace(os, container)("Memory Throttle Limit is not supported.");
-  return OSCONTAINER_ERROR; // not supported
+  return (ssize_t)-1; // not supported
 }
 
 // Constructor
@@ -280,19 +275,28 @@ bool CgroupV1Subsystem::is_containerized() {
          _cpuset->is_read_only();
 }
 
-/* memory_usage_in_bytes
+ssize_t CgroupV1MemoryController::memory_usage_in_bytes() {
+  size_t memory_usage = 0;
+  if (!memory_usage_val(memory_usage)) {
+    return -1; // usage value error
+  }
+  return static_cast<ssize_t>(memory_usage);
+}
+
+/* memory_usage_val
  *
- * Return the amount of used memory for this process.
+ * Read the amount of used memory for this process into the passed in reference 'result'
  *
  * return:
- *    memory usage in bytes or
- *    -1 for unlimited
- *    OSCONTAINER_ERROR for not supported
+ *    true when reading of the file was successful and 'result' was set appropriately
+ *    false when reading of the file failed
  */
-jlong CgroupV1MemoryController::memory_usage_in_bytes() {
-  julong memusage;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.usage_in_bytes", "Memory Usage", memusage);
-  return (jlong)memusage;
+bool CgroupV1MemoryController::memory_usage_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.usage_in_bytes", "Memory Usage", result);
+}
+
+bool CgroupV1MemoryController::memory_max_usage_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.max_usage_in_bytes", "Maximum Memory Usage", result);
 }
 
 /* memory_max_usage_in_bytes
@@ -300,64 +304,80 @@ jlong CgroupV1MemoryController::memory_usage_in_bytes() {
  * Return the maximum amount of used memory for this process.
  *
  * return:
- *    max memory usage in bytes or
- *    OSCONTAINER_ERROR for not supported
+ *    max memory usage in bytes. -1 when unavailable
  */
-jlong CgroupV1MemoryController::memory_max_usage_in_bytes() {
-  julong memmaxusage;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.max_usage_in_bytes", "Maximum Memory Usage", memmaxusage);
-  return (jlong)memmaxusage;
+ssize_t CgroupV1MemoryController::memory_max_usage_in_bytes() {
+  size_t memory_max_usage = 0;
+  if (!memory_max_usage_val(memory_max_usage)) {
+     return -1; // usage value error
+  }
+  return static_cast<ssize_t>(memory_max_usage);
 }
 
-jlong CgroupV1MemoryController::rss_usage_in_bytes() {
-  julong rss;
-  bool is_ok = reader()->read_numerical_key_value("/memory.stat", "rss", &rss);
+ssize_t CgroupV1MemoryController::rss_usage_in_bytes() {
+  size_t rss = 0;
+  bool is_ok = reader()->read_numerical_key_value("/memory.stat", "rss", rss);
   if (!is_ok) {
-    return OSCONTAINER_ERROR;
+    return -1; // usage value error
   }
-  log_trace(os, container)("RSS usage is: " JULONG_FORMAT, rss);
-  return (jlong)rss;
+  log_trace(os, container)("RSS usage is: %zu", rss);
+  return static_cast<ssize_t>(rss);
 }
 
-jlong CgroupV1MemoryController::cache_usage_in_bytes() {
-  julong cache;
-  bool is_ok = reader()->read_numerical_key_value("/memory.stat", "cache", &cache);
+ssize_t CgroupV1MemoryController::cache_usage_in_bytes() {
+  size_t cache;
+  bool is_ok = reader()->read_numerical_key_value("/memory.stat", "cache", cache);
   if (!is_ok) {
-    return OSCONTAINER_ERROR;
+    return -1; // usage value error
   }
-  log_trace(os, container)("Cache usage is: " JULONG_FORMAT, cache);
-  return cache;
+  log_trace(os, container)("Cache usage is: %zu", cache);
+  return static_cast<ssize_t>(cache);
 }
 
-jlong CgroupV1MemoryController::kernel_memory_usage_in_bytes() {
-  julong kmem_usage;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.usage_in_bytes", "Kernel Memory Usage", kmem_usage);
-  return (jlong)kmem_usage;
+bool CgroupV1MemoryController::kernel_memory_usage_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.usage_in_bytes", "Kernel Memory Usage", result);
 }
 
-jlong CgroupV1MemoryController::kernel_memory_limit_in_bytes(size_t phys_mem) {
-  julong kmem_limit;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.limit_in_bytes", "Kernel Memory Limit", kmem_limit);
-  if (kmem_limit >= phys_mem) {
-    return (jlong)-1;
+ssize_t CgroupV1MemoryController::kernel_memory_usage_in_bytes() {
+  size_t kmem_usage = 0;
+  if (!kernel_memory_usage_val(kmem_usage)) {
+    return -1; // usage value error
   }
-  return (jlong)kmem_limit;
+  return static_cast<ssize_t>(kmem_usage);
 }
 
-jlong CgroupV1MemoryController::kernel_memory_max_usage_in_bytes() {
-  julong kmem_max_usage;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.max_usage_in_bytes", "Maximum Kernel Memory Usage", kmem_max_usage);
-  return (jlong)kmem_max_usage;
+bool CgroupV1MemoryController::kernel_memory_limit_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.limit_in_bytes", "Kernel Memory Limit", result);
+}
+
+ssize_t CgroupV1MemoryController::kernel_memory_limit_in_bytes(size_t phys_mem) {
+  size_t kmem_limit = 0;
+  if (!kernel_memory_limit_val(kmem_limit) || kmem_limit >= phys_mem) {
+    return (ssize_t)-1; // treat as unlimited
+  }
+  return static_cast<ssize_t>(kmem_limit);
+}
+
+bool CgroupV1MemoryController::kernel_memory_max_usage_val(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.max_usage_in_bytes", "Maximum Kernel Memory Usage", result);
+}
+
+ssize_t CgroupV1MemoryController::kernel_memory_max_usage_in_bytes() {
+  size_t kmem_max_usage = 0;
+  if (!kernel_memory_max_usage_val(kmem_max_usage)) {
+    return -1; // usage value error
+  }
+  return static_cast<ssize_t>(kmem_max_usage);
 }
 
 void CgroupV1MemoryController::print_version_specific_info(outputStream* st, size_t phys_mem) {
-  jlong kmem_usage = kernel_memory_usage_in_bytes();
-  jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
-  jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
+  ssize_t kmem_usage = kernel_memory_usage_in_bytes();
+  ssize_t kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
+  ssize_t kmem_max_usage = kernel_memory_max_usage_in_bytes();
 
-  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes", false /* is_usage */);
+  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes", true  /* is_usage */);
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes", true /* is_usage */);
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
@@ -379,15 +399,14 @@ char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  *
  * return:
  *    quota time in microseconds
- *    -1 for no quota
- *    OSCONTAINER_ERROR for not supported
+ *    -1 for no quota or when an error occurs
  */
 int CgroupV1CpuController::cpu_quota() {
-  julong quota;
-  bool is_ok = reader()->read_number("/cpu.cfs_quota_us", &quota);
+  size_t quota = 0;
+  bool is_ok = reader()->read_number("/cpu.cfs_quota_us", quota);
   if (!is_ok) {
     log_trace(os, container)("CPU Quota failed: %d", OSCONTAINER_ERROR);
-    return OSCONTAINER_ERROR;
+    return -1; // treat as unlimited
   }
   // cast to int since the read value might be negative
   // and we want to avoid logging -1 as a large unsigned value.
@@ -396,10 +415,20 @@ int CgroupV1CpuController::cpu_quota() {
   return quota_int;
 }
 
+bool CgroupV1CpuController::cpu_period(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpu.cfs_period_us", "CPU Period", result);
+}
+
 int CgroupV1CpuController::cpu_period() {
-  julong period;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpu.cfs_period_us", "CPU Period", period);
-  return (int)period;
+  size_t period = 0;
+  if (!cpu_period(period)) {
+    return -1; // treat as unlimited
+  }
+  return static_cast<int>(period);
+}
+
+bool CgroupV1CpuController::cpu_shares(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpu.shares", "CPU Shares", result);
 }
 
 /* cpu_shares
@@ -409,12 +438,13 @@ int CgroupV1CpuController::cpu_period() {
  * return:
  *    Share number (typically a number relative to 1024)
  *                 (2048 typically expresses 2 CPUs worth of processing)
- *    -1 for no share setup
- *    OSCONTAINER_ERROR for not supported
+ *    -1 for no share setup (or error)
  */
 int CgroupV1CpuController::cpu_shares() {
-  julong shares;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpu.shares", "CPU Shares", shares);
+  size_t shares = 0;
+  if (!cpu_shares(shares)) {
+    return -1; // treat as unlimited
+  }
   int shares_int = (int)shares;
   // Convert 1024 to no shares setup
   if (shares_int == 1024) return -1;
@@ -422,11 +452,22 @@ int CgroupV1CpuController::cpu_shares() {
   return shares_int;
 }
 
-jlong CgroupV1CpuacctController::cpu_usage_in_micros() {
-  julong cpu_usage;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpuacct.usage", "CPU Usage", cpu_usage);
+bool CgroupV1CpuacctController::cpu_usage_in_micros(size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpuacct.usage", "CPU Usage", result);
+}
+
+ssize_t CgroupV1CpuacctController::cpu_usage_in_micros() {
+  size_t cpu_usage = 0;
+  if (!cpu_usage_in_micros(cpu_usage)) {
+    return -1; // usage value error
+  }
   // Output is in nanoseconds, convert to microseconds.
-  return (jlong)cpu_usage / 1000;
+  return static_cast<ssize_t>(cpu_usage / 1000);
+}
+
+static
+bool pids_max_val(CgroupController* ctrl, ssize_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED_MAX(ctrl, "/pids.max", "Maximum number of tasks", result);
 }
 
 /* pids_max
@@ -435,14 +476,20 @@ jlong CgroupV1CpuacctController::cpu_usage_in_micros() {
  *
  * return:
  *    maximum number of tasks
- *    -1 for unlimited
- *    OSCONTAINER_ERROR for not supported
+ *    -1 for unlimited (or failure to retrieve the value)
  */
-jlong CgroupV1Subsystem::pids_max() {
-  if (_pids == nullptr) return OSCONTAINER_ERROR;
-  jlong pids_max;
-  CONTAINER_READ_NUMBER_CHECKED_MAX(_pids, "/pids.max", "Maximum number of tasks", pids_max);
-  return pids_max;
+ssize_t CgroupV1Subsystem::pids_max() {
+  if (_pids == nullptr) return -1; // treat as unlimited
+  ssize_t pids_val = 0;
+  if (!pids_max_val(_pids, pids_val)) {
+    return -1; // treat failure as unlimited
+  }
+  return pids_val;
+}
+
+static
+bool pids_current_val(CgroupController* ctrl, size_t& result) {
+  CONTAINER_READ_NUMBER_CHECKED(ctrl, "/pids.current", "Current number of tasks", result);
 }
 
 /* pids_current
@@ -450,12 +497,13 @@ jlong CgroupV1Subsystem::pids_max() {
  * The number of tasks currently in the cgroup (and its descendants) of the process
  *
  * return:
- *    current number of tasks
- *    OSCONTAINER_ERROR for not supported
+ *    current number of tasks or -1 for not supported
  */
-jlong CgroupV1Subsystem::pids_current() {
-  if (_pids == nullptr) return OSCONTAINER_ERROR;
-  julong pids_current;
-  CONTAINER_READ_NUMBER_CHECKED(_pids, "/pids.current", "Current number of tasks", pids_current);
-  return (jlong)pids_current;
+ssize_t CgroupV1Subsystem::pids_current() {
+  if (_pids == nullptr) return -1; // treat as unlimited
+  size_t pids_current = 0;
+  if (!pids_current_val(_pids, pids_current)) {
+    return -1; // treat as unlimited
+  }
+  return static_cast<ssize_t>(pids_current);
 }

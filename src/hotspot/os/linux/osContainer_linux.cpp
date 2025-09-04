@@ -102,49 +102,67 @@ const char * OSContainer::container_type() {
   return cgroup_subsystem->container_type();
 }
 
-jlong OSContainer::memory_limit_in_bytes() {
+ssize_t OSContainer::memory_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_limit_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_limit_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_and_swap_limit_in_bytes() {
+ssize_t OSContainer::memory_and_swap_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_and_swap_limit_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_and_swap_limit_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_and_swap_usage_in_bytes() {
+ssize_t OSContainer::memory_and_swap_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_and_swap_usage_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_and_swap_usage_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_soft_limit_in_bytes() {
+ssize_t OSContainer::memory_soft_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_soft_limit_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_soft_limit_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_throttle_limit_in_bytes() {
+ssize_t OSContainer::memory_throttle_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_throttle_limit_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_throttle_limit_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_usage_in_bytes() {
+ssize_t OSContainer::memory_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_usage_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_usage_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::memory_max_usage_in_bytes() {
+ssize_t OSContainer::memory_max_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_max_usage_in_bytes();
+  ssize_t result = cgroup_subsystem->memory_max_usage_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::rss_usage_in_bytes() {
+ssize_t OSContainer::rss_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->rss_usage_in_bytes();
+  ssize_t result = cgroup_subsystem->rss_usage_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::cache_usage_in_bytes() {
+ssize_t OSContainer::cache_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->cache_usage_in_bytes();
+  ssize_t result = cgroup_subsystem->cache_usage_in_bytes();
+  assert(result >= -1, "must be");
+  return result;
 }
 
 void OSContainer::print_version_specific_info(outputStream* st) {
@@ -164,40 +182,55 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
 
 int OSContainer::active_processor_count() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->active_processor_count();
+  int result = cgroup_subsystem->active_processor_count();
+  assert(result >= -1, "must be");
+  return result;
 }
 
 int OSContainer::cpu_quota() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->cpu_quota();
+  int result = cgroup_subsystem->cpu_quota();
+  assert(result >= -1, "must be");
+  return result;
 }
 
 int OSContainer::cpu_period() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->cpu_period();
+  int result = cgroup_subsystem->cpu_period();
+  assert(result >= -1, "must be");
+  return result;
 }
 
 int OSContainer::cpu_shares() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->cpu_shares();
+  int result = cgroup_subsystem->cpu_shares();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::cpu_usage_in_micros() {
+ssize_t OSContainer::cpu_usage_in_micros() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->cpu_usage_in_micros();
+  ssize_t result = cgroup_subsystem->cpu_usage_in_micros();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::pids_max() {
+ssize_t OSContainer::pids_max() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->pids_max();
+  ssize_t result = cgroup_subsystem->pids_max();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-jlong OSContainer::pids_current() {
+ssize_t OSContainer::pids_current() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->pids_current();
+  ssize_t result = cgroup_subsystem->pids_current();
+  assert(result >= -1, "must be");
+  return result;
 }
 
-void OSContainer::print_container_helper(outputStream* st, jlong j, const char* metrics) {
+void OSContainer::print_container_helper(outputStream* st, ssize_t j, const char* metrics, bool is_usage) {
+  assert(j >= -1, "invariant");
   st->print("%s: ", metrics);
   if (j >= 0) {
     if (j >= 1024) {
@@ -206,6 +239,8 @@ void OSContainer::print_container_helper(outputStream* st, jlong j, const char* 
       st->print_cr(UINT64_FORMAT, uint64_t(j));
     }
   } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    // Usages are never unlimited (or -1). Only in the error case.
+    // For limits we might have -1 for either: unlimited or error case.
+    st->print("%s", (is_usage ? "unavailable" : "unlimited or unavailable"));
   }
 }

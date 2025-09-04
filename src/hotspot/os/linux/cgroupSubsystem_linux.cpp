@@ -661,10 +661,9 @@ int CgroupSubsystem::active_processor_count() {
  *
  * return:
  *    memory limit in bytes or
- *    -1 for unlimited
- *    OSCONTAINER_ERROR for not supported
+ *    -1 for unlimited (or unavailable)
  */
-jlong CgroupSubsystem::memory_limit_in_bytes() {
+ssize_t CgroupSubsystem::memory_limit_in_bytes() {
   CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
   CachedMetric* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
@@ -672,7 +671,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   }
   size_t phys_mem = os::Linux::physical_memory();
   log_trace(os, container)("total physical memory: %zu", phys_mem);
-  jlong mem_limit = contrl->controller()->read_memory_limit_in_bytes(phys_mem);
+  ssize_t mem_limit = contrl->controller()->read_memory_limit_in_bytes(phys_mem);
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;
@@ -720,36 +719,35 @@ bool CgroupController::read_string(const char* filename, char* buf, size_t buf_s
   return true;
 }
 
-bool CgroupController::read_number(const char* filename, julong* result) {
+bool CgroupController::read_number(const char* filename, size_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
-  int matched = sscanf(buf, JULONG_FORMAT, result);
+  int matched = sscanf(buf, "%zu", &result);
   if (matched == 1) {
     return true;
   }
   return false;
 }
 
-bool CgroupController::read_number_handle_max(const char* filename, jlong* result) {
+bool CgroupController::read_number_handle_max(const char* filename, ssize_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
-  jlong val = limit_from_str(buf);
-  if (val == OSCONTAINER_ERROR) {
+  ssize_t val = 0;
+  if (!limit_from_str(buf, val)) {
     return false;
   }
-  *result = val;
+  result = val;
   return true;
 }
 
-bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
+bool CgroupController::read_numerical_key_value(const char* filename, const char* key, size_t& result) {
   assert(key != nullptr, "key must be given");
-  assert(result != nullptr, "result pointer must not be null");
   assert(filename != nullptr, "file to search in must be given");
   const char* s_path = subsystem_path();
   if (s_path == nullptr) {
@@ -787,7 +785,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
           && after_key != '\n') {
       // Skip key, skip space
       const char* value_substr = line + key_len + 1;
-      int matched = sscanf(value_substr, JULONG_FORMAT, result);
+      int matched = sscanf(value_substr, "%zu", &result);
       found_match = matched == 1;
       if (found_match) {
         break;
@@ -798,12 +796,12 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   if (found_match) {
     return true;
   }
-  log_debug(os, container)("Type %s (key == %s) not found in file %s", JULONG_FORMAT,
+  log_debug(os, container)("Type %s (key == %s) not found in file %s", "%zu",
                            key, absolute_path);
   return false;
 }
 
-bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, jlong* result) {
+bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, ssize_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
@@ -814,66 +812,68 @@ bool CgroupController::read_numerical_tuple_value(const char* filename, bool use
   if (matched != 1) {
     return false;
   }
-  jlong val = limit_from_str(token);
-  if (val == OSCONTAINER_ERROR) {
+  ssize_t val = 0;
+  if (!limit_from_str(token, val)) {
     return false;
   }
-  *result = val;
+  result = val;
   return true;
 }
 
-jlong CgroupController::limit_from_str(char* limit_str) {
+bool CgroupController::limit_from_str(char* limit_str, ssize_t& value) {
   if (limit_str == nullptr) {
-    return OSCONTAINER_ERROR;
+    return false;
   }
   // Unlimited memory in cgroups is the literal string 'max' for
   // some controllers, for example the pids controller.
   if (strcmp("max", limit_str) == 0) {
-    return (jlong)-1;
+    value = (ssize_t)-1;
+    return true;
   }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    return OSCONTAINER_ERROR;
+  size_t limit;
+  if (sscanf(limit_str, "%zu", &limit) != 1) {
+    return false;
   }
-  return (jlong)limit;
+  value = static_cast<ssize_t>(limit);
+  return true;
 }
 
 // CgroupSubsystem implementations
 
-jlong CgroupSubsystem::memory_and_swap_limit_in_bytes() {
+ssize_t CgroupSubsystem::memory_and_swap_limit_in_bytes() {
   size_t phys_mem = os::Linux::physical_memory();
   size_t host_swap = os::Linux::host_swap();
   return memory_controller()->controller()->memory_and_swap_limit_in_bytes(phys_mem, host_swap);
 }
 
-jlong CgroupSubsystem::memory_and_swap_usage_in_bytes() {
+ssize_t CgroupSubsystem::memory_and_swap_usage_in_bytes() {
   size_t phys_mem = os::Linux::physical_memory();
   size_t host_swap = os::Linux::host_swap();
   return memory_controller()->controller()->memory_and_swap_usage_in_bytes(phys_mem, host_swap);
 }
 
-jlong CgroupSubsystem::memory_soft_limit_in_bytes() {
+ssize_t CgroupSubsystem::memory_soft_limit_in_bytes() {
   size_t phys_mem = os::Linux::physical_memory();
   return memory_controller()->controller()->memory_soft_limit_in_bytes(phys_mem);
 }
 
-jlong CgroupSubsystem::memory_throttle_limit_in_bytes() {
+ssize_t CgroupSubsystem::memory_throttle_limit_in_bytes() {
   return memory_controller()->controller()->memory_throttle_limit_in_bytes();
 }
 
-jlong CgroupSubsystem::memory_usage_in_bytes() {
+ssize_t CgroupSubsystem::memory_usage_in_bytes() {
   return memory_controller()->controller()->memory_usage_in_bytes();
 }
 
-jlong CgroupSubsystem::memory_max_usage_in_bytes() {
+ssize_t CgroupSubsystem::memory_max_usage_in_bytes() {
   return memory_controller()->controller()->memory_max_usage_in_bytes();
 }
 
-jlong CgroupSubsystem::rss_usage_in_bytes() {
+ssize_t CgroupSubsystem::rss_usage_in_bytes() {
   return memory_controller()->controller()->rss_usage_in_bytes();
 }
 
-jlong CgroupSubsystem::cache_usage_in_bytes() {
+ssize_t CgroupSubsystem::cache_usage_in_bytes() {
   return memory_controller()->controller()->cache_usage_in_bytes();
 }
 
@@ -889,7 +889,7 @@ int CgroupSubsystem::cpu_shares() {
   return cpu_controller()->controller()->cpu_shares();
 }
 
-jlong CgroupSubsystem::cpu_usage_in_micros() {
+ssize_t CgroupSubsystem::cpu_usage_in_micros() {
   return cpuacct_controller()->cpu_usage_in_micros();
 }
 

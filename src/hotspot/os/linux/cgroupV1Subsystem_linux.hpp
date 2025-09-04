@@ -73,22 +73,32 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
   private:
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
+    bool read_memory_limit_val(size_t& result);
+    bool memory_usage_val(size_t& result);
+    bool read_mem_swappiness(size_t& result);
+    bool read_mem_swap(size_t& result);
+    bool memory_soft_limit_val(size_t& result);
+    bool memory_max_usage_val(size_t& result);
+    bool kernel_memory_usage_val(size_t& result);
+    bool kernel_memory_limit_val(size_t& result);
+    bool kernel_memory_max_usage_val(size_t& result);
+
   public:
     void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
-    jlong read_memory_limit_in_bytes(size_t host_mem) override;
-    jlong memory_usage_in_bytes() override;
-    jlong memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) override;
-    jlong memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) override;
-    jlong memory_soft_limit_in_bytes(size_t host_mem) override;
-    jlong memory_throttle_limit_in_bytes() override;
-    jlong memory_max_usage_in_bytes() override;
-    jlong rss_usage_in_bytes() override;
-    jlong cache_usage_in_bytes() override;
-    jlong kernel_memory_usage_in_bytes();
-    jlong kernel_memory_limit_in_bytes(size_t host_mem);
-    jlong kernel_memory_max_usage_in_bytes();
+    ssize_t read_memory_limit_in_bytes(size_t host_mem) override;
+    ssize_t memory_usage_in_bytes() override;
+    ssize_t memory_and_swap_limit_in_bytes(size_t host_mem, size_t host_swap) override;
+    ssize_t memory_and_swap_usage_in_bytes(size_t host_mem, size_t host_swap) override;
+    ssize_t memory_soft_limit_in_bytes(size_t host_mem) override;
+    ssize_t memory_throttle_limit_in_bytes() override;
+    ssize_t memory_max_usage_in_bytes() override;
+    ssize_t rss_usage_in_bytes() override;
+    ssize_t cache_usage_in_bytes() override;
+    ssize_t kernel_memory_usage_in_bytes();
+    ssize_t kernel_memory_limit_in_bytes(size_t host_mem);
+    ssize_t kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, size_t host_mem) override;
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
@@ -99,9 +109,6 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     const char* subsystem_path() override { return reader()->subsystem_path(); }
     const char* mount_point() override { return reader()->mount_point(); }
     const char* cgroup_path() override { return reader()->cgroup_path(); }
-  private:
-    jlong read_mem_swappiness();
-    jlong read_mem_swap(size_t host_swap);
 
   public:
     CgroupV1MemoryController(const CgroupV1Controller& reader)
@@ -115,6 +122,8 @@ class CgroupV1CpuController final : public CgroupCpuController {
   private:
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
+    bool cpu_period(size_t& result);
+    bool cpu_shares(size_t& result);
   public:
     int cpu_quota() override;
     int cpu_period() override;
@@ -146,8 +155,9 @@ class CgroupV1CpuacctController final : public CgroupCpuacctController {
   private:
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
+    bool cpu_usage_in_micros(size_t& result);
   public:
-    jlong cpu_usage_in_micros() override;
+    ssize_t cpu_usage_in_micros() override;
     void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
@@ -179,15 +189,15 @@ class CgroupV1Subsystem: public CgroupSubsystem {
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory);
 
-    jlong kernel_memory_usage_in_bytes();
-    jlong kernel_memory_limit_in_bytes();
-    jlong kernel_memory_max_usage_in_bytes();
+    ssize_t kernel_memory_usage_in_bytes();
+    ssize_t kernel_memory_limit_in_bytes();
+    ssize_t kernel_memory_max_usage_in_bytes();
 
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
 
-    jlong pids_max();
-    jlong pids_current();
+    ssize_t pids_max();
+    ssize_t pids_current();
     bool is_containerized();
 
     const char * container_type() {

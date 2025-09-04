@@ -67,9 +67,9 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   size_t phys_mem = os::Linux::physical_memory();
   char* limit_cg_path = nullptr;
-  jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
-  jlong lowest_limit = limit < 0 ? static_cast<jlong>(phys_mem) : limit;
-  julong orig_limit = ((julong)lowest_limit) != phys_mem ? lowest_limit : phys_mem;
+  ssize_t limit = mem->read_memory_limit_in_bytes(phys_mem);
+  ssize_t lowest_limit = limit < 0 ? static_cast<ssize_t>(phys_mem) : limit;
+  size_t orig_limit = ((size_t)lowest_limit) != phys_mem ? static_cast<size_t>(lowest_limit) : phys_mem;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -90,17 +90,17 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
     limit_cg_path = os::strdup("/");
   }
   assert(lowest_limit >= 0, "limit must be positive");
-  if ((julong)lowest_limit != orig_limit) {
+  if (static_cast<size_t>(lowest_limit) != orig_limit) {
     // we've found a lower limit anywhere in the hierarchy,
     // set the path to the limit path
     assert(limit_cg_path != nullptr, "limit path must be set");
     mem->set_subsystem_path(limit_cg_path);
     log_trace(os, container)("Adjusted controller path for memory to: %s. "
-                             "Lowest limit was: " JLONG_FORMAT,
+                             "Lowest limit was: %zd",
                              mem->subsystem_path(),
                              lowest_limit);
   } else {
-    log_trace(os, container)("Lowest limit was: " JLONG_FORMAT, lowest_limit);
+    log_trace(os, container)("Lowest limit was: %zd", lowest_limit);
     log_trace(os, container)("No lower limit found for memory in hierarchy %s, "
                              "adjusting to original path %s",
                               mem->mount_point(), orig);
