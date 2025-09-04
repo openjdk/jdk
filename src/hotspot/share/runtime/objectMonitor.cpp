@@ -1821,7 +1821,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     OSThreadWaitState osts(osthread, true);
 
     assert(current->thread_state() == _thread_in_vm, "invariant");
-
     {     
       ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
