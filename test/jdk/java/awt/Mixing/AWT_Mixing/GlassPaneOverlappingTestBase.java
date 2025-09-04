@@ -122,7 +122,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         }
         final CountDownLatch latch = new CountDownLatch(1);
         f.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
+            @Override
+            public void focusGained(FocusEvent e) {
                 latch.countDown();
             }
         });
