@@ -139,7 +139,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   }
 
   {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     if (super != nullptr && !has_id(super)) {
       return;
     }
@@ -165,7 +165,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   ResourceMark rm;
   stream->print("%s id: %d", k->name()->as_C_string(), get_id(k));
   if (!is_builtin_loader) {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     assert(super != nullptr, "must be");
     stream->print(" super: %d", get_id(super));
 

@@ -183,7 +183,7 @@ static void reset_states(oop obj, TRAPS) {
       JavaCalls::call_special(&result, h_obj, klass,
                               method_name, method_sig, CHECK);
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
 }
 

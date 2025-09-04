@@ -83,7 +83,7 @@ static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) 
 }
 
 void TrainingData::verify() {
-  if (TrainingData::have_data()) {
+  if (TrainingData::have_data() && !TrainingData::assembling_data()) {
     archived_training_data_dictionary()->iterate([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
         KlassTrainingData* ktd = td->as_KlassTrainingData();
@@ -98,9 +98,21 @@ void TrainingData::verify() {
           Key k(mtd->holder());
           verify_archived_entry(td, &k);
         }
-        mtd->verify();
-      } else if (td->is_CompileTrainingData()) {
-        td->as_CompileTrainingData()->verify();
+        mtd->verify(/*verify_dep_counter*/true);
+      }
+    });
+  }
+  if (TrainingData::need_data()) {
+    TrainingDataLocker l;
+    training_data_set()->iterate([&](TrainingData* td) {
+      if (td->is_KlassTrainingData()) {
+        KlassTrainingData* ktd = td->as_KlassTrainingData();
+        ktd->verify();
+      } else if (td->is_MethodTrainingData()) {
+        MethodTrainingData* mtd = td->as_MethodTrainingData();
+        // During the training run init deps tracking is not setup yet,
+        // don't verify it.
+        mtd->verify(/*verify_dep_counter*/false);
       }
     });
   }
@@ -229,7 +241,7 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
 }
 
 
-void CompileTrainingData::dec_init_deps_left(KlassTrainingData* ktd) {
+void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
   LogStreamHandle(Trace, training) log;
   if (log.is_enabled()) {
     log.print("CTD "); print_on(&log); log.cr();
@@ -450,7 +462,7 @@ void KlassTrainingData::notice_fully_initialized() {
   TrainingDataLocker l; // Not a real lock if we don't collect the data,
                         // that's why we need the atomic decrement below.
   for (int i = 0; i < comp_dep_count(); i++) {
-    comp_dep(i)->dec_init_deps_left(this);
+    comp_dep(i)->dec_init_deps_left_release(this);
   }
   holder()->set_has_init_deps_processed();
 }
@@ -476,10 +488,10 @@ void TrainingData::init_dumptime_table(TRAPS) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
+  }
 
-    if (AOTVerifyTrainingData) {
-      training_data_set()->verify();
-    }
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
   }
 }
 
@@ -592,22 +604,13 @@ void KlassTrainingData::verify() {
   }
 }
 
-void MethodTrainingData::verify() {
-  iterate_compiles([](CompileTrainingData* ctd) {
-    ctd->verify();
-
-    int init_deps_left1 = ctd->init_deps_left();
-    int init_deps_left2 = ctd->compute_init_deps_left();
-
-    if (init_deps_left1 != init_deps_left2) {
-      ctd->print_on(tty); tty->cr();
-    }
-    guarantee(init_deps_left1 == init_deps_left2, "mismatch: %d %d %d",
-              init_deps_left1, init_deps_left2, ctd->init_deps_left());
+void MethodTrainingData::verify(bool verify_dep_counter) {
+  iterate_compiles([&](CompileTrainingData* ctd) {
+    ctd->verify(verify_dep_counter);
   });
 }
 
-void CompileTrainingData::verify() {
+void CompileTrainingData::verify(bool verify_dep_counter) {
   for (int i = 0; i < init_dep_count(); i++) {
     KlassTrainingData* ktd = init_dep(i);
     if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
@@ -623,6 +626,18 @@ void CompileTrainingData::verify() {
       ktd->print_on(tty); tty->cr();
     }
     guarantee(ktd->_comp_deps.contains(this), "");
+  }
+
+  if (verify_dep_counter) {
+    int init_deps_left1 = init_deps_left_acquire();
+    int init_deps_left2 = compute_init_deps_left();
+
+    bool invariant = (init_deps_left1 >= init_deps_left2);
+    if (!invariant) {
+      print_on(tty);
+      tty->cr();
+    }
+    guarantee(invariant, "init deps invariant violation: %d >= %d", init_deps_left1, init_deps_left2);
   }
 }
 

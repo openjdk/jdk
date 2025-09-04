@@ -276,7 +276,7 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   remark_pointers_for_instance_klass(ik, false);
 
   // Make sure all supertypes have been sorted
-  sort_methods(ik->java_super());
+  sort_methods(ik->super());
   Array<InstanceKlass*>* interfaces = ik->local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {

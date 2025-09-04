@@ -201,7 +201,7 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
     if (created) {
       _pending_aot_inited_classes->push(ik);
 
-      InstanceKlass* s = ik->java_super();
+      InstanceKlass* s = ik->super();
       if (s != nullptr) {
         add_aot_inited_class(s);
       }
@@ -236,7 +236,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     append_to_all_cached_classes(ik);
 
     // All super types must be added.
-    InstanceKlass* s = ik->java_super();
+    InstanceKlass* s = ik->super();
     if (s != nullptr) {
       add_cached_instance_class(s);
     }
