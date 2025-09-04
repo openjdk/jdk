@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_BASICLOCK_INLINE_HPP
 
 #include "runtime/basicLock.hpp"
+
 #include "runtime/objectMonitor.inline.hpp"
 
 inline markWord BasicLock::displaced_header() const {

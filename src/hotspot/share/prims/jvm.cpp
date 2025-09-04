@@ -3422,7 +3422,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
   InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
-  if (!caller_ik->is_shared()) {
+  if (!caller_ik->in_aot_cache()) {
     // there won't be a shared lambda class if the caller_ik is not in the shared archive.
     return nullptr;
   }

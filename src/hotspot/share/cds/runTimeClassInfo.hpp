@@ -251,7 +251,7 @@ private:
 
 public:
   static RunTimeClassInfo* get_for(InstanceKlass* klass) {
-    assert(klass->is_shared(), "don't call for non-shared class");
+    assert(klass->in_aot_cache(), "don't call for non-shared class");
     return *info_pointer_addr(klass);
   }
   static void set_for(InstanceKlass* klass, RunTimeClassInfo* record) {

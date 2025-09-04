@@ -395,7 +395,7 @@ public class TestCompatibleUseDefTypeSize {
     // In theory, one would expect this to be a simple 4byte -> 4byte conversion.
     // But there is a CmpF and CMove here because we check for isNaN. Plus a MoveF2I.
     //
-    // Would be nice to vectorize: Missing support for CmpF, CMove and MoveF2I.
+    // Would be nice to vectorize: Missing support for CmpF and CMove.
     static Object[] test5(int[] a, float[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Float.floatToIntBits(b[i]);
@@ -404,10 +404,11 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for MoveF2I
     static Object[] test6(int[] a, float[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Float.floatToRawIntBits(b[i]);
@@ -416,10 +417,11 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for MoveI2F
     static Object[] test7(int[] a, float[] b) {
         for (int i = 0; i < a.length; i++) {
             b[i] = Float.intBitsToFloat(a[i]);
@@ -431,7 +433,7 @@ public class TestCompatibleUseDefTypeSize {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for Needs CmpD, CMove and MoveD2L
+    // Missing support to vectorize CmpD and CMove
     static Object[] test8(long[] a, double[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Double.doubleToLongBits(b[i]);
@@ -440,10 +442,11 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for MoveD2L
     static Object[] test9(long[] a, double[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Double.doubleToRawLongBits(b[i]);
@@ -452,10 +455,11 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for MoveL2D
     static Object[] test10(long[] a, double[] b) {
         for (int i = 0; i < a.length; i++) {
             b[i] = Double.longBitsToDouble(a[i]);

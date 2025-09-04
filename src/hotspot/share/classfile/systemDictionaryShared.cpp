@@ -205,7 +205,7 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
 }
 
 bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
-  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(k)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::in_aot_cache(k)) {
     // We have reached a super type that's already in the base archive. Treat it
     // as "not excluded".
     return false;
@@ -238,7 +238,7 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     if (k->name()->equals("jdk/internal/event/Event")) {
       return true;
     }
-    k = k->java_super();
+    k = k->super();
   }
   return false;
 }
@@ -250,7 +250,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
-      && k->is_shared()) {
+      && k->in_aot_cache()) {
     return false; // Do not exclude: unregistered classes are passed from preimage to final image.
   }
 
@@ -329,7 +329,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
-  InstanceKlass* super = k->java_super();
+  InstanceKlass* super = k->super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
     aot_log_warning(aot)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
@@ -483,7 +483,7 @@ InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
 
 void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
   precond(CDSConfig::is_dumping_final_static_archive());
-  precond(klass->is_shared());
+  precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
   const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
@@ -571,7 +571,7 @@ bool SystemDictionaryShared::has_been_redefined(InstanceKlass* k) {
   if (k->has_been_redefined()) {
     return true;
   }
-  if (k->java_super() != nullptr && has_been_redefined(k->java_super())) {
+  if (k->super() != nullptr && has_been_redefined(k->super())) {
     return true;
   }
   Array<InstanceKlass*>* interfaces = k->local_interfaces();
@@ -665,7 +665,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
-    if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+    if (CDSConfig::is_dumping_dynamic_archive() && ik->in_aot_cache()) {
       // ik is already part of the static archive, so it will never be considered as excluded.
       return false;
     }
@@ -1018,7 +1018,7 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
-        if (MetaspaceObj::is_shared((const MetaspaceObj*)ptr)) {
+        if (MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr)) {
           assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
@@ -1106,7 +1106,7 @@ void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
 
 const RunTimeClassInfo*
 SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
-  if (!CDSConfig::is_using_archive() || !name->is_shared()) {
+  if (!CDSConfig::is_using_archive() || !name->in_aot_cache()) {
     // The names of all shared classes must also be a shared Symbol.
     return nullptr;
   }
@@ -1124,7 +1124,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
     }
   }
 
-  if (!MetaspaceShared::is_shared_dynamic(name)) {
+  if (!MetaspaceShared::in_aot_cache_dynamic_region(name)) {
     // The names of all shared classes in the static dict must also be in the
     // static archive
     record = static_dict->lookup(name, hash, 0);
@@ -1163,7 +1163,7 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
 
 const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   assert(k != nullptr, "Sanity");
-  assert(k->is_shared(), "Must be");
+  assert(k->in_aot_cache(), "Must be");
   assert(k->is_instance_klass(), "Must be");
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->defined_by_boot_loader()) {
