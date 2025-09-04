@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng CompletionSuggestionTest
+ * @run testng/timeout=480 CompletionSuggestionTest
  */
 
 import java.io.IOException;
@@ -833,5 +833,21 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("import module java.ba|", "java.base");
         assertCompletionIncludesExcludes("import module ja|", Set.of("java.base"), Set.of("jdk.compiler"));
         assertCompletion("import module java/*c*/./*c*/ba|", "java.base");
+    }
+
+    public void testCustomClassPathIndexing() {
+        Path p1 = outDir.resolve("dir1");
+        compiler.compile(p1,
+                "package p1.p2;\n" +
+                "public class Test {\n" +
+                "}",
+                "package p1.p3;\n" +
+                "public class Test {\n" +
+                "}");
+        String jarName = "test.jar";
+        compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
+        addToClasspath(compiler.getPath(p1.resolve(jarName)));
+
+        assertCompletion("p1.|", "p2.", "p3.");
     }
 }
