@@ -70,6 +70,7 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
   static void dump_array_klasses();
   static void setup_array_klasses();
+  static void setup_and_restore_array_klasses(TRAPS);
   static void append_array_klass(ObjArrayKlass* oak);
   static void serialize_array_klasses(SerializeClosure* soc);
   static void make_array_klasses_shareable();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ class AOTLinkedClassTable {
   static AOTLinkedClassTable _for_static_archive;
   static AOTLinkedClassTable _for_dynamic_archive;
 
-  Array<InstanceKlass*>* _boot;  // only java.base classes
-  Array<InstanceKlass*>* _boot2; // boot classes in other modules
+  Array<InstanceKlass*>* _boot1; // boot classes in java.base module
+  Array<InstanceKlass*>* _boot2; // boot classes in all other (named and unnamed) modules
   Array<InstanceKlass*>* _platform;
   Array<InstanceKlass*>* _app;
 
 public:
   AOTLinkedClassTable() :
-    _boot(nullptr), _boot2(nullptr),
+    _boot1(nullptr), _boot2(nullptr),
     _platform(nullptr), _app(nullptr) {}
 
   static AOTLinkedClassTable* for_static_archive()  { return &_for_static_archive; }
@@ -61,12 +61,12 @@ public:
     return is_static_archive ? for_static_archive() : for_dynamic_archive();
   }
 
-  Array<InstanceKlass*>* boot()     const { return _boot;     }
+  Array<InstanceKlass*>* boot1()    const { return _boot1;    }
   Array<InstanceKlass*>* boot2()    const { return _boot2;    }
   Array<InstanceKlass*>* platform() const { return _platform; }
   Array<InstanceKlass*>* app()      const { return _app;      }
 
-  void set_boot    (Array<InstanceKlass*>* value) { _boot     = value; }
+  void set_boot1   (Array<InstanceKlass*>* value) { _boot1    = value; }
   void set_boot2   (Array<InstanceKlass*>* value) { _boot2    = value; }
   void set_platform(Array<InstanceKlass*>* value) { _platform = value; }
   void set_app     (Array<InstanceKlass*>* value) { _app      = value; }
