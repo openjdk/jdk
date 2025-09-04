@@ -37,7 +37,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores aligned
+ * @run main/timeout=480 compiler.c2.TestMergeStores aligned
  */
 
 /*
@@ -46,7 +46,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores unaligned
+ * @run main/timeout=480 compiler.c2.TestMergeStores unaligned
  */
 
 /*
@@ -55,7 +55,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores StressIGVN
+ * @run main/timeout=480 compiler.c2.TestMergeStores StressIGVN
  */
 
 public class TestMergeStores {

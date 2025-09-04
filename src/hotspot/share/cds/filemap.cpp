@@ -1144,7 +1144,7 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
     FileMapRegion* r = region_at(idx);
     DEBUG_ONLY(if (last_region != nullptr) {
         // Ensure that the OS won't be able to allocate new memory spaces between any mapped
-        // regions, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
+        // regions, or else it would mess up the simple comparison in MetaspaceObj::in_aot_cache().
         assert(r->mapped_base() == last_region->mapped_end(), "must have no gaps");
       }
       last_region = r;)

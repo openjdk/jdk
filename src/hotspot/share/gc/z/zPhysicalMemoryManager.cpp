@@ -214,9 +214,20 @@ void ZPhysicalMemoryManager::free(const ZVirtualMemory& vmem, uint32_t numa_id) 
   });
 }
 
+static size_t inject_commit_limit(const ZVirtualMemory& vmem) {
+  // To facilitate easier interoperability with multi partition allocations we
+  // divide by ZNUMA::count(). Users of ZFailLargerCommits need to be aware of
+  // this when writing tests. In the future we could probe the VirtualMemoryManager
+  // and condition this division on whether the vmem is in the multi partition
+  // address space.
+  return align_up(MIN2(ZFailLargerCommits / ZNUMA::count(), vmem.size()), ZGranuleSize);
+}
+
 size_t ZPhysicalMemoryManager::commit(const ZVirtualMemory& vmem, uint32_t numa_id) {
   zbacking_index* const pmem = _physical_mappings.addr(vmem.start());
-  const size_t size = vmem.size();
+  const size_t size = ZFailLargerCommits > 0
+      ? inject_commit_limit(vmem)
+      : vmem.size();
 
   size_t total_committed = 0;
 
