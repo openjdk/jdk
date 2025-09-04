@@ -2025,7 +2025,7 @@ class MutableBigInteger {
             }
 
             if (rootSh == 0) {
-                // approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
+                // approx has at most ⌈Double.PRECISION / n⌉ + 1 ≤ 19 integer bits
                 s = new MutableBigInteger((int) approx + 1);
             } else {
                 // Allocate ⌈intLen / n⌉ ints to store the final root
@@ -2049,7 +2049,7 @@ class MutableBigInteger {
                     rootSh += wrongBits;
                     approx = Math.scalb(approx, -wrongBits);
 
-                    // now approx has at most ceil(Double.PRECISION / n) + 1 ≤ 19 integer bits
+                    // now approx has at most ⌈Double.PRECISION / n⌉ + 1 ≤ 19 integer bits
                     s.value[0] = (int) approx + 1;
                     s.intLen = 1;
                 }
@@ -2076,7 +2076,7 @@ class MutableBigInteger {
                 }
 
                 // Shift the approximate root back into the original range.
-                s.safeLeftShift(rootSh);
+                s.leftShift(rootSh); // Here rootSh > 0 always
             }
         }
 
