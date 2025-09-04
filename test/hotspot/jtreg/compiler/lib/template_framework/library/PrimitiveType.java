@@ -31,6 +31,9 @@ import compiler.lib.generators.Generator;
 import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_framework.DataName;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
 
 /**
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
@@ -148,4 +151,21 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT, DOUBLE -> true;
         };
     }
+
+    /**
+     * Generates a set of random number generator methods, for single values
+     * and array filling.
+     *
+     * TODO: required imports
+     *
+     * @return a TemplateToken that holds all the generated methods.
+     */
+    public static TemplateToken generateRandomNumberGeneratorMethods() {
+        var template = Template.make(() -> body(
+            """
+            // TODO: methods
+            """
+        ));
+        return template.asToken();
+    };
 }

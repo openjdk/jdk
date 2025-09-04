@@ -78,6 +78,9 @@ public class ExpressionFuzzer {
         // Generate a list of test methods.
         List<TemplateToken> tests = new ArrayList<>();
 
+        // We are going to use some random numbers in our tests, so import some good methods for that.
+        tests.add(PrimitiveType.generateRandomNumberGeneratorMethods());
+
         var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
                 """
                 try {
@@ -134,6 +137,7 @@ public class ExpressionFuzzer {
                 public static void $primitiveConTest() {
                 """,
                 methodArguments.stream().map(ma -> valueTemplate.asToken(ma.name, ma.type)).toList(),
+                // TODO: there should be a failure with indeterministic results with checkEQ
                 """
                     Object v0 = ${primitiveConTest}_compiled(#methodArguments);
                     Object v1 = ${primitiveConTest}_reference(#methodArguments);
