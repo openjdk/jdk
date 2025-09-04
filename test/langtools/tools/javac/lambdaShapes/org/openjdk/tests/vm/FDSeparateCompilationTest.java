@@ -21,6 +21,9 @@
  * questions.
  */
 
+// this test has been disabled because of timeout issues.
+// see JDK-8006746
+
 package org.openjdk.tests.vm;
 
 import java.util.*;
