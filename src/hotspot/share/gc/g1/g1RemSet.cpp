@@ -1426,7 +1426,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   }
 
   WorkerThreads* workers = g1h->workers();
-  size_t const increment_length = g1h->collection_set()->increment_length();
+  size_t const increment_length = g1h->collection_set()->regions_cur_length();
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
                                                 MIN2(workers->active_workers(), (uint)increment_length);
@@ -1438,16 +1438,6 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
-  }
-
-  {
-    size_t young_rs_length = g1h->young_regions_cardset()->occupied();
-    // We only use young_rs_length statistics to estimate young regions length.
-    g1h->policy()->record_card_rs_length(young_rs_length);
-
-    // Clear current young only collection set. Survivor regions will be added
-    // to the set during evacuation.
-    g1h->young_regions_cset_group()->clear();
   }
 
   print_merge_heap_roots_stats();

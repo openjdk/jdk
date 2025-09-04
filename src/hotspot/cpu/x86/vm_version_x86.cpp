@@ -1099,8 +1099,12 @@ void VM_Version::get_processor_features() {
   }
 
   stringStream ss(2048);
-  ss.print("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-           cores_per_cpu(), threads_per_core(),
+  if (supports_hybrid()) {
+    ss.print("(hybrid)");
+  } else {
+    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+  }
+  ss.print(" family %d model %d stepping %d microcode 0x%x",
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
@@ -3043,6 +3047,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (is_intel()) {
     if (sef_cpuid7_edx.bits.serialize != 0)
       vm_features.set_feature(CPU_SERIALIZE);
+    if (sef_cpuid7_edx.bits.hybrid != 0)
+      vm_features.set_feature(CPU_HYBRID);
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       vm_features.set_feature(CPU_AVX512_FP16);
   }
@@ -3142,7 +3148,10 @@ uint VM_Version::cores_per_cpu() {
       result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
     }
   } else if (is_amd_family()) {
-    result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    result = _cpuid_info.ext_cpuid8_ecx.bits.threads_per_cpu + 1;
+    if (cpu_family() >= 0x17) { // Zen or later
+      result /= _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+    }
   } else if (is_zx()) {
     bool supports_topology = supports_processor_topology();
     if (supports_topology) {
