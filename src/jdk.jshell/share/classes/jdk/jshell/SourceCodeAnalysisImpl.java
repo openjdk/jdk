@@ -92,7 +92,6 @@ import javax.lang.model.type.TypeMirror;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -101,6 +100,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.ProviderNotFoundException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2002,12 +2002,22 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //update indexes, either initially or after a classpath change:
     private void refreshIndexes(int version) {
         try {
-            Collection<Path> paths = new ArrayList<>();
-            MemoryFileManager fm = proc.taskFactory.fileManager();
-
-            appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, paths);
-            appendPaths(fm, StandardLocation.CLASS_PATH, paths);
-            appendPaths(fm, StandardLocation.SOURCE_PATH, paths);
+            Collection<Path> paths = proc.taskFactory.parse("", task -> {
+                MemoryFileManager fm = proc.taskFactory.fileManager();
+                Collection<Path> _paths = new ArrayList<>();
+                try {
+                    appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
+                    appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
+                    appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
+                    appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
+                    appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
+                    appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
+                    return _paths;
+                } catch (Exception ex) {
+                    proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + version + ")");
+                    return List.of();
+                }
+            });
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2060,27 +2070,24 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
+    private void appendModulePaths(MemoryFileManager fm, Location loc, Collection<Path> paths) throws IOException {
+        for (Set<Location> moduleLocations : fm.listLocationsForModules(loc)) {
+            for (Location moduleLocation : moduleLocations) {
+                Iterable<? extends Path> modulePaths = fm.getLocationAsPaths(moduleLocation);
+
+                if (modulePaths == null) {
+                    continue;
+                }
+
+                modulePaths.forEach(paths::add);
+            }
+        }
+    }
+
     //create/update index a given JavaFileManager entry (which may be a JDK installation, a jar/zip file or a directory):
     //if an index exists for the given entry, the existing index is kept unless the timestamp is modified
     private ClassIndex indexForPath(Path path) {
-        if (isJRTMarkerFile(path)) {
-            FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
-            Path modules = jrtfs.getPath("modules");
-            return PATH_TO_INDEX.compute(path, (p, index) -> {
-                try {
-                    long lastModified = Files.getLastModifiedTime(modules).toMillis();
-                    if (index == null || index.timestamp != lastModified) {
-                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modules)) {
-                            index = doIndex(lastModified, path, stream);
-                        }
-                    }
-                    return index;
-                } catch (IOException ex) {
-                    proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
-                    return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
-                }
-            });
-        } else if (!Files.isDirectory(path)) {
+        if (!Files.isDirectory(path)) {
             if (Files.exists(path)) {
                 return PATH_TO_INDEX.compute(path, (p, index) -> {
                     try {
@@ -2093,7 +2100,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             }
                         }
                         return index;
-                    } catch (IOException ex) {
+                    } catch (IOException | ProviderNotFoundException ex) {
                         proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
                         return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
                     }
@@ -2110,10 +2117,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 return index;
             });
         }
-    }
-
-    static boolean isJRTMarkerFile(Path path) {
-        return path.equals(Paths.get(System.getProperty("java.home"), "lib", "modules"));
     }
 
     //create an index based on the content of the given dirs; the original JavaFileManager entry is originalPath.
@@ -2200,11 +2203,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             upToDate = classpathVersion == indexVersion;
         }
         while (!upToDate) {
-            INDEXER.submit(() -> {}).get();
+            waitCurrentBackgroundTasksFinished();
             synchronized (currentIndexes) {
                 upToDate = classpathVersion == indexVersion;
             }
         }
+    }
+
+    public static void waitCurrentBackgroundTasksFinished() throws Exception {
+        INDEXER.submit(() -> {}).get();
     }
 
     /**

@@ -55,9 +55,14 @@ public class TestIncludesAreSorted {
                     "share/jvmci",
                     "share/libadt",
                     "share/logging",
+                    "share/memory",
                     "share/metaprogramming",
+                    "share/nmt",
                     "share/oops",
                     "share/opto",
+                    "share/precompiled",
+                    "share/prims",
+                    "share/runtime",
                     "share/services",
                     "share/utilities"
     };

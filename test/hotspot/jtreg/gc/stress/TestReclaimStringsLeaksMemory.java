@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ package gc.stress;
  * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver gc.stress.TestReclaimStringsLeaksMemory
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 
 import java.util.Arrays;
