@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+# hopyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,6 @@ java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469,8273617
 java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeChangeTest.java 8273617 macosx-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
-java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 6849371 macosx-all,linux-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/PasteNullToTextComponentsTest.java 8234140 macosx-all,windows-all
