@@ -1,3 +1,4 @@
+/out/
 /build/
 /dist/
 /.idea/
@@ -25,3 +26,4 @@ NashornProfile.txt
 **/core.[0-9]*
 *.rej
 *.orig
+*.iml
