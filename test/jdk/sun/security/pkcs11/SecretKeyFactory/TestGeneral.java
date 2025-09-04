@@ -35,7 +35,9 @@ import jtreg.SkippedException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -104,6 +106,7 @@ public class TestGeneral extends PKCS11Test {
         SecretKey bf_128Key = new SecretKeySpec(rawBytes, 0, 16, "Blowfish");
         SecretKey cc20Key = new SecretKeySpec(rawBytes, 0, 32, "ChaCha20");
 
+        List<String> skippedList  = new ArrayList<>();
         try {
             // fixed key length
             test("AES", aes_128Key, p, TestResult.PASS);
@@ -122,7 +125,11 @@ public class TestGeneral extends PKCS11Test {
             test("Blowfish", cc20Key, p, TestResult.FAIL);
             test("Blowfish", bf_128Key, p, TestResult.PASS);
         } catch (SkippedException skippedException){
-            throw new SkippedException("One or more tests skipped");
+            skippedList.add(skippedException.getMessage());
+        }
+
+        if (!skippedList.isEmpty()) {
+            throw new SkippedException("One or more tests skipped " + skippedList);
         }
     }
 }
