@@ -99,8 +99,8 @@ public class SystemMapTestBase {
             regexBase_java_heap + "JAVAHEAP.*",
             // metaspace
             regexBase_committed + "META.*",
-            // parts of metaspace should be uncommitted
-            regexBase + "-" + space + "META.*",
+            // parts of metaspace should be uncommitted, those parts can be thp eligible
+            regexBase + "(-|thpel)" + space + "META.*",
             // code cache
             regexBase_committed + "CODE.*",
             // Main thread stack
