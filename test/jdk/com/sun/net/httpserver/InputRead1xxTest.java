@@ -21,6 +21,13 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8349670
+ * @summary Test 1xx response handling
+ * @run testng/othervm InputRead1xxTest
+ * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead1xxTest
+ */
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
