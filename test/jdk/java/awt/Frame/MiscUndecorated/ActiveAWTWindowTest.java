@@ -29,6 +29,7 @@
  * @run main ActiveAWTWindowTest
  */
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
@@ -59,23 +60,18 @@ public class ActiveAWTWindowTest {
     private static boolean passed = true;
 
     public static void main(String[] args) throws Exception {
-        try {
-            EventQueue.invokeAndWait(() -> {
-                initializeGUI();
-            });
-            doTest();
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected Exception encountered.");
-        } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-                if (frame2 != null) {
-                    frame2.dispose();
-                }
-            });
-        }
+        EventQueue.invokeAndWait(() -> {
+            initializeGUI();
+        });
+        doTest();
+        EventQueue.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+            if (frame2 != null) {
+                frame2.dispose();
+            }
+        });
     }
 
     private static void initializeGUI() {
@@ -148,24 +144,13 @@ public class ActiveAWTWindowTest {
         frame2.setVisible(true);
     }
 
-    private static void doTest() {
-        Robot robot;
-        try {
-            robot = new Robot();
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot create robot");
-        }
+    private static void doTest() throws AWTException, InterruptedException  {
+        Robot robot = new Robot();
         robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
-        try {
-            if (!windowFocusGainedLatch.await(1500, TimeUnit.MILLISECONDS)) {
+        if (!windowFocusGainedLatch.await(1500, TimeUnit.MILLISECONDS)) {
                 passed = false;
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for focus");
         }
-
         robot.mouseMove(
             button.getLocationOnScreen().x + button.getSize().width / 2,
             button.getLocationOnScreen().y + button.getSize().height / 2);
@@ -173,12 +158,7 @@ public class ActiveAWTWindowTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
-            try {
-                windowActivatedLatch.await(1500, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                throw new RuntimeException("Unexpected Exception: "
-                    + "waiting on WINDOW_ACTIVATED event");
-            }
+            windowActivatedLatch.await(1500, TimeUnit.MILLISECONDS);
         }
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
             passed = false;
@@ -192,12 +172,7 @@ public class ActiveAWTWindowTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
-            try {
-                windowDeactivatedLatch.await(1500, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                throw new RuntimeException("Unexpected Exception: "
-                    + "waiting on WINDOW_DEACTIVATED event");
-            }
+            windowDeactivatedLatch.await(1500, TimeUnit.MILLISECONDS);
         }
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
             passed = false;
