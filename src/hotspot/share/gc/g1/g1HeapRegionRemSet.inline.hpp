@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
 }
 
 void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
-  assert(is_added_to_cset_group(), "pre-condition");
+  assert(has_cset_group(), "pre-condition");
 
   assert(_state != Untracked, "must be");
 

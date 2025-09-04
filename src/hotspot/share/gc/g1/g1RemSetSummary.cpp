@@ -228,7 +228,7 @@ public:
 
     // Accumulate card set details for regions that are assigned to single region
     // groups. G1HeapRegionRemSet::mem_size() includes the size of the code roots
-    if (hrrs->is_added_to_cset_group() && hrrs->cset_group()->length() == 1) {
+    if (hrrs->has_cset_group() && hrrs->cset_group()->length() == 1) {
       G1CardSet* card_set = hrrs->cset_group()->card_set();
 
       rs_mem_sz = hrrs->mem_size() + card_set->mem_size();
