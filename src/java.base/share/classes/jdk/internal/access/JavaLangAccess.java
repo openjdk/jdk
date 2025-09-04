@@ -341,6 +341,7 @@ public interface JavaLangAccess {
      * @param cs the Charset
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
+     * @throws NullPointerException If {@code bytes} is null
      */
     String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException;
 

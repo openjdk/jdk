@@ -688,7 +688,7 @@ public final class String
         }
     }
 
-    /*
+    /**
      * {@return a new string by decoding from the given UTF-8 bytes array}
      * <p>
      * <b>WARNING: The caller of this method is assumed to have relinquished
@@ -795,9 +795,10 @@ public final class String
      * @param cs charset the byte array encoded in
      *
      * @throws CharacterCodingException for malformed input or unmappable characters
+     * @throws NullPointerException If {@code src} is null
      */
     static String newStringOrThrow(byte[] src, Charset cs) throws CharacterCodingException {
-        int len = src.length;
+        int len = src.length;   // Implicit null check on `src`
         if (len == 0) {
             return "";
         }
