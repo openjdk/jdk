@@ -62,6 +62,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
      * Constructor which sets {@link SimpleOverlappingTestBase#useDefaultClickValidation }
      * @param defaultClickValidation
      */
+
     protected SimpleOverlappingTestBase(boolean defaultClickValidation) {
         super();
         this.useDefaultClickValidation = defaultClickValidation;
@@ -169,19 +170,17 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             try {
                 boolean await = latch.await(1L, TimeUnit.SECONDS);
                 if (!await) {
-                    throw new RuntimeException("Ancestor frame didn't receive " +
-                            "focus");
+                    throw new RuntimeException("Ancestor frame didn't receive focus");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
         }
 
-            clickAndBlink(robot, lLoc);
-            if (ancestor != null && isMultiFramesTest()) {
-                ancestor.dispose();
-            }
+        clickAndBlink(robot, lLoc);
+        if (ancestor != null && isMultiFramesTest()) {
+            ancestor.dispose();
+        }
 
         return wasLWClicked;
     }

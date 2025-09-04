@@ -25,6 +25,7 @@ import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
@@ -92,6 +93,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         super(defaultClickValidation);
     }
 
+    @Override
     protected boolean isMultiFramesTest(){
         return false;
     }
