@@ -24,8 +24,6 @@
 
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "logging/log.hpp"
-#include "utilities/macros.hpp"
-
 
 #if defined(LINUX)
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"

@@ -26,7 +26,6 @@
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRCPUTIMETHREADSAMPLER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "utilities/macros.hpp"
 
 class JavaThread;
 
