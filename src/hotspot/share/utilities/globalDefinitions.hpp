@@ -85,6 +85,9 @@ class oopDesc;
 // they cannot be defined and potential callers will fail to compile.
 #define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
 
+// offset_of was a workaround for UB with offsetof uses that are no longer an
+// issue.  This can be removed once all uses have been converted.
+#define offset_of(klass, field) offsetof(klass, field)
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
