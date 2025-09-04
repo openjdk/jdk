@@ -41,7 +41,7 @@ class DynamicArchiveHeader : public FileMapHeader {
   friend class CDSConstants;
 private:
   int _base_header_crc;
-  int _base_region_crc[MetaspaceShared::n_regions];
+  int _base_region_crc[AOTMetaspace::n_regions];
 
 public:
   int base_header_crc() const { return _base_header_crc; }

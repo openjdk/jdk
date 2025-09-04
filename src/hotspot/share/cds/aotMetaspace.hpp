@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_METASPACESHARED_HPP
-#define SHARE_CDS_METASPACESHARED_HPP
+#ifndef SHARE_CDS_AOTMETASPACE_HPP
+#define SHARE_CDS_AOTMETASPACE_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -49,7 +49,7 @@ enum MapArchiveResult {
 };
 
 // Class Data Sharing Support
-class MetaspaceShared : AllStatic {
+class AOTMetaspace : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
   static bool _archive_loading_failed;
@@ -63,8 +63,8 @@ class MetaspaceShared : AllStatic {
  public:
   enum {
     // core archive spaces
-    rw = 0,  // read-write shared space
-    ro = 1,  // read-only shared space
+    rw = 0,  // read-write
+    ro = 1,  // read-only
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     hp = 3,  // heap region
     ac = 4,  // aot code
@@ -202,4 +202,4 @@ private:
   static void unmap_archive(FileMapInfo* mapinfo);
   static void get_default_classlist(char* default_classlist, const size_t buf_size);
 };
-#endif // SHARE_CDS_METASPACESHARED_HPP
+#endif // SHARE_CDS_AOTMETASPACE_HPP

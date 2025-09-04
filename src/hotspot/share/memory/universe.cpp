@@ -22,11 +22,11 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -878,7 +878,7 @@ jint universe_init() {
   ObjLayout::initialize();
 
 #ifdef _LP64
-  MetaspaceShared::adjust_heap_sizes_for_dumping();
+  AOTMetaspace::adjust_heap_sizes_for_dumping();
 #endif // _LP64
 
   GCConfig::arguments()->initialize_heap_sizes();
@@ -904,7 +904,7 @@ jint universe_init() {
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
-    MetaspaceShared::initialize_shared_spaces();
+    AOTMetaspace::initialize_shared_spaces();
   }
 #endif
 
@@ -1161,7 +1161,7 @@ bool universe_post_init() {
 
   MemoryService::set_universe_heap(Universe::heap());
 #if INCLUDE_CDS
-  MetaspaceShared::post_initialize(CHECK_false);
+  AOTMetaspace::post_initialize(CHECK_false);
 #endif
   return true;
 }

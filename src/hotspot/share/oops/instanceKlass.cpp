@@ -23,12 +23,12 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -2763,7 +2763,7 @@ void InstanceKlass::init_shared_package_entry() {
     }
   } else if (CDSConfig::is_dumping_dynamic_archive() &&
              CDSConfig::is_using_full_module_graph() &&
-             MetaspaceShared::in_aot_cache(_package_entry)) {
+             AOTMetaspace::in_aot_cache(_package_entry)) {
     // _package_entry is an archived package in the base archive. Leave it as is.
   } else {
     _package_entry = nullptr;
@@ -2845,7 +2845,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (MetaspaceShared::in_aot_cache(this)) {
+  if (AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
@@ -3088,7 +3088,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   if (in_aot_cache() && _package_entry != nullptr) {
     if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
-      assert(MetaspaceShared::in_aot_cache(_package_entry), "must be");
+      assert(AOTMetaspace::in_aot_cache(_package_entry), "must be");
       return;
     } else {
       _package_entry = nullptr;
@@ -3971,7 +3971,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
     }
   } else {
     assert(this->in_aot_cache(), "must be");
-    if (MetaspaceShared::in_aot_cache_dynamic_region((void*)this)) {
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)this)) {
       info_stream.print(" source: shared objects file (top)");
     } else {
       info_stream.print(" source: shared objects file");
