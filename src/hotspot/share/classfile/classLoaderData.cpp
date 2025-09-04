@@ -415,7 +415,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
       if (!InstanceKlass::cast(k)->is_loaded()) {
         continue;
       }
-    } else if (k->is_shared() && k->is_objArray_klass()) {
+    } else if (k->in_aot_cache() && k->is_objArray_klass()) {
       Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
       if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
         // This could happen if <bottom> is a shared class that has been restored
@@ -868,7 +868,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
 // a safepoint which checks if handles point to this metadata field.
 void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   // Metadata in shared region isn't deleted.
-  if (!m->is_shared()) {
+  if (!m->in_aot_cache()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == nullptr) {
       _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);

@@ -204,8 +204,9 @@ $(eval $(call SetTestOpt,AOT_JDK,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT \
+        MAX_MEM RUN_PROBLEM_LISTS RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT \
+        AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -876,6 +877,15 @@ define SetupRunJtregTestBody
     ))
   endif
 
+  ifneq ($$(JTREG_JVMTI_STRESS_AGENT), )
+    AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
+    $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:$(TEST_IMAGE_DIR)/hotspot/jtreg/native/$$(AGENT)'
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+	    $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+        ))
+  endif
+
+
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += $$(JTREG_LAUNCHER_OPTIONS)
   endif
@@ -936,7 +946,8 @@ define SetupRunJtregTestBody
   JTREG_ALL_OPTIONS := $$(JTREG_JAVA_OPTIONS) $$(JTREG_VM_OPTIONS)
 
   JTREG_AUTO_PROBLEM_LISTS :=
-  JTREG_AUTO_TIMEOUT_FACTOR := 4
+  # Please reach consensus before changing this. It was not easy changing it to a `1`.
+  JTREG_AUTO_TIMEOUT_FACTOR := 1
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-Xcomp.txt
@@ -1243,7 +1254,7 @@ UseSpecialTestHandler = \
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
   $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
     $(eval $(call SetupRunCustomTest, $(TEST_ID), \
@@ -1323,9 +1334,9 @@ run-test-report: post-run-test
 	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
 	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
-	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '[_*1000]')) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '_')) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \

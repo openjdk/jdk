@@ -52,7 +52,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror IconTest.java
- * @run main/othervm/timeout=720 -Xmx512m
+ * @run main/othervm/timeout=2880 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */

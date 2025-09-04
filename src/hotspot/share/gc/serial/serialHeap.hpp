@@ -102,11 +102,6 @@ private:
   // old-gen.
   bool _is_heap_almost_full;
 
-  // Helper functions for allocation
-  HeapWord* attempt_allocation(size_t size,
-                               bool   is_tlab,
-                               bool   first_only);
-
   void do_full_collection(bool clear_all_soft_refs) override;
 
   // Does the "cause" of GC indicate that
@@ -229,10 +224,6 @@ public:
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 

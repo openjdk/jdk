@@ -34,6 +34,7 @@
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -66,7 +67,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -281,26 +281,13 @@ size_t SerialHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
 }
 
-// Return true if any of the following is true:
-// . the allocation won't fit into the current young gen heap
-// . heap memory is tight
-bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
-  size_t young_capacity = _young_gen->capacity_before_gc();
-  return    (word_size > heap_word_size(young_capacity))
-         || _is_heap_almost_full;
-}
-
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  HeapWord* result = nullptr;
-  if (_old_gen->should_allocate(size, is_tlab)) {
+  HeapWord* result = _young_gen->allocate(size);
+
+  if (result == nullptr) {
     result = _old_gen->expand_and_allocate(size);
   }
-  if (result == nullptr) {
-    if (_young_gen->should_allocate(size, is_tlab)) {
-      // Young-gen is not expanded.
-      result = _young_gen->allocate(size);
-    }
-  }
+
   assert(result == nullptr || is_in_reserved(result), "result not in heap");
   return result;
 }
@@ -308,32 +295,24 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
 HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
-  // Loop until the allocation is satisfied, or unsatisfied after GC.
-  for (uint try_count = 1; /* return or throw */; try_count += 1) {
-    // First allocation attempt is lock-free.
-    DefNewGeneration *young = _young_gen;
-    if (young->should_allocate(size, is_tlab)) {
-      result = young->par_allocate(size);
-      if (result != nullptr) {
-        assert(is_in_reserved(result), "result not in heap");
-        return result;
+  for (uint try_count = 1; /* break */; try_count++) {
+    result = _young_gen->par_allocate(size);
+    if (result != nullptr) {
+      break;
+    }
+    // Try old-gen allocation for non-TLAB.
+    if (!is_tlab) {
+      // If it's too large for young-gen or heap is too full.
+      if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
+        result = _old_gen->par_allocate(size);
+        if (result != nullptr) {
+          break;
+        }
       }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
-      log_trace(gc, alloc)("SerialHeap::mem_allocate_work: attempting locked slow path allocation");
-      // Note that only large objects get a shot at being
-      // allocated in later generations.
-      bool first_only = !should_try_older_generation_allocation(size);
-
-      result = attempt_allocation(size, is_tlab, first_only);
-      if (result != nullptr) {
-        assert(is_in_reserved(result), "result not in heap");
-        return result;
-      }
-
-      // Read the gc count while the heap lock is held.
       gc_count_before = total_collections();
     }
 
@@ -341,10 +320,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     VMThread::execute(&op);
     if (op.gc_succeeded()) {
       result = op.result();
-
-      assert(result == nullptr || is_in_reserved(result),
-             "result not in heap");
-      return result;
+      break;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -354,25 +330,9 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
                             " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
-}
 
-HeapWord* SerialHeap::attempt_allocation(size_t size,
-                                         bool is_tlab,
-                                         bool first_only) {
-  HeapWord* res = nullptr;
-
-  if (_young_gen->should_allocate(size, is_tlab)) {
-    res = _young_gen->allocate(size);
-    if (res != nullptr || first_only) {
-      return res;
-    }
-  }
-
-  if (_old_gen->should_allocate(size, is_tlab)) {
-    res = _old_gen->allocate(size);
-  }
-
-  return res;
+  assert(result == nullptr || is_in_reserved(result), "postcondition");
+  return result;
 }
 
 HeapWord* SerialHeap::mem_allocate(size_t size,
@@ -447,6 +407,8 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
 
 void SerialHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void SerialHeap::unregister_nmethod(nmethod* nm) {
@@ -471,15 +433,10 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   // If young-gen can handle this allocation, attempt young-gc firstly.
-  bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
+  bool should_run_young_gc = is_tlab || size <= _young_gen->eden()->capacity();
   collect_at_safepoint(!should_run_young_gc);
 
-  result = attempt_allocation(size, is_tlab, false /*first_only*/);
-  if (result != nullptr) {
-    return result;
-  }
-
-  // OK, collection failed, try expansion.
+  // Just finished a GC, try to satisfy this allocation, using expansion if needed.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {
     return result;
@@ -496,10 +453,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
     do_full_collection(clear_all_soft_refs);
   }
 
-  result = attempt_allocation(size, is_tlab, false /* first_only */);
-  if (result != nullptr) {
-    return result;
-  }
   // The previous full-gc can shrink the heap, so re-expand it.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {

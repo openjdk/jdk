@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * @modules java.net.http/jdk.internal.net.http.common
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer ReferenceTracker
- * @run main/othervm  CancelledResponse
- * @run main/othervm  CancelledResponse SSL
+ * @run main/othervm/timeout=480 CancelledResponse
+ * @run main/othervm/timeout=480 CancelledResponse SSL
  */
 
 /**
