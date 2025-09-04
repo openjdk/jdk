@@ -43,9 +43,9 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
 /// for its lambda form, or carry an underlying method handle and its bound
 /// arguments for currying.
 ///
-/// Each BMH acts like a strongly-typed argument list, where the types are
-/// [BasicType]s.  This type information is recorded by its species, represented
-/// by a per-class [SpeciesData].  A [Specializer] manages lookup for any species.
+/// Each BMH class supports a number of values, each of a particular [BasicType].
+/// This per-class value type and count information is recorded by [SpeciesData].
+/// A [Specializer] manages lookup for any species.
 ///
 /// Factories are provided by [BoundMethodHandle.SpeciesData#factory()].
 /// Getters are exposed as [BoundMethodHandle.SpeciesData#getter(int)],
