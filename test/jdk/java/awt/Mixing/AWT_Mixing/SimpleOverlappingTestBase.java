@@ -51,7 +51,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         testEmbeddedFrame = true;
     }
 
-    protected final boolean MULTI_FRAMES_TEST = true;
+    protected final boolean MULTI_FRAMES_TEST ;
 
     /**
      * Event delivery validation. If set to true (default) tested lightweight component will be provided
@@ -66,8 +66,12 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     protected SimpleOverlappingTestBase(boolean defaultClickValidation) {
         super();
         this.useDefaultClickValidation = defaultClickValidation;
+        MULTI_FRAMES_TEST = isMultiFramesTest();
     }
 
+    protected boolean isMultiFramesTest(){
+        return true;
+    }
     public SimpleOverlappingTestBase() {
         this(true);
     }

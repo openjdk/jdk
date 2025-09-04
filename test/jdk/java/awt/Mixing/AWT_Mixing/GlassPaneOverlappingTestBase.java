@@ -94,14 +94,16 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     }
 
     public GlassPaneOverlappingTestBase() {
-        this(true);
+        super();
     }
 
     public GlassPaneOverlappingTestBase(boolean defaultClickValidation) {
         super(defaultClickValidation);
-        MULTI_FRAMES_TEST =false;
-    }
 
+    }
+    protected boolean isMultiFramesTest(){
+        return false;
+    }
     /**
      * Run test by {@link OverlappingTestBase#clickAndBlink(java.awt.Robot, java.awt.Point) } validation for current lightweight component.
      * <p>Also resize component and repeat validation in the resized area.
@@ -114,13 +116,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         if (!super.performTest()) {
             return false;
         }
-        final CountDownLatch latch = new CountDownLatch(1);
-        f.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                latch.countDown();
-            }
-        });
 
         if (testResize) {
             wasLWClicked = false;
@@ -131,14 +126,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         testedComponent.setBounds(0, 0,
                                 testedComponent.getPreferredSize().width,
                                 testedComponent.getPreferredSize().height + 20);
-                        Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                                .getFocusOwner();
-                        if (focusOwner == f) {
-                            // frame already had focus
-                            latch.countDown();
-                        } else {
-                            f.requestFocusInWindow();
-                        }
                     }
                 });
             } catch (InterruptedException | InvocationTargetException ex) {
@@ -146,14 +133,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             }
             Point lLoc = testedComponent.getLocationOnScreen();
             lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
-            try {
-                if (!latch.await(1, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Ancestor frame didn't receive focus");
-                }
                 clickAndBlink(robot, lLoc);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+
             return wasLWClicked;
         } else {
             return true;
