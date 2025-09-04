@@ -160,7 +160,9 @@ bool MemBaseline::baseline_allocation_sites() {
 
   // Virtual memory allocation sites
   VirtualMemoryAllocationWalker virtual_memory_walker;
-  MemTracker::walk_virtual_memory(&virtual_memory_walker);
+  if (!MemTracker::walk_virtual_memory(&virtual_memory_walker)) {
+    return false;
+  }
 
   // Virtual memory allocations are collected in call stack order
   _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());
