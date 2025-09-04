@@ -93,7 +93,7 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
       bool v = try_add_candidate(ik);
       assert(v, "must succeed for VM class");
     }
-    InstanceKlass* super = ik->java_super();
+    InstanceKlass* super = ik->super();
     if (super != nullptr) {
       add_vm_class(super);
     }
@@ -151,7 +151,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     }
   }
 
-  InstanceKlass* s = ik->java_super();
+  InstanceKlass* s = ik->super();
   if (s != nullptr && !try_add_candidate(s)) {
     return false;
   }

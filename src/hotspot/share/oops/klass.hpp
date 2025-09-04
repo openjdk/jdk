@@ -217,7 +217,9 @@ protected:
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
-  // If this is not what your code expects, you're probably looking for Klass::java_super().
+  // If this is not what your code expects, you're probably looking for:
+  // - Klass::java_super() - if you have a Klass*
+  // - InstanceKlass::super() - if you have an InstanceKlass* ik, ik->super() returns InstanceKlass*.
   Klass* super() const               { return _super; }
   void set_super(Klass* k)           { _super = k; }
 

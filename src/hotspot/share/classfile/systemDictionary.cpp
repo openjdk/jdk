@@ -431,7 +431,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
       // (a) RedefineClasses -- the class is already loaded
       // (b) Rarely, the class might have been loaded by a parallel thread
       // We can do a quick check against the already assigned superclass's name and loader.
-      InstanceKlass* superk = klassk->java_super();
+      InstanceKlass* superk = klassk->super();
       if (superk != nullptr &&
           superk->name() == next_name &&
           superk->class_loader() == class_loader()) {
@@ -1049,7 +1049,7 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   // load <ik> from the shared archive.
 
   if (ik->super() != nullptr) {
-    bool check_super = check_shared_class_super_type(ik, ik->java_super(),
+    bool check_super = check_shared_class_super_type(ik, ik->super(),
                                                      class_loader, true,
                                                      CHECK_false);
     if (!check_super) {
