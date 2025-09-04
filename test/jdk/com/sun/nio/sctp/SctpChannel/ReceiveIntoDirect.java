@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8034181
+ * @library /test/lib
  * @summary SIGBUS in SctpChannelImpl receive
  * @author chegar
  */
@@ -45,6 +46,8 @@ import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
+import jtreg.SkippedException;
+
 public class ReceiveIntoDirect {
     /* suitably small message to NOT overrun small buffers */
     final byte[] msgBytes =  "Hello".getBytes(US_ASCII);
@@ -55,12 +58,6 @@ public class ReceiveIntoDirect {
     void test(String[] args) throws IOException {
         SocketAddress address = null;
         Server server;
-
-        if (!Util.isSCTPSupported()) {
-            out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        }
 
         if (args.length == 2) {
             /* requested to connecct to a specific address */
@@ -264,6 +261,10 @@ public class ReceiveIntoDirect {
     void debug(String message) {if(debug) {
           System.out.println(Thread.currentThread() + " " + message); } }
     public static void main(String[] args) throws Throwable {
+        if (!Util.isSCTPSupported()) {
+            throw new SkippedException("SCTP protocol is not supported");
+        }
+
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
                 .invoke( k.newInstance(), (Object) args);}

@@ -412,7 +412,7 @@ private:
   const Ticks                _start_timestamp;
   const uint32_t             _young_seqnum;
   const uint32_t             _old_seqnum;
-  const uint32_t             _initiating_numa_id;
+  const uint32_t             _preferred_partition;
   bool                       _is_multi_partition;
   ZSinglePartitionAllocation _single_partition_allocation;
   ZMultiPartitionAllocation  _multi_partition_allocation;
@@ -420,7 +420,7 @@ private:
   ZFuture<bool>              _stall_result;
 
 public:
-  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age)
+  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition)
     : _type(type),
       _requested_size(size),
       _flags(flags),
@@ -428,12 +428,14 @@ public:
       _start_timestamp(Ticks::now()),
       _young_seqnum(ZGeneration::young()->seqnum()),
       _old_seqnum(ZGeneration::old()->seqnum()),
-      _initiating_numa_id(ZNUMA::id()),
+      _preferred_partition(preferred_partition),
       _is_multi_partition(false),
       _single_partition_allocation(size),
       _multi_partition_allocation(size),
       _node(),
-      _stall_result() {}
+      _stall_result() {
+    assert(_preferred_partition < ZNUMA::count(), "Preferred partition out-of-bounds (0 <= %d < %d)", _preferred_partition, ZNUMA::count());
+  }
 
   void reset_for_retry() {
     _is_multi_partition = false;
@@ -474,8 +476,8 @@ public:
     return _old_seqnum;
   }
 
-  uint32_t initiating_numa_id() const {
-    return _initiating_numa_id;
+  uint32_t preferred_partition() const {
+    return _preferred_partition;
   }
 
   bool is_multi_partition() const {
@@ -1090,7 +1092,8 @@ void ZPartition::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
     freed += vmem.size();
     _cache.insert(vmem);
   }
-  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all");
+  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all"
+         " %zu + %zu == %zu", allocation->harvested(), allocation->committed_capacity(), freed);
 
   // Adjust capacity to reflect the failed capacity increase
   const size_t remaining = allocation->size() - freed;
@@ -1397,10 +1400,10 @@ static void check_out_of_memory_during_initialization() {
   }
 }
 
-ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition) {
   EventZPageAllocation event;
 
-  ZPageAllocation allocation(type, size, flags, age);
+  ZPageAllocation allocation(type, size, flags, age, preferred_partition);
 
   // Allocate the page
   ZPage* const page = alloc_page_inner(&allocation);
@@ -1548,7 +1551,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
   }
 
   // Round robin single-partition claiming
-  const uint32_t start_numa_id = allocation->initiating_numa_id();
+  const uint32_t start_numa_id = allocation->preferred_partition();
   const uint32_t start_partition = start_numa_id;
   const uint32_t num_partitions = _partitions.count();
 
@@ -1560,7 +1563,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
     }
   }
 
-  if (!is_multi_partition_enabled() || sum_available() < allocation->size()) {
+  if (!is_multi_partition_allowed(allocation)) {
     // Multi-partition claiming is not possible
     return false;
   }
@@ -1578,7 +1581,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
 }
 
 bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
-  const uint32_t start_node = allocation->initiating_numa_id();
+  const uint32_t start_node = allocation->preferred_partition();
   const uint32_t numa_nodes = ZNUMA::count();
 
   for (uint32_t i = 0; i < numa_nodes; ++i) {
@@ -1907,23 +1910,27 @@ void ZPageAllocator::cleanup_failed_commit_single_partition(ZSinglePartitionAllo
   ZMemoryAllocation* const allocation = single_partition_allocation->allocation();
 
   assert(allocation->commit_failed(), "Must have failed to commit");
+  assert(allocation->partial_vmems()->is_empty(), "Invariant for single partition commit failure");
 
-  const size_t committed = allocation->committed_capacity();
-  const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
-  const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
-  const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
+  // For a single partition we have unmapped the harvested memory before we
+  // started committing, and moved its physical memory association to the start
+  // of the vmem. As such, the partial_vmems is empty. All the harvested and
+  // partially successfully committed memory is mapped in the first part of vmem.
+  const size_t harvested_and_committed_capacity = allocation->harvested() + allocation->committed_capacity();
+  const ZVirtualMemory succeeded_vmem = vmem.first_part(harvested_and_committed_capacity);
+  const ZVirtualMemory failed_vmem = vmem.last_part(harvested_and_committed_capacity);
 
-  if (committed_vmem.size() > 0) {
+  if (succeeded_vmem.size() > 0) {
     // Register the committed and mapped memory. We insert the committed
     // memory into partial_vmems so that it will be inserted into the cache
     // in a subsequent step.
-    allocation->partial_vmems()->append(committed_vmem);
+    allocation->partial_vmems()->append(succeeded_vmem);
   }
 
   // Free the virtual and physical memory we fetched to use but failed to commit
   ZPartition& partition = allocation->partition();
-  partition.free_physical(non_committed_vmem);
-  partition.free_virtual(non_committed_vmem);
+  partition.free_physical(failed_vmem);
+  partition.free_virtual(failed_vmem);
 }
 
 void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, const ZVirtualMemory& vmem) {
@@ -1939,7 +1946,7 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
     }
 
     const size_t committed = allocation->committed_capacity();
-    const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
+    const ZVirtualMemory non_harvested_vmem = partial_vmem.last_part(allocation->harvested());
     const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
     const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
 
@@ -2189,6 +2196,12 @@ void ZPageAllocator::satisfy_stalled() {
 
 bool ZPageAllocator::is_multi_partition_enabled() const {
   return _virtual.is_multi_partition_enabled();
+}
+
+bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
+  return is_multi_partition_enabled() &&
+         allocation->type() == ZPageType::large &&
+         allocation->size() <= sum_available();
 }
 
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {

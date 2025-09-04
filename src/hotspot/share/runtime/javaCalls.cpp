@@ -406,7 +406,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
             address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
             if (verified_entry_point != nullptr) {
               thread->set_jvmci_alternate_call_target(verified_entry_point);
-              entry_point = method->adapter()->get_i2c_entry();
+              entry_point = method->get_i2c_entry();
             }
           }
 #endif

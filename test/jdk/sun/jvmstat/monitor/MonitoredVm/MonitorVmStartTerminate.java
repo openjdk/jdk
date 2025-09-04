@@ -35,6 +35,7 @@ import java.util.concurrent.Semaphore;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
@@ -69,7 +70,7 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
  * @modules java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  *          jdk.internal.jvmstat/sun.jvmstat.monitor.event
- * @run main/othervm MonitorVmStartTerminate
+ * @run main/othervm/timeout=240 MonitorVmStartTerminate
  */
 public final class MonitorVmStartTerminate {
 
