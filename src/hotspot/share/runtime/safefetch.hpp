@@ -32,7 +32,7 @@
 // to be valid. If the load causes a fault, the error value is returned.
 
 #if defined(_WIN32) && !defined(_M_ARM64)
-  // Windows uses Structured Exception Handling
+  // Windows x86_64 uses Structured Exception Handling
   #include "safefetch_windows.hpp"
 #elif defined(ZERO) || defined (_AIX)
   // These platforms implement safefetch via Posix sigsetjmp/longjmp.
