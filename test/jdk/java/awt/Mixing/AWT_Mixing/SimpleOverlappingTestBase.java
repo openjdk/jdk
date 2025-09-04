@@ -62,7 +62,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
      * Constructor which sets {@link SimpleOverlappingTestBase#useDefaultClickValidation }
      * @param defaultClickValidation
      */
-
     protected SimpleOverlappingTestBase(boolean defaultClickValidation) {
         super();
         this.useDefaultClickValidation = defaultClickValidation;
@@ -71,6 +70,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     protected boolean isMultiFramesTest(){
         return true;
     }
+
     public SimpleOverlappingTestBase() {
         this(true);
     }

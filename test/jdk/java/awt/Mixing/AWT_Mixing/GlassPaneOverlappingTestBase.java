@@ -97,6 +97,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     protected boolean isMultiFramesTest(){
         return false;
     }
+
     /**
      * Run test by {@link OverlappingTestBase#clickAndBlink(java.awt.Robot, java.awt.Point) } validation for current lightweight component.
      * <p>Also resize component and repeat validation in the resized area.
