@@ -502,6 +502,7 @@ public enum Option {
                               String.format(LINT_KEY_FORMAT,
                                             LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
+            log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.footer"));
             super.process(helper, option);
         }
     },
