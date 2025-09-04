@@ -557,11 +557,10 @@ public class Cipher {
         }
         if (failure instanceof NoSuchPaddingException nspe) {
             throw nspe;
-        } else {
-            throw new NoSuchAlgorithmException
-                    ("Cannot find any provider supporting " + transformation,
-                    failure);
         }
+        throw new NoSuchAlgorithmException
+                ("Cannot find any provider supporting " + transformation,
+                failure);
     }
 
     /**

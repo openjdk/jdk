@@ -57,6 +57,12 @@ public class ChaCha20CipherUnitTest {
     private static final IvParameterSpec IV_PARAM_SPEC
             = new IvParameterSpec(NONCE);
 
+    enum Expected {
+        PASS,
+        NSAE,
+        NSAE_OR_NSPE // depends on provider registration
+    }
+
     public static void main(String[] args) throws Exception {
         testTransformations();
         testInit();
@@ -67,32 +73,45 @@ public class ChaCha20CipherUnitTest {
     private static void testTransformations() throws Exception {
         System.out.println("== transformations ==");
 
-        checkTransformation("ChaCha20", true);
-        checkTransformation("ChaCha20/None/NoPadding", true);
-        checkTransformation("ChaCha20-Poly1305", true);
-        checkTransformation("ChaCha20-Poly1305/None/NoPadding", true);
+        checkTransformation("ChaCha20", Expected.PASS);
+        checkTransformation("ChaCha20/None/NoPadding", Expected.PASS);
+        checkTransformation("ChaCha20-Poly1305", Expected.PASS);
+        checkTransformation("ChaCha20-Poly1305/None/NoPadding", Expected.PASS);
 
-        checkTransformation("ChaCha20/ECB/NoPadding", false);
-        checkTransformation("ChaCha20/None/PKCS5Padding", false);
-        checkTransformation("ChaCha20-Poly1305/ECB/NoPadding", false);
-        checkTransformation("ChaCha20-Poly1305/None/PKCS5Padding", false);
+        checkTransformation("ChaCha20-Poly1305/BAD_MODE/NoPadding", Expected.NSAE);
+        checkTransformation("ChaCha20-Poly1305/BAD_MODE/PKCS5Padding", Expected.NSAE);
+
+        checkTransformation("ChaCha20/ECB/NoPadding", Expected.NSAE_OR_NSPE);
+        checkTransformation("ChaCha20/None/PKCS5Padding", Expected.NSAE_OR_NSPE);
+        checkTransformation("ChaCha20-Poly1305/ECB/NoPadding",
+                Expected.NSAE_OR_NSPE);
+        checkTransformation("ChaCha20-Poly1305/None/PKCS5Padding",
+                Expected.NSAE_OR_NSPE);
     }
 
-    private static void checkTransformation(String transformation,
-            boolean expected) throws Exception {
+    private static void checkTransformation(String transformation, Expected e)
+            throws Exception {
         try {
             Cipher.getInstance(transformation);
-            if (!expected) {
+            if (e == Expected.PASS) {
+                System.out.println("Expected PASS: " + transformation);
+            } else {
                 throw new RuntimeException(
-                        "Unexpected transformation: " + transformation);
-            } else {
-                System.out.println("Expected transformation: " + transformation);
+                        "Unexpected PASS for " + transformation);
             }
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            if (!expected) {
-                System.out.println("Unexpected transformation: " + transformation);
+        } catch (NoSuchAlgorithmException nsae) {
+            if (e == Expected.NSAE || e == Expected.NSAE_OR_NSPE) {
+                System.out.println("Expected NSAE: " + transformation);
             } else {
-                throw new RuntimeException("Unexpected fail: " + transformation, e);
+                throw new RuntimeException("Unexpected NSAE for " +
+                        transformation);
+            }
+        } catch (NoSuchPaddingException nspe) {
+            if (e == Expected.NSAE_OR_NSPE) {
+                System.out.println("Expected NSPE: " + transformation);
+            } else {
+                throw new RuntimeException("Unexpected NSPE for " +
+                        transformation);
             }
         }
     }
