@@ -51,6 +51,7 @@
  * @run main/othervm PacketLossRetransmission server 15 certificate_verify
  * @run main/othervm PacketLossRetransmission server 20 finished
  * @run main/othervm PacketLossRetransmission server 21 certificate_url
+ * @run main/othervm PacketLossRetransmission server 22 certificate_status
  * @run main/othervm PacketLossRetransmission server 23 supplemental_data
  * @run main/othervm PacketLossRetransmission server -1 change_cipher_spec
  */
