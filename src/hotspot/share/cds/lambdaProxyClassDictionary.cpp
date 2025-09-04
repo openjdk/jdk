@@ -247,12 +247,12 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   assert(method_type != nullptr, "sanity");
   assert(instantiated_method_type != nullptr, "sanity");
 
-  if (!caller_ik->is_shared()     ||
-      !invoked_name->is_shared()  ||
-      !invoked_type->is_shared()  ||
-      !method_type->is_shared()   ||
-      (member_method != nullptr && !member_method->is_shared()) ||
-      !instantiated_method_type->is_shared()) {
+  if (!caller_ik->in_aot_cache()     ||
+      !invoked_name->in_aot_cache()  ||
+      !invoked_type->in_aot_cache()  ||
+      !method_type->in_aot_cache()   ||
+      (member_method != nullptr && !member_method->in_aot_cache()) ||
+      !instantiated_method_type->in_aot_cache()) {
     // These can't be represented as u4 offset, but we wouldn't have archived a lambda proxy in this case anyway.
     return nullptr;
   }
@@ -325,7 +325,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
 
   InstanceKlass* shared_nest_host = get_shared_nest_host(lambda_ik);
   assert(shared_nest_host != nullptr, "unexpected nullptr _nest_host");
-  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
+  assert(shared_nest_host->in_aot_cache(), "nest host must be in aot metaspace");
 
   Klass* resolved_nest_host = SystemDictionary::resolve_or_fail(shared_nest_host->name(), class_loader, true, CHECK_NULL);
   if (resolved_nest_host != shared_nest_host) {

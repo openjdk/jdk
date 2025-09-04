@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ void InstanceMirrorKlass::do_metadata(oop obj, OopClosureType* closure) {
   if (klass != nullptr) {
     if (klass->class_loader_data() == nullptr) {
       // This is a mirror that belongs to a shared class that has not been loaded yet.
-      assert(klass->is_shared(), "Must be");
+      assert(klass->in_aot_cache(), "Must be");
     } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
       // A non-strong hidden class doesn't have its own class loader,
       // so when handling the java mirror for the class we need to make sure its class

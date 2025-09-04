@@ -22,11 +22,11 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "logging/log.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -321,7 +321,7 @@ void CppVtables::zero_archived_vtables() {
 }
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
-  assert(MetaspaceShared::is_in_shared_metaspace(m), "must be");
+  assert(AOTMetaspace::in_aot_cache(m), "must be");
   return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
          vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
 }

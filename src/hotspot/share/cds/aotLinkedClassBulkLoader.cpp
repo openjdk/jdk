@@ -221,7 +221,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
           log_error(aot)("Unable to resolve %s class from %s: %s", category_name, CDSConfig::type_of_archive_being_loaded(), ik->external_name());
           log_error(aot)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
           log_error(aot)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
-          MetaspaceShared::unrecoverable_loading_error();
+          AOTMetaspace::unrecoverable_loading_error();
         }
         assert(actual->is_loaded(), "must be");
       }
@@ -294,7 +294,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
          HeapShared::is_lambda_proxy_klass(ik) ||
          HeapShared::is_string_concat_klass(ik), "sanity");
   DEBUG_ONLY({
-      assert(ik->java_super()->is_loaded(), "must be");
+      assert(ik->super()->is_loaded(), "must be");
       for (int i = 0; i < ik->local_interfaces()->length(); i++) {
         assert(ik->local_interfaces()->at(i)->is_loaded(), "must be");
       }
