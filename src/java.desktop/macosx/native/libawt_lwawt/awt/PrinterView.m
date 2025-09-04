@@ -31,7 +31,6 @@
 #import "ThreadUtilities.h"
 #import "GeomUtilities.h"
 #import "JNIUtilities.h"
-#import "CGraphicsDevice.h"
 
 static jclass sjc_CPrinterJob = NULL;
 static jclass sjc_PAbortEx = NULL;
@@ -113,10 +112,11 @@ static jclass sjc_PAbortEx = NULL;
     jdouble vRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getYRes);
     CHECK_EXCEPTION();
     if (hRes > 0 && vRes > 0) {
-        double scaleX = DEFAULT_DEVICE_DPI / hRes;
-        double scaleY = DEFAULT_DEVICE_DPI / vRes;
+        double defaultDeviceDPI = 72;
+        double scaleX = defaultDeviceDPI / hRes;
+        double scaleY = defaultDeviceDPI / vRes;
         if (scaleX != 1 || scaleY != 1) {
-            if ([[[NSPrintOperation currentOperation] printInfo] orientation] == NSPortraitOrientation) {
+            if ([[[NSPrintOperation currentOperation] printInfo] orientation] == NSPaperOrientationPortrait) {
                 CGContextScaleCTM(cgRef, scaleX, scaleY);
             } else {
                 CGContextScaleCTM(cgRef, scaleY, scaleX);
