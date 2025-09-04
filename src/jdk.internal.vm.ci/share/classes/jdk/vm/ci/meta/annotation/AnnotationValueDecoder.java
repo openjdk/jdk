@@ -30,10 +30,10 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.TypeAnnotation;
 
+import java.lang.reflect.AnnotatedElement;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link AnnotationDecoder} that resolves type names to {@link JavaType} values
@@ -44,9 +44,18 @@ public final class AnnotationValueDecoder implements AnnotationDecoder<ResolvedJ
 
     private final ResolvedJavaType accessingClass;
 
+    /**
+     * While the order of {@link AnnotatedElement#getAnnotations()} is not specified,
+     * {@link sun.reflect.annotation.AnnotationParser#parseAnnotations} uses a {@link LinkedHashMap} to preserve
+     * class file order. This method does the same.
+     */
     public Map<ResolvedJavaType, AnnotationValue> decode(byte[] encoded) {
         List<AnnotationValue> annotationValues = VMSupport.decodeAnnotations(encoded, this);
-        return annotationValues.stream().collect(Collectors.toMap(AnnotationValue::getAnnotationType, Function.identity()));
+        Map<ResolvedJavaType, AnnotationValue> result = new LinkedHashMap<>(annotationValues.size());
+        for (AnnotationValue av : annotationValues) {
+            result.put(av.getAnnotationType(), av);
+        }
+        return result;
     }
 
     public AnnotationValueDecoder(ResolvedJavaType accessingClass) {
