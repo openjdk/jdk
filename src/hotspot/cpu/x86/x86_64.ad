@@ -11739,7 +11739,7 @@ instruct conv2F2I_reg_reg(rRegI dst, regF src)
 instruct conv2F2I_reg_mem(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
-  match(Set dst (ConvF2I src));
+  match(Set dst (ConvF2I (LoadF src)));
   format %{ "evcvttss2sisl $dst, $src" %}
   ins_encode %{
     __ evcvttss2sisl($dst$$Register, $src$$Address);
@@ -11773,7 +11773,7 @@ instruct conv2F2L_reg_reg(rRegL dst, regF src)
 instruct conv2F2L_reg_mem(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
-  match(Set dst (ConvF2L src));
+  match(Set dst (ConvF2L (LoadF src)));
   format %{ "evcvttss2sisq $dst, $src" %}
   ins_encode %{
     __ evcvttss2sisq($dst$$Register, $src$$Address);
@@ -11807,7 +11807,7 @@ instruct conv2D2I_reg_reg(rRegI dst, regD src)
 instruct conv2D2I_reg_mem(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
-  match(Set dst (ConvD2I src));
+  match(Set dst (ConvD2I (LoadD src)));
   format %{ "evcvttsd2sisl $dst, $src" %}
   ins_encode %{
     __ evcvttsd2sisl($dst$$Register, $src$$Address);
@@ -11841,7 +11841,7 @@ instruct conv2D2L_reg_reg(rRegL dst, regD src)
 instruct conv2D2L_reg_mem(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
-  match(Set dst (ConvD2I src));
+  match(Set dst (ConvD2I (LoadD src)));
   format %{ "evcvttsd2sisq $dst, $src" %}
   ins_encode %{
     __ evcvttsd2sisq($dst$$Register, $src$$Address);
