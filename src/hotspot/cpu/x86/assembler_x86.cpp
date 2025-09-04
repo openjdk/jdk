@@ -13051,13 +13051,13 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
                                      int size, int opcode_byte, bool no_flags, bool is_map1, bool swap, bool is_commutative) {
   int encode;
   bool is_prefixq = (size == EVEX_64bit) ? true : false;
-  bool normal_demotion = is_demotable(no_flags, dst_enc, nds_enc);
-  bool commutative_demotion = is_commutative && is_demotable(no_flags, dst_enc, src_enc);
-  if (normal_demotion || commutative_demotion) {
+  bool first_operand_demotable = is_demotable(no_flags, dst_enc, nds_enc);
+  bool second_operand_demotable = is_commutative && is_demotable(no_flags, dst_enc, src_enc);
+  if (first_operand_demotable || second_operand_demotable) {
     if (size == EVEX_16bit) {
       emit_int8(0x66);
     }
-    int src = normal_demotion ? src_enc : nds_enc;
+    int src = first_operand_demotable ? src_enc : nds_enc;
     if (swap) {
       encode = is_prefixq ? prefixq_and_encode(dst_enc, src, is_map1) : prefix_and_encode(dst_enc, src, is_map1);
     } else {
@@ -13077,13 +13077,13 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
 }
 
 int Assembler::emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool commutative_demotion) {
-  bool normal_demotion = is_demotable(no_flags, dst_enc, nds_enc);
-  if (normal_demotion || commutative_demotion) {
+                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool second_operand_demotable) {
+  bool first_operand_demotable = is_demotable(no_flags, dst_enc, nds_enc);
+  if (first_operand_demotable || second_operand_demotable) {
     if (pre == VEX_SIMD_66) {
       emit_int8(0x66);
     }
-    if (commutative_demotion) {
+    if (second_operand_demotable) {
       return use_prefixq ? prefixq_and_encode(nds_enc, dst_enc) : prefix_and_encode(nds_enc, dst_enc);
     } else {
       return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
@@ -13116,11 +13116,11 @@ int Assembler::eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc,
 
 void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
                                                InstructionAttr *attributes, int op1, int op2, bool no_flags, bool use_prefixq, bool is_commutative) {
-  bool commutative_demotion = is_commutative && is_demotable(no_flags, dst->encoding(), src2->encoding());
+  bool second_operand_demotable = is_commutative && is_demotable(no_flags, dst->encoding(), src2->encoding());
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
   // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, attributes, no_flags, use_prefixq, commutative_demotion);
-  emit_arith(op1, op2, src1, src2, commutative_demotion);
+  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, attributes, no_flags, use_prefixq, second_operand_demotable);
+  emit_arith(op1, op2, src1, src2, second_operand_demotable);
 }
 
 void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,

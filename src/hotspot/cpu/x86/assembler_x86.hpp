@@ -802,7 +802,7 @@ private:
   int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool commutative_demotion = false);
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool second_operand_demotable = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
