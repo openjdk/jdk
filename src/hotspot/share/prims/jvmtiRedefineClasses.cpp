@@ -28,10 +28,10 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/klassFactory.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -55,8 +55,8 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "prims/resolvedMethodTable.hpp"
 #include "prims/methodComparator.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1358,10 +1358,12 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // constant pools
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
-
+    size_t avail_mem = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
-      ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
-       the_class->external_name(), _class_load_kind, os::available_memory() >> 10);
+      ("loading name=%s kind=%d (avail_mem=%zuK)",
+       the_class->external_name(), _class_load_kind, avail_mem >> 10);
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
@@ -1525,9 +1527,10 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
         return JVMTI_ERROR_INTERNAL;
       }
     }
-
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
-      ("loaded name=%s (avail_mem=" UINT64_FORMAT "K)", the_class->external_name(), os::available_memory() >> 10);
+      ("loaded name=%s (avail_mem=%zuK)", the_class->external_name(), avail_mem >> 10);
   }
 
   return JVMTI_ERROR_NONE;
@@ -4435,9 +4438,12 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     ResourceMark rm(current);
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
+    size_t avail_mem = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_info(redefine, class, load)
-      ("redefined name=%s, count=%d (avail_mem=" UINT64_FORMAT "K)",
-       the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), os::available_memory() >> 10);
+      ("redefined name=%s, count=%d (avail_mem=%zuK)",
+       the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), avail_mem >> 10);
     Events::log_redefinition(current, "redefined class name=%s, count=%d",
                              the_class->external_name(),
                              java_lang_Class::classRedefinedCount(the_class->java_mirror()));

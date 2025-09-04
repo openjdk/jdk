@@ -294,7 +294,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
          HeapShared::is_lambda_proxy_klass(ik) ||
          HeapShared::is_string_concat_klass(ik), "sanity");
   DEBUG_ONLY({
-      assert(ik->java_super()->is_loaded(), "must be");
+      assert(ik->super()->is_loaded(), "must be");
       for (int i = 0; i < ik->local_interfaces()->length(); i++) {
         assert(ik->local_interfaces()->at(i)->is_loaded(), "must be");
       }
