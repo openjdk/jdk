@@ -5764,12 +5764,14 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_loader_data != nullptr, "invariant");
 
   if (_class_name == vmSymbols::java_lang_Object()) {
+    precond(_super_class_index == 0);
+    precond(_super_klass == nullptr);
     guarantee_property(_local_interfaces == Universe::the_empty_instance_klass_array(),
                        "java.lang.Object cannot implement an interface in class file %s",
                        CHECK);
-  }
-  // Set _super_klass after class file is parsed and format is checked
-  if (_super_class_index > 0) {
+  } else {
+    // Set _super_klass after class file is parsed and format is checked
+    assert(_super_class_index > 0, "any class other than Object must have a super class");
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
@@ -5790,9 +5792,6 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                                true,
                                                                CHECK);
     }
-  } else {
-    assert(_class_name == vmSymbols::java_lang_Object(), "already checked");
-    _super_klass = nullptr;
   }
 
   if (_super_klass != nullptr) {
