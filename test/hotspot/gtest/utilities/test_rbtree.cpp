@@ -1060,7 +1060,7 @@ TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
 }
 
 TEST_VM(RBTreeTestNonFixture, TestPrintCustomPrinter) {
-  typedef RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
+  typedef RBTreeCHeap<int, unsigned, IntCmp, mtTest> TreeType;
   typedef RBNode<int, unsigned> NodeType;
 
   TreeType tree;
