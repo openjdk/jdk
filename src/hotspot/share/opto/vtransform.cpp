@@ -217,7 +217,7 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
-  add_speculative_check(bol_alignment);
+  add_speculative_check([&] (Node* ctrl) { return bol_alignment; });
 }
 
 class VPointerWeakAliasingPair : public StackObj {
@@ -282,8 +282,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
-          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
-          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+          const VPointer& vp1 = vtn->vpointer();
+          const VPointer& vp2 = use->vpointer();
 #ifdef ASSERT
           if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
             tty->print_cr("\nViolated Weak Edge:");
@@ -389,8 +389,9 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
       }
 #endif
 
-      BoolNode* bol = vp1_union.make_speculative_aliasing_check_with(vp2_union);
-      add_speculative_check(bol);
+      add_speculative_check([&] (Node* ctrl) {
+        return vp1_union.make_speculative_aliasing_check_with(vp2_union, ctrl);
+      });
 
       group_start = group_end;
     }
@@ -420,7 +421,13 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
 //       Multiversioning takes more compile time and code cache, but it also
 //       produces fast code for when the runtime check passes (vectorized) and
 //       when it fails (scalar performance).
-void VTransform::add_speculative_check(BoolNode* bol) {
+//
+// Callback:
+//   In some cases, we require the ctrl just before the check iff_speculate to
+//   generate the values required in the check. We pass this ctrl into the
+//   callback, which is expected to produce the check, i.e. a BoolNode.
+template<typename Callback>
+void VTransform::add_speculative_check(Callback callback) {
   assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
   IfTrueNode* new_check_proj = nullptr;
@@ -432,6 +439,10 @@ void VTransform::add_speculative_check(BoolNode* bol) {
     new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
   }
   Node* iff_speculate = new_check_proj->in(0);
+
+  // Create the check, given the ctrl just before the iff.
+  BoolNode* bol = callback(iff_speculate->in(0));
+
   igvn().replace_input_of(iff_speculate, 1, bol);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
 }
@@ -630,7 +641,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        const VPointer& p = vtn->vpointer();
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           bool is_load = vtn->is_load_in_loop();
@@ -708,7 +719,27 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
-VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
@@ -861,7 +892,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
-  const VPointer& load_p = vpointer(apply_state.vloop_analyzer());
+  const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
     VPointer store_p(mem->as_Mem(), apply_state.vloop());
     if (store_p.never_overlaps_with(load_p)) {
@@ -983,7 +1014,24 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
   }
 }
 
-void VTransformScalarNode::print_spec() const {
+void VTransformMemopScalarNode::print_spec() const {
+  tty->print("node[%d %s] ", _node->_idx, _node->Name());
+  _vpointer.print_on(tty, false);
+}
+
+void VTransformDataScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformLoopPhiNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformCFGNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformOuterNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
@@ -1011,5 +1059,9 @@ void VTransformVectorNode::print_spec() const {
     tty->print("%d %s", n->_idx, n->Name());
   }
   tty->print("]");
+  if (is_load_or_store_in_loop()) {
+    tty->print(" ");
+    vpointer().print_on(tty, false);
+  }
 }
 #endif

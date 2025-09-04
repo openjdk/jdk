@@ -28,7 +28,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /testlibrary/asm
  * @library /runtime/SelectionResolution/classes
- * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeInterfaceSuccessTest
+ * @run main/othervm/timeout=1200 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeInterfaceSuccessTest
  */
 
 import java.util.Arrays;

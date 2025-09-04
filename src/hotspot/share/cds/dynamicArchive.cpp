@@ -187,10 +187,10 @@ public:
     for (int i = T_BOOLEAN; i <= T_LONG; i++) {
       assert(is_java_primitive((BasicType)i), "sanity");
       Klass* k = Universe::typeArrayKlass((BasicType)i);  // this give you "[I", etc
-      assert(MetaspaceShared::is_shared_static((void*)k),
+      assert(MetaspaceShared::in_aot_cache_static_region((void*)k),
         "one-dimensional primitive array should be in static archive");
       ArrayKlass* ak = ArrayKlass::cast(k);
-      while (ak != nullptr && ak->is_shared()) {
+      while (ak != nullptr && ak->in_aot_cache()) {
         Klass* next_k = ak->array_klass_or_null();
         if (next_k != nullptr) {
           ak = ArrayKlass::cast(next_k);
@@ -253,7 +253,7 @@ void DynamicArchiveBuilder::sort_methods() {
 // klasses were created. Re-sort all the tables. See Method::sort_methods().
 void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   assert(ik != nullptr, "DynamicArchiveBuilder currently doesn't support dumping the base archive");
-  if (MetaspaceShared::is_in_shared_metaspace(ik)) {
+  if (MetaspaceShared::in_aot_cache(ik)) {
     // We have reached a supertype that's already in the base archive
     return;
   }
@@ -276,7 +276,7 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   remark_pointers_for_instance_klass(ik, false);
 
   // Make sure all supertypes have been sorted
-  sort_methods(ik->java_super());
+  sort_methods(ik->super());
   Array<InstanceKlass*>* interfaces = ik->local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
@@ -287,13 +287,13 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   if (ik->methods() != nullptr) {
     for (int m = 0; m < ik->methods()->length(); m++) {
       Symbol* name = ik->methods()->at(m)->name();
-      assert(MetaspaceShared::is_in_shared_metaspace(name) || is_in_buffer_space(name), "must be");
+      assert(MetaspaceShared::in_aot_cache(name) || is_in_buffer_space(name), "must be");
     }
   }
   if (ik->default_methods() != nullptr) {
     for (int m = 0; m < ik->default_methods()->length(); m++) {
       Symbol* name = ik->default_methods()->at(m)->name();
-      assert(MetaspaceShared::is_in_shared_metaspace(name) || is_in_buffer_space(name), "must be");
+      assert(MetaspaceShared::in_aot_cache(name) || is_in_buffer_space(name), "must be");
     }
   }
 #endif
@@ -367,14 +367,14 @@ void DynamicArchiveBuilder::gather_array_klasses() {
     if (klasses()->at(i)->is_objArray_klass()) {
       ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
       Klass* elem = oak->element_klass();
-      if (MetaspaceShared::is_shared_static(elem)) {
+      if (MetaspaceShared::in_aot_cache_static_region(elem)) {
         // Only capture the array klass whose element_klass is in the static archive.
         // During run time, setup (see DynamicArchive::setup_array_klasses()) is needed
         // so that the element_klass can find its array klasses from the dynamic archive.
         DynamicArchive::append_array_klass(oak);
       } else {
         // The element_klass and its array klasses are in the same archive.
-        assert(!MetaspaceShared::is_shared_static(oak),
+        assert(!MetaspaceShared::in_aot_cache_static_region(oak),
           "we should not gather klasses that are already in the static archive");
       }
     }
@@ -435,7 +435,7 @@ void DynamicArchive::setup_array_klasses() {
       assert(!oak->is_typeArray_klass(), "all type array classes must be in static archive");
 
       Klass* elm = oak->element_klass();
-      assert(MetaspaceShared::is_shared_static((void*)elm), "must be");
+      assert(MetaspaceShared::in_aot_cache_static_region((void*)elm), "must be");
 
       if (elm->is_instance_klass()) {
         assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");

@@ -3957,7 +3957,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const InstanceKlass* const super = ik->java_super();
+  const InstanceKlass* const super = ik->super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -4092,7 +4092,7 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
 
 void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != nullptr, "invariant");
-  const InstanceKlass* const super = this_klass->java_super();
+  const InstanceKlass* const super = this_klass->super();
 
   if (super != nullptr) {
     if (super->is_final()) {
@@ -4210,7 +4210,7 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const InstanceKlass* k = this_klass->java_super();
+      const InstanceKlass* k = this_klass->super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
@@ -4242,11 +4242,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->java_super();
+          k = super_m->method_holder()->super();
           continue;
         }
 
-        k = k->java_super();
+        k = k->super();
       }
     }
   }
@@ -5292,10 +5292,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
-      if (ik->java_super() != nullptr) {
+      if (ik->super() != nullptr) {
         log_debug(class, resolve)("%s %s (super)",
                    from,
-                   ik->java_super()->external_name());
+                   ik->super()->external_name());
       }
       // print out each of the interface classes referred to by this class.
       const Array<InstanceKlass*>* const local_interfaces = ik->local_interfaces();
