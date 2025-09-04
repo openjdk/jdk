@@ -3107,7 +3107,7 @@ instruct replicateB_imm8_gt128b(vReg dst, immI8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateI_imm8_gt128b(vReg dst, immI8_shift8 con) %{
+instruct replicateI_imm8_gt128b(vReg dst, immIDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16 &&
             (Matcher::vector_element_basic_type(n) == T_SHORT ||
              Matcher::vector_element_basic_type(n) == T_INT));
@@ -3130,7 +3130,7 @@ instruct replicateL_imm_128b(vReg dst, immL con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
+instruct replicateL_imm8_gt128b(vReg dst, immLDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
@@ -3141,19 +3141,27 @@ instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-// Replicate a 16-bit half precision float value
-instruct replicateHF_imm(vReg dst, immH con) %{
+// Replicate an immediate 16-bit half precision float value
+instruct replicateHF_imm_le128b(vReg dst, immH con) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
   match(Set dst (Replicate con));
-  format %{ "replicateHF_imm $dst, $con\t# replicate immediate half-precision float" %}
+  format %{ "replicateHF_imm_le128b $dst, $con\t# vector <= 128 bits" %}
   ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     int imm = (int)($con$$constant) & 0xffff;
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ mov($dst$$FloatRegister, get_arrangement(this), imm);
-    } else { // length_in_bytes must be > 16 and SVE should be enabled
-      assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ H, imm);
-    }
+    __ mov($dst$$FloatRegister, get_arrangement(this), imm);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Replicate a 16-bit half precision float which is within the limits
+// for the operand - immHDupV
+instruct replicateHF_imm8_gt128b(vReg dst, immHDupV con) %{
+  predicate(Matcher::vector_length_in_bytes(n) > 16);
+  match(Set dst (Replicate con));
+  format %{ "replicateHF_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_dup($dst$$FloatRegister, __ H, (int)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
