@@ -795,9 +795,10 @@ public final class String
      * @param cs charset the byte array encoded in
      *
      * @throws CharacterCodingException for malformed input or unmappable characters
-     * @throws NullPointerException If {@code src} is null
+     * @throws NullPointerException If {@code src} or {@code cs} is null
      */
     static String newStringOrThrow(byte[] src, Charset cs) throws CharacterCodingException {
+        Objects.requireNonNull(cs);
         int len = src.length;   // Implicit null check on `src`
         if (len == 0) {
             return "";
