@@ -1061,7 +1061,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  julong free_memory = os::free_memory();
+  size_t free_memory = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),
          available_cc_p  = CodeCache::unallocated_capacity(CodeBlobType::MethodProfiled);
