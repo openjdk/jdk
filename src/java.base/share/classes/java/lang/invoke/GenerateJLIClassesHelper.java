@@ -66,7 +66,7 @@ import static java.lang.invoke.MethodTypeForm.*;
 /// Pregenerated species classes are resolved in [ClassSpecializer.Factory#loadSpecies]
 /// and behave identically to on-demand generated ones.  Pregenerated lambda
 /// forms are resolved in [InvokerBytecodeGenerator#lookupPregenerated], which
-/// look up from the following 4 possibly-generated classes:
+/// looks up methods for code from the following 4 possibly-generated classes:
 ///  -  [Invokers.Holder]
 ///  -  [DirectMethodHandle.Holder]
 ///  -  [DelegatingMethodHandle.Holder]
@@ -90,14 +90,14 @@ import static java.lang.invoke.MethodTypeForm.*;
 ///
 /// > To list all the Species classes in a JDK image:
 /// > ```
-/// jimage list $JAVA_HOME/lib/modules | grep BoundMethodHandle.Species_
-/// ```
+/// > jimage list $JAVA_HOME/lib/modules | grep BoundMethodHandle.Species_
+/// > ```
 ///
 /// > All these pregenerated classes can be examined by javap in the same image:
 /// > (Note to escape `$` in bash)
 /// > ```
-/// javap -c -p -v java.lang.invoke.LambdaForm\$Holder
-/// ```
+/// > javap -c -p -v java.lang.invoke.LambdaForm\$Holder
+/// > ```
 ///
 /// #### AOT Cache
 /// When creating an AOT cache, *traces* generated from the training run are
@@ -396,6 +396,7 @@ final class GenerateJLIClassesHelper {
     /// subject to change.
     ///
     /// @param traces the *traces* to determine the lambda forms and species
+    ///        to generate
     /// @see MethodHandleStatics#traceLambdaForm
     /// @see MethodHandleStatics#traceSpeciesType
     static Map<String, byte[]> generateHolderClasses(Stream<String> traces)  {
