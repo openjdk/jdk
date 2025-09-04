@@ -80,8 +80,6 @@ public class UpdateAADTest {
         new AADUpdateTest(twoKBuf.rewind().slice(1024,1024).position(42),
                 true).run();
 
-        // Test 5: Try the same test, this time with non-block aligned
-        // buffers/slices.
         System.out.println("----- Test 5: Non-Aligned Buffer Slice -----");
         System.out.println("Try the same test as #4, this time with " +
                            "non-block aligned buffers/slices.");
