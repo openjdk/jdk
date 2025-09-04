@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,11 @@ public class MacPath {
                 found_file_nfd |= match(fpath_nfd, path);
             }
         }
-        if (!found_dir || !found_file_nfc || !found_file_nfd) {
+        if (!found_dir || !found_file_nfc
+            || (!found_file_nfd && form == Normalizer.Form.NFD
+                && !Normalizer.normalize(fname_nfc, form).equals(fname_nfd)))
             throw new RuntimeException("File.equal() failed");
-        }
+
         // glob
         String glob = "*" + fname_nfd.substring(2);  // remove leading "FI" from "FILE..."
         System.out.println("glob=" + glob);

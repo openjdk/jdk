@@ -124,7 +124,6 @@ class UnixPath implements Path {
 
     // encodes the given path-string into a sequence of bytes
     private static byte[] encode(UnixFileSystem fs, String input) {
-        input = fs.normalizeNativePath(input);
         try {
             return JLA.uncheckedGetBytesNoRepl(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
@@ -814,7 +813,7 @@ class UnixPath implements Path {
         // OK if two or more threads create a String
         String stringValue = this.stringValue;
         if (stringValue == null) {
-            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = Util.toString(path);     // platform encoding
         }
         return stringValue;
     }
