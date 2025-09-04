@@ -22,6 +22,7 @@
  *
  */
 
+#include "metaprogramming/enableIf.hpp"
 #include "opto/graphInvariants.hpp"
 #include "opto/rootnode.hpp"
 
@@ -98,6 +99,20 @@ struct Bind : Pattern {
 
 private:
   const Node*& _binding;
+};
+
+/* A more type-safe version of `Bind` mostly to use with NodeClassIsAndBind macro defined later
+ */
+template <typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
+struct TypedBind : Pattern {
+  explicit TypedBind(const N*& binding) : _binding(binding) {}
+  bool check(const Node* center, Node_List&, GrowableArray<int>&, stringStream&) const override {
+    _binding = static_cast<const N*>(center);
+    return true;
+  }
+
+private:
+  const N*& _binding;
 };
 
 /* Matches multiple patterns at the same node.
@@ -224,6 +239,18 @@ struct NodeClass : Pattern {
   bool (Node::*_type_check)() const;
 };
 
+
+/* To check the kind of a node and bind it to a variable of the right type.
+ * For instance:
+ *   const RegionNode* r;
+ *   NodeClassIsAndBind(Region, r)
+ */
+#define NodeClassIsAndBind(node_type, binding)  \
+  And::make(                                    \
+      new NodeClass(&Node::is_ ## node_type),   \
+      new TypedBind<node_type ## Node>(binding) \
+  )
+
 struct HasNOutputs : Pattern {
   explicit HasNOutputs(uint expect_outcnt) : _expect_outcnt(expect_outcnt) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
@@ -321,16 +348,14 @@ struct IfProjections : PatternBasedCheck {
 /* Check that Phi has a Region as first input, and consistent arity
  */
 struct PhiArity : PatternBasedCheck {
-  const Node* region_node = nullptr;
+  const RegionNode* region_node = nullptr;
   PhiArity()
       : PatternBasedCheck(
             And::make(
                 new HasAtLeastNInputs(1),
                 new AtInput(
                     0,
-                    And::make(
-                        new NodeClass(&Node::is_Region),
-                        new Bind(region_node))))) {
+                    NodeClassIsAndBind(Region, region_node)))) {
   }
   const char* name() const override {
     return "PhiArity";
@@ -480,7 +505,7 @@ struct SelfLoopInvariant : LocalGraphInvariant {
 
 // CountedLoopEnd -> IfTrue -> CountedLoop
 struct CountedLoopInvariants : PatternBasedCheck {
-  const Node* counted_loop_end = nullptr;
+  const BaseCountedLoopEndNode* counted_loop_end = nullptr;
   CountedLoopInvariants()
       : PatternBasedCheck(
             And::make(
@@ -492,9 +517,7 @@ struct CountedLoopInvariants : PatternBasedCheck {
                         new HasExactlyNInputs(1),
                         new AtInput(
                             0,
-                            And::make(
-                                new NodeClass(&Node::is_BaseCountedLoopEnd),
-                                new Bind(counted_loop_end))))))) {}
+                            NodeClassIsAndBind(BaseCountedLoopEnd, counted_loop_end)))))) {}
   const char* name() const override {
     return "CountedLoopInvariants";
   }
