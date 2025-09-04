@@ -127,6 +127,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                 latch.countDown();
             }
         });
+
         if (testResize) {
             wasLWClicked = false;
             try {
