@@ -294,7 +294,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to I/L ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "avx10_2", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_float, max_int)", ">0"})
     public int[] convertFloatToInt() {
         int[] res = new int[SIZE];
@@ -305,7 +305,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "avx10_2", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_F2L, IRNode.VECTOR_SIZE + "min(max_float, max_long)", ">0"})
     public long[] convertFloatToLong() {
         long[] res = new long[SIZE];
@@ -316,7 +316,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "avx10_2", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_D2I, IRNode.VECTOR_SIZE + "min(max_double, max_int)", ">0"})
     public int[] convertDoubleToInt() {
         int[] res = new int[SIZE];
@@ -327,7 +327,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "avx10_2", "true", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_D2L, IRNode.VECTOR_SIZE + "min(max_double, max_long)", ">0"})
     public long[] convertDoubleToLong() {
         long[] res = new long[SIZE];
@@ -339,7 +339,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "avx10_2", "true", "rvv", "true"},
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_short)", ">0"})
     public short[] convertFloatToShort() {
@@ -358,7 +358,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "avx10_2", "true", "rvv", "true"},
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_char)", ">0"})
     public char[] convertFloatToChar() {
@@ -380,7 +380,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeature = {"rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_short)", ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "avx10_2", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_short)", ">0"})
     public short[] convertDoubleToShort() {
@@ -395,7 +395,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeature = {"rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_char)", ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "avx10_2", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_char)", ">0"})
     public char[] convertDoubleToChar() {
