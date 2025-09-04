@@ -21,22 +21,16 @@
  * questions.
  */
 
-import java.awt.Component;
 import java.awt.Container;
-import java.awt.KeyboardFocusManager;
 import java.awt.Point;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.Override;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
-import test.java.awt.regtesthelpers.Util;
 
 /**
  * Base class for testing overlapping of Swing and AWT component put into GlassPane.
