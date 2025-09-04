@@ -28,7 +28,7 @@ import jdk.vm.ci.meta.InvokeTarget;
 
 import java.util.Objects;
 
-public class HotSpotCall extends Call {
+public class HotSpotDirectCall extends Call {
 
     /**
      * Specifies if the target method should be attached to the call site.
@@ -37,8 +37,8 @@ public class HotSpotCall extends Call {
      */
     public final boolean bind;
 
-    public HotSpotCall(InvokeTarget target, int pcOffset, int size, boolean direct, DebugInfo debugInfo, boolean bind) {
-        super(target, pcOffset, size, direct, debugInfo);
+    public HotSpotDirectCall(InvokeTarget target, int pcOffset, int size, DebugInfo debugInfo, boolean bind) {
+        super(target, pcOffset, size, true, debugInfo);
         this.bind = bind;
     }
 
@@ -47,8 +47,8 @@ public class HotSpotCall extends Call {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotCall && super.equals(obj)) {
-            HotSpotCall that = (HotSpotCall) obj;
+        if (obj instanceof HotSpotDirectCall && super.equals(obj)) {
+            HotSpotDirectCall that = (HotSpotDirectCall) obj;
             if (this.size == that.size && this.direct == that.direct && Objects.equals(this.target, that.target) && this.bind == that.bind) {
                 return true;
             }

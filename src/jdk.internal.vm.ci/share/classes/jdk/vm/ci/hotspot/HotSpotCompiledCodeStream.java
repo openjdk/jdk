@@ -133,7 +133,7 @@ import jdk.vm.ci.services.Services;
  *   |<----------- chunkSize --------------------------->|
  *   |<-- HEADER ->|
  * </pre>
- *
+ * <p>
  * Each chunk is twice as large as its predecessor. See {@link #ensureCapacity(int)}.
  *
  * @see Option#DumpSerializedCode
@@ -758,7 +758,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                     writeMethod("target", method);
                     writeBoolean("direct", call.direct);
                     if (call.direct) {
-                        writeBoolean("bind", ((HotSpotCall) call).bind);
+                        writeBoolean("bind", ((HotSpotDirectCall) call).bind);
                     }
                     writeDebugInfo(debugInfo, true);
                 }
