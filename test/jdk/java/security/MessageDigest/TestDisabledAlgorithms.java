@@ -54,6 +54,8 @@ public class TestDisabledAlgorithms {
                 } else {
                     Utils.runAndCheckException(() -> MessageDigest.getInstance(a, p),
                             NoSuchAlgorithmException.class);
+                    Utils.runAndCheckException(() -> MessageDigest.getInstance(a,
+                            p.getName()), NoSuchAlgorithmException.class);
                 }
             } else {
                 MessageDigest m;
@@ -61,6 +63,7 @@ public class TestDisabledAlgorithms {
                     m = MessageDigest.getInstance(a);
                 } else {
                     m = MessageDigest.getInstance(a, p);
+                    m = MessageDigest.getInstance(a, p.getName());
                 }
                 System.out.println("Got MessageDigest w/ algo " +
                         m.getAlgorithm());

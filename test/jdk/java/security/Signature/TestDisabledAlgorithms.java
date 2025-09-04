@@ -54,6 +54,8 @@ public class TestDisabledAlgorithms {
                 } else {
                     Utils.runAndCheckException(() -> Signature.getInstance(a, p),
                             NoSuchAlgorithmException.class);
+                    Utils.runAndCheckException(() -> Signature.getInstance(a,
+                            p.getName()), NoSuchAlgorithmException.class);
                 }
             } else {
                 Signature s;
@@ -61,6 +63,7 @@ public class TestDisabledAlgorithms {
                     s = Signature.getInstance(a);
                 } else {
                     s = Signature.getInstance(a, p);
+                    s = Signature.getInstance(a, p.getName());
                 }
                 System.out.println("Got Signature w/ algo " + s.getAlgorithm());
             }

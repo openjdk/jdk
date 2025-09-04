@@ -59,6 +59,9 @@ public class TestDisabledAlgorithms {
                 } else {
                     Utils.runAndCheckException(() -> Cipher.getInstance(a, p),
                             NoSuchAlgorithmException.class);
+                    Utils.runAndCheckException(() -> Cipher.getInstance(a,
+                            p.getName()), NoSuchAlgorithmException.class);
+
                 }
             } else {
                 Cipher c;
@@ -66,6 +69,7 @@ public class TestDisabledAlgorithms {
                     c = Cipher.getInstance(a);
                 } else {
                     c = Cipher.getInstance(a, p);
+                    c = Cipher.getInstance(a, p.getName());
                 }
                 System.out.println("Got cipher w/ algo " + c.getAlgorithm());
             }

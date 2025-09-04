@@ -74,10 +74,13 @@ public class TestDisabledAlgorithms {
                     // with a provider argument
                     Utils.runAndCheckException(() -> KeyStore.getInstance(a, p),
                             KeyStoreException.class);
+                    Utils.runAndCheckException(() -> KeyStore.getInstance(a,
+                            p.getName()), KeyStoreException.class);
                 }
             } else {
+                KeyStore k;
                 if (p == null) {
-                    KeyStore k = KeyStore.getInstance(a);
+                    k = KeyStore.getInstance(a);
                     System.out.println("Got KeyStore w/ algo " + k.getType());
                     k = KeyStore.getInstance(new File(DIR, JKS_FN), PASSWD);
                     System.out.println("Got KeyStore w/ algo " + k.getType());
@@ -88,7 +91,8 @@ public class TestDisabledAlgorithms {
                     System.out.println("Got KeyStore w/ algo " + k.getType());
                 } else {
                     // with a provider argument
-                    KeyStore k = KeyStore.getInstance(a, p);
+                    k = KeyStore.getInstance(a, p);
+                    k = KeyStore.getInstance(a, p.getName());
                     System.out.println("Got KeyStore w/ algo " + k.getType());
                 }
             }

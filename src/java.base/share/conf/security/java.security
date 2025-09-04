@@ -807,13 +807,17 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 #
 # Note: The restriction is applied in the various getInstance(...) methods
 # of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
-# and Signature.
+# and Signature. If the algorithm is disabled, a NoSuchAlgorithmException will
+# be thrown by the getInstance methods of Cipher, MessageDigest, and Signature
+# and a KeyStoreException by the getInstance methods of KeyStore.
 #
 # Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
 #   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+#
+#jdk.crypto.disabledAlgorithms=
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
