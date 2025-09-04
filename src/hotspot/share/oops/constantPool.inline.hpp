@@ -87,4 +87,32 @@ inline oop ConstantPool::resolved_reference_from_indy(int index) const {
 inline oop ConstantPool::resolved_reference_from_method(int index) const {
   return resolved_references()->obj_at(cache()->resolved_method_entry_at(index)->resolved_references_index());
 }
+
+inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
+  if (_cur_offset + 1 > insert_into->offsets()->length() ||
+      _cur_array + 1 + 1 + argc > insert_into->bootstrap_methods()->length()) {
+    return nullptr;
+  }
+  insert_into->_offsets->at_put(_cur_offset, _cur_array);
+  BSMAttributeEntry* e = insert_into->entry(_cur_offset);
+  e->_bootstrap_method_index = bsmi;
+  e->_argument_count = argc;
+
+  _cur_array += 1 + 1 + argc;
+  _cur_offset += 1;
+  return e;
+}
+
+inline size_t BSMAttributeEntry::copy_into(u2* data, size_t size) const {
+  size_t total_u2s_needed = 1 + 1 + argument_count();
+  assert(size >= total_u2s_needed, "doesn't fit");
+  data[_bsmi_offset] = _bootstrap_method_index;
+  data[_argc_offset] = _argument_count;
+  for (int i = 0; i < argument_count(); i++) {
+    data[_argv_offset + i] = argument_indexes()[i];
+  }
+  return total_u2s_needed;
+}
+
+
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP
