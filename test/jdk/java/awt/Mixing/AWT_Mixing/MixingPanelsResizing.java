@@ -312,7 +312,7 @@ public class MixingPanelsResizing {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+
     static class TestPassedException extends RuntimeException {
     }
 }// class JButtonInGlassPane
-

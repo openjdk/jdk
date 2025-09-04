@@ -688,7 +688,7 @@ public abstract class OverlappingTestBase {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+
     static class TestPassedException extends RuntimeException {
     }
 }// class LWComboBox
-

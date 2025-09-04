@@ -52,8 +52,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         testEmbeddedFrame = true;
     }
 
-    protected final boolean MULTI_FRAMES_TEST ;
-
     /**
      * Event delivery validation. If set to true (default) tested lightweight component will be provided
      * with mouse listener which should be called in order for test to pass.
@@ -67,7 +65,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     protected SimpleOverlappingTestBase(boolean defaultClickValidation) {
         super();
         this.useDefaultClickValidation = defaultClickValidation;
-        MULTI_FRAMES_TEST = isMultiFramesTest();
     }
 
     protected boolean isMultiFramesTest(){
@@ -182,7 +179,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         }
 
             clickAndBlink(robot, lLoc);
-            if (ancestor != null && MULTI_FRAMES_TEST) {
+            if (ancestor != null && isMultiFramesTest()) {
                 ancestor.dispose();
             }
 
@@ -202,5 +199,4 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         }
         return false;
     }
-
 }
