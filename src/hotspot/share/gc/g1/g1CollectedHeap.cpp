@@ -1207,6 +1207,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cr(nullptr),
   _task_queues(nullptr),
   _partial_array_state_manager(nullptr),
+  _is_shutting_down(false),
   _ref_processor_stw(nullptr),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1505,11 +1506,12 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  return _cm_thread->should_terminate();
+bool G1CollectedHeap::is_shutting_down() const {
+  return Atomic::load_acquire(&_is_shutting_down);
 }
 
 void G1CollectedHeap::stop() {
+  Atomic::release_store_fence(&_is_shutting_down, true);
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.

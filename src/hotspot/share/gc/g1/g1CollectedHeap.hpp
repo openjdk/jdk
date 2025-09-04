@@ -817,6 +817,9 @@ public:
   G1ScannerTasksQueueSet* _task_queues;
   PartialArrayStateManager* _partial_array_state_manager;
 
+  // Flag to indicate that VM is shutting down.
+  volatile bool _is_shutting_down;
+
   // ("Weak") Reference processing support.
   //
   // G1 has 2 instances of the reference processor class.
@@ -901,8 +904,8 @@ public:
   // specified by the policy object.
   jint initialize() override;
 
-  // Returns whether concurrent mark threads (and the VM) are about to terminate.
-  bool concurrent_mark_is_terminating() const;
+  // Returns whether the VM are about to terminate.
+  bool is_shutting_down() const;
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
