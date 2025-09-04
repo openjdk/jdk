@@ -165,6 +165,7 @@ public class JdkProcServer extends AbstractServer {
     @Override
     public void close() throws IOException {
         printLog();
+        deletePort();
     }
 
     private static int readPort() {
@@ -173,6 +174,10 @@ public class JdkProcServer extends AbstractServer {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    private static void deletePort() throws IOException {
+        Utilities.deleteFile(PORT_LOG);
     }
 
     private static void savePort(int port) throws IOException {
