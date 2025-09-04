@@ -107,6 +107,7 @@ public:
       PRINTIF(info.ht, "huge");
       PRINTIF(info.anonhugepages > 0, "thp");
       PRINTIF(info.hg, "thpad");
+      PRINTIF(!info.hg && info.thpeligible == 1, "thpel");
       PRINTIF(info.nh, "nothp");
       if (num_printed == 0) {
         st->print("-");
@@ -136,6 +137,7 @@ public:
     st->print_cr("                      swap: mapping partly or completely swapped out");
     st->print_cr("                       thp: mapping uses THP");
     st->print_cr("                     thpad: mapping is THP-madvised");
+    st->print_cr("                     thpel: mapping is THP-eligible");
     st->print_cr("                     nothp: mapping is forbidden to use THP");
     st->print_cr("                      huge: mapping uses hugetlb pages");
     st->print_cr("vm info:         VM information (requires NMT)");

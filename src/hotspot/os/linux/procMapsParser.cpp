@@ -66,18 +66,24 @@ void ProcSmapsParser::scan_header_line(ProcSmapsInfo& out) {
 
 void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
 #define SCAN(key, var) \
- if (::sscanf(_line, key ": %zu kB", &var) == 1) { \
-     var *= K; \
-     return; \
+ if (::sscanf(_line, key ": %zu", &var) == 1) { \
+   return; \
  }
-  SCAN("KernelPageSize", out.kernelpagesize);
-  SCAN("Rss", out.rss);
-  SCAN("AnonHugePages", out.anonhugepages);
-  SCAN("Private_Hugetlb", out.private_hugetlb);
-  SCAN("Shared_Hugetlb", out.shared_hugetlb);
-  SCAN("Swap", out.swap);
+#define SCAN_KB(key, var) \
+ if (::sscanf(_line, key ": %zu kB", &var) == 1) { \
+   var *= K; \
+   return; \
+ }
+  SCAN_KB("KernelPageSize", out.kernelpagesize);
+  SCAN_KB("Rss", out.rss);
+  SCAN_KB("AnonHugePages", out.anonhugepages);
+  SCAN_KB("Private_Hugetlb", out.private_hugetlb);
+  SCAN_KB("Shared_Hugetlb", out.shared_hugetlb);
+  SCAN_KB("Swap", out.swap);
+  SCAN("THPeligible", out.thpeligible);
   int i = 0;
 #undef SCAN
+#undef SCAN_KB
   // scan some flags too
   if (strncmp(_line, "VmFlags:", 8) == 0) {
 #define SCAN(flag) { out.flag = (::strstr(_line + 8, " " #flag) != nullptr); }
