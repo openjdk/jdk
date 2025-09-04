@@ -1036,8 +1036,8 @@ void Metaspace::purge(bool classes_unloaded) {
 
 // Returns true if pointer points into one of the metaspace regions, or
 // into the class space.
-bool Metaspace::is_in_shared_metaspace(const void* ptr) {
-  return MetaspaceShared::is_in_shared_metaspace(ptr);
+bool Metaspace::in_aot_cache(const void* ptr) {
+  return MetaspaceShared::in_aot_cache(ptr);
 }
 
 // Returns true if pointer points into one of the non-class-space metaspace regions.

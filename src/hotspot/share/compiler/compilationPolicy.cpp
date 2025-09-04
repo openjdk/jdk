@@ -165,7 +165,7 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaT
 
 void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
-  if (TrainingData::have_data() && klass->is_shared()) {
+  if (TrainingData::have_data() && klass->in_aot_cache()) {
     _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }

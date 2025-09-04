@@ -224,7 +224,7 @@ void AOTArtifactFinder::append_to_all_cached_classes(Klass* k) {
 }
 
 void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
-  if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+  if (CDSConfig::is_dumping_dynamic_archive() && ik->in_aot_cache()) {
     // This class is already included in the base archive. No need to cache
     // it again in the dynamic archive.
     return;

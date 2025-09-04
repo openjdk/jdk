@@ -347,8 +347,8 @@
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \
                                                                                                                                      \
-     static_field(MetaspaceObj,                _shared_metaspace_base,                        void*)                                 \
-     static_field(MetaspaceObj,                _shared_metaspace_top,                         void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_base,                           void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_top,                            void*)                                 \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \

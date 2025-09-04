@@ -805,7 +805,7 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
-  set_is_shared();
+  set_in_aot_cache();
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // "Classic" static archives are required to have deterministic contents.
@@ -858,7 +858,7 @@ void Klass::remove_java_mirror() {
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
-  assert(is_shared(), "must be set");
+  assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, aot, unshareable)) {
