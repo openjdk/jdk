@@ -96,6 +96,8 @@ public sealed interface ModuleHashesAttribute
      * {@return a {@code ModuleHashes} attribute}
      * @param algorithm the hashing algorithm
      * @param hashes the hash descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleHashesAttribute of(String algorithm,
                                     List<ModuleHashInfo> hashes) {
@@ -106,6 +108,8 @@ public sealed interface ModuleHashesAttribute
      * {@return a {@code ModuleHashes} attribute}
      * @param algorithm the hashing algorithm
      * @param hashes the hash descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleHashesAttribute of(String algorithm,
                                     ModuleHashInfo... hashes) {
@@ -116,6 +120,8 @@ public sealed interface ModuleHashesAttribute
      * {@return a {@code ModuleHashes} attribute}
      * @param algorithm the hashing algorithm
      * @param hashes the hash descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleHashesAttribute of(Utf8Entry algorithm,
                                     List<ModuleHashInfo> hashes) {
@@ -126,6 +132,8 @@ public sealed interface ModuleHashesAttribute
      * {@return a {@code ModuleHashes} attribute}
      * @param algorithm the hashing algorithm
      * @param hashes the hash descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleHashesAttribute of(Utf8Entry algorithm,
                                     ModuleHashInfo... hashes) {
