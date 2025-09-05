@@ -107,7 +107,7 @@ public:
       PRINTIF(info.ht, "huge");
       PRINTIF(info.anonhugepages > 0, "thp");
       PRINTIF(info.hg, "thpad");
-      PRINTIF(!info.hg && info.thpeligible == 1, "thpel");
+      PRINTIF(!info.hg && info.thpeligible, "thpel");
       PRINTIF(info.nh, "nothp");
       if (num_printed == 0) {
         st->print("-");
