@@ -23,6 +23,8 @@
 /*
  * @test
  * @bug 4069754 4067878 4101150 4185761 8327640
+ * @library /java/text/testlib
+ * @build HexDumpReader
  * @summary Check de-serialization correctness for DecimalFormat. That is, ensure the
  *          behavior for each stream version is correct during de-serialization.
  * @run junit/othervm --add-opens java.base/java.text=ALL-UNNAMED SerializationTest
@@ -34,12 +36,19 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.math.RoundingMode;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +59,40 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SerializationTest {
+
+    @Nested // Test that rely on hex dump files that were written from older JDK versions
+    class HexDumpTests {
+
+        @Test // See 4101150 and CDF which is the serialized hex dump
+        void JDK1_1_4Test() {
+            // Reconstruct a 1.1.4 serializable class which has a DF holder
+            var cdf = (CheckDecimalFormat) assertDoesNotThrow(
+                    () -> deSer("DecimalFormat.114.txt"));
+            assertDoesNotThrow(cdf::Update); // Checks format call succeeds
+        }
+
+        @Test // See 4185761
+        void minMaxDigitsTest() {
+            // Reconstructing a DFS stream from an older JDK version
+            // The min digits are smaller than the max digits and should fail
+            // minint maxint minfrac maxfrac
+            // 0x122  0x121   0x124   0x123
+            assertEquals("Digit count range invalid",
+                    assertThrows(InvalidObjectException.class,
+                            () -> deSer("NumberFormat4185761a.ser.txt")).getMessage());
+        }
+
+        @Test // See 4185761
+        void digitLimitTest() {
+            // Reconstructing a DFS stream from an older JDK version
+            // The digit values exceed the class invariant limits
+            // minint maxint minfrac maxfrac
+            // 0x311  0x312   0x313   0x314
+            assertEquals("Digit count out of range",
+                    assertThrows(InvalidObjectException.class,
+                            () -> deSer("NumberFormat4185761b.ser.txt")).getMessage());
+        }
+    }
 
     @Nested
     class VersionTests {
@@ -212,6 +255,27 @@ public class SerializationTest {
         assertNotNull(readField(df, "digitList"));
     }
 
+    // Similar to the previous test, but the original regression test
+    // which was a failure in DateFormat due to DecimalFormat NPE
+    @Test // See 4069754 and 4067878
+    void digitListDateFormatTest() {
+        var fmt = new FooFormat();
+        fmt.now();
+        var bytes = ser(fmt);
+        var ff = (FooFormat) assertDoesNotThrow(() -> deSer0(bytes));
+        assertDoesNotThrow(ff::now);
+    }
+
+    static class FooFormat implements Serializable {
+        DateFormat dateFormat = DateFormat.getDateInstance();
+
+        public String now() {
+            GregorianCalendar calendar = new GregorianCalendar();
+            Date t = calendar.getTime();
+            return dateFormat.format(t);
+        }
+    }
+
 // Utilities ----
 
     // Utility to serialize
@@ -226,10 +290,23 @@ public class SerializationTest {
     }
 
     // Utility to deserialize
-    private static DecimalFormat deSer(byte[] bytes) throws IOException, ClassNotFoundException {
+    private static Object deSer0(byte[] bytes) throws IOException, ClassNotFoundException {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
              ObjectInputStream ois = new ObjectInputStream(byteArrayInputStream)) {
-            return (DecimalFormat) ois.readObject();
+            return ois.readObject();
+        }
+    }
+
+    // Convenience cast to DF
+    private static DecimalFormat deSer(byte[] bytes) throws IOException, ClassNotFoundException {
+        return (DecimalFormat) deSer0(bytes);
+    }
+
+    // Utility to deserialize from file in hex format
+    private static Object deSer(String file) throws IOException, ClassNotFoundException {
+        try (InputStream stream = HexDumpReader.getStreamFromHexDump(file);
+             ObjectInputStream ois = new ObjectInputStream(stream)) {
+            return ois.readObject();
         }
     }
 
@@ -275,5 +352,14 @@ public class SerializationTest {
         private DecimalFormat build() {
             return df;
         }
+    }
+}
+
+// Not nested, so that it can be recognized and cast correctly for the 1.1.4 test
+class CheckDecimalFormat implements Serializable {
+    DecimalFormat _decFormat = (DecimalFormat) NumberFormat.getInstance();
+    public String Update() {
+        Random r = new Random();
+        return _decFormat.format(r.nextDouble());
     }
 }

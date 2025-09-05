@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4068067 4101150 8366401
+ * @library /java/text/testlib
+ * @build HexDumpReader
  * @summary Check serialization of DecimalFormatSymbols. That is, ensure the
  *          behavior for each stream version is correct during de-serialization.
  * @run junit/othervm --add-opens java.base/java.text=ALL-UNNAMED DFSSerializationTest
@@ -35,9 +37,11 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.text.DecimalFormatSymbols;
 import java.util.Currency;
@@ -51,8 +55,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DFSSerializationTest {
 
+    // Test that rely on hex dump files that were written from older JDK versions
     @Nested
-    class VersionTests {
+    class HexDumpTests {
+
+        @Test // See 4068067 and CDFS which is the class in the serialized hex dump
+        void JDK1_1_4Test() {
+            // Reconstruct a class serialized during 1.1.4 which has a DFS holder
+            var cdfs = (CheckDecimalFormatSymbols) assertDoesNotThrow(
+                    () -> deSer("DecimalFormatSymbols.114.txt"));
+            assertDoesNotThrow(cdfs::Update); // Checks getDigit call succeeds
+        }
+
+        @Test // See 4068067
+        void JDK1_4_2Test() {
+            // Reconstruct a 1.4.2 DFS
+            var dfs = (DecimalFormatSymbols) assertDoesNotThrow(
+                    () -> deSer("DecimalFormatSymbols.142.txt"));
+            // Checks curr symbol is saved, and exponent separator default set
+            assertEquals("E", dfs.getExponentSeparator());
+            assertEquals("*SpecialCurrencySymbol*", dfs.getCurrencySymbol());
+        }
+    }
+
+    @Nested
+    class StreamVersionTests {
 
         // Ensure correct monetarySeparator and exponential field defaults
         // Reads monetary from decimal, and sets exponential to 'E'
@@ -238,11 +265,19 @@ public class DFSSerializationTest {
         }, "Unexpected error during serialization");
     }
 
-    // Utility to deserialize
+    // Utility to deserialize from byte array
     private static DecimalFormatSymbols deSer(byte[] bytes) throws IOException, ClassNotFoundException {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
              ObjectInputStream ois = new ObjectInputStream(byteArrayInputStream)) {
             return (DecimalFormatSymbols) ois.readObject();
+        }
+    }
+
+    // Utility to deserialize from file in hex format
+    private static Object deSer(String file) throws IOException, ClassNotFoundException {
+        try (InputStream stream = HexDumpReader.getStreamFromHexDump(file);
+             ObjectInputStream ois = new ObjectInputStream(stream)) {
+            return ois.readObject();
         }
     }
 
@@ -280,5 +315,14 @@ public class DFSSerializationTest {
         private DecimalFormatSymbols build() {
             return dfs;
         }
+    }
+}
+
+// Not nested, so that it can be cast correctly for the 1.1.4 test
+class CheckDecimalFormatSymbols implements Serializable {
+    DecimalFormatSymbols _decFormatSymbols = new DecimalFormatSymbols();
+    public char Update()
+    {
+        return  _decFormatSymbols.getDigit();
     }
 }
