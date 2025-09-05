@@ -794,7 +794,6 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
-<<<<<<< HEAD
   VectorNode* vn = nullptr;
   if (req() <= 3) {
     vn = VectorNode::make(vopc, in1, in2, vt); // unary and binary
