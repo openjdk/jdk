@@ -1399,10 +1399,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
   cb->initialize_stubs_size(stub_req);
   cb->initialize_oop_recorder(C->env()->oop_recorder());
 
-  // fill in the nop array for bundling computations
-  MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list);
-
   return cb;
 }
 

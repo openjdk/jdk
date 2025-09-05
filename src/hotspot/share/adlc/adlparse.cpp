@@ -1507,36 +1507,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "nops")) {
+          parse_err(WARN, "Using obsolete token, nops");
           skipws();
-          if (_curchar != '(') {
-            parse_err(SYNERR, "expected `(`, found '%c'\n", _curchar);
-            break;
-            }
-
-          next_char(); skipws();
-
-          while (_curchar != ')') {
-            ident = get_ident();
-            if (ident == nullptr) {
-              parse_err(SYNERR, "expected identifier for nop instruction, found '%c'\n", _curchar);
-              break;
-            }
-
-            pipeline->_noplist.addName(ident);
-            pipeline->_nopcnt++;
-            skipws();
-
-            if (_curchar == ',') {
-              next_char(); skipws();
-            }
-          }
-
-          next_char(); skipws();
-
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
           continue;
         }
 

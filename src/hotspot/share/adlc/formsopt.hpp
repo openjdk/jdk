@@ -386,9 +386,6 @@ public:
   FormDict   _classdict;          // Class Name -> PipeClassForm mapping
   int        _classcnt;           // Number of classes
 
-  NameList   _noplist;            // List of NOP instructions
-  int        _nopcnt;             // Number of nop instructions
-
   bool       _variableSizeInstrs; // Indicates if this architecture has variable sized instructions
   bool       _branchHasDelaySlot; // Indicates that branches have delay slot instructions
   int        _maxInstrsPerBundle; // Indicates the maximum number of instructions for ILP
