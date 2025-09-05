@@ -302,5 +302,17 @@ TARGETS += $(GENSRC_VARHANDLES)
 
 ################################################################################
 
+GENSRC_VARHANDLEGUARDS := $(VARHANDLES_GENSRC_DIR)/VarHandleGuards.java
+
+$(GENSRC_VARHANDLEGUARDS): $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_VARHANDLEGUARDMETHODGENERATOR) \
+	    $(GENSRC_VARHANDLEGUARDS)
+
+TARGETS += $(GENSRC_VARHANDLEGUARDS)
+
+################################################################################
+
 endif # include guard
 include MakeIncludeEnd.gmk
