@@ -80,11 +80,13 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     vtn_memory_dependencies.clear(); // Add every memory dependency only once per vtn.
 
     if (p0->is_Load()) {
+      init_req_with_scalar(p0,   vtn, MemNode::Control);
       init_req_with_scalar(p0,   vtn, MemNode::Address);
       for (uint k = 0; k < pack->size(); k++) {
         add_memory_dependencies_of_node_to_vtnode(pack->at(k), vtn, vtn_memory_dependencies);
       }
     } else if (p0->is_Store()) {
+      init_req_with_scalar(p0,   vtn, MemNode::Control);
       init_req_with_scalar(p0,   vtn, MemNode::Address);
       init_req_with_vector(pack, vtn, MemNode::ValueIn);
       for (uint k = 0; k < pack->size(); k++) {

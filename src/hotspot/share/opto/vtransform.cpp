@@ -846,10 +846,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
-  uint  vlen = _prototype.vector_length();
-  int   sopc  = _prototype.scalar_opcode();
-  // TODO: investigate the difference here!
-  //BasicType bt = first->bottom_type()->basic_type();
+  int     sopc = _prototype.scalar_opcode();
+  uint    vlen = _prototype.vector_length();
   BasicType bt = _prototype.element_basic_type();
 
   Node* init = apply_state.transformed_node(in_req(1));
@@ -861,15 +859,16 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
-  // TODO: consider refactoring too
+  int     sopc = _prototype.scalar_opcode();
+  uint    vlen = _prototype.vector_length();
+  BasicType bt = _prototype.element_basic_type();
   LoadNode* first = nodes().at(0)->as_Load();
-  uint  vlen = nodes().length();
-  Node* ctrl = first->in(MemNode::Control);
+  Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
+  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
-  Node* adr  = first->in(MemNode::Address);
-  int   sopc  = first->Opcode();
+  Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
+  // TODO: refactor?
   const TypePtr* adr_type = first->adr_type();
-  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
@@ -892,13 +891,14 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& apply_state) const {
-  // TODO: consider refactoring too
+  int     sopc = _prototype.scalar_opcode();
+  uint    vlen = _prototype.vector_length();
   StoreNode* first = nodes().at(0)->as_Store();
-  uint  vlen = nodes().length();
-  Node* ctrl = first->in(MemNode::Control);
+  Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
+  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
-  Node* adr  = first->in(MemNode::Address);
-  int   sopc  = first->Opcode();
+  Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
+  // TODO: refactor?
   const TypePtr* adr_type = first->adr_type();
 
   Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
