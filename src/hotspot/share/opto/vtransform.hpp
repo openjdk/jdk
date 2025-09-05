@@ -258,7 +258,9 @@ private:
   void apply_speculative_alignment_runtime_checks();
   void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
-  void add_speculative_check(BoolNode* bol);
+
+  template<typename Callback>
+  void add_speculative_check(Callback callback);
 
   void apply_vectorization() const;
 };
