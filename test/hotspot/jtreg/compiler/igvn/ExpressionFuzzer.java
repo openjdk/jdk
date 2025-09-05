@@ -79,7 +79,7 @@ public class ExpressionFuzzer {
         List<TemplateToken> tests = new ArrayList<>();
 
         // We are going to use some random numbers in our tests, so import some good methods for that.
-        tests.add(PrimitiveType.generateRandomNumberGeneratorMethods());
+        tests.add(PrimitiveType.generateLibraryRNG());
 
         var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
                 """
@@ -98,8 +98,10 @@ public class ExpressionFuzzer {
         ));
 
         var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
-            "#type #name = ", type.con(), ";\n"
-            // TODO: randomize!
+            //"#type #name = ", type.con(), ";\n"
+            "#type #name = ",
+            (type instanceof PrimitiveType pt) ? pt.callLibraryRNG() : type.con(),
+            ";\n"
         ));
 
         var testTemplate = Template.make("expression", (Expression expression) -> {
@@ -135,6 +137,7 @@ public class ExpressionFuzzer {
                 """
                 @Test
                 public static void $primitiveConTest() {
+                    // In each iteration, generate new random values for the method arguments.
                 """,
                 methodArguments.stream().map(ma -> valueTemplate.asToken(ma.name, ma.type)).toList(),
                 // TODO: there should be a failure with indeterministic results with checkEQ
@@ -200,7 +203,10 @@ public class ExpressionFuzzer {
             // package and class name.
             "compiler.igvn.templated", "ExpressionFuzzerInnerTest",
             // Set of imports.
-            Set.of("compiler.lib.verify.*"),
+            Set.of("compiler.lib.verify.*",
+                   "java.util.Random",
+                   "jdk.test.lib.Utils",
+                   "compiler.lib.generators.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
