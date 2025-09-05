@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -432,7 +432,7 @@ private:
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
+    CDS_JAVA_HEAP_ONLY(return (idx == AOTMetaspace::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 

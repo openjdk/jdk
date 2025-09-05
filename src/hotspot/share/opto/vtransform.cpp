@@ -215,7 +215,7 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
-  add_speculative_check(bol_alignment);
+  add_speculative_check([&] (Node* ctrl) { return bol_alignment; });
 }
 
 class VPointerWeakAliasingPair : public StackObj {
@@ -387,8 +387,9 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
       }
 #endif
 
-      BoolNode* bol = vp1_union.make_speculative_aliasing_check_with(vp2_union);
-      add_speculative_check(bol);
+      add_speculative_check([&] (Node* ctrl) {
+        return vp1_union.make_speculative_aliasing_check_with(vp2_union, ctrl);
+      });
 
       group_start = group_end;
     }
@@ -418,7 +419,13 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
 //       Multiversioning takes more compile time and code cache, but it also
 //       produces fast code for when the runtime check passes (vectorized) and
 //       when it fails (scalar performance).
-void VTransform::add_speculative_check(BoolNode* bol) {
+//
+// Callback:
+//   In some cases, we require the ctrl just before the check iff_speculate to
+//   generate the values required in the check. We pass this ctrl into the
+//   callback, which is expected to produce the check, i.e. a BoolNode.
+template<typename Callback>
+void VTransform::add_speculative_check(Callback callback) {
   assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
   IfTrueNode* new_check_proj = nullptr;
@@ -430,6 +437,10 @@ void VTransform::add_speculative_check(BoolNode* bol) {
     new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
   }
   Node* iff_speculate = new_check_proj->in(0);
+
+  // Create the check, given the ctrl just before the iff.
+  BoolNode* bol = callback(iff_speculate->in(0));
+
   igvn().replace_input_of(iff_speculate, 1, bol);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
 }
@@ -783,6 +794,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
+<<<<<<< HEAD
   VectorNode* vn = nullptr;
   if (req() <= 3) {
     vn = VectorNode::make(vopc, in1, in2, vt); // unary and binary
@@ -818,7 +830,7 @@ VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyStat
 
   Node* in1 = apply_state.transformed_node(in_req(1));
   const TypeVect* src_vt = TypeVect::make(_src_bt, vlen);
-  VectorNode* vn = new VectorReinterpretNode(in1, vt, src_vt);
+  VectorNode* vn = new VectorReinterpretNode(in1, src_vt, vt);
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
