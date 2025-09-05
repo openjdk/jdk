@@ -3001,11 +3001,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ bind(next);
 }
 
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
-
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ lea(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
