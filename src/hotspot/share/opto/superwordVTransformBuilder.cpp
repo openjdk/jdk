@@ -183,7 +183,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, -1 /* TODO: */);
+    int vopc = VectorNode::opcode(opc, bt);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, vopc);
   } else if (VectorNode::is_convert_opcode(opc)) {
     assert(p0->req() == 2, "convert should have 2 operands");
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
@@ -209,7 +210,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, -1 /*TODO:*/);
+    assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
+    int vopc = VectorNode::opcode(opc, bt);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
   }
   vtn->set_nodes(pack);
   return vtn;
