@@ -2809,6 +2809,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     ClassLoader::perf_method_adapters_count()->inc();
   }
 
+#ifndef ZERO
   BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
   CodeBuffer buffer(buf);
   short buffer_locs[20];
@@ -2830,7 +2831,6 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                          entry_address);
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.
-#ifndef ZERO
   int entry_offset[AdapterBlob::ENTRY_COUNT];
   address_to_offset(entry_address, entry_offset);
 #ifdef ASSERT
