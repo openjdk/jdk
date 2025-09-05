@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary test International Date Format Symbols
+ * @bug 8366517
  * @run junit IntlTestDateFormatSymbols
  */
 /*
@@ -43,6 +44,7 @@ import java.util.*;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class IntlTestDateFormatSymbols
@@ -204,5 +206,11 @@ public class IntlTestDateFormatSymbols
         if(! en.equals(fr)) {
             fail("ERROR: Clone failed");
         }
+    }
+
+    @Test
+    void nullLocaleTest() {
+        assertThrows(NullPointerException.class, () -> new DateFormatSymbols(null));
+        assertThrows(NullPointerException.class, () -> DateFormatSymbols.getInstance(null));
     }
 }
