@@ -151,10 +151,12 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
 
 // Create a vtnode for each pack. No in/out edges set yet.
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
+  // TODO: refactor and rename
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   int opc = p0->Opcode();
   const VTransformVectorNodePrototype prototype = VTransformVectorNodePrototype::make_from_pack(pack, _vloop_analyzer);
+  const BasicType bt = prototype.element_basic_type();
   VTransformVectorNode* vtn = nullptr;
 
   if (p0->is_Load()) {
@@ -191,6 +193,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     assert(p0->req() == 2, "reinterpret should have 2 operands");
     BasicType src_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
     vtn = new (_vtransform.arena()) VTransformReinterpretVectorNode(_vtransform, prototype, src_bt);
+  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, bt)) {
+    int vopc = VectorNode::opcode(Op_RShiftI, bt);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
   } else {
     assert(p0->req() == 3 ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||

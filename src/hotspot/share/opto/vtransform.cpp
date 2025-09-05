@@ -804,8 +804,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     //const TypeVect* vt = TypeVect::make(bt, vlen);
     //vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    sopc = Op_RShiftI;
-    vn = VectorNode::make(sopc, in1, in2, vlen, bt);
+    vn = VectorNode::make(vopc, in1, in2, vt);
+    //sopc = Op_RShiftI;
+    //vn = VectorNode::make(sopc, in1, in2, vlen, bt);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
