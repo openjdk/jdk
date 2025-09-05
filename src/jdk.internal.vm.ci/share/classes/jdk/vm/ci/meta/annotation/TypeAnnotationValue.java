@@ -24,9 +24,14 @@ package jdk.vm.ci.meta.annotation;
 
 import sun.reflect.annotation.TypeAnnotation;
 
+import java.lang.annotation.Annotation;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * This is the JVMCI analog of {@link TypeAnnotation} where the encapsulated
+ * annotation is an {@link AnnotationValue} instead of an {@link Annotation}.
+ */
 public final class TypeAnnotationValue {
 
     private final TypeAnnotation.TypeAnnotationTargetInfo targetInfo;

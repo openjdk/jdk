@@ -67,6 +67,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests for {@link ResolvedJavaRecordComponent}.
@@ -148,8 +150,6 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
         }
     }
 
-    private static final Field recordComponentTypeAnnotations = lookupField(RecordComponent.class, "typeAnnotations");
-
     private static List<TypeAnnotation> getTypeAnnotations(RecordComponent rc) {
         Class<?> container = rc.getDeclaringRecord();
         byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
@@ -163,6 +163,49 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
         }
         for (RecordComponent rc : recordComponents.keySet()) {
             getTypeAnnotationValuesTest(rc);
+        }
+    }
+
+    @Test
+    public void getTypeAnnotationInfoTest() {
+        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
+            checkTypeAnnotationInfo(rc);
+        }
+        for (RecordComponent rc : recordComponents.keySet()) {
+            checkTypeAnnotationInfo(rc);
+        }
+    }
+
+    private static void checkTypeAnnotationInfo(RecordComponent rc) {
+        ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
+        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
+        if (rawAnnotations == null) {
+            assertNull(jrc.getTypeAnnotationInfo());
+        } else {
+            assertNotNull(jrc.getTypeAnnotationInfo());
+        }
+    }
+
+    @Test
+    public void getDeclaredAnnotationInfoTest() {
+        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
+            checkDeclaredAnnotationInfo(rc);
+        }
+        for (RecordComponent rc : recordComponents.keySet()) {
+            checkDeclaredAnnotationInfo(rc);
+        }
+    }
+
+    private static final Field recordComponentAnnotations = lookupField(RecordComponent.class, "annotations");
+    private static final Field recordComponentTypeAnnotations = lookupField(RecordComponent.class, "typeAnnotations");
+
+    private static void checkDeclaredAnnotationInfo(RecordComponent rc) {
+        ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
+        byte[] rawAnnotations = getFieldValue(recordComponentAnnotations, rc);
+        if (rawAnnotations == null) {
+            assertNull(jrc.getDeclaredAnnotationInfo());
+        } else {
+            assertNotNull(jrc.getDeclaredAnnotationInfo());
         }
     }
 }

@@ -65,7 +65,7 @@ final class HotSpotResolvedJavaRecordComponent implements ResolvedJavaRecordComp
     }
 
     @Override
-    public ResolvedJavaType getDeclaringRecord() {
+    public HotSpotResolvedObjectTypeImpl getDeclaringRecord() {
         return declaringRecord;
     }
 
@@ -106,5 +106,17 @@ final class HotSpotResolvedJavaRecordComponent implements ResolvedJavaRecordComp
     public List<TypeAnnotationValue> getTypeAnnotationValues() {
         byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(declaringRecord, index, false, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringRecord()));
+    }
+
+    @Override
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('r', declaringRecord, declaringRecord.getKlassPointer(), index, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringRecord().getConstantPool(), getDeclaringRecord());
+    }
+
+    @Override
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('r', declaringRecord, declaringRecord.getKlassPointer(), index, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringRecord().getConstantPool(), getDeclaringRecord());
     }
 }

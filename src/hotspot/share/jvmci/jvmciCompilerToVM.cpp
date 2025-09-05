@@ -3163,6 +3163,96 @@ C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationValues, (JNIEnv* env, jobj
   return get_encoded_annotation_values(holder, raw_annotations, category, nullptr, THREAD, JVMCIENV);
 C2V_END
 
+
+C2V_VMENTRY_NULL(jbyteArray, getRawAnnotationBytes, (JNIEnv* env, jobject, jchar containerTag, ARGUMENT_PAIR(container), jint fieldOrRecordComponentIndex, jint category))
+  AnnotationArray* raw_annotations = nullptr;
+  bool illegal_category = false;
+  const char* illegal_category_container_title = nullptr;
+  switch (containerTag) {
+    case 't': {
+      InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, container));
+      if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+        raw_annotations = holder->class_annotations();
+      } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+        raw_annotations = holder->class_type_annotations();
+      } else {
+        illegal_category = true;
+      }
+      break;
+    }
+    case 'm': {
+      methodHandle method(THREAD, UNPACK_PAIR(Method, container));
+      if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+        raw_annotations = method->annotations();
+      } else if (category == CompilerToVM::PARAMETER_ANNOTATIONS) {
+        raw_annotations = method->parameter_annotations();
+      } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+        raw_annotations = method->type_annotations();
+      } else if (category == CompilerToVM::ANNOTATION_MEMBER_VALUE) {
+        raw_annotations = method->annotation_default();
+      } else {
+        illegal_category = true;
+      }
+      break;
+    }
+    case 'f': {
+      InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, container)), fieldOrRecordComponentIndex, JVMCI_CHECK_NULL);
+      fieldDescriptor fd(holder, fieldOrRecordComponentIndex);
+      if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+        raw_annotations = fd.annotations();
+      } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+        raw_annotations = fd.type_annotations();
+      } else {
+        illegal_category = true;
+      }
+      break;
+    }
+    case 'r': {
+      InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, container));
+      Array<RecordComponent*>* components = holder->record_components();
+      if (components == nullptr) {
+        THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                      err_msg("%s has no record components", holder->name()->as_C_string()));
+      }
+      if (fieldOrRecordComponentIndex < 0 || fieldOrRecordComponentIndex >= components->length()) {
+        THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                      err_msg("%d is out of bounds for record components of %s",
+                              fieldOrRecordComponentIndex,
+                              holder->name()->as_C_string()));
+      }
+      RecordComponent* rc = components->at(fieldOrRecordComponentIndex);
+      if (category == CompilerToVM::DECLARED_ANNOTATIONS) {
+        raw_annotations = rc->annotations();
+      } else if (category == CompilerToVM::TYPE_ANNOTATIONS) {
+        raw_annotations = rc->type_annotations();
+      } else {
+        illegal_category = true;
+      }
+      break;
+    }
+    default: {
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                    err_msg("illegal tag %c", containerTag));
+
+    }
+  }
+  if (illegal_category) {
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                  err_msg("Illegal category for a %s: %d",
+                    containerTag == 't' ? "type" :
+                    containerTag == 'm' ? "method" :
+                    containerTag == 'f' ? "field" : "record component",
+                    category));
+  }
+  if (raw_annotations == nullptr) {
+    return nullptr;
+  }
+  int length = raw_annotations->length();
+  JVMCIPrimitiveArray result = JVMCIENV->new_byteArray(length, JVMCI_CHECK_NULL);
+  JVMCIENV->copy_bytes_from((jbyte*) raw_annotations->data(), result, 0, length);
+  return JVMCIENV->get_jbyteArray(result);
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
   FailedSpeculation* head = *((FailedSpeculation**)(address) failed_speculations_address);
   int result_length = 0;
@@ -3454,6 +3544,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getMaxCallTargetOffset",                       CC "(J)J",                                                                            FN_PTR(getMaxCallTargetOffset)},
   {CC "getNumIndyEntries",                            CC "(" HS_CONSTANT_POOL2 ")I",                                                        FN_PTR(getNumIndyEntries)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
+  {CC "getRawAnnotationBytes",                        CC "(C" OBJECT "JII)[B",                                                              FN_PTR(getRawAnnotationBytes)},
   {CC "getRecordComponents",                          CC "(" HS_KLASS2 ")[" RESOLVED_RECORD_COMPONENT,                                      FN_PTR(getRecordComponents)},
   {CC "getResolvedJavaMethod",                        CC "(" OBJECTCONSTANT "J)" HS_METHOD,                                                 FN_PTR(getResolvedJavaMethod)},
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},

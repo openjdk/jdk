@@ -173,7 +173,7 @@ public enum JavaKind {
     }
 
     /**
-     * Checks whether this represent an Object of some sort.
+     * Checks whether this represents an Object of some sort.
      *
      * @return {@code true} if this is {@link #Object}.
      */
@@ -186,9 +186,12 @@ public enum JavaKind {
      *
      * @param typeString the Java type string
      * @return the kind
+     * @throws IllegalArgumentException if {@code typeString} is empty
      */
     public static JavaKind fromTypeString(String typeString) {
-        assert typeString.length() > 0;
+        if (typeString.isEmpty()) {
+            throw new IllegalArgumentException("empty typeString");
+        }
         final char first = typeString.charAt(0);
         if (first == '[' || first == 'L') {
             return JavaKind.Object;
@@ -215,30 +218,34 @@ public enum JavaKind {
      * Returns the kind from the character describing a primitive or void.
      *
      * @param ch the character for a void or primitive kind as returned by {@link #getTypeChar()}
-     * @return the kind
+     * @return the void or primitive kind for {@code ch}
+     * @throws IllegalArgumentException if {@code ch} does not represent a void or primitive kind
      */
     public static JavaKind fromPrimitiveOrVoidTypeChar(char ch) {
-        switch (ch) {
-            case 'Z':
-                return Boolean;
-            case 'C':
-                return Char;
-            case 'F':
-                return Float;
-            case 'D':
-                return Double;
-            case 'B':
-                return Byte;
-            case 'S':
-                return Short;
-            case 'I':
-                return Int;
-            case 'J':
-                return Long;
-            case 'V':
-                return Void;
+        JavaKind kind = forPrimitiveTypeChar(ch);
+        if (kind != null) {
+            return kind;
         }
         throw new IllegalArgumentException("unknown primitive or void type character: " + ch);
+    }
+
+    /**
+     * Gets the {@linkplain #isPrimitive() primitive kind} for {@code ch}
+     * or {@code null} of {@code ch} does not denote the type char of a primitive kind.
+     */
+    public static JavaKind forPrimitiveTypeChar(char ch) {
+        return switch (ch) {
+            case 'Z' -> Boolean;
+            case 'C' -> Char;
+            case 'F' -> Float;
+            case 'D' -> Double;
+            case 'B' -> Byte;
+            case 'S' -> Short;
+            case 'I' -> Int;
+            case 'J' -> Long;
+            case 'V' -> Void;
+            default -> null;
+        };
     }
 
     /**
@@ -326,8 +333,7 @@ public enum JavaKind {
             if (value == null) {
                 return "null";
             } else {
-                if (value instanceof String) {
-                    String s = (String) value;
+                if (value instanceof String s) {
                     if (s.length() > 50) {
                         return "String:\"" + s.substring(0, 30) + "...\"";
                     } else {
@@ -338,7 +344,7 @@ public enum JavaKind {
                 } else if (value instanceof Enum) {
                     return MetaUtil.getSimpleName(value.getClass(), true) + ":" + ((Enum<?>) value).name();
                 } else if (value instanceof FormatWithToString) {
-                    return MetaUtil.getSimpleName(value.getClass(), true) + ":" + String.valueOf(value);
+                    return MetaUtil.getSimpleName(value.getClass(), true) + ":" + value;
                 } else if (value instanceof Class<?>) {
                     return "Class:" + ((Class<?>) value).getName();
                 } else if (isToStringSafe(value.getClass())) {
@@ -384,26 +390,17 @@ public enum JavaKind {
      * @return the minimum value represented as a {@code long}
      */
     public long getMinValue() {
-        switch (this) {
-            case Boolean:
-                return 0;
-            case Byte:
-                return java.lang.Byte.MIN_VALUE;
-            case Char:
-                return java.lang.Character.MIN_VALUE;
-            case Short:
-                return java.lang.Short.MIN_VALUE;
-            case Int:
-                return java.lang.Integer.MIN_VALUE;
-            case Long:
-                return java.lang.Long.MIN_VALUE;
-            case Float:
-                return java.lang.Float.floatToRawIntBits(java.lang.Float.MIN_VALUE);
-            case Double:
-                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MIN_VALUE);
-            default:
-                throw new IllegalArgumentException("illegal call to minValue on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 0;
+            case Byte -> java.lang.Byte.MIN_VALUE;
+            case Char -> Character.MIN_VALUE;
+            case Short -> java.lang.Short.MIN_VALUE;
+            case Int -> Integer.MIN_VALUE;
+            case Long -> java.lang.Long.MIN_VALUE;
+            case Float -> java.lang.Float.floatToRawIntBits(java.lang.Float.MIN_VALUE);
+            case Double -> java.lang.Double.doubleToRawLongBits(java.lang.Double.MIN_VALUE);
+            default -> throw new IllegalArgumentException("illegal call to minValue on " + this);
+        };
     }
 
     /**
@@ -412,26 +409,17 @@ public enum JavaKind {
      * @return the maximum value represented as a {@code long}
      */
     public long getMaxValue() {
-        switch (this) {
-            case Boolean:
-                return 1;
-            case Byte:
-                return java.lang.Byte.MAX_VALUE;
-            case Char:
-                return java.lang.Character.MAX_VALUE;
-            case Short:
-                return java.lang.Short.MAX_VALUE;
-            case Int:
-                return java.lang.Integer.MAX_VALUE;
-            case Long:
-                return java.lang.Long.MAX_VALUE;
-            case Float:
-                return java.lang.Float.floatToRawIntBits(java.lang.Float.MAX_VALUE);
-            case Double:
-                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MAX_VALUE);
-            default:
-                throw new IllegalArgumentException("illegal call to maxValue on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 1;
+            case Byte -> java.lang.Byte.MAX_VALUE;
+            case Char -> Character.MAX_VALUE;
+            case Short -> java.lang.Short.MAX_VALUE;
+            case Int -> Integer.MAX_VALUE;
+            case Long -> java.lang.Long.MAX_VALUE;
+            case Float -> java.lang.Float.floatToRawIntBits(java.lang.Float.MAX_VALUE);
+            case Double -> java.lang.Double.doubleToRawLongBits(java.lang.Double.MAX_VALUE);
+            default -> throw new IllegalArgumentException("illegal call to maxValue on " + this);
+        };
     }
 
     /**
@@ -453,24 +441,13 @@ public enum JavaKind {
      * @return the number of bits
      */
     public int getBitCount() {
-        switch (this) {
-            case Boolean:
-                return 1;
-            case Byte:
-                return 8;
-            case Char:
-            case Short:
-                return 16;
-            case Float:
-                return 32;
-            case Int:
-                return 32;
-            case Double:
-                return 64;
-            case Long:
-                return 64;
-            default:
-                throw new IllegalArgumentException("illegal call to getBitCount() on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 1;
+            case Byte -> 8;
+            case Char, Short -> 16;
+            case Float, Int -> 32;
+            case Double, Long -> 64;
+            default -> throw new IllegalArgumentException("illegal call to getBitCount() on " + this);
+        };
     }
 }

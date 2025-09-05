@@ -23,7 +23,9 @@
 package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements ResolvedJavaType {
 
@@ -73,4 +75,13 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
             throw new IllegalArgumentException(type.toJavaName() + " is not an annotation interface");
         }
     }
+
+    static ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, HotSpotResolvedObjectType accessingType, boolean resolve) {
+        JavaType javaType = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedJavaType.getName(), accessingType, resolve);
+        if (javaType instanceof ResolvedJavaType resolved) {
+            return resolved;
+        }
+        return null;
+    }
+
 }

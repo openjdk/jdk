@@ -1248,6 +1248,27 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void getTypeAnnotationInfoTest() {
+        checkTypeAnnotationInfo(AnnotationTestInput.AnnotatedClass.class);
+        checkTypeAnnotationInfo(AnnotationTestInput.AnnotatedClass2.class);
+        checkTypeAnnotationInfo(int.class);
+        checkTypeAnnotationInfo(void.class);
+        for (Class<?> c : classes) {
+            checkTypeAnnotationInfo(c);
+        }
+    }
+
+    private static void checkTypeAnnotationInfo(Class<?> cls) {
+        ResolvedJavaType rt = metaAccess.lookupJavaType(cls);
+        byte[] rawAnnotations = invokeMethod(classGetRawTypeAnnotations, cls);
+        if (rawAnnotations == null) {
+            assertNull(rt.getTypeAnnotationInfo());
+        } else {
+            assertNotNull(rt.getTypeAnnotationInfo());
+        }
+    }
+
+    @Test
     public void getTypeAnnotationValuesTest() {
         getTypeAnnotationValuesTest(AnnotationTestInput.AnnotatedClass.class);
         getTypeAnnotationValuesTest(AnnotationTestInput.AnnotatedClass2.class);
@@ -1267,6 +1288,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         assertTypeAnnotationsEquals(getTypeAnnotations(cls), rt.getTypeAnnotationValues());
     }
 
+    private static final Method classGetRawAnnotations = lookupMethod(Class.class, "getRawAnnotations");
     private static final Method classGetRawTypeAnnotations = lookupMethod(Class.class, "getRawTypeAnnotations");
     private static final Method classGetConstantPool = lookupMethod(Class.class, "getConstantPool");
 
@@ -1280,6 +1302,27 @@ public class TestResolvedJavaType extends TypeUniverse {
         return Stream.of(TypeAnnotationParser.parseTypeAnnotations(rawAnnotations, cp, null, false, container))
                 .filter(ta -> ta.getAnnotation() != null)
                 .toList();
+    }
+
+    @Test
+    public void getDeclaredAnnotationInfoTest() {
+        checkDeclaredAnnotationInfo(AnnotationTestInput.AnnotatedClass.class);
+        checkDeclaredAnnotationInfo(AnnotationTestInput.AnnotatedClass2.class);
+        checkDeclaredAnnotationInfo(int.class);
+        checkDeclaredAnnotationInfo(void.class);
+        for (Class<?> c : classes) {
+            checkDeclaredAnnotationInfo(c);
+        }
+    }
+
+    public static void checkDeclaredAnnotationInfo(Class<?> clazz) {
+        Annotated type = metaAccess.lookupJavaType(clazz);
+        byte[] rawAnnotations = invokeMethod(classGetRawAnnotations, clazz);
+        if (rawAnnotations == null) {
+            assertNull(type.getDeclaredAnnotationInfo());
+        } else {
+            assertNotNull(type.getDeclaredAnnotationInfo());
+        }
     }
 
     @Test

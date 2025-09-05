@@ -830,4 +830,31 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         compilerToVM().getOopMapAt(this, bci, oopMap);
         return BitSet.valueOf(oopMap);
     }
+
+    @Override
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        if (!hasAnnotations()) {
+            return null;
+        }
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
+    }
+
+    @Override
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
+    }
+
+    @Override
+    public AnnotationsInfo getAnnotationDefaultInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.ANNOTATION_MEMBER_VALUE);
+        return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
+    }
+
+    @Override
+    public AnnotationsInfo getParameterAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.PARAMETER_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
+    }
 }

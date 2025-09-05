@@ -22,9 +22,8 @@
  */
 package jdk.vm.ci.meta.annotation;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
-
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.util.Map;
 
 /**
@@ -63,5 +62,21 @@ public interface Annotated {
             throw new IllegalArgumentException(type.toJavaName() + " is not an annotation interface");
         }
         return getDeclaredAnnotationValues().get(type);
+    }
+
+    /**
+     * Gets the class file info for the annotations directly present on this element
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getDeclaredAnnotationInfo() {
+        return null;
+    }
+
+    /**
+     * Gets the class file info for the type annotations associated with this element
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getTypeAnnotationInfo() {
+        return null;
     }
 }

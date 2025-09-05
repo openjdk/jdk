@@ -23,7 +23,6 @@
 
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -1489,6 +1488,35 @@ final class CompilerToVM {
 
     native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int index, boolean isField, int category);
 
+    /// Denotes class file bytes of a `RuntimeVisibleAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int DECLARED_ANNOTATIONS = 0;
+
+    /// Denotes class file bytes of a `RuntimeVisibleParameterAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int PARAMETER_ANNOTATIONS = 1;
+
+    /// Denotes class file bytes of a `RuntimeVisibleTypeAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int TYPE_ANNOTATIONS = 2;
+
+    /// Denotes class file bytes of a `AnnotationDefault` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int ANNOTATION_MEMBER_VALUE = 3;
+
+    /// Gets the raw bytes of a class file annotations attribute (e.g. `RuntimeVisibleAnnotations`).
+    /// The relationship the arguments is shown below:
+    ///
+    ///  | containerTag |       container class              | containerPointer C++ type | fieldOrRecordComponentIndex            |
+    ///  |--------------|------------------------------------|---------------------------|----------------------------------------|
+    ///  | 't'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | -                                      |
+    ///  | 'm'          | HotSpotResolvedJavaMethodImpl      | Method*                   | -                                      |
+    ///  | 'f'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | index of field in container            |
+    ///  | 'r'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | index of record component in container |
+    ///
+    /// @param category [#DECLARED_ANNOTATIONS], [#PARAMETER_ANNOTATIONS], [#TYPE_ANNOTATIONS] or [#ANNOTATION_MEMBER_VALUE]
+    native byte[] getRawAnnotationBytes(char containerTag, Object container, long containerPointer, int fieldOrRecordComponentIndex, int category);
+
     /**
      * @see HotSpotResolvedJavaMethod#getOopMapAt
      */
@@ -1502,7 +1530,7 @@ final class CompilerToVM {
      * If the current thread is a CompilerThread associated with a JVMCI compiler where
      * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
      *
-     * @returns false if no change was made, otherwise true
+     * @return false if no change was made, otherwise true
      */
     native boolean updateCompilerThreadCanCallJava(boolean newState);
 

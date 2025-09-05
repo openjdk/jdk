@@ -31,6 +31,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
@@ -367,5 +368,10 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public List<TypeAnnotationValue> getTypeAnnotationValues() {
         return List.of();
+    }
+
+    @Override
+    public ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
+        return lookupType(unresolvedJavaType, runtime().getJavaLangObject(), resolve);
     }
 }

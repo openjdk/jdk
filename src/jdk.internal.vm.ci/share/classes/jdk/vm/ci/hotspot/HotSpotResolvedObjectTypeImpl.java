@@ -511,7 +511,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public HotSpotConstantPool getConstantPool() {
-        if (constantPool == null || !isArray() && UNSAFE.getAddress(getKlassPointer() + config().instanceKlassConstantsOffset) != constantPool.getConstantPoolPointer()) {
+        if (isArray()) {
+            return null;
+        }
+        if (constantPool == null || UNSAFE.getAddress(getKlassPointer() + config().instanceKlassConstantsOffset) != constantPool.getConstantPoolPointer()) {
             /*
              * If the pointer to the ConstantPool has changed since this was last read refresh the
              * HotSpotConstantPool wrapper object. This ensures that uses of the constant pool are
@@ -1111,11 +1114,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
-        JavaType javaType = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedJavaType.getName(), this, resolve);
-        if (javaType instanceof ResolvedJavaType) {
-            return (ResolvedJavaType) javaType;
-        }
-        return null;
+        return lookupType(unresolvedJavaType, this, resolve);
     }
 
     @Override
@@ -1154,5 +1153,23 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
         byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(this));
+    }
+
+    @Override
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        if (isArray()) {
+            return null;
+        }
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getConstantPool(), this);
+    }
+
+    @Override
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        if (isArray()) {
+            return null;
+        }
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getConstantPool(), this);
     }
 }

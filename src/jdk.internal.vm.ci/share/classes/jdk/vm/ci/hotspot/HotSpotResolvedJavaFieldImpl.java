@@ -245,4 +245,16 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, true, VMSupport.TYPE_ANNOTATIONS);
         return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
+
+    @Override
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('f', holder, holder.getKlassPointer(), index, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringClass().getConstantPool(), getDeclaringClass());
+    }
+
+    @Override
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('f', holder, holder.getKlassPointer(), index, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringClass().getConstantPool(), getDeclaringClass());
+    }
 }

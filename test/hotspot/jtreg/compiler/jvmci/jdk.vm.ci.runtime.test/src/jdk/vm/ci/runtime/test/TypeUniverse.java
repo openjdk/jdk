@@ -312,6 +312,19 @@ public class TypeUniverse {
             result.setAccessible(true);
             return result;
         } catch (ReflectiveOperationException | LinkageError cause) {
+            /* Try to get hidden field */
+            try {
+                Method fieldGetDeclaredFields0 = lookupMethod(Class.class, "getDeclaredFields0", boolean.class);
+                Field[] allFields = (Field[]) fieldGetDeclaredFields0.invoke(declaringClass, false);
+                for (Field field : allFields) {
+                    if (field.getName().equals(fieldName)) {
+                        field.setAccessible(true);
+                        return field;
+                    }
+                }
+            } catch (ReflectiveOperationException e) {
+                // ignore
+            }
             throw new AssertionError(cause);
         }
     }

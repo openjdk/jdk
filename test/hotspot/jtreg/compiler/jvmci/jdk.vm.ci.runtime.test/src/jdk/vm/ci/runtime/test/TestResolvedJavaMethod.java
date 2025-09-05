@@ -84,6 +84,7 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -681,6 +682,87 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         getParameterAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
         for (Method m : methods.keySet()) {
             getParameterAnnotationValuesTest(m);
+        }
+    }
+
+    @Test
+    public void getTypeAnnotationInfoTest() {
+        for (Method f : AnnotationTestInput.class.getDeclaredMethods()) {
+            checkTypeAnnotationInfo(f);
+        }
+        for (Method f : methods.keySet()) {
+            checkTypeAnnotationInfo(f);
+        }
+    }
+
+    private static void checkTypeAnnotationInfo(Method m) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+        byte[] rawAnnotations = invokeMethod(executableGetTypeAnnotationBytes, m);
+        if (rawAnnotations == null) {
+            assertNull(method.getTypeAnnotationInfo());
+        } else {
+            assertNotNull(method.getTypeAnnotationInfo());
+        }
+    }
+
+    @Test
+    public void getDeclaredAnnotationInfoTest() {
+        for (Method m : AnnotationTestInput.class.getDeclaredMethods()) {
+            checkDeclaredAnnotationInfo(m);
+        }
+        for (Method m : methods.keySet()) {
+            checkDeclaredAnnotationInfo(m);
+        }
+    }
+
+    private static final Field methodAnnotations = lookupField(Method.class, "annotations");
+
+    private static void checkDeclaredAnnotationInfo(Method m) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+        byte[] rawAnnotations = getFieldValue(methodAnnotations, m);
+        if (rawAnnotations == null) {
+            assertNull(method.getDeclaredAnnotationInfo());
+        } else {
+            assertNotNull(method.getDeclaredAnnotationInfo());
+        }
+    }
+
+    @Test
+    public void getParameterAnnotationInfoTest() throws Exception {
+        checkParameterAnnotationInfo(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        for (Method m : methods.keySet()) {
+            checkParameterAnnotationInfo(m);
+        }
+    }
+
+    @Test
+    public void getAnnotationDefaultInfoTest() throws Exception {
+        checkAnnotationDefaultInfo(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        for (Method m : methods.keySet()) {
+            checkAnnotationDefaultInfo(m);
+        }
+    }
+
+    private static final Field methodParameterAnnotations = lookupField(Method.class, "parameterAnnotations");
+    private static final Field methodAnnotationDefault = lookupField(Method.class, "annotationDefault");
+
+    private static void checkParameterAnnotationInfo(Method m) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+        byte[] rawAnnotations = getFieldValue(methodParameterAnnotations, m);
+        if (rawAnnotations == null) {
+            assertNull(method.getParameterAnnotationInfo());
+        } else {
+            assertNotNull(method.getParameterAnnotationInfo());
+        }
+    }
+
+    private static void checkAnnotationDefaultInfo(Method m) {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+        byte[] rawAnnotations = getFieldValue(methodAnnotationDefault, m);
+        if (rawAnnotations == null) {
+            assertNull(method.getAnnotationDefaultInfo());
+        } else {
+            assertNotNull(method.getAnnotationDefaultInfo());
         }
     }
 

@@ -24,6 +24,7 @@ package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.annotation.Annotated;
 import jdk.vm.ci.meta.annotation.AnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
@@ -535,5 +536,21 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      */
     default Object getAnnotationDefaultValue() {
         throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    /**
+     * Gets the class file info for the parameter annotations on this method
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getParameterAnnotationInfo() {
+        return null;
+    }
+
+    /**
+     * Gets the class file info for the default value of the annotation element represented
+     * by this method or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getAnnotationDefaultInfo() {
+        return null;
     }
 }

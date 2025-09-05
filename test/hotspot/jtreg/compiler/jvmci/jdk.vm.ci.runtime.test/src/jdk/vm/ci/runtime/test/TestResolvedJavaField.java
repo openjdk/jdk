@@ -82,6 +82,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -218,6 +219,48 @@ public class TestResolvedJavaField extends FieldUniverse {
         byte[] rawAnnotations = invokeMethod(fieldGetTypeAnnotationBytes, f);
         Class<?> container = f.getDeclaringClass();
         return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
+    }
+
+    @Test
+    public void getTypeAnnotationInfoTest() {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            checkTypeAnnotationInfo(f);
+        }
+        for (Field f : fields.keySet()) {
+            checkTypeAnnotationInfo(f);
+        }
+    }
+
+    private static void checkTypeAnnotationInfo(Field f) {
+        ResolvedJavaField javaField = metaAccess.lookupJavaField(f);
+        byte[] rawAnnotations = invokeMethod(fieldGetTypeAnnotationBytes, f);
+        if (rawAnnotations == null) {
+            assertNull(javaField.getTypeAnnotationInfo());
+        } else {
+            assertNotNull(javaField.getTypeAnnotationInfo());
+        }
+    }
+
+    @Test
+    public void getDeclaredAnnotationInfoTest() {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            checkDeclaredAnnotationInfo(f);
+        }
+        for (Field f : fields.keySet()) {
+            checkDeclaredAnnotationInfo(f);
+        }
+    }
+
+    private static final Field fieldAnnotations = lookupField(Field.class, "annotations");
+
+    private static void checkDeclaredAnnotationInfo(Field f) {
+        ResolvedJavaField field = metaAccess.lookupJavaField(f);
+        byte[] rawAnnotations = getFieldValue(fieldAnnotations, f);
+        if (rawAnnotations == null) {
+            assertNull(field.getDeclaredAnnotationInfo());
+        } else {
+            assertNotNull(field.getDeclaredAnnotationInfo());
+        }
     }
 
     @Test
