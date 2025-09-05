@@ -45,7 +45,8 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
 // the Collector free set, or in neither free set (NotFree).  When we speak of a "free partition", we mean partitions that
 // for which the ShenandoahFreeSetPartitionId is not equal to NotFree.
 class ShenandoahRegionPartitions {
-
+friend class ShenandoahFreeSet;
+friend class DirectAllocatableRegionRefillClosure;
 private:
   // We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
   // in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
@@ -118,6 +119,10 @@ public:
   // Set the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
   inline void raw_assign_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
     _membership[int(p)].set_bit(idx);
+  }
+
+  inline void raw_unassign_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
+    _membership[int(p)].clear_bit(idx);
   }
 
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
@@ -467,6 +472,9 @@ public:
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   inline size_t alloc_capacity(size_t idx) const;
+  ShenandoahRegionPartitions* partitions() {
+    return &_partitions;
+  }
 
   void clear();
 
@@ -543,12 +551,6 @@ public:
 
   template<bool IS_TLAB>
   HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
-
-  inline void retire_region_from_partition(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
-
-  inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-
-  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
