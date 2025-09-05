@@ -140,11 +140,12 @@ public class ExpressionFuzzer {
                     // In each iteration, generate new random values for the method arguments.
                 """,
                 methodArguments.stream().map(ma -> valueTemplate.asToken(ma.name, ma.type)).toList(),
-                // TODO: there should be a failure with indeterministic results with checkEQ
                 """
                     Object v0 = ${primitiveConTest}_compiled(#methodArguments);
                     Object v1 = ${primitiveConTest}_reference(#methodArguments);
-                    Verify.checkEQ(v0, v1);
+                """,
+                expression.info.isResultDeterministic ? "Verify.checkEQ(v0, v1);\n" : "// could fail - don't verify.\n",
+                """
                 }
 
                 @DontInline
