@@ -129,7 +129,8 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       if (object_count_enabled) {
         KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
         KlassInfoTable local_cit(false);
-        ShenandoahObjectCountClosure count(&local_cit);
+        ShenandoahIsAliveClosure is_alive;
+        ShenandoahObjectCountClosure count(&local_cit, &is_alive);
         ShenandoahMarkRefsAndCountClosure<NON_GEN> init_mark(queue, rp, nullptr, &count);
         _root_scanner.roots_do(&init_mark, worker_id);
         count.merge_table(global_cit);

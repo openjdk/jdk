@@ -1,3 +1,4 @@
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -12,6 +13,10 @@ void ShenandoahObjectCountClosure::merge_table(KlassInfoTable* global_cit) {
   // Clear the _cit in the closure to ensure it won't be used again.
   _cit = nullptr;
   assert(success, "Failed to merge thread-local table");
+}
+
+bool ShenandoahObjectCountClosure::should_visit(oop o) {
+  return _filter->do_object_b(o);
 }
 
 #endif // INCLUDE_JFR
