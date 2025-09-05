@@ -1860,6 +1860,7 @@ void JvmtiExport::post_method_exit_transition(JavaThread* thread, methodHandle m
     }
 
     if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+      // Deferred saving Object result into value.
       if (is_reference_type(type)) {
        value.l = JNIHandles::make_local(thread, result());
       }
