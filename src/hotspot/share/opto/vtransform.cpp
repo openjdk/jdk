@@ -813,7 +813,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   } else if (VectorNode::is_reinterpret_opcode(opc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     const TypeVect* vt = TypeVect::make(bt, vlen);
-    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
+    vn = new VectorReinterpretNode(in1, in1->bottom_type()->is_vect(), vt);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
