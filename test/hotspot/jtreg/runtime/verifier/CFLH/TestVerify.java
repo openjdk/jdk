@@ -164,7 +164,6 @@ public class TestVerify {
                 // Load the class instrumented with CFLH for the VerifyError.
                 inst.addTransformer(new BadTransformer());
                 Class<?> cls = Class.forName(CLASS_TO_BREAK);
-                System.out.println("class loaded" + cls);
             }
             throw new RuntimeException("Failed: Did not throw VerifyError");
         } catch (VerifyError e) {
