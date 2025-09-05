@@ -1835,13 +1835,16 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Saving oop_result into value.j is deferred until jvmti state is ready.
   HandleMark hm(thread);
   methodHandle mh(thread, method);
+  Handle result;
   oop oop_result;
   jvalue value;
   value.j = 0L;
   BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
   assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
           "Stack shouldn't be empty");
-  Handle result = Handle(thread, oop_result);
+  if (is_reference_type(type)) {
+    result = Handle(thread, oop_result);
+  }
   post_method_exit_transition(thread, mh, type, result, value);
   if (result.not_null() && !mh->is_native()) {
     *(oop*)current_frame.interpreter_frame_tos_address() = result();
@@ -1850,7 +1853,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
 
 void JvmtiExport::post_method_exit_transition(JavaThread* thread, methodHandle mh,
                                     BasicType type, Handle result, jvalue value) {
-  JvmtiThreadState * state; // should be initialized in vm state only
+  JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     state = get_jvmti_thread_state(thread);
