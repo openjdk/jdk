@@ -39,7 +39,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * ii) https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
  *
- * iii)  https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/download/134688/93813/325237?__cf_chl_tk=srkjkIczzRjlZ6yNglESSEpS2hmV.RCw0e7vNo63_hk-1755902581-1.0.1.1-ruSf1b4pdYugDIUAPQWsjtjtBUVLNbIk2aR8tkyfF8I
+ * iii) https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/view/134688
  */
 public final class AESCrypt extends SymmetricCipher {
 
@@ -747,7 +747,7 @@ public final class AESCrypt extends SymmetricCipher {
 
     /**
      * Check algorithm and initalize round keys for decryption and encryption.
-     * 
+     *
      * @param decrypting [in] indicates if encrypting ({@code false}) or
      *      decrypting ({@code true}).
      * @param algorithm [in] the case insentive string name for the AES cipher.
@@ -1074,8 +1074,8 @@ public final class AESCrypt extends SymmetricCipher {
         int len = WB;
         int ek = invExpandedKey[idx];
 
-        // Utilize lookup tables for the the three transformations to
-        // help mitigate against timing attacks.
+        // Can only use byte instead of int array, but decreases performance by
+        // 0.4%.  No lookup table yields a 0.7% decrease.
         int a0 = TI4[(state[idx] >> 24) & 0xFF] & 0xFF000000;
         int a1 = TI4[(state[(idx + 3) % len] >> 16) & 0xFF] & 0xFF0000;
         int a2 = TI4[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
