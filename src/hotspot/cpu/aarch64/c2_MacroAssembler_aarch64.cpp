@@ -2785,10 +2785,10 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
 // An example of 128-bit Byte vector:
 //   Data direction: high <== low
 //   Input:
-//         src   = g f e d c b a 9 8 7 6 5 4 3 2 1
-//         mask  = 0 0 -1 -1 0 0 -1 -1 0 0 -1 -1 0 0 -1 -1
+//         src   = g  f  e  d  c  b  a  9  8  7  6  5  4  3  2  1
+//         mask  = 0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
 //   Expected result:
-//         dst   = 0 0 8 7 0 0 6 5 0 0 4 3 0 0 2 1
+//         dst   = 0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
 void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
                                            FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
                                            int vector_length_in_bytes) {
@@ -2797,25 +2797,25 @@ void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src,
   // Since the TBL instruction only supports byte table, we need to
   // compute indices in byte type for all types.
   SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
-  // tmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  // tmp1 =  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
   dup(tmp1, size, zr);
-  // dst = 0 0 1 1 0 0 1 1 0 0 1 1 0 0 1 1
+  // dst  =  0  0  1  1  0  0  1  1  0  0  1  1  0  0  1  1
   negr(dst, size, mask);
   // Calculate vector index for TBL with prefix sum algorithm.
-  // dst = 8 8 8 7 6 6 6 5 4 4 4 3 2 2 2 1
+  // dst  =  8  8  8  7  6  6  6  5  4  4  4  3  2  2  2  1
   for (int i = 1; i < vector_length_in_bytes; i <<= 1) {
     ext(tmp2, size, tmp1, dst, vector_length_in_bytes - i);
     addv(dst, size, tmp2, dst);
   }
-  // tmp2 = 0 0 -1 -1 0 0 -1 -1 0 0 -1 -1 0 0 -1 -1
+  // tmp2 =  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
   orr(tmp2, size, mask, mask);
-  // tmp2 = 0 0 8 7 0 0 6 5 0 0 4 3 0 0 2 1
+  // tmp2 =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
   bsl(tmp2, size, dst, tmp1);
-  // tmp1 = 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+  // tmp1 =  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
   movi(tmp1, size, 1);
-  // dst = -1 -1 7 6 -1 -1 5 4 -1 -1 3 2 -1 -1 1 0
+  // dst  = -1 -1  7  6 -1 -1  5  4 -1 -1  3  2 -1 -1  1  0
   subv(dst, size, tmp2, tmp1);
-  // dst = 0 0 8 7 0 0 6 5 0 0 4 3 0 0 2 1
+  // dst  =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
   tbl(dst, size, src, 1, dst);
 }
 
@@ -2851,10 +2851,10 @@ void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, 
     sve_ext(dst, tmp2, MaxVectorSize - i);
     sve_add(tmp2, size, dst, tmp2);
   }
-  // dst = 00 04 00 03 00 02 00 01
+  // dst  = 00 04 00 03 00 02 00 01
   sve_sel(dst, size, pg, tmp2, tmp1);
-  // dst = -1 03 -1 02 -1 01 -1 00
+  // dst  = -1 03 -1 02 -1 01 -1 00
   sve_sub(dst, size, 1);
-  // dst = 00 87 00 65 00 43 00 21
+  // dst  = 00 87 00 65 00 43 00 21
   sve_tbl(dst, size, src, dst);
 }
