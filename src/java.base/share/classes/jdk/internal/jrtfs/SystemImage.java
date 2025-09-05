@@ -78,13 +78,13 @@ abstract class SystemImage {
         return new ExplodedImage(explodedModulesDir);
     }
 
-    static final String RUNTIME_HOME;
+    private static final String RUNTIME_HOME;
     // "modules" jimage file Path
-    static final Path moduleImageFile;
+    private static final Path moduleImageFile;
     // "modules" jimage exists or not?
-    static final boolean modulesImageExists;
+    private static final boolean modulesImageExists;
     // <JAVA_HOME>/modules directory Path
-    static final Path explodedModulesDir;
+    private static final Path explodedModulesDir;
 
     static {
         PrivilegedAction<String> pa = SystemImage::findHome;

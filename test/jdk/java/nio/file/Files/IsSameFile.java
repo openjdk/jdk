@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8154364
+ * @bug 8154364 8366254
  * @summary Test of Files.isSameFile
  * @requires (os.family != "windows")
  * @library .. /test/lib
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemLoopException;
 import java.nio.file.FileSystemException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -451,6 +452,6 @@ public class IsSameFile {
     @ParameterizedTest
     @MethodSource("linkLoopSource")
     public void linkLoop(boolean expect, Path x, Path y) throws IOException {
-        assertThrows(FileSystemException.class, () -> Files.isSameFile(x, y));
+        assertThrows(FileSystemLoopException.class, () -> Files.isSameFile(x, y));
     }
 }
