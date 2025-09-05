@@ -54,12 +54,12 @@ public class TestHeapFreeRatio {
       output.shouldHaveExitValue(0);
       break;
     case MIN_INVALID:
-      output.shouldContain("Bad min heap free percentage size: -Xminf" + min);
+      output.shouldContain("Bad min heap free ratio: -Xminf" + min);
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;
     case MAX_INVALID:
-      output.shouldContain("Bad max heap free percentage size: -Xmaxf" + max);
+      output.shouldContain("Bad max heap free ratio: -Xmaxf" + max);
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;
