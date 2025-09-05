@@ -95,28 +95,24 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     } else if (vtn->isa_ReductionVector() != nullptr) {
       init_req_with_scalar(p0,   vtn, 1); // scalar init
       init_req_with_vector(pack, vtn, 2); // vector
-    } else if (vtn->isa_ElementWiseVector() != nullptr) {
-      if (VectorNode::is_scalar_rotate(p0) &&
-          p0->in(2)->is_Con() &&
-          Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
-        init_req_with_vector(pack, vtn, 1);
-        init_req_with_scalar(p0,   vtn, 2); // constant rotation
-      } else if (VectorNode::is_roundopD(p0)) {
-        init_req_with_vector(pack, vtn, 1);
-        init_req_with_scalar(p0,   vtn, 2); // constant rounding mode
-      } else if (p0->is_CMove()) {
-        // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        init_all_req_with_vectors(pack, vtn);
-        // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
-        vtn->swap_req(1, 2);
-        vtn->swap_req(2, 3);
-        // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(3)->isa_BoolVector();
-        if (vtn_mask_cmp->test()._is_negated) {
-          vtn->swap_req(1, 2); // swap if test was negated.
-        }
-      } else {
-        init_all_req_with_vectors(pack, vtn);
+    } else if (VectorNode::is_scalar_rotate(p0) &&
+               p0->in(2)->is_Con() &&
+               Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
+      init_req_with_vector(pack, vtn, 1);
+      init_req_with_scalar(p0,   vtn, 2); // constant rotation
+    } else if (VectorNode::is_roundopD(p0)) {
+      init_req_with_vector(pack, vtn, 1);
+      init_req_with_scalar(p0,   vtn, 2); // constant rounding mode
+    } else if (p0->is_CMove()) {
+      // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
+      init_all_req_with_vectors(pack, vtn);
+      // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
+      vtn->swap_req(1, 2);
+      vtn->swap_req(2, 3);
+      // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
+      VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(3)->isa_BoolVector();
+      if (vtn_mask_cmp->test()._is_negated) {
+        vtn->swap_req(1, 2); // swap if test was negated.
       }
     } else {
       init_all_req_with_vectors(pack, vtn);
