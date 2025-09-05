@@ -151,26 +151,23 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
 
 // Create a vtnode for each pack. No in/out edges set yet.
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
-  // TODO: refactor and rename
-  uint pack_size = pack->size();
   Node* p0 = pack->at(0);
-  int opc = p0->Opcode();
   const VTransformVectorNodePrototype prototype = VTransformVectorNodePrototype::make_from_pack(pack, _vloop_analyzer);
+  const int  sopc = prototype.scalar_opcode();
+  const uint vlen = prototype.vector_length();
   const BasicType bt = prototype.element_basic_type();
-  VTransformVectorNode* vtn = nullptr;
 
+  VTransformVectorNode* vtn = nullptr;
   if (p0->is_Load()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
-    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
     vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p);
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
-    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
     vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p);
   } else if (p0->is_Cmp()) {
-    assert(p0->req() == 3, "is it true?");
-    // TODO: remove req above and below
-    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, p0->req(), prototype);
+    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
@@ -183,35 +180,35 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    int vopc = VectorNode::opcode(opc, bt);
+    int vopc = VectorNode::opcode(sopc, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype, vopc);
-  } else if (VectorNode::is_convert_opcode(opc)) {
+  } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(p0->req() == 2, "convert should have 2 operands");
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
-    int vopc = VectorCastNode::opcode(opc, def_bt);
+    int vopc = VectorCastNode::opcode(sopc, def_bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
-  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+  } else if (VectorNode::is_reinterpret_opcode(sopc)) {
     assert(p0->req() == 2, "reinterpret should have 2 operands");
     BasicType src_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
     vtn = new (_vtransform.arena()) VTransformReinterpretVectorNode(_vtransform, prototype, src_bt);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
-    vtn = new (_vtransform.arena()) VTransformElementWiseLongOpWithCastToIntVectorNode(_vtransform, p0->req(), prototype);
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
+    vtn = new (_vtransform.arena()) VTransformElementWiseLongOpWithCastToIntVectorNode(_vtransform, prototype);
   } else {
     assert(p0->req() == 3 ||
-           VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
-           VectorNode::is_reinterpret_opcode(opc) ||
-           VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
-           opc == Op_FmaD  ||
-           opc == Op_FmaF  ||
-           opc == Op_FmaHF ||
-           opc == Op_SignumF ||
-           opc == Op_SignumD,
+           VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc) ||
+           VectorNode::is_reinterpret_opcode(sopc) ||
+           VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc) ||
+           sopc == Op_FmaD  ||
+           sopc == Op_FmaF  ||
+           sopc == Op_FmaHF ||
+           sopc == Op_SignumF ||
+           sopc == Op_SignumD,
            "pack type must be in this list");
     assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
-    int vopc = VectorNode::opcode(opc, bt);
+    int vopc = VectorNode::opcode(sopc, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
   }
   vtn->set_nodes(pack);

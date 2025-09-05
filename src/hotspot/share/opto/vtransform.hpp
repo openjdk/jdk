@@ -671,8 +671,8 @@ public:
 // Hence, we vectorize it as: long --long_op--> long --cast--> int
 class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVectorNode {
 public:
-  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, req, prototype) {}
+  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype) :
+    VTransformVectorNode(vtransform, 2, prototype) {}
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
 };
@@ -700,8 +700,8 @@ struct VTransformBoolTest {
 // The Bool node takes care of "apply".
 class VTransformCmpVectorNode : public VTransformVectorNode {
 public:
-  VTransformCmpVectorNode(VTransform& vtransform, int req, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, req, prototype) {}
+  VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype) :
+    VTransformVectorNode(vtransform, 3, prototype) {}
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
