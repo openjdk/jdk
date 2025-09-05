@@ -1832,7 +1832,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // The post_method_exit_transition always makes transition to vm and back
   // where GC can happen. So it is needed to preserve result  and then restore it
   // even if events are not actually posted.
-  // Saving oop_result into valu.j is deferred until jvmti state is ready.
+  // Saving oop_result into value.j is deferred until jvmti state is ready.
   HandleMark hm(thread);
   methodHandle mh(thread, method);
   oop oop_result;
