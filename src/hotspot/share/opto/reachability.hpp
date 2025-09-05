@@ -30,22 +30,28 @@
 #include "opto/type.hpp"
 
 //------------------------ReachabilityFenceNode--------------------------
-class ReachabilityFenceNode : public MultiNode {
+class ReachabilityFenceNode : public Node {
 public:
   ReachabilityFenceNode(Compile* C, Node* ctrl, Node* referent)
-      : MultiNode(1) {
+      : Node(1) {
     init_class_id(Class_ReachabilityFence);
     init_req(TypeFunc::Control, ctrl);
     add_req(referent);
     C->add_reachability_fence(this);
   }
-  virtual int   Opcode() const;
+  virtual int  Opcode() const;
+  virtual bool is_CFG() const { return true; }
+  virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
+  virtual bool depends_only_on_test() const { return false; };
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
   virtual const Type* bottom_type() const { return Type::CONTROL; }
-  const RegMask &in_RegMask(uint idx) const {
+  virtual const RegMask& in_RegMask(uint idx) const {
     // Fake input register mask for the referent: accepts all registers and all stack slots.
     // This avoids redundant register moves around reachability fences.
     return RegMask::All;
+  }
+  virtual const RegMask& out_RegMask() const {
+    return RegMask::Empty;
   }
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
