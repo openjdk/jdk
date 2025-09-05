@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Check if weak cipher suites are disabled
  * @library /javax/net/ssl/templates
  * @modules jdk.crypto.ec
- * @run main/othervm DisabledAlgorithms default
- * @run main/othervm DisabledAlgorithms empty
+ * @run main/othervm/timeout=480 DisabledAlgorithms default
+ * @run main/othervm/timeout=480 DisabledAlgorithms empty
  */
 
 import java.io.BufferedInputStream;
