@@ -42,6 +42,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -59,7 +60,7 @@ class UnixPath implements Path {
     private final byte[] path;
 
     // String representation (created lazily, no need to be volatile)
-    private String stringValue;
+    private @Stable String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
