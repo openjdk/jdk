@@ -210,11 +210,16 @@ class JvmtiExport : public AllStatic {
   // dependency information is complete or not.
   static bool _all_dependencies_are_recorded;
 
+  static void post_method_exit_transition(JavaThread* thread,
+                                          methodHandle mh,
+                                          BasicType type,
+                                          Handle result,
+                                          jvalue value);
+
   static void post_method_exit_inner(JavaThread* thread,
                                      methodHandle& mh,
                                      JvmtiThreadState *state,
                                      bool exception_exit,
-                                     frame current_frame,
                                      jvalue& value);
 
  public:
