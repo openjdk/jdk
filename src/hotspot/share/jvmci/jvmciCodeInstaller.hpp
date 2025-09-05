@@ -410,11 +410,21 @@ protected:
 
   void record_oop_patch(HotSpotCompiledCodeStream* stream, address dest, u1 read_tag, bool narrow, JVMCI_TRAPS);
 
-  // full_info: if false, only BytecodePosition is in stream otherwise all DebugInfo is in stream
-  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS);
+  class BindingInfo {
+    public:
+      bool reexecute;
+      int bci;
+      methodHandle caller;
+  };
 
-  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, JVMCI_TRAPS) {
-    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* is_mh_invoke */, false /* return_oop */, JVMCIENV);
+  // see CallGenerator::is_inlined_method_handle_intrinsic
+  bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle caller, int bci, methodHandle method);
+
+  // full_info: if false, only BytecodePosition is in stream otherwise all DebugInfo is in stream
+  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, BindingInfo* binding_info, JVMCI_TRAPS);
+
+  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, BindingInfo* binding_info, JVMCI_TRAPS) {
+    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* is_mh_invoke */, false /* return_oop */, binding_info, JVMCIENV);
   }
   void record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);
 
