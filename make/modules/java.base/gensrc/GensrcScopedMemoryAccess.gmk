@@ -40,20 +40,32 @@ SCOPED_OUTPUT := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/ScopedM
 define SetupGenScopedSnippets
   $1_SCOPED_SNIPPET_FILE := $$(SCOPED_OUTPUT).snippet.$1
 
+  $1_KEYS := $1 CAS
+  ifneq ($$(filter byte, $1),)
+    $1_KEYS += byte
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter char short int long, $1),)
+    $1_KEYS += Unaligned
+  endif
+  ifneq ($$(filter boolean byte char short, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifeq ($$(filter boolean, $1),)
+    $1_KEYS += AtomicAdd
+  endif
+  ifeq ($$(filter float double, $1),)
+    $1_KEYS += Bitwise
+  endif
+
   $$(eval $$(call SetupStreamPreProcessing, GEN_SCOPED_SNIPPET_$1, \
       SOURCE_FILE := $$(SCOPED_INPUT_DIR)/X-ScopedMemoryAccess-bin.java.template, \
       OUTPUT_FILE := $$($1_SCOPED_SNIPPET_FILE), \
       INFO := Generating snippets for ScopedMemoryAccess ($1), \
       SUBST_EMPTY_LINES := false, \
-      KEYS := \
-          $1 \
-          CAS \
-          $$(if $$(filter byte, $1), byte) \
-          $$(if $$(filter float double, $1), floatingPoint) \
-          $$(if $$(filter char short int long, $1), Unaligned) \
-          $$(if $$(filter boolean byte char short, $1), ShorterThanInt) \
-          $$(if $$(filter-out boolean, $1), AtomicAdd) \
-          $$(if $$(filter-out float double, $1), Bitwise), \
+      KEYS := $$($1_KEYS), \
       REPLACEMENTS := \
           type=$1 \
           Type=$$(call Conv, $1, Type), \

@@ -41,6 +41,13 @@ define SetupGenBufferBinSnippets
   $1_$2_TMP := $$(BUFFER_OUTPUT_DIR)/$1.java.bin-snippet.$2
 
   $1_$2_LBPV :=  $$(call Conv, $2, LBPV)
+  ifeq ($$($1_READ_ONLY), true)
+    $1_$2_RW_KEYS := ro
+    $1_$2_RW_REPLACEMENT := R
+  else
+    $1_$2_RW_KEYS := rw
+    $1_$2_RW_REPLACEMENT :=
+  endif
 
   $$(eval $$(call SetupStreamPreProcessing, GEN_BUFFER_BIN_$1_$2, \
       SOURCE_FILE := $$(BUFFER_INPUT_DIR)/$$($1_TEMPLATE)-bin.java.template, \
@@ -48,10 +55,10 @@ define SetupGenBufferBinSnippets
       INFO := Generating buffer class bin snippets for $1 ($2), \
       BEGIN_END := true, \
       KEYS := \
-          $$(if $$(filter true, $$($1_READ_ONLY)), ro, rw), \
+          $$($1_$2_RW_KEYS), \
       REPLACEMENTS := \
           type=$2 \
-          RW=$$(strip $$(if $$(filter true, $$($1_READ_ONLY)), R)) \
+          RW=$$($1_$2_RW_REPLACEMENT) \
           LG_BYTES_PER_VALUE=$$($1_$2_LBPV) \
           BYTES_PER_VALUE="(1$$$$(SPACE)<<$$$$(SPACE)$$($1_$2_LBPV))" \
           a=$$(call Conv, $2, a) \
@@ -95,6 +102,13 @@ define SetupGenBufferBody
   endif
 
   $1_LBPV := $$(call Conv, $$($1_TYPE), LBPV)
+  ifeq ($$($1_READ_ONLY), true)
+    $1_RW_KEYS := ro
+    $1_RW_REPLACEMENT := R
+  else
+    $1_RW_KEYS := rw
+    $1_RW_REPLACEMENT :=
+  endif
 
   $$(eval $$(call SetupStreamPreProcessing, GEN_BUFFER_$1, \
       SOURCE_FILE := $$(BUFFER_INPUT_DIR)/$$($1_TEMPLATE).java.template, \
@@ -102,14 +116,14 @@ define SetupGenBufferBody
       INFO := Generating buffer class $1.java, \
       KEYS := \
           $$($1_TYPE) \
-          $$(if $$(filter true, $$($1_READ_ONLY)), ro, rw) \
+          $$($1_RW_KEYS), \
           bo$$($1_BYTE_ORDER) \
           $$(call Conv, $$($1_TYPE), category) \
           $$(call Conv, $$($1_TYPE), streams), \
       REPLACEMENTS := \
           type=$$($1_TYPE) \
           BO=$$($1_BYTE_ORDER) \
-          RW=$$(strip $$(if $$(filter true, $$($1_READ_ONLY)), R)) \
+          RW=$$($1_RW_REPLACEMENT) \
           LG_BYTES_PER_VALUE=$$($1_LBPV) \
           BYTES_PER_VALUE="(1$$$$(SPACE)<<$$$$(SPACE)$$($1_$2_LBPV))" \
           a=$$(call Conv, $$($1_TYPE), a) \

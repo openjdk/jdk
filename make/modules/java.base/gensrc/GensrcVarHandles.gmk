@@ -39,17 +39,23 @@ define GenerateVarHandle
   VARHANDLE_$1_type := $$(strip $$(if $$(filter reference, $1), Object, $1))
   VARHANDLE_$1_Type := $$(call Conv, $1, Type)
 
+  $1_KEYS := $$(VARHANDLE_$1_type) CAS
+  ifneq ($$(filter byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifeq ($$(filter boolean reference, $1),)
+    $1_KEYS += AtomicAdd
+  endif
+  ifeq ($$(filter float double reference, $1),)
+    $1_KEYS += Bitwise
+  endif
+
   $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_$1, \
       SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandle.java.template, \
       OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandle$$(VARHANDLE_$1_Type)s.java, \
       INFO := Generating VarHandle class for $1, \
       SUBST_EMPTY_LINES := false, \
-      KEYS := \
-          $$(VARHANDLE_$1_type) \
-          CAS \
-          $$(if $$(filter byte short char, $1), ShorterThanInt) \
-          $$(if $$(filter-out boolean reference, $1), AtomicAdd) \
-          $$(if $$(filter-out float double reference, $1), Bitwise), \
+      KEYS := $$($1_KEYS), \
       REPLACEMENTS := \
           type=$$(VARHANDLE_$1_type) \
           Type=$$(VARHANDLE_$1_Type), \
@@ -64,17 +70,23 @@ endef
 define GenerateVarHandleByteArray
   VARHANDLE_BYTEARRAY_$1_Type := $$(call Conv, $1, Type)
 
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
+  endif
+
   $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_BYTEARRAY_$1, \
       SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleByteArrayView.java.template, \
       OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleByteArrayAs$$(VARHANDLE_BYTEARRAY_$1_Type)s.java, \
       INFO := Generating VarHandleByteArray class for $1, \
       SUBST_EMPTY_LINES := false, \
-      KEYS := \
-          $1 \
-          $$(if $$(filter int long float double, $1), CAS) \
-          $$(if $$(filter float double, $1), floatingPoint) \
-          $$(if $$(filter int long, $1), AtomicAdd) \
-          $$(if $$(filter int long, $1), Bitwise), \
+      KEYS := $$($1_KEYS), \
       REPLACEMENTS := \
           type=$1 \
           Type=$$(VARHANDLE_BYTEARRAY_$1_Type) \
@@ -93,19 +105,30 @@ endef
 define GenerateVarHandleMemorySegment
   VARHANDLE_SEGMENT_$1_Type := $$(call Conv, $1, Type)
 
+
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter boolean byte, $1),)
+    $1_KEYS += byte
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter boolean byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
+  endif
+
   $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_SEGMENT_$1, \
       SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleSegmentView.java.template, \
       OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleSegmentAs$$(VARHANDLE_SEGMENT_$1_Type)s.java, \
       INFO := Generating VarHandleSegment class for $1, \
       SUBST_EMPTY_LINES := false, \
-      KEYS := \
-          $1 \
-          $$(if $$(filter int long float double, $1), CAS) \
-          $$(if $$(filter boolean byte, $1), byte) \
-          $$(if $$(filter float double, $1), floatingPoint) \
-          $$(if $$(filter boolean byte short char, $1), ShorterThanInt) \
-          $$(if $$(filter int long, $1), AtomicAdd) \
-          $$(if $$(filter int long, $1), Bitwise), \
+      KEYS := $$($1_KEYS), \
       REPLACEMENTS := \
           type=$1 \
           Type=$$(VARHANDLE_SEGMENT_$1_Type) \
