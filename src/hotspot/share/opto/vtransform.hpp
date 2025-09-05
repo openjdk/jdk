@@ -666,6 +666,17 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// The scalar operation was a long -> int operation.
+// However, the vector operation is long -> long.
+// Hence, we vectorize it as: long --long_op--> long --cast--> int
+class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVectorNode {
+public:
+  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype) :
+    VTransformVectorNode(vtransform, req, prototype) {}
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
+};
+
 class VTransformReinterpretVectorNode : public VTransformVectorNode {
 private:
   const BasicType _src_bt;

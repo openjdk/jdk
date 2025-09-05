@@ -196,6 +196,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype, vopc);
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+    vtn = new (_vtransform.arena()) VTransformElementWiseLongOpWithCastToIntVectorNode(_vtransform, p0->req(), prototype);
   } else {
     assert(p0->req() == 3 ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||

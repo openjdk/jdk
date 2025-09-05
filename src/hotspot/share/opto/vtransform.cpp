@@ -808,12 +808,13 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     //sopc = Op_RShiftI;
     //vn = VectorNode::make(sopc, in1, in2, vlen, bt);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
-    // The scalar operation was a long -> int operation.
-    // However, the vector operation is long -> long.
-    VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
-    register_new_node_from_vectorization(apply_state, long_vn, first);
-    // Cast long -> int, to mimic the scalar long -> int operation.
-    vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
+    assert(false, "WIP");
+    // // The scalar operation was a long -> int operation.
+    // // However, the vector operation is long -> long.
+    // VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
+    // register_new_node_from_vectorization(apply_state, long_vn, first);
+    // // Cast long -> int, to mimic the scalar long -> int operation.
+    // vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
              VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
     assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
@@ -829,6 +830,23 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
 
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
+}
+
+VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(VTransformApplyState& apply_state) const {
+  // TODO: refactor!
+  Node* first = _nodes.at(0);
+  uint  vlen   = _prototype.vector_length();
+  int   sopc   = _prototype.scalar_opcode();
+  Node* in1 = apply_state.transformed_node(in_req(1));
+
+  // The scalar operation was a long -> int operation.
+  // However, the vector operation is long -> long.
+  VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
+  register_new_node_from_vectorization(apply_state, long_vn, first);
+  // Cast long -> int, to mimic the scalar long -> int operation.
+  VectorNode* vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
