@@ -388,6 +388,7 @@ struct ControlSuccessor : LocalGraphInvariant {
       return CheckResult::NOT_APPLICABLE;
     }
 
+    ResourceMark rm;
     Node_List ctrl_succ;
     for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
       Node* out = center->fast_out(i);
