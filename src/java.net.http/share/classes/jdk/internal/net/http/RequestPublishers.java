@@ -438,13 +438,13 @@ public final class RequestPublishers {
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            Iterable<ByteBuffer> iterable = () -> new FileChannelIterator(channel, position, limit);
+            CheckedIterable<ByteBuffer> iterable = () -> new FileChannelIterator(channel, position, limit);
             new PullPublisher<>(iterable).subscribe(subscriber);
         }
 
     }
 
-    private static final class FileChannelIterator implements Iterator<ByteBuffer> {
+    private static final class FileChannelIterator implements CheckedIterator<ByteBuffer> {
 
         private final FileChannel channel;
 
@@ -466,7 +466,7 @@ public final class RequestPublishers {
         }
 
         @Override
-        public ByteBuffer next() {
+        public ByteBuffer next() throws IOException {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -483,7 +483,7 @@ public final class RequestPublishers {
                 }
             } catch (IOException ioe) {
                 terminated = true;
-                throw new UncheckedIOException(ioe);
+                throw new IOException(ioe);
             }
             return buffer.flip();
         }
