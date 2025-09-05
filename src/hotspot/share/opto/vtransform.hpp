@@ -593,13 +593,10 @@ public:
 // Bundle the information needed for vector nodes.
 class VTransformVectorNodePrototype : public StackObj {
 private:
-  // TODO: make fields const?
   Node* _approximate_origin; // for proper propagation of node notes
   const int _scalar_opcode;
   const uint _vector_length;
   const BasicType _element_basic_type;
-  // TODO: needed?
-  //const TypePtr* _adr_type; // carries slice information for memory ops (load, store, phi)
 
   VTransformVectorNodePrototype(Node* approximate_origin,
                                 int scalar_opcode,
@@ -616,8 +613,7 @@ public:
     int opc = first->Opcode();
     int vlen = pack->size();
     BasicType bt = vloop_analyzer.types().velt_basic_type(first);
-    // TODO: // const TypePtr* adr_type = first->adr_type();
-    return VTransformVectorNodePrototype(first, opc, vlen, bt/*, adr_type*/); // TcDO: ?
+    return VTransformVectorNodePrototype(first, opc, vlen, bt);
   }
 
 
@@ -740,11 +736,14 @@ public:
 class VTransformMemVectorNode : public VTransformVectorNode {
 private:
   const VPointer _vpointer; // with size of the vector
+protected:
+  const TypePtr* _adr_type;
 
 public:
-  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype, const VPointer& vpointer) :
+  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
     VTransformVectorNode(vtransform, req, prototype),
-    _vpointer(vpointer) {}
+    _vpointer(vpointer),
+    _adr_type(adr_type) {}
 
   const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
@@ -755,8 +754,8 @@ public:
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 3, prototype, vpointer) {}
+  VTransformLoadVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 3, prototype, vpointer, adr_type) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
@@ -767,8 +766,8 @@ public:
 class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 4, prototype, vpointer) {}
+  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 4, prototype, vpointer, adr_type) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

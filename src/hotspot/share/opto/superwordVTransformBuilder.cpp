@@ -163,11 +163,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   if (p0->is_Load()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p);
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p, p0->adr_type());
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p);
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p, p0->adr_type());
   } else if (p0->is_Cmp()) {
     vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype);
   } else if (p0->is_Bool()) {

@@ -867,8 +867,6 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
-  // TODO: refactor?
-  const TypePtr* adr_type = first->adr_type();
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
@@ -883,7 +881,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
@@ -898,11 +896,9 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
-  // TODO: refactor?
-  const TypePtr* adr_type = first->adr_type();
 
   Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
-  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
+  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, _adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
@@ -912,7 +908,6 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
   PhaseIdealLoop* phase = apply_state.phase();
   register_new_node_from_vectorization(apply_state, vn);
 
-  // TODO: refactor
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
     phase->igvn().replace_node(n, vn);
