@@ -890,7 +890,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 }
 
 HeapWord* ShenandoahFreeSet::allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
-  //update_allocation_bias();
+  update_allocation_bias();
 
   if (_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
     // There is no recovery. Mutator does not touch collector view at all.
@@ -2441,11 +2441,11 @@ uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionBreakableI
   if (_partitions.is_empty(partition)) {
     return 0u;
   }
-  /*
+
   if (IS_MUTATOR) {
     update_allocation_bias();
   }
-  */
+
   if (_partitions.alloc_from_left_bias(partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, partition, use_empty);
     return iterate_regions_for_alloc(iterator, cl);
