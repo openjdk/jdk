@@ -2058,8 +2058,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   // Create a MachNopNode
   _nop = new MachNopNode();
 
-  // Now that the nops are in the array, save the count
-  // (but allow entries for the nops)
+  // Save the count
   _node_bundling_limit = compile.unique();
   uint node_max = _regalloc->node_regs_max_index();
 
