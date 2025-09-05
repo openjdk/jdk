@@ -2176,8 +2176,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous_cds(ShenandoahAllocRequest& req
 
 template<bool IS_TLAB>
 HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
-  uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region) {
-  has_replacement_eligible_region = false;
+  uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region) {
   HeapWord *obj = nullptr;
   uint i = 0u;
   while (i < probe_count) {
@@ -2191,9 +2190,6 @@ HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
         return obj;
       }
     }
-    has_replacement_eligible_region = has_replacement_eligible_region ||
-                                      r == nullptr ||
-                                      r->free() < PLAB::min_size_bytes();
     i++;
   }
   return obj;
@@ -2212,40 +2208,25 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
   const uint max_probes = ShenandoahDirectAllocationMaxProbes;
   for (;;) {
     HeapWord* obj = nullptr;
-    bool any_replacement_eligible = false;
-    bool steal_alloc_done = false;
-    obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, max_probes, req, in_new_region, any_replacement_eligible);
+    obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, max_probes, req, in_new_region);
     if (obj != nullptr) {
       return obj;
-    }
-    uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
-    uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
-    if (!any_replacement_eligible && _heap->is_gc_state(ShenandoahHeap::GCState::STABLE)) {
-      // After probing max_probes times with CAS alloc failure, if there is no region eligible for replacement,
-      // Taking the lock and try to allocate direct allocation region will unlikely to successfully to replace any of them,
-      // therefore, it tries steal space from other allocation regions first.
-      steal_alloc_done = true;
-      obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
-                                                     steal_alloc_probes,
-                                                     req,
-                                                     in_new_region,
-                                                     any_replacement_eligible);
-      if (obj != nullptr) {
-        return obj;
-      }
     }
 
-    if (!try_allocate_directly_allocatable_regions(start_idx, steal_alloc_done, req, obj, in_new_region)) {
-      if (obj == nullptr) {
-        obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
-                                                       steal_alloc_probes,
-                                                       req,
-                                                       in_new_region,
-                                                       any_replacement_eligible);
-      }
+    // try to steal from other directly allocatable regions
+    uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
+    uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
+    obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
+                                                   steal_alloc_probes,
+                                                   req,
+                                                   in_new_region);
+    if (obj != nullptr) {
       return obj;
     }
-    if (obj != nullptr) {
+
+    if (!try_allocate_directly_allocatable_regions(start_idx, true, req, obj, in_new_region) || obj != nullptr) {
+      // if no new directly allocatable region has been allocated, return the obj which can be nullptr;
+      // otherwise only return if the obj is not nullptr.
       return obj;
     }
   }

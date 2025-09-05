@@ -448,7 +448,7 @@ private:
 
   template<bool IS_TLAB>
   HeapWord* cas_allocate_single_for_mutator(
-    uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region);
+    uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region);
 
   template<bool IS_TLAB>
   HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
