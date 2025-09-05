@@ -157,6 +157,10 @@ public class CipherByteBufferOverwriteTest {
                 outBuf.position(outOfs);
                 break;
             case MEMORY_SEGMENT:
+                if (arena == null) {
+                    throw new RuntimeException(
+                            "arena argument cannot be null for MEMORY_SEGMENT buffers.");
+                }
                 outBuf = arena.allocate(bufSz).asByteBuffer();
                 inBuf = outBuf.slice();
                 inBuf.put(in, inOfs, inLen);
