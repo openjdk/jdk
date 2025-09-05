@@ -38,7 +38,6 @@ import jdk.vm.ci.code.site.InfopointReason;
 import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.code.site.Reference;
 import jdk.vm.ci.code.site.Site;
-import jdk.vm.ci.hotspot.HotSpotDirectCall;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotCompiledNmethod;
@@ -302,14 +301,8 @@ public abstract class TestAssembler {
         sites.add(new Call(target, code.position(), size, direct, debugInfo));
     }
 
-    protected void recordCall(int posBefore, int posAfter, InvokeTarget target, boolean direct, boolean bind, DebugInfo debugInfo) {
-        Call call;
-        if (direct) {
-            call = new HotSpotDirectCall(target, posBefore, posAfter - posBefore, debugInfo, bind);
-        } else {
-            call = new Call(target, posBefore, posAfter - posBefore, false, debugInfo);
-        }
-        sites.add(call);
+    protected void recordCall(int posBefore, int posAfter, InvokeTarget target, boolean direct, DebugInfo debugInfo) {
+        sites.add(new Call(target, posBefore, posAfter - posBefore, direct, debugInfo));
     }
 
     protected void recordMark(Object id) {

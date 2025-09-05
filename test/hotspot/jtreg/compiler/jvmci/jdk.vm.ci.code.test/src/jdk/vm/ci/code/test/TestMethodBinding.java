@@ -93,7 +93,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                 info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
                 asm.emitJavaCall(pos, info);
 
-                asm.recordCall(pos[0], pos[1], resolvedMethod, true, true, info);
+                asm.recordCall(pos[0], pos[1], resolvedMethod, true, info);
                 asm.emitCallEpilogue(cc);
                 if (returnClazz == float.class) {
                     asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
