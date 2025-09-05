@@ -25,7 +25,7 @@
  * @test
  * @bug 8366845
  * @summary Test Reinterpret with Cast cases, where the order of the src/dst types of Reinterpret matters.
- * @modules java.base/jdk.internal.misc
+ * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReinterpretAndCast
  */
@@ -45,7 +45,7 @@ public class TestReinterpretAndCast {
     private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
     static long[] fillWithDoubles(long[] a) {
