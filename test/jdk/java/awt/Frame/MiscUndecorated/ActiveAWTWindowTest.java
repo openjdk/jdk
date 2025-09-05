@@ -112,12 +112,7 @@ public class ActiveAWTWindowTest {
 
         textField = new TextField("TextField");
         button = new Button("Click me");
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                textField.setText("Focus gained");
-            }
-        });
+        button.addActionListener(e -> textField.setText("Focus gained"));
 
         frame.setBackground(Color.green);
         frame.add(button);
@@ -132,12 +127,7 @@ public class ActiveAWTWindowTest {
 
         button2 = new Button("Click me");
         textField2 = new TextField("TextField");
-        button2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                textField2.setText("Got the focus");
-            }
-        });
+        button2.addActionListener(e -> textField2.setText("Got the focus"));
 
         frame2.add(button2, BorderLayout.SOUTH);
         frame2.add(textField2, BorderLayout.NORTH);
