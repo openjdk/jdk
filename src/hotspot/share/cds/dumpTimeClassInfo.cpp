@@ -78,7 +78,8 @@ void DumpTimeClassInfo::add_verification_constraint(Symbol* name,
                                    _klass->external_name(), from_name->as_klass_external_name(),
                                    name->as_klass_external_name(), c);
     } else {
-      log_trace(aot, verification)("added old verification constraint: %s", _klass->external_name());
+      log_trace(aot, verification)("added old verification constraint: %s: %s", _klass->external_name(),
+                                   name->as_klass_external_name());
     }
   }
 }

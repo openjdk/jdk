@@ -152,6 +152,7 @@ public:
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
+  // For old verifier: only name is saved; all other fields are null/false.
   void add_verification_constraint(Symbol* name,
          Symbol* from_name = nullptr, bool from_field_is_protected = false, bool from_is_array = false, bool from_is_object = false);
   void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);

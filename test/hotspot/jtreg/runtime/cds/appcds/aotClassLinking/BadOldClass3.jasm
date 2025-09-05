@@ -22,7 +22,7 @@
  *
  */
 
-super public class BadOldClass2
+super public class BadOldClass3
     version 49:0
 {
 
@@ -35,18 +35,19 @@ public Method "<init>":"()V"
 }
 
     /*
-     * The following method tries to return a NotFoo as a Foo.
+     * The following method tries to return a String[][] as an Integer[].
      * Verifier should fail.
+     *
+     * Note: the arrays have different number of dimensions. The old verifier
+     * rejects this immediately without looking up the String/Integer types.
      */
-public Method doit:"()LFoo;"
+public Method doit:"()[Ljava/lang/Integer;"
     stack 2 locals 1
 {
-        new              class NotFoo;
-        dup;
-        invokespecial    Method NotFoo."<init>":"()V";
-        astore_0;
-        aload_0;
-        areturn;   // tries to return a NotFoo as a Foo
+        iconst_1;
+        iconst_1;
+        multianewarray class "[[Ljava/lang/String;", 2;
+        areturn;
 }
 
 }

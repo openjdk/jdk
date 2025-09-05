@@ -22,12 +22,8 @@
  *
  */
 
-// When -XX:+PreloadSharedClasses is enabled, this class will be
-// archived in the unlinked state. When we try to use this class
-// at runtime, a VerifyError should be thrown.
-
 super public class BadNewClass
-    version 49:0
+    version 52:0
 {
 
 public Method "<init>":"()V"

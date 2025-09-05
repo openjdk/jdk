@@ -460,7 +460,7 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
   return false;
 }
 
-// Returns true if the DumpTimeClassInfo::is_excluded() is true for at least one of k's exclusion dependencies.
+// Returns true if DumpTimeClassInfo::is_excluded() is true for at least one of k's exclusion dependencies.
 bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
   InstanceKlass* super = k->java_super();
   if (super != nullptr && is_dependency_excluded(k, super, "super")) {
@@ -1039,16 +1039,7 @@ void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 void SystemDictionaryShared::add_old_verification_constraint(Thread* current, InstanceKlass* ik, Symbol* name) {
   precond(CDSConfig::is_preserving_verification_constraints());
   DumpTimeClassInfo* info = get_info(ik);
-  Handle loader(current, ik->class_loader());
-  Klass* k = SystemDictionary::find_instance_or_array_klass(current, name, loader);
-  if (k != nullptr) {
-    if (k->is_objArray_klass()) {
-      k = ObjArrayKlass::cast(k)->bottom_klass();
-    }
-    if (k->is_instance_klass() && !ik->is_subclass_of(k)) {
-      info->add_verification_constraint(k->name());
-    }
-  }
+  info->add_verification_constraint(name);
 }
 
 void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
