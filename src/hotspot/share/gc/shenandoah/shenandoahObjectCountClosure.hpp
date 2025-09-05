@@ -35,9 +35,15 @@ public:
   // Record the object's instance in the KlassInfoTable
   inline void do_oop(oop* o) { do_oop_work(o); }
   inline KlassInfoTable* get_table() { return _cit; }
+<<<<<<< HEAD
 
   bool should_visit(oop o);
 
+=======
+  
+  bool should_visit(oop o);
+  
+>>>>>>> 774f4e2b8592424f74d3fea4c509d1fc95a20c39
   // Merges the heap's KlassInfoTable with the thread's KlassInfoTable.
   // Clears the thread's table, so it won't be used again.
   void merge_table(KlassInfoTable* global_cit);
