@@ -2591,37 +2591,29 @@ class BacktraceIterator : public StackObj {
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
                                           int version, int bci, Symbol* name) {
   ResourceMark rm;
+  stringStream ss;
 
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
   const char* klass_name  = holder->external_name();
-
   char* method_name = name->as_C_string();
+  ss.print("\tat %s.%s(", klass_name, method_name);
+
+  // Print module information
+  ModuleEntry* module = holder->module();
+  if (module->is_named()) {
+    char* module_name = module->name()->as_C_string();
+    if (module->version() != nullptr) {
+      char* module_version = module->version()->as_C_string();
+      ss.print("%s@%s/", module_name, module_version);
+    } else {
+      ss.print("%s/", module_name);
+    }
+  }
 
   char* source_file_name = nullptr;
   Symbol* source = Backtrace::get_source_file_name(holder, version);
   if (source != nullptr) {
     source_file_name = source->as_C_string();
-  }
-
-  char *module_name = nullptr, *module_version = nullptr;
-  ModuleEntry* module = holder->module();
-  if (module->is_named()) {
-    module_name = module->name()->as_C_string();
-    if (module->version() != nullptr) {
-      module_version = module->version()->as_C_string();
-    }
-  }
-
-  stringStream ss;
-  ss.print("\tat %s.%s(", klass_name, method_name);
-
-  // Print module information
-  if (module_name != nullptr) {
-    if (module_version != nullptr) {
-      ss.print("%s@%s/", module_name, module_version);
-    } else {
-      ss.print("%s/", module_name);
-    }
   }
 
   // The method can be null if the requested class version is gone
@@ -2645,7 +2637,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
-        ss.print("(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        ss.print("(nmethod " INTPTR_FORMAT ")", p2i(nm));
       }
     }
   }
