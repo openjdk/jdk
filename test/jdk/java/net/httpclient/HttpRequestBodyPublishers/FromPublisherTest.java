@@ -26,9 +26,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.http.HttpRequest;
-import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,9 +61,19 @@ class FromPublisherTest {
                 "Unexpected exception message: " + exceptionMessage);
     }
 
-    @Test
-    void testContentLength() {
+    @ParameterizedTest
+    @ValueSource(longs = {1, 2, 3, 4})
+    void testValidContentLength(long contentLength) {
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody(), contentLength);
+        assertEquals(contentLength, publisher.contentLength());
+    }
 
+    @Test
+    void testNoContentLength() {
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody());
+        assertEquals(-1, publisher.contentLength());
     }
 
     @Test
@@ -70,6 +81,20 @@ class FromPublisherTest {
         HttpRequest.BodyPublisher publisher =
                 HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody());
         assertThrows(NullPointerException.class, () -> publisher.subscribe(null));
+    }
+
+    @Test
+    void testDelegation() throws InterruptedException {
+        BlockingQueue<Object> publisherInvocations = new LinkedBlockingQueue<>();
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.fromPublisher(subscriber -> {
+            publisherInvocations.add("subscribe");
+            publisherInvocations.add(subscriber);
+        });
+        RecordingSubscriber subscriber = new RecordingSubscriber();
+        publisher.subscribe(subscriber);
+        assertEquals("subscribe", publisherInvocations.take());
+        assertEquals(subscriber, publisherInvocations.take());
+        assertTrue(subscriber.invocations.isEmpty());
     }
 
 }
