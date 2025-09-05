@@ -24,7 +24,6 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTimer.hpp"

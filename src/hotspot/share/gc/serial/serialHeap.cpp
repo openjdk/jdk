@@ -67,7 +67,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -283,16 +282,12 @@ size_t SerialHeap::max_capacity() const {
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  HeapWord* result = nullptr;
-  if (_old_gen->should_allocate(size, is_tlab)) {
+  HeapWord* result = _young_gen->allocate(size);
+
+  if (result == nullptr) {
     result = _old_gen->expand_and_allocate(size);
   }
-  if (result == nullptr) {
-    if (_young_gen->should_allocate(size, is_tlab)) {
-      // Young-gen is not expanded.
-      result = _young_gen->allocate(size);
-    }
-  }
+
   assert(result == nullptr || is_in_reserved(result), "result not in heap");
   return result;
 }
@@ -301,11 +296,9 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    if (_young_gen->should_allocate(size, is_tlab)) {
-      result = _young_gen->par_allocate(size);
-      if (result != nullptr) {
-        break;
-      }
+    result = _young_gen->par_allocate(size);
+    if (result != nullptr) {
+      break;
     }
     // Try old-gen allocation for non-TLAB.
     if (!is_tlab) {
@@ -340,25 +333,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
   assert(result == nullptr || is_in_reserved(result), "postcondition");
   return result;
-}
-
-HeapWord* SerialHeap::attempt_allocation(size_t size,
-                                         bool is_tlab,
-                                         bool first_only) {
-  HeapWord* res = nullptr;
-
-  if (_young_gen->should_allocate(size, is_tlab)) {
-    res = _young_gen->allocate(size);
-    if (res != nullptr || first_only) {
-      return res;
-    }
-  }
-
-  if (_old_gen->should_allocate(size, is_tlab)) {
-    res = _old_gen->allocate(size);
-  }
-
-  return res;
 }
 
 HeapWord* SerialHeap::mem_allocate(size_t size,
@@ -459,15 +433,10 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   // If young-gen can handle this allocation, attempt young-gc firstly.
-  bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
+  bool should_run_young_gc = is_tlab || size <= _young_gen->eden()->capacity();
   collect_at_safepoint(!should_run_young_gc);
 
-  result = attempt_allocation(size, is_tlab, false /*first_only*/);
-  if (result != nullptr) {
-    return result;
-  }
-
-  // OK, collection failed, try expansion.
+  // Just finished a GC, try to satisfy this allocation, using expansion if needed.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {
     return result;
@@ -484,10 +453,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
     do_full_collection(clear_all_soft_refs);
   }
 
-  result = attempt_allocation(size, is_tlab, false /* first_only */);
-  if (result != nullptr) {
-    return result;
-  }
   // The previous full-gc can shrink the heap, so re-expand it.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {

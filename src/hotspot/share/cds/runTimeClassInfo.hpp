@@ -25,10 +25,10 @@
 #ifndef SHARE_CDS_RUNTIMECLASSINFO_HPP
 #define SHARE_CDS_RUNTIMECLASSINFO_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cds_globals.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -251,7 +251,7 @@ private:
 
 public:
   static RunTimeClassInfo* get_for(InstanceKlass* klass) {
-    assert(klass->is_shared(), "don't call for non-shared class");
+    assert(klass->in_aot_cache(), "don't call for non-shared class");
     return *info_pointer_addr(klass);
   }
   static void set_for(InstanceKlass* klass, RunTimeClassInfo* record) {
