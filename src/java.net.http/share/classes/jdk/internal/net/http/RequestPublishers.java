@@ -32,6 +32,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -72,8 +73,11 @@ public final class RequestPublishers {
             this(content, offset, length, Utils.BUFSIZE);
         }
 
-        /* bufSize exposed for testing purposes */
-        ByteArrayPublisher(byte[] content, int offset, int length, int bufSize) {
+        private ByteArrayPublisher(byte[] content, int offset, int length, int bufSize) {
+            Objects.checkFromIndexSize(offset, length, content.length);     // Implicit null check on `content`
+            if (bufSize <= 0) {
+                throw new IllegalArgumentException("Invalid buffer size: " + bufSize);
+            }
             this.content = content;
             this.offset = offset;
             this.length = length;
@@ -201,7 +205,7 @@ public final class RequestPublishers {
 
     public static class StringPublisher extends ByteArrayPublisher {
         public StringPublisher(String content, Charset charset) {
-            super(content.getBytes(charset));
+            super(content.getBytes(Objects.requireNonNull(charset)));   // Implicit null check on `content`
         }
     }
 
@@ -289,7 +293,7 @@ public final class RequestPublishers {
     /**
      * Reads one buffer ahead all the time, blocking in hasNext()
      */
-    public static class StreamIterator implements CheckedIterator<ByteBuffer> {
+    private static final class StreamIterator implements CheckedIterator<ByteBuffer> {
         final InputStream is;
         final Supplier<? extends ByteBuffer> bufSupplier;
         private volatile boolean eof;
@@ -385,14 +389,19 @@ public final class RequestPublishers {
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            PullPublisher<ByteBuffer> publisher;
-            InputStream is = streamSupplier.get();
-            if (is == null) {
-                Throwable t = new IOException("streamSupplier returned null");
-                publisher = new PullPublisher<>(null, t);
-            } else  {
-                publisher = new PullPublisher<>(iterableOf(is), null);
+            InputStream is = null;
+            Exception exception = null;
+            try {
+                is = streamSupplier.get();
+                if (is == null) {
+                    exception = new IOException("Stream supplier returned null");
+                }
+            } catch (Exception cause) {
+                exception = new IOException("Stream supplier has failed", cause);
             }
+            PullPublisher<ByteBuffer> publisher = exception != null
+                    ? new PullPublisher<>(null, exception)
+                    : new PullPublisher<>(iterableOf(is), null);
             publisher.subscribe(subscriber);
         }
 
@@ -404,6 +413,81 @@ public final class RequestPublishers {
         public long contentLength() {
             return -1;
         }
+    }
+
+    public static final class FileChannelPublisher implements BodyPublisher {
+
+        private final FileChannel channel;
+
+        private final long position;
+
+        private final long limit;
+
+        public FileChannelPublisher(FileChannel channel, long offset, long length) throws IOException {
+            this.channel = Objects.requireNonNull(channel, "channel");
+            long fileSize = channel.size();
+            Objects.checkFromIndexSize(offset, length, fileSize);
+            this.position = offset;
+            this.limit = offset + length;
+        }
+
+        @Override
+        public long contentLength() {
+            return limit - position;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+            Iterable<ByteBuffer> iterable = () -> new FileChannelIterator(channel, position, limit);
+            new PullPublisher<>(iterable).subscribe(subscriber);
+        }
+
+    }
+
+    private static final class FileChannelIterator implements Iterator<ByteBuffer> {
+
+        private final FileChannel channel;
+
+        private final long limit;
+
+        private long position;
+
+        private boolean terminated;
+
+        private FileChannelIterator(FileChannel channel, long position, long limit) {
+            this.channel = channel;
+            this.position = position;
+            this.limit = limit;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return position < limit && !terminated;
+        }
+
+        @Override
+        public ByteBuffer next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            long remaining = limit - position;
+            ByteBuffer buffer = Utils.getBufferWithAtMost(remaining);
+            try {
+                int readLength = channel.read(buffer, position);
+                // Short-circuit if `read()` has failed, e.g., due to file content being changed in the meantime
+                if (readLength < 0) {
+                    // Throw to signal that the request needs to be cancelled
+                    throw new IOException("Unexpected EOF (position=%s)".formatted(position));
+                } else {
+                    position += readLength;
+                }
+            } catch (IOException ioe) {
+                terminated = true;
+                throw new UncheckedIOException(ioe);
+            }
+            return buffer.flip();
+        }
+
     }
 
     public static final class PublisherAdapter implements BodyPublisher {
@@ -418,12 +502,12 @@ public final class RequestPublishers {
         }
 
         @Override
-        public final long contentLength() {
+        public long contentLength() {
             return contentLength;
         }
 
         @Override
-        public final void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             publisher.subscribe(subscriber);
         }
     }

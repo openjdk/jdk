@@ -65,9 +65,11 @@ class oopDesc {
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
+  inline void* base_addr();
+  inline const void* base_addr() const;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
-  inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);

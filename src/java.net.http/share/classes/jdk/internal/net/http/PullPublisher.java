@@ -60,15 +60,20 @@ class PullPublisher<T> implements Flow.Publisher<T> {
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        Subscription sub;
-        if (throwable != null) {
-            sub = new Subscription(subscriber, null, throwable);
-        } else {
-            sub = new Subscription(subscriber, iterable.iterator(), null);
+        Throwable failure = throwable;
+        CheckedIterator<T> iterator = null;
+        if (failure == null) {
+            try {
+                iterator = iterable.iterator();
+            } catch (Exception exception) {
+                failure = exception;
+            }
         }
+        Subscription sub = failure != null
+                ? new Subscription(subscriber, null, failure)
+                : new Subscription(subscriber, iterator, null);
         subscriber.onSubscribe(sub);
-
-        if (throwable != null) {
+        if (failure != null) {
             sub.pullScheduler.runOrSchedule();
         }
     }
