@@ -582,7 +582,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
       // Calc address range within we try to attach (range of possible start addresses).
       char* const highest_start = align_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
       char* const lowest_start  = align_up((char *)aligned_heap_base_min_address, attach_point_alignment);
-      assert(lowest_start < highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT ,
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT ,
                                           p2i(lowest_start), p2i(highest_start));
       reserved = try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                                    (char *)aligned_heap_base_min_address, (char *)UnscaledOopHeapMax, size, alignment, page_size);
@@ -609,7 +609,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
         lowest_start = MAX2(lowest_start, (char*)unscaled_end);
       }
       lowest_start = align_up(lowest_start, attach_point_alignment);
-      assert(lowest_start < highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
                                           p2i(lowest_start), p2i(highest_start));
       reserved = try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                                    (char *)aligned_heap_base_min_address, zerobased_max, size, alignment, page_size);
