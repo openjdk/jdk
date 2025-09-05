@@ -2145,6 +2145,10 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
+            public void appendPair(StringBuilder buf, int v) {
+                buf.appendPair(v);
+            }
+
             public byte[] getBytesUTF8NoRepl(String s) {
                 return String.getBytesUTF8NoRepl(s);
             }
