@@ -636,8 +636,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
       {
         size_t capacity = _free_set->alloc_capacity(i);
         bool is_empty = (capacity == _region_size_bytes);
-        // TODO remove assert, not possible to pass when allow mutator to allocate w/o lock.
-        //assert(capacity > 0, "free regions must have allocation capacity");
+        assert(capacity > 0, "free regions must have allocation capacity");
         if (i < leftmosts[int(partition)]) {
           leftmosts[int(partition)] = i;
         }
@@ -2374,28 +2373,30 @@ public:
         ac = _free_set->alloc_capacity(r);
       }
 
-      if (_next_retire_eligible_region != -1) {
+      if (_next_retire_eligible_region != -1 && ac >= ShenandoahHeapRegion::max_tlab_size_bytes()) {
         // After satisfying object allocation, the region still has space to fit at least one tlab.
-        if (ac >= ShenandoahHeapRegion::max_tlab_size_bytes()) {
-          ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
-          ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
-          r->reserve_for_direct_allocation();
-          // Unassign the region from Mutator partition.
-          _free_set->partitions()->raw_unassign_membership(r->index(), ShenandoahFreeSetPartitionId::Mutator);
-          _free_set->partitions()->shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId::Mutator, r->index());
-          _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, ac);
-          OrderAccess::fence();
-          Atomic::store(&shared_region._address, r);
-          OrderAccess::fence();
-          if (is_probing_region((uint) _next_retire_eligible_region)) {
-            probing_region_refilled = true;
-          }
-          if (original_region != nullptr) {
-            assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
-            original_region->release_from_direct_allocation();
-          }
-          _next_retire_eligible_region = find_next_retire_eligible_region();
+        ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
+        ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
+        r->reserve_for_direct_allocation();
+        // Unassign the region from Mutator partition.
+        _free_set->partitions()->raw_unassign_membership(r->index(), ShenandoahFreeSetPartitionId::Mutator);
+        _free_set->partitions()->shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId::Mutator, r->index());
+        _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, ac);
+        OrderAccess::fence();
+        Atomic::store(&shared_region._address, r);
+        OrderAccess::fence();
+        if (is_probing_region((uint) _next_retire_eligible_region)) {
+          probing_region_refilled = true;
         }
+        if (original_region != nullptr) {
+          assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
+          original_region->release_from_direct_allocation();
+        }
+        _next_retire_eligible_region = find_next_retire_eligible_region();
+      } else if (ac < PLAB::min_size_bytes()) {
+        // if the remaining memory is less than PLAB:min_size_bytes(), retire this region
+        _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+        _free_set->partitions()->assert_bounds();
       }
     }
     return _next_retire_eligible_region == -1 && _obj != nullptr;
