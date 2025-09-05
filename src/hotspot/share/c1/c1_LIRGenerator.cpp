@@ -3193,7 +3193,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
   LIR_Opr result = new_register(T_INT);
   __ load(counter, result);
-  __ add(result, step, result); // TODO: Atomic here.
+  __ add(result, step, result);
   __ store(result, counter);
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());

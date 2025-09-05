@@ -2007,10 +2007,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseClassMetaspaceForAllClasses, false, DIAGNOSTIC,          \
           "Use the class metaspace for all classes including "              \
           "abstract and interface classes.")                                \
-                                                                            \
-  product(bool, AtomicProfileCounters, true, DIAGNOSTIC,                    \
-          "Use atomic updates for profile counters, where possible.")       \
-                                                                            \
 
 // end of RUNTIME_FLAGS
 

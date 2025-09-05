@@ -1171,7 +1171,6 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Address data(mdp_in, constant);
-  if (AtomicProfileCounters) lock();
   addptr(data, DataLayout::counter_increment);
 }
 
@@ -1181,7 +1180,6 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Address data(mdp_in, index, Address::times_1, constant);
-  if (AtomicProfileCounters) lock();
   addptr(data, DataLayout::counter_increment);
 }
 
@@ -1497,7 +1495,6 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr, Ad
   // This update is actually not atomic and can lose a number of updates
   // under heavy contention, but the alternative of using the (contended)
   // atomic update here penalizes profiling paths too much.
-  // TODO: Atomic here.
   movl(scratch, counter_addr);
   incrementl(scratch, InvocationCounter::count_increment);
   movl(counter_addr, scratch);

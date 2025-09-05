@@ -2760,7 +2760,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          if (AtomicProfileCounters) __ lock();
           __ addptr(data_addr, DataLayout::counter_increment);
           return;
         }
@@ -2774,7 +2773,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     type_profile_helper(mdo, md, data, recv);
   } else {
     // Static call
-    if (AtomicProfileCounters) __ lock();
     __ addptr(counter_addr, DataLayout::counter_increment);
   }
 }

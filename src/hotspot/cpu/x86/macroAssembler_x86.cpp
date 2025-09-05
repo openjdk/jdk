@@ -4797,7 +4797,6 @@ void MacroAssembler::type_profile(Register recv, Register mdp, int mdp_offset) {
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    if (AtomicProfileCounters) lock();
     addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
     return;
   }
@@ -4820,9 +4819,10 @@ void MacroAssembler::type_profile(Register recv, Register mdp, int mdp_offset) {
   // Since this claim is racy, we need to make sure that rows are only claimed once.
   // This makes sure we never overwrite a row for another receiver and never duplicate
   // the receivers in the list.
-  // Note: It is tempting to make a single search and claim the first nullptr slot without
-  // checking the rest of the table. But, profiling code should tolerate free slots in MDO.
-  // For example, to allow cleaning up rows for unloaded receivers.
+  // Note: It is tempting to combine this search with the optimistic loop above,
+  // and claim the first nullptr slot without checking the rest of the table.
+  // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
+  // rows for unloaded receivers.
   movptr(offset, base_receiver_offset);
   bind(L_loop_nulls);
     cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
@@ -4883,7 +4883,6 @@ void MacroAssembler::type_profile(Register recv, Register mdp, int mdp_offset) {
   addptr(offset, receiver_to_count_step);
 
   bind(L_count_update);
-  if (AtomicProfileCounters) lock();
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
 }
 
