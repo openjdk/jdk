@@ -520,7 +520,8 @@ bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKl
 bool SystemDictionaryShared::check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name) {
   Klass* constraint_bottom_class = find_verification_constraint_bottom_class(k, constraint_class_name);
   if (constraint_bottom_class == nullptr) {
-    // No class of the constraint_class_name has not yet been loaded. This happens when the new verifier was checking
+    // We don't have a bottom class (constraint_class_name is a type array), or constraint_class_name
+    // has not been loaded. The latter case happens when the new verifier was checking
     // if constraint_class_name is assignable to an interface, and found the answer without resolving
     // constraint_class_name.
     //
