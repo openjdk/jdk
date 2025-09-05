@@ -39,10 +39,12 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -484,7 +486,7 @@ public enum Option {
     },
 
     HELP_LINT("--help-lint", "opt.help.lint", EXTENDED, INFO) {
-        private final String LINT_KEY_FORMAT = SMALL_INDENT + SMALL_INDENT + "%-" +
+        private final String LINT_KEY_FORMAT = SMALL_INDENT + " %c%-" +
                 (DEFAULT_SYNOPSIS_WIDTH - LARGE_INDENT.length()) + "s %s";
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
@@ -492,16 +494,29 @@ public enum Option {
             log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
+                                            ' ',
                                             LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            LintCategory.options().forEach(ident -> log.printRawLines(WriterKind.STDOUT,
-                              String.format(LINT_KEY_FORMAT,
-                                            ident,
-                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident))));
+            TreeMap<String, String> keyDescMap = new TreeMap<>();       // alphabetize categories and aliases together
+            Stream.of(LintCategory.values()).forEach(lc ->
+              lc.optionList.stream().forEach(ident -> keyDescMap.put(ident, ident.equals(lc.option) ?
+                String.format(LINT_KEY_FORMAT,
+                              lc.enabledByDefault ? '*' : ' ',
+                              ident,
+                              log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident)) :
+                String.format(LINT_KEY_FORMAT,
+                              lc.enabledByDefault ? '*' : ' ',
+                              ident,
+                              log.localize(PrefixKind.JAVAC, "opt.Xlint.alias.of", lc.option, ident)))));
+            keyDescMap.values().forEach(desc -> log.printRawLines(WriterKind.STDOUT, desc));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
+                                            ' ',
                                             LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
+            List<String> aliasExample = LintCategory.IDENTITY.optionList;
+            log.printRawLines(WriterKind.STDOUT,
+                              log.localize(PrefixKind.JAVAC, "opt.help.lint.footer", aliasExample.get(0), aliasExample.get(1)));
             super.process(helper, option);
         }
     },

@@ -152,7 +152,6 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code auxiliaryclass}       <td>an auxiliary class that is hidden in a source file, and is used
  *                                                      from other files
  * <tr><th scope="row">{@code cast}                 <td>use of unnecessary casts
- * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
  * <tr><th scope="row">{@code dangling-doc-comments} <td>issues related to "dangling" documentation comments,
  *                                                       not attached to a declaration
  * <tr><th scope="row">{@code deprecation}          <td>use of deprecated items
@@ -165,7 +164,6 @@ import javax.tools.StandardLocation;
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
  * <tr><th scope="row">{@code identity}             <td>use of a value-based class where an identity class is expected
- * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
  * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
@@ -173,13 +171,13 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code opens}                <td>issues regarding module opens
  * <tr><th scope="row">{@code overloads}            <td>issues regarding method overloads
  * <tr><th scope="row">{@code overrides}            <td>issues regarding method overrides
- * <tr><th scope="row">{@code path}                 <td>invalid path elements on the command line
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
+ * <tr><th scope="row">{@code processing}           <td>issues regarding annotation processing
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
- * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
  * <tr><th scope="row">{@code requires-transitive-automatic} <td>automatic modules in {@code requires transitive}
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code serial}               <td>{@link java.base/java.io.Serializable Serializable} classes
  *                                                      that do not have a {@code serialVersionUID} field, or other
  *                                                      suspect declarations in {@code Serializable} and
@@ -187,11 +185,9 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
- * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes;
- *                                                      this key is a deprecated alias for {@code identity}, which has
- *                                                      the same uses and effects. Users are encouraged to use the
- *                                                      {@code identity} category for all future and existing uses of
- *                                                      {@code synchronization}
+ * <tr><th scope="row">{@code synchronization}      <td>deprecated alias for {@code identity} with an identical effect.
+ *                                                      Users are encouraged to use {@code identity} instead of
+ *                                                      {@code synchronization} for all current and future uses.
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
  * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
