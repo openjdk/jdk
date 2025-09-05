@@ -595,9 +595,9 @@ class VTransformVectorNodePrototype : public StackObj {
 private:
   // TODO: make fields const?
   Node* _approximate_origin; // for proper propagation of node notes
-  int _scalar_opcode;
-  uint _vector_length;
-  BasicType _element_basic_type;
+  const int _scalar_opcode;
+  const uint _vector_length;
+  const BasicType _element_basic_type;
   // TODO: needed?
   //const TypePtr* _adr_type; // carries slice information for memory ops (load, store, phi)
 
@@ -630,8 +630,9 @@ public:
 
 // Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
-protected:
+private:
   const VTransformVectorNodePrototype _prototype;
+protected:
   GrowableArray<Node*> _nodes;
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype) :
@@ -651,6 +652,12 @@ public:
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
+
+protected:
+  Node* approximate_origin()     const { return _prototype.approximate_origin(); }
+  int scalar_opcode()            const { return _prototype.scalar_opcode(); }
+  uint vector_length()           const { return _prototype.vector_length(); }
+  BasicType element_basic_type() const { return _prototype.element_basic_type(); }
 };
 
 // Catch all for all element-wise vector operations.
