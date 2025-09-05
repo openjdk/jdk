@@ -337,7 +337,9 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
-  PSParallelCompact::invoke(clear_all_soft_refs, false /* should_do_max_compaction */);
+  // No need for max-compaction in this context.
+  const bool should_do_max_compaction = false;
+  PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
 }
 
 static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
@@ -397,7 +399,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
     }
   }
 
-  // Last resort GC; try everything possible before throwing OOM.
+  // Last resort GC; clear soft refs and do max-compaction before throwing OOM.
   {
     const bool clear_all_soft_refs = true;
     const bool should_do_max_compaction = true;
