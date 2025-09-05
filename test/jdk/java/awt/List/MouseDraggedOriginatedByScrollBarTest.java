@@ -119,13 +119,13 @@ public class MouseDraggedOriginatedByScrollBarTest {
 
         EventQueue.invokeAndWait(() -> {
             Point p = list.getLocationOnScreen();
-            p.translate(list.getWidth() - XOFFSET, 20);
+            p.translate(list.getWidth() - XOFFSET, YOFFSET);
             loc = p;
         });
         robot.mouseMove(loc.x, loc.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         for (int i = 0; i < 30; i++) {
-            robot.mouseMove(loc.x, loc.y + 1);
+            robot.mouseMove(loc.x, loc.y + i);
         }
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
