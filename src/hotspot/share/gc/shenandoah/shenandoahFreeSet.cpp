@@ -641,25 +641,13 @@ void ShenandoahRegionPartitions::assert_bounds() {
           leftmosts[int(partition)] = i;
         }
         if (is_empty && (i < empty_leftmosts[int(partition)])) {
-          if (partition == ShenandoahFreeSetPartitionId::Mutator) {
-            if (!heap->get_region(i)->reserved_for_direct_allocation()){
-              empty_leftmosts[int(partition)] = i;
-            }
-          } else {
-            empty_leftmosts[int(partition)] = i;
-          }
+          empty_leftmosts[int(partition)] = i;
         }
         if (i > rightmosts[int(partition)]) {
           rightmosts[int(partition)] = i;
         }
         if (is_empty && (i > empty_rightmosts[int(partition)])) {
-          if (partition == ShenandoahFreeSetPartitionId::Mutator) {
-            if (!heap->get_region(i)->reserved_for_direct_allocation()) {
-              empty_rightmosts[int(partition)] = i;
-            }
-          } else {
-            empty_rightmosts[int(partition)] = i;
-          }
+          empty_rightmosts[int(partition)] = i;
         }
         break;
       }
