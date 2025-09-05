@@ -451,7 +451,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->get_cached_class_file_bytes() == nullptr) {
       // Link the class to avoid races with the rewriter. This will call the verifier also
-      // on the class. Linking is done already below in VM_RedefineClasses below, but we need
+      // on the class. Linking is also done in VM_RedefineClasses below, but we need
       // to keep that for other VM_RedefineClasses callers.
       JavaThread* THREAD = current_thread;
       ik->link_class(THREAD);

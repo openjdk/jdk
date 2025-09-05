@@ -41,9 +41,9 @@ import jdk.test.lib.compiler.InMemoryJavaCompiler;
  * This test puts the linking process in one thread and the retransforming process
  * in another thread. The test uses Class.forName("BigClass", false, classLoader)
  * which does not link the class. When the class is used, the linking process starts.
- * In another thread retransforming of the class is happening,
- * We generate a class with big methods. A number of methods and thier size are
- * chosen to make the linking and retransforming processes running concurrently.
+ * In another thread retransforming of the class is happening.
+ * We generate a class with big methods. A number of methods and their size are
+ * chosen to make the linking and retransforming processes run concurrently.
  * We delay the retransforming process to follow the linking process.
  * If there is no synchronization between the processes, a data race will happen.
  */
@@ -51,7 +51,7 @@ public class RetransformBigClassTest extends AInstrumentationTestCase {
 
     private static final Object LOCK = new Object();
     private static final int COUNTER_INC_COUNT            = 2000; // A number of 'c+=1;' statements in methods of a class.
-    private static final int MIN_LINK_TIME_MS             = 60;   // This time is chosen to be big enough the linking and retransforming processes are running in parallel.
+    private static final int MIN_LINK_TIME_MS             = 60;   // Large enough so the linking and retransforming processes run in parallel.
     private static final int RETRANSFORM_CLASSES_DELAY_MS = 37;   // We manage to create a data race when a delay is in the range 0.52x - 0.62x of MIN_LINK_TIME_MS.
 
     private static Class<?> bigClass;
@@ -105,7 +105,8 @@ public class RetransformBigClassTest extends AInstrumentationTestCase {
         return InMemoryJavaCompiler.compile(className, classSrc);
     }
 
-    // We calculate a number of methods the linking time to exceed MIN_LINK_TIME_MS.
+    // We need a number of methods such that the linking time is greater than
+    // or equal to MIN_LINK_TIME_MS.
     // We create a class having 5 methods and trigger the linking process.
     // We measure the time taken and use it to calculate the needed number.
     private int findMethodCount() throws Exception {
