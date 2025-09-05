@@ -46,6 +46,10 @@ class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
   bool init_timeout();
   void arm();
   void disarm();
+  void reset() {
+    disarm();
+    arm();
+  };
 };
 
 #endif //LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
