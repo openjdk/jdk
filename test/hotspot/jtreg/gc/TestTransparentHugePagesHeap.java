@@ -49,6 +49,7 @@
  * @run driver TestTransparentHugePagesHeap Serial
 */
 
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,46 +99,98 @@ public class TestTransparentHugePagesHeap {
     class VerifyTHPEnabledForHeap {
 
         public static void main(String args[]) throws Exception {
-            String heapAddress = readHeapAddressInLog();
+            // Read the heapRange from pagesize logging
+            Range heapRange = readHeapAddressInLog();
+
             Path smaps = makeSmapsCopy();
 
-            final Pattern heapSection = Pattern.compile("^" + heapAddress + ".*");
-            final Pattern thpEligible = Pattern.compile("THPeligible:\\s+(\\d)\\s*");
+            final Pattern addressRangePattern = Pattern.compile("([0-9a-f]*?)-([0-9a-f]*?) .*");
+            final Pattern thpEligiblePattern = Pattern.compile("THPeligible:\\s+(\\d)\\s*");
 
             Scanner smapsFile = new Scanner(smaps);
             while (smapsFile.hasNextLine()) {
-                Matcher heapMatcher = heapSection.matcher(smapsFile.nextLine());
+                Matcher addressRangeMatcher = addressRangePattern.matcher(smapsFile.nextLine());
+                if (!addressRangeMatcher.matches()) {
+                    continue;
+                }
 
-                if (heapMatcher.matches()) {
+                // Found an address line, is it inside the reported heap?
+
+                String addressStart = addressRangeMatcher.group(1);
+                String addressEnd = addressRangeMatcher.group(2);
+
+                Range addressRange = new Range(new BigInteger(addressStart, 16),
+                                               new BigInteger(addressEnd, 16));
+
+                // Linux sometimes merges adjacent VMAs. We need to do some fuzzy matching
+                // to see if the address range found in the smaps file contains the heap.
+                if (heapRange.overlaps(addressRange)) {
                     // Found the first heap section, verify that it is THP eligible
                     while (smapsFile.hasNextLine()) {
-                        Matcher m = thpEligible.matcher(smapsFile.nextLine());
-                        if (m.matches()) {
-                            if (Integer.parseInt(m.group(1)) == 1) {
-                                // THPeligible is 1, heap can be backed by huge pages
-                                return;
-                            }
-
-                            throw new RuntimeException("First heap section at 0x" + heapAddress + " is not THPeligible");
+                        Matcher m = thpEligiblePattern.matcher(smapsFile.nextLine());
+                        if (!m.matches()) {
+                            continue;
                         }
+
+                        // Found the THPeligible line
+                        if (m.group(1).equals("1")) {
+                            // THPeligible is 1, heap can be backed by huge pages
+                            return;
+                        }
+
+                        throw new RuntimeException("First address range " + addressRange
+                                                   + " that overlaps with the heap range " + heapRange
+                                                   + " is not THPeligible");
                     }
+
+                    throw new RuntimeException("Couldn't find THPeligible in the smaps file");
                 }
             }
 
-            // Failed to verify THP for heap
-            throw new RuntimeException("Could not find heap section in smaps file");
+            throw new RuntimeException("Could not find heap range " + heapRange + " in the smaps file");
         }
 
-        private static String readHeapAddressInLog() throws Exception {
-            final Pattern heapAddress = Pattern.compile(".* Heap: .*base=(0x[0-9A-Fa-f]*).*");
+        private static record Range(BigInteger start, BigInteger end) {
+            boolean overlaps(Range r) {
+                return this.start.compareTo(r.start) <= 0 && this.end.compareTo(r.start) > 0 ||
+                       this.start.compareTo(r.start) > 0 && this.start.compareTo(r.end) < 0;
+            }
+
+            public String toString() {
+                return "0x" + start.toString(16) + "-0x" + end.toString(16);
+            }
+        }
+
+        private static int memSuffixToInt(String memSuffix) {
+            return switch (memSuffix) {
+                case "K": yield 1024;
+                case "M": yield 1024 * 1024;
+                case "G": yield 1024 * 1024 * 1024;
+                default:
+                    throw new RuntimeException("Unknown memSuffix: " + memSuffix);
+            };
+        }
+
+        private static Range readHeapAddressInLog() throws Exception {
+            //[0.041s][info][pagesize] Heap:  min=128M max=128M base=0x0000ffff5c600000 size=128M page_size=2M
+            final Pattern heapAddressPattern = Pattern.compile(".* Heap: .*base=0x([0-9A-Fa-f]*).*size=([^ ]+)([KMG]) page_size.*");
 
             Scanner logFile = new Scanner(Paths.get("thp-" + ProcessHandle.current().pid() + ".log"));
             while (logFile.hasNextLine()) {
-                Matcher m = heapAddress.matcher(logFile.nextLine());
+                String heapAddressLine = logFile.nextLine();
+                Matcher m = heapAddressPattern.matcher(heapAddressLine);
                 if (m.matches()) {
-                    return Long.toHexString(Long.decode(m.group(1)));
+                    String address = m.group(1);
+                    String size = m.group(2);
+                    String memSuffix = m.group(3);
+
+                    BigInteger start = new BigInteger(address, 16);
+                    BigInteger end = start.add(BigInteger.valueOf(Long.parseLong(size) * memSuffixToInt(memSuffix)));
+
+                    return new Range(start, end);
                 }
             }
+
             throw new RuntimeException("Failed to parse heap address, failing test");
         }
 
@@ -149,4 +202,3 @@ public class TestTransparentHugePagesHeap {
         }
     }
 }
-
