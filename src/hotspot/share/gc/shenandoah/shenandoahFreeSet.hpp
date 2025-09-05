@@ -316,6 +316,7 @@ class ShenandoahDirectlyAllocatableRegionAffinity : public AllStatic {
 public:
   static void initialize();
   static uint index();
+  static void set_index(uint index);
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
@@ -453,7 +454,7 @@ private:
   template<bool IS_TLAB>
   HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
-  bool try_allocate_directly_allocatable_regions(uint start_index,
+  bool try_allocate_directly_allocatable_regions(uint& start_index,
                                                  bool replace_all_eligible_regions,
                                                  ShenandoahAllocRequest &req,
                                                  HeapWord* &obj,
