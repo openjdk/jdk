@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -219,7 +219,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->add_to_hierarchy(THREAD);
 
   // new class not linked yet.
-  MetaspaceShared::try_link_class(THREAD, result);
+  AOTMetaspace::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   result->set_is_generated_shared_class();
