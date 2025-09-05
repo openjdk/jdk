@@ -22,9 +22,11 @@
  */
 package org.openjdk.bench.java.text;
 
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.DoubleStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -51,12 +53,18 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 public class DefFormatterBench {
 
     public double[] values;
+    public BigDecimal[] bdValues;
 
     @Setup
     public void setup() {
         values = new double[] {
             1.23, 1.49, 1.80, 1.7, 0.0, -1.49, -1.50, 9999.9123, 1.494, 1.495, 1.03, 25.996, -25.996
         };
+
+        bdValues = DoubleStream.of(values)
+                .mapToObj(BigDecimal::new)
+                .toArray(BigDecimal[]::new);
+
     }
 
     private DefNumberFormat dnf = new DefNumberFormat();
@@ -66,6 +74,30 @@ public class DefFormatterBench {
     public void testDefNumberFormatter(final Blackhole blackhole) {
         for (double value : values) {
             blackhole.consume(this.dnf.format(value));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testSmallBigDecDefNumberFormatter(final Blackhole blackhole) {
+        for (double value : values) {
+            // bd is recreated each time to avoid the effect of internal caching of the
+            // toString value if the BigDecimal instance was reused
+            BigDecimal bd = BigDecimal.valueOf(value);  // This will create "small" BigDecimals where unscaled
+                                                        // value fits in a long
+            blackhole.consume(this.dnf.format(bd));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(13)
+    public void testLargeBigDecDefNumberFormatter(final Blackhole blackhole) {
+        for (BigDecimal value : bdValues) {
+            // bd is recreated each time to avoid the effect of internal caching of the
+            // toString value if the BigDecimal instance was reused
+            BigDecimal bd = new BigDecimal(value.unscaledValue(), value.scale());
+
+            blackhole.consume(this.dnf.format(bd));
         }
     }
 
@@ -86,6 +118,10 @@ public class DefFormatterBench {
         }
 
         public String format(final double d) {
+            return this.n.format(d);
+        }
+
+        public String format(final BigDecimal d) {
             return this.n.format(d);
         }
     }
