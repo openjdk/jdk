@@ -116,7 +116,7 @@ define SetupGenBufferBody
       INFO := Generating buffer class $1.java, \
       KEYS := \
           $$($1_TYPE) \
-          $$($1_RW_KEYS), \
+          $$($1_RW_KEYS) \
           bo$$($1_BYTE_ORDER) \
           $$(call Conv, $$($1_TYPE), category) \
           $$(call Conv, $$($1_TYPE), streams), \
