@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
 
@@ -44,7 +44,6 @@
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
 
@@ -58,7 +57,6 @@
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 -XX:ObjectAlignmentInBytes=16
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
@@ -73,7 +71,6 @@
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 -XX:-TieredCompilation -Xbatch
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
