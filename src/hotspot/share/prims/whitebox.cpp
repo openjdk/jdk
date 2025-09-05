@@ -2667,7 +2667,7 @@ WB_ENTRY(void, WB_BusyWait(JNIEnv* env, jobject wb, jint time))
 WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
-  #ifdef ASSERT
+  #if defined(ASSERT) && defined(INCLUDE_JFR) && defined(LINUX)
     JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE);
     return JNI_TRUE;
   #else
@@ -2676,7 +2676,7 @@ WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jb
 WB_END
 
 WB_ENTRY(jlong, WB_CPUSamplerOutOfStackWalkingIterations(JNIEnv* env, jobject wb))
-  #ifdef ASSERT
+  #if defined(ASSERT) && defined(INCLUDE_JFR) && defined(LINUX)
     return (jlong)JfrCPUTimeThreadSampling::out_of_stack_walking_iterations();
   #else
     return 0;
