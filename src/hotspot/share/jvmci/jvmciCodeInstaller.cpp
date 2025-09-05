@@ -1225,7 +1225,7 @@ void CodeInstaller::site_Infopoint(CodeBuffer& buffer, jint pc_offset, HotSpotCo
 }
 
 // see CallGenerator::is_inlined_method_handle_intrinsic
-bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle caller, int bci, methodHandle method) {
+bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle& caller, int bci, methodHandle& method) {
   constantPoolHandle cpool(thread, caller->constants());
   InstanceKlass* pool_holder = cpool->pool_holder();
   Bytecode_invoke bytecode(caller, bci);
@@ -1233,12 +1233,18 @@ bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle caller,
   return symbolic_info->is_method_handle_intrinsic() && !method->is_method_handle_intrinsic();
 }
 
+// computation if binding is necessary corresponds to SharedRuntime::find_callee_info_helper
+bool bind_call(JavaThread* thread, CallSiteBindingContext& binding_context, methodHandle& method) {
+  // TODO for Valhalla: if method has scalarized parameters bind as well
+  return binding_context.reexecute || is_inlined_method_handle_intrinsic(thread, binding_context.caller, binding_context.bci, method);
+}
+
 void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
   JavaThread* thread = stream->thread();
   jlong target = stream->read_u8("target");
   methodHandle method;
   bool direct_call = false;
-  bool bind = false;
+  int method_index = 0;
   CallSiteBindingContext binding_context;
   if (tag == SITE_CALL) {
     method = methodHandle(thread, (Method*) target);
@@ -1275,11 +1281,9 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     jlong foreign_call_destination = target;
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, JVMCI_CHECK);
   } else {
-    if (direct_call){
-      // TODO for Valhalla: if the method has scalarized parameters bind as well
-      bind = binding_context.reexecute || is_inlined_method_handle_intrinsic(thread, binding_context.caller, binding_context.bci, method);
+    if (direct_call && bind_call(thread, binding_context, method)) {
+      method_index = _oop_recorder->find_index(method());
     }
-    int method_index = bind ? _oop_recorder->find_index(method()) : 0;
     CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, method_index, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.

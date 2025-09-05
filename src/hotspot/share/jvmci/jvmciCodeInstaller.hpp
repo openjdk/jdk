@@ -140,6 +140,13 @@ class HotSpotCompiledCodeStream : public ResourceObj {
 #undef checked_read
 };
 
+class CallSiteBindingContext {
+  public:
+    int bci;
+    methodHandle caller;
+    bool reexecute;
+};
+
 // Converts a HotSpotCompiledCode to a CodeBlob or an nmethod.
 class CodeInstaller : public StackObj {
   friend class JVMCIVMStructs;
@@ -409,13 +416,6 @@ protected:
   int map_jvmci_bci(int bci);
 
   void record_oop_patch(HotSpotCompiledCodeStream* stream, address dest, u1 read_tag, bool narrow, JVMCI_TRAPS);
-
-  class CallSiteBindingContext {
-    public:
-      int bci;
-      methodHandle caller;
-      bool reexecute;
-  };
 
   // full_info: if false, only BytecodePosition is in stream otherwise all DebugInfo is in stream
   void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, CallSiteBindingContext* binding_context, JVMCI_TRAPS);
