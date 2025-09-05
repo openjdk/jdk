@@ -127,9 +127,8 @@ Proof:-
   - KnownBits.ZEROS and KnownBits.ONES are inferred out of common prefix of value range
     delimiting bounds.
 
-  - Thus, ~ZEROS not only include set bits in the common prefix but optimistically assumes
-    that all other bits not included in common prefix are also set, thereby implicitly covering
-    the actual set bits at runtime.
+  - Thus, ~KnownBits.ZEROS not only include set bits in the common prefix but optimistically assumes
+    that all other bits not included in common prefix are also set.
 
   - Consider following illustration which performs round trip translation
     of a value range via knowbits information e.g.
@@ -141,13 +140,13 @@ Proof:-
       _known_bits.ones    = _lo & _common_prefix_mask  = 0b11000100
       _known_bits.zeros   = ~_lo & _common_prefix_mask = 0b00111000
 
-    B) Now transform computed knownbits back to value range.
+    B) Now, transform computed knownbits back to value range.
       _new_lo = _known_bits.ones  = 0b11000100
       _new_hi = ~known_bits.zeros = 0b11000111
 
   - We now know that ~KnownBits.ZEROS >= UB >= LB >= KnownBits.ONES
-  - Therefore, popcount(~ZEROS) is guaranteed to be greater than popcount(ONES).
-  - Also, popcount(~ZEROS) >= Res.UB >= Res.LB >= popcount(ONES)
+  - Therefore, popcount(ONES) and popcount(~ZEROS) can safely be assumed as the upper and lower
+    bounds of the result value range.
 */
 
 const Type* PopCountINode::Value(PhaseGVN* phase) const {

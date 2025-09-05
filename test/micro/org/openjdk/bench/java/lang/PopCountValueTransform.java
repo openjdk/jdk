@@ -28,18 +28,15 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-
 public class PopCountValueTransform {
-
     public int lower_bound = 0;
-
     public int upper_bound = 10000;
 
     @Benchmark
     public int StockKernelInt() {
         int res = 0;
         for (int i = lower_bound; i < upper_bound; i++) {
-            int constrained_i = Integer.min(1179, Integer.max(1169, i));
+            int constrained_i = i & 0xFFFF;
             res += constrained_i;
         }
         return res;
@@ -49,8 +46,8 @@ public class PopCountValueTransform {
     public int LogicFoldingKerenlInt() {
         int res = 0;
         for (int i = lower_bound; i < upper_bound; i++) {
-            int constrained_i = Integer.min(1179, Integer.max(1169, i));
-            if (Integer.bitCount(constrained_i) > 20 || Integer.bitCount(constrained_i) < 3) {
+            int constrained_i = i & 0xFFFF;
+            if (Integer.bitCount(constrained_i) > 16) {
                 throw new AssertionError("Uncommon trap");
             }
             res += constrained_i;
@@ -62,7 +59,7 @@ public class PopCountValueTransform {
     public long StockKernelLong() {
         long res = 0;
         for (int i = lower_bound; i < upper_bound; i++) {
-            long constrained_i = Long.min(1179, Long.max(1169, i));
+            long constrained_i = i & 0xFFFFFFL;
             res += constrained_i;
         }
         return res;
@@ -72,8 +69,8 @@ public class PopCountValueTransform {
     public long LogicFoldingKerenLong() {
         long res = 0;
         for (int i = lower_bound; i < upper_bound; i++) {
-            long constrained_i = Long.min(1179L, Long.max(1169L, i));
-            if (Long.bitCount(constrained_i) > 20L || Long.bitCount(constrained_i) < 3L) {
+            long constrained_i = i & 0xFFFFFFL;
+            if (Long.bitCount(constrained_i) > 24) {
                 throw new AssertionError("Uncommon trap");
             }
             res += constrained_i;
