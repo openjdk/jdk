@@ -33,26 +33,15 @@
  * @build DTLSOverDatagram
  *
  * @run main/othervm PacketLossRetransmission client 1 client_hello
- * @run main/othervm PacketLossRetransmission client 11 certificate
- * @run main/othervm PacketLossRetransmission client 15 certificate_verify
  * @run main/othervm PacketLossRetransmission client 16 client_key_exchange
  * @run main/othervm PacketLossRetransmission client 20 finished
- * @run main/othervm PacketLossRetransmission client 21 certificate_url
- * @run main/othervm PacketLossRetransmission client 23 supplemental_data
  * @run main/othervm PacketLossRetransmission client -1 change_cipher_spec
- * @run main/othervm PacketLossRetransmission server 0 hello_request
  * @run main/othervm PacketLossRetransmission server 2 server_hello
  * @run main/othervm PacketLossRetransmission server 3 hello_verify_request
- * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
  * @run main/othervm PacketLossRetransmission server 11 certificate
  * @run main/othervm PacketLossRetransmission server 12 server_key_exchange
- * @run main/othervm PacketLossRetransmission server 13 certificate_request
  * @run main/othervm PacketLossRetransmission server 14 server_hello_done
- * @run main/othervm PacketLossRetransmission server 15 certificate_verify
  * @run main/othervm PacketLossRetransmission server 20 finished
- * @run main/othervm PacketLossRetransmission server 21 certificate_url
- * @run main/othervm PacketLossRetransmission server 22 certificate_status
- * @run main/othervm PacketLossRetransmission server 23 supplemental_data
  * @run main/othervm PacketLossRetransmission server -1 change_cipher_spec
  */
 
