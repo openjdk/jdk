@@ -42,9 +42,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class MouseDraggedOriginatedByScrollBarTest {
-    static Frame frame;
-    static volatile Point loc;
-    static volatile List list;
+    private static Frame frame;
+    private static volatile Point loc;
+    private static volatile List list;
+    private static final int XOFFSET = 10;
+    private static final int YOFFSET = 20;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -81,8 +83,7 @@ public class MouseDraggedOriginatedByScrollBarTest {
                 @Override
                 public void mouseDragged(MouseEvent me){
                     System.out.println(me.toString());
-                    throw new RuntimeException("Test failed. Mouse dragged " +
-                            "event detected.");
+                    throw new RuntimeException("Mouse dragged event detected.");
                 }
             });
 
@@ -90,20 +91,17 @@ public class MouseDraggedOriginatedByScrollBarTest {
             new MouseAdapter() {
                 public void mousePressed(MouseEvent me) {
                     System.out.println(me.toString());
-                    throw new RuntimeException("Test failed. Mouse pressed " +
-                            "event detected.");
+                    throw new RuntimeException("Mouse pressed event detected.");
                 }
 
                 public void mouseReleased(MouseEvent me) {
                     System.out.println(me.toString());
-                    throw new RuntimeException("Test failed. Mouse released " +
-                            "event detected.");
+                    throw new RuntimeException("Mouse released event detected.");
                 }
 
                 public void mouseClicked(MouseEvent me){
                     System.out.println(me.toString());
-                    throw new RuntimeException("Test failed. Mouse clicked " +
-                            "event detected.");
+                    throw new RuntimeException("Mouse clicked event detected.");
                 }
             });
 
@@ -121,10 +119,10 @@ public class MouseDraggedOriginatedByScrollBarTest {
 
         EventQueue.invokeAndWait(() -> {
             Point p = list.getLocationOnScreen();
-            p.translate(list.getWidth(), 20);
+            p.translate(list.getWidth() - XOFFSET, 20);
             loc = p;
         });
-        robot.mouseMove(loc.x - 10, loc.y + 20);
+        robot.mouseMove(loc.x, loc.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         for (int i = 0; i < 30; i++) {
             robot.mouseMove(loc.x, loc.y + 1);
