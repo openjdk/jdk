@@ -24,7 +24,6 @@
 
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -188,7 +187,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
   }
   // First we tell the OS which page size we want in the given range. The underlying
   // large page can be broken down if we require small pages.
-  os::realign_memory((char*) mr.start(), mr.byte_size(), SpaceAlignment);
+  os::realign_memory((char*) mr.start(), mr.byte_size(), page_size());
   // Then we uncommit the pages in the range.
   os::disclaim_memory((char*) mr.start(), mr.byte_size());
   // And make them local/first-touch biased.

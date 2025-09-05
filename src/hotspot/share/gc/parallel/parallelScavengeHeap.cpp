@@ -70,24 +70,9 @@ jint ParallelScavengeHeap::initialize() {
                            ? os::vm_page_size()
                            : SpaceAlignment;
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, desired_page_size);
-  // Check if SpaceAlignment needs adjustment
+  // Adjust SpaceAlignment based on actually used large page size.
   if (UseLargePages) {
-    if (SpaceAlignment == default_space_alignment()) {
-      // Opted out of using largepage because MinHeapSize is too small.
-      assert(!is_aligned(SpaceAlignment, os::large_page_size()), "inv");
-      assert(heap_rs.page_size() == os::vm_page_size(), "inv");
-    } else {
-      // Opted in to using largepage
-      if (os::can_commit_large_page_memory()) {
-        // Keep SpaceAlignment as is so that largepage can be formed
-      } else {
-        // Explicit largepage; use actual pagesize or the default
-        SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
-      }
-    }
-  } else {
-    assert(heap_rs.page_size() == os::vm_page_size(), "inv");
-    assert(SpaceAlignment == default_space_alignment(), "inv");
+    SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
   }
   assert(is_aligned(SpaceAlignment, heap_rs.page_size()), "inv");
 
