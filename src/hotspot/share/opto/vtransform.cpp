@@ -773,62 +773,21 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  // TODO: refactor!
-  Node* first = _nodes.at(0);
-  uint  vlen   = _prototype.vector_length();
-  int   sopc   = _prototype.scalar_opcode();
-  int   vopc   = _vector_opcode;
+  uint vlen    = _prototype.vector_length();
+  int  vopc    = _vector_opcode;
   BasicType bt = _prototype.element_basic_type();
   const TypeVect* vt = TypeVect::make(bt, vlen);
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
-  VectorNode* vn = nullptr;
   Node* in1 =                apply_state.transformed_node(in_req(1));
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
-  // TODO: replace with unary / binary / ternary
-
-  if (first->is_CMove()) {
-    assert(req() == 4, "three inputs expected: mask, blend1, blend2");
-    vn = VectorNode::make(vopc, in1, in2, in3, vt);
-    //vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
-  } else if (VectorNode::is_convert_opcode(sopc)) {
-    assert(first->req() == 2 && req() == 2, "only one input expected");
-    vn = VectorNode::make(vopc, in1, in2, vt);
-    //int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
-    //vn = VectorCastNode::make(vopc, in1, bt, vlen);
-  } else if (VectorNode::is_reinterpret_opcode(sopc)) {
-    assert(false, "WIP");
-    //assert(first->req() == 2 && req() == 2, "only one input expected");
-    //const TypeVect* vt = TypeVect::make(bt, vlen);
-    //vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
-  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    vn = VectorNode::make(vopc, in1, in2, vt);
-    //sopc = Op_RShiftI;
-    //vn = VectorNode::make(sopc, in1, in2, vlen, bt);
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
-    assert(false, "WIP");
-    // // The scalar operation was a long -> int operation.
-    // // However, the vector operation is long -> long.
-    // VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
-    // register_new_node_from_vectorization(apply_state, long_vn, first);
-    // // Cast long -> int, to mimic the scalar long -> int operation.
-    // vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
-  } else if (req() == 3 ||
-             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
-    assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
-    //vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
-    vn = VectorNode::make(vopc, in1, in2, vt);
+  VectorNode* vn = nullptr;
+  if (req() <= 3) {
+    vn = VectorNode::make(vopc, in1, in2, vt); // unary and binary
   } else {
-    assert(req() == 4, "three inputs expected");
-    assert(sopc == Op_FmaD  ||
-           sopc == Op_FmaF  ||
-           sopc == Op_FmaHF ||
-           sopc == Op_SignumF ||
-           sopc == Op_SignumD,
-           "element wise operation must be from this list");
-    vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
+    vn = VectorNode::make(vopc, in1, in2, in3, vt); // ternary
   }
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
