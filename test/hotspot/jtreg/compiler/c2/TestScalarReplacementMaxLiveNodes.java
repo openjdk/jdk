@@ -38,6 +38,7 @@
  *                   -XX:CompileCommand=dontinline,*String*::substring
  *                   -XX:NodeCountInliningCutoff=220000
  *                   -XX:DesiredMethodLimit=100000
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=0
  *                   compiler.c2.TestScalarReplacementMaxLiveNodes
  */
 package compiler.c2;
