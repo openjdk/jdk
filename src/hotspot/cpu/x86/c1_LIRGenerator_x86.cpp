@@ -225,6 +225,7 @@ void LIRGenerator::increment_counter(address counter, BasicType type, int step) 
 
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
+  // if (AtomicProfileCounters) __ lock(); // TODO: This is LIR
   __ add((LIR_Opr)addr, LIR_OprFact::intConst(step), (LIR_Opr)addr);
 }
 
