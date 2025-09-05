@@ -942,7 +942,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         old = " old";
       }
 
-      if (ik->is_generated_shared_class()) {
+      if (ik->is_aot_generated_class()) {
         generated = " generated";
       }
       if (aotlinked) {
