@@ -54,8 +54,6 @@ $(eval $(call SetupStreamPreProcessing, GEN_CHARSETDECODER, \
         coding='decoding' \
         OtherCoder='Encoder' \
         replTypeName='string' \
-        defaultRepl='"\\uFFFD"' \
-        defaultReplName='<code>"\&#92;uFFFD"<\/code>' \
         replType='String' \
         replFQType='java.lang.String' \
         replLength='length()' \
@@ -88,8 +86,6 @@ $(eval $(call SetupStreamPreProcessing, GEN_CHARSETENCODER, \
         coding='encoding' \
         OtherCoder='Decoder' \
         replTypeName='byte$$(SPACE)array' \
-        defaultRepl='new$$(SPACE)byte[]$$(SPACE){$$(SPACE)(byte)'"'"\\?"'"'$$(SPACE)}' \
-        defaultReplName='<code>{<\/code>\&nbsp;<code>(byte)'"'"\\?"'"'<\/code>\&nbsp;<code>}<\/code>' \
         replType='byte[]' \
         replFQType='byte[]' \
         replLength='length' \
