@@ -47,7 +47,6 @@ $(eval $(call SetupExecute, EXEC_1, \
 ))
 
 run-test1: $(EXEC_1)
-	fd . $(OUTPUT_DIR)/exec_1
 	test -f $(OUTPUT_DIR)/exec_1/support/junkfile
 
 $(eval $(call SetupExecute, EXEC_2, \
@@ -59,7 +58,6 @@ $(eval $(call SetupExecute, EXEC_2, \
 ))
 
 run-test2: $(EXEC_2)
-	fd . $(OUTPUT_DIR)/exec_2
 	test -f $(OUTPUT_DIR)/exec_2/special/specialfile
 
 
