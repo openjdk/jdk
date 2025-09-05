@@ -445,7 +445,7 @@ public:
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
-  void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn, Node* old_node) const;
+  void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)

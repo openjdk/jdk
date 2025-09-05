@@ -734,14 +734,14 @@ VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_sta
 VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
   Node* val = apply_state.transformed_node(in_req(1));
   VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
-  register_new_node_from_vectorization(apply_state, vn, val);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
 VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_state) const {
   Node* val = apply_state.transformed_node(in_req(1));
   Node* n = new ConvI2LNode(val);
-  register_new_node_from_vectorization(apply_state, n, val);
+  register_new_node_from_vectorization(apply_state, n);
   return VTransformApplyResult::make_scalar(n);
 }
 
@@ -753,10 +753,10 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.
   Node* shift_count_masked = new AndINode(shift_count_in, phase->intcon(_mask));
-  register_new_node_from_vectorization(apply_state, shift_count_masked, shift_count_in);
+  register_new_node_from_vectorization(apply_state, shift_count_masked);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
   VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
-  register_new_node_from_vectorization(apply_state, vn, shift_count_in);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
@@ -768,7 +768,7 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
   assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
   VectorNode* vn = new PopulateIndexNode(val, phase->intcon(1), vt);
-  register_new_node_from_vectorization(apply_state, vn, val);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
@@ -795,8 +795,6 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
 }
 
 VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(VTransformApplyState& apply_state) const {
-  // TODO: refactor!
-  Node* first = _nodes.at(0);
   uint  vlen   = _prototype.vector_length();
   int   sopc   = _prototype.scalar_opcode();
   Node* in1 = apply_state.transformed_node(in_req(1));
@@ -804,7 +802,7 @@ VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(
   // The scalar operation was a long -> int operation.
   // However, the vector operation is long -> long.
   VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
-  register_new_node_from_vectorization(apply_state, long_vn, first);
+  register_new_node_from_vectorization(apply_state, long_vn);
   // Cast long -> int, to mimic the scalar long -> int operation.
   VectorNode* vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
@@ -912,10 +910,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
 
 void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  // TODO: refactor
-  Node* first = _nodes.at(0);
-
-  register_new_node_from_vectorization(apply_state, vn, first);
+  register_new_node_from_vectorization(apply_state, vn);
 
   // TODO: refactor
   for (int i = 0; i < _nodes.length(); i++) {
@@ -924,9 +919,11 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
   }
 }
 
-void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn, Node* old_node) const {
+void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  phase->register_new_node_with_ctrl_of(vn, old_node);
+  // TODO: copy node notes!
+  // The control is not always correct, but we set major_progress anyway.
+  phase->register_new_node(vn, apply_state.vloop().cl());
   phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
