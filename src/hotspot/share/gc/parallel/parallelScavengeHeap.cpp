@@ -266,19 +266,16 @@ bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
 // and the rest will not be executed. For that reason, this method loops
 // during failed allocation attempts. If the java heap becomes exhausted,
 // we rely on the size_policy object to force a bail out.
-HeapWord* ParallelScavengeHeap::mem_allocate(size_t size,
-                                             bool* gc_overhead_limit_was_exceeded) {
+HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at safepoint");
   assert(Thread::current() != (Thread*)VMThread::vm_thread(), "should not be in vm thread");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   bool is_tlab = false;
-  return mem_allocate_work(size, is_tlab, gc_overhead_limit_was_exceeded);
+  return mem_allocate_work(size, is_tlab);
 }
 
-HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
-                                                  bool is_tlab,
-                                                  bool* gc_overhead_limit_was_exceeded) {
+HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
   for (uint loop_count = 0; /* empty */; ++loop_count) {
     // Try young-gen first.
     HeapWord* result = young_gen()->allocate(size);
@@ -442,10 +439,8 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 }
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
-  bool dummy;
   HeapWord* result = mem_allocate_work(requested_size /* size */,
-                                       true /* is_tlab */,
-                                       &dummy);
+                                       true /* is_tlab */);
   if (result != nullptr) {
     *actual_size = requested_size;
   }
