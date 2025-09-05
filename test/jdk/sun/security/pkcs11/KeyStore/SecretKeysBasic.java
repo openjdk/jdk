@@ -117,9 +117,9 @@ public class SecretKeysBasic extends PKCS11Test {
         // to be read incorrectly.  Checking for improper 16 byte length
         // in key string.
         if (isNSS(provider) && expected.getAlgorithm().equals("AES")) {
-            String version = getNSSVersion();
-            if (version.equals("3.12") || version.equals("3.12.1")
-                    || version.equals("3.12.2")) {
+            Version version = getNSSVersion();
+            if (version.major() == 3 && version.minor() == 12
+                    && version.patch() <= 2) {
                 System.out.println("NSS 3.12 bug returns incorrect AES key " +
                         "length breaking key storage. Aborting...");
                 return true;

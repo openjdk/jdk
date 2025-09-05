@@ -121,12 +121,10 @@ public class AddTrustedCert extends SecmodTest {
     }
 
     private static boolean improperNSSVersion(Provider p) {
-        String nssVersion = getNSSVersion();
+        Version nssVersion = getNSSVersion();
         if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")) {
-            int idx = nssVersion.indexOf(".");
-            double major = Double.parseDouble(nssVersion.substring(0, idx));
-            double minor = Double.parseDouble(nssVersion.substring(idx+1));
-            return major == 3 && (minor >= 28 && minor < 35);
+            return nssVersion.major() == 3 &&
+                    (nssVersion.minor() >= 28 && nssVersion.minor() < 35);
         }
 
         return false;

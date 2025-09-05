@@ -48,14 +48,11 @@ public class TestDSAKeyLength extends PKCS11Test {
     @Override
     protected boolean skipTest(Provider provider) {
         if (isNSS(provider)) {
-            String version = getNSSVersion();
+            Version version = getNSSVersion();
             if (version == null) {
                 return true;
             }
-            int idx = version.indexOf(".");
-            double major = Double.parseDouble(version.substring(0, idx));
-            double minor = Double.parseDouble(version.substring(idx+1));
-            if (major >= 3 && minor >= 14){
+            if (version.major() >= 3 && version.minor() >= 14){
                 System.out.println("Skip testing NSS " + version);
                 return true;
             }

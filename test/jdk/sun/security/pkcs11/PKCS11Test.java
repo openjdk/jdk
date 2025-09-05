@@ -52,8 +52,6 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,7 +83,7 @@ public abstract class PKCS11Test {
     private static final String NSS_BUNDLE_VERSION = "3.111";
     private static final String NSSLIB = "jpg.tests.jdk.nsslib";
 
-    static String nss_version = null;
+    static Version nss_version = null;
     static ECCState nss_ecc_status = ECCState.Basic;
 
     // The NSS library we need to search for in getNSSLibDir()
@@ -95,8 +93,8 @@ public abstract class PKCS11Test {
 
     // NSS versions of each library.  It is simpler to keep nss_version
     // for quick checking for generic testing than many if-else statements.
-    static String softoken3_version = null;
-    static String nss3_version = null;
+    static Version softoken3_version = null;
+    static Version nss3_version = null;
     static Provider pkcs11 = newPKCS11Provider();
     private static String PKCS11_BASE;
     private static Map<String, String[]> osMap;
@@ -260,23 +258,29 @@ public abstract class PKCS11Test {
     }
 
     static boolean isBadNSSVersion(Provider p) {
-        String nssVersion = getNSSVersion();
+        Version nssVersion = getNSSVersion();
         if (isNSS(p)) {
             // bad version is just between [3.11,3.12)
-            // strings may include a trailing dash e.g., 3.111-debug
-            Pattern  pattern = Pattern.compile("^(\\d+)(?:\\.(.*?))?(?:-.*)?$");
-            Matcher m = pattern.matcher(nssVersion);
-            if (m.matches()) {
-                int major = Integer.parseInt(m.group(1));
-                String tmp = m.group(2);
-                double minor = tmp == null ? 0 : Double.parseDouble(tmp);
-                return major == 3 && (11 <= minor && minor < 12);
-            } else {
-                throw new RuntimeException("Unexpected version format: " + nssVersion);
-            }
+            return nssVersion.major == 3 && 11 == nssVersion.minor;
         } else {
             return false;
         }
+    }
+
+    public record Version(int major, int minor, int patch) {}
+
+    protected static Version parseVersionString(String version) {
+        String [] parts = version.split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        int minor = 0;
+        int patch = 0;
+        if (parts.length >= 2) {
+            minor = Integer.parseInt(parts[1]);
+        }
+        if (parts.length >= 3) {
+            patch = Integer.parseInt(parts[2]);
+        }
+        return new Version(major, minor, patch);
     }
 
     protected static void safeReload(String lib) {
@@ -305,7 +309,7 @@ public abstract class PKCS11Test {
         return p.getName().equalsIgnoreCase("SUNPKCS11-NSS");
     }
 
-    static String getNSSVersion() {
+    static Version getNSSVersion() {
         if (nss_version == null)
             getNSSInfo();
         return nss_version;
@@ -317,13 +321,13 @@ public abstract class PKCS11Test {
         return nss_ecc_status;
     }
 
-    public static String getLibsoftokn3Version() {
+    public static Version getLibsoftokn3Version() {
         if (softoken3_version == null)
             return getNSSInfo("softokn3");
         return softoken3_version;
     }
 
-    public static String getLibnss3Version() {
+    public static Version getLibnss3Version() {
         if (nss3_version == null)
             return getNSSInfo("nss3");
         return nss3_version;
@@ -339,7 +343,7 @@ public abstract class PKCS11Test {
     // $Header: NSS <version>
     // Version: NSS <version>
     // Here, <version> stands for NSS version.
-    static String getNSSInfo(String library) {
+    static Version getNSSInfo(String library) {
         // look for two types of headers in NSS libraries
         String nssHeader1 = "$Header: NSS";
         String nssHeader2 = "Version: NSS";
@@ -356,7 +360,7 @@ public abstract class PKCS11Test {
         try {
             libfile = getNSSLibPath();
             if (libfile == null) {
-                return "0.0";
+                return parseVersionString("0.0");
             }
             try (InputStream is = Files.newInputStream(libfile)) {
                 byte[] data = new byte[1000];
@@ -392,7 +396,7 @@ public abstract class PKCS11Test {
         if (!found) {
             System.out.println("lib" + library +
                     " version not found, set to 0.0: " + libfile);
-            nss_version = "0.0";
+            nss_version = parseVersionString("0.0");
             return nss_version;
         }
 
@@ -405,7 +409,7 @@ public abstract class PKCS11Test {
             version.append(c);
         }
 
-        nss_version = version.toString();
+        nss_version = parseVersionString(version.toString());
 
         System.out.print("library: " + library + ", version: " + version + ".  ");
 
