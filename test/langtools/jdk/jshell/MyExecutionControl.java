@@ -42,7 +42,7 @@ import jdk.jshell.execution.Util;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
 import jdk.jshell.spi.ExecutionEnv;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 import static jdk.jshell.execution.Util.remoteInputOutput;
 
 class MyExecutionControl extends JdiExecutionControl {

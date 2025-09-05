@@ -26,28 +26,29 @@
  * @bug 8159635
  * @summary Test setting compiler options
  * @build KullaTesting TestingInputStream
- * @run testng CompilerOptionsTest
+ * @run junit CompilerOptionsTest
  */
 
 import javax.tools.Diagnostic;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
 import static jdk.jshell.Snippet.Status.VALID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class CompilerOptionsTest extends KullaTesting {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(b -> b.compilerOptions("-source", "8", "-Xlint:cast,-options"));
     }
 
+    @Test
     public void testLint() {
         assertDeclareWarn1("String s = (String)\"hello\";",
                 new ExpectedDiagnostic("compiler.warn.redundant.cast", 11, 26, 11, -1, -1, Diagnostic.Kind.WARNING));
     }
 
+    @Test
     public void testSourceVersion() {
         assertEval("import java.util.ArrayList;", added(VALID));
         // Diamond with anonymous classes allowed in 9

@@ -26,22 +26,22 @@
  * @bug 8169519 8166581
  * @summary Tests for JDI connector failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
- * @run testng JdiBadOptionListenExecutionControlTest
+ * @run junit JdiBadOptionListenExecutionControlTest
  */
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.testng.annotations.Test;
 import jdk.jshell.JShell;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JdiBadOptionListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
             "Unrecognized option: -BadBadOption";
 
+    @Test
     public void badOptionListenTest() {
         try {
             // turn on logging of launch failures

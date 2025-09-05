@@ -27,18 +27,16 @@
  * @summary Tests for alternate JDI connector -- listening
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
- * @run testng JdiListeningExecutionControlTest
+ * @run junit JdiListeningExecutionControlTest
  * @key intermittent
  */
 
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.BeforeEach;
 
-@Test
 public class JdiListeningExecutionControlTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine("jdi"));

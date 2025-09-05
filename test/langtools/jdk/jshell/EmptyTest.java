@@ -25,34 +25,39 @@
  * @test
  * @summary null test
  * @build KullaTesting TestingInputStream
- * @run testng EmptyTest
+ * @run junit EmptyTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class EmptyTest extends KullaTesting {
 
+    @Test
     public void testEmpty() {
         assertEvalEmpty("");
     }
 
+    @Test
     public void testSpace() {
         assertEvalEmpty("    ");
     }
 
+    @Test
     public void testSemicolon() {
         assertEval(";", "");
     }
 
+    @Test
     public void testSlashStarComment() {
         assertEvalEmpty("/*test*/");
     }
 
+    @Test
     public void testSlashStarCommentSemicolon() {
         assertEval("/*test*/;", "");
     }
 
+    @Test
     public void testSlashComment() {
         assertEvalEmpty("// test");
     }

@@ -32,20 +32,20 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
- * @run testng ToolReloadTest
+ * @run junit ToolReloadTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Function;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 
-@Test
 public class ToolReloadTest extends ReplToolTesting {
 
+    @Test
     public void testReloadSnippets() {
         test(
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
@@ -63,6 +63,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadClasspath() {
         Function<String,String> prog = (s) -> String.format(
                 "package pkg; public class A { public String toString() { return \"%s\"; } }\n", s);
@@ -89,6 +90,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadDrop() {
         test(false, new String[]{"--no-startup"},
                 a -> assertVariable(a, "int", "a"),
@@ -112,6 +114,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadQuiet() {
         test(false, new String[]{"--no-startup"},
                 a -> assertVariable(a, "int", "a"),
@@ -129,6 +132,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadRepeat() {
         test(false, new String[]{"--no-startup"},
                 (a) -> assertVariable(a, "int", "c", "7", "7"),
@@ -149,6 +153,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadIgnore() {
         test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "(-)", null),
@@ -162,6 +167,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadResetRestore() {
         test(
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
@@ -180,6 +186,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadCrashRestore() {
         test(
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
@@ -200,6 +207,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testEnvBadModule() {
         test(new String[] {"--execution", Presets.TEST_STANDARD_EXECUTION},
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
@@ -221,6 +229,7 @@ public class ToolReloadTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testReloadExitRestore() {
         test(false, new String[]{"--no-startup"},
                 (a) -> assertVariable(a, "int", "x", "5", "5"),

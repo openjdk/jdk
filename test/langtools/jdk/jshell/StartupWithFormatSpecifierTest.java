@@ -31,16 +31,16 @@
  * @library /tools/lib
  * @build toolbox.ToolBox
  * @build KullaTesting Compiler
- * @run testng StartupWithFormatSpecifierTest
+ * @run junit StartupWithFormatSpecifierTest
  */
 
 import java.nio.file.Path;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class StartupWithFormatSpecifierTest extends ReplToolTesting {
 
+    @Test
     public void testStartupWithFormatSpecifier() {
         Compiler compiler = new Compiler();
         String startupScript = "String.format(\"This is a %s.\", \"test\");";

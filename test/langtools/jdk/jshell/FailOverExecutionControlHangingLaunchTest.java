@@ -28,16 +28,14 @@
  * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
  * @build KullaTesting ExecutionControlTestBase
- * @run testng FailOverExecutionControlHangingLaunchTest
+ * @run junit FailOverExecutionControlHangingLaunchTest
  */
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.BeforeEach;
 
-@Test
 public class FailOverExecutionControlHangingLaunchTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine(

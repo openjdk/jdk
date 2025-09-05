@@ -25,14 +25,14 @@
  * @test
  * @summary null test
  * @build KullaTesting TestingInputStream
- * @run testng NullTest
+ * @run junit NullTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class NullTest extends KullaTesting {
 
+    @Test
     public void testNull() {
         assertEval("null;", "null");
         assertEval("(Object)null;", "null");

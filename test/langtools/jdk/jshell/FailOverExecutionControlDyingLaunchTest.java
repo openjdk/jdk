@@ -28,17 +28,15 @@
  * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
  * @build KullaTesting ExecutionControlTestBase DyingRemoteAgent
- * @run testng FailOverExecutionControlDyingLaunchTest
+ * @run junit FailOverExecutionControlDyingLaunchTest
  * @key intermittent
  */
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.BeforeEach;
 
-@Test
 public class FailOverExecutionControlDyingLaunchTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine(

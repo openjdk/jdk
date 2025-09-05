@@ -25,42 +25,46 @@
  * @bug 8304487 8325257
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @build KullaTesting TestingInputStream
- * @run testng PrimitiveInstanceOfTest
+ * @run junit PrimitiveInstanceOfTest
  */
 import jdk.jshell.JShell;
-import org.testng.annotations.Test;
 
 import java.util.function.Consumer;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class PrimitiveInstanceOfTest extends KullaTesting {
 
+    @Test
     public void testInstanceOf() {
         assertEval("int i = 42;");
         assertEval("i instanceof Integer");
         assertEval("i instanceof int");
     }
 
+    @Test
     public void testInstanceOfRef() {
         assertEval("Integer i = 42;");
         assertEval("i instanceof Integer");
         assertEval("i instanceof Number");
     }
 
+    @Test
     public void testInstanceOfObjectToPrimitive() {
         assertEval("Object o = 1L;");
         assertEval("o instanceof long");
         assertEval("o instanceof Long");
     }
 
+    @Test
     public void testInstanceOfPrimitiveToPrimitiveInvokingExactnessMethod() {
         assertEval("int b = 1024;");
         assertEval("b instanceof byte");
     }
 
-    @org.testng.annotations.BeforeMethod
+    @BeforeEach
     public void setUp() {
         super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
     }

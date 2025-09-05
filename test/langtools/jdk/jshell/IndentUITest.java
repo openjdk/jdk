@@ -35,18 +35,18 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile IndentUITest.java
- * @run testng IndentUITest
+ * @run junit IndentUITest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class IndentUITest extends UITesting {
 
     public IndentUITest() {
         super(true);
     }
 
+    @Test
     public void testIdent() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("void test1() {\nSystem.err.println(1);\n}\n");

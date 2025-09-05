@@ -27,19 +27,19 @@
  * @summary Tests for JDI connector failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @build DyingRemoteAgent
- * @run testng JdiFailingListenExecutionControlTest
+ * @run junit JdiFailingListenExecutionControlTest
  */
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JdiFailingListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
             "Launching JShell execution engine threw: Accept timed out";
 
+    @Test
     public void failListenTest() {
         try {
             System.err.printf("Unexpected return value: %s\n", DyingRemoteAgent.state(true, null).eval("33;"));
