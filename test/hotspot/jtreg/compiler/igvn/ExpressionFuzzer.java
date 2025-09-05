@@ -81,20 +81,55 @@ public class ExpressionFuzzer {
         // We are going to use some random numbers in our tests, so import some good methods for that.
         tests.add(PrimitiveType.generateLibraryRNG());
 
+        // Create the body for the test. We use it twice: compiled and reference.
         var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
-                """
-                try {
-                """,
-                "var val = ", expression.asToken(arguments), ";\n",
-                "return #checksum(val);\n",
-                expression.info.exceptions.stream().map(exception ->
-                    "} catch (" + exception + " e) { return e;\n"
-                ).toList(),
-                """
-                } finally {
-                    // Just so that javac is happy if there are no exceptions to catch.
-                }
-                """
+            """
+            try {
+            """,
+            "var val = ", expression.asToken(arguments), ";\n",
+            "return #checksum(val);\n",
+            expression.info.exceptions.stream().map(exception ->
+                "} catch (" + exception + " e) { return e;\n"
+            ).toList(),
+            """
+            } finally {
+                // Just so that javac is happy if there are no exceptions to catch.
+            }
+            """
+        ));
+
+        // Checksum method: returns not just the value, but also does some range / bit checks.
+        //                  This gives us enhanced verification on the range / bits of the result type.
+        var checksumTemplate = Template.make("expression", "checksum", (Expression expression, String checksum) -> body(
+            let("returnType", expression.returnType),
+            """
+            @ForceInline
+            public static Object #checksum(#returnType val) {
+            """,
+            "return new Object[] {",
+            switch(expression.returnType.name()) {
+                // The integral values have signed/unsigned ranges and known bits.
+                // Return val, but also some range and bits tests to see if those
+                // ranges and bits are correct.
+                case "byte", "short", "char", "int", "long" ->
+                    List.of("val",
+                            IntStream.range(0, 20).mapToObj(i ->
+                                // Generate a test like:
+                                // val < 5
+                                // val & 16
+                                List.of(", val", List.of("<", ">", "<=", ">=", "&").get(i % 5), expression.returnType.con())
+                                // TODO: unsigned!
+                            ).toList());
+                // Float/Double have no range, just return the value:
+                case "float", "double" -> "val";
+                // Check if the boolean constant folded:
+                case "boolean" -> "val, val == true, val == false";
+                default -> throw new RuntimeException("should only be primitive types");
+            }
+            , "};\n",
+            """
+            }
+            """
         ));
 
         var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
@@ -129,7 +164,6 @@ public class ExpressionFuzzer {
             // And the result should be returned, but also some "checksum" to
             // detect range and bits.
             return body(
-                let("returnType", expression.returnType),
                 let("methodArguments",
                     methodArguments.stream().map(ma -> ma.name).collect(Collectors.joining(", "))),
                 let("methodArgumentsWithTypes",
@@ -162,32 +196,8 @@ public class ExpressionFuzzer {
                 """
                 }
 
-                @ForceInline
-                public static Object $checksum(#returnType val) {
                 """,
-                "return new Object[] {",
-                switch(expression.returnType.name()) {
-                    // The integral values have signed/unsigned ranges and known bits.
-                    // Return val, but also some range and bits tests to see if those
-                    // ranges and bits are correct.
-                    case "byte", "short", "char", "int", "long" ->
-                        List.of("val",
-                                IntStream.range(0, 20).mapToObj(i ->
-                                    // Generate a test like:
-                                    // val < 5
-                                    // val & 16
-                                    List.of(", val", List.of("<", ">", "<=", ">=", "&").get(i % 5), expression.returnType.con())
-                                ).toList());
-                    // Float/Double have no range, just return the value:
-                    case "float", "double" -> "val";
-                    // Check if the boolean constant folded:
-                    case "boolean" -> "val, val == true, val == false";
-                    default -> throw new RuntimeException("should only be primitive types");
-                }
-                , "};\n",
-                """
-                }
-                """
+                checksumTemplate.asToken(expression, $("checksum"))
             );
         });
 
