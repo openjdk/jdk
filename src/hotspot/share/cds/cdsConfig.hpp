@@ -44,7 +44,7 @@ class CDSConfig : public AllStatic {
   static bool _has_aot_linked_classes;
   static bool _is_single_command_training;
   static bool _has_temp_aot_config_file;
-  static bool _is_at_cds_safepoint;
+  static bool _is_at_aot_safepoint;
 
   const static char* _default_archive_path;
   const static char* _input_static_archive_path;
@@ -101,8 +101,8 @@ public:
   static const char* type_of_archive_being_written();
   static void prepare_for_dumping();
 
-  static bool is_at_cds_safepoint()                          { return CDS_ONLY(_is_at_cds_safepoint) NOT_CDS(false); }
-  static void set_is_at_cds_safepoint(bool value)            { CDS_ONLY(_is_at_cds_safepoint = value); }
+  static bool is_at_aot_safepoint()                          { return CDS_ONLY(_is_at_aot_safepoint) NOT_CDS(false); }
+  static void set_is_at_aot_safepoint(bool value)            { CDS_ONLY(_is_at_aot_safepoint = value); }
 
   // --- Basic CDS features
 
@@ -167,7 +167,7 @@ public:
   static void set_has_aot_linked_classes(bool has_aot_linked_classes) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Bytecode verification
-  static bool is_preserving_verification_dependencies();
+  static bool is_preserving_verification_constraints();
   static bool is_old_class_for_verifier(const InstanceKlass* ik);
 
   // archive_path

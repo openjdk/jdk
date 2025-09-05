@@ -36,9 +36,6 @@ DumpTimeClassInfo::~DumpTimeClassInfo() {
     delete _verifier_constraints;
     delete _verifier_constraint_flags;
   }
-  if (_old_verifier_dependencies != nullptr) {
-    delete _old_verifier_dependencies;
-  }
   if (_loader_constraints != nullptr) {
     delete _loader_constraints;
   }
@@ -46,7 +43,6 @@ DumpTimeClassInfo::~DumpTimeClassInfo() {
 
 size_t DumpTimeClassInfo::runtime_info_bytesize() const {
   return RunTimeClassInfo::byte_size(_klass, num_verifier_constraints(),
-                                     num_old_verifier_dependencies(),
                                      num_loader_constraints(),
                                      num_enum_klass_static_fields());
 }
@@ -77,25 +73,15 @@ void DumpTimeClassInfo::add_verification_constraint(Symbol* name,
 
   if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(aot, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x]",
-                                 _klass->external_name(), from_name->as_klass_external_name(),
-                                 name->as_klass_external_name(), c);
+    if (from_name != nullptr) {
+      log_trace(aot, verification)("add verification constraint: %s: %s must be subclass of %s [0x%x]",
+                                   _klass->external_name(), from_name->as_klass_external_name(),
+                                   name->as_klass_external_name(), c);
+    } else {
+      log_trace(aot, verification)("added old verification constraint: %s", _klass->external_name());
+    }
   }
 }
-
-void DumpTimeClassInfo::add_old_verification_dependency(Symbol* name) {
-  if (_old_verifier_dependencies == nullptr) {
-    _old_verifier_dependencies = new (mtClass) GrowableArray<Symbol*>(4, mtClass);
-  }
-  _old_verifier_dependencies->append(name);
-
-  if (log_is_enabled(Trace, aot, verification)) {
-    ResourceMark rm;
-    log_trace(aot, verification)("added old verification dependency: %s: %s must be also be archived",
-                                 _klass->external_name(), name->as_klass_external_name());
-  }
-}
-
 
 static char get_loader_type_by(oop  loader) {
   assert(SystemDictionary::is_builtin_class_loader(loader), "Must be built-in loader");

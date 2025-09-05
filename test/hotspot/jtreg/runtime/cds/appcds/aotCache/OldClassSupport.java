@@ -115,7 +115,7 @@ public class OldClassSupport {
 
     static void shouldSkip(OutputAnalyzer out, Class[] classes) {
         for (Class c : classes) {
-            out.shouldMatch("Skipping " + c.getName() + ": verification dependency .* is excluded");
+            out.shouldMatch("Skipping " + c.getName() + ": verification constraint .* is excluded");
         }
     }
 }

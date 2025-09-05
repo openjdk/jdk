@@ -851,9 +851,9 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   }
 
 #if INCLUDE_CDS
-  if (CDSConfig::is_preserving_verification_dependencies() && from_class->is_instance_klass()) {
+  if (CDSConfig::is_preserving_verification_constraints() && from_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(from_class);
-    SystemDictionaryShared::add_old_verification_dependency(THREAD, ik, h_name);
+    SystemDictionaryShared::add_old_verification_constraint(THREAD, ik, h_name);
   }
 #endif
 

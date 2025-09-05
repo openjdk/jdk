@@ -109,8 +109,7 @@ public class AOTClassLinkingVerification {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (runMode == RunMode.TRAINING ||
-                runMode == RunMode.ASSEMBLY) {
+            if (runMode == RunMode.TRAINING) {
                 out.shouldContain("Preload Warning: Verification failed for BadNewClass2");
                 out.shouldContain("Preload Warning: Verification failed for BadNewClass");
                 out.shouldContain("Preload Warning: Verification failed for BadOldClass2");

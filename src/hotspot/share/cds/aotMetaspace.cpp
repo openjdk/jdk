@@ -652,7 +652,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
-  CDSConfig::set_is_at_cds_safepoint(true);
+  CDSConfig::set_is_at_aot_safepoint(true);
 
   if (!CDSConfig::is_dumping_final_static_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
@@ -720,7 +720,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
 
-  CDSConfig::set_is_at_cds_safepoint(false);
+  CDSConfig::set_is_at_aot_safepoint(false);
 }
 
 class CollectClassesForLinking : public KlassClosure {

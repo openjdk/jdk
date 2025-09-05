@@ -56,7 +56,7 @@ bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
-bool CDSConfig::_is_at_cds_safepoint = false;
+bool CDSConfig::_is_at_aot_safepoint = false;
 
 const char* CDSConfig::_default_archive_path = nullptr;
 const char* CDSConfig::_input_static_archive_path = nullptr;
@@ -923,7 +923,7 @@ bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
   return !is_dumping_method_handles();
 }
 
-bool CDSConfig::is_preserving_verification_dependencies() {
+bool CDSConfig::is_preserving_verification_constraints() {
   // Verification dependencies are classes used in assignability checks by the
   // bytecode verifier. In the following example, the verification dependencies
   // for X are A and B.

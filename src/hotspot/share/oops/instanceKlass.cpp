@@ -2846,7 +2846,7 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     return true;
   }
 
-  if (CDSConfig::is_preserving_verification_dependencies()) {
+  if (CDSConfig::is_preserving_verification_constraints()) {
     return true;
   }
 

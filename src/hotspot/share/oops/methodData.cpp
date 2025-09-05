@@ -323,7 +323,7 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
 
 static bool is_excluded(Klass* k) {
 #if INCLUDE_CDS
-  if (CDSConfig::is_at_cds_safepoint()) {
+  if (CDSConfig::is_at_aot_safepoint()) {
     // Check for CDS exclusion only at CDS safe point.
     if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());

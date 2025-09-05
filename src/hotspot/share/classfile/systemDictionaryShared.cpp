@@ -218,7 +218,7 @@ bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeC
 // <func> returns bool and takes a single parameter of Symbol*
 // The return value indicates whether we want to keep on iterating or not.
 template<typename Function>
-void SystemDictionaryShared::iterate_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
+void SystemDictionaryShared::iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func) {
   int n = info->num_verifier_constraints();
   bool cont; // continue iterating?
   for (int i = 0; i < n; i++) {
@@ -226,17 +226,12 @@ void SystemDictionaryShared::iterate_verification_dependency_names(InstanceKlass
     if (!cont) {
       return; // early termination
     }
-    cont = func(info->verifier_constraint_from_name_at(i));
-    if (!cont) {
-      return; // early termination
-    }
-  }
-
-  n = info->num_old_verifier_dependencies();
-  for (int i = 0; i < n; i++) {
-    cont = func(info->old_verifier_dependency_at(i));
-    if (!cont) {
-      return; // early termination
+    Symbol* from_name = info->verifier_constraint_from_name_at(i);
+    if (from_name != nullptr) {
+      cont = func(from_name);
+      if (!cont) {
+        return; // early termination
+      }
     }
   }
 }
@@ -281,11 +276,11 @@ class SystemDictionaryShared::ExclusionCheckCandidates
       add_candidate(nest_host);
     }
 
-    if (CDSConfig::is_preserving_verification_dependencies()) {
-      SystemDictionaryShared::iterate_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
-        Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
-        if (dependency_bottom_class != nullptr && dependency_bottom_class->is_instance_klass()) {
-          add_candidate(InstanceKlass::cast(dependency_bottom_class));
+    if (CDSConfig::is_preserving_verification_constraints()) {
+      SystemDictionaryShared::iterate_verification_constraint_names(k, info, [&] (Symbol* constraint_class_name) {
+        Klass* constraint_bottom_class = find_verification_constraint_bottom_class(k, constraint_class_name);
+        if (constraint_bottom_class != nullptr && constraint_bottom_class->is_instance_klass()) {
+          add_candidate(InstanceKlass::cast(constraint_bottom_class));
         }
         return true; // Keep iterating.
       });
@@ -303,8 +298,8 @@ public:
 //     - ik's super types
 //     - ik's nest host (if any)
 //
-//  plus, if CDSConfig::is_preserving_verification_dependencies()==true:
-//     - ik's verification dependencies. These are the classes used in assignability checks
+//  plus, if CDSConfig::is_preserving_verification_constraints()==true:
+//     - ik's verification constraints. These are the classes used in assignability checks
 //         when verifying ik's bytecodes.
 //
 // This method ensure that exclusion check is performed on X and all of its exclusion dependencies.
@@ -335,7 +330,7 @@ void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceK
 
     // Algorithm notes:
     //
-    // The dependencies is a directed graph, possibly cyclic. Class X is excluded
+    // The dependencies form a directed graph, possibly cyclic. Class X is excluded
     // if it has at least one directed path that reaches class Y, where
     // check_self_exclusion(Y) returns true.
     //
@@ -435,7 +430,7 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
       return warn_excluded(k, "Failed verification");
     } else if (CDSConfig::is_dumping_aot_linked_classes()) {
       // Most loaded classes should have been speculatively linked by AOTMetaspace::link_class_for_cds().
-      // Old classes may not be linked if CDSConfig::is_preserving_verification_dependencies()==false.
+      // Old classes may not be linked if CDSConfig::is_preserving_verification_constraints()==false.
       // An unlinked class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
       // causing the JVM to fail at bootstrap.
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
@@ -486,12 +481,12 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     return true;
   }
 
-  if (CDSConfig::is_preserving_verification_dependencies()) {
+  if (CDSConfig::is_preserving_verification_constraints()) {
     bool excluded = false;
 
-    iterate_verification_dependency_names(k, info, [&] (Symbol* dependency_class_name) {
-      if (check_verification_dependency_exclusion(k, dependency_class_name)) {
-        // If one of the verification dependency class has been excluded, the assignability checks
+    iterate_verification_constraint_names(k, info, [&] (Symbol* constraint_class_name) {
+      if (check_verification_constraint_exclusion(k, constraint_class_name)) {
+        // If one of the verification constraint class has been excluded, the assignability checks
         // by the verifier may no longer be valid in the production run. For safety, exclude this class.
         excluded = true;
         return false; // terminate iteration; k will be excluded
@@ -501,7 +496,7 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     });
 
     if (excluded) {
-      // At least one verification dependency class has been excluded
+      // At least one verification constraint class has been excluded
       return true;
     }
   }
@@ -522,40 +517,40 @@ bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKl
   return false;
 }
 
-bool SystemDictionaryShared::check_verification_dependency_exclusion(InstanceKlass* k, Symbol* dependency_class_name) {
-  Klass* dependency_bottom_class = find_verification_dependency_bottom_class(k, dependency_class_name);
-  if (dependency_bottom_class == nullptr) {
-    // No class of the dependency_class_name has not yet been loaded. This happens when the new verifier was checking
-    // if dependency_class_name is assignable to an interface, and found the answer without resolving
-    // dependency_class_name.
+bool SystemDictionaryShared::check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name) {
+  Klass* constraint_bottom_class = find_verification_constraint_bottom_class(k, constraint_class_name);
+  if (constraint_bottom_class == nullptr) {
+    // No class of the constraint_class_name has not yet been loaded. This happens when the new verifier was checking
+    // if constraint_class_name is assignable to an interface, and found the answer without resolving
+    // constraint_class_name.
     //
     // Since this class is not even loaded, it surely cannot be excluded.
     return false;
-  } else if (dependency_bottom_class->is_instance_klass()) {
-    if (is_dependency_excluded(k, InstanceKlass::cast(dependency_bottom_class), "verification dependency")) {
+  } else if (constraint_bottom_class->is_instance_klass()) {
+    if (is_dependency_excluded(k, InstanceKlass::cast(constraint_bottom_class), "verification constraint")) {
       return true;
     }
   } else {
-    assert(dependency_bottom_class->is_typeArray_klass(), "must be");
+    assert(constraint_bottom_class->is_typeArray_klass(), "must be");
   }
 
   return false;
 }
 
-Klass* SystemDictionaryShared::find_verification_dependency_bottom_class(InstanceKlass* k, Symbol* dependency_class_name) {
+Klass* SystemDictionaryShared::find_verification_constraint_bottom_class(InstanceKlass* k, Symbol* constraint_class_name) {
   Thread* current = Thread::current();
   Handle loader(current, k->class_loader());
-  Klass* dependency_class = SystemDictionary::find_instance_or_array_klass(current, dependency_class_name, loader);
-  if (dependency_class == nullptr) {
+  Klass* constraint_class = SystemDictionary::find_instance_or_array_klass(current, constraint_class_name, loader);
+  if (constraint_class == nullptr) {
     return nullptr;
   }
 
-  if (dependency_class->is_objArray_klass()) {
-    dependency_class = ObjArrayKlass::cast(dependency_class)->bottom_klass();
+  if (constraint_class->is_objArray_klass()) {
+    constraint_class = ObjArrayKlass::cast(constraint_class)->bottom_klass();
   }
 
-  precond(dependency_class->is_typeArray_klass() || dependency_class->is_instance_klass());
-  return dependency_class;
+  precond(constraint_class->is_typeArray_klass() || constraint_class->is_instance_klass());
+  return constraint_class;
 }
 
 bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
@@ -906,8 +901,8 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       //
       // Do not call this function in other types of safepoints. For example, if this
       // is called in a GC safepoint, a klass may be improperly excluded because some
-      // of its verifyer dependencies have not yet been linked.
-      assert(CDSConfig::is_at_cds_safepoint(), "Do not call this function in any other safepoint");
+      // of its verification constraints have not yet been linked.
+      assert(CDSConfig::is_at_aot_safepoint(), "Do not call this function in any other safepoint");
 
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in AOTMetaspace::link_class_for_cds().
@@ -1041,8 +1036,8 @@ void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 // When the old verifier is verifying the class <ik> at dump time, it tries to resolve a
 // class with the given <name>. For the verification result to be valid at run time, we must
 // ensure that <name> resolves to the exact same Klass as in dump time.
-void SystemDictionaryShared::add_old_verification_dependency(Thread* current, InstanceKlass* ik, Symbol* name) {
-  precond(CDSConfig::is_preserving_verification_dependencies());
+void SystemDictionaryShared::add_old_verification_constraint(Thread* current, InstanceKlass* ik, Symbol* name) {
+  precond(CDSConfig::is_preserving_verification_constraints());
   DumpTimeClassInfo* info = get_info(ik);
   Handle loader(current, ik->class_loader());
   Klass* k = SystemDictionary::find_instance_or_array_klass(current, name, loader);
@@ -1050,10 +1045,8 @@ void SystemDictionaryShared::add_old_verification_dependency(Thread* current, In
     if (k->is_objArray_klass()) {
       k = ObjArrayKlass::cast(k)->bottom_klass();
     }
-    // No need to record any supertypes, as ik cannot be loaded at run time unless the
-    // exact same set of super types are loaded.
     if (k->is_instance_klass() && !ik->is_subclass_of(k)) {
-      info->add_old_verification_dependency(k->name());
+      info->add_verification_constraint(k->name());
     }
   }
 }
@@ -1075,6 +1068,13 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
       RunTimeClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
+
+      if (from_name == nullptr) {
+        // This is for old verifier. No need to check, as we can guarantee that all classes checked by
+        // the old verifier during AOT training phase cannot be replaced in the asembly phase.
+        precond(CDSConfig::is_dumping_final_static_archive());
+        continue;
+      }
 
       if (log_is_enabled(Trace, aot, verification)) {
         ResourceMark rm(THREAD);
@@ -1114,14 +1114,6 @@ void SystemDictionaryShared::copy_verification_info_from_preimage(InstanceKlass*
 
       dt_info->add_verification_constraint(name, from_name,
          rt_info->from_field_is_protected(i), rt_info->from_is_array(i), rt_info->from_is_object(i));
-    }
-  }
-
-  length = rt_info->num_old_verifier_dependencies();
-  if (length > 0) {
-    for (int i = 0; i < length; i++) {
-      Symbol* name = rt_info->old_verifier_constraint_at(i);
-      dt_info->add_old_verification_dependency(name);
     }
   }
 }

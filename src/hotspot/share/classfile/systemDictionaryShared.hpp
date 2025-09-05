@@ -181,10 +181,10 @@ private:
   static void check_exclusion_for_self_and_dependencies(InstanceKlass *k);
   static bool check_self_exclusion(InstanceKlass* k);
   static bool check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
-  static bool check_verification_dependency_exclusion(InstanceKlass* k, Symbol* dependency_class_name);
+  static bool check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name);
   static bool is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type);
-  static bool is_excluded_verification_dependency(InstanceKlass* k, Symbol* dependency_class_name);
-  static Klass* find_verification_dependency_bottom_class(InstanceKlass* k, Symbol* dependency_class_name);
+  static bool is_excluded_verification_constraint(InstanceKlass* k, Symbol* constraint_class_name);
+  static Klass* find_verification_constraint_bottom_class(InstanceKlass* k, Symbol* constraint_class_name);
 
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
@@ -194,7 +194,7 @@ private:
   static void copy_linking_constraints_from_preimage(InstanceKlass* klass);
 
   template<typename Function>
-  static void iterate_verification_dependency_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
+  static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
@@ -252,7 +252,7 @@ public:
                   Symbol* from_name, bool from_field_is_protected,
                   bool from_is_array, bool from_is_object,
                   bool* skip_assignability_check);
-  static void add_old_verification_dependency(Thread* current, InstanceKlass* k, Symbol* name);
+  static void add_old_verification_constraint(Thread* current, InstanceKlass* k, Symbol* name);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
   static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);

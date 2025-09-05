@@ -555,8 +555,8 @@ void KlassTrainingData::cleanup(Visitor& visitor) {
   visitor.visit(this);
   if (has_holder()) {
     bool is_excluded = !holder()->is_loaded();
-    if (CDSConfig::is_at_cds_safepoint()) {
-      // Check for CDS exclusion only at CDS safe point.
+    if (CDSConfig::is_at_aot_safepoint()) {
+      // Check for AOT exclusion only at AOT safe point.
       is_excluded |= SystemDictionaryShared::should_be_excluded(holder());
     }
     if (is_excluded) {
@@ -577,8 +577,8 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    if (CDSConfig::is_at_cds_safepoint() && SystemDictionaryShared::should_be_excluded(holder()->method_holder())) {
-      // Check for CDS exclusion only at CDS safe point.
+    if (CDSConfig::is_at_aot_safepoint() && SystemDictionaryShared::should_be_excluded(holder()->method_holder())) {
+      // Check for AOT exclusion only at AOT safe point.
       log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
       if (_final_profile != nullptr && _final_profile->method() != _holder) {
         log_warning(aot, training)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
