@@ -1141,7 +1141,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, BindingInfo* binding_info, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, CallSiteBindingContext* binding_context, JVMCI_TRAPS) {
   if (full_info) {
     read_virtual_objects(stream, JVMCI_CHECK);
   }
@@ -1170,10 +1170,10 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
 
         if (bci >= 0) {
           reexecute = !is_set(frame_flags, DIF_DURING_CALL);
-          if (i == depth - 1 && binding_info != nullptr) {
-            binding_info->reexecute = reexecute;
-            binding_info->bci = bci;
-            binding_info->caller = method;
+          if (i == depth - 1 && binding_context != nullptr) {
+            binding_context->bci = bci;
+            binding_context->caller = method;
+            binding_context->reexecute = reexecute;
           }
         }
 
@@ -1224,7 +1224,8 @@ void CodeInstaller::site_Infopoint(CodeBuffer& buffer, jint pc_offset, HotSpotCo
   _debug_recorder->end_non_safepoint(pc_offset);
 }
 
-bool CodeInstaller::is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle caller, int bci, methodHandle method) {
+// see CallGenerator::is_inlined_method_handle_intrinsic
+bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle caller, int bci, methodHandle method) {
   constantPoolHandle cpool(thread, caller->constants());
   InstanceKlass* pool_holder = cpool->pool_holder();
   Bytecode_invoke bytecode(caller, bci);
@@ -1238,7 +1239,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
   methodHandle method;
   bool direct_call = false;
   bool bind = false;
-  BindingInfo binding_info;
+  CallSiteBindingContext binding_context;
   if (tag == SITE_CALL) {
     method = methodHandle(thread, (Method*) target);
     assert(Method::is_valid_method(method()), "invalid method");
@@ -1264,9 +1265,9 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
                 (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
       }
       bool return_oop = method->is_returning_oop();
-      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, &binding_info, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, &binding_context, JVMCI_CHECK);
     } else {
-      record_scope(next_pc_offset, stream, flags, true, &binding_info, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, &binding_context, JVMCI_CHECK);
     }
   }
 
@@ -1276,7 +1277,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
   } else {
     if (direct_call){
       // TODO for Valhalla: if the method has scalarized parameters bind as well
-      bind = binding_info.reexecute || is_inlined_method_handle_intrinsic(thread, binding_info.caller, binding_info.bci, method);
+      bind = binding_context.reexecute || is_inlined_method_handle_intrinsic(thread, binding_context.caller, binding_context.bci, method);
     }
     int method_index = bind ? _oop_recorder->find_index(method()) : 0;
     CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, method_index, JVMCI_CHECK);

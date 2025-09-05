@@ -133,7 +133,7 @@ import jdk.vm.ci.services.Services;
  *   |<----------- chunkSize --------------------------->|
  *   |<-- HEADER ->|
  * </pre>
- * <p>
+ *
  * Each chunk is twice as large as its predecessor. See {@link #ensureCapacity(int)}.
  *
  * @see Option#DumpSerializedCode
