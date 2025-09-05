@@ -124,17 +124,17 @@ public class TestReinterpretAndCast {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test1(long[] a, int[] b) {
-	for (int i = 0; i < SIZE; i++) {
-	    long   v0 = a[i];
-	    double v1 = Double.longBitsToDouble(v0);
+        for (int i = 0; i < SIZE; i++) {
+            long   v0 = a[i];
+            double v1 = Double.longBitsToDouble(v0);
             // Reinterpret: long -> double
             // Before fix:  double -> long (no direct problem)
-	    float  v2 = (float)v1;
+            float  v2 = (float)v1;
             // Cast:        double -> float
             // Before fix:  long -> float  (wrong!)
-	    int    v3 = Float.floatToRawIntBits(v2);
-	    b[i] = v3;
-	}
+            int    v3 = Float.floatToRawIntBits(v2);
+            b[i] = v3;
+        }
     }
 
     @Check(test = "test1")
@@ -164,7 +164,7 @@ public class TestReinterpretAndCast {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test2(int[] a, short[] b) {
-	for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             int v0 = a[i];
             float v1 = Float.intBitsToFloat(v0);
             // Reinterpret: int -> float
@@ -173,7 +173,7 @@ public class TestReinterpretAndCast {
             // Cast:        float -> float16/short
             // Before fix:  int ->   float16/short (wrong!)
             b[i] = v2;
-	}
+        }
     }
 
     @Check(test = "test2")
@@ -204,7 +204,7 @@ public class TestReinterpretAndCast {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test3(short[] a, long[] b) {
-	for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             short v0 = a[i];
             Float16 v1 = Float16.shortBitsToFloat16(v0);
             float v2 = v1.floatValue();
@@ -215,7 +215,7 @@ public class TestReinterpretAndCast {
             // Cast:        int -> long
             // Before fix:  float -> long (wrong!)
             b[i] = v4;
-	}
+        }
     }
 
     @Check(test = "test3")
