@@ -119,19 +119,19 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
 }
 
 /*
-Lemma 1: For a given known bits information, _lo and _hi bounds of corresponding value
-        range are computed using following formulas :-
+Lemma 1: For a given known bits information, _lo and _hi bounds of the corresponding value
+        range is computed using the following formulas:-
         - _hi = ~ZEROS
         - _lo = ONES
 Proof:-
-  - KnownBits.ZEROS and KnownBits.ONES are inferred out of common prefix of value range
+  - KnownBits.ZEROS and KnownBits.ONES are inferred out of the common prefix of the value range
     delimiting bounds.
 
-  - Thus, ~KnownBits.ZEROS not only include set bits in the common prefix but optimistically assumes
-    that all other bits not included in common prefix are also set.
+  - Thus, ~KnownBits.ZEROS not only includes set bits in the common prefix but also optimistically assumes
+    that all other bits not included in the common prefix are also set.
 
-  - Consider following illustration which performs round trip translation
-    of a value range via knowbits information e.g.
+  - Consider the following illustration, which performs round-trip translation
+    of a value range via knowbits information, e.g.
     A) Initial value range bounds to infer knownbits.
       _lo = 0b11000100
       _hi = 0b11000110
@@ -140,7 +140,7 @@ Proof:-
       _known_bits.ones    = _lo & _common_prefix_mask  = 0b11000100
       _known_bits.zeros   = ~_lo & _common_prefix_mask = 0b00111000
 
-    B) Now, transform computed knownbits back to value range.
+    B) Now, transform the computed knownbits back to the value range.
       _new_lo = _known_bits.ones  = 0b11000100
       _new_hi = ~known_bits.zeros = 0b11000111
 
@@ -148,7 +148,6 @@ Proof:-
   - Therefore, popcount(ONES) and popcount(~ZEROS) can safely be assumed as the upper and lower
     bounds of the result value range.
 */
-
 const Type* PopCountINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
