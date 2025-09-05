@@ -28,6 +28,9 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+// It may be unsafe to call these methods during VM exit
+// as threads are terminating
+
 namespace CPUTimeUsage {
   class GC : public AllStatic {
   public:
