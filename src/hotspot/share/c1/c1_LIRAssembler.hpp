@@ -154,8 +154,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_block(BlockBegin* block);
   void emit_lir_list(LIR_List* list);
 
-  // any last minute peephole optimizations are performed here.  In
-  // particular sparc uses this for delay slot filling.
+  // any last minute peephole optimizations are performed here.
   void peephole(LIR_List* list);
 
   void return_op(LIR_Opr result, C1SafepointPollStub* code_stub);

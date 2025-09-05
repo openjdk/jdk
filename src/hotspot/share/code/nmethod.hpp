@@ -966,7 +966,6 @@ public:
 
   // ScopeDesc for an instruction
   ScopeDesc* scope_desc_at(address pc);
-  ScopeDesc* scope_desc_near(address pc);
 
   // copying of debugging information
   void copy_scopes_pcs(PcDesc* pcs, int count);

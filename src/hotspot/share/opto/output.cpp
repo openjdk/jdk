@@ -1516,9 +1516,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           current_offset = masm->offset();
         }
 
-        // A padding may be needed again since a previous instruction
-        // could be moved to delay slot.
-
         // align the instruction if necessary
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
@@ -2573,11 +2570,7 @@ void Scheduling::DoScheduling() {
       break;                    // Funny loop structure to be sure...
     }
     // Compute last "interesting" instruction in block - last instruction we
-    // might schedule.  _bb_end points just after last schedulable inst.  We
-    // normally schedule conditional branches (despite them being forced last
-    // in the block), because they have delay slots we can fill.  Calls all
-    // have their delay slots filled in the template expansions, so we don't
-    // bother scheduling them.
+    // might schedule.  _bb_end points just after last schedulable inst.
     Node *last = bb->get_node(_bb_end);
     // Ignore trailing NOPs.
     while (_bb_end > 0 && last->is_Mach() &&

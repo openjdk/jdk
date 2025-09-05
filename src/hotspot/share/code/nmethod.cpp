@@ -669,12 +669,6 @@ ScopeDesc* nmethod::scope_desc_at(address pc) {
   return new ScopeDesc(this, pd);
 }
 
-ScopeDesc* nmethod::scope_desc_near(address pc) {
-  PcDesc* pd = pc_desc_near(pc);
-  guarantee(pd != nullptr, "scope must be present");
-  return new ScopeDesc(this, pd);
-}
-
 address nmethod::oops_reloc_begin() const {
   // If the method is not entrant then a JMP is plastered over the
   // first few bytes.  If an oop in the old code was there, that oop
