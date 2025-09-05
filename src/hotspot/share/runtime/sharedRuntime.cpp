@@ -2737,7 +2737,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     if (entry != nullptr) {
       assert(entry->is_linked(), "AdapterHandlerEntry must have been linked");
 #ifdef ASSERT
-      if (!entry->is_shared() && VerifyAdapterSharing) {
+      if (!entry->in_aot_cache() && VerifyAdapterSharing) {
         verify_adapter_sharing(total_args_passed, sig_bt, entry);
       }
 #endif

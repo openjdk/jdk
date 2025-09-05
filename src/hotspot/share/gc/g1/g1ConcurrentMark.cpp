@@ -3054,7 +3054,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   const char* remset_type = r->rem_set()->get_short_state_str();
   uint cset_group_id     = 0;
 
-  if (r->rem_set()->is_added_to_cset_group()) {
+  if (r->rem_set()->has_cset_group()) {
     cset_group_id = r->rem_set()->cset_group_id();
   }
 
