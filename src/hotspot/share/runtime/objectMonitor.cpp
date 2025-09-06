@@ -321,15 +321,6 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
-  if (current->is_suspended()) {
-    if (_om->has_successor(current)) {
-      _om->clear_successor();
-      OrderAccess::fence(); // always do a full fence when successor is cleared
-    }
-  }
-}
-
 #define assert_mark_word_consistency()                                         \
   assert(UseObjectMonitorTable || object()->mark() == markWord::encode(this),  \
          "object mark must match encoded this: mark=" INTPTR_FORMAT            \
@@ -1085,11 +1076,10 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
 
 void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentNode) {
   assert(current != nullptr, "invariant");
-  assert(current->thread_state() != _thread_blocked, "invariant");
+  assert(current->thread_state() == _thread_blocked, "invariant");
   assert(currentNode != nullptr, "invariant");
   assert(currentNode->_thread == current, "invariant");
   assert(_waiters > 0, "invariant");
-  assert_mark_word_consistency();
 
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
@@ -1109,14 +1099,7 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
     {
       OSThreadContendState osts(current->osthread());
-
-      assert(current->thread_state() == _thread_in_vm, "invariant");
-
-      {
-        ClearSuccOnSuspend csos(this);
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
-        current->_ParkEvent->park();
-      }
+      current->_ParkEvent->park();
     }
 
     // Try again, but just so we distinguish between futile wakeups and
@@ -1139,7 +1122,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
   // Current has acquired the lock -- Unlink current from the _entry_list.
   assert(has_owner(current), "invariant");
-  assert_mark_word_consistency();
   unlink_after_acquire(current, currentNode);
   if (has_successor(current)) clear_successor();
   assert(!has_successor(current), "invariant");
@@ -1836,12 +1818,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-
     assert(current->thread_state() == _thread_in_vm, "invariant");
-
     {
-      ClearSuccOnSuspend csos(this);
-      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+      ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (!node._notified) {
@@ -1934,7 +1913,26 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       enter(current);
     } else {
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-      reenter_internal(current, &node);
+      ExitOnSuspend eos(this);
+      {
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
+        reenter_internal(current, &node);
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending.
+      }
+      if (eos.exited()) {
+        // ExitOnSuspend exit the OM
+        assert(!has_owner(current), "invariant");
+        guarantee(node.TState == ObjectWaiter::TS_RUN, "invariant");
+        current->set_current_pending_monitor(nullptr);
+        enter(current);
+      }
+      assert(has_owner(current), "invariant");
       node.wait_reenter_end(this);
     }
 
