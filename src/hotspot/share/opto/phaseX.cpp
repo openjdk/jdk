@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/graphInvariants.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -987,6 +988,9 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 
   verify_optimize();
 #endif
+  if (VerifyIdealGraph) {
+    assert(C->_invariant_checker->run(), "Ideal graph doesn't verify structural invariants.");
+  }
 }
 #endif /* PRODUCT */
 
