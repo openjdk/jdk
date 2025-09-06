@@ -31,6 +31,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,6 +56,7 @@ import javax.tools.StandardLocation;
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -440,7 +442,8 @@ public class JavaCompiler {
                         context.get(DiagnosticListener.class) != null;
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
-        werror        = options.isSet(WERROR);
+        werrorAny     = options.isSet(WERROR) || options.isSet(WERROR_CUSTOM, Option.LINT_CUSTOM_ALL);
+        werrorLint    = options.getLintCategoriesOf(WERROR, LintCategory::newEmptySet);
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
@@ -513,9 +516,13 @@ public class JavaCompiler {
      */
     protected boolean processPcks;
 
-    /** Switch: treat warnings as errors
+    /** Switch: treat any kind of warning (lint or non-lint) as an error.
      */
-    protected boolean werror;
+    protected boolean werrorAny;
+
+    /** Switch: treat lint warnings in the specified {@link LintCategory}s as errors.
+     */
+    protected EnumSet<LintCategory> werrorLint;
 
     /** Switch: is annotation processing requested explicitly via
      * CompilationTask.setProcessors?
@@ -581,10 +588,18 @@ public class JavaCompiler {
      */
     public int errorCount() {
         log.reportOutstandingWarnings();
-        if (werror && log.nerrors == 0 && log.nwarnings > 0) {
+        if (log.nerrors == 0 && log.nwarnings > 0 &&
+                (werrorAny || werrorLint.clone().removeAll(log.lintWarnings))) {
             log.error(Errors.WarningsAndWerror);
         }
         return log.nerrors;
+    }
+
+    /**
+     * Should warnings in the given lint category be treated as errors due to a {@code -Werror} flag?
+     */
+    public boolean isWerror(LintCategory lc) {
+        return werrorAny || werrorLint.contains(lc);
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
