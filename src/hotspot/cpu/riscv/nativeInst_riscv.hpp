@@ -156,6 +156,10 @@ class NativeCall: private NativeInstruction {
   static void set_stub_address_destination_at(address dest, address value);
   // return target address at stub
   static address stub_address_destination_at(address src);
+  // We either have a jalr or jal depending on distance to old destination.
+  // This method emits a new jal if new destination is within jal reach.
+  // Otherwise restores the jalr which can reach any destination.
+  void optimize_call(address dest, bool mt_safe = true);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
