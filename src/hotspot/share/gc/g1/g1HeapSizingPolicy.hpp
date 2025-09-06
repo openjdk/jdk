@@ -26,8 +26,14 @@
 #define SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 
 #include "gc/g1/g1Analytics.hpp"
+#include "gc/g1/g1_globals.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 
@@ -93,8 +99,12 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   size_t young_collection_shrink_amount(double cpu_usage_delta, size_t allocation_word_size) const;
 
   G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics);
-public:
 
+  // Methods for time-based sizing
+  void get_uncommit_candidates(GrowableArray<G1HeapRegion*>* candidates);
+  bool should_uncommit_region(G1HeapRegion* hr) const;
+
+public:
   static constexpr uint long_term_count_limit() {
     return G1Analytics::max_num_of_recorded_pause_times();
   }
@@ -106,6 +116,9 @@ public:
   // Returns the amount of bytes to resize the heap; if expand is set, the heap
   // should by expanded by that amount, shrunk otherwise.
   size_t full_collection_resize_amount(bool& expand, size_t allocation_word_size);
+
+  // Time-based sizing methods
+  size_t evaluate_heap_resize(bool& expand);
 
   static G1HeapSizingPolicy* create(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 };
