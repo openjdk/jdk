@@ -254,17 +254,18 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
 }
 
 template <typename FUNCTION>
-void check_aot_init_annotation_for_supertypes(InstanceKlass* ik, const char* annotation, FUNCTION func) {
+void require_annotation_for_super_types(InstanceKlass* ik, const char* annotation, FUNCTION func) {
   if (log_is_enabled(Info, aot, init)) {
     ResourceMark rm;
     log_info(aot, init)("Found %s class %s", annotation, ik->external_name());
   }
 
-  // If a type has this annotation, we require that
-  //   - all super classes have this annotation
-  //   - all super interfaces that have <clinit> must have this annotation
-  // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-  // the current class' <clinit>.
+  // Since ik has this annotation, we require that
+  //   - all super classes must have this annotation
+  //   - all super interfaces that are interface_needs_clinit_execution_as_super()
+  //     must have this annotation
+  // This avoid the situation where in the production run, we run the <clinit>
+  // of a supertype but not the <clinit> of ik
 
   InstanceKlass* super = ik->java_super();
   if (super != nullptr && !func(super)) {
@@ -288,7 +289,7 @@ void check_aot_init_annotation_for_supertypes(InstanceKlass* ik, const char* ann
 
 void AOTClassInitializer::check_aot_annotations(InstanceKlass* ik) {
   if (ik->has_aot_safe_initializer()) {
-    check_aot_init_annotation_for_supertypes(ik, "@AOTSafeClassInitializer", [&] (const InstanceKlass* supertype) {
+    require_annotation_for_super_types(ik, "@AOTSafeClassInitializer", [&] (const InstanceKlass* supertype) {
       return supertype->has_aot_safe_initializer();
     });
   } else {
@@ -301,7 +302,7 @@ void AOTClassInitializer::check_aot_annotations(InstanceKlass* ik) {
   }
 
   if (ik->force_aot_initialization()) {
-    check_aot_init_annotation_for_supertypes(ik, "@AOTInitialize", [&] (const InstanceKlass* supertype) {
+    require_annotation_for_super_types(ik, "@AOTInitialize", [&] (const InstanceKlass* supertype) {
       return supertype->force_aot_initialization();
     });
   }
