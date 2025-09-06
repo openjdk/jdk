@@ -197,8 +197,9 @@ public class SegmentFactories {
             throw new OutOfMemoryError();
         }
         // Always allocate at least some memory so that zero-length segments have distinct
-        // non-zero addresses.
-        alignedSize = Math.max(1, alignedSize);
+        // non-zero addresses. If we are initializing the allocated memory, then use a minimum
+        // size of 8 because we init the memory with longs.
+        alignedSize = Math.max((init ? Long.BYTES : 1), alignedSize);
 
         long allocationSize;
         long allocationBase;
