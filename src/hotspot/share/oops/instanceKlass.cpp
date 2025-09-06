@@ -2839,18 +2839,20 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
-// Check if a class or any of its supertypes has a version older than 50.
-// CDS will not perform verification of old classes during dump time because
-// without changing the old verifier, the verification constraint cannot be
-// retrieved during dump time.
-// Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
   }
-  if (major_version() < 50 /*JAVA_6_VERSION*/) {
+
+  if (CDSConfig::is_preserving_verification_constraints()) {
+    return true;
+  }
+
+  if (CDSConfig::is_old_class_for_verifier(this)) {
+    // The old verifier does not save verification constraints, so at run time
+    // SystemDictionaryShared::check_verification_constraints() will not work for this class.
     return false;
   }
   if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
