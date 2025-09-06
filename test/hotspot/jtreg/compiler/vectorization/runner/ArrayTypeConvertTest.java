@@ -297,7 +297,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_float, max_int)", ">0"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public int[] convertFloatToInt() {
@@ -312,7 +312,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_F2L, IRNode.VECTOR_SIZE + "min(max_float, max_long)", ">0"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512dq", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public long[] convertFloatToLong() {
@@ -327,7 +327,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_D2I, IRNode.VECTOR_SIZE + "min(max_double, max_int)", ">0"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public int[] convertDoubleToInt() {
@@ -342,7 +342,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
         counts = {IRNode.VECTOR_CAST_D2L, IRNode.VECTOR_SIZE + "min(max_double, max_long)", ">0"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512dq", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public long[] convertDoubleToLong() {
@@ -359,7 +359,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_short)", ">0"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx2", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public short[] convertFloatToShort() {
@@ -382,7 +382,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_char)", ">0"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx2", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx2", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public char[] convertFloatToChar() {
@@ -408,7 +408,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIf = {"MaxVectorSize", ">=16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_short)", ">0"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public short[] convertDoubleToShort() {
@@ -427,7 +427,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIf = {"MaxVectorSize", ">=16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_char)", ">0"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public char[] convertDoubleToChar() {

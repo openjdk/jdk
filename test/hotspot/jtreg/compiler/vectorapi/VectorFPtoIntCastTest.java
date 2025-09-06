@@ -89,7 +89,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2int() {
@@ -111,7 +111,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_F2L, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeature = {"avx512dq", "true"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512dq", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2long() {
@@ -133,7 +133,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2short() {
@@ -155,7 +155,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_F2B, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castFtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2FtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2byte() {
@@ -177,7 +177,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_D2I, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2int() {
@@ -199,7 +199,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_D2L, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeature = {"avx512dq", "true"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512dq", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2long() {
@@ -221,7 +221,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2short() {
@@ -243,7 +243,7 @@ public class VectorFPtoIntCastTest {
     @IR(counts = {IRNode.VECTOR_CAST_D2B, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeature = {"avx512f", "true"})
     @IR(counts = {"castDtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512f", "true", "avx10_2", "false"})
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
     @IR(counts = {"cast2DtoX", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2byte() {
