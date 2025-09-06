@@ -37,7 +37,7 @@
 // For AARCH64 we add explicit barriers in the stubs.
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
@@ -53,7 +53,7 @@ struct Atomic::PlatformAdd {
 #define DEFINE_INTRINSIC_ADD(IntrinsicName, IntrinsicType)                \
   template<>                                                              \
   template<typename D, typename I>                                        \
-  inline D Atomic::PlatformAdd<sizeof(IntrinsicType)>::add_then_fetch(D volatile* dest, \
+  inline D AtomicAccess::PlatformAdd<sizeof(IntrinsicType)>::add_then_fetch(D volatile* dest, \
                                                                       I add_value, \
                                                                       atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
@@ -70,7 +70,7 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
 #define DEFINE_INTRINSIC_XCHG(IntrinsicName, IntrinsicType)               \
   template<>                                                              \
   template<typename T>                                                    \
-  inline T Atomic::PlatformXchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
+  inline T AtomicAccess::PlatformXchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
                                                                    T exchange_value, \
                                                                    atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
@@ -85,13 +85,13 @@ DEFINE_INTRINSIC_XCHG(InterlockedExchange64, __int64)
 #undef DEFINE_INTRINSIC_XCHG
 
 // Note: the order of the parameters is different between
-// Atomic::PlatformCmpxchg<*>::operator() and the
+// AtomicAccess::PlatformCmpxchg<*>::operator() and the
 // InterlockedCompareExchange* API.
 
 #define DEFINE_INTRINSIC_CMPXCHG(IntrinsicName, IntrinsicType)            \
   template<>                                                              \
   template<typename T>                                                    \
-  inline T Atomic::PlatformCmpxchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
+  inline T AtomicAccess::PlatformCmpxchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
                                                                       T compare_value, \
                                                                       T exchange_value, \
                                                                       atomic_memory_order order) const { \

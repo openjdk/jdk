@@ -35,7 +35,7 @@ const uint64_t JFR_NODE_MASK = ~(JFR_NODE_LOGICAL_INSERTION_BIT | JFR_NODE_LOGIC
 
 template <typename Node>
 inline bool cas(Node** address, Node* current, Node* exchange) {
-  return Atomic::cmpxchg(address, current, exchange) == current;
+  return AtomicAccess::cmpxchg(address, current, exchange) == current;
 }
 
 template <typename Node>

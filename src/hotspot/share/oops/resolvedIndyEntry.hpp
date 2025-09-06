@@ -77,7 +77,7 @@ public:
   };
 
   // Getters
-  Method* method()               const { return Atomic::load_acquire(&_method); }
+  Method* method()               const { return AtomicAccess::load_acquire(&_method); }
   u2 resolved_references_index() const { return _resolved_references_index;     }
   u2 constant_pool_index()       const { return _cpool_index;                   }
   u2 num_parameters()            const { return _number_of_parameters;          }
@@ -101,7 +101,7 @@ public:
   void set_num_parameters(int value) {
     assert(_number_of_parameters == 0 || _number_of_parameters == value,
       "size must not change: parameter_size=%d, value=%d", _number_of_parameters, value);
-    Atomic::store(&_number_of_parameters, (u2)value);
+    AtomicAccess::store(&_number_of_parameters, (u2)value);
     guarantee(_number_of_parameters == value,
       "size must not change: parameter_size=%d, value=%d", _number_of_parameters, value);
   }
@@ -113,7 +113,7 @@ public:
     set_has_appendix(has_appendix);
     // Set the method last since it is read lock free.
     // Resolution is indicated by whether or not the method is set.
-    Atomic::release_store(&_method, m);
+    AtomicAccess::release_store(&_method, m);
   }
 
   void set_has_appendix(bool has_appendix) {

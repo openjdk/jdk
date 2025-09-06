@@ -44,28 +44,28 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
 }
 
 size_t ClassLoaderDataGraph::num_instance_classes() {
-  return Atomic::load(&_num_instance_classes);
+  return AtomicAccess::load(&_num_instance_classes);
 }
 
 size_t ClassLoaderDataGraph::num_array_classes() {
-  return Atomic::load(&_num_array_classes);
+  return AtomicAccess::load(&_num_array_classes);
 }
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
-  Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
+  AtomicAccess::add(&_num_instance_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  size_t old_count = Atomic::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
+  size_t old_count = AtomicAccess::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
-  Atomic::add(&_num_array_classes, count, memory_order_relaxed);
+  AtomicAccess::add(&_num_array_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  size_t old_count = Atomic::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
+  size_t old_count = AtomicAccess::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 

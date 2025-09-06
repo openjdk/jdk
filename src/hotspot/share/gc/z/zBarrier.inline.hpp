@@ -93,7 +93,7 @@ inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p
     assert_transition_monotonicity(ptr, heal_ptr);
 
     // Heal
-    const zpointer prev_ptr = Atomic::cmpxchg(p, ptr, heal_ptr, memory_order_relaxed);
+    const zpointer prev_ptr = AtomicAccess::cmpxchg(p, ptr, heal_ptr, memory_order_relaxed);
     if (prev_ptr == ptr) {
       // Success
       return;
@@ -365,7 +365,7 @@ inline void ZBarrier::remap_young_relocated(volatile zpointer* p, zpointer o) {
 }
 
 inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {
-  const zpointer ptr = Atomic::load(p);
+  const zpointer ptr = AtomicAccess::load(p);
   assert_is_valid(ptr);
   return ptr;
 }

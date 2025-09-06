@@ -31,7 +31,7 @@
 #include "runtime/mutexLocker.hpp"
 
 inline void DataLayout::release_set_cell_at(int index, intptr_t value) {
-  Atomic::release_store(&_cells[index], value);
+  AtomicAccess::release_store(&_cells[index], value);
 }
 
 inline void ProfileData::release_set_intptr_at(int index, intptr_t value) {

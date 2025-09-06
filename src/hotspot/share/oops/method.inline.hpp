@@ -34,16 +34,16 @@
 #include "runtime/atomicAccess.hpp"
 
 inline address Method::from_compiled_entry() const {
-  return Atomic::load_acquire(&_from_compiled_entry);
+  return AtomicAccess::load_acquire(&_from_compiled_entry);
 }
 
 inline address Method::from_interpreted_entry() const {
-  return Atomic::load_acquire(&_from_interpreted_entry);
+  return AtomicAccess::load_acquire(&_from_interpreted_entry);
 }
 
 inline nmethod* Method::code() const {
   assert( check_code(), "" );
-  return Atomic::load_acquire(&_code);
+  return AtomicAccess::load_acquire(&_code);
 }
 
 // Write (bci, line number) pair to stream

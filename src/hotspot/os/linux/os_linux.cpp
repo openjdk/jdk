@@ -4786,8 +4786,8 @@ static bool should_warn_invalid_processor_id() {
 
   static volatile int warn_once = 1;
 
-  if (Atomic::load(&warn_once) == 0 ||
-      Atomic::xchg(&warn_once, 0) == 0) {
+  if (AtomicAccess::load(&warn_once) == 0 ||
+      AtomicAccess::xchg(&warn_once, 0) == 0) {
     // Don't warn more than once
     return false;
   }

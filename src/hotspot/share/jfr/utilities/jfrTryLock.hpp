@@ -36,7 +36,7 @@ class JfrTryLock {
   bool _acquired;
 
  public:
-  JfrTryLock(volatile int* lock) : _lock(lock), _acquired(Atomic::cmpxchg(lock, 0, 1) == 0) {}
+  JfrTryLock(volatile int* lock) : _lock(lock), _acquired(AtomicAccess::cmpxchg(lock, 0, 1) == 0) {}
 
   ~JfrTryLock() {
     if (_acquired) {

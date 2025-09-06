@@ -32,14 +32,14 @@ static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards
-      Atomic::store(to++, Atomic::load(from++));
+      AtomicAccess::store(to++, AtomicAccess::load(from++));
     }
   } else {
     from += count - 1;
     to   += count - 1;
     while (count-- > 0) {
       // Copy backwards
-      Atomic::store(to--, Atomic::load(from--));
+      AtomicAccess::store(to--, AtomicAccess::load(from--));
     }
   }
 }

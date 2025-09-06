@@ -288,7 +288,7 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
-  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
+  AtomicAccess::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
@@ -441,7 +441,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
-  st->print("|%3zu", Atomic::load(&_pinned_object_count));
+  st->print("|%3zu", AtomicAccess::load(&_pinned_object_count));
   st->print_cr("");
 }
 

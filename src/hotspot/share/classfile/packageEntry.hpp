@@ -222,11 +222,11 @@ public:
 
   bool is_defined_by_cds_in_class_path(int idx) const {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    return((Atomic::load(&_defined_by_cds_in_class_path) & ((int)1 << idx)) != 0);
+    return((AtomicAccess::load(&_defined_by_cds_in_class_path) & ((int)1 << idx)) != 0);
   }
   void set_defined_by_cds_in_class_path(int idx) {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    Atomic::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
+    AtomicAccess::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
   }
 };
 

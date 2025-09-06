@@ -34,7 +34,7 @@
 // See https://patchwork.kernel.org/patch/3575821/
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     if (order == memory_order_relaxed) {
@@ -54,7 +54,7 @@ struct Atomic::PlatformAdd {
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                      T exchange_value,
                                                      atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
@@ -65,7 +65,7 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                         T compare_value,
                                                         T exchange_value,
                                                         atomic_memory_order order) const {
@@ -109,21 +109,21 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
 }
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
   T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
 };
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X>
+struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
 };
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }

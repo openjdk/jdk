@@ -52,7 +52,7 @@ inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* 
 
 uint8_t G1BlockOffsetTable::offset_array(uint8_t* addr) const {
   check_address(addr, "Block offset table address out of range");
-  return Atomic::load(addr);
+  return AtomicAccess::load(addr);
 }
 
 inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {

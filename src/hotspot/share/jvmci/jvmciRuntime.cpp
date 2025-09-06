@@ -1622,7 +1622,7 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   static volatile int report_error = 0;
-  if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {
+  if (!report_error && AtomicAccess::cmpxchg(&report_error, 0, 1) == 0) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != nullptr) {

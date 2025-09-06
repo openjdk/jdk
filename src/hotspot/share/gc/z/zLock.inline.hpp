@@ -50,11 +50,11 @@ inline ZReentrantLock::ZReentrantLock()
 
 inline void ZReentrantLock::lock() {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
 
   if (owner != thread) {
     _lock.lock();
-    Atomic::store(&_owner, thread);
+    AtomicAccess::store(&_owner, thread);
   }
 
   _count++;
@@ -67,14 +67,14 @@ inline void ZReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)nullptr);
+    AtomicAccess::store(&_owner, (Thread*)nullptr);
     _lock.unlock();
   }
 }
 
 inline bool ZReentrantLock::is_owned() const {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
   return owner == thread;
 }
 

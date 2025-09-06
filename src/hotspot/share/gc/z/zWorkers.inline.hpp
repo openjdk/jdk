@@ -29,7 +29,7 @@
 #include "runtime/atomicAccess.hpp"
 
 inline bool ZWorkers::should_worker_resize() {
-  return Atomic::load(&_requested_nworkers) != 0;
+  return AtomicAccess::load(&_requested_nworkers) != 0;
 }
 
 #endif // SHARE_GC_Z_ZWORKERS_INLINE_HPP

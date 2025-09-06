@@ -63,11 +63,11 @@ void G1FullCollector::update_from_skip_compacting_to_compacting(uint region_idx)
 }
 
 void G1FullCollector::set_compaction_top(G1HeapRegion* r, HeapWord* value) {
-  Atomic::store(&_compaction_tops[r->hrm_index()], value);
+  AtomicAccess::store(&_compaction_tops[r->hrm_index()], value);
 }
 
 HeapWord* G1FullCollector::compaction_top(G1HeapRegion* r) const {
-  return Atomic::load(&_compaction_tops[r->hrm_index()]);
+  return AtomicAccess::load(&_compaction_tops[r->hrm_index()]);
 }
 
 void G1FullCollector::set_has_compaction_targets() {

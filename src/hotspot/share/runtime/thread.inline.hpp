@@ -36,7 +36,7 @@
 #endif
 
 inline jlong Thread::cooked_allocated_bytes() {
-  jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
+  jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
     // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
     // Use only if top > start && used_bytes <= max_tlab_size_bytes.
@@ -59,15 +59,15 @@ inline jlong Thread::cooked_allocated_bytes() {
 }
 
 inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
-  return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
+  return (ThreadsList*)AtomicAccess::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
 inline ThreadsList* Thread::get_threads_hazard_ptr() const {
-  return (ThreadsList*)Atomic::load_acquire(&_threads_hazard_ptr);
+  return (ThreadsList*)AtomicAccess::load_acquire(&_threads_hazard_ptr);
 }
 
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
-  Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
+  AtomicAccess::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
 #if defined(__APPLE__) && defined(AARCH64)

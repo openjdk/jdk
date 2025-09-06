@@ -68,7 +68,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
       }
     }
 
-  } while (Atomic::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
+  } while (AtomicAccess::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
 }
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
@@ -104,7 +104,7 @@ bool KlassCleaningTask::claim_clean_klass_tree_task() {
     return false;
   }
 
-  return !Atomic::cmpxchg(&_clean_klass_tree_claimed, false, true);
+  return !AtomicAccess::cmpxchg(&_clean_klass_tree_claimed, false, true);
 }
 
 InstanceKlass* KlassCleaningTask::claim_next_klass() {

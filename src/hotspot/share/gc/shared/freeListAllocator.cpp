@@ -41,26 +41,26 @@ FreeListAllocator::PendingList::PendingList() :
 
 size_t FreeListAllocator::PendingList::add(FreeNode* node) {
   assert(node->next() == nullptr, "precondition");
-  FreeNode* old_head = Atomic::xchg(&_head, node);
+  FreeNode* old_head = AtomicAccess::xchg(&_head, node);
   if (old_head != nullptr) {
     node->set_next(old_head);
   } else {
     assert(_tail == nullptr, "invariant");
     _tail = node;
   }
-  return Atomic::add(&_count, size_t(1));
+  return AtomicAccess::add(&_count, size_t(1));
 }
 
 typename FreeListAllocator::NodeList FreeListAllocator::PendingList::take_all() {
-  NodeList result{Atomic::load(&_head), _tail, Atomic::load(&_count)};
-  Atomic::store(&_head, (FreeNode*)nullptr);
+  NodeList result{AtomicAccess::load(&_head), _tail, AtomicAccess::load(&_count)};
+  AtomicAccess::store(&_head, (FreeNode*)nullptr);
   _tail = nullptr;
-  Atomic::store(&_count, size_t(0));
+  AtomicAccess::store(&_count, size_t(0));
   return result;
 }
 
 size_t FreeListAllocator::PendingList::count() const {
-  return  Atomic::load(&_count);
+  return  AtomicAccess::load(&_count);
 }
 
 FreeListAllocator::FreeListAllocator(const char* name, FreeListConfig* config) :
@@ -85,7 +85,7 @@ void FreeListAllocator::delete_list(FreeNode* list) {
 }
 
 FreeListAllocator::~FreeListAllocator() {
-  uint index = Atomic::load(&_active_pending_list);
+  uint index = AtomicAccess::load(&_active_pending_list);
   NodeList pending_list = _pending_lists[index].take_all();
   delete_list(pending_list._head);
   delete_list(_free_list.pop_all());
@@ -93,18 +93,18 @@ FreeListAllocator::~FreeListAllocator() {
 
 // Drop existing nodes and reset all counters
 void FreeListAllocator::reset() {
-  uint index = Atomic::load(&_active_pending_list);
+  uint index = AtomicAccess::load(&_active_pending_list);
   _pending_lists[index].take_all();
   _free_list.pop_all();
   _free_count = 0;
 }
 
 size_t FreeListAllocator::free_count() const {
-  return Atomic::load(&_free_count);
+  return AtomicAccess::load(&_free_count);
 }
 
 size_t FreeListAllocator::pending_count() const {
-  uint index = Atomic::load(&_active_pending_list);
+  uint index = AtomicAccess::load(&_active_pending_list);
   return _pending_lists[index].count();
 }
 
@@ -124,7 +124,7 @@ void* FreeListAllocator::allocate() {
     // Decrement count after getting buffer from free list.  This, along
     // with incrementing count before adding to free list, ensures count
     // never underflows.
-    size_t count = Atomic::sub(&_free_count, 1u);
+    size_t count = AtomicAccess::sub(&_free_count, 1u);
     assert((count + 1) != 0, "_free_count underflow");
     return node;
   } else {
@@ -149,7 +149,7 @@ void FreeListAllocator::release(void* free_node) {
   // we're done with what might be the pending list to be transferred.
   {
     GlobalCounter::CriticalSection cs(Thread::current());
-    uint index = Atomic::load_acquire(&_active_pending_list);
+    uint index = AtomicAccess::load_acquire(&_active_pending_list);
     size_t count = _pending_lists[index].add(node);
     if (count <= _config->transfer_threshold()) return;
   }
@@ -164,17 +164,17 @@ void FreeListAllocator::release(void* free_node) {
 // in-progress transfer.
 bool FreeListAllocator::try_transfer_pending() {
   // Attempt to claim the lock.
-  if (Atomic::load(&_transfer_lock) || // Skip CAS if likely to fail.
-      Atomic::cmpxchg(&_transfer_lock, false, true)) {
+  if (AtomicAccess::load(&_transfer_lock) || // Skip CAS if likely to fail.
+      AtomicAccess::cmpxchg(&_transfer_lock, false, true)) {
     return false;
   }
   // Have the lock; perform the transfer.
 
   // Change which pending list is active.  Don't need an atomic RMW since
   // we have the lock and we're the only writer.
-  uint index = Atomic::load(&_active_pending_list);
+  uint index = AtomicAccess::load(&_active_pending_list);
   uint new_active = (index + 1) % ARRAY_SIZE(_pending_lists);
-  Atomic::release_store(&_active_pending_list, new_active);
+  AtomicAccess::release_store(&_active_pending_list, new_active);
 
   // Wait for all critical sections in the buffer life-cycle to complete.
   // This includes _free_list pops and adding to the now inactive pending
@@ -186,11 +186,11 @@ bool FreeListAllocator::try_transfer_pending() {
   size_t count = transfer_list._entry_count;
   if (count > 0) {
     // Update count first so no underflow in allocate().
-    Atomic::add(&_free_count, count);
+    AtomicAccess::add(&_free_count, count);
     _free_list.prepend(*transfer_list._head, *transfer_list._tail);
     log_trace(gc, freelist)
              ("Transferred %s pending to free: %zu", name(), count);
   }
-  Atomic::release_store(&_transfer_lock, false);
+  AtomicAccess::release_store(&_transfer_lock, false);
   return true;
 }

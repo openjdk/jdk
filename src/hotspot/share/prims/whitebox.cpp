@@ -2303,7 +2303,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
       jt->print_on(tty);
       jt->print_stack_on(tty);
       tty->cr();
-      Atomic::inc(&_num_threads_completed);
+      AtomicAccess::inc(&_num_threads_completed);
     }
 
   public:
@@ -2370,14 +2370,14 @@ WB_ENTRY(void, WB_LockAndBlock(JNIEnv* env, jobject wb, jboolean suspender))
     // We will deadlock here if we are 'suspender' and 'suspendee'
     // suspended in ~ThreadBlockInVM. This verifies we only suspend
     // at the right place.
-    while (Atomic::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
+    while (AtomicAccess::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
     assert(_emulated_lock == 1, "Must be locked");
 
     // Sleep much longer in suspendee to force situation where
     // 'suspender' is waiting above to acquire lock.
     os::naked_short_sleep(suspender ? 1 : 10);
   }
-  Atomic::store(&_emulated_lock, 0);
+  AtomicAccess::store(&_emulated_lock, 0);
 WB_END
 
 // Some convenience methods to deal with objects from java

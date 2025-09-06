@@ -440,7 +440,7 @@ class StubGenerator: public StubCodeGenerator {
   // be removed in the future.
 
   // Implementation of atomic_add(jint add_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint add_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint add_value)
   //
   // Arguments :
   //
@@ -492,7 +492,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_xchg(jint exchange_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint exchange_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint exchange_value)
   //
   // Arguments :
   //
@@ -542,7 +542,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_cmpxchg(jint exchange_value, volatile jint *dest, jint compare_value)
-  // used by Atomic::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
+  // used by AtomicAccess::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
   //
   // Arguments :
   //
@@ -582,7 +582,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
+  // Support for jlong AtomicAccess::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
   // reordered before by a wrapper to (jlong compare_value, jlong exchange_value, volatile jlong *dest)
   //
   // Arguments :

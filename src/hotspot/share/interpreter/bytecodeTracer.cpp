@@ -184,10 +184,10 @@ static Method* _method_currently_being_printed = nullptr;
 
 void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
-    BytecodePrinter printer(Atomic::load_acquire(&_method_currently_being_printed));
+    BytecodePrinter printer(AtomicAccess::load_acquire(&_method_currently_being_printed));
     printer.trace(method, bcp, tos, tos2, st);
     // Save method currently being printed to detect when method printing changes.
-    Atomic::release_store(&_method_currently_being_printed, method());
+    AtomicAccess::release_store(&_method_currently_being_printed, method());
   }
 }
 #endif

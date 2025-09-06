@@ -146,7 +146,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const oop o = AtomicAccess::load(p); // C1 PatchingStub may replace it concurrently.
       const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);

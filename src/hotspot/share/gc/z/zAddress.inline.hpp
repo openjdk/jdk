@@ -475,7 +475,7 @@ inline uintptr_t untype(zaddress addr) {
 inline void dereferenceable_test(zaddress addr) {
   if (ZVerifyOops && !is_null(addr)) {
     // Intentionally crash if the address is pointing into unmapped memory
-    (void)Atomic::load((int*)(uintptr_t)addr);
+    (void)AtomicAccess::load((int*)(uintptr_t)addr);
   }
 }
 #endif

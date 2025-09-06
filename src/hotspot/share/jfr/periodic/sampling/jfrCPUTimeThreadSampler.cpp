@@ -85,11 +85,11 @@ bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
   u4 elementIndex;
   do {
-    elementIndex = Atomic::load_acquire(&_head);
+    elementIndex = AtomicAccess::load_acquire(&_head);
     if (elementIndex >= _capacity) {
       return false;
     }
-  } while (Atomic::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
+  } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
   _data[elementIndex] = request;
   return true;
 }
@@ -102,11 +102,11 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
 static volatile u4 _lost_samples_sum = 0;
 
 u4 JfrCPUTimeTraceQueue::size() const {
-  return Atomic::load_acquire(&_head);
+  return AtomicAccess::load_acquire(&_head);
 }
 
 void JfrCPUTimeTraceQueue::set_size(u4 size) {
-  Atomic::release_store(&_head, size);
+  AtomicAccess::release_store(&_head, size);
 }
 
 u4 JfrCPUTimeTraceQueue::capacity() const {
@@ -128,20 +128,20 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
 }
 
 bool JfrCPUTimeTraceQueue::is_empty() const {
-  return Atomic::load_acquire(&_head) == 0;
+  return AtomicAccess::load_acquire(&_head) == 0;
 }
 
 u4 JfrCPUTimeTraceQueue::lost_samples() const {
-  return Atomic::load(&_lost_samples);
+  return AtomicAccess::load(&_lost_samples);
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples() {
-  Atomic::inc(&_lost_samples_sum);
-  Atomic::inc(&_lost_samples);
+  AtomicAccess::inc(&_lost_samples_sum);
+  AtomicAccess::inc(&_lost_samples);
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
-  return Atomic::xchg(&_lost_samples, (u4)0);
+  return AtomicAccess::xchg(&_lost_samples, (u4)0);
 }
 
 void JfrCPUTimeTraceQueue::resize(u4 capacity) {
@@ -159,7 +159,7 @@ void JfrCPUTimeTraceQueue::resize_for_period(u4 period_millis) {
 }
 
 void JfrCPUTimeTraceQueue::clear() {
-  Atomic::release_store(&_head, (u4)0);
+  AtomicAccess::release_store(&_head, (u4)0);
 }
 
 // A throttle is either a rate or a fixed period
@@ -219,7 +219,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   void recompute_period_if_needed();
 
   void set_throttle(JfrCPUSamplerThrottle& throttle);
-  int64_t get_sampling_period() const { return Atomic::load(&_current_sampling_period_ns); };
+  int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
 
@@ -265,12 +265,12 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(JfrCPUSamplerThrottle& throttle) :
 }
 
 void JfrCPUSamplerThread::trigger_async_processing_of_cpu_time_jfr_requests() {
-  Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
+  AtomicAccess::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
 }
 
 void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread() ||
-      !Atomic::load_acquire(&_signal_handler_installed)) {
+      !AtomicAccess::load_acquire(&_signal_handler_installed)) {
     return;
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
@@ -280,7 +280,7 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
   } else {
-    if (!Atomic::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
+    if (!AtomicAccess::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
       log_warning(jfr)("Failed to create timer for a thread");
     }
     tl->deallocate_cpu_time_jfr_queue();
@@ -311,8 +311,8 @@ void JfrCPUSamplerThread::start_thread() {
 }
 
 void JfrCPUSamplerThread::enroll() {
-  if (Atomic::cmpxchg(&_disenrolled, true, false)) {
-    Atomic::store(&_warned_about_timer_creation_failure, false);
+  if (AtomicAccess::cmpxchg(&_disenrolled, true, false)) {
+    AtomicAccess::store(&_warned_about_timer_creation_failure, false);
     initialize_active_signal_handler_counter();
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
@@ -326,9 +326,9 @@ void JfrCPUSamplerThread::enroll() {
 }
 
 void JfrCPUSamplerThread::disenroll() {
-  if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
+  if (!AtomicAccess::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
-    if (Atomic::load_acquire(&_signal_handler_installed)) {
+    if (AtomicAccess::load_acquire(&_signal_handler_installed)) {
       stop_timer();
       stop_signal_handlers();
     }
@@ -353,7 +353,7 @@ void JfrCPUSamplerThread::run() {
       last_recompute_check = os::javaTimeNanos();
     }
 
-    if (Atomic::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
+    if (AtomicAccess::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
       stackwalk_threads_in_native();
     }
     os::naked_sleep(100);
@@ -409,12 +409,12 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(biased);
   event.commit();
-  Atomic::inc(&count);
+  AtomicAccess::inc(&count);
   if (biased) {
-    Atomic::inc(&biased_count);
+    AtomicAccess::inc(&biased_count);
   }
-  if (Atomic::load(&count) % 1000 == 0) {
-    log_debug(jfr)("CPU thread sampler sent %zu events, lost %d, biased %zu\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum), Atomic::load(&biased_count));
+  if (AtomicAccess::load(&count) % 1000 == 0) {
+    log_debug(jfr)("CPU thread sampler sent %zu events, lost %d, biased %zu\n", AtomicAccess::load(&count), AtomicAccess::load(&_lost_samples_sum), AtomicAccess::load(&biased_count));
   }
 }
 
@@ -646,8 +646,8 @@ bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& t
 
 void JfrCPUSamplerThread::stop_signal_handlers() {
   // set the stop signal bit
-  Atomic::or_then_fetch(&_active_signal_handlers, STOP_SIGNAL_BIT, memory_order_acq_rel);
-  while (Atomic::load_acquire(&_active_signal_handlers) > STOP_SIGNAL_BIT) {
+  AtomicAccess::or_then_fetch(&_active_signal_handlers, STOP_SIGNAL_BIT, memory_order_acq_rel);
+  while (AtomicAccess::load_acquire(&_active_signal_handlers) > STOP_SIGNAL_BIT) {
     // wait for all signal handlers to finish
     os::naked_short_nanosleep(1000);
   }
@@ -656,21 +656,21 @@ void JfrCPUSamplerThread::stop_signal_handlers() {
 // returns false if the stop signal bit was set, true otherwise
 bool JfrCPUSamplerThread::increment_signal_handler_count() {
   // increment the count of active signal handlers
-  u4 old_value = Atomic::fetch_then_add(&_active_signal_handlers, (u4)1, memory_order_acq_rel);
+  u4 old_value = AtomicAccess::fetch_then_add(&_active_signal_handlers, (u4)1, memory_order_acq_rel);
   if ((old_value & STOP_SIGNAL_BIT) != 0) {
     // if the stop signal bit was set, we are not allowed to increment
-    Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+    AtomicAccess::dec(&_active_signal_handlers, memory_order_acq_rel);
     return false;
   }
   return true;
 }
 
 void JfrCPUSamplerThread::decrement_signal_handler_count() {
-  Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+  AtomicAccess::dec(&_active_signal_handlers, memory_order_acq_rel);
 }
 
 void JfrCPUSamplerThread::initialize_active_signal_handler_counter() {
-  Atomic::release_store(&_active_signal_handlers, (u4)0);
+  AtomicAccess::release_store(&_active_signal_handlers, (u4)0);
 }
 
 class VM_JFRInitializeCPUTimeSampler : public VM_Operation {
@@ -697,7 +697,7 @@ bool JfrCPUSamplerThread::init_timers() {
     log_error(jfr)("Conflicting SIGPROF handler found: %p. CPUTimeSample events will not be recorded", prev_handler);
     return false;
   }
-  Atomic::release_store(&_signal_handler_installed, true);
+  AtomicAccess::release_store(&_signal_handler_installed, true);
   VM_JFRInitializeCPUTimeSampler op(this);
   VMThread::execute(&op);
   return true;
@@ -735,17 +735,17 @@ void JfrCPUSamplerThread::recompute_period_if_needed() {
   int64_t current_period = get_sampling_period();
   int64_t period = _throttle.compute_sampling_period();
   if (period != current_period) {
-    Atomic::store(&_current_sampling_period_ns, period);
+    AtomicAccess::store(&_current_sampling_period_ns, period);
     update_all_thread_timers();
   }
 }
 
 void JfrCPUSamplerThread::set_throttle(JfrCPUSamplerThrottle& throttle) {
   _throttle = throttle;
-  if (_throttle.enabled() && Atomic::load_acquire(&_disenrolled) == false) {
+  if (_throttle.enabled() && AtomicAccess::load_acquire(&_disenrolled) == false) {
     recompute_period_if_needed();
   } else {
-    Atomic::store(&_current_sampling_period_ns, _throttle.compute_sampling_period());
+    AtomicAccess::store(&_current_sampling_period_ns, _throttle.compute_sampling_period());
   }
 }
 

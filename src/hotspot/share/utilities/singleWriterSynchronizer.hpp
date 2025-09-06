@@ -87,11 +87,11 @@ public:
 };
 
 inline uint SingleWriterSynchronizer::enter() {
-  return Atomic::add(&_enter, 2u);
+  return AtomicAccess::add(&_enter, 2u);
 }
 
 inline void SingleWriterSynchronizer::exit(uint enter_value) {
-  uint exit_value = Atomic::add(&_exit[enter_value & 1], 2u);
+  uint exit_value = AtomicAccess::add(&_exit[enter_value & 1], 2u);
   // If this exit completes a synchronize request, wakeup possibly
   // waiting synchronizer.  Read of _waiting_for must follow the _exit
   // update.

@@ -114,11 +114,11 @@ public:
   }
 
   int get_value() {
-    return Atomic::load_acquire(guard_addr());
+    return AtomicAccess::load_acquire(guard_addr());
   }
 
   void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
+    AtomicAccess::release_store(guard_addr(), value);
   }
 
   bool check_barrier(err_msg& msg) const;

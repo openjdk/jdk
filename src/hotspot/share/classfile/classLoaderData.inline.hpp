@@ -35,16 +35,16 @@
 
 inline void ClassLoaderData::set_next(ClassLoaderData* next) {
   assert(this->next() == nullptr, "only link once");
-  Atomic::store(&_next, next);
+  AtomicAccess::store(&_next, next);
 }
 
 inline ClassLoaderData* ClassLoaderData::next() const {
-  return Atomic::load(&_next);
+  return AtomicAccess::load(&_next);
 }
 
 inline void ClassLoaderData::unlink_next() {
   assert(next()->is_unloading(), "only remove unloading clds");
-  Atomic::store(&_next, _next->_next);
+  AtomicAccess::store(&_next, _next->_next);
 }
 
 inline void ClassLoaderData::set_unloading_next(ClassLoaderData* unloading_next) {

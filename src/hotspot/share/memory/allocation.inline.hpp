@@ -41,8 +41,8 @@ inline void inc_stat_counter(volatile julong* dest, julong add_value) {
 #ifdef _LP64
   *dest += add_value;
 #else
-  julong value = Atomic::load(dest);
-  Atomic::store(dest, value + add_value);
+  julong value = AtomicAccess::load(dest);
+  AtomicAccess::store(dest, value + add_value);
 #endif
 }
 #endif

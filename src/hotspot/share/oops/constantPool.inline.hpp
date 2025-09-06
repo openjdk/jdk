@@ -41,7 +41,7 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
   assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
 
   Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-  return Atomic::load_acquire(adr);
+  return AtomicAccess::load_acquire(adr);
 }
 
 inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {

@@ -43,7 +43,7 @@ inline bool nmethod::is_deopt_mh_entry(address pc) {
 
 // class ExceptionCache methods
 
-inline int ExceptionCache::count() { return Atomic::load_acquire(&_count); }
+inline int ExceptionCache::count() { return AtomicAccess::load_acquire(&_count); }
 
 address ExceptionCache::pc_at(int index) {
   assert(index >= 0 && index < count(),"");
@@ -56,7 +56,7 @@ address ExceptionCache::handler_at(int index) {
 }
 
 // increment_count is only called under lock, but there may be concurrent readers.
-inline void ExceptionCache::increment_count() { Atomic::release_store(&_count, _count + 1); }
+inline void ExceptionCache::increment_count() { AtomicAccess::release_store(&_count, _count + 1); }
 
 
 #endif // SHARE_CODE_NMETHOD_INLINE_HPP

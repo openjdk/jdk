@@ -440,9 +440,9 @@ void ThreadHeapSampler::sample(oop obj, HeapWord* tlab_top) {
 }
 
 int ThreadHeapSampler::get_sampling_interval() {
-  return Atomic::load_acquire(&_sampling_interval);
+  return AtomicAccess::load_acquire(&_sampling_interval);
 }
 
 void ThreadHeapSampler::set_sampling_interval(int sampling_interval) {
-  Atomic::release_store(&_sampling_interval, sampling_interval);
+  AtomicAccess::release_store(&_sampling_interval, sampling_interval);
 }

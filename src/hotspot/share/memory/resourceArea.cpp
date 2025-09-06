@@ -49,8 +49,8 @@ void ResourceArea::verify_has_resource_mark() {
     // is missing a ResourceMark, to avoid possible recursive errors
     // in error handling.
     static volatile bool reported = false;
-    if (!Atomic::load(&reported)) {
-      if (!Atomic::cmpxchg(&reported, false, true)) {
+    if (!AtomicAccess::load(&reported)) {
+      if (!AtomicAccess::cmpxchg(&reported, false, true)) {
         fatal("memory leak: allocating without ResourceMark");
       }
     }

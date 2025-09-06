@@ -1069,11 +1069,11 @@ bool JavaThread::is_lock_owned(address adr) const {
 }
 
 oop JavaThread::exception_oop() const {
-  return Atomic::load(&_exception_oop);
+  return AtomicAccess::load(&_exception_oop);
 }
 
 void JavaThread::set_exception_oop(oop o) {
-  Atomic::store(&_exception_oop, o);
+  AtomicAccess::store(&_exception_oop, o);
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {

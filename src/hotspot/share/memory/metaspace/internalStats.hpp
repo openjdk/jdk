@@ -108,7 +108,7 @@ public:
 
 // incrementors
 #define INCREMENTOR(name)           static void inc_##name() { _##name++; }
-#define INCREMENTOR_ATOMIC(name)    static void inc_##name() { Atomic::inc(&_##name); }
+#define INCREMENTOR_ATOMIC(name)    static void inc_##name() { AtomicAccess::inc(&_##name); }
   ALL_MY_COUNTERS(INCREMENTOR, INCREMENTOR_ATOMIC)
 #undef INCREMENTOR
 #undef INCREMENTOR_ATOMIC

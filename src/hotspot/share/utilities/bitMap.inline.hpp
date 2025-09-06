@@ -44,13 +44,13 @@ inline void BitMap::clear_bit(idx_t bit) {
 
 inline BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
   if (memory_order == memory_order_relaxed || memory_order == memory_order_release) {
-    return Atomic::load(addr);
+    return AtomicAccess::load(addr);
   } else {
     assert(memory_order == memory_order_acq_rel ||
            memory_order == memory_order_acquire ||
            memory_order == memory_order_conservative,
            "unexpected memory ordering");
-    return Atomic::load_acquire(addr);
+    return AtomicAccess::load_acquire(addr);
   }
 }
 
@@ -74,7 +74,7 @@ inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -93,7 +93,7 @@ inline bool BitMap::par_clear_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }

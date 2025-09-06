@@ -595,7 +595,7 @@ bool ZMark::flush() {
 }
 
 bool ZMark::try_terminate_flush() {
-  Atomic::inc(&_work_nterminateflush);
+  AtomicAccess::inc(&_work_nterminateflush);
   _terminate.set_resurrected(false);
 
   if (ZVerifyMarking) {
@@ -611,12 +611,12 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  if (Atomic::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
+  if (AtomicAccess::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  Atomic::inc(&_work_nproactiveflush);
+  AtomicAccess::inc(&_work_nproactiveflush);
 
   SuspendibleThreadSetLeaver sts_leaver;
   return flush();

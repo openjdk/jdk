@@ -36,7 +36,7 @@ inline markWord BasicLock::displaced_header() const {
 
 inline void BasicLock::set_displaced_header(markWord header) {
   assert(LockingMode == LM_LEGACY, "must be");
-  Atomic::store(&_metadata, header.value());
+  AtomicAccess::store(&_metadata, header.value());
 }
 
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {

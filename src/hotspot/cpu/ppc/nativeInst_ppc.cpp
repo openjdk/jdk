@@ -347,7 +347,7 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   // Finally patch out the jump.
   volatile juint *jump_addr = (volatile juint*)instr_addr;
   // Release not needed because caller uses invalidate_range after copying the remaining bytes.
-  //Atomic::release_store(jump_addr, *((juint*)code_buffer));
+  //AtomicAccess::release_store(jump_addr, *((juint*)code_buffer));
   *jump_addr = *((juint*)code_buffer); // atomically store code over branch instruction
   ICache::ppc64_flush_icache_bytes(instr_addr, NativeGeneralJump::instruction_size);
 }

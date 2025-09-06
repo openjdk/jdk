@@ -30,25 +30,25 @@
 #include "runtime/atomicAccess.hpp"
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
-  Atomic::add(&_direct_allocated, value, memory_order_relaxed);
+  AtomicAccess::add(&_direct_allocated, value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_num_plab_filled(size_t value) {
-  Atomic::add(&_num_plab_filled, value, memory_order_relaxed);
+  AtomicAccess::add(&_num_plab_filled, value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_num_direct_allocated(size_t value) {
-  Atomic::add(&_num_direct_allocated, value, memory_order_relaxed);
+  AtomicAccess::add(&_num_direct_allocated, value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {
-  Atomic::add(&_region_end_waste, value, memory_order_relaxed);
-  Atomic::inc(&_regions_filled, memory_order_relaxed);
+  AtomicAccess::add(&_region_end_waste, value, memory_order_relaxed);
+  AtomicAccess::inc(&_regions_filled, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {
-  Atomic::add(&_failure_used, used, memory_order_relaxed);
-  Atomic::add(&_failure_waste, waste, memory_order_relaxed);
+  AtomicAccess::add(&_failure_used, used, memory_order_relaxed);
+  AtomicAccess::add(&_failure_waste, waste, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_G1EVACSTATS_INLINE_HPP

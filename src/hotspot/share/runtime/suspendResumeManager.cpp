@@ -78,7 +78,7 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
     }
   }
 #endif
-  Atomic::store(&_suspended, is_suspend);
+  AtomicAccess::store(&_suspended, is_suspend);
 }
 
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {

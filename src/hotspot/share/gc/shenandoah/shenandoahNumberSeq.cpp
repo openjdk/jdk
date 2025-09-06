@@ -202,7 +202,7 @@ void BinaryMagnitudeSeq::clear() {
 }
 
 void BinaryMagnitudeSeq::add(size_t val) {
-  Atomic::add(&_sum, val);
+  AtomicAccess::add(&_sum, val);
 
   int mag = log2i_graceful(val) + 1;
 
@@ -217,7 +217,7 @@ void BinaryMagnitudeSeq::add(size_t val) {
     mag = BitsPerSize_t - 1;
   }
 
-  Atomic::add(&_mags[mag], (size_t)1);
+  AtomicAccess::add(&_mags[mag], (size_t)1);
 }
 
 size_t BinaryMagnitudeSeq::level(int level) const {

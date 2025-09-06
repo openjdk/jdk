@@ -444,7 +444,7 @@ public:
   virtual void do_field(oop base, oop* p) {
     _visited_base = to_zaddress(base);
     _visited_p = (volatile zpointer*)p;
-    _visited_ptr_pre_loaded = Atomic::load(_visited_p);
+    _visited_ptr_pre_loaded = AtomicAccess::load(_visited_p);
   }
 };
 
@@ -652,7 +652,7 @@ public:
 
   virtual void do_oop(oop* p_) {
     volatile zpointer* const p = (volatile zpointer*)p_;
-    const zpointer ptr = Atomic::load(p);
+    const zpointer ptr = AtomicAccess::load(p);
 
     // Order this load w.r.t. the was_remembered load which can race when
     // the remset scanning of the to-space object is concurrently forgetting
@@ -695,7 +695,7 @@ public:
     }
 
     OrderAccess::loadload();
-    if (Atomic::load(p) != ptr) {
+    if (AtomicAccess::load(p) != ptr) {
       // Order the was_remembered bitmap load w.r.t. the reload of the zpointer.
       // Sometimes the was_remembered() call above races with clearing of the
       // previous bits, when the to-space object is concurrently forgetting

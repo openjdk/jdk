@@ -76,7 +76,7 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   // happen before the creation of LogDecorations instance so
   // wait_until_no_readers() in LogConfiguration::configure_output()
   // synchronizes _decorations as well. The order is guaranteed by
-  // the implied memory order of Atomic::add().
+  // the implied memory order of AtomicAccess::add().
   LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
 

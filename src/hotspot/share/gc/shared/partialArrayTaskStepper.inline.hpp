@@ -52,7 +52,7 @@ PartialArrayTaskStepper::next_impl(size_t length, volatile size_t* index_addr) c
   // Because we limit the number of enqueued tasks to being no more than the
   // number of remaining chunks to process, we can use an atomic add for the
   // claim, rather than a CAS loop.
-  size_t start = Atomic::fetch_then_add(index_addr,
+  size_t start = AtomicAccess::fetch_then_add(index_addr,
                                         _chunk_size,
                                         memory_order_relaxed);
 

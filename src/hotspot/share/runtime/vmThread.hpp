@@ -88,7 +88,7 @@ class VMThread: public NamedThread {
   void loop();
 
  public:
-  bool is_running() const { return Atomic::load(&_is_running); }
+  bool is_running() const { return AtomicAccess::load(&_is_running); }
 
   // Tester
   bool is_VM_thread() const                      { return true; }

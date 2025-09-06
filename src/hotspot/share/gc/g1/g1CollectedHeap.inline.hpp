@@ -53,10 +53,10 @@ inline bool G1STWIsAliveClosure::do_object_b(oop p) {
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   count = 0;
-  if (Atomic::load(&_cur_claim) >= _list.length()) {
+  if (AtomicAccess::load(&_cur_claim) >= _list.length()) {
     return nullptr;
   }
-  uint claim = Atomic::fetch_then_add(&_cur_claim, _claim_step);
+  uint claim = AtomicAccess::fetch_then_add(&_cur_claim, _claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }

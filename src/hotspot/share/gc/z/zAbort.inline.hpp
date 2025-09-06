@@ -29,7 +29,7 @@
 #include "runtime/atomicAccess.hpp"
 
 inline bool ZAbort::should_abort() {
-  return Atomic::load(&_should_abort);
+  return AtomicAccess::load(&_should_abort);
 }
 
 #endif // SHARE_GC_Z_ZABORT_INLINE_HPP

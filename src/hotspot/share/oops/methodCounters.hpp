@@ -160,7 +160,7 @@ class MethodCounters : public Metadata {
       return true;
     }
     if (cur == nullptr || cur == reinterpret_cast<MethodTrainingData*>(method_training_data_sentinel())) {
-      return Atomic::cmpxchg(reinterpret_cast<MethodTrainingData**>(&_method_training_data), cur, td) == cur;
+      return AtomicAccess::cmpxchg(reinterpret_cast<MethodTrainingData**>(&_method_training_data), cur, td) == cur;
     }
     return false;
   }

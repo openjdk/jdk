@@ -76,9 +76,9 @@ jlong CPUTimeUsage::GC::stringdedup() {
 }
 
 bool CPUTimeUsage::Error::has_error() {
-  return Atomic::load(&_has_error);
+  return AtomicAccess::load(&_has_error);
 }
 
 void CPUTimeUsage::Error::mark_error() {
-  Atomic::store(&_has_error, true);
+  AtomicAccess::store(&_has_error, true);
 }

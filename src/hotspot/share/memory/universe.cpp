@@ -738,7 +738,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   int next;
   if ((_preallocated_out_of_memory_error_avail_count > 0) &&
       vmClasses::Throwable_klass()->is_initialized()) {
-    next = (int)Atomic::add(&_preallocated_out_of_memory_error_avail_count, -1);
+    next = (int)AtomicAccess::add(&_preallocated_out_of_memory_error_avail_count, -1);
     assert(next < (int)PreallocatedOutOfMemoryErrorCount, "avail count is corrupt");
   } else {
     next = -1;

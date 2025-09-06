@@ -307,7 +307,7 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
   if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
     if (is_SR) {
-      Atomic::store(&_sync_protocol_enabled_permanently, true);
+      AtomicAccess::store(&_sync_protocol_enabled_permanently, true);
     }
   }
   VTMS_transition_disable_for_all();
@@ -347,7 +347,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
   while (_SR_mode) { // suspender or resumer is a JvmtiVTMSTransitionDisabler monopolist
     ml.wait(10); // wait while there is an active suspender or resumer
   }
-  Atomic::inc(&_VTMS_transition_disable_for_one_count);
+  AtomicAccess::inc(&_VTMS_transition_disable_for_one_count);
   java_lang_Thread::inc_VTMS_transition_disable_count(vth());
 
   while (java_lang_Thread::is_in_VTMS_transition(vth())) {
@@ -377,7 +377,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_all() {
         ml.wait(10);   // Wait while there is any active jvmtiVTMSTransitionDisabler.
       }
     }
-    Atomic::inc(&_VTMS_transition_disable_for_all_count);
+    AtomicAccess::inc(&_VTMS_transition_disable_for_all_count);
 
     // Block while some mount/unmount transitions are in progress.
     // Debug version fails and prints diagnostic information.
@@ -415,7 +415,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_one() {
   }
   MonitorLocker ml(JvmtiVTMSTransition_lock);
   java_lang_Thread::dec_VTMS_transition_disable_count(vth());
-  Atomic::dec(&_VTMS_transition_disable_for_one_count);
+  AtomicAccess::dec(&_VTMS_transition_disable_for_one_count);
   if (_VTMS_transition_disable_for_one_count == 0) {
     ml.notify_all();
   }
@@ -435,7 +435,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_all() {
     if (_is_SR) {  // Disabler is suspender or resumer.
       _SR_mode = false;
     }
-    Atomic::dec(&_VTMS_transition_disable_for_all_count);
+    AtomicAccess::dec(&_VTMS_transition_disable_for_all_count);
     if (_VTMS_transition_disable_for_all_count == 0 || _is_SR) {
       ml.notify_all();
     }

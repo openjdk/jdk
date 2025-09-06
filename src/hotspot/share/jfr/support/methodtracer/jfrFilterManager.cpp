@@ -78,12 +78,12 @@ static void add_previous_filter(const JfrFilter* previous_filter) {
 }
 
 const JfrFilter* JfrFilterManager::current() {
-  return Atomic::load_acquire(&_current);
+  return AtomicAccess::load_acquire(&_current);
 }
 
 void JfrFilterManager::install(const JfrFilter* new_filter) {
   assert(new_filter != nullptr, "invariant");
-  add_previous_filter(Atomic::xchg(&_current, new_filter));
+  add_previous_filter(AtomicAccess::xchg(&_current, new_filter));
   new_filter->log("New filter installed");
 }
 

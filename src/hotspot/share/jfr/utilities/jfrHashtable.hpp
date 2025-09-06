@@ -59,9 +59,9 @@ class JfrHashtableBucket : public CHeapObj<mtTracing> {
   TableEntry* _entry;
 
   TableEntry* get_entry() const {
-    return (TableEntry*)Atomic::load_acquire(&_entry);
+    return (TableEntry*)AtomicAccess::load_acquire(&_entry);
   }
-  void set_entry(TableEntry* entry) { Atomic::release_store(&_entry, entry);}
+  void set_entry(TableEntry* entry) { AtomicAccess::release_store(&_entry, entry);}
   TableEntry** entry_addr() { return &_entry; }
 };
 

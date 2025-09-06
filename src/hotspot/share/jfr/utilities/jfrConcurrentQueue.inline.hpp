@@ -45,7 +45,7 @@ bool JfrConcurrentQueue<NodeType, AllocPolicy>::initialize() {
 
 template <typename NodeType, typename AllocPolicy>
 inline bool JfrConcurrentQueue<NodeType, AllocPolicy>::is_empty() const {
-  return Atomic::load_acquire(&_head._next) == &_tail;
+  return AtomicAccess::load_acquire(&_head._next) == &_tail;
 }
 
 template <typename NodeType, typename AllocPolicy>

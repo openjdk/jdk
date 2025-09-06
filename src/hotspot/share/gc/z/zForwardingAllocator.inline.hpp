@@ -38,7 +38,7 @@ inline bool ZForwardingAllocator::is_full() const {
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {
-  char* const addr = Atomic::fetch_then_add(&_top, size);
+  char* const addr = AtomicAccess::fetch_then_add(&_top, size);
   assert(addr + size <= _end, "Allocation should never fail");
   return addr;
 }

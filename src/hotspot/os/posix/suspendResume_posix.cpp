@@ -31,7 +31,7 @@
 SuspendResume::State SuspendResume::switch_state(SuspendResume::State from,
                                                  SuspendResume::State to)
 {
-  SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
+  SuspendResume::State result = AtomicAccess::cmpxchg(&_state, from, to);
   if (result == from) {
     // success
     return to;

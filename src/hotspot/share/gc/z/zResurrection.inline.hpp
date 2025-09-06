@@ -29,7 +29,7 @@
 #include "runtime/atomicAccess.hpp"
 
 inline bool ZResurrection::is_blocked() {
-  return Atomic::load(&_blocked);
+  return AtomicAccess::load(&_blocked);
 }
 
 #endif // SHARE_GC_Z_ZRESURRECTION_INLINE_HPP

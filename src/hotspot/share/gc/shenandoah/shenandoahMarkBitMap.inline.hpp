@@ -47,7 +47,7 @@ inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr, bool& was_upg
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = bit_mask(bit);
   const bm_word_t mask_weak = (bm_word_t)1 << (bit_in_word(bit) + 1);
-  bm_word_t old_val = Atomic::load(addr);
+  bm_word_t old_val = AtomicAccess::load(addr);
 
   do {
     const bm_word_t new_val = old_val | mask;
@@ -55,7 +55,7 @@ inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr, bool& was_upg
       assert(!was_upgraded, "Should be false already");
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
     if (cur_val == old_val) {
       was_upgraded = (cur_val & mask_weak) != 0;
       return true;      // Success.
@@ -72,7 +72,7 @@ inline bool ShenandoahMarkBitMap::mark_weak(HeapWord* heap_addr) {
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask_weak = (bm_word_t)1 << (bit_in_word(bit) + 1);
   const bm_word_t mask_strong = (bm_word_t)1 << bit_in_word(bit);
-  bm_word_t old_val = Atomic::load(addr);
+  bm_word_t old_val = AtomicAccess::load(addr);
 
   do {
     if ((old_val & mask_strong) != 0) {
@@ -82,7 +82,7 @@ inline bool ShenandoahMarkBitMap::mark_weak(HeapWord* heap_addr) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
     if (cur_val == old_val) {
       return true;      // Success.
     }

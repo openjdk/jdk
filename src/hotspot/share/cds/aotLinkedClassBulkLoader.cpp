@@ -57,7 +57,7 @@ bool AOTLinkedClassBulkLoader::class_preloading_finished() {
     // The ConstantPools of preloaded classes have references to other preloaded classes. We don't
     // want any Java code (including JVMCI compiler) to use these classes until all of them
     // are loaded.
-    return Atomic::load_acquire(&_all_completed);
+    return AtomicAccess::load_acquire(&_all_completed);
   }
 }
 
@@ -90,7 +90,7 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
   }
 
   _app_completed = true;
-  Atomic::release_store(&_all_completed, true);
+  AtomicAccess::release_store(&_all_completed, true);
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {

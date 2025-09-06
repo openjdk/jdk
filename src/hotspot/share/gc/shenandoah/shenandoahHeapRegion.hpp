@@ -216,7 +216,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return Atomic::load(&_state); }
+  RegionState state()              const { return AtomicAccess::load(&_state); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();

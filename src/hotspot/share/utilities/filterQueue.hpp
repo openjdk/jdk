@@ -44,7 +44,7 @@ class FilterQueue {
 
   Node* _first;
   Node* load_first() {
-    return Atomic::load_acquire(&_first);
+    return AtomicAccess::load_acquire(&_first);
   }
 
   static bool match_all(E d) { return true; }

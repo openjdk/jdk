@@ -30,11 +30,11 @@
 #include "runtime/atomicAccess.hpp"
 
 inline ObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
-  return Atomic::load_acquire(&_higher_dimension);
+  return AtomicAccess::load_acquire(&_higher_dimension);
 }
 
 inline void ArrayKlass::release_set_higher_dimension(ObjArrayKlass* k) {
-  Atomic::release_store(&_higher_dimension, k);
+  AtomicAccess::release_store(&_higher_dimension, k);
 }
 
 #endif // SHARE_OOPS_ARRAYKLASS_INLINE_HPP

@@ -107,7 +107,7 @@ void ShenandoahHeapRegionCounters::update() {
   if (ShenandoahRegionSampling) {
     jlong current = nanos_to_millis(os::javaTimeNanos());
     jlong last = _last_sample_millis;
-    if (current - last > ShenandoahRegionSamplingRate && Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
+    if (current - last > ShenandoahRegionSamplingRate && AtomicAccess::cmpxchg(&_last_sample_millis, last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       _status->set_value(encode_heap_status(heap));

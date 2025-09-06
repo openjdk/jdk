@@ -82,7 +82,7 @@ class VirtualMemory {
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
   inline size_t peak_size() const {
-    return Atomic::load(&_peak_size);
+    return AtomicAccess::load(&_peak_size);
   }
 };
 

@@ -181,7 +181,7 @@ public:
   }
 
   u1 flags() const {
-    return Atomic::load_acquire(&_header._struct._flags);
+    return AtomicAccess::load_acquire(&_header._struct._flags);
   }
 
   u2 bci() const {
@@ -214,7 +214,7 @@ public:
         // already set.
         return false;
       }
-    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
+    } while (compare_value != AtomicAccess::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
     return true;
   }
 
@@ -229,7 +229,7 @@ public:
         return false;
       }
       exchange_value = compare_value & ~bit;
-    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
+    } while (compare_value != AtomicAccess::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
     return true;
   }
 

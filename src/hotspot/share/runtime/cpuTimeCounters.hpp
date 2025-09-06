@@ -64,7 +64,7 @@ private:
 
   // A long which atomically tracks how much CPU time has been spent doing GC
   // since the last time we called `publish_total_cpu_time()`.
-  // It is incremented using Atomic::add() to prevent race conditions, and
+  // It is incremented using AtomicAccess::add() to prevent race conditions, and
   // is added to the `gc_total` CPUTimeType at the end of GC.
   volatile jlong _gc_total_cpu_time_diff;
 

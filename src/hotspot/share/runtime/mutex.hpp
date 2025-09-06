@@ -104,7 +104,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // the low-level _lock, or to null before it has released the _lock. Accesses by any thread other
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
-  void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
+  void raw_set_owner(Thread* new_owner) { AtomicAccess::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
   PlatformMonitor _lock;                 // Native monitor implementation
@@ -202,7 +202,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   // Current owner - note not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock
-  Thread* owner() const         { return Atomic::load(&_owner); }
+  Thread* owner() const         { return AtomicAccess::load(&_owner); }
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
   bool owned_by_self() const;
 

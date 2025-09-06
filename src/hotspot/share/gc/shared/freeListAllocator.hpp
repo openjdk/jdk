@@ -66,11 +66,11 @@ class FreeListAllocator {
 
     FreeNode() : _next (nullptr) { }
 
-    FreeNode* next() { return Atomic::load(&_next); }
+    FreeNode* next() { return AtomicAccess::load(&_next); }
 
     FreeNode* volatile* next_addr() { return &_next; }
 
-    void set_next(FreeNode* next) { Atomic::store(&_next, next); }
+    void set_next(FreeNode* next) { AtomicAccess::store(&_next, next); }
   };
 
   struct NodeList {

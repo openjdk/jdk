@@ -35,7 +35,7 @@ template <typename ObjectFunctionT>
 inline void ZUncoloredRoot::barrier(ObjectFunctionT function, zaddress_unsafe* p, uintptr_t color) {
   z_verify_safepoints_are_blocked();
 
-  const zaddress_unsafe addr = Atomic::load(p);
+  const zaddress_unsafe addr = AtomicAccess::load(p);
   assert_is_valid(addr);
 
   // Nothing to do for nulls

@@ -571,7 +571,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
-      if (Atomic::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
+      if (AtomicAccess::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
         break;
       }
     }

@@ -35,7 +35,7 @@ inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (_next_allocate >= _num_slots) {
     return nullptr;
   }
-  uint result = Atomic::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
+  uint result = AtomicAccess::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
   if (result >= _num_slots) {
     return nullptr;
   }
@@ -48,8 +48,8 @@ inline G1MonotonicArena::Segment* G1MonotonicArena::SegmentFreeList::get() {
 
   Segment* result = _list.pop();
   if (result != nullptr) {
-    Atomic::dec(&_num_segments, memory_order_relaxed);
-    Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
+    AtomicAccess::dec(&_num_segments, memory_order_relaxed);
+    AtomicAccess::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
   }
   return result;
 }

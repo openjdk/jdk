@@ -144,7 +144,7 @@ private:
   const ZHeapIteratorContext& _context;
 
   oop load_oop(oop* p) {
-    const oop o = Atomic::load(p);
+    const oop o = AtomicAccess::load(p);
     check_is_valid_zaddress(o);
     return RawAccess<>::oop_load(p);
   }

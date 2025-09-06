@@ -54,7 +54,7 @@ public:
 
   virtual void do_oop(oop* p) {
     // Create local, aligned root
-    zaddress_unsafe addr = Atomic::load(ZUncoloredRoot::cast(p));
+    zaddress_unsafe addr = AtomicAccess::load(ZUncoloredRoot::cast(p));
     ZUncoloredRoot::process_no_keepalive(&addr, _color);
 
     if (!is_null(addr) && ZHeap::heap()->is_old(safe(addr)) && !ZHeap::heap()->is_object_live(safe(addr))) {

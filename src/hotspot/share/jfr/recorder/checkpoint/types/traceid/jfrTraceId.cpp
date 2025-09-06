@@ -43,7 +43,7 @@ static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
   do {
     compare_value = *dest;
     exchange_value = compare_value + stride;
-  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
+  } while (AtomicAccess::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 

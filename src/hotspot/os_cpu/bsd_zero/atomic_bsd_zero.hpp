@@ -32,7 +32,7 @@
 // Implementation of class atomic
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
@@ -44,7 +44,7 @@ struct Atomic::PlatformAdd {
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
@@ -56,7 +56,7 @@ inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
+inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
@@ -68,7 +68,7 @@ inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
@@ -80,7 +80,7 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
@@ -92,11 +92,11 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
 
 // No direct support for cmpxchg of bytes; emulate using int.
 template<>
-struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgByteUsingInt {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
@@ -111,7 +111,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
+inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
@@ -134,7 +134,7 @@ inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 template<>
 template<typename T>
-inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   T dest;
   __atomic_load(const_cast<T*>(src), &dest, __ATOMIC_RELAXED);
@@ -143,7 +143,7 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
+inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   __atomic_store(dest, &store_value, __ATOMIC_RELAXED);

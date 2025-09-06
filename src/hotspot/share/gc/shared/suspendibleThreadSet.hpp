@@ -59,7 +59,7 @@ private:
 
 public:
   // Returns true if an suspension is in progress.
-  static bool should_yield() { return Atomic::load(&_suspend_all); }
+  static bool should_yield() { return AtomicAccess::load(&_suspend_all); }
 
   // Suspends the current thread if a suspension is in progress.
   static void yield() {

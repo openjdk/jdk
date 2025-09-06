@@ -127,7 +127,7 @@ class LogOutputList {
     void operator++(int) {
       // FIXME: memory_order_consume could be used here.
       // Atomic access on the reading side for LogOutputList.
-      _current = Atomic::load_acquire(&_current->_next);
+      _current = AtomicAccess::load_acquire(&_current->_next);
     }
 
     bool operator!=(const LogOutputNode *ref) const {
@@ -143,7 +143,7 @@ class LogOutputList {
     increase_readers();
     // FIXME: memory_order_consume could be used here.
     // Atomic access on the reading side for LogOutputList.
-    return Iterator(this, Atomic::load_acquire(&_level_start[level]));
+    return Iterator(this, AtomicAccess::load_acquire(&_level_start[level]));
   }
 
   LogOutputNode* end() const {
