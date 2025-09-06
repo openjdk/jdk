@@ -1,0 +1,3 @@
+InterruptedExceptionTest2.java:38:40: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest2
+InterruptedExceptionTest2.java:62:40: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest5
+2 warnings
