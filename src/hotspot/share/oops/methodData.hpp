@@ -29,7 +29,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"

@@ -26,7 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"

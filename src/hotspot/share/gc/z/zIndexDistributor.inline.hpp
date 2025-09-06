@@ -28,7 +28,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"

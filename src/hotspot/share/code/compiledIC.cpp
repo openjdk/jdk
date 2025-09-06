@@ -32,7 +32,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

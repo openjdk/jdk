@@ -34,7 +34,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"

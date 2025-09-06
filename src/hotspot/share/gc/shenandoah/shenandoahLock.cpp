@@ -24,7 +24,7 @@
 
 
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"

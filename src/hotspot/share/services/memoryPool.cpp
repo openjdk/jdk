@@ -29,7 +29,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"

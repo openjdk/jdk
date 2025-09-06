@@ -34,7 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/events.hpp"

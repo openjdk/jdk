@@ -48,7 +48,7 @@
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");

@@ -29,7 +29,7 @@
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/javaThread.hpp"

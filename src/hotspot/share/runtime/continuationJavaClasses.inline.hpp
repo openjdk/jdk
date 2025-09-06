@@ -31,7 +31,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline oop jdk_internal_vm_Continuation::scope(oop continuation) {
   return continuation->obj_field(_scope_offset);

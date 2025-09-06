@@ -42,7 +42,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"

@@ -51,7 +51,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"

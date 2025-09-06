@@ -23,7 +23,7 @@
  */
 
 #include "gc/shared/workerUtils.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // *** WorkerThreadsBarrierSync

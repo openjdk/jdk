@@ -46,7 +46,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"

@@ -45,7 +45,7 @@
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 

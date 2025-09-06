@@ -26,7 +26,7 @@
 
 #include "gc/z/zForwardingAllocator.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 inline size_t ZForwardingAllocator::size() const {

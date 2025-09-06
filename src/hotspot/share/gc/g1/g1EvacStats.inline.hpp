@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1EvacStats.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
   Atomic::add(&_direct_allocated, value, memory_order_relaxed);

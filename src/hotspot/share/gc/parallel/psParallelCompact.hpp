@@ -34,7 +34,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 
 class ParallelScavengeHeap;

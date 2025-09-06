@@ -27,7 +27,7 @@
 #define SHARE_MEMORY_METASPACE_INTERNALSTATS_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;

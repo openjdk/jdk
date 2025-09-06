@@ -27,7 +27,7 @@
 
 #include "runtime/safepointMechanism.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"

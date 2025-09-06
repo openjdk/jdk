@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"

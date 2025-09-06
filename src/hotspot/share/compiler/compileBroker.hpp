@@ -30,7 +30,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI

@@ -28,7 +28,7 @@
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
 inline size_t ShenandoahMarkBitMap::address_to_index(const HeapWord* addr) const {

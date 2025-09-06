@@ -28,7 +28,7 @@
 #include "utilities/concurrentHashTable.hpp"
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"

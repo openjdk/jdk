@@ -47,7 +47,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"

@@ -40,7 +40,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"

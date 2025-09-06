@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

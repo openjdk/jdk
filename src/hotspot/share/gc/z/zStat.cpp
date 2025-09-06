@@ -38,7 +38,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/timer.hpp"

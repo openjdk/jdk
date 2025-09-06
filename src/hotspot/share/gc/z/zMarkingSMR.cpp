@@ -24,7 +24,7 @@
 #include "gc/z/zMarkingSMR.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 ZMarkingSMR::ZMarkingSMR()
   : _worker_states(),

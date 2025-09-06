@@ -25,7 +25,7 @@
 #ifndef OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 #define OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {

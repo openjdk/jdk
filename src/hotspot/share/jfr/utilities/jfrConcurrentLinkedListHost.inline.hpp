@@ -29,7 +29,7 @@
 
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /*

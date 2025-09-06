@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "suspendResume_posix.hpp"
 
 /* try to switch state from state "from" to state "to"

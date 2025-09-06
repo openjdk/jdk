@@ -31,7 +31,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 template <bool concurrent, bool is_const>

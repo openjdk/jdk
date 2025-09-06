@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"

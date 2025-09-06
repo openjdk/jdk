@@ -56,7 +56,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"

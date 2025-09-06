@@ -28,7 +28,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

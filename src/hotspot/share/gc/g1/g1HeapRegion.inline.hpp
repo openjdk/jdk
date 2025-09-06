@@ -35,7 +35,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"

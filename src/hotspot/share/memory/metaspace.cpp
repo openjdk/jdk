@@ -54,7 +54,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"

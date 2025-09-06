@@ -30,7 +30,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"

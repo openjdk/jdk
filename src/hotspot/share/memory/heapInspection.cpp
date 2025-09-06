@@ -34,7 +34,7 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

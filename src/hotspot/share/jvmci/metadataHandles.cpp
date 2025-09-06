@@ -23,7 +23,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "jvmci/metadataHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 jmetadata MetadataHandles::allocate_metadata_handle(Metadata* obj) {
   assert(obj->is_valid() && obj->is_metadata(), "must be");

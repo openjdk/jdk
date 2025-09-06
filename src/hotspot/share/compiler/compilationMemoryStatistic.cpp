@@ -37,7 +37,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/checkedCast.hpp"

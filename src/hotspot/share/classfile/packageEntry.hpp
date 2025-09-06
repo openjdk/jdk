@@ -28,7 +28,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"

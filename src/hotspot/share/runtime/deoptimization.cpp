@@ -61,7 +61,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"

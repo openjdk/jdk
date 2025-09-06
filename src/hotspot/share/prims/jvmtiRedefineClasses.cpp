@@ -57,7 +57,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/methodComparator.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

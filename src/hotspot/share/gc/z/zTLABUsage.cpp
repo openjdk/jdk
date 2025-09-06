@@ -23,7 +23,7 @@
 
 #include "gc/z/zTLABUsage.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 ZTLABUsage::ZTLABUsage()
   : _used(0),

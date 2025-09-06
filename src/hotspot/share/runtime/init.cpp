@@ -36,7 +36,7 @@
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"

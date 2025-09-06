@@ -24,7 +24,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 

@@ -25,7 +25,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"

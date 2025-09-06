@@ -30,7 +30,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 #ifdef LINUX

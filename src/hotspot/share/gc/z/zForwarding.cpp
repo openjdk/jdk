@@ -29,7 +29,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 
 //

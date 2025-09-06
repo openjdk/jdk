@@ -34,7 +34,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

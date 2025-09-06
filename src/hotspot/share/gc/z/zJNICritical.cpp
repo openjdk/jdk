@@ -24,7 +24,7 @@
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"

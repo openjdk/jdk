@@ -32,7 +32,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"

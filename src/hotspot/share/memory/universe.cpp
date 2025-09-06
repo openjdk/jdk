@@ -70,7 +70,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"

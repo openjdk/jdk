@@ -27,7 +27,7 @@
 
 #include "oops/arrayKlass.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline ObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
   return Atomic::load_acquire(&_higher_dimension);

@@ -33,7 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"

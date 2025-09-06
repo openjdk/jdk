@@ -27,7 +27,7 @@
 
 #include "utilities/nonblockingQueue.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
 T* NonblockingQueue<T, next_ptr>::next(const T& node) {

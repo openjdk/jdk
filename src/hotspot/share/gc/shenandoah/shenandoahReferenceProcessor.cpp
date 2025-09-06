@@ -33,7 +33,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();

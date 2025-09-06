@@ -31,7 +31,7 @@
 #include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"

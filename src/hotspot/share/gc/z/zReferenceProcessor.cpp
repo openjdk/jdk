@@ -35,7 +35,7 @@
 #include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 

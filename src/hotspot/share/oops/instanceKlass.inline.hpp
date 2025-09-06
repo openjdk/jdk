@@ -31,7 +31,7 @@
 #include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 

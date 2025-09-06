@@ -30,7 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "jni.h"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"

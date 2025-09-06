@@ -26,7 +26,7 @@
 
 #include "gc/z/zResurrection.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline bool ZResurrection::is_blocked() {
   return Atomic::load(&_blocked);

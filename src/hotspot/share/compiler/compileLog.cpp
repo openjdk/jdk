@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 

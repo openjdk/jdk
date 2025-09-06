@@ -33,7 +33,7 @@
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"

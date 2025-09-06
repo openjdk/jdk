@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_MUTEX_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/semaphore.hpp"
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)

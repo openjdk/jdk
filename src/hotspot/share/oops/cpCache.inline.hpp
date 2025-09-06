@@ -31,7 +31,7 @@
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // Constructor
 inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_references_map,

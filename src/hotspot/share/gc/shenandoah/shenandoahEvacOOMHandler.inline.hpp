@@ -29,7 +29,7 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 jint ShenandoahEvacOOMCounter::load_acquire() {
   return Atomic::load_acquire(&_bits);

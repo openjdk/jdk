@@ -56,7 +56,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"

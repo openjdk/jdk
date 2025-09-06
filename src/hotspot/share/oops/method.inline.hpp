@@ -31,7 +31,7 @@
 #include "code/nmethod.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline address Method::from_compiled_entry() const {
   return Atomic::load_acquire(&_from_compiled_entry);

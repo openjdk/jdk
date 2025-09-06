@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"

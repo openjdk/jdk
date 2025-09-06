@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
 #define SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class JfrSignal {
  private:

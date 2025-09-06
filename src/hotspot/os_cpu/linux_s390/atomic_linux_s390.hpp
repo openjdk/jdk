@@ -26,7 +26,7 @@
 #ifndef OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
 #define OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 

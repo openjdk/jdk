@@ -29,7 +29,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/bitMap.inline.hpp"

@@ -34,7 +34,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"

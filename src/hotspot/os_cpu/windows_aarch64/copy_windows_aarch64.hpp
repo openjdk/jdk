@@ -26,7 +26,7 @@
 #ifndef OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
 #define OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 #include <string.h>
 

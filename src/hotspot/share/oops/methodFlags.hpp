@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_METHODFLAGS_HPP
 #define SHARE_OOPS_METHODFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

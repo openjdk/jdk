@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_SINGLEWRITERSYNCHRONIZER_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

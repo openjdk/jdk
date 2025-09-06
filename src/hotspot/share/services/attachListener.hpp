@@ -26,7 +26,7 @@
 #define SHARE_SERVICES_ATTACHLISTENER_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"

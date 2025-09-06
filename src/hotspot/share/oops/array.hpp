@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_ARRAY_HPP
 #define SHARE_OOPS_ARRAY_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"

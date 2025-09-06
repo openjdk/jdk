@@ -25,7 +25,7 @@
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"

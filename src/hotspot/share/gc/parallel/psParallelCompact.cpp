@@ -81,7 +81,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"

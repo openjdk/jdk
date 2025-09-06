@@ -86,7 +86,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"

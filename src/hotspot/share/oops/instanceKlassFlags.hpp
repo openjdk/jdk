@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class ClassLoaderData;
 

@@ -27,7 +27,7 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "oops/instanceKlass.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/sizes.hpp"
 

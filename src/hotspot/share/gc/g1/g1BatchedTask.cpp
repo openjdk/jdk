@@ -26,7 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/growableArray.hpp"
 
 void G1AbstractSubTask::record_work_item(uint worker_id, uint index, size_t count) {

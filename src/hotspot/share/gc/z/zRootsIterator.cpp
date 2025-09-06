@@ -29,7 +29,7 @@
 #include "gc/z/zStat.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"

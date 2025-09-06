@@ -28,7 +28,7 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1EvacFailureRegions::G1EvacFailureRegions() :

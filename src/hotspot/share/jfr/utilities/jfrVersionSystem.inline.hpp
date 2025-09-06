@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrVersionSystem.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 
 inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(nullptr) {

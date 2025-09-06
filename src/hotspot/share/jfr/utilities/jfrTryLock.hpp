@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRTRYLOCK_HPP
 #define SHARE_JFR_UTILITIES_JFRTRYLOCK_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"

@@ -43,7 +43,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

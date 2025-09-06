@@ -28,7 +28,7 @@
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class AsyncLogWriter::Locker : public StackObj {
   Thread*& _holder;

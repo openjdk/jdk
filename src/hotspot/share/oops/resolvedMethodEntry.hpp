@@ -26,7 +26,7 @@
 #define SHARE_OOPS_RESOLVEDMETHODENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/sizes.hpp"
 
 // ResolvedMethodEntry contains the resolution information for the invoke bytecodes

@@ -28,7 +28,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"

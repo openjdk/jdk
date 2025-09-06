@@ -38,7 +38,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.hpp"

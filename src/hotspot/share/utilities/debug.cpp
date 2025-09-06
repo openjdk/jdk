@@ -39,7 +39,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"

@@ -29,7 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

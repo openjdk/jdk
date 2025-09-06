@@ -24,7 +24,7 @@
 #include "gc/z/zNMethodTableEntry.hpp"
 #include "gc/z/zNMethodTableIteration.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

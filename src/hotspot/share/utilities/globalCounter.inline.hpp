@@ -27,7 +27,7 @@
 
 #include "utilities/globalCounter.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 inline GlobalCounter::CSContext

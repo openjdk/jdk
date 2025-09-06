@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/threadIdentifier.hpp"
 
 // starting at 3, excluding reserved values defined in ObjectMonitor.hpp

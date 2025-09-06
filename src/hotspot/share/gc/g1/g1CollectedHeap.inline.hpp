@@ -41,7 +41,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 

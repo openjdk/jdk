@@ -26,7 +26,7 @@
 
 #include "gc/z/zWorkers.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline bool ZWorkers::should_worker_resize() {
   return Atomic::load(&_requested_nworkers) != 0;

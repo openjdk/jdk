@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

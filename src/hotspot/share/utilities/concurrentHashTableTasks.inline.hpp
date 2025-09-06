@@ -27,7 +27,7 @@
 
 // No concurrentHashTableTasks.hpp
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 

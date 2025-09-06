@@ -25,7 +25,7 @@
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
   volatile uintptr_t* const value_addr = (volatile uintptr_t*)addr;

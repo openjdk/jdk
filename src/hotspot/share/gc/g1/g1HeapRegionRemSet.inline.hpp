@@ -30,7 +30,7 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 void G1HeapRegionRemSet::set_state_untracked() {

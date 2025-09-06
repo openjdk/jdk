@@ -23,7 +23,7 @@
  */
 
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 const size_t max_lease_factor = 2;
 JfrStorageControl::JfrStorageControl(size_t global_count_total, size_t in_memory_discard_threshold) :

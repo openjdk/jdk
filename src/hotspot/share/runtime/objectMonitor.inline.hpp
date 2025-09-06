@@ -31,7 +31,7 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/lockStack.inline.hpp"

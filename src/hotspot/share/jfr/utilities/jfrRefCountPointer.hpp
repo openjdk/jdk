@@ -26,7 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRREFCOUNTPOINTER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 class RefCountHandle {

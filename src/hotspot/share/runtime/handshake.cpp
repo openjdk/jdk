@@ -29,7 +29,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

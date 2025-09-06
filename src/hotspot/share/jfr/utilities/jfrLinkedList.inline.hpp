@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrLinkedList.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename NodeType, typename AllocPolicy>
 JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}

@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_VMTHREAD_HPP
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/perfDataTypes.hpp"

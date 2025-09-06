@@ -34,7 +34,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"

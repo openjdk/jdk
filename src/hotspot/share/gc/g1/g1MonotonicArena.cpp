@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalCounter.inline.hpp"
 

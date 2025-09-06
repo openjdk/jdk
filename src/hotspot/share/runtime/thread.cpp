@@ -36,7 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/nonJavaThread.hpp"

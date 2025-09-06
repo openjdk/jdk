@@ -27,7 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/memoryUsage.hpp"

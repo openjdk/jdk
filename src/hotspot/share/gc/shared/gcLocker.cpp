@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"

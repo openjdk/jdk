@@ -29,7 +29,7 @@
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 void PLABStats::add_allocated(size_t v) {
   Atomic::add(&_allocated, v);

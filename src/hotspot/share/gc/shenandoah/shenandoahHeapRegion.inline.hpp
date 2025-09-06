@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest &req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();

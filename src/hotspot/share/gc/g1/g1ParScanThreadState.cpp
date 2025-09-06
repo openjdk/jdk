@@ -42,7 +42,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/globalDefinitions.hpp"

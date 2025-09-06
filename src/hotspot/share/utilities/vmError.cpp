@@ -43,7 +43,7 @@
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"

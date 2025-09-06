@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_COUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_COUNTERS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -41,7 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"

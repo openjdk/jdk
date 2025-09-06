@@ -28,7 +28,7 @@
 
 #include "gc/g1/g1MonotonicArena.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 inline void* G1MonotonicArena::Segment::allocate_slot() {

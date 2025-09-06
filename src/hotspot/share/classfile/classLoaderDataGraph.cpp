@@ -36,7 +36,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"

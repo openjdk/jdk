@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"

@@ -31,7 +31,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ kit.

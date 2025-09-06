@@ -48,7 +48,7 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/prefetch.inline.hpp"

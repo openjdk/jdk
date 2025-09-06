@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_COPY_HPP
 
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"

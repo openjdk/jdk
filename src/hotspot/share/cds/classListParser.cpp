@@ -47,7 +47,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"

@@ -41,7 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"

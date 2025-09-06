@@ -28,7 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 class ReservedSpace;

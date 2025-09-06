@@ -27,7 +27,7 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 typedef jbyte ShenandoahSharedValue;
 

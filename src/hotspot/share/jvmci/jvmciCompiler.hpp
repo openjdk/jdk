@@ -26,7 +26,7 @@
 
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class JVMCICompileState;
 

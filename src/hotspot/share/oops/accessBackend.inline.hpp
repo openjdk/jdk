@@ -31,7 +31,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 
 #include <type_traits>

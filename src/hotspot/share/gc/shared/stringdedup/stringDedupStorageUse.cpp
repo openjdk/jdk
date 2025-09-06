@@ -23,7 +23,7 @@
  */
 
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.inline.hpp"

@@ -31,7 +31,7 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

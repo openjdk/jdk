@@ -29,7 +29,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {

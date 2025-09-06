@@ -28,7 +28,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.hpp"
 
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef VM_LITTLE_ENDIAN

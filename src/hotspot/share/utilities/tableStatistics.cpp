@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"

@@ -53,7 +53,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"

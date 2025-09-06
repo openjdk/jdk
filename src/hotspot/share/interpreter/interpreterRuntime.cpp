@@ -55,7 +55,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"

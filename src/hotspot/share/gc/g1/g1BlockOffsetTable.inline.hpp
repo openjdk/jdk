@@ -31,7 +31,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   assert(_reserved.contains(addr), "invalid address");

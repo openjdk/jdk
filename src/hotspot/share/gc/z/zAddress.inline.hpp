@@ -30,7 +30,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"

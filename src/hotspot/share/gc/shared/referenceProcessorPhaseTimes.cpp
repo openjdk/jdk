@@ -30,7 +30,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)

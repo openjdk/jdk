@@ -27,7 +27,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/spinYield.hpp"

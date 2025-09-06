@@ -33,7 +33,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"

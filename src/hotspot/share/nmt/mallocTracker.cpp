@@ -35,7 +35,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"

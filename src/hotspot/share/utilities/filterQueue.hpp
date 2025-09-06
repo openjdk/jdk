@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_FILTERQUEUE_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // The FilterQueue is FIFO with the ability to skip over queued items.
 // The skipping is controlled by using a filter when popping.

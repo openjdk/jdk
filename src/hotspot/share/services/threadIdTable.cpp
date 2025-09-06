@@ -24,7 +24,7 @@
 */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"

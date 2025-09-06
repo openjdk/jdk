@@ -26,7 +26,7 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRBUFFER_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/sizes.hpp"
 
 //

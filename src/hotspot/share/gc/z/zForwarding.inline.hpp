@@ -36,7 +36,7 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 

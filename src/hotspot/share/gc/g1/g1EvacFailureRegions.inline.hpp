@@ -29,7 +29,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 uint G1EvacFailureRegions::num_regions_evac_failed() const {
   return Atomic::load(&_num_regions_evac_failed);

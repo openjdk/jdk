@@ -73,7 +73,7 @@
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"

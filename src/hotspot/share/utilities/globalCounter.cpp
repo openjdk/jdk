@@ -23,7 +23,7 @@
  */
 
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmThread.hpp"

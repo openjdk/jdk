@@ -32,7 +32,7 @@
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"

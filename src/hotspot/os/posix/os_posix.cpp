@@ -31,7 +31,7 @@
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

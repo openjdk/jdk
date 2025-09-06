@@ -41,7 +41,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"

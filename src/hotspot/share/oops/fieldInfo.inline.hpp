@@ -30,7 +30,7 @@
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {

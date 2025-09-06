@@ -31,7 +31,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zUtils.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 

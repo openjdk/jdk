@@ -28,7 +28,7 @@
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.inline.hpp"
 
 JvmtiAgent* JvmtiAgentList::_head = nullptr;

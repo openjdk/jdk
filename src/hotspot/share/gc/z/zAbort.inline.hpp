@@ -26,7 +26,7 @@
 
 #include "gc/z/zAbort.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline bool ZAbort::should_abort() {
   return Atomic::load(&_should_abort);

@@ -24,7 +24,7 @@
 
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"

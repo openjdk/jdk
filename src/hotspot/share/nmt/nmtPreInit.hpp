@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #ifdef ASSERT
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #endif
 
 class outputStream;

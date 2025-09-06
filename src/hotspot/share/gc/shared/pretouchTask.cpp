@@ -25,7 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/pretouchTask.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"

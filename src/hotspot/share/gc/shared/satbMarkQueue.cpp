@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"

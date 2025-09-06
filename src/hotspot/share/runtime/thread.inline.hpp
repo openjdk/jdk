@@ -29,7 +29,7 @@
 #include "runtime/thread.hpp"
 
 #include "gc/shared/tlab_globals.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"

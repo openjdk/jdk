@@ -28,7 +28,7 @@
 #include "nmt/allocationSite.hpp"
 #include "nmt/regionsTree.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 

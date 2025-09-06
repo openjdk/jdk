@@ -37,7 +37,7 @@
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"

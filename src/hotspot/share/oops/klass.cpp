@@ -50,7 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"

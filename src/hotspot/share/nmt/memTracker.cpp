@@ -34,7 +34,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"

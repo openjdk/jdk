@@ -27,7 +27,7 @@
 #include "gc/z/zArray.hpp"
 
 #include "gc/z/zLock.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 ZArraySlice<T>::ZArraySlice(T* data, int len)

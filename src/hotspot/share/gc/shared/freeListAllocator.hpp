@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 

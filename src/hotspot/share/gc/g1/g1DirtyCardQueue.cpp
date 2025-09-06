@@ -37,7 +37,7 @@
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"

@@ -27,7 +27,7 @@
 
 #include "utilities/bitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"

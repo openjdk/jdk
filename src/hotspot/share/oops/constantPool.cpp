@@ -60,7 +60,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"

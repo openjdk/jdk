@@ -27,7 +27,7 @@
 
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 template <typename T>

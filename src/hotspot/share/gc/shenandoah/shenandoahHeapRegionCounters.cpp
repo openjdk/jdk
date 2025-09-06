@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/defaultStream.hpp"
 

@@ -25,7 +25,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/vmError.hpp"
 

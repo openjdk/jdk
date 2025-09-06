@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"

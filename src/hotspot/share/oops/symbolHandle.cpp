@@ -22,7 +22,7 @@
  */
 
 #include "oops/symbolHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 Symbol* volatile TempSymbolCleanupDelayer::_queue[QueueSize] = {};
 volatile uint TempSymbolCleanupDelayer::_index = 0;

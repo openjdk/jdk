@@ -31,7 +31,7 @@
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
   guarantee(tag_at(which).is_klass(), "Corrupted constant pool");

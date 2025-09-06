@@ -26,7 +26,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"

@@ -30,7 +30,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

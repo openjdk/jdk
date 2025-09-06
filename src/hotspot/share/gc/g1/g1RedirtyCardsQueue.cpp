@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

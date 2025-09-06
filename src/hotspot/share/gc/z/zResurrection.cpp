@@ -22,7 +22,7 @@
  */
 
 #include "gc/z/zResurrection.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 

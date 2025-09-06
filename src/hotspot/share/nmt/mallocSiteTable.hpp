@@ -29,7 +29,7 @@
 #include "nmt/allocationSite.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 

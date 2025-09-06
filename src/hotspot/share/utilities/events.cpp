@@ -26,7 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"

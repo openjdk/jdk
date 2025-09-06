@@ -48,7 +48,7 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "utilities/debug.hpp"
 

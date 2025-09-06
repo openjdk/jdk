@@ -24,7 +24,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"

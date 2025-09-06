@@ -78,7 +78,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"

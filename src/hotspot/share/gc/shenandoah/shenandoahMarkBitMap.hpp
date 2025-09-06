@@ -28,7 +28,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahMarkBitMap {

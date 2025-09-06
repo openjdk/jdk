@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 const uint64_t JFR_NODE_LOGICAL_EXCISION_BIT = 1;
 const uint64_t JFR_NODE_LOGICAL_INSERTION_BIT = 2;

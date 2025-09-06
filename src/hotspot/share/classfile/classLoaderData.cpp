@@ -72,7 +72,7 @@
 #include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"

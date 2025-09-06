@@ -26,7 +26,7 @@
 
 #include "gc/z/zBitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 

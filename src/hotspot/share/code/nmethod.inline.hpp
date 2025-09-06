@@ -28,7 +28,7 @@
 #include "code/nmethod.hpp"
 
 #include "code/nativeInst.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.hpp"
 
 inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
