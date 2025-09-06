@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@
  * @library /test/lib ..
  * @run main TestAES
  */
+import jtreg.SkippedException;
+import sun.security.util.SecurityProviderConstants;
+
 import java.security.Provider;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import static sun.security.util.SecurityProviderConstants.*;
 
 public class TestAES extends PKCS11Test {
 
@@ -53,17 +54,16 @@ public class TestAES extends PKCS11Test {
         try {
             kg = KeyGenerator.getInstance(ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + ALGO, nsae);
         }
 
         // first try w/o setting a key length and check if the generated key
         // length matches
         SecretKey key = kg.generateKey();
         byte[] keyValue = key.getEncoded();
-        if (key.getEncoded().length != getDefAESKeySize() >> 3) {
+        if (key.getEncoded().length != SecurityProviderConstants.getDefAESKeySize() >> 3) {
             throw new RuntimeException("Default AES key length should be " +
-                    getDefAESKeySize());
+                                       SecurityProviderConstants.getDefAESKeySize());
         }
 
         for (int keySize : new int[] { 16, 32, 64, 128, 256, 512, 1024 }) {
