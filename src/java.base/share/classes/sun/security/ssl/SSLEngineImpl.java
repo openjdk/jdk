@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.security.AlgorithmConstraints;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,7 +50,8 @@ import javax.net.ssl.SSLSession;
  *
  * @author Brad Wetmore
  */
-final class SSLEngineImpl extends SSLEngine implements SSLTransport {
+final class SSLEngineImpl extends SSLEngine
+        implements SSLTransport, UserConstrained {
     private final SSLContextImpl        sslContext;
     final TransportContext              conContext;
     private final ReentrantLock         engineLock = new ReentrantLock();
@@ -1177,6 +1179,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         } else {
             return new SSLException(msg, taskThrown);
         }
+    }
+
+    @Override
+    public AlgorithmConstraints getUserSpecifiedAlgorithmConstraints() {
+        HandshakeContext hc = conContext.handshakeContext;
+        return hc == null ? null
+                : hc.sslConfig.userSpecifiedAlgorithmConstraints;
     }
 
     /**
