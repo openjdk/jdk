@@ -557,8 +557,8 @@ file system locations may be directories, JAR files or JMOD files.
     section of the `javadoc` command documentation.
 
 <a id="option-Xlint">`-Xlint`</a>
-:   Enables all lint warning categories. In this release, enabling all available
-    lint warning categories is recommended.
+:   Enables recommended lint warning categories. In this release, all available
+    lint warning categories are recommended.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
 :   Enables and/or disables lint warning categories using the one or more of the keys described
