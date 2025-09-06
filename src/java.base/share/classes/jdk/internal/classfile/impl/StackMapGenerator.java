@@ -184,6 +184,7 @@ public final class StackMapGenerator {
             ITEM_DOUBLE_2ND = 14,
             ITEM_BOGUS = -1;
 
+    // Ranges represented by these constants are inclusive on both ends
     public static final int
             SAME_FRAME_END = 63,
             SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
