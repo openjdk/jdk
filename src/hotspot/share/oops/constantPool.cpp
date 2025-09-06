@@ -697,8 +697,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   AtomicAccess::release_store(adr, k);
 
   jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                  (jbyte)JVM_CONSTANT_UnresolvedClass,
-                                  (jbyte)JVM_CONSTANT_Class);
+                                        (jbyte)JVM_CONSTANT_UnresolvedClass,
+                                        (jbyte)JVM_CONSTANT_Class);
 
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
@@ -1036,8 +1036,8 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // We save this because jvmti can add classes to the bootclass path after
     // this error, so it needs to get the same error if the error is first.
     jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                    (jbyte)tag.value(),
-                                    (jbyte)error_tag);
+                                          (jbyte)tag.value(),
+                                          (jbyte)error_tag);
     if (old_tag != error_tag && old_tag != tag.value()) {
       // MethodHandles and MethodType doesn't change to resolved version.
       assert(this_cp->tag_at(cp_index).is_klass(), "Wrong tag value");

@@ -72,9 +72,9 @@ struct AtomicAccess::PlatformAdd {
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
 
   if (order != memory_order_relaxed) {
@@ -123,9 +123,9 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 
   int32_t old_value;
@@ -155,8 +155,8 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
 template<size_t byte_size>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
-                                                     T exchange_value,
-                                                     atomic_memory_order order) const {
+                                                           T exchange_value,
+                                                           atomic_memory_order order) const {
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
   // If we add xchg for sub word and are using older compiler
   // it must be added here due to not using lib atomic.
@@ -181,9 +181,9 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
 template<size_t byte_size>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                        T compare_value,
-                                                        T exchange_value,
-                                                        atomic_memory_order order) const {
+                                                              T compare_value,
+                                                              T exchange_value,
+                                                              atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
   STATIC_ASSERT(byte_size > 4);

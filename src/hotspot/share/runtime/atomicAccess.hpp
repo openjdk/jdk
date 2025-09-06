@@ -913,13 +913,13 @@ inline void AtomicAccess::release_store_fence(volatile D* p, T v) {
 
 template<typename D, typename I>
 inline D AtomicAccess::add(D volatile* dest, I add_value,
-                     atomic_memory_order order) {
+                           atomic_memory_order order) {
   return AddImpl<D, I>::add_then_fetch(dest, add_value, order);
 }
 
 template<typename D, typename I>
 inline D AtomicAccess::fetch_then_add(D volatile* dest, I add_value,
-                                atomic_memory_order order) {
+                                      atomic_memory_order order) {
   return AddImpl<D, I>::fetch_then_add(dest, add_value, order);
 }
 
@@ -997,15 +997,15 @@ inline D AtomicAccess::add_using_helper(Fn fn, D volatile* dest, I add_value) {
 
 template<typename D, typename U, typename T>
 inline D AtomicAccess::cmpxchg(D volatile* dest,
-                         U compare_value,
-                         T exchange_value,
-                         atomic_memory_order order) {
+                               U compare_value,
+                               T exchange_value,
+                               atomic_memory_order order) {
   return CmpxchgImpl<D, U, T>()(dest, compare_value, exchange_value, order);
 }
 
 template<typename D, typename T>
 inline bool AtomicAccess::replace_if_null(D* volatile* dest, T* value,
-                                    atomic_memory_order order) {
+                                          atomic_memory_order order) {
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
@@ -1085,9 +1085,9 @@ struct AtomicAccess::CmpxchgImpl<
 
 template<typename Type, typename Fn, typename T>
 inline T AtomicAccess::cmpxchg_using_helper(Fn fn,
-                                      T volatile* dest,
-                                      T compare_value,
-                                      T exchange_value) {
+                                            T volatile* dest,
+                                            T compare_value,
+                                            T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
@@ -1096,24 +1096,24 @@ inline T AtomicAccess::cmpxchg_using_helper(Fn fn,
 }
 
 inline uint32_t AtomicAccess::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
-                                                             uint8_t b,
-                                                             uint32_t idx) {
+                                                                   uint8_t b,
+                                                                   uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
   return (n & ~(static_cast<uint32_t>(0xff) << bitsIdx))
           | (static_cast<uint32_t>(b) << bitsIdx);
 }
 
 inline uint8_t AtomicAccess::CmpxchgByteUsingInt::get_byte_in_int(uint32_t n,
-                                                            uint32_t idx) {
+                                                                  uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
   return (uint8_t)(n >> bitsIdx);
 }
 
 template<typename T>
 inline T AtomicAccess::CmpxchgByteUsingInt::operator()(T volatile* dest,
-                                                 T compare_value,
-                                                 T exchange_value,
-                                                 atomic_memory_order order) const {
+                                                       T compare_value,
+                                                       T exchange_value,
+                                                       atomic_memory_order order) const {
   STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
   uint8_t canon_compare_value = compare_value;
@@ -1204,8 +1204,8 @@ struct AtomicAccess::XchgImpl<
 
 template<typename Type, typename Fn, typename T>
 inline T AtomicAccess::xchg_using_helper(Fn fn,
-                                   T volatile* dest,
-                                   T exchange_value) {
+                                         T volatile* dest,
+                                         T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   // Notice the swapped order of arguments. Change when/if stubs are rewritten.
   return PrimitiveConversions::cast<T>(
@@ -1221,8 +1221,8 @@ inline D AtomicAccess::xchg(volatile D* dest, T exchange_value, atomic_memory_or
 template<size_t byte_size>
 template<typename T>
 inline T AtomicAccess::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+                                                               T exchange_value,
+                                                               atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
 
   T old_value;

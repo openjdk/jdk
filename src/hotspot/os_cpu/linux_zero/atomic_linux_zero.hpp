@@ -44,7 +44,7 @@ struct AtomicAccess::PlatformAdd {
 template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
-                                                atomic_memory_order order) const {
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
@@ -56,7 +56,7 @@ inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_va
 template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
-                                                atomic_memory_order order) const {
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
@@ -68,8 +68,8 @@ inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_va
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   FULL_MEM_BARRIER;
   T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
@@ -80,8 +80,8 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   FULL_MEM_BARRIER;
   T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
@@ -96,9 +96,9 @@ struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgByteUsingInt {};
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 
   T value = compare_value;
@@ -112,9 +112,9 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
 
   FULL_MEM_BARRIER;
@@ -144,7 +144,7 @@ inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const 
 template<>
 template<typename T>
 inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
-                                                 T store_value) const {
+                                                       T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }

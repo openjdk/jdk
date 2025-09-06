@@ -189,9 +189,9 @@ inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value, T>::type
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
   return AtomicAccess::cmpxchg(reinterpret_cast<volatile T*>(addr),
-                         compare_value,
-                         new_value,
-                         memory_order_relaxed);
+                               compare_value,
+                               new_value,
+                               memory_order_relaxed);
 }
 
 template <DecoratorSet decorators>
@@ -200,9 +200,9 @@ inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
   return AtomicAccess::cmpxchg(reinterpret_cast<volatile T*>(addr),
-                         compare_value,
-                         new_value,
-                         memory_order_conservative);
+                               compare_value,
+                               new_value,
+                               memory_order_conservative);
 }
 
 template <DecoratorSet decorators>
@@ -211,7 +211,7 @@ inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
 RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
   return AtomicAccess::xchg(reinterpret_cast<volatile T*>(addr),
-                      new_value);
+                            new_value);
 }
 
 class RawAccessBarrierArrayCopy: public AllStatic {

@@ -106,7 +106,7 @@ struct AtomicAccess::PlatformAdd {
 template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
@@ -132,7 +132,7 @@ inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_va
 template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
@@ -157,8 +157,8 @@ inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_va
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
   // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
@@ -196,8 +196,8 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
@@ -236,9 +236,9 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
@@ -306,9 +306,9 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
@@ -356,9 +356,9 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across

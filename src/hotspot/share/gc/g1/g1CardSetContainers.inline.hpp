@@ -155,8 +155,8 @@ inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType
   EntryCountType num_entries = AtomicAccess::load(_num_entries_addr) & EntryMask;
   while (true) {
     EntryCountType old_value = AtomicAccess::cmpxchg(_num_entries_addr,
-                                               num_entries,
-                                               (EntryCountType)(num_entries | LockBitMask));
+                                                     num_entries,
+                                                     (EntryCountType)(num_entries | LockBitMask));
     if (old_value == num_entries) {
       // Succeeded locking the array.
       _local_num_entries = num_entries;

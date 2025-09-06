@@ -50,7 +50,7 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
   assert((*thread->get_rcu_counter() & COUNTER_ACTIVE) == COUNTER_ACTIVE, "must be in critical section");
   // Restore the counter value from before the associated begin.
   AtomicAccess::release_store(thread->get_rcu_counter(),
-                        static_cast<uintx>(context));
+                              static_cast<uintx>(context));
 }
 
 class GlobalCounter::CriticalSection {

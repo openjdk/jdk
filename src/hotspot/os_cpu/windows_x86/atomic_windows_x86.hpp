@@ -57,8 +57,8 @@ struct AtomicAccess::PlatformAdd {
   template<>                                                              \
   template<typename D, typename I>                                        \
   inline D AtomicAccess::PlatformAdd<sizeof(IntrinsicType)>::add_then_fetch(D volatile* dest, \
-                                                                      I add_value, \
-                                                                      atomic_memory_order order) const { \
+                                                                            I add_value, \
+                                                                            atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
     return PrimitiveConversions::cast<D>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
@@ -74,8 +74,8 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
   template<>                                                              \
   template<typename T>                                                    \
   inline T AtomicAccess::PlatformXchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
-                                                                   T exchange_value, \
-                                                                   atomic_memory_order order) const { \
+                                                                         T exchange_value, \
+                                                                         atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
     return PrimitiveConversions::cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
@@ -95,9 +95,9 @@ DEFINE_INTRINSIC_XCHG(InterlockedExchange64, __int64)
   template<>                                                              \
   template<typename T>                                                    \
   inline T AtomicAccess::PlatformCmpxchg<sizeof(IntrinsicType)>::operator()(T volatile* dest, \
-                                                                      T compare_value, \
-                                                                      T exchange_value, \
-                                                                      atomic_memory_order order) const { \
+                                                                            T compare_value, \
+                                                                            T exchange_value, \
+                                                                            atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
     return PrimitiveConversions::cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
