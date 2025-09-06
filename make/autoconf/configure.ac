@@ -285,6 +285,9 @@ BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
 # Setup use of icecc if requested
 BPERF_SETUP_ICECC
 
+# Setup use of -march=armv8-a+sve when building libsleef
+BPERF_SETUP_SVE
+
 # Can the C/C++ compiler use precompiled headers?
 BPERF_SETUP_PRECOMPILED_HEADERS
 

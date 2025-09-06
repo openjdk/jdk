@@ -945,37 +945,58 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       AC_LANG_PUSH(C)
       OLD_CFLAGS="$CFLAGS"
       CFLAGS="$CFLAGS -march=armv8-a+sve"
+      # check the compiler and binutils support sve or not
       AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
           [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
-          ])],
-          [
-            AC_MSG_RESULT([yes])
-            $2SVE_CFLAGS="-march=armv8-a+sve"
-            # Switching the initialization mode with gcc from 'pattern' to 'zero'
-            # avoids the use of unsupported `__builtin_clear_padding` for variable
-            # length aggregates
-            if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
-              INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
-              FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
-                IF_TRUE: [
-                  $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
-                ]
-              )
-            fi
+            #include <arm_sve.h>
+            svfloat64_t a() {}
           ],
           [
-            AC_MSG_RESULT([no])
-            $2SVE_CFLAGS=""
-          ]
+            svint32_t r = svdup_n_s32(1)
+          ])],
+          [sve_supported=yes],
+          [sve_supported=no]
       )
+      AC_MSG_RESULT([$sve_supported])
+      $2SVE_CFLAGS=""
+      if test "x$enable_aarch64_sve" = "xyes"; then
+        # enable sve explicitly
+        if test "x$sve_supported" = "xyes"; then
+          $2SVE_CFLAGS="-march=armv8-a+sve"
+        else
+          AC_MSG_ERROR([--enable-aarch64-sve=yes but compiler does not support SVE])
+        fi
+      elif test "x$enable_aarch64_sve" = "x"; then
+        # enable sve automaticly
+        if test "x$sve_supported" = "xyes"; then
+          $2SVE_CFLAGS="-march=armv8-a+sve"
+        fi
+      fi
+      # Switching the initialization mode with gcc from 'pattern' to 'zero'
+      # avoids the use of unsupported `__builtin_clear_padding` for variable
+      # length aggregates
+      if test "x$$2SVE_CFLAGS" != "x" && test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
+        INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
+        FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
+          IF_TRUE: [
+            $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
+          ]
+        )
+      fi
       CFLAGS="$OLD_CFLAGS"
       AC_LANG_POP(C)
     fi
   fi
   AC_SUBST($2SVE_CFLAGS)
+])
+
+AC_DEFUN([BPERF_SETUP_SVE],
+[
+  UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
+      RESULT: enable_aarch64_sve,
+      DESC: [Use SVE when compile libsleef])
+  AC_SUBST(enable_aarch64_sve)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
