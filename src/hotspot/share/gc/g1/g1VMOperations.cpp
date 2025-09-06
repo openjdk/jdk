@@ -84,7 +84,7 @@ void VM_G1TryInitiateConcMark::doit() {
   GCCauseSetter x(g1h, _gc_cause);
 
   // Record for handling by caller.
-  _terminating = g1h->concurrent_mark_is_terminating();
+  _terminating = g1h->is_shutting_down();
 
   _mark_in_progress = g1h->collector_state()->mark_in_progress();
   _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
