@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
@@ -88,12 +89,11 @@ public final class FipsModeTLS12 extends SecmodTest {
         try {
             initialize();
         } catch (Exception e) {
-            System.out.println("Test skipped: failure during" +
-                    " initialization");
             if (enableDebug) {
                 System.out.println(e);
             }
-            return;
+            throw new SkippedException("Test skipped: failure during" +
+                                       " initialization");
         }
 
         if (shouldRun()) {
@@ -105,8 +105,8 @@ public final class FipsModeTLS12 extends SecmodTest {
 
             System.out.println("Test PASS - OK");
         } else {
-            System.out.println("Test skipped: TLS 1.2 mechanisms" +
-                    " not supported by current SunPKCS11 back-end");
+            throw new SkippedException("Test skipped: TLS 1.2 mechanisms" +
+                                       " not supported by current SunPKCS11 back-end");
         }
     }
 
