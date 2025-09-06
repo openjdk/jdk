@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "unittest.hpp"
 
 // These tests of Atomic only verify functionality.  They don't verify atomicity.

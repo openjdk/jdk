@@ -26,7 +26,7 @@
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/memoryReserver.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 

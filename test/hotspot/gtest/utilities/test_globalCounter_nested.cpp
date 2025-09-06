@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/spinYield.hpp"
