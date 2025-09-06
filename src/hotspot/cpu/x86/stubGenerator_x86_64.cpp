@@ -550,8 +550,7 @@ address StubGenerator::generate_get_previous_sp() {
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  __ movptr(rax, rsp);
-  __ addptr(rax, 8); // return address is at the top of the stack.
+  __ lea(rax, Address(rsp, 8)); // return address is at the top of the stack.
   __ ret(0);
 
   return start;
