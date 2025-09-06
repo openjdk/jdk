@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_ATOMIC_HPP
-#define SHARE_RUNTIME_ATOMIC_HPP
+#ifndef SHARE_RUNTIME_ATOMICACCESS_HPP
+#define SHARE_RUNTIME_ATOMICACCESS_HPP
 
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -1232,4 +1232,4 @@ inline T Atomic::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
   return old_value;
 }
 
-#endif // SHARE_RUNTIME_ATOMIC_HPP
+#endif // SHARE_RUNTIME_ATOMICACCESS_HPP
