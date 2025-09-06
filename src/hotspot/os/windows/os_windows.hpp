@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,18 @@ public:
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();
+
+  // Output structure for query_process_memory_info(); see GetProcessMemoryInfo
+  struct process_info_t {
+    size_t working_set_size;
+    size_t working_set_size_peak;
+    size_t commit_charge;
+    size_t commit_charge_peak;
+    unsigned pagefaults;
+  };
+
+  // Attempts to query memory information about the current process and return it in the output structure.
+  static bool query_process_memory_info(process_info_t* info);
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

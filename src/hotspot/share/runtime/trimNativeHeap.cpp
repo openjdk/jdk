@@ -24,6 +24,7 @@
  *
  */
 
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -36,6 +37,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/ticks.hpp"
 #include "utilities/vmError.hpp"
 
 class NativeHeapTrimmerThread : public NamedThread {
@@ -137,24 +139,21 @@ class NativeHeapTrimmerThread : public NamedThread {
 
     os::size_change_t sc = { 0, 0 };
     LogTarget(Info, trimnative) lt;
-    const bool logging_enabled = lt.is_enabled();
-
-    // We only collect size change information if we are logging; save the access to procfs otherwise.
-    if (os::trim_native_heap(logging_enabled ? &sc : nullptr)) {
+    const Ticks ticks1 = Ticks::now();
+    if (os::trim_native_heap(sc)) {
+      const Ticks ticks2 = Ticks::now();
+      const double duration = (ticks2.microseconds() - ticks1.microseconds()) / 1000.0; // millis
       _num_trims_performed++;
-      if (logging_enabled) {
-        double t2 = now();
+      if (lt.is_enabled()) {
         if (sc.after != SIZE_MAX) {
-          const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
-          const char sign = sc.after < sc.before ? '-' : '+';
-          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ") %.3fms",
+          const size_t recovered = MIN2((size_t)0, sc.after - sc.before);
+          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (-" PROPERFMT ") (%.3fms)",
                                _num_trims_performed,
-                               PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
-                               to_ms(t2 - t1));
+                               PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), PROPERFMTARGS(recovered), duration);
+          JFR_ONLY(EventLibcHeapTrim::commit(ticks1, ticks2, false, duration, sc.before, sc.after, recovered);)
         } else {
           log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): complete (no details) %.3fms",
-                               _num_trims_performed,
-                               to_ms(t2 - t1));
+                               _num_trims_performed, duration);
         }
       }
     }

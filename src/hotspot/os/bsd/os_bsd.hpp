@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,17 @@ class os::Bsd {
   // mach_absolute_time
   static mach_timebase_info_data_t _timebase_info;
   static volatile uint64_t         _max_abstime;
+
+  // Output structure for query_process_memory_info()
+  struct process_info_t {
+    // see mach_task_basic_info_data_t
+    size_t vsize;      // current virtual size
+    size_t rss;        // current resident set size
+    size_t rssmax;     // max resident set size
+  };
+
+  // Attempts to query memory information about the current process and return it in the output structure.
+  static bool query_process_memory_info(process_info_t* info);
 #endif
 
   static GrowableArray<int>* _cpu_to_node;
