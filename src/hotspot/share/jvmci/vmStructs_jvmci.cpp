@@ -223,6 +223,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
+  nonstatic_field(InstanceKlass,               _record_components,                            Array<RecordComponent*>*)              \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
@@ -710,6 +711,7 @@
   declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
   declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
   declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_has_default_annotations)       \
   declare_constant(ConstMethodFlags::_misc_caller_sensitive)              \
   declare_constant(ConstMethodFlags::_misc_is_hidden)                     \
   declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \

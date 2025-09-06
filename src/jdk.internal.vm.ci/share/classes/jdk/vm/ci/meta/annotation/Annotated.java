@@ -20,44 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import java.lang.reflect.AnnotatedElement;
 
 /**
- * Represents an error constant within {@link AnnotationData}.
- *
- * Similar to {@code sun.reflect.annotation.ExceptionProxy}.
+ * Represents a program element such as a method, constructor, field or class for which annotations
+ * may be directly present. This API is analogous to {@link java.lang.reflect.AnnotatedElement}
+ * except that it only supports {@linkplain AnnotatedElement#getDeclaredAnnotations() declared annotations}.
  */
-public final class ErrorData {
-    private final String description;
+public interface Annotated {
 
     /**
-     * Creates an error constant.
-     *
-     * @param description description of the error
+     * Gets the class file info for the annotations directly present on this element
+     * or {@code null} if no such info exists.
      */
-    public ErrorData(String description) {
-        this.description = description;
+    default AnnotationsInfo getDeclaredAnnotationInfo() {
+        return null;
     }
 
-    @Override
-    public String toString() {
-        return description;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof ErrorData) {
-            ErrorData that = (ErrorData) obj;
-            return this.description.equals(that.description);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return description.hashCode();
+    /**
+     * Gets the class file info for the type annotations associated with this element
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getTypeAnnotationInfo() {
+        return null;
     }
 }
