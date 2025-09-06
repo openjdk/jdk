@@ -454,11 +454,12 @@ private:
   template<bool IS_TLAB>
   HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
-  bool try_allocate_directly_allocatable_regions(uint& start_index,
+  bool try_allocate_directly_allocatable_regions(uint start_index,
                                                  bool replace_all_eligible_regions,
                                                  ShenandoahAllocRequest &req,
                                                  HeapWord* &obj,
-                                                 bool &in_new_region);
+                                                 bool &in_new_region,
+                                                 uint& new_start_index);
   template<bool IS_MUTATOR, bool IS_OLD>
   uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
 
