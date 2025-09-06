@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,8 +511,6 @@ PipelineForm::PipelineForm()
   ,  _stagecnt              (0)
   ,  _classlist             ()
   ,  _classcnt              (0)
-  ,  _noplist               ()
-  ,  _nopcnt                (0)
   ,  _variableSizeInstrs    (false)
   ,  _branchHasDelaySlot    (false)
   ,  _maxInstrsPerBundle    (0)
@@ -533,7 +531,6 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
   const char *res;
   const char *stage;
   const char *cls;
-  const char *nop;
   int count = 0;
 
   fprintf(fp,"\nPipeline:");
@@ -574,9 +571,6 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
   for ( _classlist.reset(); (cls = _classlist.iter()) != nullptr; )
     _classdict[cls]->is_pipeclass()->output(fp);
 
-  fprintf(fp,"\nNop Instructions:");
-  for ( _noplist.reset(); (nop = _noplist.iter()) != nullptr; )
-    fprintf(fp, " \"%s\"", nop);
   fprintf(fp,"\n");
 }
 

@@ -2638,9 +2638,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 16;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 16 bytes
-
-  // List of nop instructions
-  nops( Nop_A0, Nop_A1, Nop_MS, Nop_FA, Nop_BR );
 %}
 
 //----------RESOURCES----------------------------------------------------------
