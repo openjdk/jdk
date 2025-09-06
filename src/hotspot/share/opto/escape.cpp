@@ -3075,20 +3075,7 @@ void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_
   for (uint i = 0; i < reducible_merges_cnt; i++) {
     Node* phi = reducible_merges.at(i);
 
-    // This 'Phi' will be a 'good' if it still points to
-    // at least one scalar replaceable object. Note that 'obj'
-    // was/should be marked as NSR before calling this function.
-    bool good_phi = false;
-
-    for (uint j = 1; j < phi->req(); j++) {
-      JavaObjectNode* phi_in_obj = unique_java_object(phi->in(j));
-      if (phi_in_obj != nullptr && phi_in_obj->scalar_replaceable()) {
-        good_phi = true;
-        break;
-      }
-    }
-
-    if (!good_phi) {
+    if (!can_reduce_phi(phi->as_Phi())) {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Phi %d became non-reducible after node %d became NSR.", phi->_idx, jobj->ideal_node()->_idx);)
       reducible_merges.remove(i);
 
@@ -3125,6 +3112,16 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               // because there is no point in reducing a Phi that won't improve the number of SR
               // objects.
               revisit_reducible_phi_status(jobj, reducible_merges);
+              found_nsr_alloc = true;
+              break;
+            }
+          }
+        } else if (use->is_LocalVar()) {
+          Node* phi = use->ideal_node();
+          if (phi->Opcode() == Op_Phi && reducible_merges.member(phi)) {
+            if (!can_reduce_phi(phi->as_Phi())) {
+              set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is merged in a non-reducible phi"));
+              reducible_merges.yank(phi);
               found_nsr_alloc = true;
               break;
             }
