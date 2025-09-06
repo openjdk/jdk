@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
  * @author  Josh Bloch
  * @since   1.5
  */
-public class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
+class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
     @java.io.Serial
     private static final long serialVersionUID = 7844069490309503934L;
     @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -57,10 +57,6 @@ public class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
 
     protected RuntimeException generateException() {
         return new AnnotationTypeMismatchException(member, foundType);
-    }
-
-    public String foundType() {
-        return foundType;
     }
 
     @Override

@@ -1454,40 +1454,6 @@ final class CompilerToVM {
     native void notifyCompilerInliningEvent(int compileId, HotSpotResolvedJavaMethodImpl caller, long callerPointer,
                     HotSpotResolvedJavaMethodImpl callee, long calleePointer, boolean succeeded, String message, int bci);
 
-    /**
-     * Gets the serialized annotation info for {@code type} by calling
-     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, int category) {
-        return getEncodedClassAnnotationValues(type, type.getKlassPointer(), category);
-    }
-
-    native byte[] getEncodedClassAnnotationValues(HotSpotResolvedObjectTypeImpl type, long klassPointer, int category);
-
-    /**
-     * Gets the serialized annotation info for {@code method} by calling
-     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, HotSpotResolvedObjectTypeImpl memberType, int category) {
-        long memberTypePointer = memberType == null ? 0L: memberType.getKlassPointer();
-        return getEncodedExecutableAnnotationValues(method, method.getMethodPointer(),
-                                                        memberType, memberTypePointer, category);
-    }
-
-    native byte[] getEncodedExecutableAnnotationValues(HotSpotResolvedJavaMethodImpl method, long methodPointer,
-                                                       HotSpotResolvedObjectTypeImpl memberType, long klassPointer, int category);
-
-    /**
-     * Gets the serialized annotation info for the field ({@code isField == true}) or
-     * record component ({@code isField == false}) denoted by {@code holder} and
-     * {@code index} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, int index, boolean isField, int category) {
-        return getEncodedFieldAnnotationValues(holder, holder.getKlassPointer(), index, isField, category);
-    }
-
-    native byte[] getEncodedFieldAnnotationValues(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int index, boolean isField, int category);
-
     /// Denotes class file bytes of a `RuntimeVisibleAnnotations` attribute after
     /// the `u2 attribute_name_index; u4 attribute_length` prefix.
     static final int DECLARED_ANNOTATIONS = 0;

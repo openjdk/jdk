@@ -22,18 +22,13 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 
 import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Map;
 
 import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
@@ -229,21 +224,6 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     @Override
     public JavaConstant getConstantValue() {
         return holder.getFieldInfo(index).getConstantValue(holder);
-    }
-
-    @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        if (!hasAnnotations()) {
-            return Map.of();
-        }
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, true, VMSupport.DECLARED_ANNOTATIONS);
-        return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(holder, index, true, VMSupport.TYPE_ANNOTATIONS);
-        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
     }
 
     @Override

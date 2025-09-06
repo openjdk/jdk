@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
@@ -39,17 +38,13 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
@@ -775,49 +770,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public int methodIdnum() {
         return UNSAFE.getChar(getConstMethod() + config().constMethodMethodIdnumOffset);
-    }
-
-    @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        if (!hasAnnotations()) {
-            return Map.of();
-        }
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.DECLARED_ANNOTATIONS);
-        return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
-    }
-
-    @Override
-    public List<List<AnnotationValue>> getParameterAnnotationValues() {
-        if (!hasParameterAnnotations()) {
-            return null;
-        }
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.PARAMETER_ANNOTATIONS);
-        return VMSupport.decodeParameterAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.TYPE_ANNOTATIONS);
-        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
-    }
-
-    private boolean hasDefaultAnnotations() {
-        return (getConstMethodFlags() & HotSpotVMConfig.config().constMethodHasDefaultAnnotations) != 0;
-    }
-
-    @Override
-    public Object getAnnotationDefaultValue() {
-        if (!hasDefaultAnnotations()) {
-            return null;
-        }
-        HotSpotResolvedObjectTypeImpl declaringClass = getDeclaringClass();
-        ResolvedJavaType type = this.getSignature().getReturnType(declaringClass).resolve(declaringClass);
-        if (type.getJavaKind().isPrimitive()) {
-            type = runtime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(type.getJavaKind().toBoxedJavaClass());
-        }
-        HotSpotResolvedObjectTypeImpl memberType = (HotSpotResolvedObjectTypeImpl) type;
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, memberType, VMSupport.ANNOTATION_MEMBER_VALUE);
-        return VMSupport.decodeAnnotationMemberValue(encoded, new AnnotationValueDecoder(declaringClass));
     }
 
     @Override

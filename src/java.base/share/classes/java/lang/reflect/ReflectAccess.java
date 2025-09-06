@@ -48,10 +48,6 @@ final class ReflectAccess implements JavaLangReflectAccess {
         return ex.getSharedExceptionTypes();
     }
 
-    public byte[] getAnnotationDefaultBytes(Method arg) {
-        return arg.getAnnotationDefaultBytes();
-    }
-
     //
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates

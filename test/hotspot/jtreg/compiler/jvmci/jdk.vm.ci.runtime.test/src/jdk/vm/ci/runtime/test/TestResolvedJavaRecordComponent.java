@@ -127,46 +127,6 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
     }
 
     @Test
-    public void getAnnotationValuesTest() {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            TestResolvedJavaType.getAnnotationValuesTest(rc);
-        }
-        for (RecordComponent rc : recordComponents.keySet()) {
-            TestResolvedJavaType.getAnnotationValuesTest(rc);
-        }
-    }
-
-    /**
-     * Tests that {@link TypeAnnotation}s obtained from {@code rc}
-     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaRecordComponent}.
-     */
-    private static void getTypeAnnotationValuesTest(RecordComponent rc) {
-        ResolvedJavaRecordComponent resolvedRc = metaAccess.lookupJavaRecordComponent(rc);
-        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(rc);
-        List<TypeAnnotationValue> typeAnnotationValues = resolvedRc.getTypeAnnotationValues();
-        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
-        if (!typeAnnotationValues.isEmpty()) {
-            IO.println(resolvedRc + " -> " + typeAnnotationValues);
-        }
-    }
-
-    private static List<TypeAnnotation> getTypeAnnotations(RecordComponent rc) {
-        Class<?> container = rc.getDeclaringRecord();
-        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
-        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
-    }
-
-    @Test
-    public void getTypeAnnotationValuesTest() throws Exception {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            getTypeAnnotationValuesTest(rc);
-        }
-        for (RecordComponent rc : recordComponents.keySet()) {
-            getTypeAnnotationValuesTest(rc);
-        }
-    }
-
-    @Test
     public void getTypeAnnotationInfoTest() {
         for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
             checkTypeAnnotationInfo(rc);

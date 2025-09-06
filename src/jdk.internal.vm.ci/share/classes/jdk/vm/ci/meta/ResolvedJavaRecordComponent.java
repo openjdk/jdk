@@ -23,10 +23,6 @@
 package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.annotation.Annotated;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
-
-import java.lang.reflect.RecordComponent;
-import java.util.List;
 
 /**
  * A reference to a {@link java.lang.reflect.RecordComponent}.
@@ -62,15 +58,4 @@ public interface ResolvedJavaRecordComponent extends Annotated {
      * Returns a {@link JavaType} object that identifies the declared type for this record component.
      */
     JavaType getType();
-
-    /**
-     * Gets the type annotations for this record component that backs the implementation
-     * of {@link RecordComponent#getAnnotatedType()}. This method returns an empty
-     * list if there are no type annotations.
-     *
-     * @throws UnsupportedOperationException if this operation is not supported
-     */
-    default List<TypeAnnotationValue> getTypeAnnotationValues() {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
 }

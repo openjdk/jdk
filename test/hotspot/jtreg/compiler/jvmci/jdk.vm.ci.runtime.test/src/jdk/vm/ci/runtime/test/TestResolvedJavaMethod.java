@@ -60,16 +60,8 @@ import jdk.vm.ci.meta.LocalVariableTable;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation1;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation2;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.Annotation3;
-import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationValueTest.NumbersDE;
 import org.junit.Assert;
 import org.junit.Test;
-
-import sun.reflect.annotation.TypeAnnotation;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -551,139 +543,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
-    /**
-     * Encapsulates input for {@link TestResolvedJavaMethod#getAnnotationValuesTest}.
-     */
-    static class AnnotationValueTest {
-
-        public enum NumbersEN {
-            One,
-            Two;
-        }
-
-        public enum NumbersDE {
-            Eins,
-            Zwei;
-
-            static {
-                Assert.fail("NumbersDE.<clinit> should not be called");
-            }
-        }
-
-        public enum NumbersUA {
-            Odyn,
-            Dva;
-        }
-
-        @Retention(RetentionPolicy.RUNTIME)
-        public @interface Annotation1 {
-            NumbersEN value() default NumbersEN.One;
-        }
-
-        @Retention(RetentionPolicy.RUNTIME)
-        public @interface Annotation2 {
-            NumbersDE value() default NumbersDE.Eins;
-        }
-
-        @Retention(RetentionPolicy.RUNTIME)
-        public @interface Annotation3 {
-            NumbersUA value() default NumbersUA.Odyn;
-        }
-
-        @Annotation1
-        @Annotation2
-        @Annotation3(NumbersUA.Dva)
-        static void methodWithThreeAnnotations() {
-
-        }
-    }
-
-    /**
-     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
-     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
-     */
-    private static void getTypeAnnotationValuesTest(Executable executable) {
-        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
-        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(executable);
-        List<TypeAnnotationValue> typeAnnotationValues = method.getTypeAnnotationValues();
-        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
-    }
-
-    /**
-     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
-     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
-     */
-    private static void getParameterAnnotationValuesTest(Executable executable) {
-        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
-        Annotation[][] parameterAnnotations = executable.getParameterAnnotations();
-        List<List<AnnotationValue>> parameterAnnotationValues = method.getParameterAnnotationValues();
-        if (parameterAnnotationValues != null) {
-            int parsedAnnotations = parameterAnnotationValues.size();
-            if (parsedAnnotations != parameterAnnotations.length) {
-                // Remove slots injected for implicit leading parameters
-                parameterAnnotations = Arrays.copyOfRange(parameterAnnotations, parameterAnnotations.length - parsedAnnotations, parameterAnnotations.length);
-            }
-            assertParameterAnnotationsEquals(parameterAnnotations, parameterAnnotationValues);
-        } else {
-            for (Annotation[] annotations : parameterAnnotations) {
-                Assert.assertEquals(0, annotations.length);
-            }
-        }
-    }
-
-    @Test
-    public void getAnnotationDefaultValueTest() throws NoSuchMethodException {
-        getAnnotationDefaultValueTest(getClass().getDeclaredMethod("methodWithAnnotatedParameters", HashMap.class, Class.class));
-        getAnnotationDefaultValueTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        for (Method m : methods.keySet()) {
-            getAnnotationDefaultValueTest(m);
-        }
-    }
-
-    /**
-     * Tests that {@link TypeAnnotation}s obtained from {@code executable}
-     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaMethod}.
-     */
-    private static void getAnnotationDefaultValueTest(Method executable) {
-        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(executable);
-        Object defaultValue = executable.getDefaultValue();
-        Object annotationDefaultValue = method.getAnnotationDefaultValue();
-        if (defaultValue == null) {
-            assertNull(annotationDefaultValue);
-        } else {
-            TestResolvedJavaType.assertAnnotationElementsEqual(defaultValue, annotationDefaultValue);
-        }
-    }
-
-    public static void assertParameterAnnotationsEquals(
-            Annotation[][] parameterAnnotations,
-            List<List<AnnotationValue>> parameterAnnotationValues) throws AssertionError {
-        assertEquals(parameterAnnotations.length, parameterAnnotationValues.size());
-        for (int i = 0; i < parameterAnnotations.length; i++) {
-            Annotation[] annotations = parameterAnnotations[i];
-            List<AnnotationValue> annotationValues = parameterAnnotationValues.get(i);
-            assertEquals(annotations.length, annotationValues.size());
-            for (int j = 0; j < annotations.length; j++) {
-                TestResolvedJavaType.assertAnnotationsEquals(annotations[j], annotationValues.get(j));
-            }
-        }
-    }
-
     private static final Method executableGetTypeAnnotationBytes = lookupMethod(Executable.class, "getTypeAnnotationBytes");
-
-    private static List<TypeAnnotation> getTypeAnnotations(Executable e) {
-        byte[] rawAnnotations = invokeMethod(executableGetTypeAnnotationBytes, e);
-        Class<?> container = e.getDeclaringClass();
-        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
-    }
-
-    @Test
-    public void getTypeAnnotationValuesTest() throws Exception {
-        getParameterAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        for (Method m : methods.keySet()) {
-            getParameterAnnotationValuesTest(m);
-        }
-    }
 
     @Test
     public void getTypeAnnotationInfoTest() {
@@ -764,65 +624,6 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         } else {
             assertNotNull(method.getAnnotationDefaultInfo());
         }
-    }
-
-    @Test
-    public void getParameterAnnotationValuesTest() throws Exception {
-        getTypeAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        for (Method m : methods.keySet()) {
-            getTypeAnnotationValuesTest(m);
-        }
-    }
-
-    @Test
-    public void getAnnotationValuesTest() throws Exception {
-        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
-        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
-        try {
-            TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingElementTypeAnnotation"));
-            throw new AssertionError("expected " + TypeNotPresentException.class.getName());
-        } catch (TypeNotPresentException e) {
-            Assert.assertEquals("Type jdk.internal.vm.test.AnnotationTestInput$Missing not present", e.getMessage());
-        }
-        try {
-            TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"));
-            throw new AssertionError("expected " + NoClassDefFoundError.class.getName());
-        } catch (NoClassDefFoundError e) {
-            Assert.assertEquals("jdk/internal/vm/test/AnnotationTestInput$Missing", e.getMessage());
-        }
-        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"));
-        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"));
-        TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
-        List<AnnotationValue> avList = TestResolvedJavaType.getAnnotationValuesTest(AnnotationTestInput.class.getDeclaredMethod("addedMember"));
-        try {
-            avList.getFirst().get("addedElement", Integer.class);
-            throw new AssertionError("expected " + IllegalArgumentException.class.getName());
-        } catch (IllegalArgumentException e) {
-            Assert.assertEquals("jdk.internal.vm.test.MemberAdded missing element addedElement", e.getMessage());
-        }
-
-        for (Method m : methods.keySet()) {
-            TestResolvedJavaType.getAnnotationValuesTest(m);
-        }
-
-        ResolvedJavaMethod m = metaAccess.lookupJavaMethod(AnnotationValueTest.class.getDeclaredMethod("methodWithThreeAnnotations"));
-        ResolvedJavaType a1 = metaAccess.lookupJavaType(Annotation1.class);
-        ResolvedJavaType a2 = metaAccess.lookupJavaType(Annotation2.class);
-        ResolvedJavaType a3 = metaAccess.lookupJavaType(Annotation3.class);
-        ResolvedJavaType numbersDEType = metaAccess.lookupJavaType(NumbersDE.class);
-
-        // Ensure NumbersDE is not initialized before Annotation2 is requested
-        Assert.assertFalse(numbersDEType.isInitialized());
-
-        Map<ResolvedJavaType, AnnotationValue> declaredAnnotationValues = m.getDeclaredAnnotationValues();
-        Assert.assertEquals(3, declaredAnnotationValues.size());
-        Assert.assertNotNull(declaredAnnotationValues.get(a1));
-        Assert.assertNotNull(declaredAnnotationValues.get(a2));
-        Assert.assertNotNull(declaredAnnotationValues.get(a3));
-
-        // Ensure NumbersDE is not initialized after Annotation2 is requested
-        Assert.assertNotNull(m.getDeclaredAnnotationValue(a2));
-        Assert.assertFalse(numbersDEType.isInitialized());
     }
 
     private static ClassModel readClassfile(Class<?> c) throws Exception {

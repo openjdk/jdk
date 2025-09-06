@@ -1277,7 +1277,7 @@ class Field extends AccessibleObject implements Member {
                                 annotations,
                                 SharedSecrets.getJavaLangAccess()
                                         .getConstantPool(getDeclaringClass()),
-                                getDeclaringClass(), true);
+                                getDeclaringClass());
                     }
                     declaredAnnotations = declAnnos;
                 }
