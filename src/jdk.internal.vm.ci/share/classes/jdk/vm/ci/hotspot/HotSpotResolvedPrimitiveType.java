@@ -32,13 +32,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
@@ -352,22 +349,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public JavaConstant getJavaMirror() {
         return mirror;
-    }
-
-    @Override
-    public AnnotationValue getDeclaredAnnotationValue(ResolvedJavaType type) {
-        checkIsAnnotation(type);
-        return null;
-    }
-
-    @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        return Map.of();
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        return List.of();
     }
 
     @Override

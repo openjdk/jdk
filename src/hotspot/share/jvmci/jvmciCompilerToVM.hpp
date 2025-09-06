@@ -35,7 +35,7 @@ class JVMCIObjectArray;
 
 class CompilerToVM {
  public:
-   // Keep in sync with constants in VMSupport.java
+   // Keep in sync with constants in CompilerToVM.java
    static const int DECLARED_ANNOTATIONS = 0;
    static const int PARAMETER_ANNOTATIONS = 1;
    static const int TYPE_ANNOTATIONS = 2;
@@ -100,7 +100,7 @@ class CompilerToVM {
     static HeapWord** _heap_end_addr;
     static HeapWord* volatile* _heap_top_addr;
     static int _max_oop_map_stack_offset;
-    static int _fields_annotations_base_offset;
+    static int _annotation_array_array_base_offset;
 
     static CardTable::CardValue* cardtable_start_address;
     static int cardtable_shift;

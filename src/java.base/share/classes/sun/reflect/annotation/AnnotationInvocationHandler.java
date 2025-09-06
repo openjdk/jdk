@@ -78,7 +78,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         }
 
         // Handle annotation member accessors
-        Object result = ResolvableValue.resolved(memberValues.get(member));
+        Object result = memberValues.get(member);
 
         if (result == null)
             throw new IncompleteAnnotationException(type, member);

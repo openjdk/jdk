@@ -25,16 +25,6 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
- *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
- *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
- *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
- *          TestResolvedJavaType.java
- * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
- *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
- * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
- *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
- *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          java.base/java.lang:open
  *          java.base/java.lang.reflect:open
@@ -51,24 +41,18 @@
 
 package jdk.vm.ci.runtime.test;
 
-import jdk.internal.vm.test.AnnotationTestInput.AnnotatedRecord;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 import org.junit.Test;
-import sun.reflect.annotation.TypeAnnotation;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 /**
  * Tests for {@link ResolvedJavaRecordComponent}.
@@ -127,85 +111,24 @@ public class TestResolvedJavaRecordComponent extends FieldUniverse {
     }
 
     @Test
-    public void getAnnotationValuesTest() {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            TestResolvedJavaType.getAnnotationValuesTest(rc);
-        }
-        for (RecordComponent rc : recordComponents.keySet()) {
-            TestResolvedJavaType.getAnnotationValuesTest(rc);
-        }
-    }
-
-    /**
-     * Tests that {@link TypeAnnotation}s obtained from {@code rc}
-     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaRecordComponent}.
-     */
-    private static void getTypeAnnotationValuesTest(RecordComponent rc) {
-        ResolvedJavaRecordComponent resolvedRc = metaAccess.lookupJavaRecordComponent(rc);
-        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(rc);
-        List<TypeAnnotationValue> typeAnnotationValues = resolvedRc.getTypeAnnotationValues();
-        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
-        if (!typeAnnotationValues.isEmpty()) {
-            IO.println(resolvedRc + " -> " + typeAnnotationValues);
-        }
-    }
-
-    private static List<TypeAnnotation> getTypeAnnotations(RecordComponent rc) {
-        Class<?> container = rc.getDeclaringRecord();
-        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
-        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
-    }
-
-    @Test
-    public void getTypeAnnotationValuesTest() throws Exception {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            getTypeAnnotationValuesTest(rc);
-        }
-        for (RecordComponent rc : recordComponents.keySet()) {
-            getTypeAnnotationValuesTest(rc);
-        }
-    }
-
-    @Test
     public void getTypeAnnotationInfoTest() {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            checkTypeAnnotationInfo(rc);
-        }
         for (RecordComponent rc : recordComponents.keySet()) {
-            checkTypeAnnotationInfo(rc);
-        }
-    }
-
-    private static void checkTypeAnnotationInfo(RecordComponent rc) {
-        ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
-        byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
-        if (rawAnnotations == null) {
-            assertNull(jrc.getTypeAnnotationInfo());
-        } else {
-            assertNotNull(jrc.getTypeAnnotationInfo());
+            ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
+            byte[] rawAnnotations = getFieldValue(recordComponentTypeAnnotations, rc);
+            TestResolvedJavaType.checkRawAnnotations(jrc, "getTypeAnnotationInfo", rawAnnotations, jrc.getTypeAnnotationInfo());
         }
     }
 
     @Test
     public void getDeclaredAnnotationInfoTest() {
-        for (RecordComponent rc : AnnotatedRecord.class.getRecordComponents()) {
-            checkDeclaredAnnotationInfo(rc);
-        }
         for (RecordComponent rc : recordComponents.keySet()) {
-            checkDeclaredAnnotationInfo(rc);
+            ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
+            byte[] rawAnnotations = getFieldValue(recordComponentAnnotations, rc);
+            TestResolvedJavaType.checkRawAnnotations(jrc, "getDeclaredAnnotationInfo", rawAnnotations, jrc.getDeclaredAnnotationInfo());
         }
     }
 
     private static final Field recordComponentAnnotations = lookupField(RecordComponent.class, "annotations");
     private static final Field recordComponentTypeAnnotations = lookupField(RecordComponent.class, "typeAnnotations");
 
-    private static void checkDeclaredAnnotationInfo(RecordComponent rc) {
-        ResolvedJavaRecordComponent jrc = metaAccess.lookupJavaRecordComponent(rc);
-        byte[] rawAnnotations = getFieldValue(recordComponentAnnotations, rc);
-        if (rawAnnotations == null) {
-            assertNull(jrc.getDeclaredAnnotationInfo());
-        } else {
-            assertNotNull(jrc.getDeclaredAnnotationInfo());
-        }
-    }
 }

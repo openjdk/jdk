@@ -108,8 +108,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
+    final int annotationsFieldTypeAnnotationsOffset = getFieldOffset("Annotations::_fields_type_annotations", Integer.class, "Array<AnnotationArray*>*");
     final int annotationsClassAnnotationsOffset = getFieldOffset("Annotations::_class_annotations", Integer.class, "AnnotationArray*");
-    final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
+    final int annotationsClassTypeAnnotationsOffset = getFieldOffset("Annotations::_class_type_annotations", Integer.class, "AnnotationArray*");
+    final int annotationArrayArrayBaseOffset = getFieldValue("CompilerToVM::Data::_annotation_array_array_base_offset", Integer.class, "int");
 
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
 
@@ -188,6 +190,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodHasLineNumberTable = getConstant("ConstMethodFlags::_misc_has_linenumber_table", Integer.class);
     final int constMethodHasLocalVariableTable = getConstant("ConstMethodFlags::_misc_has_localvariable_table", Integer.class);
     final int constMethodHasMethodAnnotations = getConstant("ConstMethodFlags::_misc_has_method_annotations", Integer.class);
+    final int constMethodHasTypeAnnotations = getConstant("ConstMethodFlags::_misc_has_type_annotations", Integer.class);
     final int constMethodHasParameterAnnotations = getConstant("ConstMethodFlags::_misc_has_parameter_annotations", Integer.class);
     final int constMethodHasDefaultAnnotations = getConstant("ConstMethodFlags::_misc_has_default_annotations", Integer.class);
     final int constMethodHasExceptionTable = getConstant("ConstMethodFlags::_misc_has_exception_table", Integer.class);

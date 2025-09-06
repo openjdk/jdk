@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
@@ -39,17 +38,13 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
@@ -515,19 +510,15 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[][] getParameterAnnotations() {
-        if (!hasParameterAnnotations() || isClassInitializer()) {
+        if (!hasAnnotations(HotSpotVMConfig.config().constMethodHasParameterAnnotations)) {
             return new Annotation[signature.getParameterCount(false)][0];
         }
         return runtime().reflection.getParameterAnnotations(this);
     }
 
-    private boolean hasParameterAnnotations() {
-        return (getConstMethodFlags() & HotSpotVMConfig.config().constMethodHasParameterAnnotations) != 0;
-    }
-
     @Override
     public Annotation[] getAnnotations() {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(config().constMethodHasMethodAnnotations)) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodAnnotations(this);
@@ -535,7 +526,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(config().constMethodHasMethodAnnotations)) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodDeclaredAnnotations(this);
@@ -543,17 +534,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(config().constMethodHasMethodAnnotations)) {
             return null;
         }
         return runtime().reflection.getMethodAnnotation(this, annotationClass);
     }
 
     /**
-     * Returns whether this method has annotations.
+     * Returns whether this method has annotations in the category specified by {@code category}.
+     *
+     * @param category a {@code ConstMethodFlags::_misc_has_*_annotations} value
      */
-    private boolean hasAnnotations() {
-        return (getConstMethodFlags() & config().constMethodHasMethodAnnotations) != 0 && !isClassInitializer();
+    private boolean hasAnnotations(int category) {
+        return (getConstMethodFlags() & category) != 0 && !isClassInitializer();
     }
 
     @Override
@@ -778,49 +771,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        if (!hasAnnotations()) {
-            return Map.of();
-        }
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.DECLARED_ANNOTATIONS);
-        return new AnnotationValueDecoder(getDeclaringClass()).decode(encoded);
-    }
-
-    @Override
-    public List<List<AnnotationValue>> getParameterAnnotationValues() {
-        if (!hasParameterAnnotations()) {
-            return null;
-        }
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.PARAMETER_ANNOTATIONS);
-        return VMSupport.decodeParameterAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, null, VMSupport.TYPE_ANNOTATIONS);
-        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringClass()));
-    }
-
-    private boolean hasDefaultAnnotations() {
-        return (getConstMethodFlags() & HotSpotVMConfig.config().constMethodHasDefaultAnnotations) != 0;
-    }
-
-    @Override
-    public Object getAnnotationDefaultValue() {
-        if (!hasDefaultAnnotations()) {
-            return null;
-        }
-        HotSpotResolvedObjectTypeImpl declaringClass = getDeclaringClass();
-        ResolvedJavaType type = this.getSignature().getReturnType(declaringClass).resolve(declaringClass);
-        if (type.getJavaKind().isPrimitive()) {
-            type = runtime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(type.getJavaKind().toBoxedJavaClass());
-        }
-        HotSpotResolvedObjectTypeImpl memberType = (HotSpotResolvedObjectTypeImpl) type;
-        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationValues(this, memberType, VMSupport.ANNOTATION_MEMBER_VALUE);
-        return VMSupport.decodeAnnotationMemberValue(encoded, new AnnotationValueDecoder(declaringClass));
-    }
-
-    @Override
     public BitSet getOopMapAt(int bci) {
         if (getCodeSize() == 0) {
             throw new IllegalArgumentException("has no bytecode");
@@ -833,7 +783,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public AnnotationsInfo getDeclaredAnnotationInfo() {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(config().constMethodHasMethodAnnotations)) {
             return null;
         }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.DECLARED_ANNOTATIONS);
@@ -842,18 +792,27 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public AnnotationsInfo getTypeAnnotationInfo() {
+        if (!hasAnnotations(config().constMethodHasTypeAnnotations)) {
+            return null;
+        }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.TYPE_ANNOTATIONS);
         return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
     }
 
     @Override
     public AnnotationsInfo getAnnotationDefaultInfo() {
+        if (!hasAnnotations(config().constMethodHasDefaultAnnotations)) {
+            return null;
+        }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.ANNOTATION_MEMBER_VALUE);
         return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
     }
 
     @Override
     public AnnotationsInfo getParameterAnnotationInfo() {
+        if (!hasAnnotations(config().constMethodHasParameterAnnotations)) {
+            return null;
+        }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('m', this, this.getMethodPointer(), 0, CompilerToVM.PARAMETER_ANNOTATIONS);
         return AnnotationsInfo.make(bytes, constantPool, getDeclaringClass());
     }

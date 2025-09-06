@@ -29,19 +29,16 @@ import java.lang.annotation.AnnotationFormatError;
 import java.lang.reflect.AnnotatedElement;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * A TypeAnnotation contains all the information needed to transform type
  * annotations on declarations in the class file to actual Annotations in
  * AnnotatedType instances.
  *
- * TypeAnnotations contain a base Annotation, location info (which lets you
+ * TypeAnnotaions contain a base Annotation, location info (which lets you
  * distinguish between '@A Inner.@B Outer' in for example nested types),
- * target info and the declaration the TypeAnnotation was parsed from.
+ * target info and the declaration the TypeAnnotaiton was parsed from.
  */
 public final class TypeAnnotation {
     private final TypeAnnotationTargetInfo targetInfo;
@@ -134,55 +131,21 @@ public final class TypeAnnotation {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof TypeAnnotationTargetInfo that) {
-                return target == that.target &&
-                        count == that.count &&
-                        secondaryIndex == that.secondaryIndex;
-
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(target, count, secondaryIndex);
-        }
-
-        @Override
         public String toString() {
             return "" + target + ": " + count + ", " + secondaryIndex;
         }
     }
 
     public static final class LocationInfo {
+        private final int depth;
         private final Location[] locations;
 
         private LocationInfo() {
-            this(new Location[0]);
+            this(0, new Location[0]);
         }
-        public LocationInfo(Location[] locations) {
+        private LocationInfo(int depth, Location[] locations) {
+            this.depth = depth;
             this.locations = locations;
-        }
-
-        /**
-         * Gets an immutable view on the locations.
-         */
-        public List<Location> getLocations() {
-            return Collections.unmodifiableList(Arrays.asList(locations));
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof LocationInfo that) {
-                return Arrays.equals(locations, that.locations);
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(locations);
         }
 
         public static final LocationInfo BASE_LOCATION = new LocationInfo();
@@ -201,7 +164,7 @@ public final class TypeAnnotation {
                     throw new AnnotationFormatError("Bad Location encoding in Type Annotation");
                 locations[i] = new Location(tag, index);
             }
-            return new LocationInfo(locations);
+            return new LocationInfo(depth, locations);
         }
 
         public LocationInfo pushArray() {
@@ -221,12 +184,11 @@ public final class TypeAnnotation {
         }
 
         public LocationInfo pushLocation(byte tag, short index) {
-            int depth = this.locations.length;
-            int newDepth = depth + 1;
+            int newDepth = this.depth + 1;
             Location[] res = new Location[newDepth];
             System.arraycopy(this.locations, 0, res, 0, depth);
             res[newDepth - 1] = new Location(tag, (short)(index & 0xFF));
-            return new LocationInfo(res);
+            return new LocationInfo(newDepth, res);
         }
 
         /**
@@ -234,13 +196,12 @@ public final class TypeAnnotation {
          * if no matching location was found.
          */
         public LocationInfo popLocation(byte tag) {
-            int depth = locations.length;
             if (depth == 0 || locations[depth - 1].tag != tag) {
                 return null;
             }
             Location[] res = new Location[depth - 1];
             System.arraycopy(locations, 0, res, 0, depth - 1);
-            return new LocationInfo(res);
+            return new LocationInfo(depth - 1, res);
         }
 
         public TypeAnnotation[] filter(TypeAnnotation[] ta) {
@@ -253,9 +214,9 @@ public final class TypeAnnotation {
         }
 
         boolean isSameLocationInfo(LocationInfo other) {
-            if (locations.length != other.locations.length)
+            if (depth != other.depth)
                 return false;
-            for (int i = 0; i < locations.length; i++)
+            for (int i = 0; i < depth; i++)
                 if (!locations[i].isSameLocation(other.locations[i]))
                     return false;
             return true;
@@ -269,19 +230,6 @@ public final class TypeAnnotation {
                 return tag == other.tag && index == other.index;
             }
 
-            @Override
-            public boolean equals(Object obj) {
-                if (obj instanceof Location that) {
-                    return isSameLocation(that);
-                }
-                return false;
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(tag, index);
-            }
-
             public Location(byte tag, short index) {
                 this.tag = tag;
                 this.index = index;
@@ -291,8 +239,8 @@ public final class TypeAnnotation {
 
     @Override
     public String toString() {
-        return annotation + " with TargetInfo: " +
-            targetInfo + " on base declaration: " +
-            baseDeclaration;
+        return annotation.toString() + " with Targetnfo: " +
+            targetInfo.toString() + " on base declaration: " +
+            baseDeclaration.toString();
     }
 }

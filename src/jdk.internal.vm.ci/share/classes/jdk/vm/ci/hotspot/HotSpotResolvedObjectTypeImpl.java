@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
@@ -39,9 +38,7 @@ import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -49,7 +46,6 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
@@ -910,22 +906,32 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @param includingInherited if true, expand this query to include superclasses of this type
      */
     private boolean mayHaveAnnotations(boolean includingInherited) {
-        if (isArray()) {
-            return false;
-        }
-        HotSpotVMConfig config = config();
-        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
-        if (metaspaceAnnotations != 0) {
-            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsClassAnnotationsOffset);
-            if (classAnnotations != 0) {
-                return true;
-            }
+        if (hasDirectAnnotations(false)) {
+            return true;
         }
         if (includingInherited) {
             HotSpotResolvedObjectTypeImpl superClass = getSuperclass();
             if (superClass != null) {
                 return superClass.mayHaveAnnotations(true);
             }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether this type has type annotations ({@code typeAnnotations == true}) or
+     * non-inherited declared annotations ({@code typeAnnotations == false}).
+     */
+    private boolean hasDirectAnnotations(boolean typeAnnotations) {
+        if (isArray()) {
+            return false;
+        }
+        HotSpotVMConfig config = config();
+        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
+        if (metaspaceAnnotations != 0) {
+            int annotationsOffset = typeAnnotations?config.annotationsClassTypeAnnotationsOffset: config.annotationsClassAnnotationsOffset;
+            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + annotationsOffset);
+            return classAnnotations != 0;
         }
         return false;
     }
@@ -1138,26 +1144,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        if (!mayHaveAnnotations(true)) {
-            return Map.of();
-        }
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.DECLARED_ANNOTATIONS);
-        return new AnnotationValueDecoder(this).decode(encoded);
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        if (isArray()) {
-            return List.of();
-        }
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationValues(this, VMSupport.TYPE_ANNOTATIONS);
-        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(this));
-    }
-
-    @Override
     public AnnotationsInfo getDeclaredAnnotationInfo() {
-        if (isArray()) {
+        if (!hasDirectAnnotations(false)) {
             return null;
         }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.DECLARED_ANNOTATIONS);
@@ -1166,7 +1154,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public AnnotationsInfo getTypeAnnotationInfo() {
-        if (isArray()) {
+        if (!hasDirectAnnotations(true)) {
             return null;
         }
         byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.TYPE_ANNOTATIONS);

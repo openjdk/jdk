@@ -22,18 +22,11 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.meta.JavaType;
 import java.lang.reflect.RecordComponent;
 
 import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.annotation.AnnotationValue;
-import jdk.vm.ci.meta.annotation.AnnotationValueDecoder;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
-
-import java.util.List;
-import java.util.Map;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
@@ -94,18 +87,6 @@ final class HotSpotResolvedJavaRecordComponent implements ResolvedJavaRecordComp
     @Override
     public int hashCode() {
         return declaringRecord.hashCode() ^ index;
-    }
-
-    @Override
-    public Map<ResolvedJavaType, AnnotationValue> getDeclaredAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(declaringRecord, index, false, VMSupport.DECLARED_ANNOTATIONS);
-        return new AnnotationValueDecoder(getDeclaringRecord()).decode(encoded);
-    }
-
-    @Override
-    public List<TypeAnnotationValue> getTypeAnnotationValues() {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationValues(declaringRecord, index, false, VMSupport.TYPE_ANNOTATIONS);
-        return VMSupport.decodeTypeAnnotations(encoded, new AnnotationValueDecoder(getDeclaringRecord()));
     }
 
     @Override

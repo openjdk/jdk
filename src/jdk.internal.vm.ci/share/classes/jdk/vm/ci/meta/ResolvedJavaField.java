@@ -23,12 +23,9 @@
 package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.annotation.Annotated;
-import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.List;
 
 /**
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved
@@ -82,16 +79,5 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
      */
     default JavaConstant getConstantValue() {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Gets the type annotations for this field that backs the implementation
-     * of {@link Field#getAnnotatedType()}. This method returns an empty
-     * list if there are no type annotations.
-     *
-     * @throws UnsupportedOperationException if this operation is not supported
-     */
-    default List<TypeAnnotationValue> getTypeAnnotationValues() {
-        throw new UnsupportedOperationException(getClass().getName());
     }
 }
