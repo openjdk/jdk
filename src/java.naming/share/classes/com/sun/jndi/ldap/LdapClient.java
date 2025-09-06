@@ -461,11 +461,13 @@ public final class LdapClient implements PooledConnection {
                 if (!pooled) {
                     // Not being pooled; continue with closing
                     conn.cleanup(reqCtls, false);
+                    closeOpenedResource();
                 } else {
                     // Pooled
                     // Is this a real close or a request to return conn to pool
                     if (hardClose) {
                         conn.cleanup(reqCtls, false);
+                        closeOpenedResource();
                         pcb.removePooledConnection(this);
                     } else {
                         pcb.releasePooledConnection(this);
@@ -474,6 +476,23 @@ public final class LdapClient implements PooledConnection {
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    // 8313657 socket is not closed until GC is run
+    private void closeOpenedResource() {
+        try {
+            if (conn != null) {
+                if (conn.outStream != null) {
+                    conn.outStream.close();
+                }
+
+                if (conn.sock != null && !conn.sock.isClosed()) {
+                    conn.sock.close();
+                }
+            }
+        } catch (IOException ioEx) {
+            //ignore the error;
         }
     }
 
@@ -489,6 +508,7 @@ public final class LdapClient implements PooledConnection {
                     "LdapClient: forced close of connection " + this);
         }
         conn.cleanup(null, false);
+        closeOpenedResource();
         if (cleanPool) {
             pcb.removePooledConnection(this);
         }

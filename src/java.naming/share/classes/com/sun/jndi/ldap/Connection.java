@@ -685,8 +685,6 @@ public final class Connection implements Runnable {
                 } finally {
 
                     flushAndCloseOutputStream();
-                    // 8313657 socket is not closed until GC is run
-                    closeOpenedSocket(sock);
                     tryUnpauseReader();
 
                     if (!notifyParent) {
@@ -705,7 +703,6 @@ public final class Connection implements Runnable {
                             tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
                         }
                     }
-                    sock = null;
                 }
                 nparent = notifyParent;
             }
@@ -731,12 +728,6 @@ public final class Connection implements Runnable {
         } catch (IOException ioEx) {
             if (debug)
                 System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
-        }
-        try {
-            outStream.close();
-        } catch (IOException ioEx) {
-            if (debug)
-                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
         }
     }
 
