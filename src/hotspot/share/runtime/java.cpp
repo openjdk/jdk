@@ -81,6 +81,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/shorthist.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -475,6 +476,8 @@ void before_exit(JavaThread* thread, bool halt) {
   WatcherThread::stop();
 
   NativeHeapTrimmer::cleanup();
+
+  ShortHistory::cleanup();
 
   // Run before exit and then stop concurrent GC threads
   Universe::before_exit();
