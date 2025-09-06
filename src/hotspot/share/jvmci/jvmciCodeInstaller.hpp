@@ -140,6 +140,13 @@ class HotSpotCompiledCodeStream : public ResourceObj {
 #undef checked_read
 };
 
+class CallSiteBindingContext {
+  public:
+    int bci;
+    methodHandle caller;
+    bool reexecute;
+};
+
 // Converts a HotSpotCompiledCode to a CodeBlob or an nmethod.
 class CodeInstaller : public StackObj {
   friend class JVMCIVMStructs;
@@ -332,7 +339,7 @@ private:
   void pd_patch_MetaspaceConstant(int pc_offset, HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_TRAPS);
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, JVMCI_TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS);
-  void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS);
+  void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, int method_index, JVMCI_TRAPS);
   bool pd_relocate(address pc, jint mark);
 
 public:
@@ -411,10 +418,10 @@ protected:
   void record_oop_patch(HotSpotCompiledCodeStream* stream, address dest, u1 read_tag, bool narrow, JVMCI_TRAPS);
 
   // full_info: if false, only BytecodePosition is in stream otherwise all DebugInfo is in stream
-  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS);
+  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, CallSiteBindingContext* binding_context, JVMCI_TRAPS);
 
-  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, JVMCI_TRAPS) {
-    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* is_mh_invoke */, false /* return_oop */, JVMCIENV);
+  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, CallSiteBindingContext* binding_context, JVMCI_TRAPS) {
+    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* is_mh_invoke */, false /* return_oop */, binding_context, JVMCIENV);
   }
   void record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);
 
