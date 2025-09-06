@@ -270,6 +270,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     // find the next marked object if any on this card
     assert(!ctx->is_marked(left), "Was dealt with above");
     HeapWord* right = MIN2(region->top(), ctx->top_at_mark_start(region));
+    assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
     HeapWord* next = ctx->get_next_marked_addr(left, right);
     if (next < right) {
       oop obj = cast_to_oop(next);
@@ -277,6 +278,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     }
     return next;
   }
+
   assert(ctx == nullptr, "Should have returned above");
 
   // The following code assumes that the region has only parsable objects
