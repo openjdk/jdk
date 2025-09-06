@@ -421,7 +421,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
- // As per atomic.hpp the Atomic read-modify-write operations must be logically implemented as:
+ // As per atomicAccess.hpp the atomic read-modify-write operations must be
+ // logically implemented as:
  //  <fence>; <op>; <membar StoreLoad|StoreStore>
  // But for load-linked/store-conditional based systems a fence here simply means
  // no load/store can be reordered with respect to the initial load-linked, so we have:

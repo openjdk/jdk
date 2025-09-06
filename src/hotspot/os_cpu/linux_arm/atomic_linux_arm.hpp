@@ -93,7 +93,7 @@ inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
     PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
-// As per atomic.hpp all read-modify-write operations have to provide two-way
+// As per atomicAccess.hpp all read-modify-write operations have to provide two-way
 // barriers semantics.
 //
 // For ARMv7 we add explicit barriers in the stubs.

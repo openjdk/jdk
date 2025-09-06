@@ -30,7 +30,7 @@
 #include "runtime/vm_version.hpp"
 
 
-// As per atomic.hpp all read-modify-write operations have to provide two-way
+// As per atomicAccess.hpp all read-modify-write operations have to provide two-way
 // barriers semantics. The memory_order parameter is ignored - we always provide
 // the strongest/most-conservative ordering
 //

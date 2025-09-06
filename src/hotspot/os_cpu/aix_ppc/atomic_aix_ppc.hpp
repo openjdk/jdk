@@ -243,7 +243,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
-  // specified otherwise (see atomic.hpp).
+  // specified otherwise (see atomicAccess.hpp).
 
   // Using 32 bit internally.
   volatile int *dest_base = (volatile int*)((uintptr_t)dest & ~3);
@@ -313,7 +313,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
-  // specified otherwise (see atomic.hpp).
+  // specified otherwise (see atomicAccess.hpp).
 
   T old_value;
   const uint64_t zero = 0;
@@ -363,7 +363,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
-  // specified otherwise (see atomic.hpp).
+  // specified otherwise (see atomicAccess.hpp).
 
   T old_value;
   const uint64_t zero = 0;
