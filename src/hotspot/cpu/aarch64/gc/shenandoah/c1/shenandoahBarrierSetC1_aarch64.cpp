@@ -29,7 +29,8 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 #define __ masm->masm()->
 
@@ -39,7 +40,12 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register cmpval = _cmp_value->as_register();
   Register tmp1 = _tmp1->as_register();
   Register tmp2 = _tmp2->as_register();
+  Register tmp3 = _tmp3->as_register();
   Register result = result_opr()->as_register();
+
+  assert_different_registers(result, addr, newval, cmpval, tmp1, tmp2, tmp3);
+
+  Label done;
 
   if (UseCompressedOops) {
     __ encode_heap_oop(tmp1, cmpval);
@@ -48,7 +54,29 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
     newval = tmp2;
   }
 
-  ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
+  bool is_narrow = UseCompressedOops;
+  Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
+  __ cmpxchg(addr, cmpval, newval, size, /*acquire*/ true, /*release*/ true, false, result);
+  __ cset(result, Assembler::EQ);
+  __ br(Assembler::EQ, done);
+
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(tmp3, gc_state);
+  __ tbz(tmp3, ShenandoahHeap::HAS_FORWARDED_BITPOS, done);
+
+  masm->store_parameter(addr, 0);
+  masm->store_parameter(cmpval, 1);
+  masm->store_parameter(newval, 2);
+
+  ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ far_call(RuntimeAddress(bs->cmpxchg_oop_rt_code_blob()->code_begin()));
+
+  assert(result != cmpval, "cmp");
+  __ mov(result, r0);
+  __ cmp(result, cmpval);
+  __ cset(result, Assembler::EQ);
+
+  __ bind(done);
 
   if (CompilerConfig::is_c1_only_no_jvmci()) {
     // The membar here is necessary to prevent reordering between the
@@ -82,10 +110,11 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
 
       LIR_Opr t1 = gen->new_register(T_OBJECT);
       LIR_Opr t2 = gen->new_register(T_OBJECT);
+      LIR_Opr t3 = gen->new_register(T_OBJECT);
       LIR_Opr addr = access.resolved_addr()->as_address_ptr()->base();
       LIR_Opr result = gen->new_register(T_INT);
 
-      __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
+      __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, t3, result));
 
       if (ShenandoahCardBarrier) {
         post_barrier(access, access.resolved_addr(), new_value.result());
