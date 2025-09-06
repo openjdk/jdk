@@ -519,7 +519,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     synchronized void newOutputToPath(Path path) throws IOException {
 
         // Is output file clash detection enabled?
-        if (!lint.isEnabled(LintCategory.OUTPUT_FILE_CLASH))
+        if (!lint.isActive(LintCategory.OUTPUT_FILE_CLASH))
             return;
 
         // Get the "canonical" version of the file's path; we are assuming

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,7 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
+ * <tr><th scope="row">{@code suppression}          <td>unnecessary suppressions in {@code @SuppressWarnings} annotations
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes;
  *                                                      this key is a deprecated alias for {@code identity}, which has
  *                                                      the same uses and effects. Users are encouraged to use the
