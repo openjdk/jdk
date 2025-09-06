@@ -27,6 +27,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahObjectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
@@ -73,7 +74,8 @@ private:
 
 protected:
   template <class T, ShenandoahGenerationType GENERATION>
-  void work(T *p);
+  // Return true if object was not previously marked strong by another thread.
+  bool work(T *p);
 
 public:
   inline ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
@@ -105,6 +107,29 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
+
+#if INCLUDE_JFR
+template <ShenandoahGenerationType GENERATION>
+class ShenandoahMarkRefsAndCountClosure : public ShenandoahMarkRefsSuperClosure {
+private:
+  ShenandoahObjectCountClosure* _count;
+  template <class T>
+  inline void do_oop_work(T* p) {
+    // Count newly marked strong references to avoid double counting.
+    const bool newly_marked_strong = work<T, GENERATION>(p);
+    if (newly_marked_strong) {
+      _count->do_oop(p);
+    }
+  }
+
+public:
+  ShenandoahMarkRefsAndCountClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q, ShenandoahObjectCountClosure* count) :
+          ShenandoahMarkRefsSuperClosure(q, rp, old_q), _count(count) {};
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+};
+#endif // INCLUDE_JFR
 
 class ShenandoahForwardedIsAliveClosure : public BoolObjectClosure {
 private:

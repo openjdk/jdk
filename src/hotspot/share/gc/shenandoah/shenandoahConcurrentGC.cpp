@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcTrace.inline.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -314,6 +315,9 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   heap->try_inject_alloc_failure();
   VM_ShenandoahFinalMarkStartEvac op(this);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
+  // Do not report object count during a safepoint
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should not be at safepoint");
+  heap->tracer()->report_object_count<ShenandoahHeap>();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {

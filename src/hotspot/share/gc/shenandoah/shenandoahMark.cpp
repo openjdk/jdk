@@ -24,7 +24,7 @@
  */
 
 
-
+#include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -69,9 +69,25 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
     Closure cl(q, rp, old_q);
     mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    using Closure = ShenandoahMarkRefsClosure<GENERATION>;
-    Closure cl(q, rp, old_q);
-    mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+#if INCLUDE_JFR
+    // Use object counting closure if ObjectCount or ObjectCountAfterGC event is enabled.
+    const bool object_count_enabled = ObjectCountEventSender::should_send_event();
+    if (object_count_enabled && !ShenandoahHeap::heap()->mode()->is_generational()) {
+      KlassInfoTable* const global_cit = ShenandoahHeap::heap()->get_cit();
+      KlassInfoTable local_cit(false);
+      ShenandoahIsAliveClosure is_alive;
+      ShenandoahObjectCountClosure count(&local_cit, &is_alive);
+      using Closure = ShenandoahMarkRefsAndCountClosure<GENERATION>;
+      Closure cl(q, rp, old_q, &count);
+      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+      count.merge_table(global_cit);
+    } else
+#endif // INCLUDE_JFR
+    {
+      using Closure = ShenandoahMarkRefsClosure<GENERATION>;
+      Closure cl(q, rp, old_q);
+      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+    }
   }
 
   heap->flush_liveness_cache(w);
