@@ -570,6 +570,10 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         blk_size += max_loop_pad;
         block_worst_case_pad[i + 1] = max_loop_pad;
       }
+    } else {
+      if (last_call_adr == blk_starts[i]+blk_size) {
+        blk_size += nop_size;
+      }
     }
 
     // Save block size; update total method size
@@ -1366,20 +1370,18 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
-  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
   int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
   if (StressCodeBuffers)
-    code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
+    code_req = const_req = stub_req = deopt_handler_req = 0x10;  // force expansion
 
   int total_req =
           const_req +
           code_req +
           pad_req +
           stub_req +
-          exception_handler_req +
           deopt_handler_req;               // deopt handler
 
   if (C->has_method_handle_invokes())
@@ -1797,17 +1799,25 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
     } // End for all instructions in block
 
+    auto emit_nops = [&](int nops_count) {
+      MachNode *nop = new MachNopNode(nops_count);
+      block->insert_node(nop, block->number_of_nodes());
+      C->cfg()->map_node_to_block(nop, block);
+      nop->emit(masm, C->regalloc());
+      current_offset = masm->offset();
+    };
+
     // If the next block is the top of a loop, pad this block out to align
     // the loop top a little. Helps prevent pipe stalls at loop back branches.
     if (i < nblocks-1) {
       Block *nb = C->cfg()->get_block(i + 1);
       int padding = nb->alignment_padding(current_offset);
       if( padding > 0 ) {
-        MachNode *nop = new MachNopNode(padding / nop_size);
-        block->insert_node(nop, block->number_of_nodes());
-        C->cfg()->map_node_to_block(nop, block);
-        nop->emit(masm, C->regalloc());
-        current_offset = masm->offset();
+        emit_nops(padding / nop_size);
+      }
+    } else {
+      if (last_call_offset == current_offset) {
+        emit_nops(1);
       }
     }
     // Verify that the distance for generated before forward
@@ -1869,8 +1879,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   // Only java methods have exception handlers and deopt handlers
   // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (C->method()) {
-    // Emit the exception handler code.
-    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(masm));
     if (C->failing()) {
       return; // CodeBuffer::expand failed
     }
