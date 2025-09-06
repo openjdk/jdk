@@ -88,6 +88,7 @@ class CallGenerator : public ArenaObj {
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
   virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
 
+  virtual ciMethod* callee_method() { ShouldNotReachHere(); }
   virtual void set_callee_method(ciMethod* callee) { ShouldNotReachHere(); }
 
   // Note:  It is possible for a CG to be both inline and virtual.
