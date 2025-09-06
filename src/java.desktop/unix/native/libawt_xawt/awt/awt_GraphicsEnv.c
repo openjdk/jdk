@@ -1286,8 +1286,12 @@ Java_sun_awt_X11GraphicsDevice_pGetBounds(JNIEnv *env, jobject this, jint screen
                     &xwa);
             AWT_UNLOCK ();
 
-            bounds = (*env)->NewObject(env, clazz, mid, 0, 0,
-                    xwa.width, xwa.height);
+            if ((*env)->ExceptionCheck(env)) {
+                return NULL;
+            } else {
+                bounds = (*env)->NewObject(env, clazz, mid, 0, 0,
+                        xwa.width, xwa.height);
+            }
         }
 
         if ((*env)->ExceptionCheck(env)) {
