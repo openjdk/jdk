@@ -108,6 +108,7 @@ public class SearchWriter extends HtmlDocletWriter {
 
         var select = HtmlTree.of(HtmlTag.SELECT)
                 .setId(HtmlId.of("search-modules"))
+                .put(HtmlAttr.TITLE, "search in modules")
                 .add(HtmlTree.of(HtmlTag.OPTION)
                         .put(HtmlAttr.VALUE, "")
                         .add(contents.getContent("doclet.search.all_modules")));
