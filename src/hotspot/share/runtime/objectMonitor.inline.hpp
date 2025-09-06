@@ -52,11 +52,7 @@ inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (has_anonymous_owner()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return current->lock_stack().contains(object());
-    } else {
-      return current->is_lock_owned((address)stack_locker());
-    }
+    return current->lock_stack().contains(object());
   } else {
     return has_owner(current);
   }
@@ -114,14 +110,6 @@ inline int64_t ObjectMonitor::owner() const {
 
 inline int64_t ObjectMonitor::owner_raw() const {
   return Atomic::load(&_owner);
-}
-
-inline BasicLock* ObjectMonitor::stack_locker() const {
-  return Atomic::load(&_stack_locker);
-}
-
-inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
-  Atomic::store(&_stack_locker, locker);
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
