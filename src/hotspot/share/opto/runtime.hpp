@@ -737,6 +737,16 @@ private:
     return _dtrace_object_alloc_Type;
   }
 
+#ifndef PRODUCT
+  // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
+  // Note: we do not allow more than 7 node arguments as GraphKit::make_runtime_call only allows 8, and we need
+  // one for the static string
+  static const TypeFunc* debug_print_Type(Node* parm0 = nullptr, Node* parm1 = nullptr,
+                                          Node* parm2 = nullptr, Node* parm3 = nullptr,
+                                          Node* parm4 = nullptr, Node* parm5 = nullptr,
+                                          Node* parm6 = nullptr);
+#endif // PRODUCT
+
  private:
  static NamedCounter * volatile _named_counters;
 
