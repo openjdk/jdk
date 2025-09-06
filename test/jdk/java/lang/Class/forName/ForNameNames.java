@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310242
+ * @bug 8310242 8328874
  * @run junit ForNameNames
  * @summary Verify class names for Class.forName
  */
@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ForNameNames {
+    private static final int JAVA_CLASSNAME_MAX_LEN = 65535;
     static class Inner {}
     static Stream<Arguments> testCases() {
         return Stream.of(
@@ -89,5 +90,22 @@ public class ForNameNames {
         Class<?> c = Class.forName(Object.class.getModule(), "[Ljava.lang.String;");
         assertNull(c);
     }
+
+    @Test
+    void testTooLongName() {
+        ClassLoader loader = ForNameNames.class.getClassLoader();
+        String tooLongName = "A".repeat(JAVA_CLASSNAME_MAX_LEN+1);
+        String errMsg = "Class name length exceeds limit of";
+
+        ClassNotFoundException ex = assertThrows(ClassNotFoundException.class,
+                                                 () -> Class.forName(tooLongName, false, loader));
+        assertTrue(ex.getMessage().contains(errMsg),
+                   "Unexpected exception message");
+
+        ex = assertThrows(ClassNotFoundException.class,
+                          () -> Class.forName(tooLongName));
+        assertTrue(ex.getMessage().contains(errMsg),
+                   "Unexpected exception message");
+   }
 
 }

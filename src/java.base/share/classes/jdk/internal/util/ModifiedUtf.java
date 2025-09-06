@@ -33,6 +33,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * @since 24
  */
 public abstract class ModifiedUtf {
+    //Max length in Modified UTF-8 bytes for class names.(see max_symbol_length in symbol.hpp)
+    public static final int JAVA_CLASSNAME_MAX_LEN = 65535;
+
     private ModifiedUtf() {
     }
 
@@ -67,5 +70,23 @@ public abstract class ModifiedUtf {
                 utflen += (c >= 0x800) ? 2 : 1;
         }
         return utflen;
+    }
+
+    /**
+     * Checks whether the length of the class name in Modified UTF-8 bytes exceeds the maximum allowed.
+     * @param name class name
+     */
+    @ForceInline
+    public static boolean classNameLengthIsValid(String name) {
+        // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
+        // If the string is short enough, it definitely fits.
+        int nameLen = name.length();
+        if (nameLen <= JAVA_CLASSNAME_MAX_LEN / 3) {
+            return true;
+        }
+        // Check exact Modified UTF-8 length.
+        // The check utfLen >= nameLen ensures we don't incorrectly return true in case of int overflow.
+        int utfLen = utfLen(name, 0);
+        return utfLen >= nameLen && utfLen <= JAVA_CLASSNAME_MAX_LEN;
     }
 }
