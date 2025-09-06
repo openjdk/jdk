@@ -141,7 +141,8 @@ import javax.tools.StandardLocation;
  *
  * In addition, <em>javac</em> also supports other strings that can be used
  * to suppress other kinds of warnings. The following table lists all the
- * strings that can be used with {@code @SuppressWarnings}.
+ * strings that are recognized by <em>javac</em> in {@code @SuppressWarnings}
+ * annotations. Unrecognized strings are ignored.
  *
  * <table class="striped">
  *     <caption>Strings supported by {@code SuppressWarnings}</caption>
