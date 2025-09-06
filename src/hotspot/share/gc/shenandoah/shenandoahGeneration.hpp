@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -69,9 +70,8 @@ protected:
   // Usage
 
   volatile size_t _used;
-  volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
-
+  ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
 private:
@@ -99,6 +99,7 @@ private:
   // to false.
   size_t select_aged_regions(size_t old_available);
 
+  // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
  public:
@@ -124,15 +125,43 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t max_capacity() const override      { return _max_capacity; }
+  virtual void post_initialize(ShenandoahHeap* heap);
+
+  size_t max_capacity() const override;
+
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return Atomic::load(&_used); }
+  size_t used() const override {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->old_used();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->young_used();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->global_used();
+      break;
+    }
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("used(_type: %d) returning %zu", _type, result);
+#endif
+    return result;
+  }
+
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {
-    return used() + get_humongous_waste();
+    // In the current implementation, used() includes humongous waste
+#ifdef KELVIN_DEBUG
+    log_info(gc)("used_including_humongous_waste(_type: %d) returning %zu", _type, used());
+#endif
+    return used();
   }
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
@@ -141,17 +170,28 @@ private:
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
 
-  size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start();
-  void increase_allocated(size_t bytes);
-
-  // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current
-  // capacity, returning the capacity of the generation following the change.
-  size_t increase_capacity(size_t increment);
-  size_t decrease_capacity(size_t decrement);
-
-  // Set the capacity of the generation, returning the value set
-  size_t set_capacity(size_t byte_size);
+  size_t bytes_allocated_since_gc_start() const override {
+    if (_type == ShenandoahGenerationType::YOUNG) {
+      size_t result = _free_set->get_bytes_allocated_since_gc_start();
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
+    } else if (_type == ShenandoahGenerationType::NON_GEN) {
+      assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
+      size_t result = _free_set->get_bytes_allocated_since_gc_start();
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
+    } else {
+      size_t result = 0;
+#ifdef KELVIN_DEBUG
+      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
+#endif
+      return result;
+    }
+  }
 
   void log_status(const char* msg) const;
 
@@ -212,28 +252,70 @@ private:
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
-  // Return the updated value of affiliated_region_count
-  size_t increment_affiliated_region_count();
+  size_t get_affiliated_region_count() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->old_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->young_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->global_affiliated_regions();
+      break;
+    }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_affiliated_region_count(_type: %d) returning %zu", _type, result);
+#endif
+    return result;
+  }
 
-  // Return the updated value of affiliated_region_count
-  size_t decrement_affiliated_region_count();
-  // Same as decrement_affiliated_region_count, but w/o the need to hold heap lock before being called.
-  size_t decrement_affiliated_region_count_without_lock();
+#ifdef KELVIN_DEPRECATE
+  size_t get_total_region_count() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->total_old_regions();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->total_young_regions();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->total_global_regions();
+      break;
+    }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_total_region_count(_type: %d) returning %zu", _type, result);
+#endif
+    return result;
+  }
+#endif
 
-  // Return the updated value of affiliated_region_count
-  size_t increase_affiliated_region_count(size_t delta);
-
-  // Return the updated value of affiliated_region_count
-  size_t decrease_affiliated_region_count(size_t delta);
-
-  void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
-
-  void increase_used(size_t bytes);
-  void decrease_used(size_t bytes);
-
-  void increase_humongous_waste(size_t bytes);
-  void decrease_humongous_waste(size_t bytes);
-  size_t get_humongous_waste() const { return _humongous_waste; }
+  size_t get_humongous_waste() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->humongous_waste_in_old();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->humongous_waste_in_mutator();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->total_humongous_waste();
+      break;
+    }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("get_humongous_waste()(_type: %d) returning %zu", _type, result);
+#endif
+    return result;
+  }
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
