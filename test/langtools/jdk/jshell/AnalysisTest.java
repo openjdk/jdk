@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
  * @test
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
- * @run testng AnalysisTest
+ * @run junit AnalysisTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class AnalysisTest extends KullaTesting {
 
+    @Test
     public void testSource() {
         assertAnalyze("int x=3//test", "int x=3;//test", "", true);
         assertAnalyze("int x=3 ;//test", "int x=3 ;//test", "", true);
@@ -41,6 +41,7 @@ public class AnalysisTest extends KullaTesting {
         assertAnalyze("int ff; int v // hi", "int ff;", " int v // hi", true);
     }
 
+    @Test
     public void testSourceSlashStar() {
         assertAnalyze("/*zoo*/int x=3 /*test*/", "/*zoo*/int x=3; /*test*/", "", true);
         assertAnalyze("/*zoo*/int x=3 ;/*test*/", "/*zoo*/int x=3 ;/*test*/", "", true);
@@ -49,11 +50,13 @@ public class AnalysisTest extends KullaTesting {
         assertAnalyze("int ff; int v /*hgjghj*/", "int ff;", " int v /*hgjghj*/", true);
     }
 
+    @Test
     public void testIncomplete() {
         assertAnalyze("void m() { //erer", null, "void m() { //erer\n", false);
         assertAnalyze("int m=//", null, "int m=//\n", false);
     }
 
+    @Test
     public void testExpression() {
         assertAnalyze("45//test", "45//test", "", true);
         assertAnalyze("45;//test", "45;//test", "", true);

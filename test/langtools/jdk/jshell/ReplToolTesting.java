@@ -46,14 +46,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-import org.testng.annotations.BeforeMethod;
 
 import jdk.jshell.tool.JavaShellToolBuilder;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
 
 public class ReplToolTesting {
 
@@ -132,7 +132,7 @@ public class ReplToolTesting {
                     .filter(l -> !l.isEmpty())
                     .collect(Collectors.toList());
             int previousId = Integer.MIN_VALUE;
-            assertEquals(lines.size(), keys.size(), "Number of keys");
+            assertEquals(keys.size(), lines.size(), "Number of keys");
             for (int i = 0; i < lines.size(); ++i) {
                 String line = lines.get(i);
                 Matcher matcher = idPattern.matcher(line);
@@ -155,7 +155,7 @@ public class ReplToolTesting {
                     .filter(l -> !l.isEmpty())
                     .filter(l -> !l.startsWith("|     ")) // error/unresolved info
                     .collect(Collectors.toList());
-            assertEquals(lines.size(), set.size(), message + " : expected: " + set.keySet() + "\ngot:\n" + lines);
+            assertEquals(set.size(), lines.size(), message + " : expected: " + set.keySet() + "\ngot:\n" + lines);
             for (String line : lines) {
                 Matcher matcher = extractPattern.matcher(line);
                 assertTrue(matcher.find(), line);
@@ -271,7 +271,7 @@ public class ReplToolTesting {
         }
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         prefsMap = new HashMap<>();
         prefsMap.put("INDENT", "0");
@@ -331,8 +331,7 @@ public class ReplToolTesting {
         String ueos = getUserErrorOutput();
         assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
-        assertEquals(ceos,
-                     expectedErrorOutput,
+        assertEquals(                     expectedErrorOutput, ceos,
                      "Expected \"" + expectedErrorOutput +
                      "\" command error output, got: \"" + ceos + "\"");
         assertTrue(uos.isEmpty(), "Expected empty user output, got: " + uos);
@@ -563,7 +562,7 @@ public class ReplToolTesting {
 
     public void assertOutput(String got, String expected, String display) {
         if (expected != null) {
-            assertEquals(got, expected, display + ".\n");
+            assertEquals(expected, got, display + ".\n");
         }
     }
 

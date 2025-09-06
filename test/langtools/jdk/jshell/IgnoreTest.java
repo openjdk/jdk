@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,20 @@
  * @bug 8129559 8246353 8247456
  * @summary Test the ignoring of comments and certain modifiers
  * @build KullaTesting TestingInputStream
- * @run testng IgnoreTest
+ * @run junit IgnoreTest
  */
 
-import org.testng.annotations.Test;
 
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class IgnoreTest extends KullaTesting {
 
+    @Test
     public void testComment() {
         assertVarKeyMatch("//t1\n int//t2\n x//t3\n =//t4\n 12//t5\n ;//t6\n",
                 true, "x", VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, "int", added(VALID));
@@ -58,6 +58,7 @@ public class IgnoreTest extends KullaTesting {
                 false, "f", METHOD_SUBKIND, added(VALID));
     }
 
+    @Test
     public void testVarModifier() {
         VarSnippet x1 = varKey(assertEval("public int x1;"));
         assertVariableDeclSnippet(x1, "x1", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
@@ -71,6 +72,7 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
 
+    @Test
     public void testVarModifierAnnotation() {
         assertEval("@interface A { int value() default 0; }");
         VarSnippet x1 = varKey(assertEval("@A public int x1;"));
@@ -85,6 +87,7 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
 
+    @Test
     public void testVarModifierOtherModifier() {
         VarSnippet x1 = varKey(assertEval("volatile public int x1;"));
         assertVariableDeclSnippet(x1, "x1", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
@@ -98,12 +101,14 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
 
+    @Test
     public void testMisplacedIgnoredModifier() {
         assertEvalFail("int public y;");
         assertEvalFail("String private x;");
         assertEvalFail("(protected 34);");
     }
 
+    @Test
     public void testMethodModifier() {
         MethodSnippet m4 = methodKey(assertEval("static void m4() {}"));
         assertMethodDeclSnippet(m4, "m4", "()void", VALID, 0, 0);
@@ -111,6 +116,7 @@ public class IgnoreTest extends KullaTesting {
         assertMethodDeclSnippet(m5, "m5", "()void", VALID, 0, 0);
     }
 
+    @Test
     public void testMethodModifierAnnotation() {
         assertEval("@interface A { int value() default 0; }");
         MethodSnippet m4 = methodKey(assertEval("@A static void m4() {}"));
@@ -119,6 +125,7 @@ public class IgnoreTest extends KullaTesting {
         assertMethodDeclSnippet(m5, "m5", "()void", VALID, 0, 0);
     }
 
+    @Test
     public void testClassModifier() {
         TypeDeclSnippet c4 = classKey(assertEval("static class C4 {}"));
         assertTypeDeclSnippet(c4, "C4", VALID, CLASS_SUBKIND, 0, 0);
@@ -126,6 +133,7 @@ public class IgnoreTest extends KullaTesting {
         assertTypeDeclSnippet(c5, "C5", VALID, CLASS_SUBKIND, 0, 0);
     }
 
+    @Test
     public void testInsideModifier() {
         assertEval("import static java.lang.reflect.Modifier.*;");
         assertEval("class C {"

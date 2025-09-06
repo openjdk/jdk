@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng JavadocTest
+ * @run junit JavadocTest
  */
 
 import java.io.IOException;
@@ -43,13 +43,13 @@ import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JavadocTest extends KullaTesting {
 
     private final Compiler compiler = new Compiler();
 
+    @Test
     public void testJavadoc() {
         prepareZip();
         assertJavadoc("test.Clazz|", "test.Clazz\n" +
@@ -65,6 +65,7 @@ public class JavadocTest extends KullaTesting {
         assertJavadoc("clz.undef|");
     }
 
+    @Test
     public void testVariableInRepl() {
         assertEval("Object o;");
         assertSignature("o|", "o:java.lang.Object");
@@ -107,6 +108,7 @@ public class JavadocTest extends KullaTesting {
         addToClasspath(compiler.getClassDir());
     }
 
+    @Test
     public void testCollectionsMin() {
         prepareJavaUtilZip();
         assertJavadoc("java.util.Collections.min(|",
