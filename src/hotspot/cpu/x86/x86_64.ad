@@ -11841,7 +11841,7 @@ instruct conv2D2L_reg_reg(rRegL dst, regD src)
 instruct conv2D2L_reg_mem(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
-  match(Set dst (ConvD2I (LoadD src)));
+  match(Set dst (ConvD2L (LoadD src)));
   format %{ "evcvttsd2sisq $dst, $src" %}
   ins_encode %{
     __ evcvttsd2sisq($dst$$Register, $src$$Address);
