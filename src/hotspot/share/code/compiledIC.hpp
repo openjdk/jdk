@@ -50,7 +50,7 @@ class CompiledICLocker: public StackObj {
 public:
   CompiledICLocker(nmethod* method);
   ~CompiledICLocker();
-  static bool is_safe(nmethod* method);
+  static bool is_safe(nmethod* nm);
   static bool is_safe(address code);
 };
 
