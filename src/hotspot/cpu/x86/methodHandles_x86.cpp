@@ -131,13 +131,13 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
 
     const Register method_holder = temp;
     __ load_method_holder(method_holder, method);
-    __ push(method_holder); // keep holder around for diagnostic purposes
+    __ push_ppx(method_holder); // keep holder around for diagnostic purposes
 
     switch (iid) {
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
         __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
-        __ jccb(Assembler::equal, L_ok);
+        __ jcc(Assembler::equal, L_ok);
         break;
 
       case vmIntrinsicID::_linkToStatic:
@@ -154,7 +154,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
         // init_state check failed, but it may be an abstract interface method
         __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
         __ testl(temp, JVM_ACC_ABSTRACT);
-        __ jccb(Assembler::notZero, L_ok);
+        __ jcc(Assembler::notZero, L_ok);
         break;
 
       default:
@@ -165,7 +165,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
     __ STOP("Method holder klass is not initialized");
 
     __ BIND(L_ok);
-    __ pop(method_holder); // restore stack layout
+    __ pop_ppx(method_holder); // restore stack layout
   }
   BLOCK_COMMENT("} verify_method");
 }

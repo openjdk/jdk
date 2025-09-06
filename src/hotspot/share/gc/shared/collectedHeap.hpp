@@ -36,6 +36,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -89,6 +90,7 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
@@ -160,8 +162,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -207,6 +208,10 @@ protected:
            static_cast<uint>(heap->kind()), static_cast<uint>(kind));
     return static_cast<T*>(heap);
   }
+
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
 
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() = 0;
@@ -425,8 +430,6 @@ protected:
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
-  void log_gc_cpu_time() const;
-
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -458,12 +461,6 @@ protected:
 
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
-
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
-
-  double elapsed_gc_cpu_time() const;
 
   void print_before_gc() const;
   void print_after_gc() const;

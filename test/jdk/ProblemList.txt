@@ -260,7 +260,7 @@ java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469,8273617
 java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeChangeTest.java 8273617 macosx-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
 java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
-java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 6849371 macosx-all,linux-all
+java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 8366852 generic-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/PasteNullToTextComponentsTest.java 8234140 macosx-all,windows-all
@@ -614,11 +614,9 @@ java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generi
 
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
 
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
-
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
-
+java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       8365398 generic-all
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
 java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
 
@@ -751,11 +749,6 @@ java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
 
-sun/tools/jstat/jstatLineCounts1.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts2.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts3.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
-
 ############################################################################
 
 # jdk_other
@@ -839,6 +832,4 @@ java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 
 # jdk_since_checks
 
-tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8358627 generic-all
 tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
-

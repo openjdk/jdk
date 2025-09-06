@@ -33,7 +33,7 @@
  * running application up to the failure or crash.
  * <p>
  * To define a Flight Recorder event, extend {@link jdk.jfr.Event} and add
- * fields that matches the data types of the payload. Metadata about fields,
+ * fields that match the data types of the payload. Metadata about fields,
  * such as labels, descriptions and units, can be added by using the annotations
  * available in the {@code jdk.jfr} package, or by using a user-defined
  * annotation that has the {@link jdk.jfr.MetadataDefinition} annotation.
@@ -232,7 +232,7 @@
  * Typically this is expressed as {@code "not null"}. If a {@code null}
  * parameter is used where it is not allowed, a
  * {@code java.lang.NullPointerException} is thrown. If a {@code null}
- * parameters is passed to a method that throws other exceptions, such as
+ * parameters are passed to a method that throws other exceptions, such as
  * {@code java.io.IOException}, the {@code java.lang.NullPointerException} takes
  * precedence, unless the Javadoc for the method explicitly states how
  * {@code null} is handled, i.e. by throwing

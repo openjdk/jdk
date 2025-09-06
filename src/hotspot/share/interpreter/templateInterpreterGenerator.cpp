@@ -23,9 +23,9 @@
  */
 
 #include "compiler/disassembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
@@ -193,6 +193,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
+  method_entry(java_lang_math_sinh )
   method_entry(java_lang_math_tanh )
   method_entry(java_lang_math_cbrt )
   method_entry(java_lang_math_abs  )
@@ -454,6 +455,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_sinh    : // fall thru
   case Interpreter::java_lang_math_tanh    : // fall thru
   case Interpreter::java_lang_math_cbrt    : // fall thru
   case Interpreter::java_lang_math_abs     : // fall thru

@@ -383,8 +383,8 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
     return;
   }
   assert(is_constantPool(), "ensure C++ vtable is restored");
-  assert(on_stack(), "should always be set for shared constant pools");
-  assert(is_shared(), "should always be set for shared constant pools");
+  assert(on_stack(), "should always be set for constant pools in AOT cache");
+  assert(in_aot_cache(), "should always be set for constant pools in AOT cache");
   if (is_for_method_handle_intrinsic()) {
     // See the same check in remove_unshareable_info() below.
     assert(cache() == nullptr, "must not have cpCache");
@@ -428,11 +428,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
-  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
+  // ConstantPools in AOT cache are in the RO region, so the _flags cannot be modified.
   // The _on_stack flag is used to prevent ConstantPools from deallocation during
-  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
+  // class redefinition. Since such ConstantPools cannot be deallocated anyway,
   // we always set _on_stack to true to avoid having to change _flags during runtime.
-  _flags |= (_on_stack | _is_shared);
+  _flags |= (_on_stack | _in_aot_cache);
 
   if (is_for_method_handle_intrinsic()) {
     // This CP was created by Method::make_method_handle_intrinsic() and has nothing
@@ -2258,13 +2258,13 @@ void ConstantPool::set_on_stack(const bool value) {
   if (value) {
     // Only record if it's not already set.
     if (!on_stack()) {
-      assert(!is_shared(), "should always be set for shared constant pools");
+      assert(!in_aot_cache(), "should always be set for constant pools in AOT cache");
       _flags |= _on_stack;
       MetadataOnStackMark::record(this);
     }
   } else {
     // Clearing is done single-threadedly.
-    if (!is_shared()) {
+    if (!in_aot_cache()) {
       _flags &= (u2)(~_on_stack);
     }
   }

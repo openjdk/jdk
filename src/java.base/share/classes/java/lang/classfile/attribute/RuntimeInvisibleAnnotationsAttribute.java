@@ -73,6 +73,8 @@ public sealed interface RuntimeInvisibleAnnotationsAttribute
      * {@return a {@code RuntimeInvisibleAnnotations} attribute}
      *
      * @param annotations the annotations
+     * @throws IllegalArgumentException if the number of annotations exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static RuntimeInvisibleAnnotationsAttribute of(List<Annotation> annotations) {
         return new UnboundAttribute.UnboundRuntimeInvisibleAnnotationsAttribute(annotations);
@@ -82,6 +84,8 @@ public sealed interface RuntimeInvisibleAnnotationsAttribute
      * {@return a {@code RuntimeInvisibleAnnotations} attribute}
      *
      * @param annotations the annotations
+     * @throws IllegalArgumentException if the number of annotations exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static RuntimeInvisibleAnnotationsAttribute of(Annotation... annotations) {
         return of(List.of(annotations));

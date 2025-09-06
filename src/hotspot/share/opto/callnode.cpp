@@ -262,7 +262,8 @@ uint TailJumpNode::match_edge(uint idx) const {
 
 //=============================================================================
 JVMState::JVMState(ciMethod* method, JVMState* caller) :
-  _method(method) {
+  _method(method),
+  _receiver_info(nullptr) {
   assert(method != nullptr, "must be valid call site");
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
@@ -278,7 +279,8 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) :
   _sp = 0;
 }
 JVMState::JVMState(int stack_size) :
-  _method(nullptr) {
+  _method(nullptr),
+  _receiver_info(nullptr) {
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
   DEBUG_ONLY(_map = (SafePointNode*)-1);
@@ -613,6 +615,7 @@ JVMState* JVMState::clone_shallow(Compile* C) const {
   n->set_endoff(_endoff);
   n->set_sp(_sp);
   n->set_map(_map);
+  n->set_receiver_info(_receiver_info);
   return n;
 }
 
@@ -685,6 +688,20 @@ int JVMState::interpreter_frame_size() const {
     jvms = jvms->caller();
   }
   return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
+}
+
+// Compute receiver info for a compiled lambda form at call site.
+ciInstance* JVMState::compute_receiver_info(ciMethod* callee) const {
+  assert(callee != nullptr && callee->is_compiled_lambda_form(), "");
+  if (has_method() && method()->is_compiled_lambda_form()) { // callee is not a MH invoker
+    Node* recv = map()->argument(this, 0);
+    assert(recv != nullptr, "");
+    const TypeOopPtr* recv_toop = recv->bottom_type()->isa_oopptr();
+    if (recv_toop != nullptr && recv_toop->const_oop() != nullptr) {
+      return recv_toop->const_oop()->as_instance();
+    }
+  }
+  return nullptr;
 }
 
 //=============================================================================
@@ -918,7 +935,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
   projs->fallthrough_proj      = nullptr;
   projs->fallthrough_catchproj = nullptr;
   projs->fallthrough_ioproj    = nullptr;
@@ -1303,6 +1320,57 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 
 
 //=============================================================================
+bool CallLeafPureNode::is_unused() const {
+  return proj_out_or_null(TypeFunc::Parms) == nullptr;
+}
+
+bool CallLeafPureNode::is_dead() const {
+  return proj_out_or_null(TypeFunc::Control) == nullptr;
+}
+
+/* We make a tuple of the global input state + TOP for the output values.
+ * We use this to delete a pure function that is not used: by replacing the call with
+ * such a tuple, we let output Proj's idealization pick the corresponding input of the
+ * pure call, so jumping over it, and effectively, removing the call from the graph.
+ * This avoids doing the graph surgery manually, but leaves that to IGVN
+ * that is specialized for doing that right. We need also tuple components for output
+ * values of the function to respect the return arity, and in case there is a projection
+ * that would pick an output (which shouldn't happen at the moment).
+ */
+TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
+  // Transparently propagate input state but parameters
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr));
+
+  // And add TOPs for the return values
+  for (uint i = TypeFunc::Parms; i < tf()->range()->cnt(); i++) {
+    tuple->set_req(i, C->top());
+  }
+
+  return tuple;
+}
+
+Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (is_dead()) {
+    return nullptr;
+  }
+
+  // We need to wait until IGVN because during parsing, usages might still be missing
+  // and we would remove the call immediately.
+  if (can_reshape && is_unused()) {
+    // The result is not used. We remove the call by replacing it with a tuple, that
+    // is later disintegrated by the projections.
+    return make_tuple_of_input_state_and_top_return_values(phase->C);
+  }
+
+  return CallRuntimeNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1313,7 +1381,7 @@ void CallLeafNode::dump_spec(outputStream *st) const {
 
 //=============================================================================
 
-void SafePointNode::set_local(JVMState* jvms, uint idx, Node *c) {
+void SafePointNode::set_local(const JVMState* jvms, uint idx, Node *c) {
   assert(verify_jvms(jvms), "jvms must match");
   int loc = jvms->locoff() + idx;
   if (in(loc)->is_top() && idx > 0 && !c->is_top() ) {
