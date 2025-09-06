@@ -34,6 +34,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.java.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -1162,6 +1163,77 @@ final class StringUTF16 {
             }
         }
         return newString(result, 0, resultOffset);
+    }
+
+    private static String toCaseFoldEx(String str, byte[] value, byte[] result, int first) {
+        assert(result.length == value.length);
+        assert(first >= 0);
+        int resultOffset = first;
+        int length = value.length >> 1;
+        int srcCount;
+        for (int i = first; i < length; i += srcCount) {
+            int src = getChar(value, i);
+            srcCount = 1;
+            if (Character.isSurrogate((char)src)) {
+                src = codePointAt(value, i, length);
+                srcCount = Character.charCount(src);
+            }
+            char[] folded = CaseFolding.fold(src);
+            if (folded.length > srcCount) {
+                // tbd: should we pre-scan?
+                byte[] result2 = newBytesFor((result.length >> 1) + folded.length - srcCount);
+                System.arraycopy(result, 0, result2, 0, resultOffset << 1);
+                result = result2;
+            }
+            assert resultOffset >= 0;
+            assert resultOffset + folded.length <= length(result);
+            for (int x = 0; x < folded.length; ++x) {
+                putChar(result, resultOffset++, folded[x]);
+            }
+        }
+        return newString(result, 0, resultOffset);
+    }
+
+    public static String toCaseFold(String str, byte[] value) {
+        int first;
+        final int len = value.length >> 1;
+        int cpCount = 1;
+
+        // Now check if there are any characters that need to be changed, or are surrogate
+        for (first = 0 ; first < len; first += cpCount) {
+            int cp = (int)getChar(value, first);
+            if (Character.isSurrogate((char)cp)) {
+                cp = codePointAt(value, first, len);
+             }
+            if (!CaseFolding.isFolded(cp)) {
+                break;
+            }
+            cpCount = Character.charCount(cp);
+        }
+        if (first == len) {
+            return str;
+        }
+        byte[] result = new byte[value.length];
+        System.arraycopy(value, 0, result, 0, first << 1); // Just copy the first few
+        // case-fold characters.
+        int bits = 0;
+        for (int i = first; i < len; i++) {
+            int cp = (int)getChar(value, i);
+            if (Character.isSurrogate((char)cp)) {
+                return toCaseFoldEx(str, value, result, i);
+            }
+            char[] folded = CaseFolding.fold(cp);
+            if (folded.length != 1) {    // 1:M or surrogate pair
+                return toCaseFoldEx(str, value, result, i);
+            }
+            bits |= folded[0];
+            putChar(result, i, folded[0]);
+        }
+        if (bits < 0 || bits > 0xff) {
+            return new String(result, UTF16);
+        } else {
+            return newString(result, 0, len);
+        }
     }
 
     public static String trim(byte[] value) {
