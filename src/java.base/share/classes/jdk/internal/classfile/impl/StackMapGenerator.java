@@ -1253,7 +1253,7 @@ public final class StackMapGenerator {
                     return;
                 }
             } else if (stackSize == 1 && localsSize == prevFrame.localsSize && equals(locals, prevFrame.locals, localsSize)) {
-                if (offsetDelta <= SAME_FRAME_END) {  //same locals 1 stack item frame
+                if (offsetDelta <= SAME_LOCALS_1_STACK_ITEM_FRAME_END  - SAME_LOCALS_1_STACK_ITEM_FRAME_START) {  //same locals 1 stack item frame
                     out.writeU1(SAME_LOCALS_1_STACK_ITEM_FRAME_START + offsetDelta);
                 } else {  //same locals 1 stack item extended frame
                     out.writeU1U2(SAME_LOCALS_1_STACK_ITEM_EXTENDED, offsetDelta);
