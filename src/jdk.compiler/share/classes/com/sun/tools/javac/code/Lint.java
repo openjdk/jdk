@@ -160,20 +160,8 @@ public class Lint {
             // if -Xlint:none is given, disable all categories by default
             values = LintCategory.newEmptySet();
         } else {
-
-            // Otherwise, enable the on-by-default categories; for some categories,
-            // whether the category is on by default depends on other options.
-            values = LintCategory.newEmptySet();
-            Source source = Source.instance(context);
-            Stream.of(LintCategory.values())
-              .filter(lc ->
-                switch (lc) {
-                    case DEP_ANN  -> source.compareTo(Source.JDK9) >= 0;
-                    case STRICTFP -> Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source);
-                    case PREVIEW  -> !options.isSet(Option.PREVIEW);
-                    default       -> lc.enabledByDefault;
-                })
-              .forEach(values::add);
+            // Otherwise enable the on-by-default categories
+            values = getDefaults();
         }
 
         // Look for specific overrides
@@ -186,6 +174,23 @@ public class Lint {
         }
 
         suppressedValues = LintCategory.newEmptySet();
+    }
+
+    // Obtain the set of on-by-default categories. Note that for a few categories,
+    // whether the category is on-by-default depends on other compiler options.
+    private EnumSet<LintCategory> getDefaults() {
+        EnumSet<LintCategory> defaults = LintCategory.newEmptySet();
+        Source source = Source.instance(context);
+        Stream.of(LintCategory.values())
+          .filter(lc ->
+            switch (lc) {
+                case DEP_ANN  -> source.compareTo(Source.JDK9) >= 0;
+                case STRICTFP -> Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source);
+                case PREVIEW  -> !options.isSet(Option.PREVIEW);
+                default       -> lc.enabledByDefault;
+            })
+          .forEach(defaults::add);
+        return defaults;
     }
 
     @Override
