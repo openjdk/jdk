@@ -83,6 +83,8 @@ public sealed interface StackMapFrameInfo
      * @param target the location of the frame
      * @param locals the complete list of frame locals
      * @param stack the complete frame stack
+     * @throws IllegalArgumentException if the number of types in {@code locals}
+     *         or {@code stack} exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,

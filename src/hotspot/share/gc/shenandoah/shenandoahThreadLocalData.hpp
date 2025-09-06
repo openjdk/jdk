@@ -58,8 +58,6 @@ private:
   PLAB* _gclab;
   size_t _gclab_size;
 
-  double _paced_time;
-
   // Thread-local allocation buffer only used in generational mode.
   // Used both by mutator threads and by GC worker threads
   // for evacuations within the old generation and
@@ -235,18 +233,6 @@ public:
 
   static size_t get_plab_actual_size(Thread* thread) {
     return data(thread)->_plab_actual_size;
-  }
-
-  static void add_paced_time(Thread* thread, double v) {
-    data(thread)->_paced_time += v;
-  }
-
-  static double paced_time(Thread* thread) {
-    return data(thread)->_paced_time;
-  }
-
-  static void reset_paced_time(Thread* thread) {
-    data(thread)->_paced_time = 0;
   }
 
   // Evacuation OOM handling

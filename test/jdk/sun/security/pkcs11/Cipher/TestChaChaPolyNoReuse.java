@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,22 @@
  * (key/nonce reuse check)
  */
 
-import java.util.*;
+import jtreg.SkippedException;
+
 import javax.crypto.Cipher;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
-import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.AEADBadTagException;
 import javax.crypto.SecretKey;
 import java.security.InvalidKeyException;
 import java.security.InvalidAlgorithmParameterException;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class TestChaChaPolyNoReuse extends PKCS11Test {
 
@@ -238,8 +242,7 @@ public class TestChaChaPolyNoReuse extends PKCS11Test {
         try {
             Cipher.getInstance(CIPHER_ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + CIPHER_ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + CIPHER_ALGO);
         }
 
         int testsPassed = 0;
