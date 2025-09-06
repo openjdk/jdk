@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1228,17 +1228,14 @@ public class GroupLayout implements LayoutManager2 {
             String indent, int axis) {
         String origin = "";
         String padding = "";
-        if (spring instanceof ComponentSpring) {
-            ComponentSpring cSpring = (ComponentSpring)spring;
+        if (spring instanceof ComponentSpring cSpring) {
             origin = cSpring.getOrigin() + " ";
             String name = cSpring.getComponent().getName();
             if (name != null) {
                 origin = "name=" + name + ", ";
             }
         }
-        if (spring instanceof AutoPreferredGapSpring) {
-            AutoPreferredGapSpring paddingSpring =
-                    (AutoPreferredGapSpring)spring;
+        if (spring instanceof AutoPreferredGapSpring paddingSpring) {
             padding = ", userCreated=" + paddingSpring.getUserCreated() +
                     ", matches=" + paddingSpring.getMatchDescription();
         }
@@ -2171,12 +2168,10 @@ public class GroupLayout implements LayoutManager2 {
             // loop.
             while (counter < springs.size()) {
                 Spring spring = getSpring(counter);
-                if (spring instanceof AutoPreferredGapSpring) {
+                if (spring instanceof AutoPreferredGapSpring padding) {
                     if (newLeadingPadding.size() == 0) {
                         // Autopadding spring. Set the sources of the
                         // autopadding spring based on newLeading.
-                        AutoPreferredGapSpring padding =
-                            (AutoPreferredGapSpring)spring;
                         padding.setSources(newLeading);
                         newLeading.clear();
                         counter = indexOfNextNonZeroSpring(counter + 1, true);
@@ -2206,10 +2201,9 @@ public class GroupLayout implements LayoutManager2 {
                         springs.add(counter, padding);
                         continue;
                     }
-                    if (spring instanceof ComponentSpring) {
+                    if (spring instanceof ComponentSpring cSpring) {
                         // Spring is a Component, make it the target of any
                         // leading AutopaddingSpring.
-                        ComponentSpring cSpring = (ComponentSpring)spring;
                         if (!cSpring.isVisible()) {
                             counter++;
                             continue;

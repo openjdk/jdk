@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,8 +176,7 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
     public void paintBorder(Component c, Graphics g, int x, int y, int width,
                             int height) {
         JComponent comp = (c instanceof JComponent)?(JComponent)c:null;
-        if (g instanceof Graphics2D){
-            Graphics2D g2 = (Graphics2D)g;
+        if (g instanceof Graphics2D g2){
             g2.translate(x,y);
             paint(g2,comp, width, height);
             g2.translate(-x,-y);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1060,13 +1060,12 @@ final class TextLine {
 
             Object graphicOrFont = styledParagraph.getFontOrGraphicAt(pos);
 
-            if (graphicOrFont instanceof GraphicAttribute) {
+            if (graphicOrFont instanceof GraphicAttribute graphicAttribute) {
                 // AffineTransform baseRot = styledParagraph.getBaselineRotationAt(pos);
                 // !!! For now, let's assign runs of text with both fonts and graphic attributes
                 // a null rotation (e.g. the baseline rotation goes away when a graphic
                 // is applied.
                 AffineTransform baseRot = null;
-                GraphicAttribute graphicAttribute = (GraphicAttribute) graphicOrFont;
                 do {
                     int chunkLimit = firstVisualChunk(charsLtoV, levels,
                                     pos, runLimit);

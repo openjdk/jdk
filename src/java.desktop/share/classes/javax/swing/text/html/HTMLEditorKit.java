@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,8 +305,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      */
     public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
 
-        if (doc instanceof HTMLDocument) {
-            HTMLDocument hdoc = (HTMLDocument) doc;
+        if (doc instanceof HTMLDocument hdoc) {
             if (pos > doc.getLength()) {
                 throw new BadLocationException("Invalid location", pos);
             }
@@ -506,8 +505,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         set.removeAttribute(StyleConstants.ComposedTextAttribute);
 
         Object o = set.getAttribute(StyleConstants.NameAttribute);
-        if (o instanceof HTML.Tag) {
-            HTML.Tag tag = (HTML.Tag)o;
+        if (o instanceof HTML.Tag tag) {
             // PENDING: we need a better way to express what shouldn't be
             // copied when editing...
             if(tag == HTML.Tag.IMG) {
@@ -768,8 +766,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 if (bias[0] == Position.Bias.Backward && pos > 0) {
                     pos--;
                 }
-                if (pos >= 0 &&(editor.getDocument() instanceof HTMLDocument)){
-                    HTMLDocument hdoc = (HTMLDocument)editor.getDocument();
+                if (pos >= 0 &&(editor.getDocument() instanceof HTMLDocument hdoc)){
                     Element elem = hdoc.getCharacterElement(pos);
                     if (!doesElementContainLocation(editor, elem, pos,
                                                     e.getX(), e.getY())) {
@@ -914,8 +911,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          */
         void activateLink(int pos, JEditorPane html, MouseEvent mouseEvent) {
             Document doc = html.getDocument();
-            if (doc instanceof HTMLDocument) {
-                HTMLDocument hdoc = (HTMLDocument) doc;
+            if (doc instanceof HTMLDocument hdoc) {
                 Element e = hdoc.getCharacterElement(pos);
                 AttributeSet a = e.getAttributes();
                 AttributeSet anchor = (AttributeSet)a.getAttribute(HTML.Tag.A);
@@ -1335,8 +1331,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 attrs.getAttribute(AbstractDocument.ElementNameAttribute);
             Object o = (elementName != null) ?
                 null : attrs.getAttribute(StyleConstants.NameAttribute);
-            if (o instanceof HTML.Tag) {
-                HTML.Tag kind = (HTML.Tag) o;
+            if (o instanceof HTML.Tag kind) {
                 if (kind == HTML.Tag.CONTENT) {
                     return new InlineView(elem);
                 } else if (kind == HTML.Tag.IMPLIED) {
@@ -1538,10 +1533,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             }
 
             public void componentResized(ComponentEvent e) {
-                if ( !(e.getSource() instanceof JViewport) ) {
+                if ( !(e.getSource() instanceof JViewport viewPort) ) {
                     return;
                 }
-                JViewport viewPort = (JViewport)e.getSource();
                 if (componentVisibleWidth != viewPort.getExtentSize().width) {
                     Document doc = getDocument();
                     if (doc instanceof AbstractDocument) {
@@ -2184,8 +2178,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          */
         public void caretUpdate(CaretEvent e) {
             Object src = e.getSource();
-            if (src instanceof JTextComponent) {
-                JTextComponent comp = (JTextComponent) src;
+            if (src instanceof JTextComponent comp) {
                 HTMLEditorKit kit = getHTMLEditorKit(comp);
                 if (kit != null && kit.foundLink) {
                     kit.foundLink = false;
@@ -2486,10 +2479,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         public void actionPerformed(ActionEvent e) {
 
             JTextComponent c = getTextComponent(e);
-            if (c.isEditable() || !(c instanceof JEditorPane)) {
+            if (c.isEditable() || !(c instanceof JEditorPane editor)) {
                 return;
             }
-            JEditorPane editor = (JEditorPane)c;
 
             Document d = editor.getDocument();
             if (!(d instanceof HTMLDocument doc)) {

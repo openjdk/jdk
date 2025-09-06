@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -769,8 +769,7 @@ public abstract class SynthStyle {
             //For example, JLabel doesn't specify a disabled color that the
             //developer can set, yet it should have a disabled color to the
             //text when the label is disabled. This code allows for that.
-            if (c instanceof JTextComponent) {
-                JTextComponent txt = (JTextComponent)c;
+            if (c instanceof JTextComponent txt) {
                 Color disabledColor = txt.getDisabledTextColor();
                 if (disabledColor == null || disabledColor instanceof UIResource) {
                     return getColorForState(context, type);

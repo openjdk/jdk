@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,8 +652,7 @@ public class UIManager implements Serializable
             return "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
         } else {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
-            if (toolkit instanceof SunToolkit) {
-                SunToolkit suntk = (SunToolkit)toolkit;
+            if (toolkit instanceof SunToolkit suntk) {
                 String desktop = suntk.getDesktop();
                 boolean gtkAvailable = suntk.isNativeGTKAvailable();
                 if ("gnome".equals(desktop) && gtkAvailable) {

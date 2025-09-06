@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,8 +169,7 @@ class GradientPaintContext implements PaintContext {
         int db = ((rgb2      ) & 0xff) - b1;
         if (a1 == 0xff && da == 0) {
             model = xrgbmodel;
-            if (cm instanceof DirectColorModel) {
-                DirectColorModel dcm = (DirectColorModel) cm;
+            if (cm instanceof DirectColorModel dcm) {
                 int tmp = dcm.getAlphaMask();
                 if ((tmp == 0 || tmp == 0xff) &&
                     dcm.getRedMask() == 0xff &&

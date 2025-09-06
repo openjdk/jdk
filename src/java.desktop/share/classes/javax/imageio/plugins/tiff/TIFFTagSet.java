@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,10 @@ public class TIFFTagSet {
             throw new IllegalArgumentException("tags == null!");
         }
         for (Object o : tags) {
-            if (!(o instanceof TIFFTag)) {
+            if (!(o instanceof TIFFTag tag)) {
                 throw new IllegalArgumentException(
                                                "tags contains a non-TIFFTag!");
             }
-            TIFFTag tag = (TIFFTag)o;
 
             allowedTagsByNumber.put(Integer.valueOf(tag.getNumber()), tag);
             allowedTagsByName.put(tag.getName(), tag);

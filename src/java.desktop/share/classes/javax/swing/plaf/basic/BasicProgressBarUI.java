@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,7 +657,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * @since 1.4
      */
     protected void paintIndeterminate(Graphics g, JComponent c) {
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             return;
         }
 
@@ -668,8 +668,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
         if (barRectWidth <= 0 || barRectHeight <= 0) {
             return;
         }
-
-        Graphics2D g2 = (Graphics2D)g;
 
         // Paint the bouncing box.
         boxRect = getBox(boxRect);
@@ -710,7 +708,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * @since 1.4
      */
     protected void paintDeterminate(Graphics g, JComponent c) {
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             return;
         }
 
@@ -727,7 +725,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
         // amount of progress to draw
         int amountFull = getAmountFull(b, barRectWidth, barRectHeight);
 
-        Graphics2D g2 = (Graphics2D)g;
         g2.setColor(progressBar.getForeground());
 
         if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
@@ -838,11 +835,10 @@ public class BasicProgressBarUI extends ProgressBarUI {
      */
     private void paintString(Graphics g, int x, int y, int width, int height,
                              int fillStart, int amountFull, Insets b) {
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             return;
         }
 
-        Graphics2D g2 = (Graphics2D)g;
         String progressString = progressBar.getString();
         g2.setFont(progressBar.getFont());
         Point renderLocation = getStringPlacement(g2, progressString,

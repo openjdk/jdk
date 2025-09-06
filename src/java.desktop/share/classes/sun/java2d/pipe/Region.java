@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1373,10 +1373,9 @@ public final class Region {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Region)) {
+        if (!(o instanceof Region r)) {
             return false;
         }
-        Region r = (Region) o;
         if (this.isEmpty()) {
             return r.isEmpty();
         } else if (r.isEmpty()) {

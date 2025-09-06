@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,7 @@ public class ByteComponentRaster extends SunWritableRaster {
         }
         int dbOffset = dataBuffer.getOffset();
 
-        if (sampleModel instanceof ComponentSampleModel) {
-            ComponentSampleModel ism = (ComponentSampleModel)sampleModel;
+        if (sampleModel instanceof ComponentSampleModel ism) {
             this.type = IntegerComponentRaster.TYPE_BYTE_SAMPLES;
             this.scanlineStride = ism.getScanlineStride();
             this.pixelStride = ism.getPixelStride();
@@ -177,9 +176,7 @@ public class ByteComponentRaster extends SunWritableRaster {
                 dataOffsets[i] += dbOffset +
                     xOffset*pixelStride+yOffset*scanlineStride;
             }
-        } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        } else if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             this.type = IntegerComponentRaster.TYPE_BYTE_PACKED_SAMPLES;
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
@@ -521,8 +518,7 @@ public class ByteComponentRaster extends SunWritableRaster {
         int srcOffY = inRaster.getMinY();
         Object tdata = null;
 
-        if (inRaster instanceof ByteComponentRaster) {
-            ByteComponentRaster bct = (ByteComponentRaster) inRaster;
+        if (inRaster instanceof ByteComponentRaster bct) {
             byte[] bdata = bct.getDataStorage();
             // REMIND: Do something faster!
             if (numDataElements == 1) {
