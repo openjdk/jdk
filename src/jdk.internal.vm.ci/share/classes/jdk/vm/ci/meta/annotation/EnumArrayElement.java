@@ -20,59 +20,52 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.meta;
+package jdk.vm.ci.meta.annotation;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
+
+import java.util.List;
 
 /**
- * Represents an enum constant within {@link AnnotationData}.
+ * Represents an enum array element within an {@link AnnotationValue}.
  */
-public final class EnumData {
-    private final JavaType type;
-    private final String name;
+public final class EnumArrayElement {
+    /**
+     * The type of the enum.
+     */
+    public final ResolvedJavaType enumType;
 
     /**
-     * Creates an enum constant.
+     * The names of the enum constants.
+     */
+    public final List<String> names;
+
+    /**
+     * Creates an array of enum constants.
      *
-     * @param type the {@linkplain Enum enum type}
-     * @param name the {@linkplain Enum#name() name} of the enum
+     * @param enumType the {@linkplain Enum enum type}
+     * @param names the names of the enum constants
      */
-    public EnumData(JavaType type, String name) {
-        this.type = type;
-        this.name = name;
-    }
-
-    /**
-     * Gets the {@linkplain Enum enum type}.
-     */
-    public JavaType getEnumType() {
-        return type;
-    }
-
-    /**
-     * Gets the {@linkplain Enum#name() name} of the enum.
-     */
-    public String getName() {
-        return name;
+    public EnumArrayElement(ResolvedJavaType enumType, List<String> names) {
+        this.enumType = enumType;
+        this.names = names;
     }
 
     @Override
     public String toString() {
-        return name;
+        return names.toString();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof EnumData) {
-            EnumData that = (EnumData) obj;
-            return this.type.equals(that.type) && this.name.equals(that.name);
+        if (obj instanceof EnumArrayElement that) {
+            return this.enumType.equals(that.enumType) && this.names.equals(that.names);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return this.type.hashCode() ^ this.name.hashCode();
+        return this.enumType.hashCode() ^ this.names.hashCode();
     }
 }

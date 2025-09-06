@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,32 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.runtime.test;
+package jdk.internal.vm.test;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * Context for method related tests.
- */
-public class MethodUniverse extends TypeUniverse {
-
-    public static final Map<Method, ResolvedJavaMethod> methods = new HashMap<>();
-    public static final Map<Constructor<?>, ResolvedJavaMethod> constructors = new HashMap<>();
-
-    static {
-        for (Class<?> c : classes) {
-            for (Method m : c.getDeclaredMethods()) {
-                ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-                methods.put(m, method);
-            }
-            for (Constructor<?> m : c.getDeclaredConstructors()) {
-                constructors.put(m, metaAccess.lookupJavaMethod(m));
-            }
-        }
-    }
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MemberAdded {
+    String value();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,18 @@
  * @library ../../../../../
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  *          TestResolvedJavaType.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ *        jdk.internal.vm.test.AnnotationTestInput$MissingTypeQualifier
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberAdded.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          java.base/java.lang:open
+ *          java.base/java.lang.reflect:open
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta.annotation
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -45,12 +51,18 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.annotation.TypeAnnotationValue;
+import jdk.vm.ci.runtime.test.TestResolvedJavaField.TestClassLoader;
+import org.junit.Assert;
+import org.junit.Test;
+import sun.reflect.annotation.TypeAnnotation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,20 +74,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import jdk.internal.vm.test.AnnotationTestInput;
-import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.test.TestResolvedJavaField.TestClassLoader;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link ResolvedJavaField}.
@@ -193,11 +201,42 @@ public class TestResolvedJavaField extends FieldUniverse {
         return null;
     }
 
+    /**
+     * Tests that {@link TypeAnnotation}s obtained from {@code field}
+     * match {@link TypeAnnotationValue}s for the corresponding {@link ResolvedJavaField}.
+     */
+    private static void getTypeAnnotationValuesTest(Field field) {
+        ResolvedJavaField javaField = metaAccess.lookupJavaField(field);
+        List<TypeAnnotation> typeAnnotations = getTypeAnnotations(field);
+        List<TypeAnnotationValue> typeAnnotationValues = javaField.getTypeAnnotationValues();
+        TestResolvedJavaType.assertTypeAnnotationsEquals(typeAnnotations, typeAnnotationValues);
+    }
+
+    private static final Method fieldGetTypeAnnotationBytes = lookupMethod(Field.class, "getTypeAnnotationBytes0");
+
+    private static List<TypeAnnotation> getTypeAnnotations(Field f) {
+        byte[] rawAnnotations = invokeMethod(fieldGetTypeAnnotationBytes, f);
+        Class<?> container = f.getDeclaringClass();
+        return TestResolvedJavaType.getTypeAnnotations(rawAnnotations, container);
+    }
+
     @Test
-    public void getAnnotationDataTest() throws Exception {
-        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
+    public void getTypeAnnotationValuesTest() throws Exception {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            getTypeAnnotationValuesTest(f);
+        }
         for (Field f : fields.keySet()) {
-            TestResolvedJavaType.getAnnotationDataTest(f);
+            getTypeAnnotationValuesTest(f);
+        }
+    }
+
+    @Test
+    public void getAnnotationValuesTest() throws Exception {
+        for (Field f : AnnotationTestInput.class.getDeclaredFields()) {
+            TestResolvedJavaType.getAnnotationValuesTest(f);
+        }
+        for (Field f : fields.keySet()) {
+            TestResolvedJavaType.getAnnotationValuesTest(f);
         }
     }
 
