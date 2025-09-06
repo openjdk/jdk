@@ -95,6 +95,13 @@
 #define HWCAP2_SVEBITPERM (1 << 4)
 #endif
 
+#ifndef HWCAP2_ECV
+#define HWCAP2_ECV (1 << 19)
+#endif
+
+#ifndef HWCAP2_WFXT
+#define HWCAP2_WFXT (1u << 31)
+#endif
 #ifndef PR_SVE_GET_VL
 // For old toolchains which do not have SVE related macros defined.
 #define PR_SVE_SET_VL   50
@@ -157,6 +164,12 @@ void VM_Version::get_os_cpu_info() {
   }
   if (auxv2 & HWCAP2_SVEBITPERM) {
     set_feature(CPU_SVEBITPERM);
+  }
+  if (auxv2 & HWCAP2_ECV) {
+    set_feature(CPU_ECV);
+  }
+  if (auxv2 & HWCAP2_WFXT) {
+    set_feature(CPU_WFXT);
   }
 
   uint64_t ctr_el0;

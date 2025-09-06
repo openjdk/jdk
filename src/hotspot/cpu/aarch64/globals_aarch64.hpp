@@ -117,12 +117,16 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
           "The instruction to use to implement "                        \
           "java.lang.Thread.onSpinWait()."                              \
-          "Valid values are: none, nop, isb, yield, sb.")               \
+          "Valid values are: none, nop, isb, yield, sb, wfet.")         \
           constraint(OnSpinWaitInstNameConstraintFunc, AtParse)         \
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
           "The number of OnSpinWaitInst instructions to generate."      \
-          "It cannot be used with OnSpinWaitInst=none.")                \
+          "It cannot be used with OnSpinWaitInst=<none|wfet>.")         \
           range(1, 99)                                                  \
+  product(uint, OnSpinWaitDelay, 1, DIAGNOSTIC,                         \
+          "The target delay in the OnSpinWait loop."                    \
+          "It can only be used with OnSpinWaitInst=wfet.")              \
+          range(1, 1000)                                                \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \

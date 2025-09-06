@@ -32,6 +32,7 @@ bool SpinWait::supports(const char *name) {
           strcmp(name, "isb")   == 0 ||
           strcmp(name, "yield") == 0 ||
           strcmp(name, "sb")    == 0 ||
+          strcmp(name, "wfet")  == 0 ||
           strcmp(name, "none")  == 0);
 }
 
@@ -46,6 +47,8 @@ SpinWait::Inst SpinWait::from_name(const char* name) {
     return SpinWait::YIELD;
   } else if (strcmp(name, "sb") == 0) {
     return SpinWait::SB;
+  } else if (strcmp(name, "wfet") == 0) {
+    return SpinWait::WFET;
   }
 
   return SpinWait::NONE;
