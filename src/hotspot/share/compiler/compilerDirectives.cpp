@@ -561,6 +561,19 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   return false;
 }
 
+bool DirectiveSet::is_estimated_size_bigger_than(ciMethod* inlinee, const int threshold) {
+  inlinee->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, inlinee->get_Method());
+
+  if (_inlinematchers != nullptr) {
+    if (_inlinematchers->match_if_bigger_than(mh, threshold)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool DirectiveSet::parse_and_add_inline(char* str, const char*& error_msg) {
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(str, error_msg);
   if (m != nullptr) {
