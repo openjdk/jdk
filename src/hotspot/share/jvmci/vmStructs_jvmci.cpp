@@ -223,6 +223,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
+  nonstatic_field(InstanceKlass,               _record_components,                            Array<RecordComponent*>*)              \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \

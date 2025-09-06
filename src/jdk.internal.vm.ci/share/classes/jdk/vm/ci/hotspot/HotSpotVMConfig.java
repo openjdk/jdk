@@ -99,6 +99,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
+    final int instanceKlassRecordComponentsOffset = getFieldOffset("InstanceKlass::_record_components", Integer.class, "Array<RecordComponent*>*");
     final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
     final int klassMiscFlagsOffset = getFieldOffset("Klass::_misc_flags._flags", Integer.class, "u1");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");

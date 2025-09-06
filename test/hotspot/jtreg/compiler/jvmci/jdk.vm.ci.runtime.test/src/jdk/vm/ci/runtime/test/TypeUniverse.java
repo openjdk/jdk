@@ -96,6 +96,10 @@ public class TypeUniverse {
 
     }
 
+    public record RecordClass(int i, String s) {
+
+    }
+
     static {
         Unsafe theUnsafe = null;
         try {
@@ -116,7 +120,7 @@ public class TypeUniverse {
                         byte[][].class, short[][].class, char[][].class, int[][].class, float[][].class, long[][].class, double[][].class, Object[][].class, Class[][].class, List[][].class,
                         ClassLoader.class, String.class, Serializable.class, Cloneable.class, Test.class, TestMetaAccessProvider.class, List.class, Collection.class, Map.class, Queue.class,
                         HashMap.class, LinkedHashMap.class, IdentityHashMap.class, AbstractCollection.class, AbstractList.class, ArrayList.class, InnerClass.class, InnerStaticClass.class,
-                        InnerStaticFinalClass.class, PrivateInnerClass.class, ProtectedInnerClass.class, ScopedMemoryAccess.class};
+                        InnerStaticFinalClass.class, PrivateInnerClass.class, ProtectedInnerClass.class, ScopedMemoryAccess.class, RecordClass.class};
         for (Class<?> c : initialClasses) {
             addClass(c);
         }
