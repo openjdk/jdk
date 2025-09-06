@@ -219,8 +219,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
-        if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
-            nm->method()->is_method_handle_intrinsic()) {
+        if (nm->is_deopt_entry(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
             return false;
         }
     }
@@ -475,8 +474,7 @@ void frame::adjust_unextended_sp() {
     nmethod* sender_nm = _cb->as_nmethod_or_null();
     if (sender_nm != nullptr) {
       // If the sender PC is a deoptimization point, get the original PC.
-      if (sender_nm->is_deopt_entry(_pc) ||
-          sender_nm->is_deopt_mh_entry(_pc)) {
+      if (sender_nm->is_deopt_entry(_pc)) {
         verify_deopt_original_pc(sender_nm, _unextended_sp);
       }
     }

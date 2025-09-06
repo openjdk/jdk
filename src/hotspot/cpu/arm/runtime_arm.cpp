@@ -264,11 +264,6 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   __ raw_pop(FP, LR);
 
-  // Restore SP from its saved reg (FP) if the exception PC is a MethodHandle call site.
-  __ ldr(Rtemp, Address(Rthread, JavaThread::is_method_handle_return_offset()));
-  __ cmp(Rtemp, 0);
-  __ mov(SP, Rmh_SP_save, ne);
-
   // R0 contains handler address
   // Since this may be the deopt blob we must set R5 to look like we returned
   // from the original pc that threw the exception
