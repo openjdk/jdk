@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jtreg.SkippedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -144,22 +146,19 @@ public class ValidatePathWithParams {
         } catch (IOException ioe) {
             // Some machines don't have network setup correctly to be able to
             // reach outside world, skip such failures
-            out.println("WARNING: Network setup issue, skip this test");
             ioe.printStackTrace(System.err);
-            return;
+            throw new SkippedException("WARNING: Network setup issue, skip this test");
         } catch (CertPathValidatorException cpve) {
             out.println("Received exception: " + cpve);
 
             if (cpve.getCause() instanceof IOException) {
-                out.println("WARNING: CertPathValidatorException caused by IO"
+                throw new SkippedException("WARNING: CertPathValidatorException caused by IO"
                         + " error, skip this test");
-                return;
             }
 
             if (cpve.getReason() == CertPathValidatorException.BasicReason.ALGORITHM_CONSTRAINED) {
-                out.println("WARNING: CertPathValidatorException caused by"
+                throw new SkippedException("WARNING: CertPathValidatorException caused by"
                         + " restricted algorithm, skip this test");
-                return;
             }
 
             if (cpve.getReason() == CertPathValidatorException.BasicReason.REVOKED
@@ -185,8 +184,7 @@ public class ValidatePathWithParams {
         // Don't want test to fail in case certificate is expired when not expected
         // Simply skip the test.
         if (expectedStatus != Status.EXPIRED && certStatus == Status.EXPIRED) {
-            out.println("WARNING: Certificate expired, skip the test");
-            return;
+            throw new SkippedException("WARNING: Certificate expired, skip the test");
         }
 
         if (certStatus != expectedStatus) {
