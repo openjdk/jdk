@@ -21,8 +21,9 @@
  * questions.
  */
 
-import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
+
+import com.sun.management.OperatingSystemMXBean;
 
 // Usage:
 //   GetFreeSwapSpaceSize <memoryAlloc> <expectedMemory> <memorySwapAlloc> <expectedSwap>
@@ -32,6 +33,7 @@ public class GetFreeSwapSpaceSize {
             throw new RuntimeException("Unexpected arguments. Expected 4, got " + args.length);
         }
         String memoryAlloc = args[0];
+        @SuppressWarnings("unused")
         long expectedMemory = Long.parseLong(args[1]);
         String memorySwapAlloc = args[2];
         long expectedSwap = Long.parseLong(args[3]);
