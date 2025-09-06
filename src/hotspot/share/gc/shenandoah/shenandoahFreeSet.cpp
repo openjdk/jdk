@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
@@ -2184,6 +2185,10 @@ HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
   HeapWord *obj = nullptr;
   uint i = 0u;
   while (i < probe_count) {
+    {
+      // Yield to Safepoint
+      ThreadBlockInVM tbivm(JavaThread::current());
+    }
     uint idx = (probe_start + i) % ShenandoahDirectlyAllocatableRegionCount;
     ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
     ShenandoahHeapRegion* r = nullptr;
