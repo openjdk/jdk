@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -446,7 +446,7 @@ void Method::restore_unshareable_info(TRAPS) {
 #endif
 
 void Method::set_vtable_index(int index) {
-  if (in_aot_cache() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context.
@@ -457,7 +457,7 @@ void Method::set_vtable_index(int index) {
 }
 
 void Method::set_itable_index(int index) {
-  if (in_aot_cache() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context. The dumptime

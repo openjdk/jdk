@@ -25,10 +25,10 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -889,10 +889,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {

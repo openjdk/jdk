@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -184,7 +184,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
         // See SystemDictionaryShared::find_builtin_class().
-        klass->set_is_generated_shared_class();
+        klass->set_is_aot_generated_class();
       }
     } else {
       int len = h_bytes->length();
@@ -219,10 +219,10 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->add_to_hierarchy(THREAD);
 
   // new class not linked yet.
-  MetaspaceShared::try_link_class(THREAD, result);
+  AOTMetaspace::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
-  result->set_is_generated_shared_class();
+  result->set_is_aot_generated_class();
   if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump

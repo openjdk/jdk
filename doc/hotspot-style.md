@@ -377,19 +377,21 @@ adjust new lines horizontally to be consistent with that
 organization. (E.g., trailing backslashes on long macro definitions
 often align.)
 
+### Avoid implicit conversions to bool
+
+* Use `bool` for boolean values.
+* Do not use ints or pointers as (implicit) booleans with `&&`, `||`,
+`if`, `while`. Instead, compare explicitly, i.e. `if (x != 0)` or
+`if (ptr != nullptr)`, etc.
+* Do not use non-boolean declarations in _condition_ forms, i.e. don't use
+`if (T v = value) { ... }`. But see
+[Enhanced selection statements](#enhanced-selection-statements).
+
 ### Miscellaneous
 
 * Use the [Resource Acquisition Is Initialization][RAII] (RAII)
 design pattern to manage bracketed critical
 sections. See class `ResourceMark` for an example.
-
-* Avoid implicit conversions to `bool`.
-    * Use `bool` for boolean values.
-    * Do not use ints or pointers as (implicit) booleans with `&&`, `||`,
-      `if`, `while`. Instead, compare explicitly, i.e. `if (x != 0)` or
-      `if (ptr != nullptr)`, etc.
-    * Do not use declarations in _condition_ forms, i.e. don't use
-      `if (T v = value) { ... }`.
 
 * Use functions from globalDefinitions.hpp and related files when
 performing bitwise
@@ -402,18 +404,17 @@ they are extremely simple. (Examples: `align_up`, `is_power_of_2`,
 * Always enumerate all cases in a switch statement or provide a default
 case. It is ok to have an empty default with comment.
 
-
 ## Use of C++ Features
 
 HotSpot was originally written in a subset of the C++98/03 language.
-More recently, support for C++14 is provided, though again,
+More recently, support for C++17 is provided, though again,
 HotSpot only uses a subset.  (Backports to JDK versions lacking
 support for more recent Standards must of course stick with the
 original C++98/03 subset.)
 
 This section describes that subset.  Features from the C++98/03
 language may be used unless explicitly excluded here.  Features from
-C++11 and C++14 may be explicitly permitted or explicitly excluded,
+C++11, C++14, and C++17 may be explicitly permitted or explicitly excluded,
 and discussed accordingly here.  There is a third category, undecided
 features, about which HotSpot developers have not yet reached a
 consensus, or perhaps have not discussed at all.  Use of these
@@ -428,9 +429,9 @@ more extensive discussion or rationale for limitations.  Features that
 don't have their own subsection are listed in omnibus feature sections
 for permitted, excluded, and undecided features.
 
-Lists of new features for C++11 and C++14, along with links to their
+Lists of new features for C++11, C++14, and C++17, along with links to their
 descriptions, can be found in the online documentation for some of the
-compilers and libraries.  The C++14 Standard is the definitive
+compilers and libraries.  The C++17 Standard is the definitive
 description.
 
 * [C++ Standards Support in GCC](https://gcc.gnu.org/projects/cxx-status.html)
@@ -635,12 +636,39 @@ For local variables, this can be used to make the code clearer by
 eliminating type information that is obvious or irrelevant.  Excessive
 use can make code much harder to understand.
 
+* `auto` for non-type template parameters
+([p0127r2](http://wg21.link/p0127r2))<br>
+`auto` may be used as a placeholder for the type of a non-type template
+parameter. The type is deduced from the value provided in a template
+instantiation.
+
 * Function return type deduction
 ([n3638](https://isocpp.org/files/papers/N3638.html))<br>
 Only use if the function body has a very small number of `return`
 statements, and generally relatively little other code.
 
+* Class template argument deduction
+([n3602](http://wg21.link/n3602), [p0091r3](http://wg21.link/p0091r3))<br>
+The template arguments of a class template may be deduced from the arguments
+to a constructor. This is similar to ordinary function argument deduction,
+though partial deduction with only _some_ template arguments explicitly
+provided is not permitted for class template argument deduction. Deduction
+guides may be used to provide additional control over the deduction. As with
+`auto` variable declarations, excessive use can make code harder to
+understand, because explicit type information is lacking. But it can also
+remove the need to be explicit about types that are either obvious, or that
+are very hard to write. For example, these allow the addition of a scope-guard
+mechanism with nice syntax; something like this
+```
+  ScopeGuard guard{[&]{ ... cleanup code ... }};
+```
+
 * Also see [lambda expressions](#lambdaexpressions).
+
+* `decltype(auto)` should be avoided, whether for variables, for non-type
+template parameters, or for function return types. There are subtle and
+complex differences between this placeholder type and `auto`. Any use would
+need very careful explanation.
 
 ### Expression SFINAE
 
@@ -662,6 +690,16 @@ pushing to extremes.
 Here are a few closely related example bugs:<br>
 <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95468><br>
 <https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html>
+
+### Non-type template parameter values
+
+C++17 extended the arguments permitted for non-type template parameters
+([n4268](http://wg21.link/n4268)). The kinds of values (the parameter types)
+aren't changed.  However, the values can now be the result of arbitrary
+constant expressions (with a few restrictions on the result), rather than a
+much more limited and restrictive set of expressions. In particular, the
+argument for a pointer or reference type parameter can now be the result of a
+constexpr function.
 
 ### enum
 
@@ -781,6 +819,32 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
+### Inline Variables
+
+Variables with static storage duration may be declared `inline`
+([p0386r2](https://wg21.link/p0386r2)). This has similar effects as for
+declaring a function inline: it can be defined, identically, in multiple
+translation units, must be defined in every translation unit in which it is
+[ODR used][ODR], and the behavior of the program is as if there is exactly one
+variable.
+
+Declaring a variable inline allows the complete definition to be in a header
+file, rather than having a declaration in a header and the definition in a
+.cpp file. The guidance on
+[initialization](#initializing-variables-with-static-storage-duration) of such
+variables still applies. Inline variables with dynamic initializations can
+make initialization order problems worse. The few ordering constraints
+that exist for non-inline variables don't apply, as there isn't a single
+program-designated translation unit containing the definition.
+
+A `constexpr` static data member is implicitly `inline`. As a consequence, an
+[ODR use][ODR] of such a variable doesn't require a definition in some .cpp
+file. (This is a change from pre-C++17. Beginning with C++17, such a
+definition is considered a duplicate definition, and is deprecated.)
+
+Declaring a `thread_local` variable `inline` is forbidden for HotSpot code.
+[The use of `thread_local`](#thread_local) is already heavily restricted.
+
 ### Initializing variables with static storage duration
 
 Variables with static storage duration and _dynamic initialization_
@@ -823,6 +887,53 @@ Some relevant sections from cppreference.com:
 
 Although related, the use of `std::initializer_list` remains forbidden, as
 part of the avoidance of the C++ Standard Library in HotSpot code.
+
+### Mandatory Copy Elision
+
+[Copy elision](https://en.wikipedia.org/wiki/Copy_elision)
+(or [here](https://cn.cppreference.com/w/cpp/language/copy_elision.html))
+is a compiler optimization used to avoid potentially expensive copies in
+certain situations. It is critical to making practical the performance of
+return by value or pass by value. It is also unusual in not following the
+as-if rule for optimizations - copy elision can be applied even if doing so
+bypasses side-effects of copying/moving the object. The C++ standard
+explicitly permits this.
+
+However, because it's an optional optimization, the relevant copy/move
+constructor must be available and accessible, in case the compiler chooses to
+not apply the optimization even in a situation where permitted.
+
+C++17 changed some cases of copy elision so that there is never a copy/move in
+these cases ([p0135r1](http://wg21.link/p0135r1)). The interesting cases
+involve a function that returns an unnamed temporary object, and constructors.
+In such cases the object being initialized from the temporary is always direct
+initialized, with no copy/move ever involved; see [RVO] and more specifically
+[URVO].
+
+Since this is now standard behavior it can't be avoided in the covered
+situations. This could change the behavior of code that relied on side effects
+by constructors, but that's both uncommon and was already problematic because
+of the previous optional copy elision. But HotSpot code can, and should,
+explicitly take advantage of this newly required behavior where it makes sense
+to do so.
+
+For example, it may be beneficial to delay construction of the result of a
+function until the return statement, rather than having a local variable that
+is modified into the desired state and then returned. (Though [NRVO] may apply
+in that case.)
+
+It is also now possible to define a factory function for a class that is
+neither movable nor copyable, if it can be written in a way that makes use of
+this feature.
+
+[RVO]: https://en.wikipedia.org/wiki/Copy_elision#RVO
+  "Return Value Optimization"
+
+[NRVO]: https://en.wikipedia.org/wiki/Copy_elision#NRVO
+  "Named Return Value Optimization"
+
+[URVO]: https://cn.cppreference.com/w/cpp/language/copy_elision.html
+  "Unnamed Return Value Optimization"
 
 ### Local Function Objects
 
@@ -892,6 +1003,12 @@ Another use for local functions is [partial application][PARTIALAPP].  Again
 here, lambdas are typically much simpler and less verbose than function
 object classes.
 
+A lambda is a constexpr function if either the parameter declaration clause is
+followed by `constexpr`, or it satisfies the requirements for a constexpr
+function ([p0170r1]). Thus, using a lambda to package up some computation
+doesn't incur unnecessary overhead or prevent use in a context required to be
+compile-time evaluated (such as an array size).
+
 Because of these benefits, lambda expressions are permitted in HotSpot code,
 with some restrictions and usage guidance.  An anonymous lambda is one which
 is passed directly as an argument.  A named lambda is the value of a
@@ -943,6 +1060,17 @@ the most part they don't apply to HotSpot code, given other usage restrictions.
     applies to captured auto variables, not member variables, and is
     inconsistent with referential transparency.
 
+* By-value capture of `this` (using a capture list like `[*this]` ([p0018r3]))
+is also not permitted. One of the motivating use-cases is when the lifetime of
+the lambda exceeds the lifetime of the object for the containing member
+function. That is, we have an upward lambda that is capturing `this` of the
+enclosing method. But again, that use-case doesn't apply if only downward
+lambdas are used.
+  Another use-case is when we simply want the lambda to be operating on a copy
+of `this` for some reason. This is sufficiently uncommon that it can be
+handled by manual copying, so readers don't need to understand this rare
+syntax.
+
 * Non-capturing lambdas (with an empty capture list - `[]`) have limited
 utility.  There are cases where no captures are required (pure functions,
 for example), but if the function is small and simple then that's obvious
@@ -952,7 +1080,7 @@ anyway.
 Capture initializers inherently increase the complexity of the capture list,
 and provide little benefit over an additional in-scope local variable.
 
-The use of `mutable` lambda expressions is forbidden because there don't
+* The use of `mutable` lambda expressions is forbidden because there don't
 seem to be many, if any, good use-cases for them in HotSpot.  A lambda
 expression needs to be mutable in order to modify a by-value captured value.
 But with only downward lambdas, such usage seems likely to be rare and
@@ -1099,21 +1227,12 @@ Do not use _inheriting constructors_
 C++11 provides simple syntax allowing a class to inherit the constructors of a
 base class.  Unfortunately there are a number of problems with the original
 specification, and C++17 contains significant revisions ([p0136r1] opens with
-a list of 8 Core Issues).  Since HotSpot doesn't support use of C++17, use of
-inherited constructors could run into those problems. Such uses might also
-change behavior in a future HotSpot update to use C++17 or later, potentially
-in subtle ways that could lead to hard to diagnose problems.  Because of this,
-HotSpot code must not use inherited constructors.
+a list of 8 Core Issues). Although those issues have been addressed, the
+benefits from this feature are small compared to the complexity. Because of
+this, HotSpot code must not use inherited constructors.
 
-Note that gcc7 provides the `-fnew-inheriting-ctors` option to use the
-[p0136r1] semantics.  This is enabled by default when using C++17 or later.
-It is also enabled by default for `fabi-version=11` (introduced by gcc7) or
-higher when using C++11/14, as the change is considered a Defect Report that
-applies to those versions.  Earlier versions of gcc don't have that option,
-and other supported compilers may not have anything similar.
-
-[p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
-  "p0136r1"
+[p0136r1]: http:/wg21.link/p0136r1 "p0136r1"
+[p0195r0](http://wg21.link/p0195r0)
 
 ### Attributes
 
@@ -1132,14 +1251,38 @@ preferred location.
 function's declaration, rather than between the function name and the parameter
 list.
 
+[p0068r0](http://wg21.link/p0068r0) is the initial proposal for the attributes
+added by C++17.)
+
 Only the following attributes are permitted:
 
 * `[[noreturn]]`
+* `[[nodiscard]]` ([p0189r1](http://wg21.link/p0189r1))
+* `[[maybe_unused]]` ([p0212r1](http://wg21.link/p0212r1))
+* `[[fallthrough]]` ([p0188r1](http://wg21.link/p0188))
 
 The following attributes are expressly forbidden:
 
 * `[[carries_dependency]]` - Related to `memory_order_consume`.
 * `[[deprecated]]` - Not relevant in HotSpot code.
+
+Direct use of non-standard (and presumably scoped) attributes in shared code
+is also forbidden. Using such would depend on the C++17 feature that an
+attribute not recognized by the implementation is ignored
+([p0283r2](http://wg21.link/p0283r2)). If such an attribute is needed in
+shared code, the well-established technique of providing an `ATTRIBUTE_XXX`
+macro with per-compiler definitions (sometimes empty) should be
+used. Compilers may warn about unrecognized attributes (whether by name or by
+location), in order to report typos or misuse. Disabling such warnings
+globally would not be desirable.
+
+The use of `using` directives in attribute lists is also forbidden.
+([p0028r0](http://wg21.link/p0028r0))
+([p0028r4](http://wg21.link/p0028r4))
+We don't generally use scoped attributes in attribute lists with other
+attributes. Rather, uses of scoped attributes (which are implementation
+defined) are generally hidden behind a portability macro that includes the
+surrounding brackets.
 
 ### noexcept
 
@@ -1189,8 +1332,78 @@ HotSpot code can assume no exceptions will ever be thrown, even from functions
 not declared `noexcept`. So HotSpot code doesn't ever need to check, either
 with conditional exception specifications or with `noexcept` expressions.
 
+The exception specification is part of the type of a function
+([p0012r1](http://wg21.link/p0012r1). This likely has little impact on HotSpot
+code, since the use of `noexcept` is expected to be rare.
+
 Dynamic exception specifications were deprecated in C++11. C++17 removed all
 but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
+
+### Enhanced selection statements
+
+C++17 modified the _condition_ part of `if` and `switch` statements, permitting
+an _init-statement_ to be included
+([p0305r1](http://wg21.link/p0305r1)).
+
+Use of this feature is permitted. (However, complex uses may interfere with
+readability.) Limiting the scope of a variable involved in the condition,
+while also making the value available to the statement's body, can improve
+readability. The alternative method of scope-limiting by introducing a nested
+scope isn't very popular and is rarely used.
+
+This new syntax is in addition to the _condition_ being a declaration with a
+_brace-or-equal-initializer_. For an `if` statement this new sytax gains that
+benefit without violating the long-standing guidance against using
+[implicit conversions to `bool`](#avoid-implicit-conversions-to-bool),
+which still stands.
+
+For example, uses of Unified Logging sometimes explicitly check whether a
+`LogTarget` is enabled.  Instead of
+```
+  LogTarget(...) lt;
+  if (lt.is_enabled()) {
+    LogStream log(lt);
+    ... use log ...
+  }
+  ... lt is accessible but probably not needed here ...
+```
+using this feature one could write
+```
+  if (LogTarget(...) lt; lt.is_enabled()) {
+    LogStream log(lt);
+    ... use log ...
+  }
+```
+
+C++17 also added compile-time `if` statements
+([p0292r2](http://wg21.link/p0292r2)). Use of `if constexpr` is
+permitted. This feature can replace and (sometimes vastly) simplify many uses
+of [SFINAE]. The same declaration and initialization guidance for the
+_condition_ part apply here as for ordinary `if` statements.
+
+### Expression Evaluation Order
+
+C++17 tightened up the evaluation order for some kinds of subexpressions
+([p0138r2](http://wg21.link/p0138r2)). Note, however, that the Alternate
+Evaluation Order for Function Calls alternative in that paper was adopted,
+rather than the strict left to right order of evaluation for function call
+arguments that was proposed in the main body of the paper.
+
+The primary purpose of this change seems to be to make certain kinds of call
+chaining well defined. That's not a style widely used in HotSpot. In general
+it is better to continue to avoid questions in this area by isolating
+operations with side effects from other statements. In particular, continue to
+avoid modifying a value in an expression where it is also used.
+
+### Compatibility with C11
+
+C++17 refers to C11 rather than C99. This means that C11 libraries and
+functions may be used in HotSpot. There may be limitations because of
+differing levels of compatibility among various compilers and versions of
+those compilers.
+
+Note that the C parts of the JDK have been built with C11 selected for some
+time ([JDK-8292008](https://bugs.openjdk.org/browse/JDK-8292008)).
 
 ### Additional Permitted Features
 
@@ -1209,7 +1422,10 @@ but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
 ([n2555](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2555.pdf))
 
 * Static assertions
-([n1720](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1720.html))
+([n1720](http://wg21.link/n1720))
+([n3928](http://wg21.link/n3928))<br>
+Both the original (C++11) two-argument form and the new (C++17)
+single-argument form are permitted.
 
 * `decltype`
 ([n2343](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2343.pdf))
@@ -1256,7 +1472,72 @@ but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
 * Unrestricted Unions
 ([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
 
-### Excluded Features
+* Preprocessor Condition `__has_include`
+([p0061r0](http://wg21.link/p0061r0))
+([p0061r1](http://wg21.link/p0061r1))
+
+* Hexadecimal Floating-Point Literals
+([p0245r1](http://wg21.link/p0245r1))
+
+* Construction Rules for `enum class` Values
+([p0138r2](http://wg21.link/p0138r2))
+
+* Allow `typename` in template template parameter
+([n4051](http://wg21.link/n4051)) &mdash; template template parameters are
+barely used (if at all) in HotSpot, but there's no reason to artificially
+disallow this syntactic regularization in any such uses.
+
+## Excluded Features
+
+### Structured Bindings
+
+The use of structured bindings [p0217r3](http://wg21.link/p0217r3) is
+forbidden.  Preferred approaches for handling functions with multiple return
+values include
+
+* Return a named class/struct intended for that purpose, with named and typed
+members/accessors.
+
+* Return a value along with out parameters (usually pointers, sometimes
+references).
+
+* Designate a sentinel "failure" value in the normal return value type, with
+some out of band location for additional information.  For example, this is
+the model typically used with `errno`, where a function returns a normal
+result, or -1 to indicate an error, with additional error information in
+`errno`.
+
+There is a strong preference for names and explicit types, as opposed to
+offsets and implicit types. For example, there are folks who strongly dislike
+that some of the Standard Library functions return `std::pair` because `first`
+and `second` members don't carry any useful information.
+
+### File System Library
+
+The use of the File System library is forbidden. HotSpot doesn't do very much
+with files, and already has adequate mechanisms for its needs. Rewriting in
+terms of this new library doesn't provide any obviously significant
+benefits. Having a mix of the existing usage and uses of this new library
+would be confusing.
+
+[n4100](http://wg21.link/n4100)
+[p0218r0](http://wg21.link/p0218r0)
+[p0219r1](http://wg21.link/p0219r1)
+[p0317r1](http://wg21.link/p0317r1)
+[p0392r0](http://wg21.link/p0392r0)
+[p0430r2](http://wg21.link/p0430r2)
+[p0492r2](http://wg21.link/p0492r2)
+[p1164r1](http://wg21.link/p1164r1)
+
+### Aggregate Extensions
+
+Aggregates with base classes are forbidden. C++17 allows aggregate
+initialization for classes with base classes
+([p0017r1](https://wg21.link/p0017r1)). HotSpot makes very little use of
+aggregate classes, preferring explicit constructors even for very simple
+classes.
+
+### Additional Excluded Features
 
 * New string and character literals
     * New character types
@@ -1292,26 +1573,280 @@ operator overloading is used, ensure the semantics conform to the
 normal expected behavior of the operation.
 
 * Avoid most implicit conversion constructors and (implicit or explicit)
-conversion operators.  (Note that conversion to `bool` isn't needed
-in HotSpot code because of the "no implicit boolean" guideline.)
+conversion operators.  Conversion to `bool` operators aren't needed
+because of the
+[no implicit boolean](#avoid-implicit-conversions-to-bool)
+guideline.)
 
 * Avoid `goto` statements.
 
-### Undecided Features
+* Attributes for namespaces and enumerators
+([n4266](http://wg21.link/n4266) &mdash;
+The only applicable attribute is [`[[deprecated]]`](#attributes), which is
+forbidden.
+
+* Variadic `using` declarations
+([p0195r2](http://wg21.link/p0195r2))
+
+* `std::variant<>`
+([p0088r3](http://wg21.link/p0088r3)) &mdash;
+Even if more of the C++ Standard Library is permitted, this class will remain
+forbidded. Invalid accesses are indicated by throwing exceptions.
+
+* `std::any`
+([p0220r1](http://wg21.link/p0220r1)) &mdash;
+Even if more of the C++ Standard Library is permitted, this class will remain
+forbidden. It may require allocation, and always uses the standard
+allocator. It requires [RTTI].
+
+* `std::as_const()`
+([p0007r1](http://wg21.link/p0007r1)) &mdash;
+If sufficiently useful, HotSpot could add such a function. It would likely be
+added to globalDefinitions.hpp, where there are already some similar small
+utilities.
+
+* `std::clamp()`
+([p002501](http://wg21.link/p002501)) &mdash;
+This function is already provided in globalDefinitions.hpp.
+
+* Parallel STL Algorithms
+([p0024r2](http://wg21.link/p0024r2)) &mdash;
+Even if more of the C++ Standard Library is permitted, these will remain
+forbidden. They are built on the standard C++ threading mechanisms. HotSpot
+doesn't use those mechanisms, instead providing and using its own.
+
+* Cache Line Sizes
+[p0154r1](http://wg21.link/p0154r1) &mdash;
+HotSpot has its own mechanisms for this, using values like
+`DEFAULT_CACHE_LINE_SIZE`. The platform-specific implementation of the HotSpot
+mechanisms might use these library functions, but there is no reason to move
+away from the current approach. Quoting from [JOSUTTIS]: "... if you know better,
+use specific values, but using these values is better than any assumed fixed
+size for code supporting multiple platforms."
+
+* `register` storage class removal
+[p0001r1](http://wg21.link/p0001r1) &mdash;
+The `register` storage class has been removed. `register` is still a keyword,
+so still can't be used for normal purposes. Also, this doesn't affect the use
+of `register` for gcc-style extended asm code; that's a different syntactic
+element with a different meaning.
+
+* Value of `__cplusplus` &mdash;
+Testing whether `__cplusplus` is defined or not is permitted, and indeed
+required. But the value should not need to be examined. The value is changed
+with each revision of the Standard. But we build HotSpot and (most of) the
+rest of the JDK with a specifically selected version of the Standard. The
+value of `__cplusplus` should be known and unchanging until we change the
+project's build configuration again. So examining the value shouldn't ever be
+necessary.
+
+* Removal of `++` for `bool`
+([p0003r1](http://wg21.link/p0003r1))
+
+* Removal of trigraphs
+([n4086](http://wg21.link/n4086))
+
+## Undecided Features
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
+
+Some features are undecided (so implicitly forbidden) because we don't expect
+to use them at all. This might be reconsidered if someone finds a good use
+case.
+
+Some Standard Library features are undecided (so implicitly forbidden)
+because, while this Style Guide forbids the use of such, they may be
+sufficiently useful that we want to permit them anyway. Doing so may require
+some idiomatic mechanism for addressing things like `assert` incompatibility,
+incompatibility with HotSpot's `FORBID_C_FUNCTION` mechanism, and the like.
+
+### std::optional<>
+
+It is undecided whether to permit the use of `std::optional<>`
+([p0220r1](http://wg21.link/p0220r1)). It may be sufficiently useful that it
+should be permitted despite the usual prohibition against using Standard
+Library facilities. Use of the `value()` member function must be forbidden, as
+it reports an invalid access by throwing an exception.
+
+### std::byte
+
+It is undecided whether to permit the use of the `std::byte` type
+([p0298r3](http://wg21.link/p0298r3)). It may be sufficiently useful that it
+should be permitted despite the usual prohibition against using Standard
+Library facilities.
+
+It has been suggested that changing the HotSpot `address` type to use
+`std::byte` has some benefits. That is, replace
+```
+typedef u_char*       address;
+typedef const u_char* const_address;
+```
+```
+using address       = std::byte*;
+using const_address = const std::byte*;
+```
+in globalDefinitions.hpp.
+
+A specific benefit that was mentioned is that it might improve the horrible
+way that gdb handles our current definition of the `address` type.
+```
+#include <cstddef>
+
+typedef unsigned char* address;
+typedef std::byte* address_b;
+
+int main() {
+
+  char* mem;
+
+  address addr = (address)mem;
+  address_b addr_b = (address_b)mem;
+
+  return 0;
+}
+```
+
+```
+(gdb) p addr
+$1 = (address) 0x7ffff7fe4fa0 <dl_main> "\363\017\036\372Uf\017\357\300H\211\345AWI\211\377AVAUATSH\201\354\210\002"
+(gdb) p addr_b
+$2 = (address_b) 0x7ffff7fe4fa0 <dl_main>
+```
+
+This needs to be explored. Some folks have said they will do so.
+
+### String Views
+
+It is undecided whether to permit the use of `std::string_view`
+([p0220r1](http://wg21.link/p0220r1)).
+
+HotSpot doesn't use `std::string`, but uses `char*` strings a lot. Wrapping
+such in a `std::string_view` to enable the use of various algorithms could be
+useful. But since HotSpot also doesn't permit use of `<algorithm>` and the
+like, that only gets the limited set of algorithms provided by the view class
+directly.
+
+There is also the issue of `NUL` termination; string views are not necessarily
+`NUL` terminated. Moreover, if one goes to the work of making one that is
+`NUL` terminated, that terminator is included in the size.
+
+There are other caveats. Permitting use of string views would require
+discussion of those.
+
+### Substring and Subsequence Searching
+
+In addition to simple substring searching, the Standard Library now includes
+Boyer-Moore and Boyer-Moore-Horspool searchers, in case someone wants to
+search really large texts. That seems an unlikely use-case for HotSpot.  See
+[p0220r1](http://wg21.link/p0220r1).
+
+### `new` and `delete` with Over-Aligned Data
+
+It is undecided whether to permit the use of dynamic allocation of overaligned
+types ([n3396](http://wg21.link/n3396)).
+
+HotSpot currently only has a couple of over-aligned types that are dynamically
+allocated. These are handled manually, not going through `new` expressions, as
+that couldn't work before C++17.
+
+One of the ways an over-aligned type might arise is by aligning a data member.
+This might be done to avoid destructive interference for concurrent accesses.
+But HotSpot uses a different approach, using explicit padding. Again, this is
+in part because `new` and `delete` of overaligned types didn't work. But we
+might prefer to continue this approach.
+
+We would need to add `operator new` overloads to `CHeapObj<>` and possibly in
+other places in order to support this. However, it has been suggested that
+implementing it (efficiently) on top of NMT might be difficult. Note that
+`posix_memalign` / `_aligned_malloc` don't help here, because of NMT's use of
+malloc headers.
+
+If we don't support it we may want to add `operator new` overloads that are
+deleted, to prevent attempted uses.
+
+Alignment usage in non-HotSpot parts of the OpenJDK:
+
+* `alignas` used once in harfbuzz, to align a variable.
+
+* libpipewire has `#define SPA_ALIGNED` macro using gcc `aligned` attribute,
+but doesn't use it.
+
+* libsleef has `#define ALIGNED` macro using gcc `aligned` attribute. It is
+not used for class or member declarations.
+
+### `std::to_chars()` and `std::from_chars`
+
+It is undecided whether to permit the use of `std::to_chars()` and
+`std::from_chars()` ([p0067r5](http://wg21.link/p0067r5)).
+
+These functions provide low-level conversions between character sequences and
+numeric values. This seems like a good candidate for use in HotSpot,
+potentially replacing various clumsy or less performant alternatives. There is
+no memory allocation. Parsing failures are indicated via error codes rather
+than exceptions. Various other nice for HotSpot properties.
+
+Note that the published C++17 Standard puts these in `<utility>`, but a defect
+report moved them to `<charconv>`. This also needs `<system_error>`.
+
+This would require upgrading the minimum gcc version to 11.1 for floating
+point conversion support. The minimum Visual Studio version is already
+sufficient.  The minimum clang version requirement hasn't been determined yet.
+
+### `std::launder()`
+
+It is undecided whether to permit the use of `std::launder()`
+([p0137r1](http://wg21.link/p0137r1)).
+
+Change to permitted if we discover a place where we need it. Or maybe we
+should just permit it, but hope we don't need it.
+
+Also, C++20 revised the relevant part of Object Lifetime in a way that seems
+more permissive and with less need of laundering. We don't know if
+implementations of prior versions take advantage of the difference.
+
+See Object Lifetime: C++17 6.8/8, C++20 6.7.3/8
+
+### Additional Undecided Features
 
 * Trailing return type syntax for functions
 ([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
 
 * Variable templates
-([n3651](https://isocpp.org/files/papers/N3651.pdf))
+([n3651](https://isocpp.org/files/papers/N3651.pdf),
+[p0127r2](http://wg21.link/p0127r2))
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))
 
 * Rvalue references and move semantics
+
+* Shorthand for nested namespaces
+([n4230](http://wg21.link/n4230)) &mdash;
+HotSpot makes very little use of namespaces, so this seemingly innocuous
+feature probably isn't useful to us.
+
+* Direct list initialization with `auto`
+([n3681](http://wg21.link/n3681)) &mdash;
+This change fixed some issues with direct list initialization and `auto`. But
+we don't use that feature much, if at all. And perhaps shouldn't be using it.
+
+* UTF-8 Character Literals
+([n4267](http://wg21.link/n4267)) &mdash;
+Do we have a use-case for this?
+
+* Fold Expressions
+([n4295](http://wg21.link/n4295)) &mdash;
+Provides a simple way to apply operators to a parameter pack. HotSpot doesn't
+use variadic templates very much. That makes it questionable that developers
+should need to know about this feature.  But if someone does come up with a
+good use-case, it's likely that the alternatives are significantly worse,
+because pack manipulation without this can be complicated.
+
+* `std::invoke<>()`
+([n4169](http://wg21.link/n4169))
+
+
 
 [ADL]: https://en.cppreference.com/w/cpp/language/adl
   "Argument Dependent Lookup"
@@ -1330,3 +1865,6 @@ features that have not yet been discussed.
 
 [PARTIALAPP]: https://en.wikipedia.org/wiki/Partial_application
   "Partial Application"
+
+[JOSUTTIS]: https://www.cppstd17.com
+  "C++17: The Complete Guide"
