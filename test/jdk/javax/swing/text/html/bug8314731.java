@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,14 @@
 /*
  * @test
  * @bug 8314731
- * @summary FormView doesn't support the alt attribute
  * @key headful
+ * @summary FormView doesn't support the alt attribute
  */
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
@@ -45,46 +44,39 @@ import javax.swing.text.html.StyleSheet;
 
 public class bug8314731 {
 
-    private static boolean testPassed;
-    private static JFrame jf;
-    private static JEditorPane jEditorPane;
+    private static JFrame frame;
+    private static JEditorPane editorPane;
 
     public static void main(String[] args) throws Exception {
-        new bug8314731();
-        if (testPassed) {
-            System.out.println("ok");
-        } else {
-            throw new RuntimeException("FormView doesn't support the alt attribute, see JDK-8314731.");
-        }
-    }
-
-    public bug8314731() throws Exception {
         try {
             SwingUtilities.invokeAndWait(bug8314731::createAndSetVisibleUI);
-            testPassed = ContainsAlt(jEditorPane);
+            SwingUtilities.invokeAndWait(() -> {
+                if (!containsAlt(editorPane)) {
+                    throw new RuntimeException("FormView doesn't support the alt attribute, see JDK-8314731.");
+                }
+            });
         } finally {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    jf.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
         }
     }
 
     private static void createAndSetVisibleUI() {
+        editorPane = new JEditorPane();
+        editorPane.setEditable(false);
+        frame = new JFrame("alt attribute test in HTML image type input");
 
-        jEditorPane = new JEditorPane();
-        jEditorPane.setEditable(false);
-        jf = new JFrame("alt attribute test in HTML image type input");
-
-        JScrollPane scrollPane = new JScrollPane(jEditorPane);
+        JScrollPane scrollPane = new JScrollPane(editorPane);
         HTMLEditorKit kit = new HTMLEditorKit();
-        jEditorPane.setEditorKit(kit);
+        editorPane.setEditorKit(kit);
         StyleSheet styleSheet = kit.getStyleSheet();
         styleSheet.addRule("""
                 body {
                     color: #000;
-                    font-family:times;
+                    font-family: times;
                     margin: 4px;
                 }
                 """);
@@ -98,27 +90,22 @@ public class bug8314731 {
                 </html>
                 """;
         Document doc = kit.createDefaultDocument();
-        jEditorPane.setDocument(doc);
-        jEditorPane.setText(htmlString);
+        editorPane.setDocument(doc);
+        editorPane.setText(htmlString);
 
-        jf.getContentPane().add(scrollPane, BorderLayout.CENTER);
-        jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        jf.setSize(new Dimension(400, 200));
-        jf.setLocationRelativeTo(null);
-        jf.setVisible(true);
+        frame.add(scrollPane, BorderLayout.CENTER);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(new Dimension(400, 200));
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
-    private boolean ContainsAlt(Container container) {
+    private static boolean containsAlt(Container container) {
         for (Component c : container.getComponents()) {
             if (c instanceof JButton butt) {
-                String text = butt.getText();
-                if (text.equals("Logo")) {
-                    return true;
-                }
+                return "Logo".equals(butt.getText());
             } else if (c instanceof Container cont) {
-                if (ContainsAlt(cont)) {
-                    return true;
-                }
+                return containsAlt(cont);
             }
         }
         return false;
