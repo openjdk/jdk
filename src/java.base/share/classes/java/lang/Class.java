@@ -601,7 +601,7 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(Module module, String name) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
-        if (!ModifiedUtf.classNameLengthIsValid(name)) {
+        if (!ModifiedUtf.isValidLengthInConstantPool(name)) {
             return null;
         }
 
@@ -4157,9 +4157,9 @@ public final class Class<T> implements java.io.Serializable,
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
-        if (!ModifiedUtf.classNameLengthIsValid(name)) {
+        if (!ModifiedUtf.isValidLengthInConstantPool(name)) {
             throw new ClassNotFoundException(
-                    "Class name length exceeds limit of " + ModifiedUtf.JAVA_CLASSNAME_MAX_LEN);
+                    "Class name length exceeds limit of " + ModifiedUtf.CONSTANT_POOL_UTF8_MAX_BYTES);
         }
     }
 }

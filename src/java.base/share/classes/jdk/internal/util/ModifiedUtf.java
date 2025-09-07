@@ -33,8 +33,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * @since 24
  */
 public abstract class ModifiedUtf {
-    //Max length in Modified UTF-8 bytes for class names.(see max_symbol_length in symbol.hpp)
-    public static final int JAVA_CLASSNAME_MAX_LEN = 65535;
+    // Maximum number of bytes allowed for a Modified UTF-8 encoded string
+    // in a ClassFile constant pool entry (CONSTANT_Utf8_info).
+    public static final int CONSTANT_POOL_UTF8_MAX_BYTES = 65535;
 
     private ModifiedUtf() {
     }
@@ -73,20 +74,24 @@ public abstract class ModifiedUtf {
     }
 
     /**
-     * Checks whether the length of the class name in Modified UTF-8 bytes exceeds the maximum allowed.
-     * @param name class name
+     * Checks whether the Modified UTF-8 encoded length of the given string
+     * fits within the ClassFile constant pool limit (u2 length = 65535 bytes).
+     * @param str the string to check
      */
     @ForceInline
-    public static boolean classNameLengthIsValid(String name) {
+    public static boolean isValidLengthInConstantPool(String str) {
         // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
         // If the string is short enough, it definitely fits.
-        int nameLen = name.length();
-        if (nameLen <= JAVA_CLASSNAME_MAX_LEN / 3) {
+        int strLen = str.length();
+        if (strLen <= CONSTANT_POOL_UTF8_MAX_BYTES / 3) {
             return true;
         }
+        if (strLen > CONSTANT_POOL_UTF8_MAX_BYTES) {
+            return false;
+        }
         // Check exact Modified UTF-8 length.
-        // The check utfLen >= nameLen ensures we don't incorrectly return true in case of int overflow.
-        int utfLen = utfLen(name, 0);
-        return utfLen >= nameLen && utfLen <= JAVA_CLASSNAME_MAX_LEN;
+        // The check utfLen >= strLen ensures we don't incorrectly return true in case of int overflow.
+        int utfLen = utfLen(str, 0);
+        return utfLen >= strLen && utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
     }
 }
