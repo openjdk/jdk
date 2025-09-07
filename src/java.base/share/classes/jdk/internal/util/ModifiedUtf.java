@@ -90,8 +90,8 @@ public abstract class ModifiedUtf {
             return false;
         }
         // Check exact Modified UTF-8 length.
-        // The check utfLen >= strLen ensures we don't incorrectly return true in case of int overflow.
+        // The check strLen > CONSTANT_POOL_UTF8_MAX_BYTES above ensures that utfLen can't overflow here.
         int utfLen = utfLen(str, 0);
-        return utfLen >= strLen && utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
+        return utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
     }
 }
