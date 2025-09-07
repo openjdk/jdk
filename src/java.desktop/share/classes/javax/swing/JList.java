@@ -2530,7 +2530,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 /* Scroll Down */
                 if (direction > 0) {
                     Rectangle r = getCellBounds(row, row);
-                    return (r == null) ? 0 : r.height - (visibleRect.y - r.y);
+                    return (r == null) ? 0 :
+                            (r.height - (visibleRect.y - r.y) < 0) ? 0 : r.height - (visibleRect.y - r.y);
                 }
                 /* Scroll Up */
                 else {
