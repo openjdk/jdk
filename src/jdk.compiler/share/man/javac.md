@@ -668,7 +668,8 @@ file system locations may be directories, JAR files or JMOD files.
 
     The keys listed above may be used in `@SuppressWarnings` annotations to suppress
     warnings within the annotated declaration, with the exception of these keys:
-    `all`, `none`, `classfile`, `incubating`, `options`, `output-file-clash`, `path`.
+    `all`, `none`, `classfile`, `incubating`, `options`, `output-file-clash`,
+    `processing`, and `path`.
 
     See [Examples of Using -Xlint keys].
 

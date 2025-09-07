@@ -160,7 +160,7 @@ public class Lint {
             // if -Xlint:none is given, disable all categories by default
             values = LintCategory.newEmptySet();
         } else {
-            // Otherwise enable the on-by-default categories
+            // otherwise, enable on-by-default categories
             values = getDefaults();
         }
 
@@ -334,8 +334,11 @@ public class Lint {
 
         /**
          * Warn about issues regarding annotation processing.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PROCESSING("processing"),
+        PROCESSING("processing", false, false),
 
         /**
          * Warn about unchecked operations on raw types.

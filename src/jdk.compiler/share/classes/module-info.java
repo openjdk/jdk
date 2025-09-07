@@ -173,7 +173,6 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code overloads}            <td>issues regarding method overloads
  * <tr><th scope="row">{@code overrides}            <td>issues regarding method overrides
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
- * <tr><th scope="row">{@code processing}           <td>issues regarding annotation processing
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
