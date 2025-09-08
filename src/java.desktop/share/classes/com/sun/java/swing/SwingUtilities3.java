@@ -149,8 +149,8 @@ public class SwingUtilities3 {
         if (insets != null) {
             rect.x += insets.left;
             rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
-            rect.height -= (insets.bottom + rect.y);
+            rect.width -= (insets.left + insets.right);
+            rect.height -= (insets.top + insets.bottom);
         }
     }
 
