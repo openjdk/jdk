@@ -127,10 +127,12 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
-     * Default step-delay in milliseconds for mouse
-     * {@link #glide(int, int, int, int) glide}.
+     * Default delay in milliseconds for mouse
+     * {@link #glide(int, int, int, int) glide},
+     * {@link #type(int) type}, and
+     * {@link #click(int) click}
      */
-    public static final int DEFAULT_STEP_DELAY = 20;
+    public static final int DEFAULT_DELAY = 20;
 
     /**
      * Default pixel step-length for mouse
@@ -785,11 +787,10 @@ public class Robot {
         String params = "autoDelay = "+getAutoDelay()+", "+"autoWaitForIdle = "+isAutoWaitForIdle();
         return getClass().getName() + "[ " + params + " ]";
     }
-}
 
     /**
      * A convenience method that simulates clicking a mouse button by calling {@code mousePress}, {@code mouseRelease},
-     * and {@code waitForIdle}. Invokes {@code waitForIdle} with a default delay of 20 milliseconds after
+     * and {@code waitForIdle}. Invokes {@code waitForIdle} with a default delay of {@value #DEFAULT_DELAY} milliseconds after
      * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs see
      * {@link java.awt.Robot#mousePress(int)}.
      *
@@ -802,6 +803,7 @@ public class Robot {
      *          mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
      *          by Java
      * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
      * @see     #mousePress(int)
      * @see     #mouseRelease(int)
      * @see     InputEvent#getMaskForButton(int)
@@ -812,10 +814,10 @@ public class Robot {
     public void click(int buttons) {
         try {
             mousePress(buttons);
-            waitForIdle(DEFAULT_STEP_DELAY);
+            waitForIdle(DEFAULT_DELAY);
         } finally {
             mouseRelease(buttons);
-            waitForIdle(DEFAULT_STEP_DELAY);
+            waitForIdle(DEFAULT_DELAY);
         }
     }
 
@@ -851,8 +853,8 @@ public class Robot {
      * A convenience method that moves the mouse in multiple
      * steps from its current location to the destination coordinates.
      *
-     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a default
-     * {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_STEP_DELAY step-delay}.
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
@@ -860,7 +862,7 @@ public class Robot {
      * @throws  IllegalThreadStateException if called on the AWT event dispatching
      *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #DEFAULT_STEP_LENGTH
-     * @see     #DEFAULT_STEP_DELAY
+     * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
      * @since   26
      */
@@ -873,8 +875,8 @@ public class Robot {
      * A convenience method that moves the mouse in multiple steps
      * from source coordinates to the destination coordinates.
      *
-     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a default
-     * {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_STEP_DELAY step-delay}.
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
      *
      * @param   srcX   Source point x coordinate
      * @param   srcY   Source point y coordinate
@@ -884,12 +886,12 @@ public class Robot {
      * @throws  IllegalThreadStateException if called on the AWT event dispatching
      *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #DEFAULT_STEP_LENGTH
-     * @see     #DEFAULT_STEP_DELAY
+     * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
      * @since   26
      */
     public void glide(int srcX, int srcY, int dstX, int dstY) {
-        glide(srcX, srcY, dstX, dstY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
+        glide(srcX, srcY, dstX, dstY, DEFAULT_STEP_LENGTH, DEFAULT_DELAY);
     }
 
     /**
@@ -967,6 +969,7 @@ public class Robot {
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
      * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
      * @see     #keyPress(int)
      * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
@@ -974,9 +977,9 @@ public class Robot {
      */
     public synchronized void type(int keycode) {
         keyPress(keycode);
-        waitForIdle(20);
+        waitForIdle(DEFAULT_DELAY);
         keyRelease(keycode);
-        waitForIdle(20);
+        waitForIdle(DEFAULT_DELAY);
     }
 
     /**
