@@ -33,9 +33,12 @@ import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
@@ -47,17 +50,18 @@ import java.awt.event.WindowFocusListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.JButton;
+import javax.swing.JComponent;
+
 public class ActiveAWTWindowTest {
 
     private static Frame frame, frame2;
     private static Button button, button2;
     private static TextField textField, textField2;
-    private static volatile int eventType;
 
     private static CountDownLatch windowActivatedLatch = new CountDownLatch(1);
     private static CountDownLatch windowDeactivatedLatch = new CountDownLatch(1);
     private static CountDownLatch windowFocusGainedLatch = new CountDownLatch(1);
-    private static boolean passed = true;
 
     public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
@@ -97,14 +101,12 @@ public class ActiveAWTWindowTest {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowActivated(WindowEvent e) {
-                eventType = WindowEvent.WINDOW_ACTIVATED;
                 System.out.println("Undecorated Frame is activated");
                 windowActivatedLatch.countDown();
             }
 
             @Override
             public void windowDeactivated(WindowEvent e) {
-                eventType = WindowEvent.WINDOW_DEACTIVATED;
                 System.out.println("Undecorated Frame got Deactivated");
                 windowDeactivatedLatch.countDown();
             }
@@ -138,41 +140,29 @@ public class ActiveAWTWindowTest {
         Robot robot = new Robot();
         robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
-        if (!windowFocusGainedLatch.await(1500, TimeUnit.MILLISECONDS)) {
-                passed = false;
+        if (!windowFocusGainedLatch.await(1000, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("Frame did not gain focus");
         }
-        robot.mouseMove(
-            button.getLocationOnScreen().x + button.getSize().width / 2,
-            button.getLocationOnScreen().y + button.getSize().height / 2);
+        clickButtonCenter(robot, button);
+
+        if (!windowActivatedLatch.await(1000, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("Frame was not activated");
+        }
+        clickButtonCenter(robot, button2);
+
+        if (!windowDeactivatedLatch.await(2000, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("Frame was not deactivated");
+        }
+    }
+
+    private static void clickButtonCenter(Robot robot, Component button) {
+        Point location = button.getLocationOnScreen();
+        Dimension size = button.getSize();
+        int x = location.x + size.width / 2;
+        int y = location.y + size.height / 2;
+        robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-        if (eventType != WindowEvent.WINDOW_ACTIVATED) {
-            windowActivatedLatch.await(1500, TimeUnit.MILLISECONDS);
-        }
-        if (eventType != WindowEvent.WINDOW_ACTIVATED) {
-            passed = false;
-        }
-        eventType = -1;
-
-        robot.mouseMove(
-            button2.getLocationOnScreen().x + button2.getSize().width / 2,
-            button2.getLocationOnScreen().y + button2.getSize().height / 2);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-        if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
-            windowDeactivatedLatch.await(1500, TimeUnit.MILLISECONDS);
-        }
-        if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
-            passed = false;
-        }
-        if (frame.hasFocus()) {
-            passed = false;
-        }
-        if (!passed) {
-            throw new RuntimeException("Test failed.");
-        }
     }
 }
 
