@@ -28,9 +28,9 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.util.Elements;
 
 /**
@@ -336,7 +336,8 @@ public abstract class SourceCodeAnalysis {
      * a given snippet.
      *
      * @apiNote Instances of this interface and instances of the returned {@linkplain Elements}
-     * should only be used and held during the execution of the {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) }
+     * should only be used and held during the execution of the
+     * {@link #completionSuggestions(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.ElementSuggestionConvertor) }
      * method. Their use outside of the context of the method is not supported and
      * the effect is undefined.
      *
@@ -370,7 +371,7 @@ public abstract class SourceCodeAnalysis {
          *
          * @apiNote The instance returned from this method is safe to hold for extended
          * periods of time, and can be called outside of the context of the
-         * {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) } method.
+         * {@link #completionSuggestions(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.ElementSuggestionConvertor) } method.
          */
         Supplier<String> documentation();
     }
@@ -412,7 +413,7 @@ public abstract class SourceCodeAnalysis {
          */
         NO_PAREN,
         /**
-         * Interpret {@link ANNOTATION_TYPE}s as annotation uses. Typically means
+         * Interpret {@link ElementKind#ANNOTATION_TYPE}s as annotation uses. Typically means
          * they should be prefixed with {@code @}.
          */
         TYPES_AS_ANNOTATIONS,
