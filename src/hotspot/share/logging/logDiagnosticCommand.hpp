@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,6 @@ class LogDiagnosticCommand : public DCmdWithParser {
 
   static const char* description() {
     return "Lists current log configuration, enables/disables/configures a log output, or rotates all logs.";
-  }
-
-  // Used by SecurityManager. This DCMD requires ManagementPermission = control.
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "control", nullptr};
-    return p;
   }
 };
 

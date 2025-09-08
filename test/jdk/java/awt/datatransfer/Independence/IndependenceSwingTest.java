@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,21 @@
  * questions.
  */
 
-import javax.swing.*;
-import java.awt.*;
+/*
+ * @test
+ * @key headful
+ * @requires (os.family == "linux")
+ * @summary To make sure that System & Primary clipboards should behave independently
+ * @library /lib/client
+ * @build ExtendedRobot
+ * @run main IndependenceSwingTest
+ */
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.HeadlessException;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -31,40 +44,44 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
-import java.util.Properties;
 
-/*
- * @test
- * @key headful
- * @summary To make sure that System & Primary clipboards should behave independently
- * @author Jitender(jitender.singh@eng.sun.com) area=AWT
- * @author dmitriy.ermashov@oracle.com
- * @library /lib/client
- * @build ExtendedRobot
- * @run main IndependenceSwingTest
- */
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class IndependenceSwingTest {
-
-    JFrame frame;
-    JPanel panel;
-    JTextField tf1, tf2, tf3;
-    Clipboard sClip, pClip;
+    private static JFrame frame;
+    private static JTextField tf1;
+    private static JTextField tf2;
+    private static JTextField tf3;
+    private static Clipboard systemClip;
+    private static Clipboard primaryClip;
+    private static ExtendedRobot robot;
+    private static volatile Point ttf1Center;
+    private static volatile Point glideStartLocation;
 
     public static void main (String[] args) throws Exception {
-        new IndependenceSwingTest().doTest();
+        try {
+            robot = new ExtendedRobot();
+            SwingUtilities.invokeAndWait(IndependenceSwingTest::createAndShowUI);
+            robot.waitForIdle();
+            robot.delay(1000);
+            test();
+        } finally {
+            SwingUtilities.invokeAndWait(frame::dispose);
+        }
     }
 
-    public IndependenceSwingTest() {
-
-        frame = new JFrame();
+    private static void createAndShowUI() {
+        frame = new JFrame("IndependenceSwingTest");
         frame.setSize(200, 200);
 
         // This textfield will be used to update the contents of clipboards
         tf1 = new JTextField();
         tf1.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent fe) {
-                tf1.setText("Clipboards_Independance_Testing");
+                tf1.setText("Clipboards_Independence_Testing");
             }
         });
 
@@ -72,7 +89,7 @@ public class IndependenceSwingTest {
         tf2 = new JTextField();
         tf3 = new JTextField();
 
-        panel = new JPanel();
+        JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
         panel.add(tf2, BorderLayout.NORTH);
@@ -80,49 +97,36 @@ public class IndependenceSwingTest {
 
         frame.add(tf1, BorderLayout.NORTH);
         frame.add(panel, BorderLayout.CENTER);
+        frame.setLocationRelativeTo(null);
 
         frame.setVisible(true);
         tf1.requestFocus();
     }
 
-    public void checkSecurity() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null)  {
-            System.out.println("security manager is not there");
-            getPrimaryClipboard();
-        } else {
-            sm.checkPermission(new AWTPermission("accessClipboard"));
-            getPrimaryClipboard();
-        }
-    }
-
     // Get System Selection i.e. Primary Clipboard
-    private void getPrimaryClipboard() {
-        Properties ps = System.getProperties();
-        String operSys = ps.getProperty("os.name");
+    private static void getPrimaryClipboard() {
         try {
-            pClip = Toolkit.getDefaultToolkit().getSystemSelection();
-            if (pClip == null)
-                if ((operSys.substring(0,3)).equalsIgnoreCase("Win") || operSys.toLowerCase().contains("os x"))
-                    System.out.println(operSys + "Operating system does not support system selection ");
-                else
-                    throw new RuntimeException("Method getSystemSelection() is returning null on X11 platform");
-        } catch(HeadlessException e) {
+            primaryClip = Toolkit.getDefaultToolkit().getSystemSelection();
+            if (primaryClip == null) {
+                throw new RuntimeException("Method getSystemSelection() is returning null"
+                                           + " on Linux platform");
+            }
+        } catch (HeadlessException e) {
             System.out.println("Headless exception thrown " + e);
         }
     }
 
     // Method to get the contents of both of the clipboards
-    public void getClipboardsContent() throws Exception {
-        sClip = Toolkit.getDefaultToolkit().getSystemClipboard();
+    private static void getClipboardsContent() throws Exception {
+        systemClip = Toolkit.getDefaultToolkit().getSystemClipboard();
         Transferable tp;
         Transferable ts;
 
         StringSelection content = new StringSelection(tf1.getText());
-        sClip.setContents(content,content);
+        systemClip.setContents(content, content);
 
-        tp = pClip.getContents(this);
-        ts = sClip.getContents(this);
+        tp = primaryClip.getContents(null);
+        ts = systemClip.getContents(null);
 
         // Paste the contents of System clipboard on textfield tf2 while the paste the contents of
         // of primary clipboard on textfiled tf3
@@ -140,7 +144,7 @@ public class IndependenceSwingTest {
     }
 
     // Method to compare the Contents return by system & primary clipboard
-    public void compareText (boolean mustEqual) {
+    private static void compareText (boolean mustEqual) {
         if ((tf2.getText()).equals(tf3.getText())) {
             if (mustEqual)
                 System.out.println("Selected text & clipboard contents are same\n");
@@ -154,40 +158,39 @@ public class IndependenceSwingTest {
         }
     }
 
-    public void doTest() throws Exception {
-        checkSecurity();
-        ExtendedRobot robot = new ExtendedRobot();
-        robot.waitForIdle(1000);
-        frame.setLocation(100, 100);
-        robot.waitForIdle(1000);
+    private static void test() throws Exception {
+        getPrimaryClipboard();
+        robot.waitForIdle(500);
 
-        if (pClip != null) {
-            Point ttf1Center = tf1.getLocationOnScreen();
-            ttf1Center.translate(tf1.getWidth()/2, tf1.getHeight()/2);
+        SwingUtilities.invokeAndWait(() -> {
+            Point center = tf1.getLocationOnScreen();
+            center.translate(tf1.getWidth() / 2, tf1.getHeight() / 2);
+            ttf1Center = center;
 
-            robot.glide(new Point(0, 0), ttf1Center);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(20);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(20);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(20);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(2000);
+            glideStartLocation = frame.getLocationOnScreen();
+            glideStartLocation.x -= 10;
+        });
 
-            getClipboardsContent();
-            compareText(true);
+        robot.glide(glideStartLocation, ttf1Center);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(20);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(500);
 
-            //Change the text selection to update the contents of primary clipboard
-            robot.mouseMove(ttf1Center);
-            robot.mousePress(MouseEvent.BUTTON1_MASK);
-            robot.delay(200);
-            robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
-            robot.mouseRelease(MouseEvent.BUTTON1_MASK);
-            robot.waitForIdle(2000);
+        getClipboardsContent();
+        compareText(true);
 
-            getClipboardsContent();
-            compareText(false);
-        }
+        //Change the text selection to update the contents of primary clipboard
+        robot.mouseMove(ttf1Center);
+        robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
+        robot.delay(20);
+        robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
+        robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(500);
+
+        getClipboardsContent();
+        compareText(false);
     }
 }

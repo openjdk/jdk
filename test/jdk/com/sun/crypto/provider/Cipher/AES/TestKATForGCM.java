@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,8 @@ public class TestKATForGCM {
     };
 
     void executeArray(TestVector tv) throws Exception {
-        Cipher c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+        Cipher c = Cipher.getInstance("AES/GCM/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
         try {
             System.out.println("Test #" + tv.id + ": byte[].");
 
@@ -320,7 +321,8 @@ public class TestKATForGCM {
     }
 
     void executeByteBuffer(TestVector tv, boolean direct, int offset) throws Exception {
-        Cipher c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+        Cipher c = Cipher.getInstance("AES/GCM/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
 
         ByteBuffer src;
         ByteBuffer ctdst;

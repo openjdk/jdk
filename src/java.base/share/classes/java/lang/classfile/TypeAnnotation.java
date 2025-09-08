@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.List;
 
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.Util;
 
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
@@ -52,18 +52,17 @@ import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface TypeAnnotation
         permits UnboundAttribute.UnboundTypeAnnotation {
 
     /**
      * The kind of target on which the annotation appears, as defined in JVMS {@jvms 4.7.20.1}.
      *
-     * @since 22
+     * @see TargetInfo#targetType()
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum TargetType {
         /** For annotations on a class type parameter declaration. */
         CLASS_TYPE_PARAMETER(TARGET_CLASS_TYPE_PARAMETER, 1),
@@ -183,6 +182,8 @@ public sealed interface TypeAnnotation
      * @param targetInfo which type in a declaration or expression is annotated
      * @param targetPath which part of the type is annotated
      * @param annotation the annotation
+     * @throws IllegalArgumentException if the size of {@code targetPath}
+     *         exceeds the limit of {@link java.lang.classfile##u1 u1}
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                              Annotation annotation) {
@@ -192,10 +193,10 @@ public sealed interface TypeAnnotation
     /**
      * Specifies which type in a declaration or expression is being annotated.
      *
+     * @see #targetInfo()
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TargetInfo {
 
         /**
@@ -354,6 +355,8 @@ public sealed interface TypeAnnotation
          * {@return a target for annotations on a class or method type parameter declaration}
          * @param targetType {@link TargetType#CLASS_TYPE_PARAMETER} or {@link TargetType#METHOD_TYPE_PARAMETER}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterTarget ofTypeParameter(TargetType targetType, int typeParameterIndex) {
             return new TargetInfoImpl.TypeParameterTargetImpl(targetType, typeParameterIndex);
@@ -362,6 +365,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on a class type parameter declaration}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterTarget ofClassTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.CLASS_TYPE_PARAMETER, typeParameterIndex);
@@ -370,6 +375,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on a method type parameter declaration}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterTarget ofMethodTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.METHOD_TYPE_PARAMETER, typeParameterIndex);
@@ -378,6 +385,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the type of an "extends" or "implements" clause}
          * @param supertypeIndex the index into the interfaces array or 65535 to indicate it is the superclass
+         * @throws IllegalArgumentException if {@code supertypeIndex} is not
+         *         {@link java.lang.classfile##u2 u2}
          */
         static SupertypeTarget ofClassExtends(int supertypeIndex) {
             return new TargetInfoImpl.SupertypeTargetImpl(supertypeIndex);
@@ -389,6 +398,8 @@ public sealed interface TypeAnnotation
          * @param targetType {@link TargetType#CLASS_TYPE_PARAMETER_BOUND} or {@link TargetType#METHOD_TYPE_PARAMETER_BOUND}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
          * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} or
+         *         {@code boundIndex} is not {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterBoundTarget ofTypeParameterBound(TargetType targetType, int typeParameterIndex, int boundIndex) {
             return new TargetInfoImpl.TypeParameterBoundTargetImpl(targetType, typeParameterIndex, boundIndex);
@@ -399,6 +410,8 @@ public sealed interface TypeAnnotation
          * a generic class, or interface}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
          * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} or
+         *         {@code boundIndex} is not {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterBoundTarget ofClassTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.CLASS_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
@@ -409,6 +422,8 @@ public sealed interface TypeAnnotation
          * a generic method, or constructor}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
          * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         * @throws IllegalArgumentException if {@code typeParameterIndex} or
+         *         {@code boundIndex} is not {@link java.lang.classfile##u1 u1}
          */
         static TypeParameterBoundTarget ofMethodTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.METHOD_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
@@ -444,9 +459,14 @@ public sealed interface TypeAnnotation
         }
 
         /**
-         * {@return a target for annotations on the type in a formal parameter declaration of a method,
-         * constructor, or lambda expression}
+         * {@return a target for annotations on the type in a formal parameter
+         * declaration of a method, constructor, or lambda expression}  The
+         * index may differ from the index in the method descriptor because some
+         * synthetic or implicit parameters are omitted.
+         *
          * @param formalParameterIndex specifies which formal parameter declaration has an annotated type
+         * @throws IllegalArgumentException if {@code formalParameterIndex} is
+         *         not {@link java.lang.classfile##u1 u1}
          */
         static FormalParameterTarget ofMethodFormalParameter(int formalParameterIndex) {
             return new TargetInfoImpl.FormalParameterTargetImpl(formalParameterIndex);
@@ -456,6 +476,8 @@ public sealed interface TypeAnnotation
          * {@return a target for annotations on the i'th type in the throws clause of a method or
          * constructor declaration}
          * @param throwsTargetIndex the index into the exception table of the Exceptions attribute of the method
+         * @throws IllegalArgumentException if {@code throwsTargetIndex} is
+         *         not {@link java.lang.classfile##u2 u2}
          */
         static ThrowsTarget ofThrows(int throwsTargetIndex) {
             return new TargetInfoImpl.ThrowsTargetImpl(throwsTargetIndex);
@@ -466,6 +488,8 @@ public sealed interface TypeAnnotation
          * including a variable declared as a resource in a try-with-resources statement}
          * @param targetType {@link TargetType#LOCAL_VARIABLE} or {@link TargetType#RESOURCE_VARIABLE}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
@@ -474,6 +498,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the type in a local variable declaration}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofLocalVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.LOCAL_VARIABLE, table);
@@ -483,6 +509,8 @@ public sealed interface TypeAnnotation
          * {@return a target for annotations on the type in a local variable declared
          * as a resource in a try-with-resources statement}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofResourceVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.RESOURCE_VARIABLE, table);
@@ -491,6 +519,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type in an exception parameter declaration}
          * @param exceptionTableIndex the index into the exception table of the Code attribute
+         * @throws IllegalArgumentException if {@code exceptionTableIndex} is
+         *         not {@link java.lang.classfile##u2 u2}
          */
         static CatchTarget ofExceptionParameter(int exceptionTableIndex) {
             return new TargetInfoImpl.CatchTargetImpl(exceptionTableIndex);
@@ -502,7 +532,7 @@ public sealed interface TypeAnnotation
          * @param targetType {@link TargetType#INSTANCEOF}, {@link TargetType#NEW},
          *                   {@link TargetType#CONSTRUCTOR_REFERENCE},
          *                   or {@link TargetType#METHOD_REFERENCE}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
             return new TargetInfoImpl.OffsetTargetImpl(targetType, target);
@@ -510,7 +540,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type in an instanceof expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofInstanceofExpr(Label target) {
             return ofOffset(TargetType.INSTANCEOF, target);
@@ -518,7 +548,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type in a new expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofNewExpr(Label target) {
             return ofOffset(TargetType.NEW, target);
@@ -526,7 +556,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type before the :: in a constructor reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofConstructorReference(Label target) {
             return ofOffset(TargetType.CONSTRUCTOR_REFERENCE, target);
@@ -534,7 +564,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type before the :: in a method reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofMethodReference(Label target) {
             return ofOffset(TargetType.METHOD_REFERENCE, target);
@@ -549,8 +579,10 @@ public sealed interface TypeAnnotation
          *                   {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT},
          *                   {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
          *                   or {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofTypeArgument(TargetType targetType, Label target, int typeArgumentIndex) {
             return new TargetInfoImpl.TypeArgumentTargetImpl(targetType, target, typeArgumentIndex);
@@ -558,8 +590,10 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the i'th type in a cast expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the cast operator is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofCastExpr(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CAST, target, typeArgumentIndex);
@@ -568,8 +602,10 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * an explicit constructor invocation statement}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofConstructorInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
@@ -578,8 +614,10 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a method invocation expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofMethodInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
@@ -588,8 +626,10 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a new expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofConstructorReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
@@ -598,8 +638,10 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a method reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypeArgumentTarget ofMethodReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
@@ -611,9 +653,11 @@ public sealed interface TypeAnnotation
      * parameter of a generic class, generic interface, generic method, or
      * generic constructor.
      *
-     * @since 22
+     * @see #ofTypeParameter(TargetType, int)
+     * @see #ofClassTypeParameter(int)
+     * @see #ofMethodTypeParameter(int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeParameterTarget extends TargetInfo
             permits TargetInfoImpl.TypeParameterTargetImpl {
 
@@ -630,9 +674,9 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on a type in the extends or implements
      * clause of a class or interface declaration.
      *
-     * @since 22
+     * @see #ofClassExtends(int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface SupertypeTarget extends TargetInfo
             permits TargetInfoImpl.SupertypeTargetImpl {
 
@@ -654,9 +698,11 @@ public sealed interface TypeAnnotation
      * type parameter declaration of a generic class, interface, method, or
      * constructor.
      *
-     * @since 22
+     * @see #ofTypeParameterBound(TargetType, int, int)
+     * @see #ofClassTypeParameterBound(int, int)
+     * @see #ofMethodTypeParameterBound(int, int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeParameterBoundTarget extends TargetInfo
             permits TargetInfoImpl.TypeParameterBoundTargetImpl {
 
@@ -680,9 +726,12 @@ public sealed interface TypeAnnotation
      * declaration, the return type of a method, the type of a newly constructed
      * object, or the receiver type of a method or constructor.
      *
-     * @since 22
+     * @see #of(TargetType)
+     * @see #ofField()
+     * @see #ofMethodReturn()
+     * @see #ofMethodReceiver()
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface EmptyTarget extends TargetInfo
             permits TargetInfoImpl.EmptyTargetImpl {
     }
@@ -691,17 +740,17 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the type in a formal parameter
      * declaration of a method, constructor, or lambda expression.
      *
-     * @since 22
+     * @see #ofMethodFormalParameter(int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface FormalParameterTarget extends TargetInfo
             permits TargetInfoImpl.FormalParameterTargetImpl {
 
         /**
-         * Which formal parameter declaration has an annotated type.
-         *
-         * @return the index into the formal parameter declarations, in the order
-         * declared in the source code
+         * {@return the index into the formal parameter declarations, in the
+         * order declared in the source code}  The index may differ from the
+         * index in the method descriptor because some synthetic or implicit
+         * parameters are omitted.
          */
         int formalParameterIndex();
     }
@@ -710,9 +759,9 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the i'th type in the throws
      * clause of a method or constructor declaration.
      *
-     * @since 22
+     * @see #ofThrows(int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ThrowsTarget extends TargetInfo
             permits TargetInfoImpl.ThrowsTargetImpl {
 
@@ -730,14 +779,14 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the type in a local variable declaration,
      * including a variable declared as a resource in a try-with-resources statement.
      *
-     * @since 22
+     * @see #ofLocalVariable(List)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LocalVarTarget extends TargetInfo
             permits TargetInfoImpl.LocalVarTargetImpl {
 
         /**
-         * {@return the table of local variable location/indices.}
+         * {@return the table of local variable location/indices}
          */
         List<LocalVarTargetInfo> table();
     }
@@ -747,9 +796,9 @@ public sealed interface TypeAnnotation
      * has a value, and the index into the local variable array of the current
      * frame at which that local variable can be found.
      *
-     * @since 22
+     * @see LocalVarTarget
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LocalVarTargetInfo
             permits TargetInfoImpl.LocalVarTargetInfoImpl {
 
@@ -760,7 +809,6 @@ public sealed interface TypeAnnotation
          * @return the start of the bytecode section
          */
         Label startLabel();
-
 
         /**
          * The given local variable has a value at indices into the code array in the interval
@@ -784,6 +832,8 @@ public sealed interface TypeAnnotation
          * @param startLabel the code label indicating start of an interval where variable has value
          * @param endLabel the code label indicating start of an interval where variable has value
          * @param index index into the local variables
+         * @throws IllegalArgumentException if {@code index} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         static LocalVarTargetInfo of(Label startLabel, Label endLabel, int index) {
             return new TargetInfoImpl.LocalVarTargetInfoImpl(startLabel, endLabel, index);
@@ -794,9 +844,9 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the i'th type in an exception parameter
      * declaration.
      *
-     * @since 22
+     * @see #ofExceptionParameter(int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface CatchTarget extends TargetInfo
             permits TargetInfoImpl.CatchTargetImpl {
 
@@ -813,18 +863,22 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on either the type in an instanceof expression
      * or a new expression, or the type before the :: in a method reference expression.
      *
-     * @since 22
+     * @see #ofOffset(TargetType, Label)
+     * @see #ofNewExpr(Label)
+     * @see #ofInstanceofExpr(Label)
+     * @see #ofConstructorReference(Label)
+     * @see #ofMethodReference(Label)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OffsetTarget extends TargetInfo
             permits TargetInfoImpl.OffsetTargetImpl {
 
         /**
-         * The code array offset of either the bytecode instruction
-         * corresponding to the instanceof expression, the new bytecode instruction corresponding to the new
-         * expression, or the bytecode instruction corresponding to the method reference expression.
+         * The label right before the {@link Instruction} corresponding to the
+         * instanceof expression, the new expression, or the method reference
+         * expression.
          *
-         * @return the code label corresponding to the instruction
+         * @return the label right before the instruction
          */
         Label target();
     }
@@ -835,20 +889,24 @@ public sealed interface TypeAnnotation
      * expression, an explicit constructor invocation statement, a method invocation expression, or a method reference
      * expression.
      *
-     * @since 22
+     * @see #ofTypeArgument(TargetType, Label, int)
+     * @see #ofCastExpr(Label, int)
+     * @see #ofConstructorInvocationTypeArgument(Label, int)
+     * @see #ofConstructorReferenceTypeArgument(Label, int)
+     * @see #ofMethodInvocationTypeArgument(Label, int)
+     * @see #ofMethodReferenceTypeArgument(Label, int)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeArgumentTarget extends TargetInfo
             permits TargetInfoImpl.TypeArgumentTargetImpl {
 
         /**
-         * The code array offset of either the bytecode instruction
-         * corresponding to the cast expression, the new bytecode instruction corresponding to the new expression, the
-         * bytecode instruction corresponding to the explicit constructor invocation statement, the bytecode
-         * instruction corresponding to the method invocation expression, or the bytecode instruction corresponding to
-         * the method reference expression.
+         * The label right before the {@link Instruction} corresponding to the
+         * cast expression, the new expression, the explicit constructor
+         * invocation statement, the method invocation expression, or the method
+         * reference expression.
          *
-         * @return the code label corresponding to the instruction
+         * @return the label right before the instruction
          */
         Label target();
 
@@ -871,18 +929,17 @@ public sealed interface TypeAnnotation
      * JVMS: Type_path structure identifies which part of the type is annotated,
      * as defined in JVMS {@jvms 4.7.20.2}
      *
-     * @since 22
+     * @see #targetPath()
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypePathComponent
             permits UnboundAttribute.TypePathComponentImpl {
 
         /**
          * Type path kind, as defined in JVMS {@jvms 4.7.20.2}
          *
-         * @since 22
+         * @since 24
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public enum Kind {
 
             /** Annotation is deeper in an array type */
@@ -944,9 +1001,11 @@ public sealed interface TypeAnnotation
          * {@return type path component of an annotation}
          * @param typePathKind the kind of path element
          * @param typeArgumentIndex the type argument index
+         * @throws IllegalArgumentException if {@code typeArgumentIndex} is not
+         *         {@link java.lang.classfile##u1 u1}
          */
         static TypePathComponent of(Kind typePathKind, int typeArgumentIndex) {
-
+            Util.checkU1(typeArgumentIndex, "type argument index");
             return switch (typePathKind) {
                 case ARRAY -> ARRAY;
                 case INNER_TYPE -> INNER_TYPE;

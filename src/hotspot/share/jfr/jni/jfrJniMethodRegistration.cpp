@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJniMethod.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"
@@ -84,6 +83,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getUnloadedEventClassCount", (char*)"()J", (void*)jfr_get_unloaded_event_classes_count,
       (char*)"setMiscellaneous", (char*)"(JJ)V", (void*)jfr_set_miscellaneous,
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
+      (char*)"setCPURate", (char*)"(D)V", (void*)jfr_set_cpu_rate,
+      (char*)"setCPUPeriod", (char*)"(J)V", (void*)jfr_set_cpu_period,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,
       (char*)"exclude", (char*)"(Ljava/lang/Thread;)V", (void*)jfr_exclude_thread,
@@ -101,7 +102,10 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
       (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
-      (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now
+      (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
+      (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product,
+      (char*)"setMethodTraceFilters", (char*)"([Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[I)[J", (void*)jfr_set_method_trace_filters,
+      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

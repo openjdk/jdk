@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,6 @@ import java.awt.event.TextEvent;
 
 abstract
 class WTextComponentPeer extends WComponentPeer implements TextComponentPeer {
-
-    static {
-        initIDs();
-    }
 
     // TextComponentPeer implementation
 
@@ -106,11 +102,6 @@ class WTextComponentPeer extends WComponentPeer implements TextComponentPeer {
     public void valueChanged() {
         postEvent(new TextEvent(target, TextEvent.TEXT_VALUE_CHANGED));
     }
-
-    /**
-     * Initialize JNI field and method IDs
-     */
-    private static native void initIDs();
 
     @Override
     public boolean shouldClearRectBeforePaint() {

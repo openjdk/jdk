@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +172,14 @@ public class CtwRunner {
 
         long classStart = start(totalClassCount);
         long classStop = stop(totalClassCount);
-
         long classCount = classStop - classStart;
+
+        boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
+        if (allowZeroClassCount && totalClassCount == 0L) {
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
+            return;
+        }
+
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
 
@@ -273,6 +279,7 @@ public class CtwRunner {
                 "-Xbatch",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 // redirect VM output to cerr so it won't collide w/ ctw output
                 "-XX:+DisplayVMOutputToStderr",
                 // define phase start
@@ -293,7 +300,16 @@ public class CtwRunner {
                 String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                // CTW does not have good execution profile info, which would uncommon-trap
+                // a lot of branches/calls that are presumed to be never executed.
+                // Expand the optimization scope by disallowing most traps.
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:PerMethodSpecTrapLimit=0",
+                // Do not pay extra stack trace generation cost for normally thrown exceptions
+                "-XX:-StackTraceInThrowable",
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra for verifying inline caches during nmethod cleanups
+                "-XX:-VerifyInlineCaches",
                 // Do not pay extra zapping cost for explicit GC invocations
                 "-XX:-ZapUnusedHeapArea",
                 // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
@@ -302,6 +318,7 @@ public class CtwRunner {
                 "-XX:+StressIGVN",
                 "-XX:+StressCCP",
                 "-XX:+StressMacroExpansion",
+                "-XX:+StressMacroElimination",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),

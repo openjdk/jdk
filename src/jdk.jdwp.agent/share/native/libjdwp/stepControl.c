@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,6 +858,17 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     return error;
 }
 
+static jint
+getThreadState(jthread thread)
+{
+    jint state = 0;
+    jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, thread, &state);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "getting thread state");
+    }
+    return state;
+}
 
 static void
 clearStep(jthread thread, StepRequest *step)
@@ -877,15 +888,60 @@ clearStep(jthread thread, StepRequest *step)
             (void)eventHandler_free(step->methodEnterHandlerNode);
             step->methodEnterHandlerNode = NULL;
         }
-        step->pending = JNI_FALSE;
-
         /*
          * Warning: Do not clear step->method, step->lineEntryCount,
          *          or step->lineEntries here, they will likely
          *          be needed on the next step.
          */
 
+        jvmtiError error;
+        jboolean needsSuspending; // true if we needed to suspend this thread
+
+        // The thread needs suspending if it is not the current thread and is
+        // not already suspended.
+        if (isSameObject(getEnv(), threadControl_currentThread(), thread)) {
+            needsSuspending = JNI_FALSE;
+        } else {
+            jint state = getThreadState(thread);
+            needsSuspending = ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0);
+        }
+
+        if (needsSuspending) {
+            // Don't use threadControl_suspendThread() here. It does a lot of
+            // locking, increasing the risk of deadlock issues. None of that
+            // locking is needed here.
+            error = JVMTI_FUNC_PTR(gdata->jvmti,SuspendThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "suspending thread");
+            }
+        }
+
+        error = JVMTI_FUNC_PTR(gdata->jvmti,ClearAllFramePops)
+            (gdata->jvmti, thread);
+        if (error != JVMTI_ERROR_NONE) {
+#ifdef DEBUG
+            jint currentDepth = getFrameCount(thread);
+            jint state = getThreadState(thread);
+            tty_message("JVMTI ERROR(%d): ClearAllFramePops (state=0x%x fromDepth=%d currentDepth=%d)",
+                        error, state, step->fromStackDepth, currentDepth);
+            printThreadInfo(thread);
+            printStackTrace(thread);
+            threadControl_dumpThread(thread);
+#endif
+            EXIT_ERROR(error, "clearing all frame pops");
+        }
+
+        if (needsSuspending) {
+            error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "resuming thread");
+            }
+        }
     }
+
+    step->pending = JNI_FALSE;
 }
 
 jvmtiError

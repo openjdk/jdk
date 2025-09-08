@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -43,12 +42,14 @@
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -66,6 +67,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -132,7 +134,7 @@ public:
       // obj->set_mark(obj->mark().set_marked());
 
       assert(dead_length == obj->size(), "bad filler object size");
-      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
+      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", %zub",
                                         p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 
       return true;
@@ -230,7 +232,7 @@ class Compacter {
   static void forward_obj(oop obj, HeapWord* new_addr) {
     prefetch_write_scan(obj);
     if (cast_from_oop<HeapWord*>(obj) != new_addr) {
-      obj->forward_to(cast_to_oop(new_addr));
+      FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
     } else {
       assert(obj->is_gc_marked(), "inv");
       // This obj will stay in-place. Fix the markword.
@@ -255,7 +257,7 @@ class Compacter {
     prefetch_read_scan(addr);
 
     oop obj = cast_to_oop(addr);
-    oop new_obj = obj->forwardee();
+    oop new_obj = FullGCForwarding::forwardee(obj);
     HeapWord* new_addr = cast_from_oop<HeapWord*>(new_obj);
     assert(addr != new_addr, "inv");
     prefetch_write_copy(new_addr);
@@ -352,13 +354,13 @@ public:
       HeapWord* top = space->top();
 
       // Check if the first obj inside this space is forwarded.
-      if (!cast_to_oop(cur_addr)->is_forwarded()) {
+      if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
         // Jump over consecutive (in-place) live-objs-chunk
         cur_addr = get_first_dead(i);
       }
 
       while (cur_addr < top) {
-        if (!cast_to_oop(cur_addr)->is_forwarded()) {
+        if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
           cur_addr = *(HeapWord**) cur_addr;
           continue;
         }
@@ -483,13 +485,22 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(0);
 
-    CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
-    gch->process_roots(SerialHeap::SO_None,
-                       &follow_root_closure,
-                       &follow_cld_closure,
-                       weak_cld_closure,
-                       &mark_code_closure);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
+                                            !NMethodToOopClosure::FixRelocations,
+                                            true);
+
+    // Start tracing from roots, there are 3 kinds of roots in full-gc.
+    //
+    // 1. CLD. This method internally takes care of whether class loading is
+    // enabled or not, applying the closure to both strong and weak or only
+    // strong CLDs.
+    ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
+
+    // 2. Threads stack frames and active nmethods in them.
+    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+
+    // 3. VM internal roots.
+    OopStorageSet::strong_oops_do(&follow_root_closure);
   }
 
   // Process reference objects found during marking
@@ -498,7 +509,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
-    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, nullptr, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
@@ -593,7 +604,7 @@ void SerialFullGC::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of serial full GC.
   markWord mark = obj->mark();
-  obj->set_mark(markWord::prototype().set_marked());
+  obj->set_mark(obj->prototype_mark().set_marked());
 
   ContinuationGCSupport::transform_stack_chunk(obj);
 
@@ -624,8 +635,8 @@ template <class T> void SerialFullGC::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    if (obj->is_forwarded()) {
-      oop new_obj = obj->forwardee();
+    if (FullGCForwarding::is_forwarded(obj)) {
+      oop new_obj = FullGCForwarding::forwardee(obj);
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
@@ -650,7 +661,7 @@ void SerialFullGC::adjust_marks() {
 }
 
 void SerialFullGC::restore_marks() {
-  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
+  log_trace(gc)("Restoring %zu marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
@@ -694,6 +705,16 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   allocate_stacks();
 
+  // Usually, all class unloading work occurs at the end of phase 1, but Serial
+  // full-gc accesses dead-objs' klass to find out the start of next live-obj
+  // during phase 2. This requires klasses of dead-objs to be kept loaded.
+  // Therefore, we declare ClassUnloadingContext at the same level as
+  // full-gc phases, and purge dead classes (invoking
+  // ClassLoaderDataGraph::purge) after all phases of full-gc.
+  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                            false /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
   phase1_mark(clear_all_softrefs);
 
   Compacter compacter{gch};
@@ -717,13 +738,20 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+    // Remap strong and weak roots in adjust phase.
+    // 1. All (strong and weak) CLDs.
+    ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
 
+    // 2. Threads stack frames. No need to visit on-stack nmethods, because all
+    // nmethods are visited in one go via CodeCache::nmethods_do.
+    Threads::oops_do(&adjust_pointer_closure, nullptr);
+    NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+    CodeCache::nmethods_do(&nmethod_cl);
+
+    // 3. VM internal roots
+    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
+
+    // 4. VM internal weak roots
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
     adjust_marks();
@@ -736,6 +764,13 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     compacter.phase4_compact();
   }
+
+  // Delete metaspaces for unloaded class loaders and clean up CLDG.
+  ClassLoaderDataGraph::purge(true /* at_safepoint */);
+  DEBUG_ONLY(MetaspaceUtils::verify();)
+
+  // Need to clear claim bits for the next full-gc (specifically phase 1 and 3).
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   restore_marks();
 

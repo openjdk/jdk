@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -163,7 +162,7 @@ public class Signatures {
                     boolean isFirst = true;
                     for (TypeMirror type : interfaces) {
                         TypeElement tDoc = utils.asTypeElement(type);
-                        if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
+                        if (!utils.isVisible(tDoc)) {
                             continue;
                         }
                         if (isFirst) {
@@ -242,9 +241,10 @@ public class Signatures {
                  }
                  content.add(modifier);
                  if (previewModifiers.contains(modifier)) {
-                     content.add(HtmlTree.SUP(writer.links.createLink(
-                             configuration.htmlIds.forPreviewSection(typeElement),
-                             configuration.contents.previewMark)));
+                     content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                             writer.links.createLink(
+                                     configuration.htmlIds.forPreviewSection(typeElement),
+                                     configuration.contents.previewMark)));
                  }
                  sep = " ";
              }
@@ -354,9 +354,6 @@ public class Signatures {
         private Content returnType;
         private Content parameters;
         private Content exceptions;
-
-        // Threshold for length of type parameters before switching from inline to block representation.
-        private static final int TYPE_PARAMS_MAX_INLINE_LENGTH = 50;
 
         // Threshold for combined length of modifiers, type params and return type before breaking
         // it up with a line break before the return type.
@@ -532,13 +529,7 @@ public class Signatures {
             // Apply different wrapping strategies for type parameters
             // depending on the combined length of type parameters and return type.
             // Note return type will be null if this is a constructor.
-            int typeParamLength = typeParameters.charCount();
-
-            if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
-                target.add(HtmlTree.SPAN(HtmlStyles.typeParametersLong, typeParameters));
-            } else {
-                target.add(HtmlTree.SPAN(HtmlStyles.typeParameters, typeParameters));
-            }
+            target.add(HtmlTree.SPAN(HtmlStyles.typeParameters, typeParameters));
 
             int lineLength = target.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;

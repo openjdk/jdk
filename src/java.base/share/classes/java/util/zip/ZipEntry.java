@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
     int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
+
+    // entry's LOC offset as noted in the entry's central header, -1 implies undetermined
+    long locOffset = -1;
+
     /**
      * Compression method for uncompressed entries.
      */
@@ -91,7 +95,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     private static final long UPPER_DOSTIME_BOUND =
             128L * 365 * 24 * 60 * 60 * 1000;
-
+    // CEN header size + name length + comment length + extra length
+    // should not exceed 65,535 bytes per the PKWare APP.NOTE
+    // 4.4.10, 4.4.11, & 4.4.12.
+    private static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFFF;
     /**
      * Creates a new ZIP entry with the specified name.
      *
@@ -99,12 +106,12 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *         The entry name
      *
      * @throws NullPointerException if the entry name is null
-     * @throws IllegalArgumentException if the entry name is longer than
-     *         0xFFFF bytes
+     * @throws IllegalArgumentException if the combined length of the entry name
+     * and the {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      */
     public ZipEntry(String name) {
         Objects.requireNonNull(name, "name");
-        if (name.length() > 0xFFFF) {
+        if (!isCENHeaderValid(name, null, null)) {
             throw new IllegalArgumentException("entry name too long");
         }
         this.name = name;
@@ -135,6 +142,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
         extra = e.extra;
         comment = e.comment;
         externalFileAttributes = e.externalFileAttributes;
+        locOffset = e.locOffset;
     }
 
     /**
@@ -519,8 +527,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param  extra
      *         The extra field data bytes
      *
-     * @throws IllegalArgumentException if the length of the specified
-     *         extra field data is greater than 0xFFFF bytes
+     * @throws IllegalArgumentException if the combined length of the specified
+     * extra field data, the {@linkplain #getName() entry name},
+     * the {@linkplain #getComment() entry comment}, and the
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      *
      * @see #getExtra()
      */
@@ -541,7 +551,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     void setExtra0(byte[] extra, boolean doZIP64, boolean isLOC) {
         if (extra != null) {
-            if (extra.length > 0xFFFF) {
+            if (!isCENHeaderValid(name, extra, comment)) {
                 throw new IllegalArgumentException("invalid extra field length");
             }
             // extra fields are in "HeaderID(2)DataSize(2)Data... format
@@ -642,16 +652,19 @@ public class ZipEntry implements ZipConstants, Cloneable {
 
     /**
      * Sets the optional comment string for the entry.
-     *
-     * <p>ZIP entry comments have maximum length of 0xffff. If the length of the
-     * specified comment string is greater than 0xFFFF bytes after encoding, only
-     * the first 0xFFFF bytes are output to the ZIP file entry.
-     *
      * @param comment the comment string
-     *
+     * @throws IllegalArgumentException if the combined length
+     * of the specified entry comment, the {@linkplain #getName() entry name},
+     * the {@linkplain #getExtra() extra field data}, and the
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      * @see #getComment()
      */
     public void setComment(String comment) {
+        if (comment != null) {
+            if (!isCENHeaderValid(name, extra, comment)) {
+                throw new IllegalArgumentException("entry comment too long");
+            }
+        }
         this.comment = comment;
     }
 
@@ -701,5 +714,23 @@ public class ZipEntry implements ZipConstants, Cloneable {
             // This should never happen, since we are Cloneable
             throw new InternalError(e);
         }
+    }
+
+    /**
+     * Initial validation that the CEN header size + name length + comment length
+     * + extra length do not exceed 65,535 bytes per the PKWare APP.NOTE
+     * 4.4.10, 4.4.11, & 4.4.12.   Prior to writing out the CEN Header,
+     * ZipOutputStream::writeCEN will do an additional validation  of the combined
+     * length of the fields after encoding the name and comment to a byte array.
+     * @param name Zip entry name
+     * @param extra Zip extra data
+     * @param comment Zip entry comment
+     * @return true if valid CEN Header size; false otherwise
+     */
+     static boolean isCENHeaderValid(String name, byte[] extra, String comment) {
+        int clen = comment == null ? 0 : comment.length();
+        int elen = extra == null ? 0 : extra.length;
+        long headerSize = (long)CENHDR + name.length() + clen + elen;
+        return headerSize <= MAX_COMBINED_CEN_HEADER_SIZE;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,13 @@ import java.util.Objects;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.Util;
 
+import static jdk.internal.classfile.impl.StackMapGenerator.*;
 import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
 
-/**
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.hpp">hotspot/share/classfile/verificationType.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.cpp">hotspot/share/classfile/verificationType.cpp</a>
- */
+/// From `verificationType.cpp`.
 class VerificationType {
 
     private static final int BitsPerByte = 8;
-
-    static final int
-            ITEM_Top = 0,
-            ITEM_Integer = 1,
-            ITEM_Float = 2,
-            ITEM_Double = 3,
-            ITEM_Long = 4,
-            ITEM_Null = 5,
-            ITEM_UninitializedThis = 6,
-            ITEM_Object = 7,
-            ITEM_Uninitialized = 8,
-            ITEM_Bogus = -1;
 
     VerificationType(String sym) {
         _data = 0x100;
@@ -95,9 +81,6 @@ class VerificationType {
     String name() {
         return _sym;
     }
-    private static final int
-            ITEM_Boolean = 9, ITEM_Byte = 10, ITEM_Short = 11, ITEM_Char = 12,
-            ITEM_Long_2nd = 13, ITEM_Double_2nd = 14;
 
     private static final int
                             TypeMask                     = 0x00000003,
@@ -119,17 +102,17 @@ class VerificationType {
                             Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
                             // Primitive values (type discriminator stored in most-significant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
-                            Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
-                            Boolean                        = (ITEM_Boolean        << 2 * BitsPerByte) | Category1,
-                            Byte                             = (ITEM_Byte             << 2 * BitsPerByte) | Category1,
-                            Short                            = (ITEM_Short            << 2 * BitsPerByte) | Category1,
-                            Char                             = (ITEM_Char             << 2 * BitsPerByte) | Category1,
-                            Integer                        = (ITEM_Integer        << 2 * BitsPerByte) | Category1,
-                            Float                            = (ITEM_Float            << 2 * BitsPerByte) | Category1,
-                            Long                             = (ITEM_Long             << 2 * BitsPerByte) | Category2,
-                            Double                         = (ITEM_Double         << 2 * BitsPerByte) | Category2,
-                            Long_2nd                     = (ITEM_Long_2nd     << 2 * BitsPerByte) | Category2_2nd,
-                            Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
+                            Bogus                            = (ITEM_BOGUS            << 2 * BitsPerByte) | Primitive,
+                            Boolean                        = (ITEM_BOOLEAN        << 2 * BitsPerByte) | Category1,
+                            Byte                             = (ITEM_BYTE             << 2 * BitsPerByte) | Category1,
+                            Short                            = (ITEM_SHORT            << 2 * BitsPerByte) | Category1,
+                            Char                             = (ITEM_CHAR             << 2 * BitsPerByte) | Category1,
+                            Integer                        = (ITEM_INTEGER        << 2 * BitsPerByte) | Category1,
+                            Float                            = (ITEM_FLOAT            << 2 * BitsPerByte) | Category1,
+                            Long                             = (ITEM_LONG             << 2 * BitsPerByte) | Category2,
+                            Double                         = (ITEM_DOUBLE         << 2 * BitsPerByte) | Category2,
+                            Long_2nd                     = (ITEM_LONG_2ND     << 2 * BitsPerByte) | Category2_2nd,
+                            Double_2nd                 = (ITEM_DOUBLE_2ND << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
                             BciMask                        = 0xffff << BitsPerByte,
                             // A bci of -1 is an Uninitialized-This
@@ -332,7 +315,7 @@ class VerificationType {
                     return from.is_integer();
                 default:
                     if (is_reference() && from.is_reference()) {
-                        return is_reference_assignable_from(from, context);
+                        return is_reference_assignable_from(from, context, null);
                     } else {
                         return false;
                     }
@@ -367,30 +350,37 @@ class VerificationType {
 
     static VerificationType from_tag(int tag, VerifierImpl context) {
         switch (tag) {
-            case ITEM_Top:         return bogus_type;
-            case ITEM_Integer: return integer_type;
-            case ITEM_Float:     return float_type;
-            case ITEM_Double:    return double_type;
-            case ITEM_Long:        return long_type;
-            case ITEM_Null:        return null_type;
+            case ITEM_TOP:         return bogus_type;
+            case ITEM_INTEGER: return integer_type;
+            case ITEM_FLOAT:     return float_type;
+            case ITEM_DOUBLE:    return double_type;
+            case ITEM_LONG:        return long_type;
+            case ITEM_NULL:        return null_type;
             default:
                 context.verifyError("Should not reach here");
                 return bogus_type;
         }
     }
 
-    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String name, String from_name, boolean from_is_array, boolean from_is_object) {
+    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String target_name, String from_name,
+                                            boolean from_is_array, boolean from_is_object, boolean[] target_is_interface) {
         //let's delegate assignability to SPI
-        var desc = Util.toClassDesc(name);
-        if (assignResolver.isInterface(desc)) {
-            return !from_is_array || "java/lang/Cloneable".equals(name) || "java/io/Serializable".equals(name);
+        var targetClass = Util.toClassDesc(target_name);
+        boolean isInterface = assignResolver.isInterface(targetClass);
+
+        if (target_is_interface != null) {
+            target_is_interface[0] = isInterface;
+        }
+
+        if (isInterface) {
+            return !from_is_array || "java/lang/Cloneable".equals(target_name) || "java/io/Serializable".equals(target_name);
         } else if (from_is_object) {
-            return assignResolver.isAssignableFrom(desc, Util.toClassDesc(from_name));
+            return assignResolver.isAssignableFrom(targetClass, Util.toClassDesc(from_name));
         }
         return false;
     }
 
-    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context) {
+    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context, boolean[] target_is_interface) {
         ClassHierarchyImpl clsTree = context.class_hierarchy();
         if (from.is_null()) {
             return true;
@@ -402,7 +392,7 @@ class VerificationType {
             if (VerifierImpl.java_lang_Object.equals(name())) {
                 return true;
             }
-            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object());
+            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object(), target_is_interface);
         } else if (is_array() && from.is_array()) {
             VerificationType comp_this = get_component(context);
             VerificationType comp_from = from.get_component(context);

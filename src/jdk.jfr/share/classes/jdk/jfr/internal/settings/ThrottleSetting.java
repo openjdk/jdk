@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,8 +36,8 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Throttle;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Rate;
 import jdk.jfr.internal.util.TimespanUnit;
@@ -47,13 +47,27 @@ import jdk.jfr.internal.util.Utils;
 @Label("Throttle")
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
-public final class ThrottleSetting extends JDKSettingControl {
-    public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+public final class ThrottleSetting extends SettingControl {
+    public static final String DEFAULT_VALUE = "off";
     private final PlatformEventType eventType;
-    private String value = DEFAULT_VALUE;
+    private final String defaultValue;
+    private String value;
 
-    public ThrottleSetting(PlatformEventType eventType) {
-       this.eventType = Objects.requireNonNull(eventType);
+    public ThrottleSetting(PlatformEventType eventType, String defaultValue) {
+        this.eventType = Objects.requireNonNull(eventType);
+        this.defaultValue = validRate(defaultValue);
+        this.value = defaultValue;
+    }
+
+    private String validRate(String defaultValue) {
+        if (DEFAULT_VALUE.equals(defaultValue)) {
+            return DEFAULT_VALUE; // Fast path to avoid parsing
+        }
+        if (Rate.of(defaultValue) == null) {
+            Utils.warnInvalidAnnotation(eventType, "Throttle", defaultValue, DEFAULT_VALUE);
+            return DEFAULT_VALUE;
+        }
+        return defaultValue;
     }
 
     @Override
@@ -69,8 +83,7 @@ public final class ThrottleSetting extends JDKSettingControl {
                 }
             }
         }
-        // "off" is default
-        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
+        return Objects.requireNonNullElse(text, defaultValue);
     }
 
     @Override
@@ -93,7 +106,7 @@ public final class ThrottleSetting extends JDKSettingControl {
             // if unit is less than 1 s, scale samples
             if (unit.nanos < SECONDS.nanos) {
                 long perSecond = SECONDS.nanos / unit.nanos;
-                samples *= Utils.multiplyOverflow(samples, perSecond, Long.MAX_VALUE);
+                samples = Utils.multiplyOverflow(samples, perSecond, Long.MAX_VALUE);
             }
             eventType.setThrottle(samples, millis);
             this.value = value;

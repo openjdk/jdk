@@ -25,11 +25,8 @@
 #ifndef SHARE_OPTO_MATHEXACTNODE_HPP
 #define SHARE_OPTO_MATHEXACTNODE_HPP
 
-#include "opto/multnode.hpp"
-#include "opto/node.hpp"
 #include "opto/addnode.hpp"
 #include "opto/subnode.hpp"
-#include "opto/type.hpp"
 
 class PhaseGVN;
 

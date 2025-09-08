@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,8 +349,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @jls 15.21.1 Numerical Equality Operators == and !=
  * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -375,9 +375,9 @@ public final class Double extends Number
     public static final double NEGATIVE_INFINITY = -1.0 / 0.0;
 
     /**
-     * A constant holding a Not-a-Number (NaN) value of type
-     * {@code double}. It is equivalent to the value returned by
-     * {@code Double.longBitsToDouble(0x7ff8000000000000L)}.
+     * A constant holding a Not-a-Number (NaN) value of type {@code double}.
+     * It is {@linkplain Double##equivalenceRelation equivalent} to the
+     * value returned by {@code Double.longBitsToDouble(0x7ff8000000000000L)}.
      */
     public static final double NaN = 0.0d / 0.0;
 
@@ -459,8 +459,7 @@ public final class Double extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
+    public static final Class<Double> TYPE = Class.getPrimitiveClass("double");
 
     /**
      * Returns a string representation of the {@code double}
@@ -1042,7 +1041,7 @@ public final class Double extends Number
      * {@link #valueOf(double)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Double(double value) {
         this.value = value;
     }
@@ -1063,7 +1062,7 @@ public final class Double extends Number
      * {@code double} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Double} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Double(String s) throws NumberFormatException {
         value = parseDouble(s);
     }
@@ -1257,9 +1256,8 @@ public final class Double extends Number
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Double)
-               && (doubleToLongBits(((Double)obj).value) ==
-                      doubleToLongBits(value));
+        return (obj instanceof Double d) &&
+            (doubleToLongBits(d.value) == doubleToLongBits(value));
     }
 
     /**

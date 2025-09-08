@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -55,15 +55,14 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbol.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -347,7 +346,7 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
 #ifdef ASSERT
   // This check is too strict when the input string is not a valid UTF8.
   // For example, it may be created with arbitrary content via jni_NewStringUTF.
-  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, strlen(utf8_str), false)) {
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, strlen(utf8_str), /*version_leq_47*/false)) {
     ResourceMark rm;
     const char* expected = utf8_str;
     char* actual = as_utf8_string(h_obj());
@@ -365,7 +364,7 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
   return h_obj();
 }
 
-Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
+Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
   const char* utf8_str = (char*)symbol->bytes();
   int utf8_len = symbol->utf8_length();
 
@@ -389,6 +388,8 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
   }
 
 #ifdef ASSERT
+  // This check is too strict on older classfile versions
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, utf8_len, /*version_leq_47*/false))
   {
     ResourceMark rm;
     const char* expected = symbol->as_utf8();
@@ -412,12 +413,6 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
   if (_to_java_string_fn == nullptr) {
     void *lib_handle = os::native_java_library();
     _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "JNU_NewStringPlatform"));
-#if defined(_WIN32) && !defined(_WIN64)
-    if (_to_java_string_fn == nullptr) {
-      // On 32 bit Windows, also try __stdcall decorated name
-      _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "_JNU_NewStringPlatform@8"));
-    }
-#endif
     if (_to_java_string_fn == nullptr) {
       fatal("JNU_NewStringPlatform missing");
     }
@@ -761,6 +756,35 @@ bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
   return true;
 }
 
+bool java_lang_String::equals(oop java_string, const char* utf8_string, size_t utf8_len) {
+  assert(java_string->klass() == vmClasses::String_klass(),
+         "must be java_string");
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  int length = java_lang_String::length(java_string, value);
+  int unicode_length = UTF8::unicode_length(utf8_string, utf8_len);
+  if (length != unicode_length) {
+    return false;
+  }
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
+  jchar c;
+  if (!is_latin1) {
+    for (int i = 0; i < unicode_length; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
+      if (value->char_at(i) != c) {
+        return false;
+      }
+    }
+  } else {
+    for (int i = 0; i < unicode_length; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
+      if ((((jchar) value->byte_at(i)) & 0xff) != c) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool java_lang_String::equals(oop str1, oop str2) {
   assert(str1->klass() == vmClasses::String_klass(),
          "must be java String");
@@ -842,6 +866,10 @@ int java_lang_Class::_name_offset;
 int java_lang_Class::_source_file_offset;
 int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
+int java_lang_Class::_reflectionData_offset;
+int java_lang_Class::_modifiers_offset;
+int java_lang_Class::_is_primitive_offset;
+int java_lang_Class::_raw_access_flags_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -911,7 +939,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
 
   // If the offset was read from the shared archive, it was fixed up already
-  if (!k->is_shared()) {
+  if (!k->in_aot_cache()) {
     if (k->is_instance_klass()) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
@@ -939,10 +967,17 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
       ik->set_fieldinfo_stream(new_fis);
       MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
+
+      Array<u1>* old_table = ik->fieldinfo_search_table();
+      Array<u1>* search_table = FieldInfoStream::create_search_table(ik->constants(), new_fis, k->class_loader_data(), CHECK);
+      ik->set_fieldinfo_search_table(search_table);
+      MetadataFactory::free_array<u1>(k->class_loader_data(), old_table);
+
+      DEBUG_ONLY(FieldInfoStream::validate_search_table(ik->constants(), new_fis, search_table));
     }
   }
 
-  if (k->is_shared() && k->has_archived_mirror_index()) {
+  if (k->in_aot_cache() && k->has_archived_mirror_index()) {
     if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
@@ -1001,15 +1036,15 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
     // If java.base was already defined then patch this particular class with java.base.
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
-      assert(javabase_entry != nullptr && javabase_entry->module() != nullptr,
+      assert(javabase_entry != nullptr && javabase_entry->module_oop() != nullptr,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(current, javabase_entry->module());
+      Handle javabase_handle(current, javabase_entry->module_oop());
       set_module(mirror(), javabase_handle());
     }
   } else {
     assert(Universe::is_module_initialized() ||
            (ModuleEntryTable::javabase_defined() &&
-            (module() == ModuleEntryTable::javabase_moduleEntry()->module())),
+            (module() == ModuleEntryTable::javabase_moduleEntry()->module_oop())),
            "Incorrect java.lang.Module specification while creating mirror");
     set_module(mirror(), module());
   }
@@ -1034,6 +1069,14 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // Setup indirection from mirror->klass
   set_klass(mirror(), k);
+
+  // Set the modifiers flag.
+  u2 computed_modifiers = k->compute_modifier_flags();
+  set_modifiers(mirror(), computed_modifiers);
+  // Set the raw access_flags, this is used by reflection instead of modifier flags.
+  // The Java code for array classes gets the access flags from the element type.
+  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
+  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1087,12 +1130,6 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   assert(k != nullptr, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == nullptr, "should only assign mirror once");
 
-  // Use this moment of initialization to cache modifier_flags also,
-  // to support Class.getModifiers().  Instance classes recalculate
-  // the cached flags after the class file is parsed, but before the
-  // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags();
-  k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_loaded()) {
@@ -1180,7 +1217,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   k->clear_archived_mirror_index();
 
   // mirror is archived, restore
-  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
+  log_debug(aot, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1205,9 +1242,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   set_mirror_module_field(THREAD, k, mirror, module);
 
-  if (log_is_enabled(Trace, cds, heap, mirror)) {
+  if (log_is_enabled(Trace, aot, heap, mirror)) {
     ResourceMark rm(THREAD);
-    log_trace(cds, heap, mirror)(
+    log_trace(aot, heap, mirror)(
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
@@ -1222,8 +1259,8 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
 
 void java_lang_Class::set_oop_size(HeapWord* java_class, size_t size) {
   assert(_oop_size_offset != 0, "must be set");
-  assert(size > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, size);
-  assert(size <= INT_MAX, "Lossy conversion: " SIZE_FORMAT, size);
+  assert(size > 0, "Oop size must be greater than zero, not %zu", size);
+  assert(size <= INT_MAX, "Lossy conversion: %zu", size);
   *(int*)(((char*)java_class) + _oop_size_offset) = (int)size;
 }
 
@@ -1248,8 +1285,11 @@ void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
 
 void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
   assert(_component_mirror_offset != 0, "must be set");
-    java_class->obj_field_put(_component_mirror_offset, comp_mirror);
-  }
+  assert(java_lang_Class::as_Klass(java_class) != nullptr &&
+         java_lang_Class::as_Klass(java_class)->is_array_klass(), "must be");
+  java_class->obj_field_put(_component_mirror_offset, comp_mirror);
+}
+
 oop java_lang_Class::component_mirror(oop java_class) {
   assert(_component_mirror_offset != 0, "must be set");
   return java_class->obj_field(_component_mirror_offset);
@@ -1276,6 +1316,11 @@ oop java_lang_Class::class_data(oop java_class) {
 void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   assert(_classData_offset != 0, "must be set");
   java_class->obj_field_put(_classData_offset, class_data);
+}
+
+void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
+  assert(_reflectionData_offset != 0, "must be set");
+  java_class->obj_field_put(_reflectionData_offset, reflection_data);
 }
 
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
@@ -1318,9 +1363,14 @@ void java_lang_Class::set_source_file(oop java_class, oop source_file) {
   java_class->obj_field_put(_source_file_offset, source_file);
 }
 
+void java_lang_Class::set_is_primitive(oop java_class) {
+  assert(_is_primitive_offset != 0, "must be set");
+  java_class->bool_field_put(_is_primitive_offset, true);
+}
+
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
-  // This should be improved by adding a field at the Java level or by
-  // introducing a new VM klass (see comment in ClassFileParser)
+  // Mirrors for basic types have a null klass field, which makes them special.
   oop java_class = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(nullptr, CHECK_NULL);
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlass(type);
@@ -1331,6 +1381,10 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(vmClasses::Class_klass());
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
+  set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+  set_raw_access_flags(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+
+  set_is_primitive(java_class);
   return java_class;
 }
 
@@ -1468,7 +1522,12 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_module_offset,              k, "module",              module_signature,       false); \
   macro(_name_offset,                k, "name",                string_signature,       false); \
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
-  macro(_signers_offset,             k, "signers",             object_array_signature, false);
+  macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
+  macro(_signers_offset,             k, "signers",             object_array_signature, false); \
+  macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
+  macro(_raw_access_flags_offset,    k, "classFileAccessFlags",      char_signature,    false); \
+  macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
+  macro(_is_primitive_offset,        k, "primitive",           bool_signature,         false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
@@ -1500,6 +1559,26 @@ int java_lang_Class::classRedefinedCount(oop the_class_mirror) {
 void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
   assert(_classRedefinedCount_offset != 0, "offsets should have been initialized");
   the_class_mirror->int_field_put(_classRedefinedCount_offset, value);
+}
+
+int java_lang_Class::modifiers(oop the_class_mirror) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->char_field(_modifiers_offset);
+}
+
+void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  the_class_mirror->char_field_put(_modifiers_offset, value);
+}
+
+int java_lang_Class::raw_access_flags(oop the_class_mirror) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->char_field(_raw_access_flags_offset);
+}
+
+void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
+  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
+  the_class_mirror->char_field_put(_raw_access_flags_offset, value);
 }
 
 
@@ -1599,7 +1678,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
-int java_lang_Thread::_inheritedAccessControlContext_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
@@ -1615,8 +1693,7 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
 #define THREAD_FIELDS_DO(macro) \
   macro(_holder_offset,        k, "holder", thread_fieldholder_signature, false); \
   macro(_name_offset,          k, vmSymbols::name_name(), string_signature, false); \
-  macro(_contextClassLoader_offset, k, vmSymbols::contextClassLoader_name(), classloader_signature, false); \
-  macro(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), accesscontrolcontext_signature, false); \
+  macro(_contextClassLoader_offset, k, "contextClassLoader", classloader_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
   macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
@@ -1686,6 +1763,7 @@ bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
 }
 
 void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
+  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
@@ -1793,10 +1871,6 @@ oop java_lang_Thread::context_class_loader(oop java_thread) {
   return java_thread->obj_field(_contextClassLoader_offset);
 }
 
-oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
-  return java_thread->obj_field(_inheritedAccessControlContext_offset);
-}
-
 
 jlong java_lang_Thread::stackSize(oop java_thread) {
   GET_FIELDHOLDER_FIELD(java_thread, stackSize, 0);
@@ -1812,8 +1886,9 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
-         JavaThread::current()->thread_state() == _thread_in_vm,
-         "Java Thread is not running in vm");
+         JavaThread::current()->thread_state() == _thread_in_vm ||
+         JavaThread::current() == java_lang_Thread::thread(java_thread),
+         "unsafe call to java_lang_Thread::get_thread_status()?");
   GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
@@ -1822,39 +1897,35 @@ ByteSize java_lang_Thread::thread_id_offset() {
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  return java_thread->obj_field(_park_blocker_offset);
+  return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
-  ThreadsListHandle tlh(JavaThread::current());
-  JavaThread* thread;
-  bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
-  if (is_virtual) {
-    oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
-    if (carrier_thread == nullptr) {
-      return nullptr;
-    }
-    thread = java_lang_Thread::thread(carrier_thread);
-  } else {
-    thread = java_lang_Thread::thread(java_thread);
-  }
-  if (thread == nullptr) {
+// Obtain stack trace for platform or mounted virtual thread.
+// If jthread is a virtual thread and it has been unmounted (or remounted to different carrier) the method returns null.
+// The caller (java.lang.VirtualThread) handles returned nulls via retry.
+oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
+  ThreadsListHandle tlh(THREAD);
+  JavaThread* java_thread = nullptr;
+  oop thread_oop;
+
+  bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  if (!has_java_thread) {
     return nullptr;
   }
 
-  class GetStackTraceClosure : public HandshakeClosure {
+  class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
-    const Handle _java_thread;
+    const Handle _thread_h;
     int _depth;
     bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle thread_h) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
-    ~GetStackTraceClosure() {
+    ~GetStackTraceHandshakeClosure() {
       delete _methods;
       delete _bcis;
     }
@@ -1873,21 +1944,22 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
         return;
       }
 
-      JavaThread* thread = JavaThread::cast(th);
+      JavaThread* java_thread = JavaThread::cast(th);
 
-      if (!thread->has_last_Java_frame()) {
+      if (!java_thread->has_last_Java_frame()) {
         return;
       }
 
       bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_java_thread())) {
-        // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
-        const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
-          return; // not mounted
+      if (java_lang_VirtualThread::is_instance(_thread_h())) {
+        // Ensure _thread_h is still mounted to java_thread.
+        const ContinuationEntry* ce = java_thread->vthread_continuation();
+        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
+          // Target thread has been unmounted.
+          return;
         }
       } else {
-        carrier = (thread->vthread_continuation() != nullptr);
+        carrier = (java_thread->vthread_continuation() != nullptr);
       }
 
       const int max_depth = MaxJavaStackTraceDepth;
@@ -1899,7 +1971,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
-      for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
+      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
@@ -1920,13 +1992,13 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
+  GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
   do {
-   Handshake::execute(&gstc, &tlh, thread);
-  } while (gstc.read_reset_retry());
+   Handshake::execute(&gsthc, &tlh, java_thread);
+  } while (gsthc.read_reset_retry());
 
   // Stop if no stack trace is found.
-  if (gstc._depth == 0) {
+  if (gsthc._depth == 0) {
     return nullptr;
   }
 
@@ -1936,12 +2008,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   if (k->should_be_initialized()) {
     k->initialize(CHECK_NULL);
   }
-  objArrayHandle trace = oopFactory::new_objArray_handle(k, gstc._depth, CHECK_NULL);
+  objArrayHandle trace = oopFactory::new_objArray_handle(k, gsthc._depth, CHECK_NULL);
 
-  for (int i = 0; i < gstc._depth; i++) {
-    methodHandle method(THREAD, gstc._methods->at(i));
+  for (int i = 0; i < gsthc._depth; i++) {
+    methodHandle method(THREAD, gsthc._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method,
-                                                      gstc._bcis->at(i),
+                                                      gsthc._bcis->at(i),
                                                       CHECK_NULL);
     trace->obj_at_put(i, element);
   }
@@ -2021,17 +2093,27 @@ int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
+int java_lang_VirtualThread::_next_offset;
+int java_lang_VirtualThread::_onWaitingList_offset;
+int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_timeout_offset;
+int java_lang_VirtualThread::_objectWaiter_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
-  macro(_state_offset,                     k, "state",              int_signature,               false)
+  macro(_state_offset,                     k, "state",              int_signature,               false); \
+  macro(_next_offset,                      k, "next",               vthread_signature,           false); \
+  macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
+  macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
   VTHREAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  VTHREAD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 bool java_lang_VirtualThread::is_instance(oop obj) {
@@ -2052,6 +2134,56 @@ int java_lang_VirtualThread::state(oop vthread) {
   return vthread->int_field_acquire(_state_offset);
 }
 
+void java_lang_VirtualThread::set_state(oop vthread, int state) {
+  vthread->release_int_field_put(_state_offset, state);
+}
+
+int java_lang_VirtualThread::cmpxchg_state(oop vthread, int old_state, int new_state) {
+  jint* addr = vthread->field_addr<jint>(_state_offset);
+  int res = Atomic::cmpxchg(addr, old_state, new_state);
+  return res;
+}
+
+oop java_lang_VirtualThread::next(oop vthread) {
+  return vthread->obj_field(_next_offset);
+}
+
+void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
+  vthread->obj_field_put(_next_offset, next_vthread);
+}
+
+// Add vthread to the waiting list if it's not already in it. Multiple threads
+// could be trying to add vthread to the list at the same time, so we control
+// access with a cmpxchg on onWaitingList. The winner adds vthread to the list.
+// Method returns true if we added vthread to the list, false otherwise.
+bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
+  jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
+  jboolean vthread_on_list = Atomic::load(addr);
+  if (!vthread_on_list) {
+    vthread_on_list = Atomic::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
+    if (!vthread_on_list) {
+      for (;;) {
+        oop head = list_head.resolve();
+        java_lang_VirtualThread::set_next(vthread, head);
+        if (list_head.cmpxchg(head, vthread) == head) return true;
+      }
+    }
+  }
+  return false; // already on waiting list
+}
+
+void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+jlong java_lang_VirtualThread::timeout(oop vthread) {
+  return vthread->long_field(_timeout_offset);
+}
+
+void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
+  vthread->long_field_put(_timeout_offset, value);
+}
+
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
   switch (state & ~SUSPENDED) {
@@ -2065,6 +2197,9 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case UNPARKED:
     case YIELDING:
     case YIELDED:
+    case UNBLOCKED:
+    case WAITING:
+    case TIMED_WAITING:
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED:
@@ -2075,6 +2210,16 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case TIMED_PINNED:
       status = JavaThreadStatus::PARKED_TIMED;
       break;
+    case BLOCKING:
+    case BLOCKED:
+      status = JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER;
+      break;
+    case WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT;
+      break;
+    case TIMED_WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT_TIMED;
+      break;
     case TERMINATED:
       status = JavaThreadStatus::TERMINATED;
       break;
@@ -2084,9 +2229,33 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
   return status;
 }
 
+ObjectMonitor* java_lang_VirtualThread::current_pending_monitor(oop vthread) {
+  ObjectWaiter* waiter = objectWaiter(vthread);
+  if (waiter != nullptr && waiter->at_monitorenter()) {
+    return waiter->monitor();
+  }
+  return nullptr;
+}
+
+ObjectMonitor* java_lang_VirtualThread::current_waiting_monitor(oop vthread) {
+  ObjectWaiter* waiter = objectWaiter(vthread);
+  if (waiter != nullptr && waiter->is_wait()) {
+    return waiter->monitor();
+  }
+  return nullptr;
+}
+
+bool java_lang_VirtualThread::is_preempted(oop vthread) {
+  oop continuation = java_lang_VirtualThread::continuation(vthread);
+  assert(continuation != nullptr, "vthread with no continuation");
+  stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
+  return chunk != nullptr && chunk->preempted();
+}
+
 #if INCLUDE_CDS
 void java_lang_VirtualThread::serialize_offsets(SerializeClosure* f) {
    VTHREAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+   VTHREAD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -2450,14 +2619,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
-
+  int buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
   // Print module information
   if (module_name != nullptr) {
     if (module_version != nullptr) {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     } else {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     }
   }
 
@@ -2472,13 +2643,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != nullptr && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else if (source_file_name != nullptr) {
         // Just sourcename
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
@@ -3051,7 +3225,7 @@ void java_lang_ClassFrameInfo::serialize_offsets(SerializeClosure* f) {
 #endif
 
 static int get_flags(const methodHandle& m) {
-  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  int flags = m->access_flags().as_method_flags();
   if (m->is_object_initializer()) {
     flags |= java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR;
   } else {
@@ -4550,28 +4724,31 @@ int java_lang_invoke_MethodType::rtype_slot_count(oop mt) {
 // Support for java_lang_invoke_CallSite
 
 int java_lang_invoke_CallSite::_target_offset;
-int java_lang_invoke_CallSite::_context_offset;
+int java_lang_invoke_CallSite::_vmdependencies_offset;
+int java_lang_invoke_CallSite::_last_cleanup_offset;
 
 #define CALLSITE_FIELDS_DO(macro) \
   macro(_target_offset,  k, "target", java_lang_invoke_MethodHandle_signature, false); \
-  macro(_context_offset, k, "context", java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, false)
 
 void java_lang_invoke_CallSite::compute_offsets() {
   InstanceKlass* k = vmClasses::CallSite_klass();
   CALLSITE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_invoke_CallSite::serialize_offsets(SerializeClosure* f) {
   CALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
-oop java_lang_invoke_CallSite::context_no_keepalive(oop call_site) {
+DependencyContext java_lang_invoke_CallSite::vmdependencies(oop call_site) {
   assert(java_lang_invoke_CallSite::is_instance(call_site), "");
-
-  oop dep_oop = call_site->obj_field_access<AS_NO_KEEPALIVE>(_context_offset);
-  return dep_oop;
+  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
+  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
+  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
+  return dep_ctx;
 }
 
 // Support for java_lang_invoke_ConstantCallSite
@@ -4591,71 +4768,6 @@ void java_lang_invoke_ConstantCallSite::serialize_offsets(SerializeClosure* f) {
   CONSTANTCALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-// Support for java_lang_invoke_MethodHandleNatives_CallSiteContext
-
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_vmdependencies_offset;
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_last_cleanup_offset;
-
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
-  InstanceKlass* k = vmClasses::Context_klass();
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize_offsets(SerializeClosure* f) {
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
-  assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
-  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
-  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
-  return dep_ctx;
-}
-
-// Support for java_security_AccessControlContext
-
-int java_security_AccessControlContext::_context_offset;
-int java_security_AccessControlContext::_privilegedContext_offset;
-int java_security_AccessControlContext::_isPrivileged_offset;
-int java_security_AccessControlContext::_isAuthorized_offset;
-
-#define ACCESSCONTROLCONTEXT_FIELDS_DO(macro) \
-  macro(_context_offset,           k, "context",      protectiondomain_signature, false); \
-  macro(_privilegedContext_offset, k, "privilegedContext", accesscontrolcontext_signature, false); \
-  macro(_isPrivileged_offset,      k, "isPrivileged", bool_signature, false); \
-  macro(_isAuthorized_offset,      k, "isAuthorized", bool_signature, false)
-
-void java_security_AccessControlContext::compute_offsets() {
-  assert(_isPrivileged_offset == 0, "offsets should be initialized only once");
-  InstanceKlass* k = vmClasses::AccessControlContext_klass();
-  ACCESSCONTROLCONTEXT_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_security_AccessControlContext::serialize_offsets(SerializeClosure* f) {
-  ACCESSCONTROLCONTEXT_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-oop java_security_AccessControlContext::create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS) {
-  assert(_isPrivileged_offset != 0, "offsets should have been initialized");
-  assert(_isAuthorized_offset != 0, "offsets should have been initialized");
-  // Ensure klass is initialized
-  vmClasses::AccessControlContext_klass()->initialize(CHECK_NULL);
-  // Allocate result
-  oop result = vmClasses::AccessControlContext_klass()->allocate_instance(CHECK_NULL);
-  // Fill in values
-  result->obj_field_put(_context_offset, context());
-  result->obj_field_put(_privilegedContext_offset, privileged_context());
-  result->bool_field_put(_isPrivileged_offset, isPrivileged);
-  result->bool_field_put(_isAuthorized_offset, true);
-  return result;
-}
-
 
 // Support for java_lang_ClassLoader
 
@@ -4737,7 +4849,7 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
   assert(is_instance(loader), "loader must be oop");
   assert(cl == nullptr || is_instance(cl), "cl argument must be oop");
   oop acl = loader;
-  debug_only(jint loop_count = 0);
+  DEBUG_ONLY(jint loop_count = 0);
   // This loop taken verbatim from ClassLoader.java:
   do {
     acl = parent(acl);
@@ -4763,38 +4875,12 @@ bool java_lang_ClassLoader::parallelCapable(oop class_loader) {
 }
 
 bool java_lang_ClassLoader::is_trusted_loader(oop loader) {
-  // Fix for 4474172; see evaluation for more details
-  loader = non_reflection_class_loader(loader);
-
   oop cl = SystemDictionary::java_system_loader();
   while(cl != nullptr) {
     if (cl == loader) return true;
     cl = parent(cl);
   }
   return false;
-}
-
-// Return true if this is one of the class loaders associated with
-// the generated bytecodes for serialization constructor returned
-// by sun.reflect.ReflectionFactory::newConstructorForSerialization
-bool java_lang_ClassLoader::is_reflection_class_loader(oop loader) {
-  if (loader != nullptr) {
-    Klass* delegating_cl_class = vmClasses::reflect_DelegatingClassLoader_klass();
-    // This might be null in non-1.4 JDKs
-    return (delegating_cl_class != nullptr && loader->is_a(delegating_cl_class));
-  }
-  return false;
-}
-
-oop java_lang_ClassLoader::non_reflection_class_loader(oop loader) {
-  // See whether this is one of the class loaders associated with
-  // the generated bytecodes for reflection, and if so, "magically"
-  // delegate to its parent to prevent class loading from occurring
-  // in places where applications using reflection didn't expect it.
-  if (is_reflection_class_loader(loader)) {
-    return parent(loader);
-  }
-  return loader;
 }
 
 oop java_lang_ClassLoader::unnamedModule(oop loader) {
@@ -4808,41 +4894,15 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
 int java_lang_System::_static_in_offset;
 int java_lang_System::_static_out_offset;
 int java_lang_System::_static_err_offset;
-int java_lang_System::_static_security_offset;
-int java_lang_System::_static_allow_security_offset;
-int java_lang_System::_static_never_offset;
 
 #define SYSTEM_FIELDS_DO(macro) \
   macro(_static_in_offset,  k, "in",  input_stream_signature, true); \
   macro(_static_out_offset, k, "out", print_stream_signature, true); \
-  macro(_static_err_offset, k, "err", print_stream_signature, true); \
-  macro(_static_security_offset, k, "security", security_manager_signature, true); \
-  macro(_static_allow_security_offset, k, "allowSecurityManager", int_signature, true); \
-  macro(_static_never_offset, k, "NEVER", int_signature, true)
+  macro(_static_err_offset, k, "err", print_stream_signature, true);
 
 void java_lang_System::compute_offsets() {
   InstanceKlass* k = vmClasses::System_klass();
   SYSTEM_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-// This field tells us that a security manager can never be installed so we
-// can completely skip populating the ProtectionDomainCacheTable.
-bool java_lang_System::allow_security_manager() {
-  static int initialized = false;
-  static bool allowed = true; // default
-  if (!initialized) {
-    oop base = vmClasses::System_klass()->static_field_base_raw();
-    int never = base->int_field(_static_never_offset);
-    allowed = (base->int_field(_static_allow_security_offset) != never);
-    initialized = true;
-  }
-  return allowed;
-}
-
-// This field tells us that a security manager is installed.
-bool java_lang_System::has_security_manager() {
-  oop base = vmClasses::System_klass()->static_field_base_raw();
-  return base->obj_field(_static_security_offset) != nullptr;
 }
 
 #if INCLUDE_CDS
@@ -5358,8 +5418,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_invoke_MethodType) \
   f(java_lang_invoke_CallSite) \
   f(java_lang_invoke_ConstantCallSite) \
-  f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
-  f(java_security_AccessControlContext) \
   f(java_lang_reflect_AccessibleObject) \
   f(java_lang_reflect_Method) \
   f(java_lang_reflect_Constructor) \
@@ -5422,20 +5480,15 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
-  if (klass == vmClasses::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated hidden classes
-      // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
-      // So for now we cannot not support these classes for archiving.
-      //
-      // These objects typically are not referenced by static fields, but rather by resolved
-      // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
-      klass == vmClasses::ResolvedMethodName_klass() ||
-      klass == vmClasses::MemberName_klass() ||
-      klass == vmClasses::Context_klass() ||
-      // It's problematic to archive Reference objects. One of the reasons is that
-      // Reference::discovered may pull in unwanted objects (see JDK-8284336)
-      klass->is_subclass_of(vmClasses::Reference_klass())) {
+  if (!CDSConfig::is_dumping_method_handles()) {
+    // These are supported by CDS only when CDSConfig::is_dumping_method_handles() is enabled.
+    if (klass == vmClasses::ResolvedMethodName_klass() ||
+        klass == vmClasses::MemberName_klass()) {
+      return false;
+    }
+  }
+
+  if (!AOTReferenceObjSupport::is_enabled() && klass->is_subclass_of(vmClasses::Reference_klass())) {
     return false;
   }
 
@@ -5515,7 +5568,7 @@ int InjectedField::compute_offset() {
   ik->print();
   tty->print_cr("all fields:");
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
+    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_field_flags());
   }
 #endif //PRODUCT
   vm_exit_during_initialization("Invalid layout of well-known class: use -Xlog:class+load=info to see the origin of the problem class");

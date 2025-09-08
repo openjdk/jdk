@@ -60,7 +60,13 @@ class AbstractICache : AllStatic {
     log2_line_size = 0  // log2(line_size)
   };
 
-  static void initialize();
+  // Initialization phases:
+  //  1 = Initial phase, nothing is known about the machine features.
+  //      The stub generated at this phase must use the most basic mechanism,
+  //      until optimized final stub is generated.
+  //  2 = Final stub that uses the optimized flush mechanism. Happens after
+  //      CPU feature detection determines which mechanism is usable.
+  static void initialize(int phase);
   static void invalidate_word(address addr);
   static void invalidate_range(address start, int nbytes);
 };
@@ -72,8 +78,11 @@ class AbstractICache : AllStatic {
 #include CPU_HEADER(icache)
 
 class ICacheStubGenerator : public StubCodeGenerator {
+ private:
+   const char* _stub_name;
+
  public:
-  ICacheStubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
+  ICacheStubGenerator(const char* stub_name, CodeBuffer *c) : StubCodeGenerator(c), _stub_name(stub_name) {}
 
   // Generate the icache flush stub.
   //

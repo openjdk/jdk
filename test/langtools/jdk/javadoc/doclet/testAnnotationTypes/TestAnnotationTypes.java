@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#annotation-interface-required-element-summary" tabindex="0">Required Element Summary</a></li>
                     <li><a href="#annotation-interface-optional-element-summary" tabindex="0">Optional Element Summary</a></li>

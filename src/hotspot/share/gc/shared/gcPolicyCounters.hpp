@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ class GCPolicyCounters: public CHeapObj<mtGC> {
 
   PerfVariable* _tenuring_threshold;
   PerfVariable* _desired_survivor_size;
-  PerfVariable* _gc_overhead_limit_exceeded_counter;
 
   const char* _name_space;
 
@@ -54,10 +53,6 @@ public:
 
   inline PerfVariable* desired_survivor_size() const  {
     return _desired_survivor_size;
-  }
-
-  inline PerfVariable* gc_overhead_limit_exceeded_counter() const {
-    return _gc_overhead_limit_exceeded_counter;
   }
 
   const char* name_space() const { return _name_space; }

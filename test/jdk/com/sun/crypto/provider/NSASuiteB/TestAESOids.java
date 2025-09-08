@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,8 @@ import javax.crypto.spec.IvParameterSpec;
  */
 public class TestAESOids {
 
-    private static final String PROVIDER_NAME = "SunJCE";
+    private static final String PROVIDER_NAME =
+            System.getProperty("test.provider.name", "SunJCE");
     private static final byte[] INPUT = "1234567890123456".getBytes();
 
     private static final List<DataTuple> DATA = Arrays.asList(

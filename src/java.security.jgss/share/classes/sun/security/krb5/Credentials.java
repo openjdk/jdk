@@ -67,7 +67,7 @@ public class Credentials {
     private static boolean alreadyTried = false;
 
     public static final boolean S4U2PROXY_ACCEPT_NON_FORWARDABLE
-            = "true".equalsIgnoreCase(SecurityProperties.privilegedGetOverridable(
+            = "true".equalsIgnoreCase(SecurityProperties.getOverridableProperty(
                     "jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket"));
 
     private Credentials proxy = null;
@@ -524,19 +524,13 @@ public class Credentials {
     }
 
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     static void ensureLoaded() {
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void> () {
-                        public Void run() {
-                                if (OperatingSystem.isMacOS()) {
-                                    System.loadLibrary("osxkrb5");
-                                } else {
-                                    System.loadLibrary("w2k_lsa_auth");
-                                }
-                                return null;
-                        }
-                });
+        if (OperatingSystem.isMacOS()) {
+            System.loadLibrary("osxkrb5");
+        } else {
+            System.loadLibrary("w2k_lsa_auth");
+        }
         alreadyLoaded = true;
     }
 

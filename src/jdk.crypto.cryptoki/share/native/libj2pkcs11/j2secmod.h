@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,9 @@
 void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName);
 
 #ifdef SECMOD_DEBUG
-#define dprintf(s) printf(s)
-#define dprintf1(s, p1) printf(s, p1)
-#define dprintf2(s, p1, p2) printf(s, p1, p2)
-#define dprintf3(s, p1, p2, p3) printf(s, p1, p2, p3)
+#define debug_printf(format, ...) printf(format, ##__VA_ARGS__)
 #else
-#define dprintf(s)
-#define dprintf1(s, p1)
-#define dprintf2(s, p1, p2)
-#define dprintf3(s, p1, p2, p3)
+#define debug_printf(format, ...)
 #endif
 
 // NSS types

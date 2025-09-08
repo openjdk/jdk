@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
@@ -61,7 +60,7 @@ const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 //---------------------------Matcher-------------------------------------------
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
-  _states_arena(Chunk::medium_size, mtCompiler),
+  _states_arena(Chunk::medium_size, mtCompiler, Arena::Tag::tag_states),
   _new_nodes(C->comp_arena()),
   _visited(&_states_arena),
   _shared(&_states_arena),
@@ -129,7 +128,7 @@ Matcher::Matcher()
   idealreg2mhdebugmask[Op_RegFlags] = nullptr;
   idealreg2mhdebugmask[Op_RegVectMask] = nullptr;
 
-  debug_only(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
+  DEBUG_ONLY(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
 }
 
 //------------------------------warp_incoming_stk_arg------------------------
@@ -170,16 +169,18 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
   worklist.push(xroot);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
-    visited.set(n->_idx);
+    if (visited.test_set(n->_idx)) {
+      continue;
+    }
     assert(C->node_arena()->contains(n), "dead node");
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
       if (in != nullptr) {
-        assert(C->node_arena()->contains(in), "dead node");
-        if (!visited.test(in->_idx)) {
-          worklist.push(in);
-        }
+        worklist.push(in);
       }
+    }
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      worklist.push(n->fast_out(j));
     }
   }
 }
@@ -432,7 +433,7 @@ void Matcher::match( ) {
   Fixup_Save_On_Entry( );
 
   { // Cleanup mach IR after selection phase is over.
-    Compile::TracePhase tp("postselect_cleanup", &timers[_t_postselect_cleanup]);
+    Compile::TracePhase tp(_t_postselect_cleanup);
     do_postselect_cleanup();
     if (C->failing())  return;
     assert(verify_after_postselect_cleanup(), "");
@@ -1183,7 +1184,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
                                                   n->_idx);
             C->set_node_notes_at(m->_idx, nn);
           }
-          debug_only(match_alias_type(C, n, m));
+          DEBUG_ONLY(match_alias_type(C, n, m));
         }
         n = m;    // n is now a new-space node
         mstack.set_node(n);
@@ -1590,7 +1591,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
     }
   }
 
-  debug_only( _mem_node = save_mem_node; )
+  DEBUG_ONLY( _mem_node = save_mem_node; )
   return m;
 }
 
@@ -1751,18 +1752,19 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   // Call DFA to match this node, and return
   svec->DFA( n->Opcode(), n );
 
-#ifdef ASSERT
   uint x;
   for( x = 0; x < _LAST_MACH_OPER; x++ )
     if( svec->valid(x) )
       break;
 
   if (x >= _LAST_MACH_OPER) {
+#ifdef ASSERT
     n->dump();
     svec->dump();
-    assert( false, "bad AD file" );
-  }
 #endif
+    assert( false, "bad AD file" );
+    C->record_failure("bad AD file");
+  }
   return control;
 }
 
@@ -1963,9 +1965,9 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
     assert(newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
     mach->_opnds[1] = s->MachOperGenerator(_reduceOp[catch_op]);
     Node *mem1 = (Node*)1;
-    debug_only(Node *save_mem_node = _mem_node;)
+    DEBUG_ONLY(Node *save_mem_node = _mem_node;)
     mach->add_req( ReduceInst(s, newrule, mem1) );
-    debug_only(_mem_node = save_mem_node;)
+    DEBUG_ONLY(_mem_node = save_mem_node;)
   }
   return;
 }
@@ -1977,7 +1979,7 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
     assert( mem == (Node*)1 || mem == mem2, "multiple Memories being matched at once?" );
-    debug_only( if( mem == (Node*)1 ) _mem_node = s->_leaf;)
+    DEBUG_ONLY( if( mem == (Node*)1 ) _mem_node = s->_leaf;)
     mem = mem2;
   }
   if( s->_leaf->in(0) != nullptr && s->_leaf->req() > 1) {
@@ -2021,9 +2023,9 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
         //             --> ReduceInst( newrule )
         mach->_opnds[num_opnds++] = s->MachOperGenerator(_reduceOp[catch_op]);
         Node *mem1 = (Node*)1;
-        debug_only(Node *save_mem_node = _mem_node;)
+        DEBUG_ONLY(Node *save_mem_node = _mem_node;)
         mach->add_req( ReduceInst( newstate, newrule, mem1 ) );
-        debug_only(_mem_node = save_mem_node;)
+        DEBUG_ONLY(_mem_node = save_mem_node;)
       }
     }
     assert( mach->_opnds[num_opnds-1], "" );
@@ -2054,7 +2056,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
   if( s->_leaf->is_Load() ) {
     assert( mem == (Node*)1, "multiple Memories being matched at once?" );
     mem = s->_leaf->in(MemNode::Memory);
-    debug_only(_mem_node = s->_leaf;)
+    DEBUG_ONLY(_mem_node = s->_leaf;)
   }
 
   handle_precedence_edges(s->_leaf, mach);
@@ -2083,9 +2085,9 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
       // Reduce the instruction, and add a direct pointer from this
       // machine instruction to the newly reduced one.
       Node *mem1 = (Node*)1;
-      debug_only(Node *save_mem_node = _mem_node;)
+      DEBUG_ONLY(Node *save_mem_node = _mem_node;)
       mach->add_req( ReduceInst( kid, newrule, mem1 ) );
-      debug_only(_mem_node = save_mem_node;)
+      DEBUG_ONLY(_mem_node = save_mem_node;)
     }
   }
 }
@@ -2302,8 +2304,10 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_EncodeISOArray:
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
     case Op_FmaVF:
+    case Op_FmaVHF:
     case Op_MacroLogicV:
     case Op_VectorCmpMasked:
     case Op_CompressV:
@@ -2474,8 +2478,10 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     }
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
-    case Op_FmaVF: {
+    case Op_FmaVF:
+    case Op_FmaVHF: {
       // Restructure into a binary tree for Matching.
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(2, pair);
@@ -2511,22 +2517,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_LoadVectorGather:
-      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
-        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
-        n->set_req(MemNode::ValueIn, pair);
-        n->del_req(MemNode::ValueIn+1);
-      }
-      break;
-    case Op_LoadVectorGatherMasked:
-      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
-        Node* pair2 = new BinaryNode(n->in(MemNode::ValueIn + 1), n->in(MemNode::ValueIn + 2));
-        Node* pair1 = new BinaryNode(n->in(MemNode::ValueIn), pair2);
-        n->set_req(MemNode::ValueIn, pair1);
-        n->del_req(MemNode::ValueIn+2);
-        n->del_req(MemNode::ValueIn+1);
-        break;
-      } // fall-through
+    case Op_LoadVectorGatherMasked: // fall-through
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);

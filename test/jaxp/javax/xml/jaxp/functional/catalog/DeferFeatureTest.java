@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ import static catalog.CatalogTestUtils.DEFER_FALSE;
 import static catalog.CatalogTestUtils.DEFER_TRUE;
 import static catalog.CatalogTestUtils.getCatalogPath;
 import static javax.xml.catalog.CatalogFeatures.Feature.DEFER;
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-import static jaxp.library.JAXPTestUtilities.tryRunWithAllPerm;
 
 import java.lang.reflect.Method;
 
@@ -40,7 +38,6 @@ import javax.xml.catalog.CatalogResolver;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
@@ -48,13 +45,11 @@ import org.testng.annotations.Test;
  * @bug 8077931 8176405
  * @library /javax/xml/jaxp/libs
  * @modules java.xml/javax.xml.catalog:open
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DeferFeatureTest
  * @run testng/othervm catalog.DeferFeatureTest
  * @summary This case tests whether the catalogs specified in delegateSystem,
  *          delegatePublic, delegateURI and nextCatalog entries are used lazily
  *          in resolution via defer feature.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class DeferFeatureTest {
 
     @Test(dataProvider = "catalog-countOfLoadedCatalogFile")
@@ -107,8 +102,8 @@ public class DeferFeatureTest {
     }
 
     private int loadedCatalogCount(Catalog catalog) throws Exception {
-        Method method = tryRunWithAllPerm(() -> catalog.getClass().getDeclaredMethod("loadedCatalogCount"));
-        runWithAllPerm(() -> method.setAccessible(true));
+        Method method = catalog.getClass().getDeclaredMethod("loadedCatalogCount");
+        method.setAccessible(true);
         return (int) method.invoke(catalog);
     }
 }

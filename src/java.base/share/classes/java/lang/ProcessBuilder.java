@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,30 +150,33 @@ import jdk.internal.event.ProcessStartEvent;
  * <p>Starting a new process which uses the default working directory
  * and environment is easy:
  *
- * <pre> {@code
+ * {@snippet lang = "java" :
+
  * Process p = new ProcessBuilder("myCommand", "myArg").start();
- * }</pre>
+ * }
+
  *
  * <p>Here is an example that starts a process with a modified working
  * directory and environment, and redirects standard output and error
  * to be appended to a log file:
  *
- * <pre> {@code
- * ProcessBuilder pb =
- *   new ProcessBuilder("myCommand", "myArg1", "myArg2");
- * Map<String, String> env = pb.environment();
- * env.put("VAR1", "myValue");
- * env.remove("OTHERVAR");
- * env.put("VAR2", env.get("VAR1") + "suffix");
- * pb.directory(new File("myDir"));
- * File log = new File("log");
- * pb.redirectErrorStream(true);
- * pb.redirectOutput(Redirect.appendTo(log));
- * Process p = pb.start();
- * assert pb.redirectInput() == Redirect.PIPE;
- * assert pb.redirectOutput().file() == log;
- * assert p.getInputStream().read() == -1;
- * }</pre>
+ * {@snippet lang = "java":
+ *     ProcessBuilder pb = new ProcessBuilder("myCommand", "myArg1", "myArg2");
+ *     Map<String, String> env = pb.environment();
+ *     env.put("VAR1", "myValue");
+ *     env.remove("OTHERVAR");
+ *     env.put("VAR2", env.get("VAR1") + "suffix");
+ *
+ *     pb.directory(new File("myDir"));
+ *     File log = new File("log");
+ *     pb.redirectErrorStream(true);
+ *     pb.redirectOutput(Redirect.appendTo(log));
+ *
+ *     Process p = pb.start();
+ *     assert pb.redirectInput() == Redirect.PIPE;
+ *     assert pb.redirectOutput().file() == log;
+ *     assert p.getInputStream().read() == -1;
+ * }
  *
  * <p>To start a process with an explicit set of environment
  * variables, first call {@link java.util.Map#clear() Map.clear()}
@@ -329,32 +332,16 @@ public final class ProcessBuilder
      *
      * <p>The returned map is typically case-sensitive on all platforms.
      *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkPermission checkPermission} method
-     * is called with a
-     * {@link RuntimePermission}{@code ("getenv.*")} permission.
-     * This may result in a {@link SecurityException} being thrown.
-     *
      * <p>When passing information to a Java subprocess,
      * <a href=System.html#EnvironmentVSSystemProperties>system properties</a>
      * are generally preferred over environment variables.
      *
      * @return this process builder's environment
      *
-     * @throws SecurityException
-     *         if a security manager exists and its
-     *         {@link SecurityManager#checkPermission checkPermission}
-     *         method doesn't allow access to the process environment
-     *
      * @see    Runtime#exec(String[],String[],java.io.File)
      * @see    System#getenv()
      */
     public Map<String,String> environment() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkPermission(new RuntimePermission("getenv.*"));
-
         if (environment == null)
             environment = ProcessEnvironment.environment();
 
@@ -522,10 +509,10 @@ public final class ProcessBuilder
          * This is the default handling of subprocess standard I/O.
          *
          * <p>It will always be true that
-         *  <pre> {@code
-         * Redirect.PIPE.file() == null &&
-         * Redirect.PIPE.type() == Redirect.Type.PIPE
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.PIPE.file() == null &&
+         *     Redirect.PIPE.type() == Redirect.Type.PIPE
+         * }
          */
         public static final Redirect PIPE = new Redirect() {
                 public Type type() { return Type.PIPE; }
@@ -537,10 +524,10 @@ public final class ProcessBuilder
          * behavior of most operating system command interpreters (shells).
          *
          * <p>It will always be true that
-         *  <pre> {@code
-         * Redirect.INHERIT.file() == null &&
-         * Redirect.INHERIT.type() == Redirect.Type.INHERIT
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.INHERIT.file() == null &&
+         *     Redirect.INHERIT.type() == Redirect.Type.INHERIT
+         * }
          */
         public static final Redirect INHERIT = new Redirect() {
                 public Type type() { return Type.INHERIT; }
@@ -553,11 +540,10 @@ public final class ProcessBuilder
          * an operating system specific "null file".
          *
          * <p>It will always be true that
-         * <pre> {@code
-         * Redirect.DISCARD.file() is the filename appropriate for the operating system
-         * and may be null &&
-         * Redirect.DISCARD.type() == Redirect.Type.WRITE
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.DISCARD.file() != null && // is the filename appropriate for the operating system
+         *     Redirect.DISCARD.type() == Redirect.Type.WRITE;
+         * }
          * @since 9
          */
         public static final Redirect DISCARD = new Redirect() {
@@ -588,10 +574,10 @@ public final class ProcessBuilder
          * Returns a redirect to read from the specified file.
          *
          * <p>It will always be true that
-         *  <pre> {@code
-         * Redirect.from(file).file() == file &&
-         * Redirect.from(file).type() == Redirect.Type.READ
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.from(file).file() == file &&
+         *     Redirect.from(file).type() == Redirect.Type.READ
+         * }
          *
          * @param file The {@code File} for the {@code Redirect}.
          * @return a redirect to read from the specified file
@@ -614,10 +600,10 @@ public final class ProcessBuilder
          * its previous contents will be discarded.
          *
          * <p>It will always be true that
-         *  <pre> {@code
-         * Redirect.to(file).file() == file &&
-         * Redirect.to(file).type() == Redirect.Type.WRITE
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.to(file).file() == file &&
+         *     Redirect.to(file).type() == Redirect.Type.WRITE
+         * }
          *
          * @param file The {@code File} for the {@code Redirect}.
          * @return a redirect to write to the specified file
@@ -644,10 +630,10 @@ public final class ProcessBuilder
          * system-dependent and therefore unspecified.
          *
          * <p>It will always be true that
-         *  <pre> {@code
-         * Redirect.appendTo(file).file() == file &&
-         * Redirect.appendTo(file).type() == Redirect.Type.APPEND
-         * }</pre>
+         * {@snippet lang = "java" :
+         *     Redirect.appendTo(file).file() == file &&
+         *     Redirect.appendTo(file).type() == Redirect.Type.APPEND
+         * }
          *
          * @param file The {@code File} for the {@code Redirect}.
          * @return a redirect to append to the specified file
@@ -930,15 +916,15 @@ public final class ProcessBuilder
      * to be the same as those of the current Java process.
      *
      * <p>This is a convenience method.  An invocation of the form
-     *  <pre> {@code
-     * pb.inheritIO()
-     * }</pre>
+     * {@snippet lang = "java" :
+     *      pb.inheritIO()
+     * }
      * behaves in exactly the same way as the invocation
-     *  <pre> {@code
-     * pb.redirectInput(Redirect.INHERIT)
-     *   .redirectOutput(Redirect.INHERIT)
-     *   .redirectError(Redirect.INHERIT)
-     * }</pre>
+     * {@snippet lang = "java" :
+     *      pb.redirectInput(Redirect.INHERIT)
+     *          .redirectOutput(Redirect.INHERIT)
+     *          .redirectError(Redirect.INHERIT)
+     * }
      *
      * This gives behavior equivalent to most operating system
      * command interpreters, or the standard C library function
@@ -1009,12 +995,6 @@ public final class ProcessBuilder
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
      *
-     * <p>If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of this object's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
-     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -1041,29 +1021,6 @@ public final class ProcessBuilder
      *
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
-     *
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *
-     *         </ul>
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes.
@@ -1109,11 +1066,6 @@ public final class ProcessBuilder
         // Throws IndexOutOfBoundsException if command is empty
         String prog = cmdarray[0];
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkExec(prog);
-
         String dir = directory == null ? null : directory.toString();
 
         for (String s : cmdarray) {
@@ -1152,24 +1104,13 @@ public final class ProcessBuilder
             }
             return process;
         } catch (IOException | IllegalArgumentException e) {
-            String exceptionInfo = ": " + e.getMessage();
-            Throwable cause = e;
-            if ((e instanceof IOException) && security != null) {
-                // Can not disclose the fail reason for read-protected files.
-                try {
-                    security.checkRead(prog);
-                } catch (SecurityException se) {
-                    exceptionInfo = "";
-                    cause = se;
-                }
-            }
             // It's much easier for us to create a high-quality error
             // message than the low-level C code which found the problem.
             throw new IOException(
                 "Cannot run program \"" + prog + "\""
                 + (dir == null ? "" : " (in directory \"" + dir + "\")")
-                + exceptionInfo,
-                cause);
+                + ": " + e.getMessage(),
+                e);
         }
     }
 
@@ -1216,12 +1157,6 @@ public final class ProcessBuilder
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
      * <p>
-     * If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of each process builder's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
-     * <p>
      * Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -1243,22 +1178,21 @@ public final class ProcessBuilder
      * @apiNote
      * For example to count the unique imports for all the files in a file hierarchy
      * on a Unix compatible platform:
-     * <pre>{@code
-     * String directory = "/home/duke/src";
-     * ProcessBuilder[] builders = {
+     * {@snippet lang = "java" :
+     *     String directory = "/home/duke/src";
+     *     ProcessBuilder[] builders = {
      *              new ProcessBuilder("find", directory, "-type", "f"),
      *              new ProcessBuilder("xargs", "grep", "-h", "^import "),
      *              new ProcessBuilder("awk", "{print $2;}"),
      *              new ProcessBuilder("sort", "-u")};
-     * List<Process> processes = ProcessBuilder.startPipeline(
-     *         Arrays.asList(builders));
-     * Process last = processes.get(processes.size()-1);
-     * try (InputStream is = last.getInputStream();
+     *     List<Process> processes = ProcessBuilder.startPipeline( Arrays.asList(builders));
+     *     Process last = processes.get(processes.size() - 1);
+     *     try (InputStream is = last.getInputStream();
      *         Reader isr = new InputStreamReader(is);
      *         BufferedReader r = new BufferedReader(isr)) {
-     *     long count = r.lines().count();
+     *         long count = r.lines().count();
+     *     }
      * }
-     * }</pre>
      *
      * @param builders a List of ProcessBuilders
      * @return a {@code List<Process>}es started from the corresponding
@@ -1272,24 +1206,6 @@ public final class ProcessBuilder
      *         the builders argument is null
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *         </ul>
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes

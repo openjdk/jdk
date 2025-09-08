@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -266,7 +265,7 @@ void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
 
 void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
-  const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
+  const size_t start_size_log_2 = log2i_ceil(DEFAULT_TABLE_SIZE);
   _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, FinalizerHashtable::DEFAULT_GROW_HINT);
 }
 

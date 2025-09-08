@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests Field value encoding
- * @run main/othervm -Djava.security.manager=allow java_lang_reflect_Field
+ * @run main/othervm java_lang_reflect_Field
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ public final class java_lang_reflect_Field extends AbstractTest<Field> {
     public int f2;
 
     public static void main(String[] args) {
-        new java_lang_reflect_Field().test(true);
+        new java_lang_reflect_Field().test();
     }
 
     protected Field getObject() {

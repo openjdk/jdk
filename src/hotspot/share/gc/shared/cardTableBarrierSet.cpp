@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
@@ -30,7 +29,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
-#include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -164,7 +162,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
       DEBUG_ONLY(oop old_obj = cast_to_oop(deferred.start());)
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
-      assert(oopDesc::is_oop(old_obj, true), "Not an oop");
+      assert(oopDesc::is_oop(old_obj), "Not an oop");
       assert(deferred.word_size() == old_obj->size(),
              "Mismatch: multiple objects?");
     }

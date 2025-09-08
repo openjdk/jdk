@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Utils;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * Provides means to configure, start, stop and dump recording data to disk.
  * <p>
- * The following example shows how configure, start, stop and dump recording data to disk.
+ * The following example shows how to configure, start, stop and dump recording data to disk.
  *
  * {@snippet class="Snippets" region="RecordingOverview"}
  *
@@ -96,10 +96,8 @@ public final class Recording implements Closeable {
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
      *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
-     *
      * @see jdk.jfr
+     * @since 11
      */
     public Recording(Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
@@ -123,9 +121,6 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
         this(Map.of());
@@ -143,15 +138,12 @@ public final class Recording implements Closeable {
      * The newly created recording is in the {@link RecordingState#NEW} state. To
      * start the recording, invoke the {@link Recording#start()} method.
      *
-     * @param configuration configuration that contains the settings to be use, not
+     * @param configuration configuration that contains the settings to be used, not
      *        {@code null}
      *
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException if a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      *
      * @see Configuration
      */
@@ -206,10 +198,6 @@ public final class Recording implements Closeable {
      * @return {@code true} if recording is stopped, {@code false} otherwise
      *
      * @throws IllegalStateException if the recording is not started or is already stopped
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to write to the destination
-     *         path
      *
      * @see #setDestination(Path)
      *
@@ -351,7 +339,7 @@ public final class Recording implements Closeable {
      * <p>
      * Clones are useful for dumping data without stopping the recording. After
      * a clone is created, the amount of data to copy is constrained
-     * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)}method.
+     * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)} method.
      *
      * @param stop {@code true} if the newly created copy should be stopped
      *        immediately, {@code false} otherwise
@@ -375,15 +363,12 @@ public final class Recording implements Closeable {
      *         location, for example, if the recording is closed or the
      *         destination path is not writable
      *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
-     *
      * @see #getState()
      * @see #isToDisk()
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination, "destination");
-        internal.dump(new WriteableUserPath(destination));
+        internal.dump(new WriteablePath(destination));
     }
 
     /**
@@ -473,14 +458,10 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if recording is in the {@code STOPPED} or
      *         {@code CLOSED} state.
      *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to read, write, and delete the
-     *         {@code destination} file
-     *
      * @throws IOException if the path is not writable
      */
     public void setDestination(Path destination) throws IOException {
-        internal.setDestination(destination != null ? new WriteableUserPath(destination) : null);
+        internal.setDestination(destination != null ? new WriteablePath(destination) : null);
     }
 
     /**
@@ -490,11 +471,11 @@ public final class Recording implements Closeable {
      * @return the destination file, or {@code null} if not set.
      */
     public Path getDestination() {
-        WriteableUserPath usp = internal.getDestination();
-        if (usp == null) {
+        WriteablePath wp = internal.getDestination();
+        if (wp == null) {
             return null;
         } else {
-            return usp.getPotentiallyMaliciousOriginal();
+            return wp.getPath();
         }
     }
 
@@ -634,9 +615,9 @@ public final class Recording implements Closeable {
     /**
      * Disables event with the specified name.
      * <p>
-     * If multiple events with same name (for example, the same class is loaded
+     * If multiple events with the same name (for example, the same class is loaded
      * in different class loaders), then all events that match the
-     * name is disabled. To disable a specific class, use the
+     * name are disabled. To disable a specific class, use the
      * {@link #disable(Class)} method or a {@code String} representation of the event
      * type ID.
      *
@@ -672,7 +653,7 @@ public final class Recording implements Closeable {
     /**
      * Disables event.
      *
-     * @param eventClass the event to enable, not {@code null}
+     * @param eventClass the event to disable, not {@code null}
      *
      * @throws IllegalArgumentException if {@code eventClass} is an abstract
      *         class or not a subclass of {@link Event}

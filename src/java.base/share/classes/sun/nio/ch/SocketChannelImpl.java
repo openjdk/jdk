@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import jdk.internal.event.SocketWriteEvent;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
-import sun.net.util.SocketExceptions;
+import jdk.internal.util.Exceptions;
 
 /**
  * An implementation of SocketChannels
@@ -243,11 +243,7 @@ class SocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            if (isUnixSocket()) {
-                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
-            } else {
-                return Net.getRevealedLocalAddress(localAddress);
-            }
+            return localAddress;
         }
     }
 
@@ -811,7 +807,6 @@ class SocketChannelImpl
     }
 
     private SocketAddress unixBind(SocketAddress local) throws IOException {
-        UnixDomainSockets.checkPermission();
         if (local == null) {
             return UnixDomainSockets.unnamed();
         } else {
@@ -833,11 +828,6 @@ class SocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkListen(isa.getPort());
-        }
         NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         return Net.localAddress(fd);
@@ -856,7 +846,7 @@ class SocketChannelImpl
     /**
      * Marks the beginning of a connect operation that might block.
      * @param blocking true if configured blocking
-     * @param isa the remote address
+     * @param sa the remote socket address
      * @throws ClosedChannelException if the channel is closed
      * @throws AlreadyConnectedException if already connected
      * @throws ConnectionPendingException is a connection is pending
@@ -923,15 +913,9 @@ class SocketChannelImpl
      */
     private SocketAddress checkRemote(SocketAddress sa) {
         if (isUnixSocket()) {
-            UnixDomainSockets.checkPermission();
             return UnixDomainSockets.checkAddress(sa);
         } else {
             InetSocketAddress isa = Net.checkAddress(sa, family);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
-            }
             InetAddress address = isa.getAddress();
             if (address.isAnyLocalAddress()) {
                 int port = isa.getPort();
@@ -991,7 +975,7 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, sa);
+            throw Exceptions.ioException(ioe, sa);
         }
     }
 
@@ -1081,13 +1065,13 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, remoteAddress);
+            throw Exceptions.ioException(ioe, remoteAddress);
         }
     }
 
     /**
-     * Closes the socket if there are no I/O operations in progress and the
-     * channel is not registered with a Selector.
+     * Closes the socket if there are no I/O operations in progress (or no I/O
+     * operations tracked), and the channel is not registered with a Selector.
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
@@ -1112,11 +1096,21 @@ class SocketChannelImpl
     }
 
     /**
-     * Closes this channel when configured in blocking mode.
+     * Closes this channel when configured in blocking mode. If there are no I/O
+     * operations in progress (or tracked), then the channel's socket is closed. If
+     * there are I/O operations in progress then the behavior is platform specific.
      *
-     * If there is an I/O operation in progress then the socket is pre-closed
-     * and the I/O threads signalled, in which case the final close is deferred
-     * until all I/O operations complete.
+     * On Unix systems, the channel's socket is pre-closed. This unparks any virtual
+     * threads that are blocked in I/O operations on this channel. If there are
+     * platform threads blocked on the channel's socket then the socket is dup'ed
+     * and the platform threads signalled. The final close is deferred until all I/O
+     * operations complete.
+     *
+     * On Windows, the channel's socket is pre-closed. This unparks any virtual
+     * threads that are blocked in I/O operations on this channel. If there are no
+     * virtual threads blocked in I/O operations on this channel then the channel's
+     * socket is closed. If there are virtual threads in I/O then the final close is
+     * deferred until all I/O operations on virtual threads complete.
      *
      * Note that a channel configured blocking may be registered with a Selector
      * This arises when a key is canceled and the channel configured to blocking
@@ -1128,31 +1122,19 @@ class SocketChannelImpl
             boolean connected = (state == ST_CONNECTED);
             state = ST_CLOSING;
 
-            if (!tryClose()) {
+            if (connected && Net.shouldShutdownWriteBeforeClose()) {
                 // shutdown output when linger interval not set to 0
-                if (connected) {
-                    try {
-                        var SO_LINGER = StandardSocketOptions.SO_LINGER;
-                        if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
-                            Net.shutdown(fd, Net.SHUT_WR);
-                        }
-                    } catch (IOException ignore) { }
-                }
+                try {
+                    var SO_LINGER = StandardSocketOptions.SO_LINGER;
+                    if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
+                        Net.shutdown(fd, Net.SHUT_WR);
+                    }
+                } catch (IOException ignore) { }
+            }
 
-                long reader = readerThread;
-                long writer = writerThread;
-                if (NativeThread.isVirtualThread(reader)
-                        || NativeThread.isVirtualThread(writer)) {
-                    Poller.stopPoll(fdVal);
-                }
-                if (NativeThread.isNativeThread(reader)
-                        || NativeThread.isNativeThread(writer)) {
-                    nd.preClose(fd);
-                    if (NativeThread.isNativeThread(reader))
-                        NativeThread.signal(reader);
-                    if (NativeThread.isNativeThread(writer))
-                        NativeThread.signal(writer);
-                }
+            if (!tryClose()) {
+                // prepare file descriptor for closing
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }
@@ -1341,7 +1323,7 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, sa);
+            throw Exceptions.ioException(ioe, sa);
         }
     }
 
@@ -1617,15 +1599,11 @@ class SocketChannelImpl
                 SocketAddress addr = localAddress();
                 if (addr != null) {
                     sb.append(" local=");
-                    if (isUnixSocket()) {
-                        sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
-                    } else {
-                        sb.append(Net.getRevealedLocalAddressAsString(addr));
-                    }
+                    sb.append(addr);
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");
-                    sb.append(remoteAddress().toString());
+                    sb.append(remoteAddress());
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1561,10 +1561,10 @@ public interface CachedRowSet extends RowSet, Joinable {
      *  method is more a matter of convenience when compared to using the version
      * of <code>execute</code> that takes a <code>ResultSet</code> object.
      *
-     * @param startRow the position in the <code>ResultSet</code> from where to start
-     *                populating the records in this <code>CachedRowSet</code>
      * @param rs the <code>ResultSet</code> object containing the data
      * to be read into this <code>CachedRowSet</code> object
+     * @param startRow the position in the <code>ResultSet</code> from where to start
+     *                populating the records in this <code>CachedRowSet</code>
      * @throws SQLException if a null <code>ResultSet</code> object is supplied
      * or this <code>CachedRowSet</code> object cannot
      * retrieve the associated <code>ResultSetMetaData</code> object

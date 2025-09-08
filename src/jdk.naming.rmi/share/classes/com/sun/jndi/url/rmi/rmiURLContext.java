@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package com.sun.jndi.url.rmi;
 
 import java.net.URI;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Locale;
 
@@ -57,12 +55,9 @@ public class rmiURLContext extends GenericURLContext {
 
     public static final ParseMode PARSE_MODE;
     static {
-        PrivilegedAction<String> action = () ->
-                System.getProperty(PARSE_MODE_PROP, DEFAULT_PARSE_MODE.toString());
         ParseMode parseMode = DEFAULT_PARSE_MODE;
         try {
-            @SuppressWarnings("removal")
-            String mode = AccessController.doPrivileged(action);
+            String mode = System.getProperty(PARSE_MODE_PROP, DEFAULT_PARSE_MODE.toString());
             parseMode = ParseMode.valueOf(mode.toUpperCase(Locale.ROOT));
         } catch (Throwable t) {
             parseMode = DEFAULT_PARSE_MODE;

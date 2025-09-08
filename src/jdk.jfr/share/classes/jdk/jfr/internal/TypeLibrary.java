@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ public final class TypeLibrary {
                 Modules.addExports(proxyModule, proxyPackage, jfrModule);
             }
         }
-        SecuritySupport.setAccessible(m);
+        m.setAccessible(true);
         try {
             return m.invoke(annotation, new Object[0]);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -330,7 +330,7 @@ public final class TypeLibrary {
             dynamicFieldSet.put(dynamicField.getName(), dynamicField);
         }
         List<Type> newTypes = new ArrayList<>();
-        for (Field field : Utils.getVisibleEventFields(clazz)) {
+        for (Field field : Utils.getEventFields(clazz)) {
             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
             if (vd != null) {
                 if (!vd.getTypeName().equals(field.getType().getName())) {
@@ -343,9 +343,7 @@ public final class TypeLibrary {
             } else {
                 vd = createField(field);
             }
-            if (vd != null) {
-                type.add(vd);
-            }
+            type.add(vd);
         }
         addTypes(newTypes);
     }
@@ -384,17 +382,7 @@ public final class TypeLibrary {
     }
 
     private static ValueDescriptor createField(Field field) {
-        int mod = field.getModifiers();
-        if (Modifier.isTransient(mod)) {
-            return null;
-        }
-        if (Modifier.isStatic(mod)) {
-            return null;
-        }
         Class<?> fieldType = field.getType();
-        if (!Type.isKnownType(fieldType)) {
-            return null;
-        }
         boolean constantPool = Thread.class == fieldType || fieldType == Class.class;
         Type type = createType(fieldType);
         String fieldName = field.getName();

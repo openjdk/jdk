@@ -33,7 +33,6 @@ import jdk.test.lib.Utils;
  * @bug 8324655 8329797 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
- * @requires os.arch != "riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIfMinMax
  */
@@ -228,7 +227,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntReduction(int[] a, int[] b) {
@@ -262,7 +261,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntReduction(int[] a, int[] b) {
@@ -297,7 +296,11 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MAX_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongReduction(long[] a, long[] b) {
@@ -332,7 +335,11 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MIN_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongReduction(long[] a, long[] b) {
@@ -366,7 +373,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntVector(int[] a, int[] b) {
@@ -401,7 +408,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntVector(int[] a, int[] b) {
@@ -436,7 +443,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongVector(long[] a, long[] b) {
@@ -471,7 +478,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongVector(long[] a, long[] b) {

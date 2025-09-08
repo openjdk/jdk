@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ import sun.print.PrintServiceLookupProvider;
 import sun.print.ServiceDialog;
 
 import java.awt.Frame;
-import java.io.FilePermission;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -265,7 +264,7 @@ public final class WPrinterJob extends RasterPrinterJob
     /* The HandleRecord holds the native resources that need to be freed
      * when this WPrinterJob is GC'd.
      */
-    static class HandleRecord implements DisposerRecord {
+    static final class HandleRecord implements DisposerRecord {
         /**
          * The Windows device context we will print into.
          * This variable is set after the Print dialog
@@ -419,7 +418,7 @@ public final class WPrinterJob extends RasterPrinterJob
      *            is cancelled, or a new PageFormat object containing
      *            the format indicated by the user if the dialog is
      *            acknowledged
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
@@ -572,7 +571,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * print job interactively.
      * @return false if the user cancels the dialog and
      *         true otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -1906,23 +1905,6 @@ public final class WPrinterJob extends RasterPrinterJob
         return mAttMediaTray;
     }
 
-
-
-    private boolean getPrintToFileEnabled() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            FilePermission printToFilePermission =
-                new FilePermission("<<ALL FILES>>", "read,write");
-            try {
-                security.checkPermission(printToFilePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private void setNativeAttributes(int flags, int fields, int values) {
         if (attributes == null) {
             return;
@@ -1931,16 +1913,7 @@ public final class WPrinterJob extends RasterPrinterJob
             Destination destPrn = (Destination)attributes.get(
                                                  Destination.class);
             if (destPrn == null) {
-                try {
-                    attributes.add(new Destination(
-                                               new File("./out.prn").toURI()));
-                } catch (SecurityException se) {
-                    try {
-                        attributes.add(new Destination(
-                                                new URI("file:out.prn")));
-                    } catch (URISyntaxException e) {
-                    }
-                }
+                attributes.add(new Destination(new File("./out.prn").toURI()));
             }
         } else {
             attributes.remove(Destination.class);
@@ -2296,7 +2269,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 @SuppressWarnings("serial") // JDK-implementation class
-static class PrintToFileErrorDialog extends Dialog implements ActionListener {
+static final class PrintToFileErrorDialog extends Dialog implements ActionListener {
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);

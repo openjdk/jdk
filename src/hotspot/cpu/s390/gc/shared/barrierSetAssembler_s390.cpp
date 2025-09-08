@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -172,10 +171,6 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
@@ -185,7 +180,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
+    __ z_cfi(Z_R0_scratch, /* to be patched */ 0); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes
@@ -218,10 +213,10 @@ SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
 
   const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
 
-  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size; // FIXME: this could be restricted to argument only
+  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size;
 
   __ save_return_pc();
-  __ push_frame(_frame_size, Z_R14); // FIXME: check if Z_R1_scaratch can do a job here;
+  __ push_frame(_frame_size, Z_R14);
 
   __ z_lg(Z_R14, _z_common_abi(return_pc) + _frame_size, Z_SP);
 
@@ -240,6 +235,7 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
   int reg_save_index = 0;
   RegMaskIterator live_regs_iterator(_reg_mask);
 
+  // Going to preserve the volatile registers which can be used by Register Allocator.
   while(live_regs_iterator.has_next()) {
     const OptoReg::Name opto_reg = live_regs_iterator.next();
 
@@ -251,8 +247,11 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
     if (vm_reg->is_Register()) {
       Register std_reg = vm_reg->as_Register();
-
-      if (std_reg->encoding() >= Z_R2->encoding() && std_reg->encoding() <= Z_R15->encoding()) {
+      // Z_R0 and Z_R1 will not be allocated by the register allocator, see s390.ad (Integer Register Classes)
+      // Z_R6 to Z_R15 are saved registers, except Z_R14 (see Z-Abi)
+      if (std_reg->encoding() == Z_R14->encoding() ||
+         (std_reg->encoding() >= Z_R2->encoding()  &&
+          std_reg->encoding() <= Z_R5->encoding())) {
         reg_save_index++;
 
         if (action == ACTION_SAVE) {
@@ -265,8 +264,10 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_FloatRegister()) {
       FloatRegister fp_reg = vm_reg->as_FloatRegister();
-      if (fp_reg->encoding() >= Z_F0->encoding() && fp_reg->encoding() <= Z_F15->encoding()
-          && fp_reg->encoding() != Z_F1->encoding()) {
+      // Z_R1 will not be allocated by the register allocator, see s390.ad (Float Register Classes)
+      if (fp_reg->encoding() >= Z_F0->encoding() &&
+          fp_reg->encoding() <= Z_F7->encoding() &&
+          fp_reg->encoding() != Z_F1->encoding()) {
         reg_save_index++;
 
         if (action == ACTION_SAVE) {
@@ -277,8 +278,20 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }
       }
-    } else if (false /* vm_reg->is_VectorRegister() */){
-      fatal("Vector register support is not there yet!");
+    } else if (vm_reg->is_VectorRegister()) {
+      VectorRegister vs_reg = vm_reg->as_VectorRegister();
+      // Z_V0 to Z_V15 will not be allocated by the register allocator, see s390.ad (reg class z_v_reg)
+      if (vs_reg->encoding() >= Z_V16->encoding() &&
+          vs_reg->encoding() <= Z_V31->encoding()) {
+        reg_save_index += 2;
+        if (action == ACTION_SAVE) {
+          __ z_vst(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else if (action == ACTION_RESTORE) {
+          __ z_vl(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
     } else {
       fatal("Register type is not known");
     }

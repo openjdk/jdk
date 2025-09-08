@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.InvalidPathException;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
@@ -68,9 +67,7 @@ public class InstrumentationImpl implements Instrumentation {
     private static final String TRACE_USAGE_PROP_NAME = "jdk.instrument.traceUsage";
     private static final boolean TRACE_USAGE;
     static {
-        PrivilegedAction<String> pa = () -> System.getProperty(TRACE_USAGE_PROP_NAME);
-        @SuppressWarnings("removal")
-        String s = AccessController.doPrivileged(pa);
+        String s = System.getProperty(TRACE_USAGE_PROP_NAME);
         TRACE_USAGE = (s != null) && (s.isEmpty() || Boolean.parseBoolean(s));
     }
 
@@ -100,9 +97,7 @@ public class InstrumentationImpl implements Instrumentation {
             String source = jarFile(nativeAgent);
             try {
                 Path path = Path.of(source);
-                PrivilegedAction<Path> pa = path::toAbsolutePath;
-                @SuppressWarnings("removal")
-                Path absolutePath = AccessController.doPrivileged(pa);
+                Path absolutePath = path.toAbsolutePath();
                 source = absolutePath.toString();
             } catch (InvalidPathException e) {
                 // use original path
@@ -482,18 +477,6 @@ public class InstrumentationImpl implements Instrumentation {
      *  Internals
      */
 
-
-    // Enable or disable Java programming language access checks on a
-    // reflected object (for example, a method)
-    @SuppressWarnings("removal")
-    private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
-                    ao.setAccessible(accessible);
-                    return null;
-                }});
-    }
-
     // Attempt to load and start an agent
     private void
     loadClassAndStartAgent( String  classname,
@@ -553,7 +536,7 @@ public class InstrumentationImpl implements Instrumentation {
             !javaAgentClass.getModule().isNamed()) {
             // If the java agent class is in an unnamed module, the java agent class can be non-public.
             // Suppress access check upon the invocation of the premain/agentmain method.
-            setAccessible(m, true);
+            m.setAccessible(true);
         }
 
         // invoke the 1 or 2-arg method
@@ -665,9 +648,7 @@ public class InstrumentationImpl implements Instrumentation {
      * Returns the possibly-bnull code source of the given class.
      */
     private static URL codeSource(Class<?> clazz) {
-        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        CodeSource cs = clazz.getProtectionDomain().getCodeSource();
         return (cs != null) ? cs.getLocation() : null;
     }
 
@@ -675,13 +656,6 @@ public class InstrumentationImpl implements Instrumentation {
      * Holder for StackWalker object.
      */
     private static class HolderStackWalker {
-        static final StackWalker walker;
-        static {
-            PrivilegedAction<StackWalker> pa = () ->
-                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            @SuppressWarnings("removal")
-            StackWalker w = AccessController.doPrivileged(pa);
-            walker = w;
-        }
+        static final StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 }

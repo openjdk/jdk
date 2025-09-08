@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                               Fuzz
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                Fuzz
  */
 
 /*
@@ -51,9 +51,9 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                               -XX:+PreserveFramePointer
- *                               Fuzz
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                -XX:+PreserveFramePointer
+ *                                Fuzz
  */
 
 import jdk.internal.vm.Continuation;
@@ -75,14 +75,16 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
+
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
     static final boolean FILE    = true;
     static final boolean RANDOM  = true;
     static final boolean VERBOSE = false;
 
-    static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    static int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
+    static int COMPILATION_TIMEOUT = (int)(5_000 * Utils.TIMEOUT_FACTOR); // ms
 
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
@@ -470,7 +472,8 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains);
+        // Returns false since we never pin after we removed legacy locking.
+        return traceHas(Op.PIN::contains) && false;
     }
 
     void verifyPin(boolean yieldResult) {

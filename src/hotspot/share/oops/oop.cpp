@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -111,27 +110,13 @@ intptr_t oopDesc::slow_identity_hash() {
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
-  if (!Universe::heap()->is_oop(obj)) {
-    return false;
-  }
-
-  // Header verification: the mark is typically non-zero. If we're
-  // at a safepoint, it must not be zero, except when using the new lightweight locking.
-  // Outside of a safepoint, the header could be changing (for example,
-  // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
-    return true;
-  }
-  if (obj->mark().value() != 0) {
-    return true;
-  }
-  return LockingMode == LM_LIGHTWEIGHT || !SafepointSynchronize::is_at_safepoint();
+bool oopDesc::is_oop(oop obj) {
+  return Universe::heap()->is_oop(obj);
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
-  return obj == nullptr ? true : is_oop(obj, ignore_mark_word);
+bool oopDesc::is_oop_or_null(oop obj) {
+  return obj == nullptr ? true : is_oop(obj);
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;
@@ -151,11 +136,6 @@ bool oopDesc::is_stackChunk_noinline()  const { return is_stackChunk();  }
 bool oopDesc::is_array_noinline()       const { return is_array();       }
 bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
 bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
-
-bool oopDesc::has_klass_gap() {
-  // Only has a klass gap when compressed class pointers are used.
-  return UseCompressedClassPointers;
-}
 
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
@@ -178,7 +158,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
 
 oop oopDesc::obj_field_acquire(int offset) const                      { return HeapAccess<MO_ACQUIRE>::oop_load_at(as_oop(), offset); }
 
-void oopDesc::obj_field_put_raw(int offset, oop value)                { assert(!(UseZGC && ZGenerational), "Generational ZGC must use store barriers");
+void oopDesc::obj_field_put_raw(int offset, oop value)                { assert(!UseZGC, "ZGC must use store barriers");
                                                                         RawAccess<>::oop_store_at(as_oop(), offset, value); }
 void oopDesc::release_obj_field_put(int offset, oop value)            { HeapAccess<MO_RELEASE>::oop_store_at(as_oop(), offset, value); }
 void oopDesc::obj_field_put_volatile(int offset, oop value)           { HeapAccess<MO_SEQ_CST>::oop_store_at(as_oop(), offset, value); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
 import javax.accessibility.Accessible;
@@ -328,9 +326,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @param doc the document to insert into
      * @param offset the offset to insert HTML at
+     * @param html the HTML string
      * @param popDepth the number of ElementSpec.EndTagTypes to generate
      *                  before inserting
-     * @param html the HTML string
      * @param pushDepth the number of ElementSpec.StartTagTypes with a direction
      *                  of ElementSpec.JoinNextDirection that should be generated
      *                  before inserting, but after the end tags have been generated
@@ -471,22 +469,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     /**
      * Fetch a resource relative to the HTMLEditorKit classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the HTMLEditorKit
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *             HTMLEditorKit class
      * @return a stream representing the resource
      */
-    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-                    public InputStream run() {
-                        return HTMLEditorKit.class.getResourceAsStream(name);
-                    }
-                });
+        return HTMLEditorKit.class.getResourceAsStream(name);
     }
 
     /**

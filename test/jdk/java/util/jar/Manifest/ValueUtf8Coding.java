@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8066619
+ * @bug 8066619 8351567
  * @run testng ValueUtf8Coding
  * @summary Tests encoding and decoding manifest header values to and from
  * UTF-8 with the complete Unicode character set.
@@ -200,10 +200,6 @@ public class ValueUtf8Coding {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         mf.write(out);
         byte[] mfBytes = out.toByteArray();
-
-        System.out.println("-".repeat(72));
-        System.out.print(new String(mfBytes, UTF_8));
-        System.out.println("-".repeat(72));
 
         ByteArrayInputStream in = new ByteArrayInputStream(mfBytes);
         return new Manifest(in);

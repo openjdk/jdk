@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
 /*
  * @test
  * @summary Testing ClassFile Verifier.
- * @bug 8333812
- * @enablePreview
+ * @bug 8333812 8361526
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
+
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
 import static java.lang.constant.ConstantDescs.*;
+
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -41,18 +45,21 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ModuleDesc;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class VerifierSelfTest {
@@ -108,6 +115,11 @@ class VerifierSelfTest {
                 @Override
                 public void writeBody(BufWriterImpl b) {
                     b.writeU2(0);
+                }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return cb.constantPool().utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TABLE);
                 }
             }));
         assertTrue(cc.verify(bytes).stream().anyMatch(e -> e.getMessage().contains("Invalid LocalVariableTable attribute location")));
@@ -366,7 +378,7 @@ class VerifierSelfTest {
             super(new AttributeMapper<CloneAttribute>(){
                 @Override
                 public String name() {
-                    return a.attributeName();
+                    return a.attributeName().stringValue();
                 }
 
                 @Override
@@ -404,5 +416,28 @@ class VerifierSelfTest {
             lst.add(new CloneAttribute(a));
         }
         return lst;
+    }
+
+    @Test // JDK-8350029
+    void testInvokeSpecialInterfacePatch() {
+        var runClass = ClassDesc.of("Run");
+        var testClass = ClassDesc.of("Test");
+        var runnableClass = Runnable.class.describeConstable().orElseThrow();
+        var chr = ClassHierarchyResolver.of(List.of(), Map.of(runClass, CD_Object))
+                .orElse(ClassHierarchyResolver.defaultResolver()).cached();
+        var context = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(chr));
+
+        for (var isInterface : new boolean[] {true, false}) {
+            var bytes = context.build(testClass, clb -> clb
+                    .withVersion(JAVA_8_VERSION, 0)
+                    .withSuperclass(runClass)
+                    .withMethodBody("test", MethodTypeDesc.of(CD_void, testClass), ACC_STATIC, cob -> cob
+                            .aload(0)
+                            .invokespecial(runnableClass, "run", MTD_void, isInterface)
+                            .return_()));
+            var errors = context.verify(bytes);
+            assertNotEquals(List.of(), errors, "invokespecial, isInterface = " + isInterface);
+            assertTrue(errors.getFirst().getMessage().contains("interface method to invoke is not in a direct superinterface"), errors.getFirst().getMessage());
+        }
     }
 }

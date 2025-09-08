@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import javax.xml.transform.Result;
@@ -36,7 +35,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.PackageTest;
@@ -70,13 +69,12 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @summary jpackage with long version number
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest != null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile WinLongVersionTest.java
+ * @compile -Xlint:all -Werror WinLongVersionTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinLongVersionTest.test
  */
@@ -84,13 +82,12 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @summary jpackage with long version number
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile WinLongVersionTest.java
+ * @compile -Xlint:all -Werror WinLongVersionTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinLongVersionTest
  */
@@ -129,12 +126,12 @@ public class WinLongVersionTest {
         Action ended 12:08:38: FindRelatedProducts. Return value 1.
         ...
         Action start 12:08:38: JpFindRelatedProducts.
-        Java [12:08:38.180 libwixhelper.cpp:120 (FindRelatedProductsEx)] TRACE: Entering FindRelatedProductsEx
-        Java [12:08:38.185 libwixhelper.cpp:85 (`anonymous-namespace'::findInstalledPackages)] TRACE: Found {D88EEA02-56CC-34AD-8216-C2CC244FA898} product
+        Java [12:08:38.180 libmsica.cpp:120 (FindRelatedProductsEx)] TRACE: Entering FindRelatedProductsEx
+        Java [12:08:38.185 libmsica.cpp:85 (`anonymous-namespace'::findInstalledPackages)] TRACE: Found {D88EEA02-56CC-34AD-8216-C2CC244FA898} product
         Java [12:08:38.187 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'JP_UPGRADABLE_FOUND'
         Java [12:08:38.187 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'MIGRATE'
         Java [12:08:38.189 MsiCA.cpp:61 (msi::CAImpl::removeProperty)] TRACE: Removing MSI property 'JP_DOWNGRADABLE_FOUND'
-        Java [12:08:38.190 libwixhelper.cpp:0 (FindRelatedProductsEx)] TRACE: Exiting FindRelatedProductsEx (entered at libwixhelper.cpp:120)
+        Java [12:08:38.190 libmsica.cpp:0 (FindRelatedProductsEx)] TRACE: Exiting FindRelatedProductsEx (entered at libmsica.cpp:120)
         Action ended 12:08:38: JpFindRelatedProducts. Return value 1.
         */
         PackageTest test2 = init.get().addInstallVerifier(cmd -> {
@@ -150,7 +147,7 @@ public class WinLongVersionTest {
 
             Path scriptPath = resourceDir.resolve(String.format(
                     "%s-post-msi.wsf", cmd.name()));
-            IOUtils.createXml(scriptPath, xml -> {
+            XmlUtils.createXml(scriptPath, xml -> {
                 xml.writeStartElement("job");
                 xml.writeAttribute("id", "main");
                 xml.writeStartElement("script");
@@ -196,7 +193,7 @@ public class WinLongVersionTest {
             cmd.setFakeRuntime();
 
             // Create package without Upgrade table
-            Document doc = IOUtils.initDocumentBuilder().parse(
+            Document doc = XmlUtils.initDocumentBuilder().parse(
                     Files.newInputStream(TKit.SRC_ROOT.resolve(
                             "windows/classes/jdk/jpackage/internal/resources/main.wxs")));
             XPath xPath = XPathFactory.newInstance().newXPath();

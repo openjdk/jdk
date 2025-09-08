@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testDatatypes xmlns="http://xmlschema.datatypes/testSchema"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://xmlschema.datatypes/testSchema testDatatypes.xsd">
+
+    <stringType>Hello, World!</stringType>
+    <integerType>12345</integerType>
+    <decimalType>67.78</decimalType>
+    <booleanType>false</booleanType>
+    <dateType>2024-11-24</dateType>
+</testDatatypes>

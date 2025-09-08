@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.internal.access;
 
+import jdk.internal.vm.annotation.Stable;
+
 import javax.crypto.SealedObject;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
@@ -39,10 +41,7 @@ import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.security.ProtectionDomain;
 import java.security.Signature;
 import javax.security.auth.x500.X500Principal;
 
@@ -62,41 +61,38 @@ import javax.security.auth.x500.X500Principal;
  */
 
 public class SharedSecrets {
-    private static JavaAWTAccess javaAWTAccess;
+    // This field is not necessarily stable
     private static JavaAWTFontAccess javaAWTFontAccess;
-    private static JavaBeansAccess javaBeansAccess;
-    private static JavaLangAccess javaLangAccess;
-    private static JavaLangInvokeAccess javaLangInvokeAccess;
-    private static JavaLangModuleAccess javaLangModuleAccess;
-    private static JavaLangRefAccess javaLangRefAccess;
-    private static JavaLangReflectAccess javaLangReflectAccess;
-    private static JavaIOAccess javaIOAccess;
-    private static JavaIOPrintStreamAccess javaIOPrintStreamAccess;
-    private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
-    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
-    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
-    private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
-    private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
-    private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
-    private static JavaNetInetAddressAccess javaNetInetAddressAccess;
-    private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
-    private static JavaNetUriAccess javaNetUriAccess;
-    private static JavaNetURLAccess javaNetURLAccess;
-    private static JavaNioAccess javaNioAccess;
-    private static JavaUtilCollectionAccess javaUtilCollectionAccess;
-    private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
-    private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
-    private static JavaUtilJarAccess javaUtilJarAccess;
-    private static JavaUtilZipFileAccess javaUtilZipFileAccess;
-    private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
-    private static JavaSecurityAccess javaSecurityAccess;
-    private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
-    private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
-    private static JavaSecuritySpecAccess javaSecuritySpecAccess;
-    private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
-    private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
-    private static JavaxSecurityAccess javaxSecurityAccess;
+    @Stable private static JavaBeansAccess javaBeansAccess;
+    @Stable private static JavaLangAccess javaLangAccess;
+    @Stable private static JavaLangInvokeAccess javaLangInvokeAccess;
+    @Stable private static JavaLangModuleAccess javaLangModuleAccess;
+    @Stable private static JavaLangRefAccess javaLangRefAccess;
+    @Stable private static JavaLangReflectAccess javaLangReflectAccess;
+    @Stable private static JavaIOAccess javaIOAccess;
+    @Stable private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
+    @Stable private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    @Stable private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
+    @Stable private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
+    @Stable private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
+    @Stable private static JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
+    @Stable private static JavaNetInetAddressAccess javaNetInetAddressAccess;
+    @Stable private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
+    @Stable private static JavaNetUriAccess javaNetUriAccess;
+    @Stable private static JavaNetURLAccess javaNetURLAccess;
+    @Stable private static JavaNioAccess javaNioAccess;
+    @Stable private static JavaUtilCollectionAccess javaUtilCollectionAccess;
+    @Stable private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
+    @Stable private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
+    @Stable private static JavaUtilJarAccess javaUtilJarAccess;
+    @Stable private static JavaUtilZipFileAccess javaUtilZipFileAccess;
+    @Stable private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
+    @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
+    @Stable private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
+    @Stable private static JavaSecuritySpecAccess javaSecuritySpecAccess;
+    @Stable private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
+    @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    @Stable private static JavaxSecurityAccess javaxSecurityAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -288,47 +284,8 @@ public class SharedSecrets {
         return access;
     }
 
-    public static void setJavaIOCPrintWriterAccess(JavaIOPrintWriterAccess a) {
-        javaIOPrintWriterAccess = a;
-    }
-
-    public static JavaIOPrintWriterAccess getJavaIOPrintWriterAccess() {
-        var access = javaIOPrintWriterAccess;
-        if (access == null) {
-            ensureClassInitialized(PrintWriter.class);
-            access = javaIOPrintWriterAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOCPrintStreamAccess(JavaIOPrintStreamAccess a) {
-        javaIOPrintStreamAccess = a;
-    }
-
-    public static JavaIOPrintStreamAccess getJavaIOPrintStreamAccess() {
-        var access = javaIOPrintStreamAccess;
-        if (access == null) {
-            ensureClassInitialized(PrintStream.class);
-            access = javaIOPrintStreamAccess;
-        }
-        return access;
-    }
-
     public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {
         javaIOFileDescriptorAccess = jiofda;
-    }
-
-    public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        var access = javaIOFilePermissionAccess;
-        if (access == null) {
-            ensureClassInitialized(FilePermission.class);
-            access = javaIOFilePermissionAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
-        javaIOFilePermissionAccess = jiofpa;
     }
 
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
@@ -336,19 +293,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(FileDescriptor.class);
             access = javaIOFileDescriptorAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {
-        javaSecurityAccess = jsa;
-    }
-
-    public static JavaSecurityAccess getJavaSecurityAccess() {
-        var access = javaSecurityAccess;
-        if (access == null) {
-            ensureClassInitialized(ProtectionDomain.class);
-            access = javaSecurityAccess;
         }
         return access;
     }
@@ -377,16 +321,6 @@ public class SharedSecrets {
 
     public static void setJavaUtilZipFileAccess(JavaUtilZipFileAccess access) {
         javaUtilZipFileAccess = access;
-    }
-
-    public static void setJavaAWTAccess(JavaAWTAccess jaa) {
-        javaAWTAccess = jaa;
-    }
-
-    public static JavaAWTAccess getJavaAWTAccess() {
-        // this may return null in which case calling code needs to
-        // provision for.
-        return javaAWTAccess;
     }
 
     public static void setJavaAWTFontAccess(JavaAWTFontAccess jafa) {
@@ -457,6 +391,21 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputFilterAccess(JavaObjectInputFilterAccess access) {
         javaObjectInputFilterAccess = access;
+    }
+
+    public static JavaObjectStreamReflectionAccess getJavaObjectStreamReflectionAccess() {
+        var access = javaObjectStreamReflectionAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.io.ObjectStreamReflection$Access", true, null);
+                access = javaObjectStreamReflectionAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaObjectStreamReflectionAccess(JavaObjectStreamReflectionAccess access) {
+        javaObjectStreamReflectionAccess = access;
     }
 
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {

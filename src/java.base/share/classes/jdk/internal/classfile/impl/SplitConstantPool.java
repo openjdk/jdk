@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,10 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
-
-import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.Objects.requireNonNull;
@@ -130,6 +129,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         if (bsmSize == 0)
             return false;
         int pos = buf.size();
+        Util.checkU2(bsmSize, "num bootstrap methods");
         if (parent != null && parentBsmSize != 0) {
             parent.writeBootstrapMethods(buf);
             for (int i = parentBsmSize; i < bsmSize; i++)
@@ -148,6 +148,11 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                     for (int i = 0; i < bsmSize; i++)
                         bootstrapMethodEntry(i).writeTo(buf);
                 }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return utf8Entry(Attributes.NAME_BOOTSTRAP_METHODS);
+                }
             };
             a.writeTo(buf);
         }
@@ -156,15 +161,14 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     void writeTo(BufWriterImpl buf) {
         int writeFrom = 1;
-        if (size() >= 65536) {
-            throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
-        }
-        buf.writeU2(size());
+        int mySize = size();
+        Util.checkU2(mySize, "constant pool count");
+        buf.writeU2(mySize);
         if (parent != null && buf.constantPool().canWriteDirect(this)) {
             parent.writeConstantPoolEntries(buf);
             writeFrom = parent.size();
         }
-        for (int i = writeFrom; i < size(); ) {
+        for (int i = writeFrom; i < mySize; ) {
             var info = (AbstractPoolEntry) entryByIndex(i);
             info.writeTo(buf);
             i += info.width();
@@ -494,7 +498,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public AbstractPoolEntry.ClassEntryImpl classEntry(Utf8Entry nameEntry) {
         var ne = maybeCloneUtf8Entry(nameEntry);
-        return classEntry(ne, AbstractPoolEntry.isArrayDescriptor(ne));
+        return classEntry(ne, ne.mayBeArrayDescriptor());
     }
 
     AbstractPoolEntry.ClassEntryImpl classEntry(AbstractPoolEntry.Utf8EntryImpl ne, boolean isArray) {
@@ -518,6 +522,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     AbstractPoolEntry.ClassEntryImpl cloneClassEntry(AbstractPoolEntry.ClassEntryImpl e) {
         var ce = tryFindClassEntry(e.hashCode(), e.ref1);
         if (ce != null) {
+            var mySym = e.sym;
+            if (ce.sym == null && mySym != null) {
+                ce.sym = mySym;
+            }
             return ce;
         }
 
@@ -586,6 +594,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference) {
+        Util.checkU1(refKind, "reference kind");
         reference = AbstractPoolEntry.maybeClone(this, reference);
         int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.index());
         EntryMap map1 = map();

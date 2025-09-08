@@ -25,7 +25,6 @@
  * @test
  * @library /test/lib
  * @bug 8337302
- * @enablePreview
  * @summary Tests that an exception is thrown if a type variable is not declared
  */
 

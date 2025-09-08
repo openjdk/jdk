@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
@@ -42,6 +42,8 @@
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;
+class G1CSetCandidateGroup;
+class G1CSetCandidateGroupList;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1CMOopClosure;
@@ -446,8 +448,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
 
-  double*   _accum_task_vtime;   // Accumulated task vtime
-
   WorkerThreads* _concurrent_workers;
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
@@ -562,6 +562,8 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+  // Approximate number of incoming references found during marking.
+  size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
 
   // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(G1HeapRegion* r);
@@ -610,16 +612,8 @@ public:
   // running.
   void abort_marking_threads();
 
-  void update_accum_task_vtime(uint i, double vtime) {
-    _accum_task_vtime[i] += vtime;
-  }
-
-  double all_task_accum_vtime() {
-    double ret = 0.0;
-    for (uint i = 0; i < _max_num_tasks; ++i)
-      ret += _accum_task_vtime[i];
-    return ret;
-  }
+  // Total cpu time spent in mark worker threads in seconds.
+  double worker_threads_cpu_time_s();
 
   // Attempts to steal an object from the task queues of other tasks
   bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
@@ -705,7 +699,7 @@ public:
 
   void threads_do(ThreadClosure* tc) const;
 
-  void print_on_error(outputStream* st) const;
+  void print_on(outputStream* st) const;
 
   // Mark the given object on the marking bitmap if it is below TAMS.
   inline bool mark_in_bitmap(uint worker_id, oop const obj);
@@ -751,8 +745,8 @@ private:
 
   // When the virtual timer reaches this time, the marking step should exit
   double                      _time_target_ms;
-  // Start time of the current marking step
-  double                      _start_time_ms;
+  // Start cpu time of the current marking step
+  jlong                       _start_cpu_time_ns;
 
   // Oop closure used for iterations over oops
   G1CMOopClosure*             _cm_oop_closure;
@@ -809,6 +803,21 @@ private:
   void setup_for_region(G1HeapRegion* hr);
   // Makes the limit of the region up-to-date
   void update_region_limit();
+
+  // Handles the processing of the current region.
+  void process_current_region(G1CMBitMapClosure& bitmap_closure);
+
+  // Claims a new region if available.
+  void claim_new_region();
+
+  // Attempts to steal work from other tasks.
+  void attempt_stealing();
+
+  // Handles the termination protocol.
+  void attempt_termination(bool is_serial);
+
+  // Handles the has_aborted scenario.
+  void handle_abort(bool is_serial, double elapsed_time_ms);
 
   // Called when either the words scanned or the refs visited limit
   // has been reached
@@ -937,6 +946,8 @@ public:
 
   inline void update_liveness(oop const obj, size_t const obj_size);
 
+  inline void inc_incoming_refs(oop const obj);
+
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);
   // Evict the whole statistics cache into the global statistics. Returns the
@@ -958,14 +969,16 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  size_t _young_cardset_bytes_per_region;
-
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
+
+  void log_cset_candidate_group_add_total(G1CSetCandidateGroup* gr, const char* type);
+  void log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type);
+  void log_cset_candidate_groups();
 
 public:
   // The header and footer are printed in the constructor and

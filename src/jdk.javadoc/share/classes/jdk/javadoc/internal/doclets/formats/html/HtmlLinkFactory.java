@@ -43,6 +43,7 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -53,7 +54,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -236,20 +236,16 @@ public class HtmlLinkFactory {
     protected Content getClassLink(HtmlLinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
         TypeElement typeElement = linkInfo.getTypeElement();
-        // Create a tool tip if we are linking to a class or interface.  Don't
-        // create one if we are linking to a member.
-        String title = "";
-        String fragment = linkInfo.getFragment();
-        boolean hasFragment = fragment != null && !fragment.isEmpty();
-        if (!hasFragment) {
-            boolean isTypeLink = linkInfo.getType() != null &&
-                     utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
-            title = getClassToolTip(typeElement, isTypeLink);
-            if (isTypeLink) {
-                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
-                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
-                        typeElement).name());
-            }
+        // Create a tool tip if we are linking to a class or interface, or one of
+        // its summary sections. Don't create one if we are linking to a member.
+        boolean isPageOrSummaryLink = linkInfo.isPageOrSummaryLink();
+        TypeMirror type = linkInfo.getType();
+        if (type != null && utils.isTypeVariable(utils.getComponentType(type))) {
+            linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                    utils.getTypeName(utils.getComponentType(type), false), typeElement).name())
+                    .title(getClassToolTip(typeElement, true));
+        } else if (isPageOrSummaryLink) {
+            linkInfo.title(getClassToolTip(typeElement, false));
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
@@ -261,7 +257,7 @@ public class HtmlLinkFactory {
         Element previewTarget;
         ExecutableElement restrictedTarget;
         boolean showPreview = !linkInfo.isSkipPreview();
-        if (!hasFragment && showPreview) {
+        if (isPageOrSummaryLink && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
             restrictedTarget = null;
@@ -274,7 +270,7 @@ public class HtmlLinkFactory {
             TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
             if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
-                if (enclosing.equals(m_writer.getCurrentPageElement())) {
+                if (enclosing.equals(m_writer.getCurrentTypeElement())) {
                     //skip the PREVIEW tag:
                     flags = EnumSet.copyOf(flags);
                     flags.remove(ElementFlag.PREVIEW);
@@ -296,12 +292,12 @@ public class HtmlLinkFactory {
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
-            if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
+            if (configuration.isGeneratedDoc(typeElement) && !utils.isHidden(typeElement)) {
                 DocPath fileName = getPath(linkInfo);
-                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
+                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentTypeElement()) {
                         link.add(m_writer.links.createLink(
                                 fileName.fragment(linkInfo.getFragment()),
-                                label, linkInfo.getStyle(), title));
+                                label, linkInfo.getStyle(), linkInfo.getTitle()));
                         addSuperscript(link, flags, fileName, null, previewTarget, restrictedTarget);
                         return link;
                 }
@@ -337,16 +333,18 @@ public class HtmlLinkFactory {
                                 Element previewTarget, ExecutableElement restrictedTarget) {
         Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
-            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
-                    m_writer.htmlIds.forPreviewSection(previewTarget),
-                    m_writer.contents.previewMark)));
+            content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forPreviewSection(previewTarget),
+                            m_writer.contents.previewMark)));
             spacer = Entity.NO_BREAK_SPACE;
         }
         if (flags.contains(ElementFlag.RESTRICTED)) {
             content.add(spacer);
-            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
-                    m_writer.htmlIds.forRestrictedSection(restrictedTarget),
-                    m_writer.contents.restrictedMark)));
+            content.add(HtmlTree.SUP(HtmlStyles.restrictedMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forRestrictedSection(restrictedTarget),
+                            m_writer.contents.restrictedMark)));
         }
     }
 
@@ -399,12 +397,15 @@ public class HtmlLinkFactory {
             }
             links.add("<");
             boolean many = false;
+            boolean longTypeParams = vars.stream()
+                    .map(t -> getLink(linkInfo.forType(t)))
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.add(",");
-                    links.add(HtmlTree.WBR());
-                    if (linkInfo.addLineBreaksInTypeParameters()) {
-                        links.add(Text.NL);
+                    if (longTypeParams) {
+                        links.add(", ");
+                    } else {
+                        links.add(",").add(HtmlTree.WBR());
                     }
                 }
                 links.add(getLink(linkInfo.forType(t)));
@@ -456,11 +457,12 @@ public class HtmlLinkFactory {
      * Given a class, return the appropriate tool tip.
      *
      * @param typeElement the class to get the tool tip for.
+     * @param isTypeParamLink true if link target is a type parameter
      * @return the tool tip for the appropriate class.
      */
-    private String getClassToolTip(TypeElement typeElement, boolean isTypeLink) {
+    private String getClassToolTip(TypeElement typeElement, boolean isTypeParamLink) {
         Resources resources = m_writer.configuration.getDocResources();
-        if (isTypeLink) {
+        if (isTypeParamLink) {
             return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));
         } else if (utils.isPlainInterface(typeElement)){

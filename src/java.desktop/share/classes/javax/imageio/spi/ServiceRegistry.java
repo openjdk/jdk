@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package javax.imageio.spi;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -81,7 +78,7 @@ import java.util.ServiceLoader;
  * proxy for the heavyweight service.
  *
  * <p> An application may customize the contents of a registry as it
- * sees fit, so long as it has the appropriate runtime permission.
+ * sees fit.
  *
  * <p> For information on how to create and deploy service providers,
  * refer to the documentation on {@link java.util.ServiceLoader ServiceLoader}
@@ -286,8 +283,7 @@ public class ServiceRegistry {
      * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
      * {@code onDeregistration} method will be called each time
-     * it is deregistered from a category or when the registry is
-     * finalized.
+     * it is deregistered from a category.
      *
      * @param provider the service provider object to be registered.
      *
@@ -316,8 +312,7 @@ public class ServiceRegistry {
      * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
      * {@code onDeregistration} method will be called each time
-     * it is deregistered from a category or when the registry is
-     * finalized.
+     * it is deregistered from a category.
      *
      * @param providers an Iterator containing service provider
      * objects to be registered.
@@ -663,31 +658,17 @@ public class ServiceRegistry {
     /**
      * Deregisters all currently registered service providers from all
      * categories.
+     * <p>
+     * If an application creates a new {@code ServiceRegistry} instance and registers providers,
+     * and at some point no longer needs the instance, it should call this method to ensure
+     * that all providers which are instances of {@link RegisterableService}
+     * receive a {@link RegisterableService#onDeregistration(ServiceRegistry, Class<?>)} call back,
+     * before allowing the instance to be garbage collected.
      */
     public void deregisterAll() {
         for (SubRegistry reg : categoryMap.values()) {
             reg.clear();
         }
-    }
-
-    /**
-     * Finalizes this object prior to garbage collection.  The
-     * {@code deregisterAll} method is called to deregister all
-     * currently registered service providers.  This method should not
-     * be called from application code.
-     *
-     * @throws Throwable if an error occurs during superclass
-     * finalization.
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    public void finalize() throws Throwable {
-        deregisterAll();
-        super.finalize();
     }
 
     /**
@@ -731,8 +712,6 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
-    @SuppressWarnings("removal")
-    final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
         this.registry = registry;
@@ -748,7 +727,6 @@ class SubRegistry {
             deregisterServiceProvider(oprovider);
         }
         map.put(provider.getClass(), provider);
-        accMap.put(provider.getClass(), AccessController.getContext());
         poset.add(provider);
         if (provider instanceof RegisterableService) {
             RegisterableService rs = (RegisterableService)provider;
@@ -773,7 +751,6 @@ class SubRegistry {
 
         if (provider == oprovider) {
             map.remove(provider.getClass());
-            accMap.remove(provider.getClass());
             poset.remove(provider);
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
@@ -815,32 +792,19 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
-    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {
             Object provider = iter.next();
             iter.remove();
 
-            if (provider instanceof RegisterableService) {
-                RegisterableService rs = (RegisterableService)provider;
-                AccessControlContext acc = accMap.get(provider.getClass());
-                if (acc != null || System.getSecurityManager() == null) {
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    rs.onDeregistration(registry, category);
-                        return null;
-                    }, acc);
-                }
+            if (provider instanceof RegisterableService rs) {
+                rs.onDeregistration(registry, category);
             }
         }
         poset.clear();
-        accMap.clear();
     }
 
-    @SuppressWarnings("removal")
-    public synchronized void finalize() {
-        clear();
-    }
 }
 
 

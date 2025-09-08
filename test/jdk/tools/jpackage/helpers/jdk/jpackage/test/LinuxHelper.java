@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,36 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
 public final class LinuxHelper {
     private static String getReleaseSuffix(JPackageCommand cmd) {
-        String value = null;
+        final String value;
         final PackageType packageType = cmd.packageType();
         switch (packageType) {
             case LINUX_DEB:
@@ -60,6 +65,9 @@ public final class LinuxHelper {
                 value = "-" + cmd.getArgumentValue("--linux-app-release",
                         () -> "1");
                 break;
+
+            default:
+                value = null;
         }
         return value;
     }
@@ -79,7 +87,7 @@ public final class LinuxHelper {
         String desktopFileName = String.format("%s-%s.desktop", getPackageName(
                 cmd), Optional.ofNullable(launcherName).orElseGet(
                         () -> cmd.name()).replaceAll("\\s+", "_"));
-        return cmd.appLayout().destktopIntegrationDirectory().resolve(
+        return cmd.appLayout().desktopIntegrationDirectory().resolve(
                 desktopFileName);
     }
 
@@ -95,7 +103,7 @@ public final class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final PackageType packageType = cmd.packageType();
-        String format = null;
+        final String format;
         switch (packageType) {
             case LINUX_DEB:
                 format = "%s_%s%s_%s";
@@ -104,6 +112,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 format = "%s-%s%s.%s";
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         final String releaseSuffix = getReleaseSuffix(cmd);
@@ -119,7 +130,7 @@ public final class LinuxHelper {
         final PackageType packageType = cmd.packageType();
         final Path packageFile = cmd.outputBundle();
 
-        Executor exec = null;
+        final Executor exec;
         switch (packageType) {
             case LINUX_DEB:
                 exec = Executor.of("dpkg", "--contents").addArgument(packageFile);
@@ -128,6 +139,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 exec = Executor.of("rpm", "-qpl").addArgument(packageFile);
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         Stream<String> lines = exec.executeAndGetOutput().stream();
@@ -154,9 +168,10 @@ public final class LinuxHelper {
                 return Executor.of("rpm", "-qp", "-R")
                 .addArgument(cmd.outputBundle())
                 .executeAndGetOutput();
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unreachable
-        return null;
     }
 
     public static String getBundleProperty(JPackageCommand cmd,
@@ -178,64 +193,68 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 return getRpmBundleProperty(cmd.outputBundle(), propertyName.get(
                         packageType));
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unrechable
-        return null;
     }
 
     static PackageHandlers createDebPackageHandlers() {
-        PackageHandlers deb = new PackageHandlers();
-        deb.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-i")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        deb.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        deb.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("dpkg", "-x")
-            .addArgument(cmd.outputBundle())
-            .addArgument(destinationDir)
-            .execute();
-            return destinationDir;
-        };
-        return deb;
+        return new PackageHandlers(LinuxHelper::installDeb, LinuxHelper::uninstallDeb, LinuxHelper::unpackDeb);
+    }
+
+    private static int installDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        return Executor.of("sudo", "dpkg", "-i")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackDeb(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        Executor.of("dpkg", "-x")
+        .addArgument(cmd.outputBundle())
+        .addArgument(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static PackageHandlers createRpmPackageHandlers() {
-        PackageHandlers rpm = new PackageHandlers();
-        rpm.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-U")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        rpm.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! rpm -q %s || sudo rpm -e %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        rpm.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sh", "-c", String.format(
-                    "rpm2cpio '%s' | cpio -idm --quiet",
-                    JPackageCommand.escapeAndJoin(
-                            cmd.outputBundle().toAbsolutePath().toString())))
-            .setDirectory(destinationDir)
-            .execute();
-            return destinationDir;
-        };
+        return new PackageHandlers(LinuxHelper::installRpm, LinuxHelper::uninstallRpm, LinuxHelper::unpackRpm);
+    }
 
-        return rpm;
+    private static int installRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        return Executor.of("sudo", "rpm", "-U")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! rpm -q %s || sudo rpm -e %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackRpm(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        Executor.of("sh", "-c", String.format(
+                "rpm2cpio '%s' | cpio -idm --quiet",
+                JPackageCommand.escapeAndJoin(
+                        cmd.outputBundle().toAbsolutePath().toString())))
+        .setDirectory(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static Path getLauncherPath(JPackageCommand cmd) {
@@ -275,9 +294,9 @@ public final class LinuxHelper {
                 String size = getRpmBundleProperty(packageFile, "Size");
                 return (Long.parseLong(size) + 1023L) >> 10; // in KB rounded up
 
+            default:
+                throw new UnsupportedOperationException();
         }
-
-        return 0;
     }
 
     static String getDebBundleProperty(Path bundle, String fieldName) {
@@ -294,10 +313,10 @@ public final class LinuxHelper {
     }
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
-        String packageName = LinuxHelper.getPackageName(cmd);
-        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        String packageName = getPackageName(cmd);
+        long packageSize = getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
-        TKit.assertNotEquals(0L, packageSize, String.format(
+        TKit.assertNotEquals(0, packageSize, String.format(
                 "Check installed size of [%s] package in not zero", packageName));
 
         final boolean checkPrerequisites;
@@ -316,7 +335,7 @@ public final class LinuxHelper {
             checkPrerequisites = packageSize > 5;
         }
 
-        List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);
+        List<String> prerequisites = getPrerequisitePackages(cmd);
         if (checkPrerequisites) {
             final String vitalPackage = "libc";
             TKit.assertTrue(prerequisites.stream().filter(
@@ -326,13 +345,28 @@ public final class LinuxHelper {
                             vitalPackage, prerequisites, packageName));
         } else {
             TKit.trace(String.format(
-                    "Not cheking %s required packages of [%s] package",
+                    "Not checking %s required packages of [%s] package",
                     prerequisites, packageName));
         }
     }
 
-    static void addBundleDesktopIntegrationVerifier(PackageTest test,
-            boolean integrated) {
+    public static Collection<? extends InvokeShortcutSpec> getInvokeShortcutSpecs(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+
+        final var desktopFiles = getDesktopFiles(cmd);
+        final var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
+
+        return desktopFiles.stream().map(desktopFile -> {
+            var systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+            return new InvokeShortcutSpec.Stub(
+                    launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile),
+                    LauncherShortcut.LINUX_SHORTCUT,
+                    new DesktopFile(systemDesktopFile, false).findQuotedValue("Path").map(Path::of),
+                    List.of("gtk-launch", PathUtils.replaceSuffix(systemDesktopFile.getFileName(), "").toString()));
+        }).toList();
+    }
+
+    static void addBundleDesktopIntegrationVerifier(PackageTest test, boolean integrated) {
         final String xdgUtils = "xdg-utils";
 
         Function<List<String>, String> verifier = (lines) -> {
@@ -378,45 +412,83 @@ public final class LinuxHelper {
         });
 
         test.addInstallVerifier(cmd -> {
-            // Verify .desktop files.
-            try (var files = Files.list(cmd.appLayout().destktopIntegrationDirectory())) {
-                List<Path> desktopFiles = files
-                        .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .toList();
-                if (!integrated) {
-                    TKit.assertStringListEquals(List.of(),
-                            desktopFiles.stream().map(Path::toString).collect(
-                                    Collectors.toList()),
-                            "Check there are no .desktop files in the package");
-                }
-                for (var desktopFile : desktopFiles) {
-                    verifyDesktopFile(cmd, desktopFile);
-                }
+            if (!integrated) {
+                TKit.assertStringListEquals(
+                        List.of(),
+                        getDesktopFiles(cmd).stream().map(Path::toString).toList(),
+                        "Check there are no .desktop files in the package");
             }
         });
     }
 
-    private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
-            throws IOException {
-        TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
-        List<String> lines = Files.readAllLines(desktopFile);
-        TKit.assertEquals("[Desktop Entry]", lines.get(0), "Check file header");
+    static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
+        final var desktopFiles = getDesktopFiles(cmd);
+        try {
+            if (installed) {
+                var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
+                for (var desktopFile : desktopFiles) {
+                    verifyDesktopFile(cmd, predefinedAppImage, desktopFile);
+                }
 
-        Map<String, String> data = lines.stream()
-        .skip(1)
-        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(Stream.of(str)))
-        .map(str -> {
-            String components[] = str.split("=(?=.+)");
-            if (components.length == 1) {
-                return Map.entry(str.substring(0, str.length() - 1), "");
+                if (!cmd.isPackageUnpacked("Not verifying system .desktop files")) {
+                    for (var desktopFile : desktopFiles) {
+                        Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                            TKit.assertFileExists(systemDesktopFile);
+                            TKit.assertStringListEquals(
+                                    Files.readAllLines(desktopFile),
+                                    Files.readAllLines(systemDesktopFile),
+                                    String.format("Check [%s] and [%s] files are equal", desktopFile, systemDesktopFile));
+                    }
+                }
+            } else {
+                for (var desktopFile : getDesktopFiles(cmd)) {
+                    Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                    TKit.assertPathExists(systemDesktopFile, false);
+                }
             }
-            return Map.entry(components[0], components[1]);
-        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
-            TKit.assertUnexpected("Multiple values of the same key");
-            return null;
-        }));
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
 
-        final Set<String> mandatoryKeys = new HashSet(Set.of("Name", "Comment",
+    private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
+        var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
+        var packageDir = cmd.pathToPackageFile(unpackedDir);
+        return getPackageFiles(cmd).filter(path -> {
+            return packageDir.equals(path.getParent()) && path.getFileName().toString().endsWith(".desktop");
+        }).map(Path::getFileName).map(unpackedDir::resolve).toList();
+    }
+
+    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
+        Objects.requireNonNull(cmd);
+        Objects.requireNonNull(predefinedAppImage);
+        Objects.requireNonNull(desktopFile);
+
+        return predefinedAppImage.map(v -> {
+            return v.launchers().keySet().stream();
+        }).orElseGet(() -> {
+            return Stream.concat(Stream.of(cmd.name()), cmd.addLauncherNames().stream());
+        }).filter(name-> {
+            return getDesktopFile(cmd, name).equals(desktopFile);
+        }).findAny().orElseThrow(() -> {
+            TKit.assertUnexpected(String.format("Failed to find launcher corresponding to [%s] file", desktopFile));
+            // Unreachable
+            return null;
+        });
+    }
+
+    private static void verifyDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) throws IOException {
+        Objects.requireNonNull(cmd);
+        Objects.requireNonNull(predefinedAppImage);
+        Objects.requireNonNull(desktopFile);
+
+        TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
+
+        var launcherName = launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile);
+
+        var data = new DesktopFile(desktopFile, true);
+
+        final Set<String> mandatoryKeys = new HashSet<>(Set.of("Name", "Comment",
                 "Exec", "Icon", "Terminal", "Type", "Categories"));
         mandatoryKeys.removeAll(data.keySet());
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
@@ -424,23 +496,51 @@ public final class LinuxHelper {
 
         for (var e : Map.of("Type", "Application", "Terminal", "false").entrySet()) {
             String key = e.getKey();
-            TKit.assertEquals(e.getValue(), data.get(key), String.format(
+            TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
                     "Check value of [%s] key", key));
         }
 
-        // Verify value of `Exec` property in .desktop files are escaped if required
-        String launcherPath = data.get("Exec");
-        if (Pattern.compile("\\s").matcher(launcherPath).find()) {
-            TKit.assertTrue(launcherPath.startsWith("\"")
-                    && launcherPath.endsWith("\""),
-                    "Check path to the launcher is enclosed in double quotes");
-            launcherPath = launcherPath.substring(1, launcherPath.length() - 1);
-        }
+        String launcherPath = data.findQuotedValue("Exec").orElseThrow();
 
-        Stream.of(launcherPath, data.get("Icon"))
-                .map(Path::of)
-                .map(cmd::pathToUnpackedPackageFile)
-                .forEach(TKit::assertFileExists);
+        TKit.assertEquals(
+                launcherPath,
+                cmd.pathToPackageFile(cmd.appLauncherPath(launcherName)).toString(),
+                String.format("Check the value of [Exec] key references [%s] app launcher", launcherName));
+
+        var appLayout = cmd.appLayout();
+
+        LauncherShortcut.LINUX_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).map(shortcutWorkDirType -> {
+            switch (shortcutWorkDirType) {
+                case DEFAULT -> {
+                    return (Path)null;
+                }
+                case APP_DIR -> {
+                    return cmd.pathToPackageFile(appLayout.appDirectory());
+                }
+                default -> {
+                    throw new AssertionError();
+                }
+            }
+        }).map(Path::toString).ifPresentOrElse(shortcutWorkDir -> {
+            var actualShortcutWorkDir = data.find("Path");
+            TKit.assertTrue(actualShortcutWorkDir.isPresent(), "Check [Path] key exists");
+            TKit.assertEquals(actualShortcutWorkDir.get(), shortcutWorkDir, "Check the value of [Path] key");
+        }, () -> {
+            TKit.assertTrue(data.find("Path").isEmpty(), "Check there is no [Path] key");
+        });
+
+        for (var e : List.<Map.Entry<Map.Entry<String, Optional<String>>, Function<ApplicationLayout, Path>>>of(
+                Map.entry(Map.entry("Exec", Optional.of(launcherPath)), ApplicationLayout::launchersDirectory),
+                Map.entry(Map.entry("Icon", Optional.empty()), ApplicationLayout::desktopIntegrationDirectory))) {
+            var path = e.getKey().getValue().or(() -> {
+                return data.findQuotedValue(e.getKey().getKey());
+            }).map(Path::of).get();
+            TKit.assertFileExists(cmd.pathToUnpackedPackageFile(path));
+            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(appLayout));
+            TKit.assertTrue(path.getParent().equals(expectedDir), String.format(
+                    "Check the value of [%s] key references a file in [%s] folder",
+                    e.getKey().getKey(), expectedDir));
+        }
 
         TKit.trace(String.format("Check [%s] file END", desktopFile));
     }
@@ -495,11 +595,11 @@ public final class LinuxHelper {
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
+                String desktopFileName = queryMimeTypeDefaultHandler(mimeType).orElse(null);
 
                 Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
                         desktopFileName);
-                Path appDesktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
+                Path appDesktopFile = cmd.appLayout().desktopIntegrationDirectory().resolve(
                         desktopFileName);
 
                 TKit.assertFileExists(systemDesktopFile);
@@ -519,7 +619,7 @@ public final class LinuxHelper {
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime());
+                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime()).orElse(null);
 
                 TKit.assertNull(desktopFileName, String.format(
                         "Check there is no default handler for [%s] mime type",
@@ -531,7 +631,7 @@ public final class LinuxHelper {
             final Path mimeTypeIconFileName = fa.getLinuxIconFileName();
             if (mimeTypeIconFileName != null) {
                 // Verify there are xdg registration commands for mime icon file.
-                Path mimeTypeIcon = cmd.appLayout().destktopIntegrationDirectory().resolve(
+                Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
                         mimeTypeIconFileName);
 
                 Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
@@ -546,14 +646,14 @@ public final class LinuxHelper {
                 .executeAndGetFirstLineOfOutput();
     }
 
-    private static String queryMimeTypeDefaultHandler(String mimeType) {
+    private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .executeAndGetFirstLineOfOutput();
+                .discardStderr().saveFirstLineOfOutput().execute().findFirstLineOfOutput();
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,
             List<String> scriptletBody, Path iconPathInPackage) {
-        final String dashMime = IOUtils.replaceSuffix(
+        final String dashMime = PathUtils.replaceSuffix(
                 iconPathInPackage.getFileName(), null).toString();
         final String xdgCmdName = "xdg-icon-resource";
 
@@ -602,10 +702,10 @@ public final class LinuxHelper {
 
             case LINUX_RPM:
                 return getRpmScriptlets(cmd, scriptletSet);
-        }
 
-        // Unreachable
-        return null;
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     private static Map<Scriptlet, List<String>> getDebScriptlets(
@@ -670,7 +770,7 @@ public final class LinuxHelper {
 
         static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
                 Collectors.toMap(v -> v.rpm, v -> v));
-    };
+    }
 
     public static String getDefaultPackageArch(PackageType type) {
         if (archs == null) {
@@ -679,7 +779,7 @@ public final class LinuxHelper {
 
         String arch = archs.get(type);
         if (arch == null) {
-            Executor exec = null;
+            final Executor exec;
             switch (type) {
                 case LINUX_DEB:
                     exec = Executor.of("dpkg", "--print-architecture");
@@ -688,6 +788,9 @@ public final class LinuxHelper {
                 case LINUX_RPM:
                     exec = Executor.of("rpmbuild", "--eval=%{_target_cpu}");
                     break;
+
+                default:
+                    throw new UnsupportedOperationException();
             }
             arch = exec.executeAndGetFirstLineOfOutput();
             archs.put(type, arch);
@@ -720,15 +823,71 @@ public final class LinuxHelper {
         }
     }
 
+
+    private static final class DesktopFile {
+        DesktopFile(Path path, boolean verify) {
+            try {
+                List<String> lines = Files.readAllLines(path);
+                if (verify) {
+                    TKit.assertEquals("[Desktop Entry]", lines.getFirst(), "Check file header");
+                }
+
+                var stream = lines.stream().skip(1).filter(Predicate.not(String::isEmpty));
+                if (verify) {
+                    stream = stream.peek(str -> {
+                        TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str));
+                    });
+                }
+
+                data = stream.map(str -> {
+                    String components[] = str.split("=(?=.+)");
+                    if (components.length == 1) {
+                        return Map.entry(str.substring(0, str.length() - 1), "");
+                    } else {
+                        return Map.entry(components[0], components[1]);
+                    }
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        Set<String> keySet() {
+            return data.keySet();
+        }
+
+        Optional<String> find(String property) {
+            return Optional.ofNullable(data.get(Objects.requireNonNull(property)));
+        }
+
+        Optional<String> findQuotedValue(String property) {
+            return find(property).map(value -> {
+                if (Pattern.compile("\\s").matcher(value).find()) {
+                    boolean quotesMatched = value.startsWith("\"") && value.endsWith("\"");
+                    if (!quotesMatched) {
+                        TKit.assertTrue(quotesMatched,
+                                String.format("Check the value of key [%s] is enclosed in double quotes", property));
+                    }
+                    return value.substring(1, value.length() - 1);
+                } else {
+                    return value;
+                }
+            });
+        }
+
+        private final Map<String, String> data;
+    }
+
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
     private static Map<PackageType, String> archs;
 
-    private final static Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
+    private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
-    private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
 
-    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
+    private static final Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -946,12 +950,15 @@ public abstract sealed class $Type$Buffer
         return get(index, dst, 0, dst.length);
     }
 
-    private $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
-        if (
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
+    $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
 #if[char]
-            isAddressable() &&
+        assert isAddressable();
 #end[char]
-            ((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
+        if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
             long bufAddr = address + ((long)index << $LG_BYTES_PER_VALUE$);
             long dstOffset =
                 ARRAY_BASE_OFFSET + ((long)offset << $LG_BYTES_PER_VALUE$);
@@ -1112,6 +1119,10 @@ public abstract sealed class $Type$Buffer
         return this;
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
 #if[rw]
         Object srcBase = src.base();
@@ -1146,9 +1157,13 @@ public abstract sealed class $Type$Buffer
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            int posMax = pos + n;
-            for (int i = pos, j = srcPos; i < posMax; i++, j++)
-                put(i, src.get(j));
+            if (this.hb != null && src instanceof StringCharBuffer scb) {
+                scb.getArray(srcPos, this.hb, pos, n);
+            } else {
+                int posMax = pos + n;
+                for (int i = pos, j = srcPos; i < posMax; i++, j++)
+                    put(i, src.get(j));
+            }
         }
 #end[char]
 #else[rw]
@@ -1338,6 +1353,10 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
@@ -1893,6 +1912,56 @@ public abstract sealed class $Type$Buffer
 #if[char]
 
     /**
+     * Relative bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code srcEnd-srcBegin} characters from this
+     * buffer into the given array, starting at index
+     * {@code position() + srcBegin} in this buffer and at offset
+     * {@code dstBegin} in the array. The position of this buffer is unchanged.
+     *
+     * <p> An invocation of this method behaves exactly the same was as the
+     * invocation
+     *
+     * {@snippet lang=java :
+     *     get(position() + srcBegin, dst, dstBegin, srcEnd - srcBegin)
+     * }
+     *
+     * @param  srcBegin
+     *         The index in this buffer, relative to the current position,
+     *         of the first character to
+     *         read; must be non-negative and less than
+     *         {@code limit() - position()}
+     *
+     * @param  srcEnd
+     *         The index in this buffer, relative to the current position,
+     *         after the last character to read;
+     *         must be greater than or equal to {@code srcBegin} and less than
+     *         or equal to {@code limit() - position()}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @param  dstBegin
+     *         The offset within the array of the first character to be
+     *         written; must be non-negative and less than {@code dst.length}
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
+     *          and {@code dstBegin} parameters do not hold
+     *
+     * @since 25
+     */
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        // Check [srcBegin,srcEnd) is a subset of [0,limit()-position)
+        int pos = position();
+        int lim = limit();
+        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
+
+        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
+
+    /**
      * Returns a string containing the characters in this buffer.
      *
      * <p> The first character of the resulting string will be the character at
@@ -2320,6 +2389,22 @@ public abstract sealed class $Type$Buffer
     // and double will be inserted here
 
 #end[byte]
+
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return Integer.numberOfTrailingZeros($Fulltype$.BYTES);
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
 
 #if[streamableType]
 

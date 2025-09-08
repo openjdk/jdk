@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,7 @@ final class LDAPCertStoreImpl {
         "sun.security.certpath.ldap.disable.app.resource.files";
 
     static {
-        @SuppressWarnings("removal")
-        String s = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty(PROP_LIFETIME));
+        String s = System.getProperty(PROP_LIFETIME);
         if (s != null) {
             LIFETIME = Integer.parseInt(s); // throws NumberFormatException
         } else {
@@ -172,9 +170,8 @@ final class LDAPCertStoreImpl {
         env.put(Context.PROVIDER_URL, url);
 
         // If property is set to true, disable application resource file lookup.
-        @SuppressWarnings("removal")
-        boolean disableAppResourceFiles = AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(PROP_DISABLE_APP_RESOURCE_FILES));
+        boolean disableAppResourceFiles =
+                Boolean.getBoolean(PROP_DISABLE_APP_RESOURCE_FILES);
         if (disableAppResourceFiles) {
             if (debug != null) {
                 debug.println("LDAPCertStore disabling app resource files");

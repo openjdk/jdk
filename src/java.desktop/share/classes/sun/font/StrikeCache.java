@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,6 @@ public final class StrikeCache {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
 
         if (nativeAddressSize < 4) {
@@ -271,37 +270,28 @@ public final class StrikeCache {
                                     nativeAddressSize);
         }
 
-        java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction<Object>() {
-            public Object run() {
+       /* Allow a client to override the reference type used to
+        * cache strikes. The default is "soft" which hints to keep
+        * the strikes around. This property allows the client to
+        * override this to "weak" which hint to the GC to free
+        * memory more aggressively.
+        */
+       String refType = System.getProperty("sun.java2d.font.reftype", "soft");
+       cacheRefTypeWeak = refType.equals("weak");
 
-               /* Allow a client to override the reference type used to
-                * cache strikes. The default is "soft" which hints to keep
-                * the strikes around. This property allows the client to
-                * override this to "weak" which hint to the GC to free
-                * memory more aggressively.
-                */
-               String refType =
-                   System.getProperty("sun.java2d.font.reftype", "soft");
-               cacheRefTypeWeak = refType.equals("weak");
-
-                String minStrikesStr =
-                    System.getProperty("sun.java2d.font.minstrikes");
-                if (minStrikesStr != null) {
-                    try {
-                        MINSTRIKES = Integer.parseInt(minStrikesStr);
-                        if (MINSTRIKES <= 0) {
-                            MINSTRIKES = 1;
-                        }
-                    } catch (NumberFormatException e) {
-                    }
+        String minStrikesStr =
+            System.getProperty("sun.java2d.font.minstrikes");
+        if (minStrikesStr != null) {
+            try {
+                MINSTRIKES = Integer.parseInt(minStrikesStr);
+                if (MINSTRIKES <= 0) {
+                    MINSTRIKES = 1;
                 }
-
-                recentStrikes = new FontStrike[MINSTRIKES];
-
-                return null;
+            } catch (NumberFormatException e) {
             }
-        });
+        }
+
+        recentStrikes = new FontStrike[MINSTRIKES];
     }
 
 

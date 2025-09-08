@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +37,38 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 
 class GCTimer;
+class ShenandoahGeneration;
+
+#define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
+  switch (generation_type) {                                              \
+    case NON_GEN:                                                         \
+      return prefix postfix;                                              \
+    case GLOBAL:                                                          \
+      return prefix " (Global)" postfix;                                  \
+    case YOUNG:                                                           \
+      return prefix " (Young)" postfix;                                   \
+    case OLD:                                                             \
+      return prefix " (Old)" postfix;                                     \
+    default:                                                              \
+      ShouldNotReachHere();                                               \
+      return prefix " (Unknown)" postfix;                                 \
+  }                                                                       \
 
 class ShenandoahGCSession : public StackObj {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   GCTimer*  const _timer;
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
 public:
-  ShenandoahGCSession(GCCause::Cause cause);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();
 };
 
@@ -223,5 +241,20 @@ public:
     assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
   }
 };
+
+// Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.
+// This CADR class enforces this by forbidding region uncommits while it is in scope.
+class ShenandoahNoUncommitMark : public StackObj {
+  ShenandoahHeap* const _heap;
+public:
+  explicit ShenandoahNoUncommitMark(ShenandoahHeap* heap) : _heap(heap) {
+    _heap->forbid_uncommit();
+  }
+
+  ~ShenandoahNoUncommitMark() {
+    _heap->allow_uncommit();
+  }
+};
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

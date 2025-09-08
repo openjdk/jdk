@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,17 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * Before returning from {@code awaitAndCheck}, the framework disposes of
  * all the windows and frames.
  *
+ * <p id="forcePassAndFail">
+ * For semi-automatic tests, use {@code forcePass} or
+ * {@code forceFail} methods to forcibly pass or fail the test
+ * when it's determined that the required conditions are already met
+ * or cannot be met correspondingly.
+ * These methods release {@code awaitAndCheck}, and
+ * the test will complete successfully or fail.
+ * <p>
+ * Refer to examples of using these methods in the description of the
+ * {@link #forcePass() forcePass} and {@link #forceFail() forceFail} methods.
+ *
  * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
  * {@snippet id='sampleManualTestCode' lang='java':
@@ -184,21 +195,23 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *
  * <p id="jtregTagsForTest">
  * Add the following jtreg tags before the test class declaration
- * {@snippet :
+ * <pre><code>
  * /*
- *  * @test
+ *  * &#64;test
  *  * @summary Sample manual test
  *  * @library /java/awt/regtesthelpers
  *  * @build PassFailJFrame
  *  * @run main/manual SampleManualTest
- * }
- * and the closing comment tag <code>*&#47;</code>.
+ *  *&#47;
+ * </code></pre>
  * <p>
  * The {@code @library} tag points to the location of the
  * {@code PassFailJFrame} class in the source code;
  * the {@code @build} tag makes jtreg compile the {@code PassFailJFrame} class,
  * and finally the {@code @run} tag specifies it is a manual
  * test and the class to run.
+ * <p>
+ * Don't forget to update the name of the class to run in the {@code @run} tag.
  *
  * <h2 id="usingBuilder">Using {@code Builder}</h2>
  * Use methods of the {@link Builder Builder} class to set or change
@@ -357,7 +370,7 @@ public final class PassFailJFrame {
      * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param instructions the instructions for the tester
@@ -380,7 +393,7 @@ public final class PassFailJFrame {
      * and the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param instructions the instructions for the tester
@@ -402,9 +415,8 @@ public final class PassFailJFrame {
      * with the given title, instructions and timeout as well as
      * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param title        the title of the instruction frame
@@ -425,38 +437,8 @@ public final class PassFailJFrame {
     /**
      * Constructs a frame which displays test instructions and
      * the <i>Pass</i> / <i>Fail</i> buttons
-     * with the given title, instructions, timeout, number of rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
-     * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
-     * more details.
-     *
-     * @param title        the title of the instruction frame
-     * @param instructions the instructions for the tester
-     * @param testTimeOut  the test timeout in minutes
-     * @param rows         the number of rows for the text component
-     *                     which displays test instructions
-     * @param columns      the number of columns for the text component
-     *                     which displays test instructions
-     *
-     * @throws InterruptedException if the current thread is interrupted
-     *              while waiting for EDT to finish creating UI components
-     * @throws InvocationTargetException if an exception is thrown while
-     *              creating UI components on EDT
-     */
-    public PassFailJFrame(String title, String instructions,
-                          long testTimeOut,
-                          int rows, int columns)
-            throws InterruptedException, InvocationTargetException {
-        this(title, instructions, testTimeOut, rows, columns, false);
-    }
-
-    /**
-     * Constructs a frame which displays test instructions and
-     * the <i>Pass</i> / <i>Fail</i> buttons
      * as well as supporting UI components with the given title, instructions,
-     * timeout, number of rows and columns,
-     * and screen capture functionality.
+     * timeout, number of rows and columns.
      * All the UI components are created on the EDT, so it is safe to call
      * the constructor on the main thread.
      * <p>
@@ -481,12 +463,6 @@ public final class PassFailJFrame {
      * the size of a text component which displays the instructions.
      * The preferred size of the instructions is calculated by
      * creating {@code new JTextArea(rows, columns)}.
-     * <p>
-     * If you enable screenshots by setting the {@code screenCapture}
-     * parameter to {@code true}, a <i>Screenshot</i> button is added.
-     * Clicking the <i>Screenshot</i> button takes screenshots of
-     * all the monitors or all the windows registered with
-     * {@code PassFailJFrame}.
      *
      * @param title        the title of the instruction frame
      * @param instructions the instructions for the tester
@@ -495,8 +471,6 @@ public final class PassFailJFrame {
      *                     which displays test instructions
      * @param columns      the number of columns for the text component
      *                     which displays test instructions
-     * @param screenCapture if set to {@code true}, enables screen capture
-     *                      functionality
      *
      * @throws InterruptedException if the current thread is interrupted
      *              while waiting for EDT to finish creating UI components
@@ -508,13 +482,11 @@ public final class PassFailJFrame {
      */
     public PassFailJFrame(String title, String instructions,
                           long testTimeOut,
-                          int rows, int columns,
-                          boolean screenCapture)
+                          int rows, int columns)
             throws InterruptedException, InvocationTargetException {
         invokeOnEDT(() -> createUI(title, instructions,
                                    testTimeOut,
-                                   rows, columns,
-                                   screenCapture));
+                                   rows, columns));
     }
 
     /**
@@ -611,8 +583,7 @@ public final class PassFailJFrame {
     }
 
     private static void createUI(String title, String instructions,
-                                 long testTimeOut, int rows, int columns,
-                                 boolean enableScreenCapture) {
+                                 long testTimeOut, int rows, int columns) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
@@ -621,7 +592,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
-                                           enableScreenCapture,
+                                           false,
                                            false, 0),
                   BorderLayout.CENTER);
         frame.pack();
@@ -673,6 +644,8 @@ public final class PassFailJFrame {
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
+        text.setBorder(createTextBorder());
+        text.setCaretPosition(0);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
@@ -727,7 +700,6 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
-        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -741,10 +713,10 @@ public final class PassFailJFrame {
 
         HTMLEditorKit kit = (HTMLEditorKit) text.getEditorKit();
         StyleSheet styles = kit.getStyleSheet();
-        // Reduce the default margins
-        styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
-        // Make the size of code blocks the same as other text
-        styles.addRule("code { font-size: inherit }");
+        // Reduce the list default margins
+        styles.addRule("ol, ul { margin-left-ltr: 30; margin-left-rtl: 30 }");
+        // Make the size of code (and other elements) the same as other text
+        styles.addRule("code, kbd, samp, pre { font-size: inherit }");
 
         return text;
     }
@@ -1333,28 +1305,50 @@ public final class PassFailJFrame {
 
     /**
      * Forcibly pass the test.
-     * <p>The sample usage:
-     * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
-     * </code></pre>
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
+     * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
         latch.countDown();
     }
 
     /**
-     *  Forcibly fail the test.
+     * Forcibly fail the test.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/0844745e7bd954a96441365f8010741ec1c29dbf/test/jdk/javax/swing/JScrollPane/AcceleratedWheelScrolling/HorizScrollers.java#L180">{@code
+     * HorizScrollers.java}</a>
      */
     public static void forceFail() {
         forceFail("forceFail called");
     }
 
     /**
-     *  Forcibly fail the test and provide a reason.
+     * Forcibly fail the test and provide a reason.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b075aa289dbb9cb80f6937b3349c8d4769/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L86">{@code
+     * SaveFileNameOverrideTest.java}</a>
      *
      * @param reason the reason why the test is failed
      */
@@ -1753,7 +1747,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUI(PanelCreator panelCreator) {
             return splitUIRight(panelCreator);
@@ -1770,7 +1764,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIRight(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
@@ -1787,7 +1781,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIBottom(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
@@ -1803,7 +1797,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         private Builder splitUI(PanelCreator panelCreator,
                                 int splitUIOrientation) {
@@ -1827,8 +1821,20 @@ public final class PassFailJFrame {
 
         public PassFailJFrame build() throws InterruptedException,
                 InvocationTargetException {
-            validate();
-            return new PassFailJFrame(this);
+            try {
+                validate();
+                return new PassFailJFrame(this);
+            } catch (final Throwable t) {
+                // Dispose of all the windows, including those that may not
+                // be registered with PassFailJFrame to allow AWT to shut down
+                try {
+                    invokeOnEDT(() -> Arrays.stream(Window.getWindows())
+                                            .forEach(Window::dispose));
+                } catch (Throwable edt) {
+                    t.addSuppressed(edt);
+                }
+                throw t;
+            }
         }
 
         /**

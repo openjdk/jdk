@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
+    public boolean isCompressible() {
+        return !compressed;
+    }
+
+    @Override
     public abstract JavaConstant compress();
 
     @Override
@@ -84,19 +89,15 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
-    public JavaConstant getCallSiteTarget(Assumptions assumptions) {
+    public Assumptions.AssumptionResult<JavaConstant> getCallSiteTarget() {
         if (runtime().getCallSite().isInstance(this)) {
             // For ConstantCallSites, we need to read "isFrozen" before reading "target"
             // isFullyInitializedConstantCallSite() reads "isFrozen"
             if (isFullyInitializedConstantCallSite()) {
-                return readTarget();
-            }
-            if (assumptions == null) {
-                return null;
+                return new Assumptions.AssumptionResult<>(readTarget());
             }
             HotSpotObjectConstantImpl result = readTarget();
-            assumptions.record(new Assumptions.CallSiteTargetValue(this, result));
-            return result;
+            return new Assumptions.AssumptionResult<>(result, new Assumptions.CallSiteTargetValue(this, result));
         }
         return null;
     }

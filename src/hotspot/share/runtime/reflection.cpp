@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -321,9 +320,16 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
 }
 
+
+// Conversion
+static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
+  assert(java_lang_Class::is_primitive(basic_type_mirror),
+    "just checking");
+  return java_lang_Class::primitive_type(basic_type_mirror);
+}
+
 static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror), "just checking");
-  BasicType type = java_lang_Class::primitive_type(basic_type_mirror);
+  BasicType type = basic_type_mirror_to_basic_type(basic_type_mirror);
   if (type == T_VOID) {
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
@@ -340,8 +346,11 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
-    Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
-    return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
+    BasicType type = basic_type_mirror_to_basic_type(element_mirror);
+    if (type == T_VOID) {
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
+    }
+    return oopFactory::new_typeArray(type, length, CHECK_NULL);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
@@ -448,12 +457,6 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (vmClasses::reflect_SerializationConstructorAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return ACCESS_OK;
-  }
 
   // module boundaries
   if (new_class->is_public()) {
@@ -548,14 +551,14 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
       } else {
-        oop jlm = module_to->module();
-        assert(jlm != nullptr, "Null jlm in module_to ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_to->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_X ") because module %s does not read unnamed module @" SIZE_FORMAT_X,
+          "class %s (in module %s) cannot access class %s (in unnamed module @0x%zx) because module %s does not read unnamed module @0x%zx",
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
       }
@@ -575,14 +578,14 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
-        oop jlm = module_from->module();
-        assert(jlm != nullptr, "Null jlm in module_from ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_from->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in unnamed module @" SIZE_FORMAT_X ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_X,
+          "class %s (in unnamed module @0x%zx) cannot access class %s (in module %s) because module %s does not export %s to unnamed module @0x%zx",
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));
       }
@@ -658,12 +661,6 @@ bool Reflection::verify_member_access(const Klass* current_class,
     }
   }
 
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return true;
-  }
-
   // Check for special relaxations
   return can_relax_access_check_for(current_class, member_class, classloader_only);
 }
@@ -709,6 +706,7 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 
   // 'inner' not declared as an inner klass in outer
   ResourceMark rm(THREAD);
+  // Names are all known to be < 64k so we know this formatted message is not excessively large.
   Exceptions::fthrow(
     THREAD_AND_LOCATION,
     vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -789,7 +787,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   Handle name = Handle(THREAD, name_oop);
   if (name == nullptr) return nullptr;
 
-  const int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  const int modifiers = method->access_flags().as_method_flags();
 
   Handle mh = java_lang_reflect_Method::create(CHECK_NULL);
 
@@ -830,7 +828,7 @@ oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   objArrayHandle exception_types = get_exception_types(method, CHECK_NULL);
   assert(!exception_types.is_null(), "cannot return null");
 
-  const int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  const int modifiers = method->access_flags().as_method_flags();
 
   Handle ch = java_lang_reflect_Constructor::create(CHECK_NULL);
 
@@ -870,7 +868,7 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
     java_lang_reflect_Field::set_trusted_final(rh());
   }
   // Note the ACC_ANNOTATION bit, which is a per-class access flag, is never set here.
-  java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
+  java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_field_flags());
   java_lang_reflect_Field::set_override(rh(), false);
   if (fd->has_generic_signature()) {
     Symbol*  gs = fd->generic_signature();
@@ -917,13 +915,6 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
                                        true,
                                        CHECK_(methodHandle()));
   return methodHandle(THREAD, info.selected_method());
-}
-
-// Conversion
-static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror),
-    "just checking");
-  return java_lang_Class::primitive_type(basic_type_mirror);
 }
 
 // Narrowing of basic types. Used to create correct jvalues for

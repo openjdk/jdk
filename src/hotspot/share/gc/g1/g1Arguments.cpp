@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
@@ -34,6 +33,7 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -71,6 +71,9 @@ void G1Arguments::initialize_alignments() {
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
+  if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
+    return G1HeapRegion::max_ergonomics_size();
+  }
   return G1HeapRegion::max_region_size();
 }
 
@@ -193,8 +196,8 @@ void G1Arguments::initialize() {
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
     // In G1, we want the default GC overhead goal to be higher than
     // it is for PS, or the heap might be expanded too aggressively.
-    // We set it here to ~8%.
-    FLAG_SET_DEFAULT(GCTimeRatio, 12);
+    // We set it here to 4%.
+    FLAG_SET_DEFAULT(GCTimeRatio, 24);
   }
 
   // Below, we might need to calculate the pause time interval based on
@@ -243,10 +246,8 @@ void G1Arguments::initialize() {
   if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
-}
 
-void G1Arguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 CollectedHeap* G1Arguments::create_heap() {

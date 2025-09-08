@@ -34,14 +34,15 @@
 
 class oopDesc;
 
-// ShowRegistersOnAssert support (for now Linux only)
-#if defined(LINUX) && !defined(ZERO)
+// ShowRegistersOnAssert support (for now Linux and Windows only)
+#if (defined(LINUX) || defined(_WINDOWS)) && !defined(ZERO)
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
+extern const char* g_assert_poison_read_only;
 #define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
 void initialize_assert_poison();
 void disarm_assert_poison();
-bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address);
+bool handle_assert_poison_fault(const void* ucVoid);
 #else
 #define TOUCH_ASSERT_POISON
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT

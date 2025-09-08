@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Simple benchmark measuring cost of looking up entries in a jar file.
@@ -71,6 +74,9 @@ public class JarFileGetEntry {
     @Param({"512", "1024"})
     private int size;
 
+    @Param({"false", "true"})
+    private boolean mr;
+
     public JarFile jarFile;
     public String[]         entryNames;
     public String[]         missingEntryNames;
@@ -91,9 +97,20 @@ public class JarFileGetEntry {
         entryNames = new String[size];
         missingEntryNames = new String[size];
 
+        Manifest man = new Manifest();
+        man.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        if (mr) {
+            man.getMainAttributes().put(Attributes.Name.MULTI_RELEASE, "true");
+        }
         try (FileOutputStream fos = new FileOutputStream(tempFile);
-             JarOutputStream jos = new JarOutputStream(fos)) {
+             JarOutputStream jos = new JarOutputStream(fos, man)) {
 
+            if (mr) {
+                // Add a few versioned entries
+                jos.putNextEntry(new ZipEntry("META-INF/versions/9/module-info.class"));
+                jos.putNextEntry(new ZipEntry("META-INF/versions/17/foo/library/Library.class"));
+                jos.putNextEntry(new ZipEntry("META-INF/versions/21/foo/library/Library.class"));
+            }
             Random random = new Random(4711);
             for (int i = 0; i < size; i++) {
                 String ename = "entry-" + (random.nextInt(90000) + 10000) + "-" + i;
@@ -107,7 +124,7 @@ public class JarFileGetEntry {
             }
         }
 
-        jarFile = new JarFile(tempFile);
+        jarFile = new JarFile(tempFile, true, ZipFile.OPEN_READ, mr ? JarFile.runtimeVersion() : JarFile.baseVersion());
     }
 
     @Benchmark

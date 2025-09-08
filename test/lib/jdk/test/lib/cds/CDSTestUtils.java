@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class CDSTestUtils {
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
         "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
+    public static final String MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE =
+        "an object points to a static field that may hold a different value at runtime";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -226,9 +228,6 @@ public class CDSTestUtils {
     public static final boolean copyChildStdoutToMainStdout =
         Boolean.getBoolean("test.cds.copy.child.stdout");
 
-    // This property is passed to child test processes
-    public static final String TestTimeoutFactor = System.getProperty("test.timeout.factor", "1.0");
-
     public static final String UnableToMapMsg =
         "Unable to map shared archive: test did not complete";
 
@@ -253,7 +252,7 @@ public class CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:dump");
-        cmd.add("-Xlog:cds,cds+hashtables");
+        cmd.add("-Xlog:cds,aot+hashtables");
         if (opts.archiveName == null)
             opts.archiveName = getDefaultArchiveName();
         cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
@@ -284,6 +283,7 @@ public class CDSTestUtils {
             output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
 
         for (String match : extraMatches) {
             output.shouldContain(match);
@@ -296,6 +296,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkBaseDump(OutputAnalyzer output) throws Exception {
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         return output;
     }
 
@@ -429,14 +430,13 @@ public class CDSTestUtils {
         ArrayList<String> cmd = new ArrayList<String>();
         cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
-        cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
+        cmd.add("-Dtest.timeout.factor=" + Utils.TIMEOUT_FACTOR);
 
         if (!opts.useSystemArchive) {
             if (opts.archiveName == null)
                 opts.archiveName = getDefaultArchiveName();
             cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
         }
-        addVerifyArchivedFields(cmd);
 
         if (opts.useVersion)
             cmd.add("-version");
@@ -774,8 +774,10 @@ public class CDSTestUtils {
 
     // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
     // must be copied, because the java.home property is derived from the canonicalized paths of these 2 files.
-    // Set a list of {jvm, "java"} which will be physically copied. If a file needs copied physically, add it to the list.
-    private static String[] phCopied = {System.mapLibraryName("jvm"), "java"};
+    // The jvm.cfg file must be copied because the cds/NonJVMVariantLocation.java
+    // test is testing a CDS archive can be loaded from a non-JVM variant directory.
+    // Set a list of {jvm, "java", "jvm.cfg"} which will be physically copied. If a file needs copied physically, add it to the list.
+    private static String[] phCopied = {System.mapLibraryName("jvm"), "java", "jvm.cfg"};
     public static void clone(File src, File dst) throws Exception {
         if (dst.exists()) {
             if (!dst.isDirectory()) {
@@ -858,5 +860,25 @@ public class CDSTestUtils {
         Path destPath = newDir.resolve(jarName);
         Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
         return destPath;
+    }
+
+    // Some tests were initially written without the knowledge of -XX:+AOTClassLinking. These tests need to
+    // be adjusted if -XX:+AOTClassLinking is specified in jtreg -vmoptions or -javaoptions:
+    public static boolean isAOTClassLinkingEnabled() {
+        return isBooleanVMOptionEnabledInCommandLine("AOTClassLinking");
+    }
+
+    public static boolean isBooleanVMOptionEnabledInCommandLine(String optionName) {
+        String lastMatch = null;
+        String pattern = "^-XX:." + optionName + "$";
+        for (String s : Utils.getTestJavaOpts()) {
+            if (s.matches(pattern)) {
+                lastMatch = s;
+            }
+        }
+        if (lastMatch != null && lastMatch.equals("-XX:+" + optionName)) {
+            return true;
+        }
+        return false;
     }
 }

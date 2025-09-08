@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.jar.JarFile;
-import java.security.Permission;
 
 import jdk.internal.util.OperatingSystem;
 import sun.net.util.URLUtil;
+import sun.net.www.ParseUtil;
+import static jdk.internal.util.Exceptions.filterJarName;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /* A factory for cached JAR file. This class is used to both retrieve
  * and cache Jar files.
@@ -93,7 +95,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             return get(url, false);
         }
         URL patched = urlFor(url);
-        if (!URLJarFile.isFileURL(patched)) {
+        if (!ParseUtil.isLocalFileURL(patched)) {
             // A temporary file will be created, we can prepopulate
             // the cache in this case.
             return get(url, useCaches);
@@ -108,7 +110,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             result = URLJarFile.getJarFile(patched, this);
         }
         if (result == null)
-            throw new FileNotFoundException(url.toString());
+            throw new FileNotFoundException(formatMsg("%s", filterJarName(url.toString())));
         return result;
     }
 
@@ -159,9 +161,10 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();
-            if (host != null && !host.isEmpty() &&
-                    !host.equalsIgnoreCase("localhost")) {
-
+            // Subtly different from ParseUtil.isLocalFileURL, for historical reasons
+            boolean isLocalFile = ParseUtil.isLocalFileURL(url) && !"~".equals(host);
+            // For remote hosts, change 'file://host/folder/data.xml' to 'file:////host/folder/data.xml'
+            if (!isLocalFile) {
                 @SuppressWarnings("deprecation")
                 var _unused = url = new URL("file", "", "//" + host + url.getPath());
             }
@@ -199,7 +202,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             result = URLJarFile.getJarFile(url, this);
         }
         if (result == null)
-            throw new FileNotFoundException(url.toString());
+            throw new FileNotFoundException(formatMsg("%s", filterJarName(url.toString())));
 
         return result;
     }
@@ -219,52 +222,12 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
     private JarFile getCachedJarFile(URL url) {
         assert Thread.holdsLock(instance);
-        JarFile result = fileCache.get(urlKey(url));
-
-        /* if the JAR file is cached, the permission will always be there */
-        if (result != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                Permission perm = getPermission(result);
-                if (perm != null) {
-                    try {
-                        sm.checkPermission(perm);
-                    } catch (SecurityException se) {
-                        // fallback to checkRead/checkConnect for pre 1.2
-                        // security managers
-                        if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().contains("read")) {
-                            sm.checkRead(perm.getName());
-                        } else if ((perm instanceof
-                            java.net.SocketPermission) &&
-                            perm.getActions().contains("connect")) {
-                            sm.checkConnect(url.getHost(), url.getPort());
-                        } else {
-                            throw se;
-                        }
-                    }
-                }
-            }
-        }
-        return result;
+        return fileCache.get(urlKey(url));
     }
 
     private String urlKey(URL url) {
         String urlstr =  URLUtil.urlNoFragString(url);
         if ("runtime".equals(url.getRef())) urlstr += "#runtime";
         return urlstr;
-    }
-
-    private Permission getPermission(JarFile jarFile) {
-        try {
-            URLConnection uc = getConnection(jarFile);
-            if (uc != null)
-                return uc.getPermission();
-        } catch (IOException ioe) {
-            // gulp
-        }
-
-        return null;
     }
 }

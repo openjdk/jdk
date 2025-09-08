@@ -49,12 +49,12 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
+ * @test id=Z
+ * @requires vm.gc.Z
  * @bug 8277072 8327180
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (ZGC)
- * @run testng/othervm -Xmx64m -XX:+UseZGC -XX:+ZGenerational ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
  */
 
 /*

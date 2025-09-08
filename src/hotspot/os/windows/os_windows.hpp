@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class os::win32 {
  protected:
   static int    _processor_type;
   static int    _processor_level;
-  static julong _physical_memory;
+  static size_t _physical_memory;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
   static bool   _processor_group_warning_displayed;
@@ -102,9 +102,9 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static julong available_memory();
-  static julong free_memory();
-  static julong physical_memory() { return _physical_memory; }
+  static bool available_memory(size_t& value);
+  static bool free_memory(size_t& value);
+  static size_t physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
@@ -146,22 +146,7 @@ class os::win32 {
   // return information about that area.
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
-#ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accessors.
-  static address fast_jni_accessor_wrapper(BasicType);
-#endif
-
-  // Fast access to current thread
-protected:
-  static int _thread_ptr_offset;
-private:
-  static void initialize_thread_ptr_offset();
 public:
-  static inline void set_thread_ptr_offset(int offset) {
-    _thread_ptr_offset = offset;
-  }
-  static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
-
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();

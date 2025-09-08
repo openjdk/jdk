@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
- * @test
- * @bug 8004476
- * @summary test XPath extension functions
- * @run main/othervm -Djava.security.manager=allow XPathExFuncTest
- */
+
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.security.AllPermission;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Iterator;
 import java.util.List;
 import javax.xml.XMLConstants;
@@ -52,9 +40,10 @@ import javax.xml.xpath.XPathFunctionResolver;
 import org.w3c.dom.Document;
 
 /**
- * test XPath extension functions
- *
- * @author huizhe.wang@oracle.com
+ * @test
+ * @bug 8004476
+ * @summary test XPath extension functions
+ * @run main/othervm XPathExFuncTest
  */
 public class XPathExFuncTest extends TestBase {
 
@@ -68,7 +57,7 @@ public class XPathExFuncTest extends TestBase {
     public XPathExFuncTest(String name) {
         super(name);
     }
-    boolean hasSM;
+
     String xslFile, xslFileId;
     String xmlFile, xmlFileId;
 
@@ -98,7 +87,7 @@ public class XPathExFuncTest extends TestBase {
     public void testExtFunc() {
 
         try {
-            evaluate(false);
+            evaluate(false, false);
             System.out.println("testExtFunc: OK");
         } catch (XPathFactoryConfigurationException e) {
             fail(e.getMessage());
@@ -108,43 +97,32 @@ public class XPathExFuncTest extends TestBase {
     }
 
     /**
-     * Security is enabled, extension function not allowed
+     * Security is enabled, extension function not allowed.
+     * Note: removing Security Manager, use FEATURE_SECURE_PROCESSING instead.
      */
     public void testExtFuncNotAllowed() {
-        Policy p = new SimplePolicy(new AllPermission());
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
-
         try {
-            evaluate(false);
+            evaluate(true, false);
         } catch (XPathFactoryConfigurationException e) {
             fail(e.getMessage());
         } catch (XPathExpressionException ex) {
             //expected since extension function is disallowed
             System.out.println("testExtFuncNotAllowed: OK");
-        } finally {
-            System.setSecurityManager(null);
         }
     }
 
     /**
-     * Security is enabled, use new feature: enableExtensionFunctions
+     * Security is enabled, use new feature: enableExtensionFunctions.
+     * Note: removing Security Manager, use FEATURE_SECURE_PROCESSING instead.
      */
     public void testEnableExtFunc() {
-        Policy p = new SimplePolicy(new AllPermission());
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
-
-
         try {
-            evaluate(true);
+            evaluate(true, true);
             System.out.println("testEnableExt: OK");
         } catch (XPathFactoryConfigurationException e) {
             fail(e.getMessage());
         } catch (XPathExpressionException e) {
             fail(e.getMessage());
-        } finally {
-            System.setSecurityManager(null);
         }
     }
 
@@ -164,10 +142,17 @@ public class XPathExFuncTest extends TestBase {
         return document;
     }
 
-    void evaluate(boolean enableExt) throws XPathFactoryConfigurationException, XPathExpressionException {
+    void evaluate(boolean secureMode, boolean enableExt)
+            throws XPathFactoryConfigurationException, XPathExpressionException {
         Document document = getDocument();
 
         XPathFactory xPathFactory = XPathFactory.newInstance();
+        if (secureMode) {
+            xPathFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } else {
+            xPathFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
+        }
+
         /**
          * Use of the extension function 'http://exslt.org/strings:tokenize' is
          * not allowed when the secure processing feature is set to true.
@@ -178,9 +163,6 @@ public class XPathExFuncTest extends TestBase {
         }
 
         xPathFactory.setXPathFunctionResolver(new MyXPathFunctionResolver());
-        if (System.getSecurityManager() == null) {
-            xPathFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
-        }
 
         XPath xPath = xPathFactory.newXPath();
         xPath.setNamespaceContext(new MyNamespaceContext());
@@ -251,37 +233,5 @@ public class XPathExFuncTest extends TestBase {
             isSupported = false;
         }
         return isSupported;
-    }
-
-    class SimplePolicy extends Policy {
-
-        private final Permissions perms;
-
-        public SimplePolicy(Permission... permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions) {
-                perms.add(permission);
-            }
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p);
-        }
-
-        //for older jdk
-        @Override
-        public void refresh() {
-        }
     }
 }

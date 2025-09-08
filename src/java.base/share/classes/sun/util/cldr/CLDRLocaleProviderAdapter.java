@@ -25,10 +25,6 @@
 
 package sun.util.cldr;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.util.Arrays;
@@ -75,24 +71,14 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         parentLocalesMap.put(Locale.US, Locale.US);
     }
 
-    @SuppressWarnings("removal")
     public CLDRLocaleProviderAdapter() {
-        LocaleDataMetaInfo nbmi;
-
-        try {
-            nbmi = AccessController.doPrivileged((PrivilegedExceptionAction<LocaleDataMetaInfo>) () -> {
-                for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
-                    if (ldmi.getType() == Type.CLDR) {
-                        return ldmi;
-                    }
-                }
-                return null;
-            });
-        } catch (PrivilegedActionException pae) {
-            throw new InternalError(pae.getCause());
+        for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+            if (ldmi.getType() == Type.CLDR) {
+                nonBaseMetaInfo = ldmi;
+                return;
+            }
         }
-
-        nonBaseMetaInfo = nbmi;
+        nonBaseMetaInfo = null;
     }
 
     /**
@@ -112,12 +98,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
-            @SuppressWarnings("removal")
-            CalendarDataProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CalendarDataProvider>) () ->
-                    new CLDRCalendarDataProviderImpl(
+            CalendarDataProvider provider = new CLDRCalendarDataProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("CalendarData")));
+                        getLanguageTagSet("CalendarData"));
 
             synchronized (this) {
                 if (calendarDataProvider == null) {
@@ -131,12 +114,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         if (calendarNameProvider == null) {
-            @SuppressWarnings("removal")
-            CalendarNameProvider provider = AccessController.doPrivileged(
-                    (PrivilegedAction<CalendarNameProvider>) ()
-                    -> new CLDRCalendarNameProviderImpl(
+            CalendarNameProvider provider = new CLDRCalendarNameProviderImpl(
                             getAdapterType(),
-                            getLanguageTagSet("FormatData")));
+                            getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (calendarNameProvider == null) {
@@ -155,12 +135,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
-            @SuppressWarnings("removal")
-            TimeZoneNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<TimeZoneNameProvider>) () ->
-                    new CLDRTimeZoneNameProviderImpl(
+            TimeZoneNameProvider provider = new CLDRTimeZoneNameProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("TimeZoneNames")));
+                        getLanguageTagSet("TimeZoneNames"));
 
             synchronized (this) {
                 if (timeZoneNameProvider == null) {

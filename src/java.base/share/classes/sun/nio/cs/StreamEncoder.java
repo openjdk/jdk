@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import jdk.internal.misc.InternalLock;
 
 public final class StreamEncoder extends Writer {
 
@@ -97,26 +96,12 @@ public final class StreamEncoder extends Writer {
     }
 
     public void flushBuffer() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedFlushBuffer();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedFlushBuffer();
-            }
+        synchronized (lock) {
+            if (isOpen())
+                implFlushBuffer();
+            else
+                throw new IOException("Stream closed");
         }
-    }
-
-    private void lockedFlushBuffer() throws IOException {
-        if (isOpen())
-            implFlushBuffer();
-        else
-            throw new IOException("Stream closed");
     }
 
     public void write(int c) throws IOException {
@@ -126,30 +111,16 @@ public final class StreamEncoder extends Writer {
     }
 
     public void write(char[] cbuf, int off, int len) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedWrite(cbuf, off, len);
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedWrite(cbuf, off, len);
-            }
-        }
-    }
-
-    private void lockedWrite(char[] cbuf, int off, int len) throws IOException {
-        ensureOpen();
-        if ((off < 0) || (off > cbuf.length) || (len < 0) ||
+        synchronized (lock) {
+            ensureOpen();
+            if ((off < 0) || (off > cbuf.length) || (len < 0) ||
                 ((off + len) > cbuf.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return;
+            }
+            implWrite(cbuf, off, len);
         }
-        implWrite(cbuf, off, len);
     }
 
     public void write(String str, int off, int len) throws IOException {
@@ -164,73 +135,31 @@ public final class StreamEncoder extends Writer {
     public void write(CharBuffer cb) throws IOException {
         int position = cb.position();
         try {
-            Object lock = this.lock;
-            if (lock instanceof InternalLock locker) {
-                locker.lock();
-                try {
-                    lockedWrite(cb);
-                } finally {
-                    locker.unlock();
-                }
-            } else {
-                synchronized (lock) {
-                    lockedWrite(cb);
-                }
+            synchronized (lock) {
+                ensureOpen();
+                implWrite(cb);
             }
         } finally {
             cb.position(position);
         }
     }
 
-    private void lockedWrite(CharBuffer cb) throws IOException {
-        ensureOpen();
-        implWrite(cb);
-    }
-
     public void flush() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedFlush();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedFlush();
-            }
+        synchronized (lock) {
+            ensureOpen();
+            implFlush();
         }
-    }
-
-    private void lockedFlush() throws IOException {
-        ensureOpen();
-        implFlush();
     }
 
     public void close() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
+        synchronized (lock) {
+            if (closed)
+                return;
             try {
-                lockedClose();
+                implClose();
             } finally {
-                locker.unlock();
+                closed = true;
             }
-        } else {
-            synchronized (lock) {
-                lockedClose();
-            }
-        }
-    }
-
-    private void lockedClose() throws IOException {
-        if (closed)
-            return;
-        try {
-            implClose();
-        } finally {
-            closed = true;
         }
     }
 

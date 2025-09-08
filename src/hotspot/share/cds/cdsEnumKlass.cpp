@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/heapShared.hpp"
-#include "classfile/vmClasses.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -37,9 +36,8 @@
 
 bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
   Klass* k = orig_obj->klass();
-  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   return k->is_instance_klass() &&
-         InstanceKlass::cast(k)->java_super() == vmClasses::Enum_klass();
+         InstanceKlass::cast(k)->is_enum_subclass();
 }
 
 // -- Handling of Enum objects
@@ -73,7 +71,6 @@ void CDSEnumKlass::handle_enum_obj(int level,
   }
 
   ik->set_has_archived_enum_objs();
-  ArchiveBuilder::get_buffered_klass(ik)->set_has_archived_enum_objs();
 
   oop mirror = ik->java_mirror();
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
@@ -102,7 +99,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
   bool success = HeapShared::archive_reachable_objects_from(level, subgraph_info, oop_field);
   assert(success, "VM should have exited with unarchivable objects for _level > 1");
   int root_index = HeapShared::append_root(oop_field);
-  log_info(cds, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
+  log_info(aot, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
                       root_index, ik->external_name(), fd.name()->as_C_string(),
                       p2i((oopDesc*)oop_field));
   SystemDictionaryShared::add_enum_klass_static_field(ik, root_index);
@@ -116,9 +113,9 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
   RunTimeClassInfo* info = RunTimeClassInfo::get_for(k);
   assert(info != nullptr, "sanity");
 
-  if (log_is_enabled(Info, cds, heap)) {
+  if (log_is_enabled(Info, aot, heap)) {
     ResourceMark rm;
-    log_info(cds, heap)("Initializing Enum class: %s", k->external_name());
+    log_info(aot, heap)("Initializing Enum class: %s", k->external_name());
   }
 
   oop mirror = k->java_mirror();

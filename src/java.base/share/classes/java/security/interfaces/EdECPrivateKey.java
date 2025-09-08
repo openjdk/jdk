@@ -40,6 +40,8 @@ import java.util.Optional;
  * string lengths that are a multiple of 8, and the key is represented using
  * a byte array.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECPrivateKey extends EdECKey, PrivateKey {

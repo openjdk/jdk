@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,17 +110,21 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * The <i>ArgumentIndex</i> value is a non-negative integer written
+ * The {@code ArgumentIndex} value is a non-negative integer written
  * using the digits {@code '0'} through {@code '9'}, and represents an index into the
  * {@code arguments} array passed to the {@code format} methods
  * or the result array returned by the {@code parse} methods.
  * <p>
- * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
+ * Any constructor or method that takes a String pattern parameter will throw an {@code IllegalArgumentException} if the
+ * pattern contains an {@code ArgumentIndex} value that is equal to or exceeds an implementation limit.
+ * <p>
+ * The {@code FormatType} and {@code FormatStyle} values are used to create
  * a {@code Format} instance for the format element. The following
  * table shows how the values map to {@code Format} instances. These values
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
  * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
+ * @implNote In the reference implementation, the limit of {@code ArgumentIndex} is 10,000.
  *
  * <table class="plain">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
@@ -312,15 +316,15 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal" rowspan=3>{@code list}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code or}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code unit}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}}
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}{@code )}
  * </tbody>
  * </table>
  *
@@ -2037,7 +2041,7 @@ public class MessageFormat extends Format {
 
         // Check the correctness of arguments and offsets
         if (isValid) {
-            int lastOffset = patt.length() + 1;
+            int lastOffset = patt.length();
             for (int i = maxOff; i >= 0; --i) {
                 if (argNums[i] < 0 || argNums[i] >= MAX_ARGUMENT_INDEX
                         || offs[i] < 0 || offs[i] > lastOffset) {

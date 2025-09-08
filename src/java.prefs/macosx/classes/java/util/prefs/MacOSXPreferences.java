@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package java.util.prefs;
 import java.util.Objects;
 
 class MacOSXPreferences extends AbstractPreferences {
-    // fixme need security checks?
-
     // CF preferences file name for Java nodes with short names
     // This value is also in MacOSXPreferencesFile.c
     private static final String defaultAppName = "com.apple.java.util.prefs";

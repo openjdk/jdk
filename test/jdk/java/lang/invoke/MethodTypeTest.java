@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8366028
  * @summary unit tests for java.lang.invoke.MethodType
  * @compile MethodTypeTest.java
  * @run testng/othervm test.java.lang.invoke.MethodTypeTest
@@ -35,6 +36,8 @@ import java.lang.reflect.Method;
 
 import java.util.*;
 import org.testng.*;
+
+import static org.testng.Assert.assertThrows;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.*;
 
@@ -216,6 +219,24 @@ public class MethodTypeTest {
             prevPart = part;
         }
         return sb.toString().replace('.', '/');
+    }
+
+    @DataProvider(name = "badMethodDescriptorStrings")
+    public String[] badMethodDescriptorStrings() {
+        return new String[] {
+                "(I)",
+                "(V)V",
+                "([V)V",
+                "(" + "[".repeat(256) + "J)I",
+                "(java/lang/Object)V",
+                "()java/lang/Object",
+        };
+    }
+
+    // JDK-8366028
+    @Test(dataProvider = "badMethodDescriptorStrings", expectedExceptions = IllegalArgumentException.class)
+    public void testFromMethodDescriptorStringNegatives(String desc) {
+        MethodType.fromMethodDescriptorString(desc, null);
     }
 
     @Test

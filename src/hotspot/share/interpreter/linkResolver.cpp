@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/defaultMethods.hpp"
@@ -323,6 +322,9 @@ void LinkResolver::check_klass_accessibility(Klass* ref_klass, Klass* sel_klass,
     char* msg = Reflection::verify_class_access_msg(ref_klass,
                                                     InstanceKlass::cast(base_klass),
                                                     vca_result);
+
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
+
     bool same_module = (base_klass->module() == ref_klass->module());
     if (msg == nullptr) {
       Exceptions::fthrow(
@@ -497,7 +499,6 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
         if (natives == nullptr || InstanceKlass::cast(natives)->is_not_initialized()) {
           SystemDictionary::resolve_or_fail(vmSymbols::java_lang_invoke_MethodHandleNatives(),
                                             Handle(),
-                                            Handle(),
                                             true,
                                             CHECK_NULL);
         }
@@ -581,7 +582,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
       resolved_klass->is_array_klass()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
-    jint new_flags = flags.as_int();
+    u2 new_flags = flags.as_method_flags();
     new_flags = new_flags & (~JVM_ACC_PROTECTED);
     new_flags = new_flags | JVM_ACC_PUBLIC;
     flags.set_flags(new_flags);
@@ -616,6 +617,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
       print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
 
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),
                        "%s",
@@ -969,6 +971,7 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
     if (fd.is_private()) {
       print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),
                        "%s",
@@ -1188,6 +1191,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
     ss.print(" %s(", resolved_method->name()->as_C_string());
     resolved_method->signature()->print_as_signature_external_parameters(&ss);
     ss.print(")' not found");
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_NoSuchMethodError(),
@@ -1196,22 +1200,16 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   }
 
   // ensure that invokespecial's interface method reference is in
-  // a direct superinterface, not an indirect superinterface
+  // a direct superinterface, not an indirect superinterface or unrelated interface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
-    // Disable verification for the dynamically-generated reflection bytecodes
-    // for serialization constructor accessor.
-    bool is_reflect = klass_to_check->is_subclass_of(
-                        vmClasses::reflect_SerializationConstructorAccessorImpl_klass());
-
-    if (!is_reflect &&
-        !klass_to_check->is_same_or_direct_interface(resolved_klass)) {
+    if (!klass_to_check->is_same_or_direct_interface(resolved_klass)) {
       ResourceMark rm(THREAD);
       stringStream ss;
       ss.print("Interface method reference: '");
       resolved_method->print_external_name(&ss);
-      ss.print("', is in an indirect superinterface of %s",
+      ss.print("', is not in a direct superinterface of %s",
                current_klass->external_name());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }

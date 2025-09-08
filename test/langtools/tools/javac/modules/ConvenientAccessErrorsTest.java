@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,6 +426,37 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
 
         List<String> expected = Arrays.asList(
                 "Test.java:1:22: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.not.exported: api, m1x)",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
+    }
+
+    @Test
+    public void testInModuleImport(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }",
+                          "package api; public class Api { public String test() { return null; } }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { requires m1x; }",
+                          "package test; import module m1x; public class Test { Api api; { api.test().length(); } }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Test.java:1:54: compiler.err.cant.resolve.location: kindname.class, Api, , , (compiler.misc.location: kindname.class, test.Test, null)",
                 "1 error");
 
         if (!expected.equals(log))

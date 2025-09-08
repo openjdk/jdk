@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.amd64.*;
-import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.windbg.aarch64.*;
 import sun.jvm.hotspot.debugger.windbg.amd64.*;
-import sun.jvm.hotspot.debugger.windbg.x86.*;
 import sun.jvm.hotspot.debugger.win32.coff.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.BasicDebugEvent;
@@ -100,9 +98,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
                                   machDesc.supports32bitAlignmentOf64bitTypes());
 
     String cpu = PlatformInfo.getCPU();
-    if (cpu.equals("x86")) {
-       threadFactory = new WindbgX86ThreadFactory(this);
-    } else if (cpu.equals("amd64")) {
+    if (cpu.equals("amd64")) {
        threadFactory = new WindbgAMD64ThreadFactory(this);
     } else if (cpu.equals("aarch64")) {
       threadFactory = new WindbgAARCH64ThreadFactory(this);

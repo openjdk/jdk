@@ -243,12 +243,12 @@ public abstract class NMTBenchmark {
   public static final String ADD_EXPORTS = "--add-exports";
   public static final String MISC_PACKAGE = "java.base/jdk.internal.misc=ALL-UNNAMED"; // used for Unsafe API
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=off", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=off", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTOff extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=summary", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=summary", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTSummary extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=detail", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=detail", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTDetail extends NMTBenchmark { }
 }

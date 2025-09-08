@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 8065132
  * @summary Test generation of annotations on inner class parameters.
  * @library /lib/annotations/
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build annotations.classfile.ClassfileInspector SyntheticParameters
  * @run main SyntheticParameters
  */

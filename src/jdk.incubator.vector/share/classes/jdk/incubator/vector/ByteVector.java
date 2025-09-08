@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -554,7 +554,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Byte>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -689,7 +689,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             this, m,
             UN_IMPL.find(op, opc, ByteVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<ByteVector, VectorMask<Byte>>>
@@ -824,6 +825,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     = this.compare(EQ, (byte) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             this, that, m,
             BIN_IMPL.find(op, opc, ByteVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<ByteVector, VectorMask<Byte>>>
@@ -884,6 +887,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturatingUnsigned(a, b)));
             default: return null;
         }
     }
@@ -1084,7 +1099,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,byte,byte,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,byte,VectorMask)
@@ -1736,7 +1751,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1769,7 +1784,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1793,7 +1808,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1826,7 +1841,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1894,7 +1909,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2296,9 +2311,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector that = (ByteVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)(length() - origin));
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2326,9 +2342,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     ByteVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)(length() - origin));
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2347,10 +2364,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector that = (ByteVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)origin);
+        VectorMask<Byte> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2387,10 +2404,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)origin);
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2413,13 +2430,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     final
     <S extends VectorShuffle<Byte>>
     ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, byte.class, length(),
-            this, ws, null,
+            this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2440,15 +2456,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, byte.class, length(),
-                   this, ws, m,
+                   this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
@@ -2469,30 +2483,29 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            S shuffle,
                                            ByteVector v) {
         VectorMask<Byte> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         ByteVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, byte.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         ByteVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, byte.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        assert(dsp.length() == vspecies().length());
         byte[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2501,16 +2514,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
-        ByteSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), byte.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     ByteVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        ByteVector idx = this;
+        ByteVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            ByteVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Byte> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -2857,6 +2872,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp((byte)0, m, (i, a, b) -> (byte) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((byte)-1, m, (i, a, b) -> (byte)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2934,7 +2955,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2954,7 +2975,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2974,7 +2995,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision.
      */
@@ -3044,7 +3065,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3100,17 +3122,30 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, null, byte.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, null,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3233,7 +3268,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3415,7 +3451,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, ms.byteSize());
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 1);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3483,7 +3520,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         } else {
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3640,7 +3678,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         } else {
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoBooleanArray0(a, offset, m);
         }
@@ -3772,7 +3811,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             }
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, ms.byteSize());
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 1);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3857,17 +3897,30 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, byte.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, m,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
@@ -4023,26 +4076,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                ByteSpecies vsp,
-                                VectorMask<Byte> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Byte>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                ByteSpecies vsp,
-                                VectorMask<Byte> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Byte>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,
@@ -4204,9 +4237,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         private ByteSpecies(VectorShape shape,
                 Class<? extends ByteVector> vectorType,
                 Class<? extends AbstractMask<Byte>> maskType,
+                Class<? extends AbstractShuffle<Byte>> shuffleType,
                 Function<Object, ByteVector> vectorFactory) {
             super(shape, LaneType.of(byte.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Byte.SIZE);
         }
@@ -4492,6 +4526,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_64_BIT,
                             Byte64Vector.class,
                             Byte64Vector.Byte64Mask.class,
+                            Byte64Vector.Byte64Shuffle.class,
                             Byte64Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4499,6 +4534,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_128_BIT,
                             Byte128Vector.class,
                             Byte128Vector.Byte128Mask.class,
+                            Byte128Vector.Byte128Shuffle.class,
                             Byte128Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4506,6 +4542,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_256_BIT,
                             Byte256Vector.class,
                             Byte256Vector.Byte256Mask.class,
+                            Byte256Vector.Byte256Shuffle.class,
                             Byte256Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4513,6 +4550,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_512_BIT,
                             Byte512Vector.class,
                             Byte512Vector.Byte512Mask.class,
+                            Byte512Vector.Byte512Shuffle.class,
                             Byte512Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4520,6 +4558,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_Max_BIT,
                             ByteMaxVector.class,
                             ByteMaxVector.ByteMaxMask.class,
+                            ByteMaxVector.ByteMaxShuffle.class,
                             ByteMaxVector::new);
 
     /**

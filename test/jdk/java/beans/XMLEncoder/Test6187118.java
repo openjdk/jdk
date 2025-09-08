@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6187118
  * @summary Tests encoding of immutable list that creates itself
- * @run main/othervm -Djava.security.manager=allow Test6187118
+ * @run main/othervm Test6187118
  * @author Sergey Malenkov
  */
 
@@ -41,7 +41,7 @@ import java.util.List;
 
 public final class Test6187118 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6187118().test(true);
+        new Test6187118().test();
     }
 
     protected ImmutableList<String> getObject() {

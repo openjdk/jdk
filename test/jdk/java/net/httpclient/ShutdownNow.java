@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  *          isTerminated.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.RandomFactory jdk.test.lib.Utils
  *        ReferenceTracker
  * @run testng/othervm
  *       -Djdk.internal.httpclient.debug=true
@@ -41,8 +42,6 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
@@ -58,20 +57,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -191,7 +182,7 @@ public class ShutdownNow implements HttpServerAdapters {
                     Thread.sleep(sleep);
                 }
                 if (i == step) {
-                    out.printf("%d: shutting down client now%n", i, sleep);
+                    out.printf("%d: shutting down client now%n", i);
                     client.shutdownNow();
                 }
                 final int si = i;
@@ -211,7 +202,7 @@ public class ShutdownNow implements HttpServerAdapters {
             }
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).get();
         } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {
@@ -251,7 +242,7 @@ public class ShutdownNow implements HttpServerAdapters {
                     Thread.sleep(sleep);
                 }
                 if (i == step) {
-                    out.printf("%d: shutting down client now%n", i, sleep);
+                    out.printf("%d: shutting down client now%n", i);
                     client.shutdownNow();
                 }
                 final int si = i;
@@ -277,7 +268,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 }).thenCompose((c) -> c).get();
             }
        } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {

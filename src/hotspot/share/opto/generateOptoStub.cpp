@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -101,7 +100,7 @@ void GraphKit::gen_stub(address C_function,
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
   Node *last_sp = frameptr();
-  store_to_memory(control(), adr_sp, last_sp, T_ADDRESS, NoAlias, MemNode::unordered);
+  store_to_memory(control(), adr_sp, last_sp, T_ADDRESS, MemNode::unordered);
 
   // Set _thread_in_native
   // The order of stores into TLS is critical!  Setting _thread_in_native MUST
@@ -221,29 +220,25 @@ void GraphKit::gen_stub(address C_function,
   //-----------------------------
 
   // Clear last_Java_sp
-  store_to_memory(control(), adr_sp, null(), T_ADDRESS, NoAlias, MemNode::unordered);
+  store_to_memory(control(), adr_sp, null(), T_ADDRESS, MemNode::unordered);
   // Clear last_Java_pc
-  store_to_memory(control(), adr_last_Java_pc, null(), T_ADDRESS, NoAlias, MemNode::unordered);
-#if (defined(IA64) && !defined(AIX))
-  Node* adr_last_Java_fp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_fp_offset()));
-  store_to_memory(control(), adr_last_Java_fp, null(), T_ADDRESS, NoAlias, MemNode::unordered);
-#endif
+  store_to_memory(control(), adr_last_Java_pc, null(), T_ADDRESS, MemNode::unordered);
 
   // For is-fancy-jump, the C-return value is also the branch target
   Node* target = map()->in(TypeFunc::Parms);
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
-    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_offset()));
-    Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
+    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_oop_offset()));
+    Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)
-    store_to_memory(control(), adr, null(), T_ADDRESS, NoAlias, MemNode::unordered);
+    store_to_memory(control(), adr, null(), T_ADDRESS, MemNode::unordered);
   }
 
   //-----------------------------
   // check exception
   Node* adr = basic_plus_adr(top(), thread, in_bytes(Thread::pending_exception_offset()));
-  Node* pending = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
+  Node* pending = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
 
   Node* exit_memory = reset_memory();
 

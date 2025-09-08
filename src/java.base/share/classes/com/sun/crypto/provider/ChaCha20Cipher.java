@@ -245,7 +245,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 params.init((new DerValue(
                         DerValue.tag_OctetString, nonceData).toByteArray()));
             } catch (NoSuchAlgorithmException | IOException exc) {
-                throw new RuntimeException(exc);
+                throw new ProviderException(exc);
             }
         }
 
@@ -353,7 +353,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 break;
             default:
                 // Should never happen
-                throw new RuntimeException("ChaCha20 in unsupported mode");
+                throw new ProviderException("ChaCha20 in unsupported mode");
         }
         init(opmode, key, newNonce);
     }
@@ -426,7 +426,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 }
                 break;
             default:
-                throw new RuntimeException("Invalid mode: " + mode);
+                throw new ProviderException("Invalid mode: " + mode);
         }
 
         // Continue with initialization
@@ -730,7 +730,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             engine.doFinal(in, inOfs, inLen, output, 0);
         } catch (ShortBufferException | KeyException exc) {
-            throw new RuntimeException(exc);
+            throw new ProviderException(exc);
         } finally {
             // Reset the cipher's state to post-init values.
             resetStartState();
@@ -767,7 +767,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             bytesUpdated = engine.doFinal(in, inOfs, inLen, out, outOfs);
         } catch (KeyException ke) {
-            throw new RuntimeException(ke);
+            throw new ProviderException(ke);
         } finally {
             // Reset the cipher's state to post-init values.
             resetStartState();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,10 +146,8 @@ public class TestNewRatioFlag {
             long newSize = initEden + 2 * initSurv;
 
             // See GenArguments::scale_by_NewRatio_aligned for calculation in the JVM.
-            long alignedDownNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
+            long expectedNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
                     wb.getHeapSpaceAlignment());
-            long expectedNewSize = HeapRegionUsageTool.alignUp(alignedDownNewSize,
-                    wb.psVirtualSpaceAlignment());
 
             if (expectedNewSize != newSize) {
                 throw new RuntimeException("Expected young gen size is: " + expectedNewSize

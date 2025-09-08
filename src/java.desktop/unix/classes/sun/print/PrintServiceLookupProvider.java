@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,8 @@ package sun.print;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import javax.print.DocFlavor;
 import javax.print.MultiDocPrintService;
 import javax.print.PrintService;
@@ -60,7 +56,7 @@ import sun.awt.util.ThreadGroupUtils;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-public class PrintServiceLookupProvider extends PrintServiceLookup
+public final class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
@@ -95,9 +91,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to force the printing code to poll or not poll
          * for PrintServices.
          */
-        @SuppressWarnings("removal")
-        String pollStr = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
+        String pollStr = System.getProperty("sun.java2d.print.polling");
 
         if (pollStr != null) {
             if (pollStr.equalsIgnoreCase("true")) {
@@ -111,10 +105,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to specify minimum refresh time (in seconds)
          * for polling PrintServices.  The default is 120.
          */
-        @SuppressWarnings("removal")
-        String refreshTimeStr = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction(
-                "sun.java2d.print.minRefreshTime"));
+        String refreshTimeStr = System.getProperty("sun.java2d.print.minRefreshTime");
 
         if (refreshTimeStr != null) {
             try {
@@ -132,9 +123,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * take lots of time if thousands of printers are attached to a server.
          */
         if (isAIX()) {
-            @SuppressWarnings("removal")
-            String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
+            String aixPrinterEnumerator = System.getProperty("sun.java2d.print.aix.lpstat");
 
             if (aixPrinterEnumerator != null) {
                 if (aixPrinterEnumerator.equalsIgnoreCase("lpstat")) {
@@ -202,18 +191,15 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return BSD_LPD;
     }
 
-    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
-                                        new PrinterChangeListener(),
-                                        "PrinterListener", 0, false);
-                thr.setContextClassLoader(null);
-                thr.setDaemon(true);
-                return thr;
-            }).start();
+            Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                    new PrinterChangeListener(),
+                                    "PrinterListener", 0, false);
+            thr.setContextClassLoader(null);
+            thr.setDaemon(true);
+            thr.start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");
         }
     }
@@ -223,13 +209,8 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * This isn't required by the API and there's a risk doing this will
      * lead people to assume its guaranteed.
      */
+    @Override
     public synchronized PrintService[] getPrintServices() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
-
         if (printServices == null || !pollServices) {
             refreshServices();
         }
@@ -561,13 +542,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * If service attributes are specified then there must be additional
      * filtering.
      */
+    @Override
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         PrintRequestAttributeSet requestSet = null;
         PrintServiceAttributeSet serviceSet = null;
 
@@ -624,25 +601,16 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     /*
      * return empty array as don't support multi docs
      */
+    @Override
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         return new MultiDocPrintService[0];
     }
 
 
+    @Override
     public synchronized PrintService getDefaultPrintService() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
-
         // clear defaultPrintService
         defaultPrintService = null;
         String psuri = null;
@@ -701,6 +669,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return defaultPrintService;
     }
 
+    @Override
     public synchronized void
         getServicesInbackground(BackgroundLookupListener listener) {
         if (printServices != null) {
@@ -731,6 +700,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
+    @Override
     public void run() {
         PrintService[] services = getPrintServices();
         synchronized (this) {
@@ -871,7 +841,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return printerNames.toArray(new String[printerNames.size()]);
     }
 
-    @SuppressWarnings("removal")
     static String[] execCmd(final String command) {
         ArrayList<String> results = null;
         try {
@@ -886,51 +855,46 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 cmd[2] = "LC_ALL=C " + command;
             }
 
-            results = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<ArrayList<String>>() {
-                    public ArrayList<String> run() throws IOException {
+            Process proc;
+            BufferedReader bufferedReader = null;
+            File f = Files.createTempFile("prn", "xc")
+                          .toFile();
+            cmd[2] = cmd[2] + ">" + f.getAbsolutePath();
 
-                        Process proc;
-                        BufferedReader bufferedReader = null;
-                        File f = Files.createTempFile("prn","xc").toFile();
-                        cmd[2] = cmd[2]+">"+f.getAbsolutePath();
-
-                        proc = Runtime.getRuntime().exec(cmd);
-                        try {
-                            boolean done = false; // in case of interrupt.
-                            while (!done) {
-                                try {
-                                    proc.waitFor();
-                                    done = true;
-                                } catch (InterruptedException e) {
-                                }
-                            }
-
-                            if (proc.exitValue() == 0) {
-                                FileReader reader = new FileReader(f);
-                                bufferedReader = new BufferedReader(reader);
-                                String line;
-                                ArrayList<String> results = new ArrayList<>();
-                                while ((line = bufferedReader.readLine())
-                                       != null) {
-                                    results.add(line);
-                                }
-                                return results;
-                            }
-                        } finally {
-                            f.delete();
-                            // promptly close all streams.
-                            if (bufferedReader != null) {
-                                bufferedReader.close();
-                            }
-                            proc.getInputStream().close();
-                            proc.getErrorStream().close();
-                            proc.getOutputStream().close();
-                        }
-                        return null;
+            proc = Runtime.getRuntime().exec(cmd);
+            try {
+                boolean done = false; // in case of interrupt.
+                while (!done) {
+                    try {
+                        proc.waitFor();
+                        done = true;
+                    } catch (InterruptedException ignored) {
                     }
-                });
-        } catch (PrivilegedActionException e) {
+                }
+
+                if (proc.exitValue() == 0) {
+                    FileReader reader = new FileReader(f);
+                    bufferedReader = new BufferedReader(reader);
+                    String line;
+                    while ((line = bufferedReader.readLine())
+                           != null) {
+                        results.add(line);
+                    }
+                }
+            } finally {
+                f.delete();
+                // promptly close all streams.
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
+                proc.getInputStream()
+                    .close();
+                proc.getErrorStream()
+                    .close();
+                proc.getOutputStream()
+                    .close();
+            }
+        } catch (IOException ignored) {
         }
         if (results == null) {
             return new String[0];
@@ -939,7 +903,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
-    private class PrinterChangeListener implements Runnable {
+    private final class PrinterChangeListener implements Runnable {
 
         @Override
         public void run() {

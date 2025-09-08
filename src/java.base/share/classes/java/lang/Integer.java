@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +95,13 @@ public final class Integer extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Integer>  TYPE = (Class<Integer>) Class.getPrimitiveClass("int");
+    public static final Class<Integer> TYPE = Class.getPrimitiveClass("int");
 
     /**
      * All possible chars for representing a number as a String
      */
-    static final char[] digits = {
+    @Stable
+    static final byte[] digits = {
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
         'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
@@ -173,10 +173,10 @@ public final class Integer extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)digits[-(i % radix)];
+                buf[charPos--] = digits[-(i % radix)];
                 i = i / radix;
             }
-            buf[charPos] = (byte)digits[-i];
+            buf[charPos] = digits[-i];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -393,7 +393,7 @@ public final class Integer extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[val & mask];
+            buf[--charPos] = Integer.digits[val & mask];
             val >>>= shift;
         } while (charPos > 0);
     }
@@ -433,11 +433,11 @@ public final class Integer extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            StringLatin1.getChars(i, size, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            StringUTF16.getChars(i, size, buf);
+            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
     }
@@ -961,7 +961,17 @@ public final class Integer extends Number
             if (archivedCache == null || size > archivedCache.length) {
                 Integer[] c = new Integer[size];
                 int j = low;
-                for(int i = 0; i < c.length; i++) {
+                // If archive has Integer cache, we must use all instances from it.
+                // Otherwise, the identity checks between archived Integers and
+                // runtime-cached Integers would fail.
+                int archivedSize = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < archivedSize; i++) {
+                    c[i] = archivedCache[i];
+                    assert j == archivedCache[i];
+                    j++;
+                }
+                // Fill the rest of the cache.
+                for (int i = archivedSize; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;
@@ -1015,7 +1025,7 @@ public final class Integer extends Number
      * {@link #valueOf(int)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Integer(int value) {
         this.value = value;
     }
@@ -1037,7 +1047,7 @@ public final class Integer extends Number
      * {@code int} primitive, or use {@link #valueOf(String)}
      * to convert a string to an {@code Integer} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Integer(String s) throws NumberFormatException {
         this.value = parseInt(s, 10);
     }
@@ -1147,8 +1157,8 @@ public final class Integer extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Integer) {
-            return value == ((Integer)obj).intValue();
+        if (obj instanceof Integer i) {
+            return value == i.intValue();
         }
         return false;
     }
@@ -1178,8 +1188,6 @@ public final class Integer extends Number
      *
      * @param   nm   property name.
      * @return  the {@code Integer} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1224,8 +1232,6 @@ public final class Integer extends Number
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Integer} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1266,17 +1272,11 @@ public final class Integer extends Number
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Integer} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     System#getProperty(java.lang.String)
      * @see     System#getProperty(java.lang.String, java.lang.String)
      */
     public static Integer getInteger(String nm, Integer val) {
-        String v = null;
-        try {
-            v = System.getProperty(nm);
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
+        String v = nm != null && !nm.isEmpty() ? System.getProperty(nm) : null;
         if (v != null) {
             try {
                 return Integer.decode(v);

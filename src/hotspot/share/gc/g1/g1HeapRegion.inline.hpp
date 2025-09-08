@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,8 @@ inline void G1HeapRegion::reset_after_full_gc_common() {
 
   _garbage_bytes = 0;
 
+  _incoming_refs = 0;
+
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
     mangle_unused_area();
@@ -263,11 +265,12 @@ inline void G1HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes) {
+inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs) {
   assert_at_safepoint();
 
   if (top_at_mark_start != bottom()) {
     _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
+    _incoming_refs = incoming_refs;
   }
 
   if (needs_scrubbing()) {
@@ -347,7 +350,7 @@ inline HeapWord* G1HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion
     assert(bitmap->is_marked(cur), "inv");
 
     oop obj = cast_to_oop(cur);
-    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(oopDesc::is_oop(obj), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     cur += obj->size();
     bool is_precise;
@@ -415,7 +418,7 @@ inline HeapWord* G1HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* 
   // All objects >= pb are parsable. So we can just take object sizes directly.
   while (true) {
     oop obj = cast_to_oop(cur);
-    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(oopDesc::is_oop(obj), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     bool is_precise = false;
 
@@ -511,12 +514,12 @@ inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   Atomic::add(&_pinned_object_count, value, memory_order_relaxed);
 }
 
-inline void G1HeapRegion::install_group_cardset(G1CardSet* group_cardset) {
-  _rem_set->install_group_cardset(group_cardset);
+inline void G1HeapRegion::install_cset_group(G1CSetCandidateGroup* cset_group) {
+  _rem_set->install_cset_group(cset_group);
 }
 
-inline void G1HeapRegion::uninstall_group_cardset() {
-  _rem_set->uninstall_group_cardset();
+inline void G1HeapRegion::uninstall_cset_group() {
+  _rem_set->uninstall_cset_group();
 }
 
 #endif // SHARE_GC_G1_G1HEAPREGION_INLINE_HPP

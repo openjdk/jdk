@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 3)
+@Fork(jvmArgs = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 3)
 public class Signatures {
     private static Signature signer;
 
@@ -194,4 +194,3 @@ public class Signatures {
         }
     }
 }
-

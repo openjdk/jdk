@@ -27,9 +27,7 @@ package sun.security.provider;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.security.AccessController;
 import java.security.DrbgParameters;
-import java.security.PrivilegedAction;
 import java.security.SecureRandomParameters;
 import java.security.SecureRandomSpi;
 import java.security.Security;
@@ -93,10 +91,7 @@ public final class DRBG extends SecureRandomSpi {
         byte[] nonce = null;
 
         // Can be configured with a security property
-
-        @SuppressWarnings("removal")
-        String config = AccessController.doPrivileged((PrivilegedAction<String>)
-                () -> Security.getProperty(PROP_NAME));
+        String config = Security.getProperty(PROP_NAME);
 
         if (config != null && !config.isEmpty()) {
             for (String part : config.split(",")) {

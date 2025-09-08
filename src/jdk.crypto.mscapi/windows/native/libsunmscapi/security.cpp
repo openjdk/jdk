@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,7 +444,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
         }
         else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
         }
         else {
             PP("jCertStoreLocation is not a valid value");
@@ -798,11 +798,15 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signHash
             ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_CONTAINER, //deprecated
                 (BYTE *)pbData, &cbData, 0);
 
+            DWORD keysetType = 0;
+            DWORD keysetTypeLen = sizeof(keysetType);
+            ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_KEYSET_TYPE, //deprecated
+                (BYTE*)&keysetType, &keysetTypeLen, 0);
+
             // Acquire an alternative CSP handle
             if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL, //deprecated
-                PROV_RSA_AES, 0) == FALSE)
+                PROV_RSA_AES, 0 | keysetType) == FALSE)
             {
-
                 ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
                 __leave;
             }
@@ -1309,6 +1313,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     EXPORT_BLOB(NCRYPT_PKCS7_ENVELOPE_BLOB);
     //EXPORT_BLOB(NCRYPTBUFFER_CERT_BLOB);
     //EXPORT_BLOB(NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+    /*
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
@@ -1317,6 +1322,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
     bbd.pBuffers = &bb;
+    */
     if(::NCryptExportKey(hKey, NULL, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, NULL,
             (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
         snprintf(header, sizeof(header), "NCRYPT_PKCS8_PRIVATE_KEY_BLOB %ls", NCRYPT_PKCS8_PRIVATE_KEY_BLOB);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/os.hpp"
@@ -64,7 +63,7 @@ public:
   } while (false)
 
 TEST_VM_F(LockStackTest, is_recursive) {
-  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -131,7 +130,7 @@ TEST_VM_F(LockStackTest, is_recursive) {
 }
 
 TEST_VM_F(LockStackTest, try_recursive_enter) {
-  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -198,10 +197,6 @@ TEST_VM_F(LockStackTest, try_recursive_enter) {
 }
 
 TEST_VM_F(LockStackTest, contains) {
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    return;
-  }
-
   const bool test_recursive = VM_Version::supports_recursive_lightweight_locking();
 
   JavaThread* THREAD = JavaThread::current();
@@ -264,10 +259,6 @@ TEST_VM_F(LockStackTest, contains) {
 }
 
 TEST_VM_F(LockStackTest, remove) {
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    return;
-  }
-
   const bool test_recursive = VM_Version::supports_recursive_lightweight_locking();
 
   JavaThread* THREAD = JavaThread::current();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,19 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -89,9 +90,6 @@ public class Arguments {
 
     private List<CLIOptions> allOptions = null;
 
-    private String input = null;
-    private Path output = null;
-
     private boolean hasMainJar = false;
     private boolean hasMainClass = false;
     private boolean hasMainModule = false;
@@ -135,25 +133,23 @@ public class Arguments {
         allOptions = new ArrayList<>();
 
         addLaunchers = new ArrayList<>();
-
-        output = Paths.get("").toAbsolutePath();
-        deployParams.setOutput(output);
     }
 
     // CLIOptions is public for DeployParamsTest
     public enum CLIOptions {
         PACKAGE_TYPE("type", "t", OptionCategories.PROPERTY, () -> {
-            context().deployParams.setTargetFormat(popArg());
+            var type = popArg();
+            context().deployParams.setTargetFormat(type);
+            setOptionValue("type", type);
         }),
 
         INPUT ("input", "i", OptionCategories.PROPERTY, () -> {
-            context().input = popArg();
-            setOptionValue("input", context().input);
+            setOptionValue("input", popArg());
         }),
 
         OUTPUT ("dest", "d", OptionCategories.PROPERTY, () -> {
-            context().output = Path.of(popArg());
-            context().deployParams.setOutput(context().output);
+            var path = Path.of(popArg());
+            setOptionValue("dest", path);
         }),
 
         DESCRIPTION ("description", OptionCategories.PROPERTY),
@@ -353,16 +349,13 @@ public class Arguments {
 
         WIN_UPDATE_URL ("win-update-url", OptionCategories.PLATFORM_WIN),
 
-        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-menu", true);
-        }),
+        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-menu")),
 
         WIN_MENU_GROUP ("win-menu-group", OptionCategories.PLATFORM_WIN),
 
-        WIN_SHORTCUT_HINT ("win-shortcut",
-                OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-shortcut", true);
-        }),
+        WIN_SHORTCUT_HINT ("win-shortcut", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-shortcut")),
 
         WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
                 OptionCategories.PLATFORM_WIN, () -> {
@@ -401,10 +394,8 @@ public class Arguments {
         LINUX_PACKAGE_DEPENDENCIES ("linux-package-deps",
                 OptionCategories.PLATFORM_LINUX),
 
-        LINUX_SHORTCUT_HINT ("linux-shortcut",
-                OptionCategories.PLATFORM_LINUX, () -> {
-            setOptionValue("linux-shortcut", true);
-        }),
+        LINUX_SHORTCUT_HINT ("linux-shortcut", OptionCategories.PLATFORM_LINUX,
+                createArgumentWithOptionalValueAction("linux-shortcut")),
 
         LINUX_MENU_GROUP ("linux-menu-group", OptionCategories.PLATFORM_LINUX);
 
@@ -483,8 +474,31 @@ public class Arguments {
             context().pos++;
         }
 
+        private static void prevArg() {
+            Objects.checkIndex(context().pos, context().argList.size());
+            context().pos--;
+        }
+
         private static boolean hasNextArg() {
             return context().pos < context().argList.size();
+        }
+
+        private static Runnable createArgumentWithOptionalValueAction(String option) {
+            Objects.requireNonNull(option);
+            return () -> {
+                nextArg();
+                if (hasNextArg()) {
+                    var value = getArg();
+                    if (value.startsWith("-")) {
+                        prevArg();
+                        setOptionValue(option, true);
+                    } else {
+                        setOptionValue(option, value);
+                    }
+                } else {
+                    setOptionValue(option, true);
+                }
+            };
         }
     }
 
@@ -554,23 +568,17 @@ public class Arguments {
                 }
                 usedNames.add(slName);
             }
-            if (runtimeInstaller && bp.getName() == null) {
-                throw new PackagerException("ERR_NoJreInstallerName");
-            }
 
             generateBundle(bp.getBundleParamsAsMap());
             return true;
         } catch (Exception e) {
-            if (Log.isVerbose()) {
-                Log.verbose(e);
-            } else {
-                String msg1 = e.getMessage();
-                Log.fatalError(msg1);
-                if (e.getCause() != null && e.getCause() != e) {
-                    String msg2 = e.getCause().getMessage();
-                    if (msg2 != null && !msg1.contains(msg2)) {
-                        Log.fatalError(msg2);
-                    }
+            Log.verbose(e);
+            String msg1 = e.getMessage();
+            Log.fatalError(msg1);
+            if (e.getCause() != null && e.getCause() != e) {
+                String msg2 = e.getCause().getMessage();
+                if (msg2 != null && !msg1.contains(msg2)) {
+                    Log.fatalError(msg2);
                 }
             }
             return false;
@@ -710,8 +718,7 @@ public class Arguments {
 
         Map<String, ? super Object> localParams = new HashMap<>(params);
         try {
-            bundler.validate(localParams);
-            Path result = bundler.execute(localParams, deployParams.outdir);
+            Path result = executeBundler(bundler, params, localParams);
             if (result == null) {
                 throw new PackagerException("MSG_BundlerFailed",
                         bundler.getID(), bundler.getName());
@@ -742,6 +749,24 @@ public class Arguments {
                 // always clean up the temporary directory created
                 // when --temp option not used.
                 bundler.cleanup(localParams);
+            }
+        }
+    }
+
+    private static Path executeBundler(Bundler bundler, Map<String, ? super Object> params,
+            Map<String, ? super Object> localParams) throws ConfigException, PackagerException {
+        try {
+            bundler.validate(localParams);
+            return bundler.execute(localParams, StandardBundlerParam.OUTPUT_DIR.fetchFrom(params));
+        } catch (ConfigException|PackagerException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof ConfigException cfgEx) {
+                throw cfgEx;
+            } else if (ex.getCause() instanceof PackagerException pkgEx) {
+                throw pkgEx;
+            } else {
+                throw ex;
             }
         }
     }

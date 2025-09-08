@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  *
  * @test
- * @bug 8176841 8194148 8284840 8306116
+ * @bug 8176841 8194148 8284840 8306116 8333582
  * @summary Tests *Format class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=CLDR FormatTests
+ * @run testng FormatTests
  */
 
 import static org.testng.Assert.assertEquals;
@@ -111,7 +111,7 @@ public class FormatTests {
 
             // -rg
             {RG_GB, null, null,
-            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
         };
     }

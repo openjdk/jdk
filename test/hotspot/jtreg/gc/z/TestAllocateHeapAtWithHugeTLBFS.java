@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestAllocateHeapAtWithHugeTLBFS
- * @requires vm.gc.ZGenerational & os.family == "linux"
+ * @requires vm.gc.Z & os.family == "linux"
  * @summary Test ZGC with -XX:AllocateHeapAt and -XX:+UseLargePages
  * @library /test/lib
  * @run driver gc.z.TestAllocateHeapAtWithHugeTLBFS true
@@ -77,7 +77,6 @@ public class TestAllocateHeapAtWithHugeTLBFS {
 
         ProcessTools.executeTestJava(
             "-XX:+UseZGC",
-            "-XX:+ZGenerational",
             "-Xlog:gc*",
             "-Xms32M",
             "-Xmx32M",

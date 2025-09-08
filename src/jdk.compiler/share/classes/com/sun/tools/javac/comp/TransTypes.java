@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,11 +810,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        Type selsuper = types.supertype(tree.selector.type);
-        boolean enumSwitch = selsuper != null &&
-            selsuper.tsym == syms.enumSym;
-        Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
-        tree.selector = translate(tree.selector, target);
+        tree.selector = translate(tree.selector, erasure(tree.selector.type));
         tree.cases = translateCases(tree.cases);
         result = tree;
     }
@@ -849,12 +845,8 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        Type selsuper = types.supertype(tree.selector.type);
-        boolean enumSwitch = selsuper != null &&
-            selsuper.tsym == syms.enumSym;
-        Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
-        tree.selector = translate(tree.selector, target);
-        tree.cases = translate(tree.cases, tree.type);
+        tree.selector = translate(tree.selector, erasure(tree.selector.type));
+        tree.cases = translate(tree.cases, erasure(tree.type));
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
     }
@@ -1067,8 +1059,14 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        tree.expr = translate(tree.expr, null);
         tree.pattern = translate(tree.pattern, null);
+        if (tree.pattern.type.isPrimitive()) {
+            tree.erasedExprOriginalType = erasure(tree.expr.type);
+            tree.expr = translate(tree.expr, null);
+        }
+        else {
+            tree.expr = translate(tree.expr, null);
+        }
         result = tree;
     }
 
@@ -1144,9 +1142,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitTypeIntersection(JCTypeIntersection tree) {
-        tree.bounds = translate(tree.bounds, null);
-        tree.type = erasure(tree.type);
-        result = tree;
+        result = translate(tree.bounds.head, null);
     }
 
 /* ************************************************************************
@@ -1164,7 +1160,7 @@ public class TransTypes extends TreeTranslator {
     private Env<AttrContext> env;
 
     private static final String statePreviousToFlowAssertMsg =
-            "The current compile state [%s] of class %s is previous to FLOW";
+            "The current compile state [%s] of class %s is previous to WARN";
 
     void translateClass(ClassSymbol c) {
         Type st = types.supertype(c.type);
@@ -1185,7 +1181,7 @@ public class TransTypes extends TreeTranslator {
          *  1) has no compile state being it the most outer class.
          *     We accept this condition for inner classes.
          *
-         *  2) has a compile state which is previous to Flow state.
+         *  2) has a compile state which is previous to WARN state.
          */
         boolean envHasCompState = compileStates.get(myEnv) != null;
         if (!envHasCompState && c.outermostClass() == c) {
@@ -1193,7 +1189,7 @@ public class TransTypes extends TreeTranslator {
         }
 
         if (envHasCompState &&
-                CompileState.FLOW.isAfter(compileStates.get(myEnv))) {
+                CompileState.WARN.isAfter(compileStates.get(myEnv))) {
             Assert.error(String.format(statePreviousToFlowAssertMsg,
                     compileStates.get(myEnv), myEnv.enclClass.sym));
         }

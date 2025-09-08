@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,21 @@
 /*
  * @test
  * @bug 4221800
+ * @library /test/lib
  * @summary Test restored generateKeyPair method
  */
 
 import java.security.KeyPairGenerator;
 import java.security.KeyPair;
+import jdk.test.lib.security.SecurityUtils;
 
 public class GenerateKeypair {
 
     public static void main(String[] args) throws Exception {
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        kpg.initialize(512);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         // test generateKeyPair
         KeyPair kpair = kpg.generateKeyPair();

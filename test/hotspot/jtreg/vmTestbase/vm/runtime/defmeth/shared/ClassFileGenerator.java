@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,17 @@
 package vm.runtime.defmeth.shared;
 
 
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.Type;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Type;
 import nsk.share.TestFailure;
 import nsk.share.test.TestUtils;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 
 import static java.lang.invoke.MethodHandleInfo.REF_newInvokeSpecial;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.ClassWriter;
+import static org.objectweb.asm.ClassWriter.*;
 
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.*;
@@ -504,11 +504,11 @@ public class ClassFileGenerator implements Visitor {
         //   cw = new ClassWriter(COMPUTE_FRAMES | COMPUTE_MAXS);
         // then:
         // java.lang.RuntimeException: java.lang.ClassNotFoundException: S
-        //   at jdk.internal.org.objectweb.asm.ClassWriter.getCommonSuperClass(ClassWriter.java:1588)
-        //   at jdk.internal.org.objectweb.asm.ClassWriter.getMergedType(ClassWriter.java:1559)
-        //   at jdk.internal.org.objectweb.asm.Frame.merge(Frame.java:1407)
-        //   at jdk.internal.org.objectweb.asm.Frame.merge(Frame.java:1308)
-        //   at jdk.internal.org.objectweb.asm.MethodWriter.visitMaxs(MethodWriter.java:1353)
+        //   at org.objectweb.asm.ClassWriter.getCommonSuperClass(ClassWriter.java:1588)
+        //   at org.objectweb.asm.ClassWriter.getMergedType(ClassWriter.java:1559)
+        //   at org.objectweb.asm.Frame.merge(Frame.java:1407)
+        //   at org.objectweb.asm.Frame.merge(Frame.java:1308)
+        //   at org.objectweb.asm.MethodWriter.visitMaxs(MethodWriter.java:1353)
         //mv.visitMaxs(t.getParams().length > 1 ? t.getParams().length+1 : 2, 2);
 
         cw = new ClassWriter(COMPUTE_MAXS);

@@ -176,7 +176,16 @@ class Eval {
     List<Snippet> toScratchSnippets(String userSource) {
         try {
             preserveState = true;
-            return sourceToSnippets(userSource);
+            List<Snippet> result = sourceToSnippetsWithWrappers(userSource);
+            result.forEach(snippet -> {
+                if (snippet.diagnostics() == null || snippet.diagnostics().isEmpty()) {
+                    //if no better diagnostics set yet, do trial compilation, and
+                    //set diagnostic found:
+                    DiagList fullDiagnostics = state.taskFactory.analyze(snippet.outerWrap(), AnalyzeTask::getDiagnostics);
+                    snippet.setDiagnostics(fullDiagnostics);
+                }
+            });
+            return result;
         } finally {
             preserveState = false;
         }

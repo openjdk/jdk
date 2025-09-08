@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,9 +264,37 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
+    public void convertD2LBits() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = Double.doubleToLongBits(doubles[i]);
+        }
+    }
+
+    @Benchmark
+    public void convertD2LBitsRaw() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = Double.doubleToRawLongBits(doubles[i]);
+        }
+    }
+
+    @Benchmark
     public void convertF2I() {
         for (int i = 0; i < COUNT; i++) {
             resI[i] = (int) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convertF2IBits() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = Float.floatToIntBits(floats[i]);
+        }
+    }
+
+    @Benchmark
+    public void convertF2IBitsRaw() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) Float.floatToRawIntBits(floats[i]);
         }
     }
 
@@ -305,6 +334,13 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
+    public void convertIBits2F() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = Float.intBitsToFloat(ints[i]);
+        }
+    }
+
+    @Benchmark
     public void convertI2D() {
         for (int i = 0; i < COUNT; i++) {
             resD[i] = (double) ints[i];
@@ -322,6 +358,13 @@ public abstract class TypeVectorOperations {
     public void convertL2D() {
         for (int i = 0; i < COUNT; i++) {
             resD[i] = (double) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convertLBits2D() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = Double.longBitsToDouble(longs[i]);
         }
     }
 
@@ -382,7 +425,7 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    @Fork(jvmArgs = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
     public void cmoveD() {
         for (int i = 0; i < COUNT; i++) {
             resD[i] = resD[i] < doubles[i] ? resD[i] : doubles[i];
@@ -390,21 +433,21 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    @Fork(jvmArgs = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
     public void cmoveF() {
         for (int i = 0; i < COUNT; i++) {
             resF[i] = resF[i] < floats[i] ? resF[i] : floats[i];
         }
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class TypeVectorOperationsSuperWord extends TypeVectorOperations {
 
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class TypeVectorOperationsNonSuperWord extends TypeVectorOperations {

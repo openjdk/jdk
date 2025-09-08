@@ -62,7 +62,7 @@ public class objmonusage004 {
         synchronized (lockCheck) {
             // Virtual threads are not supported by GetObjectMonitorUsage.
             // Correct the expected values if the test is executed with
-            // JTREG_TEST_THREAD_FACTORY=Virtual.
+            // JTREG="TEST_THREAD_FACTORY=Virtual".
             Thread expOwner = currThread.isVirtual() ? null : currThread;
             int expEntryCount = currThread.isVirtual() ? 0 : 2;
 

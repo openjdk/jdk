@@ -56,16 +56,46 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 
 UNAME_SYSTEM=`uname -s`
 UNAME_RELEASE=`uname -r`
+UNAME_OS=`uname -o`
 
 # Detect cygwin or WSL
 IS_CYGWIN=`echo $UNAME_SYSTEM | grep -i CYGWIN`
 IS_WSL=`echo $UNAME_RELEASE | grep Microsoft`
+IS_MSYS=`echo $UNAME_OS | grep -i Msys`
+MSYS2_ARG_CONV_EXCL="*"          # make "cmd.exe /c" work for msys2
+CMD_EXE="cmd.exe /c"
+
+# Detect host architecture to determine devkit platform support
+# Note: The devkit always includes x86, x64, and aarch64 libraries and tools
+# The difference is in toolchain capabilities:
+# - On x64|AMD64 hosts: aarch64 tools are cross-compilation tools (Hostx64/arm64)
+# - On aarch64|ARMv8 hosts: aarch64 tools are native tools (Hostarm64/arm64)
+HOST_ARCH=`echo $PROCESSOR_IDENTIFIER`
+case $HOST_ARCH in
+    AMD64)
+        echo "Running on x64 host - generating devkit with native x86/x64 tools and cross-compiled aarch64 tools."
+        echo "For native aarch64 compilation tools, run this script on a Windows/aarch64 machine."
+        SUPPORTED_PLATFORMS="x86, x64 (native) and aarch64 (cross-compiled)"
+        ;;
+    ARMv8)
+        echo "Running on aarch64 host - generating devkit with native tools for all platforms (x86, x64, aarch64)."
+        SUPPORTED_PLATFORMS="x86, x64, and aarch64 (all native)"
+        ;;
+    *)
+        echo "Unknown host architecture: $HOST_ARCH"
+        echo "Proceeding with devkit generation - toolchain capabilities may vary."
+        SUPPORTED_PLATFORMS="x86, x64, and aarch64"
+        ;;
+esac
+
 if test "x$IS_CYGWIN" != "x"; then
+    BUILD_ENV="cygwin"
+elif test "x$IS_MSYS" != "x"; then
     BUILD_ENV="cygwin"
 elif test "x$IS_WSL" != "x"; then
     BUILD_ENV="wsl"
 else
-    echo "Unknown environment; only Cygwin and WSL are supported."
+    echo "Unknown environment; only Cygwin/MSYS2/WSL are supported."
     exit 1
 fi
 
@@ -76,7 +106,7 @@ elif test "x$BUILD_ENV" = "xwsl"; then
 fi
 
 # Work around the insanely named ProgramFiles(x86) env variable
-PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
+PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(${CMD_EXE} set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
 PROGRAMFILES="$($WINDOWS_PATH_TO_UNIX_PATH "$PROGRAMFILES")"
 
 case $VS_VERSION in
@@ -99,13 +129,15 @@ esac
 
 
 # Find Visual Studio installation dir
-VSNNNCOMNTOOLS=`cmd.exe /c echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS=`${CMD_EXE} echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS")"
 if [ -d "$VSNNNCOMNTOOLS" ]; then
-    VS_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS/../..")"
+    VS_INSTALL_DIR="$VSNNNCOMNTOOLS/../.."
 else
     VS_INSTALL_DIR="${MSVC_PROGRAMFILES_DIR}/Microsoft Visual Studio/$VS_VERSION"
     VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional,Enterprise} 2>/dev/null | head -n1)"
 fi
+echo "VSNNNCOMNTOOLS: $VSNNNCOMNTOOLS"
 echo "VS_INSTALL_DIR: $VS_INSTALL_DIR"
 
 # Extract semantic version
@@ -131,6 +163,7 @@ DEVKIT_ROOT="${BUILD_DIR}/VS${VS_VERSION}-${VS_VERSION_SP}-devkit"
 DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Creating devkit in $DEVKIT_ROOT"
+echo "Platform support: $SUPPORTED_PLATFORMS"
 
 MSVCR_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}.dll
 VCRUNTIME_1_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}_1.dll
@@ -148,7 +181,11 @@ REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_VERSION"
 echo "Copying VC..."
 rm -rf $DEVKIT_ROOT/VC
 mkdir -p $DEVKIT_ROOT/VC/bin
-cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+if [ -d "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" ]; then
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" $DEVKIT_ROOT/VC/bin/
+else
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+fi
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx86/x86" $DEVKIT_ROOT/VC/bin/
 mkdir -p $DEVKIT_ROOT/VC/lib
@@ -180,7 +217,11 @@ cp $DEVKIT_ROOT/VC/redist/arm64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/arm64
 ################################################################################
 # Copy SDK files
 
-SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+SDK_INSTALL_DIR=`${CMD_EXE} echo %WindowsSdkDir% | tr -d '\r'`
+SDK_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$SDK_INSTALL_DIR")"
+if [ ! -d "$SDK_INSTALL_DIR" ]; then
+    SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+fi
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
 SDK_FULL_VERSION="$(ls "$SDK_INSTALL_DIR/bin" | sort -r -n | head -n1)"

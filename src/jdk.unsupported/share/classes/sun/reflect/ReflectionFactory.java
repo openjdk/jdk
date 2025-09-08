@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,30 @@
 
 package sun.reflect;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
 
 /**
  * ReflectionFactory supports custom serialization.
  * Its methods support the creation of uninitialized objects, invoking serialization
  * private methods for readObject, writeObject, readResolve, and writeReplace.
- * <p>
- * ReflectionFactory access is restricted, if a security manager is active,
- * unless the permission {@code RuntimePermission("reflectionFactoryAccess")}
- * is granted.
  */
 public class ReflectionFactory {
 
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
-    @SuppressWarnings("removal")
-    private static final jdk.internal.reflect.ReflectionFactory delegate = AccessController.doPrivileged(
-            new PrivilegedAction<jdk.internal.reflect.ReflectionFactory>() {
-                public jdk.internal.reflect.ReflectionFactory run() {
-                    return jdk.internal.reflect.ReflectionFactory.getReflectionFactory();
-                }
-            });
+    private static final jdk.internal.reflect.ReflectionFactory delegate =
+            jdk.internal.reflect.ReflectionFactory.getReflectionFactory();
 
     private ReflectionFactory() {}
-
-    private static final Permission REFLECTION_FACTORY_ACCESS_PERM
-            = new RuntimePermission("reflectionFactoryAccess");
 
     /**
      * Provides the caller with the capability to instantiate reflective
      * objects.
-     *
-     * <p> First, if there is a security manager, its {@code checkPermission}
-     * method is called with a {@link java.lang.RuntimePermission} with target
-     * {@code "reflectionFactoryAccess"}.  This may result in a security
-     * exception.
      *
      * <p> The returned {@code ReflectionFactory} object should be carefully
      * guarded by the caller, since it can be used to read and write private
@@ -73,16 +56,8 @@ public class ReflectionFactory {
      * It must never be passed to untrusted code.
      *
      * @return the ReflectionFactory
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method doesn't allow access to
-     *         the RuntimePermission "reflectionFactoryAccess".
      */
     public static ReflectionFactory getReflectionFactory() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(REFLECTION_FACTORY_ACCESS_PERM);
-        }
         return soleInstance;
     }
 
@@ -158,6 +133,50 @@ public class ReflectionFactory {
     }
 
     /**
+     * Generate and return a direct MethodHandle which implements
+     * the general default behavior for serializable class's {@code readObject}.
+     * The generated method behaves in accordance with the
+     * Java Serialization specification's rules for that method.
+     * <p>
+     * The generated method will invoke {@link ObjectInputStream#readFields()}
+     * to acquire the stream field values. The serialization fields of the class will
+     * then be populated from the stream values.
+     * <p>
+     * Only fields which are eligible for default serialization will be populated.
+     * This includes only fields which are not {@code transient} and not {@code static}
+     * (even if the field is {@code final} or {@code private}).
+     * <p>
+     * Requesting a default serialization method for a class in a disallowed
+     * category is not supported; {@code null} will be returned for such classes.
+     * The disallowed categories include (but are not limited to):
+     * <ul>
+     *     <li>Classes which do not implement {@code Serializable}</li>
+     *     <li>Classes which implement {@code Externalizable}</li>
+     *     <li>Classes which are specially handled by the Java Serialization specification,
+     *     including record classes, enum constant classes, {@code Class}, {@code String},
+     *     array classes, reflection proxy classes, and hidden classes</li>
+     *     <li>Classes which declare a valid {@code serialPersistentFields} value</li>
+     *     <li>Any special types which may possibly be added to the JDK or the Java language
+     *     in the future which in turn might require special handling by the
+     *     provisions of the corresponding future version of the Java Serialization
+     *     specification</li>
+     * </ul>
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectInputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code readObject} method
+     *          or {@code null} if the class falls in a disallowed category
+     *
+     * @since 24
+     */
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        return delegate.defaultReadObjectForSerialization(cl);
+    }
+
+    /**
      * Returns a direct MethodHandle for the {@code writeObject} method on
      * a Serializable class.
      * The first argument of {@link MethodHandle#invoke} is the serializable
@@ -170,6 +189,53 @@ public class ReflectionFactory {
      */
     public final MethodHandle writeObjectForSerialization(Class<?> cl) {
         return delegate.writeObjectForSerialization(cl);
+    }
+
+    /**
+     * Generate and return a direct MethodHandle which implements
+     * the general default behavior for serializable class's {@code writeObject}.
+     * The generated method behaves in accordance with the
+     * Java Serialization specification's rules for that method.
+     * <p>
+     * The generated method will invoke {@link ObjectOutputStream#putFields}
+     * to acquire the buffer for the stream field values. The buffer will
+     * be populated from the serialization fields of the class. The buffer
+     * will then be flushed to the stream using the
+     * {@link ObjectOutputStream#writeFields()} method.
+     * <p>
+     * Only fields which are eligible for default serialization will be written
+     * to the buffer.
+     * This includes only fields which are not {@code transient} and not {@code static}
+     * (even if the field is {@code final} or {@code private}).
+     * <p>
+     * Requesting a default serialization method for a class in a disallowed
+     * category is not supported; {@code null} will be returned for such classes.
+     * The disallowed categories include (but are not limited to):
+     * <ul>
+     *     <li>Classes which do not implement {@code Serializable}</li>
+     *     <li>Classes which implement {@code Externalizable}</li>
+     *     <li>Classes which are specially handled by the Java Serialization specification,
+     *     including record classes, enum constant classes, {@code Class}, {@code String},
+     *     array classes, reflection proxy classes, and hidden classes</li>
+     *     <li>Classes which declare a valid {@code serialPersistentFields} value</li>
+     *     <li>Any special types which may possibly be added to the JDK or the Java language
+     *     in the future which in turn might require special handling by the
+     *     provisions of the corresponding future version of the Java Serialization
+     *     specification</li>
+     * </ul>
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectOutputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code writeObject} method
+     *          or {@code null} if the class falls in a disallowed category
+     *
+     * @since 24
+     */
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        return delegate.defaultWriteObjectForSerialization(cl);
     }
 
     /**
@@ -224,5 +290,22 @@ public class ReflectionFactory {
         } catch (InstantiationException|IllegalAccessException|InvocationTargetException ex) {
             throw new InternalError("unable to create OptionalDataException", ex);
         }
+    }
+
+    /**
+     * {@return the declared {@code serialPersistentFields} from a
+     * serializable class, or {@code null} if none is declared, the field
+     * is declared but not valid, or the class is not a valid serializable class}
+     * A class is a valid serializable class if it implements {@code Serializable}
+     * but not {@code Externalizable}. The {@code serialPersistentFields} field
+     * is valid if it meets the type and accessibility restrictions defined
+     * by the Java Serialization specification.
+     *
+     * @param cl a Serializable class
+     *
+     * @since 24
+     */
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        return delegate.serialPersistentFields(cl);
     }
 }

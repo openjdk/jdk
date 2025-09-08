@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 /**
  * @test
  * @bug 8231081
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal
  * @library /test/lib /test/jdk
@@ -49,7 +49,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 /**
  * System.gc() will trigger class unloading if -XX:+ExplicitGCInvokesConcurrent is NOT set.
  * If this flag is set G1 will never unload classes on System.gc() and
- * As far as the "jfr" key guarantees no VM flags are set from the outside
+ * As far as the vm.flagless guarantees no VM flags are set from the outside
  * it should be enough with System.gc().
  */
 public final class TestClearStaleConstants {

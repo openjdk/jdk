@@ -23,13 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #define __ masm->masm()->
 
@@ -102,6 +101,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
 
+      if (ShenandoahCardBarrier) {
+        post_barrier(access, access.resolved_addr(), new_value.result());
+      }
+
       return result;
     }
   }
@@ -131,6 +134,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
 
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr, result);
+    }
+
+    if (ShenandoahCardBarrier) {
+      post_barrier(access, access.resolved_addr(), result);
     }
   }
 

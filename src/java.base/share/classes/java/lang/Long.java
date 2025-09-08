@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,7 @@ public final class Long extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
+    public static final Class<Long> TYPE = Class.getPrimitiveClass("long");
 
     /**
      * Returns a string representation of the first argument in the
@@ -158,10 +157,10 @@ public final class Long extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)Integer.digits[(int)(-(i % radix))];
+                buf[charPos--] = Integer.digits[(int)(-(i % radix))];
                 i = i / radix;
             }
-            buf[charPos] = (byte)Integer.digits[(int)(-i)];
+            buf[charPos] = Integer.digits[(int)(-i)];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -423,7 +422,7 @@ public final class Long extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[((int) val) & mask];
+            buf[--charPos] = Integer.digits[((int) val) & mask];
             val >>>= shift;
         } while (charPos > offset);
     }
@@ -463,11 +462,11 @@ public final class Long extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            StringLatin1.getChars(i, size, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            StringUTF16.getChars(i, size, buf);
+            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
     }
@@ -963,7 +962,7 @@ public final class Long extends Number
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(LongCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
+            if (archivedCache == null) {
                 Long[] c = new Long[size];
                 long value = -128;
                 for(int i = 0; i < size; i++) {
@@ -972,6 +971,7 @@ public final class Long extends Number
                 archivedCache = c;
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 
@@ -1109,7 +1109,7 @@ public final class Long extends Number
      * {@link #valueOf(long)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Long(long value) {
         this.value = value;
     }
@@ -1132,7 +1132,7 @@ public final class Long extends Number
      * {@code long} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Long} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Long(String s) throws NumberFormatException {
         this.value = parseLong(s, 10);
     }
@@ -1245,8 +1245,8 @@ public final class Long extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Long) {
-            return value == ((Long)obj).longValue();
+        if (obj instanceof Long ell) {
+            return value == ell.longValue();
         }
         return false;
     }
@@ -1276,8 +1276,6 @@ public final class Long extends Number
      *
      * @param   nm   property name.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1321,8 +1319,6 @@ public final class Long extends Number
      * @param   nm    property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1370,17 +1366,11 @@ public final class Long extends Number
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     System#getProperty(java.lang.String)
      * @see     System#getProperty(java.lang.String, java.lang.String)
      */
     public static Long getLong(String nm, Long val) {
-        String v = null;
-        try {
-            v = System.getProperty(nm);
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
+        String v = nm != null && !nm.isEmpty() ? System.getProperty(nm) : null;
         if (v != null) {
             try {
                 return Long.decode(v);

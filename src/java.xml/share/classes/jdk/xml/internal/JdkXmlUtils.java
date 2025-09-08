@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
-    public static final boolean IS_WINDOWS = SecuritySupport.getSystemProperty("os.name").contains("Windows");
-    public static final String JAVA_HOME = SecuritySupport.getSystemProperty("java.home");
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
+    public static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
     private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
@@ -94,7 +94,50 @@ public class JdkXmlUtils {
     /**
      * The system-default factory
      */
-    private static final SAXParserFactory defaultSAXFactory = getSAXFactory(false);
+    private static class DefaultSAXFactory {
+        private static final SAXParserFactory instance = getSAXFactory(false);
+    }
+
+    /**
+     * Sets the property if it's managed by either XMLSecurityManager or XMLSecurityPropertyManager.
+     * @param xsm the XMLSecurityManager
+     * @param xspm the XMLSecurityPropertyManager
+     * @param property the property
+     * @param value the value
+     * @return true if the property is managed by either XMLSecurityManager or
+     * XMLSecurityPropertyManager, false otherwise
+     */
+    public static boolean setProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
+            String property, Object value) {
+        if (xsm != null && xsm.find(property) != null) {
+            return xsm.setLimit(property, JdkProperty.State.APIPROPERTY, value);
+
+        } else if (xspm != null && xspm.find(property) != null) {
+            return xspm.setValue(property, FeaturePropertyBase.State.APIPROPERTY, value);
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value of the property if it's managed by either XMLSecurityManager
+     * or XMLSecurityPropertyManager.
+     * @param xsm the XMLSecurityManager
+     * @param xspm the XMLSecurityPropertyManager
+     * @param property the property
+     * @return the value of the property if it's managed by either XMLSecurityManager
+     * or XMLSecurityPropertyManager, null otherwise
+     */
+    public static String getProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
+            String property) {
+        String value = null;
+        if (xsm != null && (value = xsm.getLimitAsString(property)) != null) {
+            return value;
+        }
+        if (xspm != null) {
+            value = xspm.getValue(property);
+        }
+        return value;
+    }
 
     /**
      * Returns the value.
@@ -298,7 +341,7 @@ public class JdkXmlUtils {
             boolean useCatalog, CatalogFeatures catalogFeatures) {
         SAXParserFactory saxFactory;
         XMLReader reader = null;
-        String spSAXDriver = SecuritySupport.getSystemProperty(SAX_DRIVER);
+        String spSAXDriver = System.getProperty(SAX_DRIVER);
         if (spSAXDriver != null) {
             reader = getXMLReaderWXMLReaderFactory();
         } else if (overrideDefaultParser) {
@@ -322,7 +365,7 @@ public class JdkXmlUtils {
             }
         } else {
             // use the system-default
-            saxFactory = defaultSAXFactory;
+            saxFactory = DefaultSAXFactory.instance;
 
             try {
             reader = saxFactory.newSAXParser().getXMLReader();
@@ -401,12 +444,11 @@ public class JdkXmlUtils {
      *
      * @return a DocumentBuilderFactory instance.
      */
-    @SuppressWarnings("removal")
     public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spDOMFactory = SecuritySupport.getJAXPSystemProperty(DOM_FACTORY_ID);
 
-        if (spDOMFactory != null && System.getSecurityManager() == null) {
+        if (spDOMFactory != null) {
             override = true;
         }
         DocumentBuilderFactory dbf
@@ -428,11 +470,10 @@ public class JdkXmlUtils {
      *
      * @return a SAXParserFactory instance.
      */
-    @SuppressWarnings("removal")
     public static SAXParserFactory getSAXFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spSAXFactory = SecuritySupport.getJAXPSystemProperty(SAX_FACTORY_ID);
-        if (spSAXFactory != null && System.getSecurityManager() == null) {
+        if (spSAXFactory != null) {
             override = true;
         }
 

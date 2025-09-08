@@ -26,6 +26,7 @@
  * @test
  * @bug 8221530 8221642
  * @library /test/lib
+ * @requires !jdk.static
  * @run main/native CallerAccessTest
  */
 

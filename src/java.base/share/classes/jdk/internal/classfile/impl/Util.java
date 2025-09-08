@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -56,7 +56,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
  * represented as JVM type descriptor strings and symbols are represented as
  * name strings
  */
-public class Util {
+public final class Util {
 
     private Util() {
     }
@@ -134,8 +134,8 @@ public class Util {
     }
 
     public static String toInternalName(ClassDesc cd) {
-        if (cd instanceof ReferenceClassDescImpl rcd) {
-            return rcd.internalName();
+        if (cd instanceof ClassOrInterfaceDescImpl coi) {
+            return coi.internalName();
         }
         throw new IllegalArgumentException(cd.descriptorString());
     }
@@ -144,6 +144,33 @@ public class Util {
         return classInternalNameOrArrayDesc.charAt(0) == '['
                 ? ClassDesc.ofDescriptor(classInternalNameOrArrayDesc)
                 : ClassDesc.ofInternalName(classInternalNameOrArrayDesc);
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U1, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU1List(List<T> input) {
+        var copy = List.copyOf(input);
+        checkU1(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U2, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU2List(Collection<T> input) {
+        var copy = List.copyOf(input);
+        checkU2(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input nested list of parameter annotations.
+    public static List<List<Annotation>> sanitizeParameterAnnotations(List<List<Annotation>> input) {
+        var array = input.toArray().clone();
+        checkU1(array.length, "parameter count");
+        for (int i = 0; i < array.length; i++) {
+            array[i] = sanitizeU2List((List<?>) array[i]);
+        }
+
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 
     public static<T, U> List<U> mappedList(List<? extends T> list, Function<T, U> mapper) {
@@ -184,6 +211,31 @@ public class Util {
     public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
         return new IllegalArgumentException(
                 String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+    }
+
+    /// Ensures the given value won't be truncated when written as a u1
+    public static int checkU1(int incoming, String valueName) {
+        if ((incoming & ~0xFF) != 0) {
+            throw outOfRangeException(incoming, valueName, "u1");
+        }
+        return incoming;
+    }
+
+    /// Ensures the given value won't be truncated when written as a u2
+    public static char checkU2(int incoming, String valueName) {
+        if ((incoming & ~0xFFFF) != 0)
+            throw outOfRangeException(incoming, valueName, "u2");
+        return (char) incoming;
+    }
+
+    public static IllegalArgumentException outOfRangeException(int value, String fieldName, String typeName) {
+        return new IllegalArgumentException(
+                String.format("%s out of range of %d: %d", fieldName, typeName, value));
+    }
+
+    /// Ensures the given mask won't be truncated when written as an access flag
+    public static char checkFlags(int mask) {
+        return checkU2(mask, "access flags");
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {
@@ -234,6 +286,7 @@ public class Util {
     @ForceInline
     public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
         int size = list.size();
+        Util.checkU2(size, "attributes count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             writeAttribute(buf, list.get(i));
@@ -242,6 +295,7 @@ public class Util {
 
     @ForceInline
     static void writeList(BufWriterImpl buf, Writable[] array, int size) {
+        Util.checkU2(size, "member count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             array[i].writeTo(buf);
@@ -280,6 +334,11 @@ public class Util {
                                     b.writeInt(bytecode.length());
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2U2(0, 0);//exception handlers & attributes
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return cp.utf8Entry(Attributes.NAME_CODE);
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);

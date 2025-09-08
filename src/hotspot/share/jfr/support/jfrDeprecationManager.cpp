@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
@@ -41,6 +40,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -49,7 +49,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-// for strstr
 #include <string.h>
 
 static bool _enqueue_klasses = false;
@@ -216,6 +215,25 @@ static bool should_record(const Method* method, const Method* sender, JavaThread
   return is_not_jdk_module(sender_module, jt) && max_limit_not_reached();
 }
 
+static inline bool is_invoke_bytecode(const Method* sender, int bci) {
+  assert(sender != nullptr, "invariant");
+  assert(sender->validate_bci(bci) >= 0, "invariant");
+  const Bytecodes::Code bc = (Bytecodes::Code)*sender->bcp_from(bci);
+  switch (bc) {
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokedynamic: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+  return false;
+}
+
 // This is the entry point for newly discovered edges in JfrResolution.cpp.
 void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   assert(method != nullptr, "invariant");
@@ -224,10 +242,13 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(!sender->is_native(), "invariant");
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
-  if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
-    if (should_record(method, sender, jt)) {
-      create_edge(method, sender, bci, frame_type, jt);
+  if (should_record(method, sender, jt)) {
+    if (is_invoke_bytecode(sender, bci)) {
+      if (!JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
+        return;
+      }
     }
+    create_edge(method, sender, bci, frame_type, jt);
   }
 }
 
@@ -332,7 +353,6 @@ static void reset_type_set_blobs() {
 void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
   reset_type_set_blobs();
   if (_pending_list.is_nonempty()) {
-    JfrKlassUnloading::sort(true);
     JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);
@@ -369,15 +389,16 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
   _resolved_list.iterate(scw);
 }
 
-// First, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
-// and serialize it to the chunk. Then, all events are serialized, and unique type set blobs
-// written into the JfrCheckpoint system to be serialized to the chunk upon return.
+// First, all events are serialized, and unique type set blobs are written into the
+// JfrCheckpoint system to be serialized to the chunk upon return.
+// Then, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
+// and serialize it directly to the chunk.
 void JfrDeprecationManager::write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error /* false */) {
   if (_resolved_list.is_nonempty() && JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent)) {
+    write_events(cw, thread, on_error);
     if (has_stacktrace()) {
       write_stacktraces(cw);
     }
-    write_events(cw, thread, on_error);
   }
 }
 

@@ -26,7 +26,9 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -34,13 +36,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.misc.InnocuousThread;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Polls file descriptors. Virtual threads invoke the poll method to park
  * until a given file descriptor is ready for I/O.
  */
-abstract class Poller {
+public abstract class Poller {
     private static final Pollers POLLERS;
     static {
         try {
@@ -51,6 +53,9 @@ abstract class Poller {
             throw new ExceptionInInitializerError(ioe);
         }
     }
+
+    // the poller or sub-poller thread
+    private @Stable Thread owner;
 
     // maps file descriptors to parked Thread
     private final Map<Integer, Thread> map = new ConcurrentHashMap<>();
@@ -143,6 +148,20 @@ abstract class Poller {
     }
 
     /**
+     * Parks the current thread until a Selector's file descriptor is ready.
+     * @param fdVal the Selector's file descriptor
+     * @param nanos the waiting time or 0 to wait indefinitely
+     */
+    static void pollSelector(int fdVal, long nanos) throws IOException {
+        assert nanos >= 0L;
+        Poller poller = POLLERS.masterPoller();
+        if (poller == null) {
+            poller = POLLERS.readPoller(fdVal);
+        }
+        poller.poll(fdVal, nanos, () -> true);
+    }
+
+    /**
      * If there is a thread polling the given file descriptor for the given event then
      * the thread is unparked.
      */
@@ -223,6 +242,7 @@ abstract class Poller {
      * descriptor that is polled.
      */
     private void pollerLoop() {
+        owner = Thread.currentThread();
         try {
             for (;;) {
                 poll(-1);
@@ -243,6 +263,7 @@ abstract class Poller {
      */
     private void subPollerLoop(Poller masterPoller) {
         assert Thread.currentThread().isVirtual();
+        owner = Thread.currentThread();
         try {
             int polled = 0;
             for (;;) {
@@ -256,6 +277,19 @@ abstract class Poller {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns the number I/O operations currently registered with this poller.
+     */
+    public int registered() {
+        return map.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s [registered = %d, owner = %s]",
+                Objects.toIdentityString(this), registered(), owner);
     }
 
     /**
@@ -277,7 +311,7 @@ abstract class Poller {
         Pollers() throws IOException {
             PollerProvider provider = PollerProvider.provider();
             Poller.Mode mode;
-            String s = GetPropertyAction.privilegedGetProperty("jdk.pollerMode");
+            String s = System.getProperty("jdk.pollerMode");
             if (s != null) {
                 if (s.equalsIgnoreCase(Mode.SYSTEM_THREADS.name()) || s.equals("1")) {
                     mode = Mode.SYSTEM_THREADS;
@@ -345,6 +379,13 @@ abstract class Poller {
         }
 
         /**
+         * Returns the master poller, or null if there is no master poller.
+         */
+        Poller masterPoller() {
+            return masterPoller;
+        }
+
+        /**
          * Returns the read poller for the given file descriptor.
          */
         Poller readPoller(int fdVal) {
@@ -361,6 +402,21 @@ abstract class Poller {
         }
 
         /**
+         * Return the list of read pollers.
+         */
+        List<Poller> readPollers() {
+            return List.of(readPollers);
+        }
+
+        /**
+         * Return the list of write pollers.
+         */
+        List<Poller> writePollers() {
+            return List.of(writePollers);
+        }
+
+
+        /**
          * Reads the given property name to get the poller count. If the property is
          * set then the value must be a power of 2. Returns 1 if the property is not
          * set.
@@ -368,7 +424,7 @@ abstract class Poller {
          * is not a power of 2.
          */
         private static int pollerCount(String propName, int defaultCount) {
-            String s = GetPropertyAction.privilegedGetProperty(propName);
+            String s = System.getProperty(propName);
             int count = (s != null) ? Integer.parseInt(s) : defaultCount;
 
             // check power of 2
@@ -392,5 +448,26 @@ abstract class Poller {
                 throw new InternalError(e);
             }
         }
+    }
+
+    /**
+     * Return the master poller or null if there is no master poller.
+     */
+    public static Poller masterPoller() {
+        return POLLERS.masterPoller();
+    }
+
+    /**
+     * Return the list of read pollers.
+     */
+    public static List<Poller> readPollers() {
+        return POLLERS.readPollers();
+    }
+
+    /**
+     * Return the list of write pollers.
+     */
+    public static List<Poller> writePollers() {
+        return POLLERS.writePollers();
     }
 }

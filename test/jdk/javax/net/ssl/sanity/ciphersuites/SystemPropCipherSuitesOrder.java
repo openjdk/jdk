@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 import java.util.Arrays;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
@@ -86,8 +87,20 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
         clientcipherSuites
                 = toArray(System.getProperty("jdk.tls.client.cipherSuites"));
         System.out.printf("SYSTEM PROPERTIES: ServerProp:%s - ClientProp:%s%n",
-                Arrays.deepToString(servercipherSuites),
-                Arrays.deepToString(clientcipherSuites));
+                          Arrays.deepToString(servercipherSuites),
+                          Arrays.deepToString(clientcipherSuites));
+
+        // Re-enable TLS_RSA_* cipher suites if needed since test depends on it.
+        if (Stream.concat(
+                        Arrays.stream(
+                                servercipherSuites == null
+                                        ? new String[0] : servercipherSuites),
+                        Arrays.stream(
+                                clientcipherSuites == null
+                                        ? new String[0] : clientcipherSuites))
+                .anyMatch(s -> s.startsWith("TLS_RSA_"))) {
+            SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+        }
 
         try {
             new SystemPropCipherSuitesOrder(args[0]).run();

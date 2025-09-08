@@ -94,8 +94,6 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * A text component to edit various kinds of content.
  * You can find how-to information and examples of using editor panes in
@@ -1238,7 +1236,6 @@ public class JEditorPane extends JTextComponent {
             try {
                 Class<?> c;
                 if (loader != null) {
-                    ReflectUtil.checkPackageAccess(classname);
                     c = loader.loadClass(classname);
                 } else {
                     // Will only happen if developer has invoked
@@ -1342,8 +1339,7 @@ public class JEditorPane extends JTextComponent {
     /**
      * This is invoked every time the registries are accessed. Loading
      * is done this way instead of via a static as the static is only
-     * called once when running in plugin resulting in the entries only
-     * appearing in the first applet.
+     * called once when running in an AppContext.
      */
     private static void loadDefaultKitsIfNecessary() {
         if (SwingUtilities.appContextGet(kitTypeRegistryKey) == null) {

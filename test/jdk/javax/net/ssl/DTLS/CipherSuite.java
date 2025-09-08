@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,16 @@
  *          jdk.crypto.ec
  * @library /test/lib
  * @build DTLSOverDatagram
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA re-enable
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA256
+ * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA256 re-enable
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA re-enable
  * @run main/othervm CipherSuite TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_GCM_SHA256
+ * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_GCM_SHA256 re-enable
  * @run main/othervm CipherSuite TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256 re-enable
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm CipherSuite TLS_DHE_DSS_WITH_AES_128_GCM_SHA256

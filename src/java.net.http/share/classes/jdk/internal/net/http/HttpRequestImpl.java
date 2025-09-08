@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
@@ -41,14 +39,17 @@ import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.util.function.BiPredicate;
 
 import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
+import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
+import static jdk.internal.net.http.common.Utils.copyProxy;
 
 public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
@@ -62,15 +63,13 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     final boolean secure;
     final boolean expectContinue;
     private volatile boolean isWebSocket;
-    @SuppressWarnings("removal")
-    private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
+    private volatile boolean userSetAuthorization;
+    private volatile boolean userSetProxyAuthorization;
 
     private static String userAgent() {
-        PrivilegedAction<String> pa = () -> System.getProperty("java.version");
-        @SuppressWarnings("removal")
-        String version = AccessController.doPrivileged(pa);
+        String version = System.getProperty("java.version");
         return "Java-http-client/" + version;
     }
 
@@ -129,15 +128,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = requestURI;
-        if (isWebSocket) {
-            // WebSocket determines and sets the proxy itself
-            this.proxy = ((HttpRequestImpl) request).proxy;
-        } else {
-            if (ps != null)
-                this.proxy = retrieveProxy(ps, uri);
-            else
-                this.proxy = null;
-        }
+        this.proxy = retrieveProxy(request, ps, uri);
         this.expectContinue = request.expectContinue();
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestPublisher = request.bodyPublisher().orElse(null);
@@ -158,7 +149,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                                                             String method,
                                                             HttpRequestImpl other,
                                                             boolean mayHaveBody) {
-        return new HttpRequestImpl(uri, method, other, mayHaveBody);
+        if (uri.getScheme().equalsIgnoreCase(other.uri.getScheme()) &&
+                uri.getRawAuthority().equals(other.uri.getRawAuthority())) {
+            return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.empty());
+        }
+        return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.of(Utils.ALLOWED_REDIRECT_HEADERS));
     }
 
     /** Returns a new instance suitable for authentication. */
@@ -178,9 +173,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                             String method,
                             HttpRequestImpl other,
                             boolean mayHaveBody) {
+        this(uri, method, other, mayHaveBody, Optional.empty());
+    }
+
+    private HttpRequestImpl(URI uri,
+                            String method,
+                            HttpRequestImpl other,
+                            boolean mayHaveBody,
+                            Optional<BiPredicate<String, String>> redirectHeadersFilter) {
         assert method == null || Utils.isValidName(method);
-        this.method = method == null? "GET" : method;
-        this.userHeaders = other.userHeaders;
+        this.method = method == null ? "GET" : method;
+        HttpHeaders userHeaders = redirectHeadersFilter.isPresent() ?
+                HttpHeaders.of(other.userHeaders.map(), redirectHeadersFilter.get()) : other.userHeaders;
+        this.userHeaders = userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
         if (userHeaders.firstValue("User-Agent").isEmpty()) {
@@ -191,7 +196,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.expectContinue = other.expectContinue;
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestPublisher = mayHaveBody ? publisher(other) : null; // may be null
-        this.acc = other.acc;
         this.timeout = other.timeout;
         this.version = other.version();
         this.authority = null;
@@ -269,7 +273,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.expectContinue = parent.expectContinue;
         this.secure = parent.secure;
         this.requestPublisher = parent.requestPublisher;
-        this.acc = parent.acc;
         this.timeout = parent.timeout;
         this.version = parent.version;
         this.authority = null;
@@ -296,16 +299,27 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public boolean expectContinue() { return expectContinue; }
 
-    /** Retrieves the proxy, from the given ProxySelector, if there is one. */
-    private static Proxy retrieveProxy(ProxySelector ps, URI uri) {
-        Proxy proxy = null;
-        List<Proxy> pl = ps.select(uri);
-        if (!pl.isEmpty()) {
-            Proxy p = pl.get(0);
-            if (p.type() == Proxy.Type.HTTP)
-                proxy = p;
+    /** Retrieves a copy of the proxy either from the given {@link HttpRequest} or {@link ProxySelector}, if there is one. */
+    private static Proxy retrieveProxy(HttpRequest request, ProxySelector ps, URI uri) {
+
+        // WebSocket determines and sets the proxy itself
+        if (request instanceof HttpRequestImpl requestImpl && requestImpl.isWebSocket) {
+            return requestImpl.proxy;
         }
-        return proxy;
+
+        // Try to find a matching one from the `ProxySelector`
+        if (ps != null) {
+            List<Proxy> pl = ps.select(uri);
+            if (!pl.isEmpty()) {
+                Proxy p = pl.getFirst();
+                if (p.type() == Proxy.Type.HTTP) {
+                    return copyProxy(p);
+                }
+            }
+        }
+
+        return null;
+
     }
 
     InetSocketAddress proxy() {
@@ -321,7 +335,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public void setProxy(Proxy proxy) {
         assert isWebSocket;
-        this.proxy = proxy;
+        this.proxy = copyProxy(proxy);
     }
 
     @Override
@@ -331,6 +345,30 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     boolean isWebSocket() {
         return isWebSocket;
+    }
+
+    /**
+     * These flags are set if the user set an Authorization or Proxy-Authorization header
+     * overriding headers produced by an Authenticator that was also set
+     *
+     * The values are checked in the AuthenticationFilter which tells the library
+     * to return whatever response received to the user instead of causing request
+     * to be resent, in case of error.
+     */
+    public void setUserSetAuthFlag(Authenticator.RequestorType type, boolean value) {
+        if (type == SERVER) {
+            userSetAuthorization = value;
+        } else {
+            userSetProxyAuthorization = value;
+        }
+    }
+
+    public boolean getUserSetAuthFlag(Authenticator.RequestorType type) {
+        if (type == SERVER) {
+            return userSetAuthorization;
+        } else {
+            return userSetProxyAuthorization;
+        }
     }
 
     @Override
@@ -366,7 +404,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeadersBuilder.setHeader(name, value);
     }
 
-    @SuppressWarnings("removal")
     InetSocketAddress getAddress() {
         URI uri = uri();
         if (uri == null) {
@@ -383,8 +420,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         final String host = uri.getHost();
         final int port = p;
         if (proxy() == null) {
-            PrivilegedAction<InetSocketAddress> pa = () -> new InetSocketAddress(host, port);
-            return AccessController.doPrivileged(pa);
+            return new InetSocketAddress(host, port);
         } else {
             return InetSocketAddress.createUnresolved(host, port);
         }

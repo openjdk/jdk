@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ import java.util.function.Supplier;
  * bootstrap method. Since the descriptors must be immutable, you can set up a
  * cache for equivalent descriptors to have the call sites share them.
  * <p>
- * The class extends {@link SecureLookupSupplier} for security-checked access to
- * the {@code MethodHandles.Lookup} object it carries. This lookup should be used
+ * The class extends {@link SecureLookupSupplier} to encapsulate the {@code
+ * MethodHandles.Lookup} object. This lookup should be used
  * to find method handles to set as targets of the call site described by this
  * descriptor.
  * @since 9
@@ -170,11 +170,6 @@ public class CallSiteDescriptor extends SecureLookupSupplier {
      * @param newOperation the new operation
      * @return a call site descriptor with the changed operation.
      * @throws NullPointerException if {@code newOperation} is null.
-     * @throws SecurityException if the descriptor's lookup isn't the
-     * {@link MethodHandles#publicLookup()}, and a security manager is present,
-     * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
-     * This is necessary as changing the operation in the call site descriptor
-     * allows fabrication of descriptors for arbitrary operations with the lookup.
      */
     public final CallSiteDescriptor changeOperation(final Operation newOperation) {
         getLookup(); // force security check

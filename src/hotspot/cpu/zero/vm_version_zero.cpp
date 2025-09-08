@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
@@ -151,7 +150,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "Zero VM");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _features_string);
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "Zero VM");
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _cpu_info_string);
   _initialized = true;
 }

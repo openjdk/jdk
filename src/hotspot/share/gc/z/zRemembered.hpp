@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ class ZMark;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
+class ZRemsetTableIterator;
 struct ZRememberedSetContaining;
+struct ZRemsetTableEntry;
 
 class ZRemembered {
   friend class ZRememberedScanMarkFollowTask;
@@ -99,6 +101,26 @@ public:
 
   // Register pages with the remembered set
   void register_found_old(ZPage* page);
+
+  // Remap the current remembered set
+  void remap_current(ZRemsetTableIterator* iter);
+};
+
+// This iterator uses the "found old" optimization to skip having to iterate
+// over the entire page table. Make sure to check where and how the FoundOld
+// data is cycled before using this iterator.
+class ZRemsetTableIterator {
+private:
+  ZRemembered* const            _remembered;
+  BitMap* const                 _bm;
+  ZPageTable* const             _page_table;
+  const ZForwardingTable* const _old_forwarding_table;
+  volatile BitMap::idx_t        _claimed;
+
+public:
+  ZRemsetTableIterator(ZRemembered* remembered, bool previous);
+
+  bool next(ZRemsetTableEntry* entry_addr);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBERED_HPP

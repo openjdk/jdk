@@ -37,9 +37,6 @@ package java.util.concurrent.atomic;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -49,11 +46,12 @@ import java.lang.invoke.VarHandle;
 
 /**
  * A reflection-based utility that enables atomic updates to
- * designated {@code volatile} reference fields of designated
- * classes.  This class is designed for use in atomic data structures
- * in which several reference fields of the same node are
- * independently subject to atomic updates. For example, a tree node
- * might be declared as
+ * designated non-static {@code volatile} reference fields of
+ * designated classes, providing a subset of the functionality of
+ * class {@link VarHandle} that should be used instead.  This class
+ * may be used in atomic data structures in which several reference
+ * fields of the same node are independently subject to atomic
+ * updates. For example, a tree node might be declared as
  *
  * <pre> {@code
  * class Node {
@@ -70,6 +68,26 @@ import java.lang.invoke.VarHandle;
  *   }
  *   // ... and so on
  * }}</pre>
+ *
+ * However, it is preferable to use {@link VarHandle}:
+ * <pre> {@code
+ * import java.lang.invoke.VarHandle;
+ * import java.lang.invoke.MethodHandles;
+ * class Node {
+ *  private volatile Node left, right;
+ *  private static final VarHandle LEFT, RIGHT;
+ *  Node getLeft() { return left; }
+ *  boolean compareAndSetLeft(Node expect, Node update) {
+ *    return LEFT.compareAndSet(this, expect, update);
+ *  }
+ *  // ... and so on
+ *  static { try {
+ *    MethodHandles.Lookup l = MethodHandles.lookup();
+ *    LEFT  = l.findVarHandle(Node.class, "left", Node.class);
+ *    RIGHT = l.findVarHandle(Node.class, "right", Node.class);
+ *   } catch (ReflectiveOperationException e) {
+ *     throw new ExceptionInInitializerError(e);
+ * }}}}</pre>
  *
  * <p>Note that the guarantees of the {@code compareAndSet}
  * method in this class are weaker than in other atomic classes.
@@ -320,7 +338,6 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          * screenings fail.
          */
 
-        @SuppressWarnings("removal")
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         final Class<V> vclass,
                                         final String fieldName,
@@ -329,24 +346,11 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             final Class<?> fieldClass;
             final int modifiers;
             try {
-                field = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Field>() {
-                        public Field run() throws NoSuchFieldException {
-                            return tclass.getDeclaredField(fieldName);
-                        }
-                    });
+                field = tclass.getDeclaredField(fieldName);
                 modifiers = field.getModifiers();
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
                     caller, tclass, null, modifiers);
-                ClassLoader cl = tclass.getClassLoader();
-                ClassLoader ccl = caller.getClassLoader();
-                if ((ccl != null) && (ccl != cl) &&
-                    ((cl == null) || !isAncestor(cl, ccl))) {
-                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
-                }
                 fieldClass = field.getType();
-            } catch (PrivilegedActionException pae) {
-                throw new RuntimeException(pae.getException());
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -358,6 +362,9 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
+
+            if (Modifier.isStatic(modifiers))
+                throw new IllegalArgumentException("Must not be a static field");
 
             // Access to protected field members is restricted to receivers only
             // of the accessing class, or one of its subclasses, and the

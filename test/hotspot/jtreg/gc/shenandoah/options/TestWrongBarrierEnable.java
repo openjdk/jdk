@@ -37,14 +37,18 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
-        String[] concurrent = {
-                "ShenandoahSATBBarrier",
-        };
+        String[] concurrent = { "ShenandoahSATBBarrier" };
+        String[] generational = { "ShenandoahCardBarrier" };
+        String[] all = { "ShenandoahSATBBarrier", "ShenandoahCardBarrier" };
+
         shouldPassAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
+        shouldPassAll("-XX:ShenandoahGCMode=generational",     all);
+        shouldFailAll("-XX:ShenandoahGCMode=satb",             generational);
+        shouldFailAll("-XX:ShenandoahGCMode=passive",          generational);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
@@ -78,5 +82,4 @@ public class TestWrongBarrierEnable {
             output.shouldHaveExitValue(0);
         }
     }
-
 }

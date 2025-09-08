@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -236,6 +235,8 @@ private:
   VerifyOption     _vo;
   bool             _failures;
 
+  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->in_full_gc(); }
+
 public:
   VerifyRegionClosure(VerifyOption vo)
     : _vo(vo),
@@ -247,7 +248,7 @@ public:
 
   bool do_heap_region(G1HeapRegion* r) {
     guarantee(!r->has_index_in_opt_cset(), "Region %u still has opt collection set index %u", r->hrm_index(), r->index_in_opt_cset());
-    guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
+    guarantee(is_in_full_gc() || !r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete outside full gc, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
     guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
 
@@ -367,7 +368,6 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
     Log(gc, verify) log;
-    ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
 

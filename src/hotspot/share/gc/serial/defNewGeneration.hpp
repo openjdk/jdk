@@ -32,7 +32,6 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
@@ -56,8 +55,6 @@ class DefNewGeneration: public Generation {
 
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
-  // Size of object to pretenure in words; command line provides bytes
-  size_t      _pretenure_size_threshold_words;
 
   // ("Weak") Reference processing support
   SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -98,11 +95,6 @@ class DefNewGeneration: public Generation {
   // the subsequent full collection will look at from-space objects:
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
-
-  virtual void restore_preserved_marks();
-
-  // Preserved marks
-  PreservedMarksSet _preserved_marks_set;
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
@@ -190,24 +182,6 @@ class DefNewGeneration: public Generation {
   void object_iterate(ObjectClosure* blk);
 
   HeapWord* block_start(const void* p) const;
-
-  // Allocation support
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    assert(UseTLAB || !is_tlab, "Should not allocate tlab");
-    assert(word_size != 0, "precondition");
-
-    size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-
-    const bool overflows     = word_size >= overflow_limit;
-    const bool check_too_big = _pretenure_size_threshold_words > 0;
-    const bool not_too_big   = word_size < _pretenure_size_threshold_words;
-    const bool size_ok       = is_tlab || !check_too_big || not_too_big;
-
-    bool result = !overflows &&
-                  size_ok;
-
-    return result;
-  }
 
   // Allocate requested size or return null; single-threaded and lock-free versions.
   HeapWord* allocate(size_t word_size);

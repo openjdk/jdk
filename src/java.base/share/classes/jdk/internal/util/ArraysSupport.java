@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,7 @@ public class ArraysSupport {
     public static int hashCodeOfUTF16(byte[] a, int fromIndex, int length, int initialValue) {
         return switch (length) {
             case 0 -> initialValue;
-            case 1 -> 31 * initialValue + JLA.getUTF16Char(a, fromIndex);
+            case 1 -> 31 * initialValue + JLA.uncheckedGetUTF16Char(a, fromIndex);
             default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
         };
     }
@@ -420,7 +420,7 @@ public class ArraysSupport {
     private static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
-            result = 31 * result + JLA.getUTF16Char(value, i);
+            result = 31 * result + JLA.uncheckedGetUTF16Char(value, i);
         }
         return result;
     }
@@ -457,8 +457,8 @@ public class ArraysSupport {
         if (length > 7) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+            long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -550,8 +550,8 @@ public class ArraysSupport {
         if (length > 7) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+            long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -599,8 +599,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -648,8 +648,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -697,8 +697,8 @@ public class ArraysSupport {
         if (length > 1) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -729,8 +729,8 @@ public class ArraysSupport {
         int i = 0;
         if (length > 1) {
             if (Float.floatToRawIntBits(a[aFromIndex]) == Float.floatToRawIntBits(b[bFromIndex])) {
-                int aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
-                int bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
                 i = vectorizedMismatch(
                         a, aOffset,
                         b, bOffset,
@@ -787,8 +787,8 @@ public class ArraysSupport {
         }
         if (a[aFromIndex] != b[bFromIndex])
             return 0;
-        int aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
-        int bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
         int i = vectorizedMismatch(
                 a, aOffset,
                 b, bOffset,
@@ -813,8 +813,8 @@ public class ArraysSupport {
         }
         int i = 0;
         if (Double.doubleToRawLongBits(a[aFromIndex]) == Double.doubleToRawLongBits(b[bFromIndex])) {
-            int aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,

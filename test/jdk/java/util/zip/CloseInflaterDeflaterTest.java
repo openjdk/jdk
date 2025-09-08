@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,8 @@ public class CloseInflaterDeflaterTest {
                 gzip.finish();
             }
         });
-        // Write on a closed GZIPOutputStream, closed Deflater IOException expected
-        assertThrows(NullPointerException.class , () -> gzip.write(inputBytes, 0, INPUT_LENGTH));
+        // Write on a closed GZIPOutputStream, closed Deflater IllegalStateException expected
+        assertThrows(IllegalStateException.class , () -> gzip.write(inputBytes, 0, INPUT_LENGTH));
     }
 
     /**
@@ -149,8 +149,8 @@ public class CloseInflaterDeflaterTest {
                 def.finish();
             }
         });
-        // Write on a closed DeflaterOutputStream, 'Deflater has been closed' NPE is expected
-        assertThrows(NullPointerException.class , () -> def.write(inputBytes, 0, INPUT_LENGTH));
+        // Write on a closed DeflaterOutputStream, IllegalStateException is expected
+        assertThrows(IllegalStateException.class , () -> def.write(inputBytes, 0, INPUT_LENGTH));
     }
 
     /**
@@ -202,8 +202,8 @@ public class CloseInflaterDeflaterTest {
         assertThrows(IOException.class , () -> zip.putNextEntry(new ZipEntry("")));
         zip.write(inputBytes, 0, INPUT_LENGTH);
         assertThrows(IOException.class , () -> zip.closeEntry());
-        // Write on a closed ZipOutputStream , 'Deflater has been closed' NPE is expected
-        assertThrows(NullPointerException.class , () -> zip.write(inputBytes, 0, INPUT_LENGTH));
+        // Write on a closed ZipOutputStream , IllegalStateException is expected
+        assertThrows(IllegalStateException.class , () -> zip.write(inputBytes, 0, INPUT_LENGTH));
     }
 
 }

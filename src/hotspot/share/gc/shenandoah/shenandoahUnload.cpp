@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +23,17 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
-#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -51,7 +50,7 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
+    _marking_context(ShenandoahHeap::heap()->global_generation()->complete_marking_context()),
     _is_unloading(false) {
   }
 

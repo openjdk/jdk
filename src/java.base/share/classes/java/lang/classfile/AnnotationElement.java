@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.constant.ClassDesc;
 
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an element-value pair in the {@code element_value_pairs}
@@ -41,11 +40,10 @@ import jdk.internal.javac.PreviewFeature;
  * {@link Object#equals(Object) equals} method.
  *
  * @see Annotation
- * @see AnnotationValue
- *
- * @since 22
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
+ * @jvms 4.7.16.1 The {@code element_value} structure
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationElement
         permits AnnotationImpl.AnnotationElementImpl {
 
@@ -211,6 +209,8 @@ public sealed interface AnnotationElement
      * @param name the name of the key
      * @param values the associated values
      * @see AnnotationValue#ofArray(AnnotationValue...) AnnotationValue::ofArray
+     * @throws IllegalArgumentException if the number of associated values
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static AnnotationElement ofArray(String name,
                                      AnnotationValue... values) {

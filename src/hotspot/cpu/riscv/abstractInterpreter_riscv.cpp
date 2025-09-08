@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/klass.inline.hpp"
@@ -142,7 +141,8 @@ void AbstractInterpreter::layout_activation(Method* method,
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
-    assert(locals < caller->fp() + frame::interpreter_frame_initial_sp_offset, "bad placement");
+    assert(locals <= caller->interpreter_frame_expression_stack(), "bad placement");
+    assert(locals >= interpreter_frame->sender_sp() + max_locals - 1, "bad placement");
   }
 #endif
 

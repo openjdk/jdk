@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,14 @@ public class InferenceContext {
 
     Types types;
     Infer infer;
+
+    /* when an inference context (IC) is minimized, the minimized inference context (MIC) contains a
+     * proper subset of IC's inference vars (IC_IV). In other words there will be at least one inference variable T
+     * that belongs to IC_IV which doesn't belong to MIC_IV. We need the field below to, among other things,
+     * check for set membership for cases where the minimized context or any other context derived from it
+     * needs to deal with an inference variable that has been eliminated from IC_IV while minimizing it
+     */
+    InferenceContext parentIC;
 
     public InferenceContext(Infer infer, List<Type> inferencevars) {
         this(infer, inferencevars, inferencevars.map(infer.fromTypeVarFun));
@@ -214,6 +222,20 @@ public class InferenceContext {
         return buf.toList();
     }
 
+    /**
+     * Replace all undet vars in a given type with corresponding free variables
+     */
+    public final Type asTypeVar(Type t) {
+        return asTypeVarFun.apply(t);
+    }
+
+    Types.TypeMapping<Void> asTypeVarFun = new Type.StructuralTypeMapping<>() {
+        @Override
+        public Type visitUndetVar(UndetVar uv, Void aVoid) {
+            return uv.qtype;
+        }
+    };
+
     List<Type> instTypes() {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {
@@ -229,7 +251,17 @@ public class InferenceContext {
      * fully instantiated, it will still be available in the resulting type.
      */
     Type asInstType(Type t) {
-        return types.subst(t, inferencevars, instTypes());
+        ListBuffer<Type> from = new ListBuffer<>();
+        ListBuffer<Type> to = new ListBuffer<>();
+        from.addAll(inferencevars);
+        to.addAll(instTypes());
+        InferenceContext next = parentIC;
+        while (next != null) {
+            from.addAll(next.inferencevars);
+            to.addAll(next.instTypes());
+            next = next.parentIC;
+        }
+        return types.subst(t, from.toList(), to.toList());
     }
 
     List<Type> asInstTypes(List<Type> ts) {
@@ -537,8 +569,12 @@ public class InferenceContext {
 
     @Override
     public String toString() {
-        return "Inference vars: " + inferencevars + '\n' +
-               "Undet vars: " + undetvars;
+        String result = "Inference vars: " + inferencevars + '\n' +
+               "Undet vars: " + undetvars + '\n';
+        if (parentIC != null) {
+            result += "\nParent : " + parentIC.toString();
+        }
+        return result;
     }
 
     /* Method Types.capture() generates a new type every time it's applied

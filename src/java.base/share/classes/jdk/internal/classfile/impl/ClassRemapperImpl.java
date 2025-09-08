@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.ClassRemapper;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
 import java.lang.classfile.instruction.*;

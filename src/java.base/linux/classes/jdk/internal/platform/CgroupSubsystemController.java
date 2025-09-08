@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +29,8 @@ package jdk.internal.platform;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,13 +62,13 @@ public interface CgroupSubsystemController {
     public static String getStringValue(CgroupSubsystemController controller, String param) {
         if (controller == null) return null;
 
-        try {
-            return CgroupUtil.readStringValue(controller, param);
-        }
-        catch (IOException e) {
+        Path filePath = Path.of(controller.path(), param);
+        try (Stream<String> lines = Files.lines(filePath)) {
+            Optional<String> firstLine = lines.findFirst();
+            return firstLine.orElse(null);
+        } catch (UncheckedIOException | IOException e) {
             return null;
         }
-
     }
 
     /**
@@ -92,8 +93,8 @@ public interface CgroupSubsystemController {
             return retval;
         }
         try {
-            Path filePath = Paths.get(controller.path(), param);
-            List<String> lines = CgroupUtil.readAllLinesPrivileged(filePath);
+            Path filePath = Path.of(controller.path(), param);
+            List<String> lines = Files.readAllLines(filePath);
             for (String line : lines) {
                 if (line.startsWith(match)) {
                     retval = conversion.apply(line);
@@ -161,7 +162,7 @@ public interface CgroupSubsystemController {
     public static long getLongEntry(CgroupSubsystemController controller, String param, String entryname, long defaultRetval) {
         if (controller == null) return defaultRetval;
 
-        try (Stream<String> lines = CgroupUtil.readFilePrivileged(Paths.get(controller.path(), param))) {
+        try (Stream<String> lines = Files.lines(Path.of(controller.path(), param))) {
 
             Optional<String> result = lines.map(line -> line.split(" "))
                                            .filter(line -> (line.length == 2 &&

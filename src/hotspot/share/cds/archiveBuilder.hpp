@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,17 @@
 
 #include "cds/archiveUtils.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resizeableResourceHash.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ArchiveHeapInfo;
 class CHeapBitMap;
@@ -43,9 +46,9 @@ class Klass;
 class MemRegion;
 class Symbol;
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+// The minimum alignment for non-Klass objects inside the CDS archive. Klass objects need
+// to follow CompressedKlassPointers::klass_alignment_in_bytes().
+constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignment_bytes;
 
 // Overview of CDS archive creation (for both static and dynamic dump):
 //
@@ -90,12 +93,11 @@ const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 //    buffered_address + _buffer_to_requested_delta == requested_address
 //
 class ArchiveBuilder : public StackObj {
+  friend class AOTMapLogger;
+
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
-  address _last_verified_top;
-  int _num_dump_regions_used;
-  size_t _other_region_used_bytes;
 
   // These are the addresses where we will request the static and dynamic archives to be
   // mapped at run time. If the request fails (due to ASLR), we will map the archives at
@@ -180,6 +182,7 @@ private:
       return _buffered_addr;
     }
     MetaspaceObj::Type msotype() const { return _msotype; }
+    FollowMode follow_mode() const { return _follow_mode; }
   };
 
   class SourceObjList {
@@ -201,16 +204,21 @@ private:
     SourceObjInfo* at(int i) const { return objs()->at(i); }
   };
 
-  class CDSMapLogger;
-
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
 
   ReservedSpace _shared_rs;
   VirtualSpace _shared_vs;
 
+  // The "pz" region is used only during static dumps to reserve an unused space between SharedBaseAddress and
+  // the bottom of the rw region. During runtime, this space will be filled with a reserved area that disallows
+  // read/write/exec, so we can track for bad CompressedKlassPointers encoding.
+  // Note: this region does NOT exist in the cds archive.
+  DumpRegion _pz_region;
+
   DumpRegion _rw_region;
   DumpRegion _ro_region;
+  DumpRegion _ac_region; // AOT code
 
   // Combined bitmap to track pointers in both RW and RO regions. This is updated
   // as objects are copied into RW and RO.
@@ -222,8 +230,8 @@ private:
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
-  ResizeableResourceHashtable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
-  ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
+  ResizeableHashTable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableHashTable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   unsigned int _entropy_seed;
@@ -231,6 +239,11 @@ private:
   // statistics
   DumpAllocStats _alloc_stats;
   size_t _total_heap_region_size;
+  struct {
+    size_t _num_ptrs;
+    size_t _num_tagged_ptrs;
+    size_t _num_nulled_ptrs;
+  } _relocated_ptr_info;
 
   void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
@@ -251,6 +264,8 @@ public:
     ~OtherROAllocMark();
   };
 
+  void count_relocated_pointer(bool tagged, bool nulled);
+
 private:
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
@@ -269,17 +284,7 @@ private:
 
 protected:
   virtual void iterate_roots(MetaspaceClosure* it) = 0;
-
-  // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
-  size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
-
-  static const int _total_dump_regions = 2;
-
-  size_t estimate_archive_size();
-
   void start_dump_region(DumpRegion* next);
-  void verify_estimate_size(size_t estimate, const char* which);
 
 public:
   address reserve_buffer();
@@ -291,7 +296,7 @@ public:
   intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;            }
 
   bool is_in_buffer_space(address p) const {
-    return (buffer_bottom() <= p && p < buffer_top());
+    return (buffer_bottom() != nullptr && buffer_bottom() <= p && p < buffer_top());
   }
 
   template <typename T> bool is_in_requested_static_archive(T p) const {
@@ -311,6 +316,12 @@ public:
     return (T)(address(obj) + _buffer_to_requested_delta);
   }
 
+  template <typename T> T requested_to_buffered(T obj) const {
+    T b = (T)(address(obj) - _buffer_to_requested_delta);
+    assert(is_in_buffer_space(b), "must be");
+    return b;
+  }
+
   static intx get_buffer_to_requested_delta() {
     return current()->buffer_to_requested_delta();
   }
@@ -321,7 +332,7 @@ public:
   }
 
 public:
-  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
+  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
 
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
@@ -331,6 +342,9 @@ public:
   // inside the output buffer, or (b), an object in the currently mapped static archive.
   uintx any_to_offset(address p) const;
 
+  // The reverse of buffer_to_offset()
+  address offset_to_buffered_address(u4 offset) const;
+
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
     uintx offset = buffer_to_offset((address)p);
@@ -339,8 +353,23 @@ public:
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
+    assert(p != nullptr, "must not be null");
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
+  }
+
+  template <typename T>
+  u4 any_or_null_to_offset_u4(T p) const {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return any_to_offset_u4<T>(p);
+    }
+  }
+
+  template <typename T>
+  T offset_to_buffered(u4 offset) const {
+    return (T)offset_to_buffered_address(offset);
   }
 
 public:
@@ -355,8 +384,10 @@ public:
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
   static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
+  DumpRegion* pz_region() { return &_pz_region; }
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
+  DumpRegion* ac_region() { return &_ac_region; }
 
   static char* rw_region_alloc(size_t num_bytes) {
     return current()->rw_region()->allocate(num_bytes);
@@ -364,6 +395,12 @@ public:
   static char* ro_region_alloc(size_t num_bytes) {
     return current()->ro_region()->allocate(num_bytes);
   }
+  static char* ac_region_alloc(size_t num_bytes) {
+    return current()->ac_region()->allocate(num_bytes);
+  }
+
+  void start_ac_region();
+  void end_ac_region();
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
@@ -396,6 +433,7 @@ public:
   void relocate_metaspaceobj_embedded_pointers();
   void record_regenerated_object(address orig_src_obj, address regen_src_obj);
   void make_klasses_shareable();
+  void make_training_data_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
@@ -411,9 +449,15 @@ public:
     mark_and_relocate_to_buffered_addr((address*)ptr_location);
   }
 
+  bool has_been_archived(address src_addr) const;
+  template <typename T> bool has_been_archived(T src_addr) const {
+    return has_been_archived((address)src_addr);
+  }
+
   address get_buffered_addr(address src_addr) const;
   template <typename T> T get_buffered_addr(T src_addr) const {
-    return (T)get_buffered_addr((address)src_addr);
+    CDS_ONLY(return (T)get_buffered_addr((address)src_addr);)
+    NOT_CDS(return nullptr;)
   }
 
   address get_source_addr(address buffered_addr) const;
@@ -426,7 +470,8 @@ public:
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
 
   static bool is_active() {
-    return (_current != nullptr);
+    CDS_ONLY(return (_current != nullptr));
+    NOT_CDS(return false;)
   }
 
   static ArchiveBuilder* current() {
@@ -460,6 +505,29 @@ public:
 
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
+
+#ifdef _LP64
+  // The CDS archive contains pre-computed narrow Klass IDs. It carries them in the headers of
+  // archived heap objects. With +UseCompactObjectHeaders, it also carries them in prototypes
+  // in Klass.
+  // When generating the archive, these narrow Klass IDs are computed using the following scheme:
+  // 1) The future encoding base is assumed to point to the first address of the generated mapping.
+  //    That means that at runtime, the narrow Klass encoding must be set up with base pointing to
+  //    the start address of the mapped CDS metadata archive (wherever that may be). This precludes
+  //    zero-based encoding.
+  // 2) The shift must be large enough to result in an encoding range that covers the future assumed
+  //    runtime Klass range. That future Klass range will contain both the CDS metadata archive and
+  //    the future runtime class space. Since we do not know the size of the future class space, we
+  //    need to chose an encoding base/shift combination that will result in a "large enough" size.
+  //    The details depend on whether we use compact object headers or legacy object headers.
+  //  In Legacy Mode, a narrow Klass ID is 32 bit. This gives us an encoding range size of 4G even
+  //    with shift = 0, which is all we need. Therefore, we use a shift=0 for pre-calculating the
+  //    narrow Klass IDs.
+  // TinyClassPointer Mode:
+  //    We use the highest possible shift value to maximize the encoding range size.
+  static int precomputed_narrow_klass_shift();
+#endif // _LP64
+
 };
 
 #endif // SHARE_CDS_ARCHIVEBUILDER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@ class CounterMode extends FeedbackCipher {
     // number of bytes in encryptedCounter already used up
     private int used;
 
+    // chunkSize is a multiple of block size and used to divide up
+    // input data to trigger the intrinsic.
+    private final int chunkSize;
+
     // variables for save/restore calls
     private byte[] counterSave = null;
     private byte[] encryptedCounterSave = null;
@@ -62,6 +66,7 @@ class CounterMode extends FeedbackCipher {
         super(embeddedCipher);
         counter = new byte[blockSize];
         encryptedCounter = new byte[blockSize];
+        chunkSize = blockSize * 6400;
     }
 
     /**
@@ -178,7 +183,17 @@ class CounterMode extends FeedbackCipher {
 
         ArrayUtil.nullAndBoundsCheck(in, inOff, len);
         ArrayUtil.nullAndBoundsCheck(out, outOff, len);
-        return implCrypt(in, inOff, len, out, outOff);
+
+        int processed = 0;
+        for (;  len > chunkSize; inOff += chunkSize, outOff += chunkSize,
+            len -= chunkSize) {
+            processed += implCrypt(in, inOff, chunkSize, out, outOff);
+        }
+        // note: above loop always leaves some data to process (more than zero,
+        // less than or equal to chunkSize) so this last call can be
+        // unconditional
+        processed += implCrypt(in, inOff, len, out, outOff);
+        return processed;
     }
 
     // Implementation of crpyt() method. Possibly replaced with a compiler intrinsic.

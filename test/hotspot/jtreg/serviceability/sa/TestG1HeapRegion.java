@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import jdk.test.lib.Utils;
  * @test
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.gc.G1
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1

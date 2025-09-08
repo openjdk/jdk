@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ class ClassFileParser {
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
   Array<u1>* _fieldinfo_stream;
+  Array<u1>* _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
   Array<Method*>* _methods;
   Array<u2>* _inner_classes;
@@ -185,13 +186,13 @@ class ClassFileParser {
   u2 _java_fields_count;
 
   bool _need_verify;
-  bool _relax_verify;
 
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
   bool _has_localvariable_table;
   bool _has_final_method;
   bool _has_contended_fields;
+  bool _has_aot_runtime_setup_method;
 
   // precomputed flags
   bool _has_finalizer;
@@ -241,10 +242,10 @@ class ClassFileParser {
                         bool* has_nonstatic_concrete_methods,
                         TRAPS);
 
-  const InstanceKlass* parse_super_class(ConstantPool* const cp,
-                                         const int super_class_index,
-                                         const bool need_verify,
-                                         TRAPS);
+  void check_super_class(ConstantPool* const cp,
+                         const int super_class_index,
+                         const bool need_verify,
+                         TRAPS);
 
   // Field parsing
   void parse_field_attributes(const ClassFileStream* const cfs,
@@ -368,6 +369,10 @@ class ClassFileParser {
                             const Klass* k,
                             TRAPS) const;
 
+  // Uses msg directly in the ICCE, with no additional content
+  void classfile_icce_error(const char* msg,
+                            TRAPS) const;
+
   void classfile_ucve_error(const char* msg,
                             const Symbol* class_name,
                             u2 major,
@@ -376,44 +381,6 @@ class ClassFileParser {
 
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
     if (!b) { classfile_parse_error(msg, THREAD); return; }
-  }
-
-  void report_assert_property_failure(const char* msg, TRAPS) const PRODUCT_RETURN;
-  void report_assert_property_failure(const char* msg, int index, TRAPS) const PRODUCT_RETURN;
-
-  inline void assert_property(bool b, const char* msg, TRAPS) const {
-#ifdef ASSERT
-    if (!b) {
-      report_assert_property_failure(msg, THREAD);
-    }
-#endif
-  }
-
-  inline void assert_property(bool b, const char* msg, int index, TRAPS) const {
-#ifdef ASSERT
-    if (!b) {
-      report_assert_property_failure(msg, index, THREAD);
-    }
-#endif
-  }
-
-  inline void check_property(bool property,
-                             const char* msg,
-                             int index,
-                             TRAPS) const {
-    if (_need_verify) {
-      guarantee_property(property, msg, index, CHECK);
-    } else {
-      assert_property(property, msg, index, CHECK);
-    }
-  }
-
-  inline void check_property(bool property, const char* msg, TRAPS) const {
-    if (_need_verify) {
-      guarantee_property(property, msg, CHECK);
-    } else {
-      assert_property(property, msg, CHECK);
-    }
   }
 
   inline void guarantee_property(bool b,
@@ -548,6 +515,10 @@ class ClassFileParser {
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
   bool is_abstract() const { return _access_flags.is_abstract(); }
+
+  // Returns true if the Klass to be generated will need to be addressable
+  // with a narrow Klass ID.
+  bool klass_needs_narrow_id() const;
 
   ClassLoaderData* loader_data() const { return _loader_data; }
   const Symbol* class_name() const { return _class_name; }

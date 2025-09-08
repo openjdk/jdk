@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ inline bool is_FloatRegister() {
          value() < ConcreteRegisterImpl::max_fpr;
 }
 
-inline bool is_VectorSRegister() {
+inline bool is_VectorRegister() {
   return value() >= ConcreteRegisterImpl::max_fpr &&
-         value() < ConcreteRegisterImpl::max_vsr;
+         value() < ConcreteRegisterImpl::max_vr;
 }
 
 inline bool is_ConditionRegister() {
-  return value() >= ConcreteRegisterImpl::max_vsr &&
+  return value() >= ConcreteRegisterImpl::max_vr &&
          value() < ConcreteRegisterImpl::max_cnd;
 }
 
@@ -60,14 +60,19 @@ inline FloatRegister as_FloatRegister() {
   return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
 }
 
-inline VectorSRegister as_VectorSRegister() {
-  assert(is_VectorSRegister(), "must be");
-  return ::as_VectorSRegister(value() - ConcreteRegisterImpl::max_fpr);
+inline VectorRegister as_VectorRegister() {
+  assert(is_VectorRegister(), "must be");
+  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr) >> 2);
 }
 
 inline bool is_concrete() {
   assert(is_reg(), "must be");
-  return is_even(value());
+  if (is_Register() || is_FloatRegister()) return is_even(value());
+  if (is_VectorRegister()) {
+    int base = value() - ConcreteRegisterImpl::max_fpr;
+    return (base & 3) == 0;
+  }
+  return true;
 }
 
 #endif // CPU_PPC_VMREG_PPC_HPP

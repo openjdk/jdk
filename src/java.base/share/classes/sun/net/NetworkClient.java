@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,14 @@ import java.io.*;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.net.Proxy;
 import java.util.Arrays;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This is the base class for network clients.
  *
  * @author      Jonathan Payne
  */
-@SuppressWarnings("removal")
 public class NetworkClient {
     /* Default value of read timeout, if not specified (infinity) */
     public static final int DEFAULT_READ_TIMEOUT = -1;
@@ -66,26 +62,17 @@ public class NetworkClient {
     protected static String encoding;
 
     static {
-        final int vals[] = {0, 0};
-        final String encs[] = { null };
-
-        AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public Void run() {
-                        vals[0] = Integer.getInteger("sun.net.client.defaultReadTimeout", 0).intValue();
-                        vals[1] = Integer.getInteger("sun.net.client.defaultConnectTimeout", 0).intValue();
-                        encs[0] = System.getProperty("file.encoding", "ISO8859_1");
-                        return null;
-            }
-        });
-        if (vals[0] != 0) {
-            defaultSoTimeout = vals[0];
-        }
-        if (vals[1] != 0) {
-            defaultConnectTimeout = vals[1];
+        int soTimeout = Integer.getInteger("sun.net.client.defaultReadTimeout", 0);
+        if (soTimeout != 0) {
+            defaultSoTimeout = soTimeout;
         }
 
-        encoding = encs[0];
+        int connTimeout = Integer.getInteger("sun.net.client.defaultConnectTimeout", 0);
+        if (connTimeout != 0) {
+            defaultConnectTimeout = connTimeout;
+        }
+
+        encoding = System.getProperty("file.encoding", "ISO8859_1");
         try {
             if (!isASCIISuperset (encoding)) {
                 encoding = "ISO8859_1";
@@ -131,7 +118,7 @@ public class NetworkClient {
 
     /** Open a connection to the server. */
     public void openServer(String server, int port)
-        throws IOException, UnknownHostException {
+        throws IOException {
         if (serverSocket != null)
             closeServer();
         serverSocket = doConnect (server, port);
@@ -150,15 +137,11 @@ public class NetworkClient {
      * appropriate options pre-established
      */
     protected Socket doConnect (String server, int port)
-    throws IOException, UnknownHostException {
+    throws IOException {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                        public Socket run() {
-                                       return new Socket(proxy);
-                                   }});
+                s = new Socket(proxy);
             } else if (proxy.type() == Proxy.Type.DIRECT) {
                 s = createSocket();
             } else {
@@ -203,13 +186,7 @@ public class NetworkClient {
     protected InetAddress getLocalAddress() throws IOException {
         if (serverSocket == null)
             throw new IOException("not connected");
-        return  AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            public InetAddress run() {
-                                return serverSocket.getLocalAddress();
-
-                            }
-                        });
+        return serverSocket.getLocalAddress();
     }
 
     /** Close an open connection to the server. */

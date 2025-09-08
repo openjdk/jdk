@@ -1445,10 +1445,10 @@ public abstract class VectorReduction2 {
         bh.consume(acc);
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {"-XX:+UseSuperWord"})
+    @Fork(value = 1, jvmArgs = {"-XX:+UseSuperWord"})
     public static class WithSuperword extends VectorReduction2 {}
 
-    @Fork(value = 1, jvmArgsPrepend = {"-XX:-UseSuperWord"})
+    @Fork(value = 1, jvmArgs = {"-XX:-UseSuperWord"})
     public static class NoSuperword extends VectorReduction2 {}
 }
 

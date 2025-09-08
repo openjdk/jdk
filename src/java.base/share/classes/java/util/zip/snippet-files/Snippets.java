@@ -38,8 +38,7 @@ class Snippets {
 
         // Compress the bytes
         ByteArrayOutputStream compressedBaos = new ByteArrayOutputStream();
-        Deflater compressor = new Deflater();
-        try {
+        try (Deflater compressor = new Deflater()) {
             compressor.setInput(input);
             // Let the compressor know that the complete input
             // has been made available
@@ -55,15 +54,11 @@ class Snippets {
                 // buffer into the final byte array
                 compressedBaos.write(tmpBuffer, 0, numCompressed);
             }
-        } finally {
-            // Release the resources held by the compressor
-            compressor.end();
         }
 
         // Decompress the bytes
-        Inflater decompressor = new Inflater();
         ByteArrayOutputStream decompressedBaos = new ByteArrayOutputStream();
-        try {
+        try (Inflater decompressor = new Inflater()) {
             byte[] compressed = compressedBaos.toByteArray();
             decompressor.setInput(compressed, 0, compressed.length);
             while (!decompressor.finished()) {
@@ -83,9 +78,6 @@ class Snippets {
                 // buffer into the final byte array
                 decompressedBaos.write(tmpBuffer, 0, numDecompressed);
             }
-        } finally {
-            // Release the resources held by the decompressor
-            decompressor.end();
         }
         // Decode the bytes into a String
         String outputString = decompressedBaos.toString(StandardCharsets.UTF_8);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,8 @@ public class bug8075609 {
             SwingUtilities.invokeAndWait(bug8075609::createAndShowGUI);
 
             robot = new Robot();
-            Thread.sleep(100);
             robot.waitForIdle();
-
+            robot.delay(1000);
             robot.setAutoDelay(100);
 
             // Radio button group tab key test

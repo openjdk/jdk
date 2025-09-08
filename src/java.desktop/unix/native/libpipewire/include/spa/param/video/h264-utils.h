@@ -18,7 +18,15 @@ extern "C" {
 #include <spa/pod/builder.h>
 #include <spa/param/video/h264.h>
 
-static inline int
+#ifndef SPA_API_VIDEO_H264_UTILS
+ #ifdef SPA_API_IMPL
+  #define SPA_API_VIDEO_H264_UTILS SPA_API_IMPL
+ #else
+  #define SPA_API_VIDEO_H264_UTILS static inline
+ #endif
+#endif
+
+SPA_API_VIDEO_H264_UTILS int
 spa_format_video_h264_parse(const struct spa_pod *format,
                 struct spa_video_info_h264 *info)
 {
@@ -31,9 +39,9 @@ spa_format_video_h264_parse(const struct spa_pod *format,
             SPA_FORMAT_VIDEO_H264_alignment,    SPA_POD_OPT_Id(&info->alignment));
 }
 
-static inline struct spa_pod *
+SPA_API_VIDEO_H264_UTILS struct spa_pod *
 spa_format_video_h264_build(struct spa_pod_builder *builder, uint32_t id,
-               struct spa_video_info_h264 *info)
+                const struct spa_video_info_h264 *info)
 {
     struct spa_pod_frame f;
     spa_pod_builder_push_object(builder, &f, SPA_TYPE_OBJECT_Format, id);
@@ -49,7 +57,7 @@ spa_format_video_h264_build(struct spa_pod_builder *builder, uint32_t id,
             SPA_FORMAT_VIDEO_framerate,    SPA_POD_Fraction(&info->framerate), 0);
     if (info->max_framerate.denom != 0)
         spa_pod_builder_add(builder,
-            SPA_FORMAT_VIDEO_maxFramerate,    SPA_POD_Fraction(info->max_framerate), 0);
+            SPA_FORMAT_VIDEO_maxFramerate,    SPA_POD_Fraction(&info->max_framerate), 0);
     if (info->stream_format != 0)
         spa_pod_builder_add(builder,
             SPA_FORMAT_VIDEO_H264_streamFormat, SPA_POD_Id(info->stream_format), 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // The verifier class
 class Verifier : AllStatic {
@@ -52,7 +52,7 @@ class Verifier : AllStatic {
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
   // -Xverify:all overrides this value
-  static bool should_verify_for(oop class_loader, bool should_verify_class);
+  static bool should_verify_for(oop class_loader);
 
   // Relax certain access checks to enable some broken 1.1 apps to run on 1.2.
   static bool relax_access_for(oop class_loader);
@@ -61,7 +61,6 @@ class Verifier : AllStatic {
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
  private:
-  static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class);
   static Symbol* inference_verify(
     InstanceKlass* klass, char* msg, size_t msg_len, TRAPS);
 };
@@ -271,7 +270,7 @@ class sig_as_verification_types : public ResourceObj {
 
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to
 // by constant pool (Interface)Method_refs' NameAndType signature entries.
-typedef ResourceHashtable<int, sig_as_verification_types*, 1007>
+typedef HashTable<int, sig_as_verification_types*, 1007>
                           method_signatures_table_type;
 
 // A new instance of this class is created for each class being verified

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.hpp"
@@ -66,12 +65,16 @@
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   Register handle_exception = Z_ARG5;
@@ -115,7 +118,7 @@ void OptoRuntime::generate_exception_blob() {
   __ z_lgr(Z_SP, saved_sp);
 
   // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
-  // C2I adapter extensions are now removed by a resize in the frame manager
+  // C2I adapter extensions are now removed by a resize in the template interpreter
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);
@@ -146,5 +149,5 @@ void OptoRuntime::generate_exception_blob() {
 
   // Set exception blob.
   OopMapSet *oop_maps = nullptr;
-  _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, frame_size/wordSize);
+  return ExceptionBlob::create(&buffer, oop_maps, frame_size/wordSize);
 }

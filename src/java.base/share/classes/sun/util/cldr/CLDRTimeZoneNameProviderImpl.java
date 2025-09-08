@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.TimeZone;
+
+import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -54,7 +55,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
     private static final String NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
     private static class AVAILABLE_IDS {
         static final String[] INSTANCE =
-            Arrays.stream(ZoneInfoFile.getZoneIds())
+                ZoneInfoFile.zoneIds()
                 .sorted()
                 .toArray(String[]::new);
     }
@@ -92,8 +93,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 switch (namesSuper[i]) {
                 case "":
                     // Fill in empty elements
-                    deriveFallbackName(namesSuper, i, locale,
-                                       TimeZone.getTimeZone(id).toZoneId().getRules().isFixedOffset());
+                    deriveFallbackName(namesSuper, i, locale, isFixedOffset(id));
                     break;
                 case NO_INHERITANCE_MARKER:
                     // CLDR's "no inheritance marker"
@@ -131,7 +131,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     // Derive fallback time zone name according to LDML's logic
     private void deriveFallbackNames(String[] names, Locale locale) {
-        boolean noDST = TimeZone.getTimeZone(names[0]).toZoneId().getRules().isFixedOffset();
+        boolean noDST = isFixedOffset(names[0]);
 
         for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
             deriveFallbackName(names, i, locale, noDST);
@@ -151,10 +151,11 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return;
         }
 
+        var lpa = ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR));
+
         // Check parent locales first
         if (!exists(names, index)) {
-            var cands = ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
-                    .getCandidateLocales("", locale);
+            var cands = lpa.getCandidateLocales("", locale);
             for (int i = 1; i < cands.size() ; i++) {
                 var loc = cands.get(i);
                 String[] parentNames = super.getDisplayNameArray(id, loc);
@@ -167,6 +168,14 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                     }
                 }
             }
+        }
+
+        // Check canonical id
+        var canonName =
+            lpa.canonicalTZID(id).map(canonId -> getDisplayNameArray(canonId, locale)[index]);
+        if (canonName.isPresent()) {
+            names[index] = canonName.get();
+            return;
         }
 
         // Type Fallback
@@ -301,5 +310,12 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return MessageFormat.format(gmtFormat,
                     String.format(l, hourFormat, offset / 60, offset % 60));
         }
+    }
+
+    // ZoneInfo.getTimeZone() may return null if the tzdata has been
+    // forcibly downgraded to an older release using TZUpdater
+    private boolean isFixedOffset(String id) {
+        var zi = ZoneInfo.getTimeZone(id);
+        return zi == null || zi.toZoneId().getRules().isFixedOffset();
     }
 }

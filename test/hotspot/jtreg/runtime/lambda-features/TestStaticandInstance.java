@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
  * @test
  * @bug 8087342
  * @summary Test linkresolver search static, instance and overpass duplicates
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal TestStaticandInstance
  */
 
 
 import java.util.*;
-import jdk.internal.org.objectweb.asm.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class TestStaticandInstance {
   static final String stringC = "C";

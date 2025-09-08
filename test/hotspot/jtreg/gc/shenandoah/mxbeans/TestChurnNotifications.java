@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * @test id=passive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -43,7 +44,7 @@
  * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -55,7 +56,7 @@
  * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -67,7 +68,7 @@
  * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -79,11 +80,23 @@
  * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      -Dprecise=false
+ *      TestChurnNotifications
+ */
+
+/*
+ * @test id=generational
+ * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -Dprecise=false -Dmem.pool=Young
  *      TestChurnNotifications
  */
 
@@ -111,6 +124,8 @@ public class TestChurnNotifications {
 
     static volatile Object sink;
 
+    private static final String POOL_NAME = "Young".equals(System.getProperty("mem.pool")) ? "Shenandoah Young Gen" : "Shenandoah";
+
     public static void main(String[] args) throws Exception {
         final long startTimeNanos = System.nanoTime();
 
@@ -124,8 +139,8 @@ public class TestChurnNotifications {
                     Map<String, MemoryUsage> mapBefore = info.getGcInfo().getMemoryUsageBeforeGc();
                     Map<String, MemoryUsage> mapAfter = info.getGcInfo().getMemoryUsageAfterGc();
 
-                    MemoryUsage before = mapBefore.get("Shenandoah");
-                    MemoryUsage after = mapAfter.get("Shenandoah");
+                    MemoryUsage before = mapBefore.get(POOL_NAME);
+                    MemoryUsage after = mapAfter.get(POOL_NAME);
 
                     if ((before != null) && (after != null)) {
                         long diff = before.getUsed() - after.getUsed();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.apple.laf.AquaIcon.DynamicallySizingJRSUIIcon;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.*;
 
-public class AquaTextFieldSearch {
+public final class AquaTextFieldSearch {
     private static final String VARIANT_KEY = "JTextField.variant";
     private static final String SEARCH_VARIANT_VALUE = "search";
 
@@ -58,7 +58,8 @@ public class AquaTextFieldSearch {
         c.removePropertyChangeListener(SEARCH_FIELD_PROPERTY_LISTENER);
     }
 
-    static class SearchFieldPropertyListener implements PropertyChangeListener {
+    static final class SearchFieldPropertyListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final Object source = evt.getSource();
             if (!(source instanceof JTextComponent)) return;
@@ -249,7 +250,6 @@ public class AquaTextFieldSearch {
         label.setText(promptText);
     }
 
-    @SuppressWarnings("serial") // anonymous class inside
     protected static JButton getCancelButton(final JTextComponent c) {
         final JButton b = createButton(c, getCancelIcon());
         b.setName("cancel");
@@ -291,7 +291,7 @@ public class AquaTextFieldSearch {
     }
 
     // subclass of normal text border, because we still want all the normal text field behaviors
-    static class SearchFieldBorder extends AquaTextFieldBorder implements JComponentPainter {
+    static final class SearchFieldBorder extends AquaTextFieldBorder implements JComponentPainter {
         protected boolean reallyPaintBorder;
 
         public SearchFieldBorder() {
@@ -303,6 +303,7 @@ public class AquaTextFieldSearch {
             super(other);
         }
 
+        @Override
         public void paint(final JComponent c, final Graphics g, final int x, final int y, final int w, final int h) {
             reallyPaintBorder = true;
             paintBorder(c, g, x, y, w, h);
@@ -310,11 +311,13 @@ public class AquaTextFieldSearch {
         }
 
         // apparently without adjusting for odd height pixels, the search field "wobbles" relative to it's contents
+        @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
             if (!reallyPaintBorder) return;
             super.paintBorder(c, g, x, y - (height % 2), width, height);
         }
 
+        @Override
         public Insets getBorderInsets(final Component c) {
             if (doingLayout) return new Insets(0, 0, 0, 0);
 
@@ -326,7 +329,6 @@ public class AquaTextFieldSearch {
         }
 
         protected boolean doingLayout;
-        @SuppressWarnings("serial") // anonymous class inside
         protected LayoutManager getCustomLayout() {
             // unfortunately, the default behavior of BorderLayout, which accommodates for margins
             // is not what we want, so we "turn off margins" for layout for layout out our buttons

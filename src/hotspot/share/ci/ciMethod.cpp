@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciReplay.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -48,6 +48,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -742,6 +743,13 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == nullptr) {
     return nullptr;
   }
+
+  // Redefinition support.
+  if (this->is_old() || root_m->is_old() || target->is_old()) {
+    guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+    return nullptr;
+  }
+
   if (target() == root_m->get_Method()) {
     return root_m;
   }
@@ -782,22 +790,6 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::equals
-//
-// Returns true if the methods are the same, taking redefined methods
-// into account.
-bool ciMethod::equals(const ciMethod* m) const {
-  if (this == m) return true;
-  VM_ENTRY_MARK;
-  Method* m1 = this->get_Method();
-  Method* m2 = m->get_Method();
-  if (m1->is_old()) m1 = m1->get_new_method();
-  if (m2->is_old()) m2 = m2->get_new_method();
-  return m1 == m2;
-}
-
-
-// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
@@ -835,6 +827,12 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
 
   ciMethod* result = this;
   if (m != get_Method()) {
+    // Redefinition support.
+    if (this->is_old() || m->is_old()) {
+      guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+      return nullptr;
+    }
+
     result = CURRENT_THREAD_ENV->get_method(m);
   }
 
@@ -918,8 +916,14 @@ int ciMethod::scale_count(int count, float prof_factor) {
       method_life = counter_life;
     }
     if (counter_life > 0) {
-      count = (int)((double)count * prof_factor * method_life / counter_life + 0.5);
-      count = (count > 0) ? count : 1;
+      double count_d = (double)count * prof_factor * method_life / counter_life + 0.5;
+      if (count_d >= static_cast<double>(INT_MAX)) {
+        // Clamp in case of overflowing int range.
+        count = INT_MAX;
+      } else {
+        count = int(count_d);
+        count = (count > 0) ? count : 1;
+      }
     } else {
       count = 1;
     }
@@ -1147,6 +1151,28 @@ int ciMethod::code_size_for_inlining() {
 // heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
+    if (TrainingData::have_data()) {
+      GUARDED_VM_ENTRY(
+        CompLevel level = static_cast<CompLevel>(CURRENT_ENV->comp_level());
+        methodHandle top_level_mh(Thread::current(), CURRENT_ENV->task()->method());
+        MethodTrainingData* mtd = MethodTrainingData::find(top_level_mh);
+        if (mtd != nullptr) {
+          CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+          if (ctd != nullptr) {
+            methodHandle mh(Thread::current(), get_Method());
+            MethodTrainingData* this_mtd = MethodTrainingData::find(mh);
+            if (this_mtd != nullptr) {
+              auto r = ctd->ci_records().ciMethod__inline_instructions_size.find(this_mtd);
+              if (r.is_valid()) {
+                _inline_instructions_size = r.result();
+              }
+            }
+          }
+        }
+      );
+    }
+  }
+  if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
@@ -1154,6 +1180,14 @@ int ciMethod::inline_instructions_size() {
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;
+      }
+      if (TrainingData::need_data()) {
+        CompileTrainingData* ctd = CURRENT_ENV->task()->training_data();
+        if (ctd != nullptr) {
+          methodHandle mh(Thread::current(), get_Method());
+          MethodTrainingData* this_mtd = MethodTrainingData::make(mh);
+          ctd->ci_records().ciMethod__inline_instructions_size.append_if_missing(_inline_instructions_size, this_mtd);
+        }
       }
     );
   }
@@ -1495,3 +1529,10 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
+// ciMethod::is_old
+//
+// Return true for redefined methods
+bool ciMethod::is_old() const {
+  ASSERT_IN_VM;
+  return get_Method()->is_old();
+}

@@ -103,6 +103,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Klass;
@@ -115,6 +116,7 @@ class ThreadClosure;
 // feature.  Other functions in the StringDedup class are called where
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
+  friend class CPUTimeUsage::GC;
   friend class StringDedupThread;
 
   class Config;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherVerifier.Action;
 import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -43,12 +45,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary pre-user configuration of app launchers
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @compile PerUserCfgTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
+ * @compile -Xlint:all -Werror PerUserCfgTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PerUserCfgTest
  */
@@ -65,7 +66,7 @@ public class PerUserCfgTest {
 
         cfgCmd.execute();
 
-        new PackageTest().configureHelloApp().addInstallVerifier(cmd -> {
+        new PackageTest().addHelloAppInitializer(null).addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running per-user configuration tests")) {
                 return;
             }
@@ -144,10 +145,7 @@ public class PerUserCfgTest {
     }
 
     private static void addLauncher(JPackageCommand cmd, String name) {
-        new AdditionalLauncher(name) {
-            @Override
-            protected void verify(JPackageCommand cmd) {}
-        }.setDefaultArguments(name).applyTo(cmd);
+        new AdditionalLauncher(name).setDefaultArguments(name).withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(cmd);
     }
 
     private static Path getUserHomeDir() {
@@ -166,6 +164,8 @@ public class PerUserCfgTest {
                 null).getFileName());
         TKit.assertPathExists(targetCfgFile, false);
         try (var dirCleaner = TKit.createDirectories(targetCfgFile.getParent())) {
+            // Suppress "warning: [try] auto-closeable resource dirCleaner is never referenced"
+            Objects.requireNonNull(dirCleaner);
             Files.copy(srcCfgFile, targetCfgFile);
             try {
                 TKit.traceFileContents(targetCfgFile, "cfg file");

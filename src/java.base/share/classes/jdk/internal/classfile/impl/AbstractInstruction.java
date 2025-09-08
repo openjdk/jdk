@@ -673,7 +673,8 @@ public abstract sealed class AbstractInstruction
             if (writer.canWriteDirect(code.constantPool()))
                 super.writeTo(writer);
             else
-                writer.writeLoadConstant(op, constantEntry());
+                // We have writer.canWriteDirect(constantEntry().constantPool()) == false
+                writer.writeAdaptLoadConstant(op, constantEntry());
         }
 
         @Override
@@ -1346,7 +1347,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLoadConstant(op, constant);
+            var constant = this.constant;
+            if (writer.canWriteDirect(constant.constantPool()))
+                // Allows writing ldc_w small index constants upon user request
+                writer.writeDirectLoadConstant(op, constant);
+            else
+                writer.writeAdaptLoadConstant(op, constant);
         }
 
         @Override

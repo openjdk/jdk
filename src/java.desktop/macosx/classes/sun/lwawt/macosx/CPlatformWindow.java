@@ -46,7 +46,6 @@ import java.awt.event.WindowStateListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -70,7 +69,6 @@ import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformWindow;
-import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
@@ -131,9 +129,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     // This system property is named as jdk.* because it is not specific to AWT
     // and it is also used in JavaFX
-    @SuppressWarnings("removal")
-    public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
-            new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
+    public static final String MAC_OS_TABBED_WINDOW = System.getProperty("jdk.allowMacOSTabbedWindows");
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -272,7 +268,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
     }) {
-        @SuppressWarnings("deprecation")
         public CPlatformWindow convertJComponentToTarget(final JRootPane p) {
             Component root = SwingUtilities.getRoot(p);
             final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
@@ -365,7 +360,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         });
         setPtr(ref.get());
-        if (peer != null) { // Not applicable to CWarningWindow
+        if (peer != null) {
             peer.setTextured(IS(TEXTURED, styleBits));
         }
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -438,7 +433,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
         if (isPopup) {
             styleBits = SET(styleBits, TEXTURED, false);
-            // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
             styleBits = SET(styleBits, IS_POPUP, true);
         }
@@ -609,6 +603,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         execute(ptr -> nativeSetNSWindowBounds(ptr, x, y, w, h));
     }
 
+    @Override
     public void setMaximizedBounds(int x, int y, int w, int h) {
         execute(ptr -> nativeSetNSWindowStandardFrame(ptr, x, y, w, h));
     }
@@ -719,7 +714,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 boolean isPopup = (target.getType() == Window.Type.POPUP);
                 execute(ptr -> {
                     if (isPopup) {
-                        // Popups in applets don't activate applet's process
                         CWrapper.NSWindow.orderFrontRegardless(ptr);
                     } else {
                         CWrapper.NSWindow.orderFront(ptr);

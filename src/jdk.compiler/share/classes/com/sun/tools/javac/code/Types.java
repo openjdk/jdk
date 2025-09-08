@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,12 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.comp.LambdaToMethod;
 import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.util.*;
 
@@ -1216,7 +1214,7 @@ public class Types {
             @Override
             public Boolean visitUndetVar(UndetVar t, Type s) {
                 //todo: test against origin needed? or replace with substitution?
-                if (t == s || t.qtype == s || s.hasTag(ERROR) || s.hasTag(UNKNOWN)) {
+                if (t == s || t.qtype == s || s.hasTag(ERROR)) {
                     return true;
                 } else if (s.hasTag(BOT)) {
                     //if 's' is 'null' there's no instantiated type U for which
@@ -1466,7 +1464,7 @@ public class Types {
                     return false;
                 }
 
-                if (t == s || t.qtype == s || s.hasTag(ERROR) || s.hasTag(UNKNOWN)) {
+                if (t == s || t.qtype == s || s.hasTag(ERROR)) {
                     return true;
                 }
 
@@ -1672,6 +1670,12 @@ public class Types {
     // where
         class DisjointChecker {
             Set<Pair<ClassSymbol, ClassSymbol>> pairsSeen = new HashSet<>();
+            /* there are three cases for ts and ss:
+             *   - one is a class and the other one is an interface (case I)
+             *   - both are classes                                 (case II)
+             *   - both are interfaces                              (case III)
+             * all those cases are covered in JLS 23, section: "5.1.6.1 Allowed Narrowing Reference Conversion"
+             */
             private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
                 Pair<ClassSymbol, ClassSymbol> newPair = new Pair<>(ts, ss);
                 /* if we are seeing the same pair again then there is an issue with the sealed hierarchy
@@ -1679,31 +1683,37 @@ public class Types {
                  */
                 if (!pairsSeen.add(newPair))
                     return false;
-                if (isSubtype(erasure(ts.type), erasure(ss.type))) {
-                    return false;
+
+                if (ts.isInterface() != ss.isInterface()) { // case I: one is a class and the other one is an interface
+                    ClassSymbol isym = ts.isInterface() ? ts : ss; // isym is the interface and csym the class
+                    ClassSymbol csym = isym == ts ? ss : ts;
+                    if (!isSubtype(erasure(csym.type), erasure(isym.type))) {
+                        if (csym.isFinal()) {
+                            return true;
+                        } else if (csym.isSealed()) {
+                            return areDisjoint(isym, csym.getPermittedSubclasses());
+                        } else if (isym.isSealed()) {
+                            // if the class is not final and not sealed then it has to be freely extensible
+                            return areDisjoint(csym, isym.getPermittedSubclasses());
+                        }
+                    } // now both are classes or both are interfaces
+                } else if (!ts.isInterface()) {              // case II: both are classes
+                    return !isSubtype(erasure(ss.type), erasure(ts.type)) && !isSubtype(erasure(ts.type), erasure(ss.type));
+                } else {                                     // case III: both are interfaces
+                    if (!isSubtype(erasure(ts.type), erasure(ss.type)) && !isSubtype(erasure(ss.type), erasure(ts.type))) {
+                        if (ts.isSealed()) {
+                            return areDisjoint(ss, ts.getPermittedSubclasses());
+                        } else if (ss.isSealed()) {
+                            return areDisjoint(ts, ss.getPermittedSubclasses());
+                        }
+                    }
                 }
-                // if both are classes or both are interfaces, shortcut
-                if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
-                    return false;
-                }
-                if (ts.isInterface() && !ss.isInterface()) {
-                    /* so ts is interface but ss is a class
-                     * an interface is disjoint from a class if the class is disjoint form the interface
-                     */
-                    return areDisjoint(ss, ts);
-                }
-                // a final class that is not subtype of ss is disjoint
-                if (!ts.isInterface() && ts.isFinal()) {
-                    return true;
-                }
-                // if at least one is sealed
-                if (ts.isSealed() || ss.isSealed()) {
-                    // permitted subtypes have to be disjoint with the other symbol
-                    ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
-                    ClassSymbol other = sealedOne == ts ? ss : ts;
-                    return sealedOne.getPermittedSubclasses().stream().allMatch(type -> areDisjoint((ClassSymbol)type.tsym, other));
-                }
+                // at this point we haven't been able to statically prove that the classes or interfaces are disjoint
                 return false;
+            }
+
+            boolean areDisjoint(ClassSymbol csym, List<Type> permittedSubtypes) {
+                return permittedSubtypes.stream().allMatch(psubtype -> areDisjoint(csym, (ClassSymbol) psubtype.tsym));
             }
         }
 
@@ -2224,60 +2234,64 @@ public class Types {
         };
 
     /**
-     * Return the base type of t or any of its outer types that starts
-     * with the given symbol.  If none exists, return null.
+     *  This method returns the first type in a sequence (starting at `t`) that is
+     *  a subclass of `sym`. The next type in the sequence is obtained by calling
+     *  `getEnclosingType()` on the previous type in the sequence. Note, this is
+     *  typically used to compute the implicit qualifier in a method/field access
+     *  expression. Example:
      *
-     * @param t a type
-     * @param sym a symbol
+     *  static class Sup<F> { public F f; }
+     *   class Outer {
+     *    static class Sub extends Sup<String> {
+     *        class I {
+     *          void test() {
+     *              String f2 = f; // Sup<String>::f
+     *          }
+     *        }
+     *    }
+     *  }
+     *
+     *  @param t a type
+     *  @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-        case CLASS:
-            do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                t = t.getEnclosingType();
-            } while (t.hasTag(CLASS));
-            return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
+            if (s != null) return s;
+            t1 = t1.getEnclosingType();
         }
+        return null;
     }
 
     /**
-     * Return the base type of t or any of its enclosing types that
-     * starts with the given symbol.  If none exists, return null.
+     * This method returns the first type in a sequence (starting at `t`) that is
+     * a subclass of `sym`. The next type in the sequence is obtained by obtaining
+     * innermost lexically enclosing class type of the previous type in the sequence.
+     * Note, this is typically used to compute the implicit qualifier in
+     * a type expression. Example:
+     *
+     * class A<T> { class B { } }
+     *
+     * class C extends A<String> {
+     *   static class D {
+     *      B b; // A<String>.B
+     *   }
+     * }
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-        case CLASS:
-            do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                Type outer = t.getEnclosingType();
-                t = (outer.hasTag(CLASS)) ? outer :
-                    (t.tsym.owner.enclClass() != null) ? t.tsym.owner.enclClass().type :
-                    Type.noType;
-            } while (t.hasTag(CLASS));
-            return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
+            if (s != null) return s;
+            t1 = (t1.tsym.owner.enclClass() != null)
+                    ? t1.tsym.owner.enclClass().type
+                    : noType;
         }
+        return null;
     }
     // </editor-fold>
 
@@ -2422,7 +2436,7 @@ public class Types {
                              ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
                             return s.dropMetadata(Annotations.class);
                         case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
-                             NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
+                             NONE, ERROR, UNDETVAR, UNINITIALIZED_THIS,
                              UNINITIALIZED_OBJECT:
                             return s;
                         default:
@@ -3328,6 +3342,10 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
+    /* this class won't substitute all types for example UndetVars are never substituted, this is
+     * by design as UndetVars are used locally during inference and shouldn't escape from inference routines,
+     * some specialized applications could need a tailored solution
+     */
     private class Subst extends StructuralTypeMapping<Void> {
         List<Type> from;
         List<Type> to;
@@ -4498,7 +4516,7 @@ public class Types {
             to = from;
             from = target;
         }
-        List<Type> commonSupers = superClosure(to, erasure(from));
+        List<Type> commonSupers = supertypeClosure(to, erasure(from));
         boolean giveWarning = commonSupers.isEmpty();
         // The arguments to the supers could be unified here to
         // get a more accurate analysis
@@ -4556,13 +4574,13 @@ public class Types {
         return false;
     }
 
-    private List<Type> superClosure(Type t, Type s) {
+    private List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
                 cl = insert(cl, l.head);
             } else {
-                cl = union(cl, superClosure(l.head, s));
+                cl = union(cl, supertypeClosure(l.head, s));
             }
         }
         return cl;
@@ -5069,16 +5087,12 @@ public class Types {
      *  @param targetType       Target type
      */
     public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
-        if (isSameType(selectorType, targetType)) {
-            return true;
-        }
-
-        return (selectorType.isPrimitive() && targetType.isPrimitive()) &&
-                ((selectorType.hasTag(BYTE) && !targetType.hasTag(CHAR)) ||
-                 (selectorType.hasTag(SHORT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))) ||
-                 (selectorType.hasTag(CHAR)  && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag())))  ||
-                 (selectorType.hasTag(INT)   && (targetType.hasTag(DOUBLE) || targetType.hasTag(LONG))) ||
-                 (selectorType.hasTag(FLOAT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))));
+        return isSameType(selectorType, targetType) ||
+                (selectorType.isPrimitive() && targetType.isPrimitive()) &&
+                ((selectorType.getTag().isStrictSubRangeOf(targetType.getTag())) &&
+                        !((selectorType.hasTag(BYTE) && targetType.hasTag(CHAR)) ||
+                          (selectorType.hasTag(INT)  && targetType.hasTag(FLOAT)) ||
+                          (selectorType.hasTag(LONG) && (targetType.hasTag(DOUBLE) || targetType.hasTag(FLOAT)))));
     }
     // </editor-fold>
 

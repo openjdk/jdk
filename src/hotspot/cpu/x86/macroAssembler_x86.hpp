@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,10 @@ class MacroAssembler: public Assembler {
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
   //
-  // If no java_thread register is specified (noreg) than rdi will be used instead. call_VM_base
-  // returns the register which contains the thread upon return. If a thread register has been
-  // specified, the return value will correspond to that register. If no last_java_sp is specified
-  // (noreg) than rsp will be used instead.
+  // call_VM_base returns the register which contains the thread upon return.
+  // If no last_java_sp is specified (noreg) than rsp will be used instead.
   virtual void call_VM_base(           // returns the register containing the thread upon return
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
-    Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
@@ -74,19 +71,14 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
-  // helpers for FPU flag access
-  // tmp is a temporary register, if none is available use noreg
-  void save_rax   (Register tmp);
-  void restore_rax(Register tmp);
-
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
  // The implementation is only non-empty for the InterpreterMacroAssembler,
  // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   Address as_Address(AddressLiteral adr);
   Address as_Address(ArrayAddress adr, Register rscratch);
@@ -111,7 +103,8 @@ class MacroAssembler: public Assembler {
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
         (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
-        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */,
+        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */ ||
+        (op == 0x8D) /* lea */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
@@ -122,7 +115,7 @@ class MacroAssembler: public Assembler {
                 file == nullptr ? "<null>" : file, line);
       *disp = (char)imm8;
     } else {
-      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
+      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7 || op == 0x8D) ? 2 : 1];
       int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
@@ -147,10 +140,10 @@ class MacroAssembler: public Assembler {
 
   // Support for inc/dec with optimal instruction selection depending on value
 
-  void increment(Register reg, int value = 1) { LP64_ONLY(incrementq(reg, value)) NOT_LP64(incrementl(reg, value)) ; }
-  void decrement(Register reg, int value = 1) { LP64_ONLY(decrementq(reg, value)) NOT_LP64(decrementl(reg, value)) ; }
-  void increment(Address dst, int value = 1)  { LP64_ONLY(incrementq(dst, value)) NOT_LP64(incrementl(dst, value)) ; }
-  void decrement(Address dst, int value = 1)  { LP64_ONLY(decrementq(dst, value)) NOT_LP64(decrementl(dst, value)) ; }
+  void increment(Register reg, int value = 1) { incrementq(reg, value); }
+  void decrement(Register reg, int value = 1) { decrementq(reg, value); }
+  void increment(Address dst, int value = 1)  { incrementq(dst, value); }
+  void decrement(Address dst, int value = 1)  { decrementq(dst, value); }
 
   void decrementl(Address dst, int value = 1);
   void decrementl(Register reg, int value = 1);
@@ -216,18 +209,16 @@ class MacroAssembler: public Assembler {
   void align(uint modulus, uint target);
 
   void post_call_nop();
-  // A 5 byte nop that is safe for patching (see patch_verified_entry)
-  void fat_nop();
 
   // Stack frame creation/removal
   void enter();
   void leave();
 
-  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
-  // The pointer will be loaded into the thread register.
-  void get_thread(Register thread);
+  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information).
+  // The pointer will be loaded into the thread register. This is a slow version that does native call.
+  // Normally, JavaThread pointer is available in r15_thread, use that where possible.
+  void get_thread_slow(Register thread);
 
-#ifdef _LP64
   // Support for argument shuffling
 
   // bias in bytes
@@ -243,7 +234,6 @@ class MacroAssembler: public Assembler {
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-#endif // _LP64
 
   // Support for VM calls
   //
@@ -290,8 +280,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result  (Register oop_result, Register thread);
-  void get_vm_result_2(Register metadata_result, Register thread);
+  void get_vm_result_oop(Register oop_result);
+  void get_vm_result_metadata(Register metadata_result);
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
@@ -322,28 +312,22 @@ class MacroAssembler: public Assembler {
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  // last Java Frame (fills frame anchor)
-  void set_last_Java_frame(Register thread,
-                           Register last_java_sp,
-                           Register last_java_fp,
-                           address  last_java_pc,
-                           Register rscratch);
-
-  // thread in the default location (r15_thread on 64bit)
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            address  last_java_pc,
                            Register rscratch);
 
-  void reset_last_Java_frame(Register thread, bool clear_fp);
+  void set_last_Java_frame(Register last_java_sp,
+                           Register last_java_fp,
+                           Label &last_java_pc,
+                           Register scratch);
 
-  // thread in the default location (r15_thread on 64bit)
   void reset_last_Java_frame(bool clear_fp);
 
   // jobjects
   void clear_jobject_tag(Register possibly_non_local);
-  void resolve_jobject(Register value, Register thread, Register tmp);
-  void resolve_global_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp);
+  void resolve_global_jobject(Register value, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -363,18 +347,25 @@ class MacroAssembler: public Assembler {
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_narrow_klass_compact(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
+  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
+  // depending on UseCompressedClassPointers).
+  void cmp_klass(Register klass, Register obj, Register tmp);
+
+  // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
+  // Uses tmp1 and tmp2 as temporary registers.
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
+
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register thread_tmp);
+                      Register tmp1);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
@@ -382,7 +373,6 @@ class MacroAssembler: public Assembler {
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
-#ifdef _LP64
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
@@ -416,8 +406,6 @@ class MacroAssembler: public Assembler {
   void reinit_heapbase();
 
   DEBUG_ONLY(void verify_heapbase(const char* msg);)
-
-#endif // _LP64
 
   // Int division/remainder for Java
   // (as idivl, but checks for special case as described in JVM spec.)
@@ -458,39 +446,6 @@ class MacroAssembler: public Assembler {
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
 
-#ifndef _LP64
-  // Compares the top-most stack entries on the FPU stack and sets the eflags as follows:
-  //
-  // CF (corresponds to C0) if x < y
-  // PF (corresponds to C2) if unordered
-  // ZF (corresponds to C3) if x = y
-  //
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // tmp is a temporary register, if none is available use noreg (only matters for non-P6 code)
-  void fcmp(Register tmp);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp(Register tmp, int index, bool pop_left, bool pop_right);
-
-  // Floating-point comparison for Java
-  // Compares the top-most stack entries on the FPU stack and stores the result in dst.
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // (semantics as described in JVM spec.)
-  void fcmp2int(Register dst, bool unordered_is_less);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp2int(Register dst, bool unordered_is_less, int index, bool pop_left, bool pop_right);
-
-  // Floating-point remainder for Java (ST0 = ST0 fremr ST1, ST1 is empty afterwards)
-  // tmp is a temporary register, if none is available use noreg
-  void fremr(Register tmp);
-
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
-#endif // !LP64
-
   // dst = c = a * b + c
   void fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
   void fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
@@ -504,34 +459,6 @@ class MacroAssembler: public Assembler {
   // same as fcmp2int, but using SSE2
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
   void cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
-
-  // branch to L if FPU flag C2 is set/not set
-  // tmp is a temporary register, if none is available use noreg
-  void jC2 (Register tmp, Label& L);
-  void jnC2(Register tmp, Label& L);
-
-  // Load float value from 'address'. If UseSSE >= 1, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_float(Address src);
-
-  // Store float value to 'address'. If UseSSE >= 1, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_float(Address dst);
-
-  // Load double value from 'address'. If UseSSE >= 2, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_double(Address src);
-
-  // Store double value to 'address'. If UseSSE >= 2, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_double(Address dst);
-
-#ifndef _LP64
-  // Pop ST (ffree & fincstp combined)
-  void fpop();
-
-  void empty_FPU_stack();
-#endif // !_LP64
 
   void push_IU_state();
   void pop_IU_state();
@@ -584,7 +511,6 @@ public:
 
   // allocation
   void tlab_allocate(
-    Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
     int      con_size_in_bytes,        // object size in bytes if   known at compile time
@@ -646,24 +572,63 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      bool set_cond_codes = false);
-  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+
+  // The 64-bit version, which may do a hashed subclass lookup.
+  void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp_reg,
                                      Register temp2_reg,
+                                     Register temp3_reg,
+                                     Register temp4_reg,
                                      Label* L_success,
-                                     Label* L_failure,
-                                     bool set_cond_codes = false);
+                                     Label* L_failure);
+
+  // Three parts of a hashed subclass lookup: a simple linear search,
+  // a table lookup, and a fallback that does linear probing in the
+  // event of a hash collision.
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure);
+  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Label* L_success,
+                                            Label* L_failure);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  void lookup_secondary_supers_table(Register sub_klass,
-                                     Register super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     Register temp4,
-                                     Register result,
-                                     u1 super_klass_slot);
+  void lookup_secondary_supers_table_const(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           Register temp4,
+                                           Register result,
+                                           u1 super_klass_slot);
+
+  using Assembler::salq;
+  void salq(Register dest, Register count);
+  using Assembler::rorq;
+  void rorq(Register dest, Register count);
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
 
   void lookup_secondary_supers_table_slow_path(Register r_super_klass,
                                                Register r_array_base,
@@ -685,7 +650,14 @@ public:
                    Label* L_success,
                    Label* L_failure = nullptr);
 
-    // Simplified, combined version, good for typical uses.
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -693,7 +665,6 @@ public:
                            Label& L_success);
 
   void clinit_barrier(Register klass,
-                      Register thread,
                       Label* L_fast_path = nullptr,
                       Label* L_slow_path = nullptr);
 
@@ -768,7 +739,7 @@ public:
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
 
-  void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod);
 
   void verify_tlab();
 
@@ -782,10 +753,10 @@ public:
   // Arithmetics
 
 
-  void addptr(Address dst, int32_t src) { LP64_ONLY(addq(dst, src)) NOT_LP64(addl(dst, src)) ; }
+  void addptr(Address dst, int32_t src) { addq(dst, src); }
   void addptr(Address dst, Register src);
 
-  void addptr(Register dst, Address src) { LP64_ONLY(addq(dst, src)) NOT_LP64(addl(dst, src)); }
+  void addptr(Register dst, Address src) { addq(dst, src); }
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
@@ -794,12 +765,10 @@ public:
   }
 
   void andptr(Register dst, int32_t src);
-  void andptr(Register src1, Register src2) { LP64_ONLY(andq(src1, src2)) NOT_LP64(andl(src1, src2)) ; }
+  void andptr(Register src1, Register src2) { andq(src1, src2); }
 
-#ifdef _LP64
   using Assembler::andq;
   void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
-#endif
 
   void cmp8(AddressLiteral src1, int imm, Register rscratch = noreg);
 
@@ -812,12 +781,6 @@ public:
 
   void cmp32(Register src1, Address src2);
 
-#ifndef _LP64
-  void cmpklass(Address dst, Metadata* obj);
-  void cmpklass(Register dst, Metadata* obj);
-  void cmpoop(Address dst, jobject obj);
-#endif // _LP64
-
   void cmpoop(Register src1, Register src2);
   void cmpoop(Register src1, Address src2);
   void cmpoop(Register dst, jobject obj, Register rscratch);
@@ -827,12 +790,11 @@ public:
 
   void cmpptr(Register src1, AddressLiteral src2, Register rscratch = noreg);
 
-  void cmpptr(Register src1, Register src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
-  void cmpptr(Register src1, Address src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
-  // void cmpptr(Address src1, Register src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
+  void cmpptr(Register src1, Register src2) { cmpq(src1, src2); }
+  void cmpptr(Register src1, Address src2) { cmpq(src1, src2); }
 
-  void cmpptr(Register src1, int32_t src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
-  void cmpptr(Address src1, int32_t src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
+  void cmpptr(Register src1, int32_t src2) { cmpq(src1, src2); }
+  void cmpptr(Address src1, int32_t src2) { cmpq(src1, src2); }
 
   // cmp64 to avoild hiding cmpq
   void cmp64(Register src1, AddressLiteral src, Register rscratch = noreg);
@@ -841,26 +803,26 @@ public:
 
   void locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch = noreg);
 
-  void imulptr(Register dst, Register src) { LP64_ONLY(imulq(dst, src)) NOT_LP64(imull(dst, src)); }
-  void imulptr(Register dst, Register src, int imm32) { LP64_ONLY(imulq(dst, src, imm32)) NOT_LP64(imull(dst, src, imm32)); }
+  void imulptr(Register dst, Register src) { imulq(dst, src); }
+  void imulptr(Register dst, Register src, int imm32) { imulq(dst, src, imm32); }
 
 
-  void negptr(Register dst) { LP64_ONLY(negq(dst)) NOT_LP64(negl(dst)); }
+  void negptr(Register dst) { negq(dst); }
 
-  void notptr(Register dst) { LP64_ONLY(notq(dst)) NOT_LP64(notl(dst)); }
+  void notptr(Register dst) { notq(dst); }
 
   void shlptr(Register dst, int32_t shift);
-  void shlptr(Register dst) { LP64_ONLY(shlq(dst)) NOT_LP64(shll(dst)); }
+  void shlptr(Register dst) { shlq(dst); }
 
   void shrptr(Register dst, int32_t shift);
-  void shrptr(Register dst) { LP64_ONLY(shrq(dst)) NOT_LP64(shrl(dst)); }
+  void shrptr(Register dst) { shrq(dst); }
 
-  void sarptr(Register dst) { LP64_ONLY(sarq(dst)) NOT_LP64(sarl(dst)); }
-  void sarptr(Register dst, int32_t src) { LP64_ONLY(sarq(dst, src)) NOT_LP64(sarl(dst, src)); }
+  void sarptr(Register dst) { sarq(dst); }
+  void sarptr(Register dst, int32_t src) { sarq(dst, src); }
 
-  void subptr(Address dst, int32_t src) { LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src)); }
+  void subptr(Address dst, int32_t src) { subq(dst, src); }
 
-  void subptr(Register dst, Address src) { LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src)); }
+  void subptr(Register dst, Address src) { subq(dst, src); }
   void subptr(Register dst, int32_t src);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void subptr_imm32(Register dst, int32_t src);
@@ -870,13 +832,13 @@ public:
     else                   subptr(dst,       src.as_register());
   }
 
-  void sbbptr(Address dst, int32_t src) { LP64_ONLY(sbbq(dst, src)) NOT_LP64(sbbl(dst, src)); }
-  void sbbptr(Register dst, int32_t src) { LP64_ONLY(sbbq(dst, src)) NOT_LP64(sbbl(dst, src)); }
+  void sbbptr(Address dst, int32_t src) { sbbq(dst, src); }
+  void sbbptr(Register dst, int32_t src) { sbbq(dst, src); }
 
-  void xchgptr(Register src1, Register src2) { LP64_ONLY(xchgq(src1, src2)) NOT_LP64(xchgl(src1, src2)) ; }
-  void xchgptr(Register src1, Address src2) { LP64_ONLY(xchgq(src1, src2)) NOT_LP64(xchgl(src1, src2)) ; }
+  void xchgptr(Register src1, Register src2) { xchgq(src1, src2); }
+  void xchgptr(Register src1, Address src2) { xchgq(src1, src2); }
 
-  void xaddptr(Address src1, Register src2) { LP64_ONLY(xaddq(src1, src2)) NOT_LP64(xaddl(src1, src2)) ; }
+  void xaddptr(Address src1, Register src2) { xaddq(src1, src2); }
 
 
 
@@ -886,14 +848,12 @@ public:
   // Unconditional atomic increment.
   void atomic_incl(Address counter_addr);
   void atomic_incl(AddressLiteral counter_addr, Register rscratch = noreg);
-#ifdef _LP64
   void atomic_incq(Address counter_addr);
   void atomic_incq(AddressLiteral counter_addr, Register rscratch = noreg);
-#endif
-  void atomic_incptr(AddressLiteral counter_addr, Register rscratch = noreg) { LP64_ONLY(atomic_incq(counter_addr, rscratch)) NOT_LP64(atomic_incl(counter_addr, rscratch)) ; }
-  void atomic_incptr(Address counter_addr) { LP64_ONLY(atomic_incq(counter_addr)) NOT_LP64(atomic_incl(counter_addr)) ; }
+  void atomic_incptr(AddressLiteral counter_addr, Register rscratch = noreg) { atomic_incq(counter_addr, rscratch); }
+  void atomic_incptr(Address counter_addr) { atomic_incq(counter_addr); }
 
-  void lea(Register dst, Address        adr) { Assembler::lea(dst, adr); }
+  using Assembler::lea;
   void lea(Register dst, AddressLiteral adr);
   void lea(Address  dst, AddressLiteral adr, Register rscratch);
 
@@ -909,18 +869,18 @@ public:
   void testq(Address dst, int32_t imm32);
   void testq(Register dst, int32_t imm32);
 
-  void orptr(Register dst, Address src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
-  void orptr(Register dst, Register src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
-  void orptr(Register dst, int32_t src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
-  void orptr(Address dst, int32_t imm32) { LP64_ONLY(orq(dst, imm32)) NOT_LP64(orl(dst, imm32)); }
+  void orptr(Register dst, Address src) { orq(dst, src); }
+  void orptr(Register dst, Register src) { orq(dst, src); }
+  void orptr(Register dst, int32_t src) { orq(dst, src); }
+  void orptr(Address dst, int32_t imm32) { orq(dst, imm32); }
 
-  void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
-  void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
-  void testptr(Address src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
+  void testptr(Register src, int32_t imm32) { testq(src, imm32); }
+  void testptr(Register src1, Address src2) { testq(src1, src2); }
+  void testptr(Address src, int32_t imm32) { testq(src, imm32); }
   void testptr(Register src1, Register src2);
 
-  void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
-  void xorptr(Register dst, Address src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
+  void xorptr(Register dst, Register src) { xorq(dst, src); }
+  void xorptr(Register dst, Address src) { xorq(dst, src); }
 
   // Calls
 
@@ -1029,9 +989,14 @@ public:
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
 
+  void push_ppx(Register src);
+  void pop_ppx(Register dst);
+
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void andnpd(XMMRegister dst, XMMRegister src) { Assembler::andnpd(dst, src); }
 
   void andps(XMMRegister dst, XMMRegister    src) { Assembler::andps(dst, src); }
   void andps(XMMRegister dst, Address        src) { Assembler::andps(dst, src); }
@@ -1045,31 +1010,12 @@ public:
   void comisd(XMMRegister dst, Address        src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-#ifndef _LP64
-  void fadd_s(Address        src) { Assembler::fadd_s(src); }
-  void fadd_s(AddressLiteral src) { Assembler::fadd_s(as_Address(src)); }
+  void orpd(XMMRegister dst, XMMRegister src) { Assembler::orpd(dst, src); }
 
-  void fldcw(Address        src) { Assembler::fldcw(src); }
-  void fldcw(AddressLiteral src);
-
-  void fld_s(int index)          { Assembler::fld_s(index); }
-  void fld_s(Address        src) { Assembler::fld_s(src); }
-  void fld_s(AddressLiteral src);
-
-  void fld_d(Address        src) { Assembler::fld_d(src); }
-  void fld_d(AddressLiteral src);
-
-  void fld_x(Address        src) { Assembler::fld_x(src); }
-  void fld_x(AddressLiteral src) { Assembler::fld_x(as_Address(src)); }
-
-  void fmul_s(Address        src) { Assembler::fmul_s(src); }
-  void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
-#endif // !_LP64
-
+  void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src, Register rscratch = noreg);
 
-#ifdef _LP64
  private:
   void sha256_AVX2_one_round_compute(
     Register  reg_old_h,
@@ -1118,7 +1064,7 @@ public:
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
-#endif // _LP64
+  void sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block);
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
                 bool multi_block);
@@ -1128,67 +1074,14 @@ public:
                  Register buf, Register state, Register ofs, Register limit, Register rsp,
                  bool multi_block);
 
-#ifdef _LP64
   void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp,
                    bool multi_block, XMMRegister shuf_mask);
-#else
-  void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
-                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
-                   Register buf, Register state, Register ofs, Register limit, Register rsp,
-                   bool multi_block);
-#endif
 
   void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
-
-#ifndef _LP64
- private:
-  // Initialized in macroAssembler_x86_constants.cpp
-  static address ONES;
-  static address L_2IL0FLOATPACKET_0;
-  static address PI4_INV;
-  static address PI4X3;
-  static address PI4X4;
-
- public:
-  void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp1);
-
-  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp);
-
-  void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
-                XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
-                Register rdx, Register tmp);
-
-  void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rbx, Register rdx);
-
-  void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp);
-
-  void libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
-                        Register edx, Register ebx, Register esi, Register edi,
-                        Register ebp, Register esp);
-
-  void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
-                         Register esi, Register edi, Register ebp, Register esp);
-
-  void libm_tancot_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
-                        Register edx, Register ebx, Register esi, Register edi,
-                        Register ebp, Register esp);
-
-  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp);
-#endif // !_LP64
 
 private:
 
@@ -1215,6 +1108,9 @@ public:
   void addpd(XMMRegister dst, XMMRegister    src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, Address        src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  using Assembler::vbroadcasti128;
+  void vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
@@ -1274,10 +1170,19 @@ public:
   void vmovdqu(XMMRegister dst, XMMRegister    src);
   void vmovdqu(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqu(XMMRegister dst, XMMRegister    src, int vector_len);
+  void vmovdqu(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqu(Address     dst, XMMRegister    src, int vector_len);
+
+  // AVX Aligned forms
+  using Assembler::vmovdqa;
+  void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address     src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len);
 
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
   void evmovdqub(XMMRegister dst, Address     src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
@@ -1291,6 +1196,7 @@ public:
   void evmovdqub(XMMRegister dst, KRegister mask, Address        src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
+  void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
   void evmovdquw(Address     dst, XMMRegister src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
   void evmovdquw(XMMRegister dst, Address     src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
 
@@ -1328,6 +1234,7 @@ public:
   void evmovdquq(XMMRegister dst, Address        src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address     dst, XMMRegister    src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
     if (dst->encoding() != src->encoding() || mask != k0) {
@@ -1337,6 +1244,10 @@ public:
   void evmovdquq(Address     dst, KRegister mask, XMMRegister    src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, Address        src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+
+  using Assembler::movapd;
+  void movapd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister    src) { Assembler::movdqa(dst, src); }
@@ -1501,6 +1412,8 @@ public:
   void vpmulld(XMMRegister dst, XMMRegister nds, Address        src, int vector_len) { Assembler::vpmulld(dst, nds, src, vector_len); }
   void vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  void vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister    src, int vector_len) { Assembler::vpmuldq(dst, nds, src, vector_len); }
+
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, Address     src, int vector_len);
 
@@ -1510,9 +1423,13 @@ public:
   void vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsraw(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
 
+  void evpsrad(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
+  void evpsrad(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
+
   void evpsraq(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void evpsraq(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
 
+  using Assembler::evpsllw;
   void evpsllw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsllw(dst, mask, nds, src, merge, vector_len);
@@ -1557,6 +1474,7 @@ public:
       Assembler::evpsrlvq(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsraw;
   void evpsraw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraw(dst, mask, nds, src, merge, vector_len);
@@ -1564,6 +1482,7 @@ public:
       Assembler::evpsravw(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsrad;
   void evpsrad(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrad(dst, mask, nds, src, merge, vector_len);
@@ -1584,6 +1503,11 @@ public:
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpmins(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
 
   void vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
@@ -1928,8 +1852,8 @@ public:
 
   void cmov(   Condition cc, Register dst, Register src) { cmovptr(cc, dst, src); }
 
-  void cmovptr(Condition cc, Register dst, Address  src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
-  void cmovptr(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
+  void cmovptr(Condition cc, Register dst, Address  src) { cmovq(cc, dst, src); }
+  void cmovptr(Condition cc, Register dst, Register src) { cmovq(cc, dst, src); }
 
   void movoop(Register dst, jobject obj);
   void movoop(Address  dst, jobject obj, Register rscratch);
@@ -1968,15 +1892,15 @@ public:
   // Can push value or effective address
   void pushptr(AddressLiteral src, Register rscratch);
 
-  void pushptr(Address src) { LP64_ONLY(pushq(src)) NOT_LP64(pushl(src)); }
-  void popptr(Address src) { LP64_ONLY(popq(src)) NOT_LP64(popl(src)); }
+  void pushptr(Address src) { pushq(src); }
+  void popptr(Address src) { popq(src); }
 
   void pushoop(jobject obj, Register rscratch);
   void pushklass(Metadata* obj, Register rscratch);
 
   // sign extend as need a l to ptr sized element
-  void movl2ptr(Register dst, Address src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(movl(dst, src)); }
-  void movl2ptr(Register dst, Register src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(if (dst != src) movl(dst, src)); }
+  void movl2ptr(Register dst, Address src) { movslq(dst, src); }
+  void movl2ptr(Register dst, Register src) { movslq(dst, src); }
 
 
  public:
@@ -1999,7 +1923,6 @@ public:
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
                         XMMRegister tmp4, Register tmp5, Register result, bool ascii);
 
-#ifdef _LP64
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2);
   void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
                              Register y, Register y_idx, Register z,
@@ -2040,32 +1963,22 @@ public:
   void vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
                            Register result, Register tmp1, Register tmp2,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3);
-#endif
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);
 
-
-#ifdef _LP64
   void kernel_crc32_avx512(Register crc, Register buf, Register len, Register table, Register tmp1, Register tmp2);
   void kernel_crc32_avx512_256B(Register crc, Register buf, Register len, Register key, Register pos,
                                 Register tmp1, Register tmp2, Label& L_barrett, Label& L_16B_reduction_loop,
                                 Label& L_get_last_two_xmms, Label& L_128_done, Label& L_cleanup);
-#endif // _LP64
 
   // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic
   // Note on a naming convention:
   // Prefix w = register only used on a Westmere+ architecture
   // Prefix n = register only used on a Nehalem architecture
-#ifdef _LP64
   void crc32c_ipl_alg4(Register in_out, uint32_t n,
                        Register tmp1, Register tmp2, Register tmp3);
-#else
-  void crc32c_ipl_alg4(Register in_out, uint32_t n,
-                       Register tmp1, Register tmp2, Register tmp3,
-                       XMMRegister xtmp1, XMMRegister xtmp2);
-#endif
   void crc32c_pclmulqdq(XMMRegister w_xtmp1,
                         Register in_out,
                         uint32_t const_or_pre_comp_const_index, bool is_pclmulqdq_supported,
@@ -2090,10 +2003,8 @@ public:
   // Fold 128-bit data chunk
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset);
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);
-#ifdef _LP64
   // Fold 512-bit data chunk
   void fold512bit_crc32_avx512(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, Register pos, int offset);
-#endif // _LP64
   // Fold 8-bit data
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
@@ -2127,7 +2038,6 @@ public:
 
   void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
-#ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);
   void convert_d2i(Register dst, XMMRegister src);
   void convert_f2l(Register dst, XMMRegister src);
@@ -2142,38 +2052,17 @@ public:
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
 #endif // COMPILER2_OR_JVMCI
-#endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
 
-#ifdef _LP64
   void save_legacy_gprs();
   void restore_legacy_gprs();
   void setcc(Assembler::Condition comparison, Register dst);
-#endif
-};
-
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value, Register rscratch);
-   ~SkipIfEqual();
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

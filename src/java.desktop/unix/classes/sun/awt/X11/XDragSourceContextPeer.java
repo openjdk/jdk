@@ -114,6 +114,7 @@ public final class XDragSourceContextPeer
         return theInstance;
     }
 
+    @Override
     protected void startDrag(Transferable transferable,
                              long[] formats, Map<Long, DataFlavor> formatMap) {
         Component component = getTrigger().getComponent();
@@ -256,6 +257,7 @@ public final class XDragSourceContextPeer
      * set cursor
      */
 
+    @Override
     public void setCursor(Cursor c) throws InvalidDnDOperationException {
         XToolkit.awtLock();
         try {
@@ -265,6 +267,7 @@ public final class XDragSourceContextPeer
         }
     }
 
+    @Override
     protected void setNativeCursor(long nativeCtxt, Cursor c, int cType) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -304,6 +307,7 @@ public final class XDragSourceContextPeer
     /**
      * The caller must own awtLock.
      */
+    @Override
     public void cleanup(long time) {
         if (dndInProgress) {
             if (dragProtocol != null) {
@@ -794,18 +798,21 @@ public final class XDragSourceContextPeer
 
     /* XDragSourceProtocolListener implementation */
 
+    @Override
     public void handleDragReply(int action) {
         // NOTE: we have to use the current pointer location, since
         // the target didn't specify the coordinates for the reply.
         handleDragReply(action, xRoot, yRoot);
     }
 
+    @Override
     public void handleDragReply(int action, int x, int y) {
         // NOTE: we have to use the current modifiers state, since
         // the target didn't specify the modifiers state for the reply.
         handleDragReply(action, xRoot, yRoot, XWindow.getModifiers(eventState,0,0));
     }
 
+    @Override
     public void handleDragReply(int action, int x, int y, int modifiers) {
         if (action == DnDConstants.ACTION_NONE &&
             targetAction != DnDConstants.ACTION_NONE) {
@@ -826,23 +833,27 @@ public final class XDragSourceContextPeer
         targetAction = action;
     }
 
+    @Override
     public void handleDragFinished() {
         /* Assume that the drop was successful. */
         handleDragFinished(true);
     }
 
+    @Override
     public void handleDragFinished(boolean success) {
         /* Assume that the performed drop action is the latest drop action
            accepted by the drop target. */
         handleDragFinished(true, targetAction);
     }
 
+    @Override
     public void handleDragFinished(boolean success, int action) {
         // NOTE: we have to use the current pointer location, since
         // the target didn't specify the coordinates for the reply.
         handleDragFinished(success, action, xRoot, yRoot);
     }
 
+    @Override
     public void handleDragFinished(boolean success, int action, int x, int y) {
         dragDropFinished(success, action, x, y);
 

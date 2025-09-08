@@ -412,4 +412,135 @@ inline Register as_Register(FloatRegister reg) {
 // High-level register class of an OptoReg or a VMReg register.
 enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
 
+// AArch64 Vector Register Sequence management support
+//
+// VSeq implements an indexable (by operator[]) vector register
+// sequence starting from a fixed base register and with a fixed delta
+// (defaulted to 1, but sometimes 0 or 2) e.g. VSeq<4>(16) will return
+// registers v16, ... v19 for indices 0, ... 3.
+//
+// Generator methods may iterate across sets of VSeq<4> to schedule an
+// operation 4 times using distinct input and output registers,
+// profiting from 4-way instruction parallelism.
+//
+// A VSeq<2> can be used to specify registers loaded with special
+// constants e.g. <v30, v31> --> <MONT_Q, MONT_Q_INV_MOD_R>.
+//
+// A VSeq with base n and delta 0 can be used to generate code that
+// combines values in another VSeq with the constant in register vn.
+//
+// A VSeq with base n and delta 2 can be used to select an odd or even
+// indexed set of registers.
+//
+// Methods which accept arguments of type VSeq<8>, may split their
+// inputs into front and back halves or odd and even halves (see
+// convenience methods below).
+
+// helper macro for computing register masks
+#define VS_MASK_BIT(base, delta, i) (1 << (base + delta * i))
+
+template<int N> class VSeq {
+  static_assert(N >= 2, "vector sequence length must be greater than 1");
+private:
+  int _base;  // index of first register in sequence
+  int _delta; // increment to derive successive indices
+public:
+  VSeq(FloatRegister base_reg, int delta = 1) : VSeq(base_reg->encoding(), delta) { }
+  VSeq(int base, int delta = 1) : _base(base), _delta(delta) {
+    assert (_base >= 0 && _base <= 31, "invalid base register");
+    assert ((_base + (N - 1) * _delta) >= 0, "register range underflow");
+    assert ((_base + (N - 1) * _delta) < 32, "register range overflow");
+  }
+  // indexed access to sequence
+  FloatRegister operator [](int i) const {
+    assert (0 <= i && i < N, "index out of bounds");
+    return as_FloatRegister(_base + i * _delta);
+  }
+  int mask() const {
+    int m = 0;
+    for (int i = 0; i < N; i++) {
+      m |= VS_MASK_BIT(_base, _delta, i);
+    }
+    return m;
+  }
+  int base() const { return _base; }
+  int delta() const { return _delta; }
+  bool is_constant() const { return _delta == 0; }
+};
+
+// methods for use in asserts to check VSeq inputs and outputs are
+// either disjoint or equal
+
+template<int N, int M> bool vs_disjoint(const VSeq<N>& n, const VSeq<M>& m) { return (n.mask() & m.mask()) == 0; }
+template<int N> bool vs_same(const VSeq<N>& n, const VSeq<N>& m) { return n.mask() == m.mask(); }
+
+// method for use in asserts to check whether registers appearing in
+// an output sequence will be written before they are read from an
+// input sequence.
+
+template<int N> bool vs_write_before_read(const VSeq<N>& vout, const VSeq<N>& vin) {
+  int b_in = vin.base();
+  int d_in = vin.delta();
+  int b_out = vout.base();
+  int d_out = vout.delta();
+  int bit_in = 1 << b_in;
+  int bit_out = 1 << b_out;
+  int mask_read = vin.mask();   // all pending reads
+  int mask_write = 0;         // no writes as yet
+
+
+  for (int i = 0; i < N - 1; i++) {
+    // check whether a pending read clashes with a write
+    if ((mask_write & mask_read) != 0) {
+      return true;
+    }
+    // remove the pending input (so long as this is a constant
+    // sequence)
+    if (d_in != 0) {
+      mask_read ^= VS_MASK_BIT(b_in, d_in, i);
+    }
+    // record the next write
+    mask_write |= VS_MASK_BIT(b_out, d_out, i);
+  }
+  // no write before read
+  return false;
+}
+
+// convenience methods for splitting 8-way or 4-way vector register
+// sequences in half -- needed because vector operations can normally
+// benefit from 4-way instruction parallelism or, occasionally, 2-way
+// parallelism
+
+template<int N>
+VSeq<N/2> vs_front(const VSeq<N>& v) {
+  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  return VSeq<N/2>(v.base(), v.delta());
+}
+
+template<int N>
+VSeq<N/2> vs_back(const VSeq<N>& v) {
+  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  return VSeq<N/2>(v.base() + N / 2 * v.delta(), v.delta());
+}
+
+template<int N>
+VSeq<N/2> vs_even(const VSeq<N>& v) {
+  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  return VSeq<N/2>(v.base(), v.delta() * 2);
+}
+
+template<int N>
+VSeq<N/2> vs_odd(const VSeq<N>& v) {
+  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  return VSeq<N/2>(v.base() + v.delta(), v.delta() * 2);
+}
+
+// convenience method to construct a vector register sequence that
+// indexes its elements in reverse order to the original
+
+template<int N>
+VSeq<N> vs_reverse(const VSeq<N>& v) {
+  return VSeq<N>(v.base() + (N - 1) * v.delta(), -v.delta());
+}
+
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

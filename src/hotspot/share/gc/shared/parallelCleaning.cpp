@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
@@ -97,7 +95,7 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
 }
 
 KlassCleaningTask::KlassCleaningTask() :
-  _clean_klass_tree_claimed(0),
+  _clean_klass_tree_claimed(false),
   _klass_iterator() {
 }
 
@@ -106,7 +104,7 @@ bool KlassCleaningTask::claim_clean_klass_tree_task() {
     return false;
   }
 
-  return Atomic::cmpxchg(&_clean_klass_tree_claimed, 0, 1) == 0;
+  return !Atomic::cmpxchg(&_clean_klass_tree_claimed, false, true);
 }
 
 InstanceKlass* KlassCleaningTask::claim_next_klass() {
@@ -120,16 +118,14 @@ InstanceKlass* KlassCleaningTask::claim_next_klass() {
 }
 
 void KlassCleaningTask::work() {
-  ResourceMark rm;
-
   // One worker will clean the subklass/sibling klass tree.
   if (claim_clean_klass_tree_task()) {
-    Klass::clean_subklass_tree();
+    Klass::clean_weak_klass_links(true /* class_unloading_occurred */, false /* clean_alive_klasses */);
   }
 
   // All workers will help cleaning the classes,
   InstanceKlass* klass;
   while ((klass = claim_next_klass()) != nullptr) {
-    clean_klass(klass);
+    Klass::clean_weak_instanceklass_links(klass);
   }
 }

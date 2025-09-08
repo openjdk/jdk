@@ -265,8 +265,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Brasilia"/>
 			</timezone>
 			<timezone type="America/Bahia_Banderas">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone to="2010-04-04 09:00" from="1970-01-01 08:00" mzone="America_Mountain"/>
+				<usesMetazone to="2010-04-04 09:00" mzone="America_Mountain"/>
 				<usesMetazone from="2010-04-04 09:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Barbados">
@@ -304,8 +303,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Amazon"/>
 			</timezone>
 			<timezone type="America/Cancun">
-				<usesMetazone to="1981-12-23 06:00" mzone="America_Central"/>
-				<usesMetazone to="1998-08-02 06:00" from="1981-12-23 06:00" mzone="America_Eastern"/>
+				<usesMetazone to="1981-12-26 08:00" mzone="America_Central"/>
+				<usesMetazone to="1983-01-04 05:00" from="1981-12-26 08:00" mzone="America_Eastern"/>
+				<usesMetazone to="1997-10-26 07:00" from="1983-01-04 05:00" mzone="America_Central"/>
+				<usesMetazone to="1998-08-02 06:00" from="1997-10-26 07:00" mzone="America_Eastern"/>
 				<usesMetazone to="2015-02-01 08:00" from="1998-08-02 06:00" mzone="America_Central"/>
 				<usesMetazone from="2015-02-01 08:00" mzone="America_Eastern"/>
 			</timezone>
@@ -437,8 +438,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Cuba"/>
 			</timezone>
 			<timezone type="America/Hermosillo">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone from="1970-01-01 08:00" mzone="Mexico_Pacific"/>
+				<usesMetazone mzone="Mexico_Pacific"/>
 			</timezone>
 			<timezone type="America/Indiana/Knox">
 				<usesMetazone to="1991-10-27 07:00" mzone="America_Central"/>
@@ -547,8 +547,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Mazatlan">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone from="1970-01-01 08:00" mzone="Mexico_Pacific"/>
+				<usesMetazone mzone="Mexico_Pacific"/>
 			</timezone>
 			<timezone type="America/Mendoza">
 				<usesMetazone to="1990-03-04 02:00" mzone="Argentina"/>
@@ -562,9 +561,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1973-04-29 07:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Merida">
-				<usesMetazone to="1981-12-23 06:00" mzone="America_Central"/>
-				<usesMetazone to="1982-12-02 05:00" from="1981-12-23 06:00" mzone="America_Eastern"/>
-				<usesMetazone from="1982-12-02 05:00" mzone="America_Central"/>
+				<usesMetazone to="1981-12-26 08:00" mzone="America_Central"/>
+				<usesMetazone to="1982-11-02 07:00" from="1981-12-26 08:00" mzone="America_Eastern"/>
+				<usesMetazone from="1982-11-02 07:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Metlakatla">
 				<usesMetazone to="2015-11-01 10:00" mzone="America_Pacific"/>
@@ -803,7 +802,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Almaty">
 				<usesMetazone to="2004-10-30 20:00" mzone="Almaty"/>
 				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 20:00" mzone="Kazakhstan_Eastern"/>
-				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Amman">
 				<usesMetazone to="2022-10-27 22:00" mzone="Europe_Eastern"/>
@@ -816,19 +815,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Aqtau">
 				<usesMetazone to="1991-12-15 19:00" mzone="Shevchenko"/>
 				<usesMetazone to="2004-10-30 22:00" from="1991-12-15 19:00" mzone="Aqtau"/>
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Aqtobe">
 				<usesMetazone to="1991-12-15 19:00" mzone="Aktyubinsk"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Aqtobe"/>
-				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Ashgabat">
 				<usesMetazone to="1991-10-26 20:00" mzone="Ashkhabad"/>
 				<usesMetazone from="1991-10-26 20:00" mzone="Turkmenistan"/>
 			</timezone>
 			<timezone type="Asia/Atyrau">
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Baghdad">
 				<usesMetazone mzone="Arabian"/>
@@ -865,11 +867,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2014-10-25 16:00" mzone="Yakutsk"/>
 				<usesMetazone to="2016-03-26 18:00" from="2014-10-25 16:00" mzone="Irkutsk"/>
 				<usesMetazone from="2016-03-26 18:00" mzone="Yakutsk"/>
-			</timezone>
-			<timezone type="Asia/Choibalsan">
-				<usesMetazone to="1983-03-31 16:00" mzone="Mongolia"/>
-				<usesMetazone to="2008-03-30 15:00" from="1983-03-31 16:00" mzone="Choibalsan"/>
-				<usesMetazone from="2008-03-30 15:00" mzone="Mongolia"/>
 			</timezone>
 			<timezone type="Asia/Colombo">
 				<usesMetazone to="1996-05-24 18:30" mzone="India"/>
@@ -950,8 +947,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Krasnoyarsk"/>
 			</timezone>
 			<timezone type="Asia/Kuala_Lumpur">
-				<usesMetazone to="1981-12-31 16:30" mzone="Malaya"/>
-				<usesMetazone from="1981-12-31 16:30" mzone="Malaysia"/>
+				<usesMetazone to="1981-12-31 16:00" mzone="Malaya"/>
+				<usesMetazone from="1981-12-31 16:00" mzone="Malaysia"/>
 			</timezone>
 			<timezone type="Asia/Kuching">
 				<usesMetazone to="1981-12-31 16:00" mzone="Borneo"/>
@@ -993,7 +990,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Oral">
 				<usesMetazone to="1991-12-15 20:00" mzone="Uralsk"/>
 				<usesMetazone to="2004-10-30 22:00" from="1991-12-15 20:00" mzone="Oral"/>
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Phnom_Penh">
 				<usesMetazone mzone="Indochina"/>
@@ -1013,13 +1011,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Qostanay">
 				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
-				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Qyzylorda">
 				<usesMetazone to="1991-12-15 19:00" mzone="Kizilorda"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Qyzylorda"/>
 				<usesMetazone to="2018-12-20 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
-				<usesMetazone from="2018-12-20 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2018-12-20 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Rangoon">
 				<usesMetazone mzone="Myanmar"/>
@@ -1105,9 +1104,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1991-09-22 20:00" mzone="Armenia"/>
 			</timezone>
 			<timezone type="Atlantic/Azores">
-				<usesMetazone to="1992-09-27 02:00" mzone="Azores"/>
-				<usesMetazone to="1993-03-28 01:00" from="1992-09-27 02:00" mzone="Europe_Western"/>
-				<usesMetazone from="1993-03-28 01:00" mzone="Azores"/>
+				<usesMetazone to="1992-12-27 02:00" mzone="Azores"/>
+				<usesMetazone to="1993-06-17 01:00" from="1992-12-27 02:00" mzone="Europe_Western"/>
+				<usesMetazone from="1993-06-17 01:00" mzone="Azores"/>
 			</timezone>
 			<timezone type="Atlantic/Bermuda">
 				<usesMetazone mzone="Atlantic"/>
@@ -1170,14 +1169,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Australia/Sydney">
 				<usesMetazone mzone="Australia_Eastern"/>
 			</timezone>
-			<timezone type="CST6CDT">
-				<usesMetazone mzone="America_Central"/>
-			</timezone>
 			<timezone type="Etc/GMT">
 				<usesMetazone mzone="GMT"/>
-			</timezone>
-			<timezone type="EST5EDT">
-				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Amsterdam">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1416,9 +1409,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Indian/Reunion">
 				<usesMetazone mzone="Reunion"/>
 			</timezone>
-			<timezone type="MST7MDT">
-				<usesMetazone mzone="America_Mountain"/>
-			</timezone>
 			<timezone type="Pacific/Apia">
 				<usesMetazone mzone="Apia"/>
 			</timezone>
@@ -1539,9 +1529,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Pacific/Wallis">
 				<usesMetazone mzone="Wallis"/>
-			</timezone>
-			<timezone type="PST8PDT">
-				<usesMetazone mzone="America_Pacific"/>
 			</timezone>
 		</metazoneInfo>
 
@@ -1665,7 +1652,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Chatham" territory="001" type="Pacific/Chatham"/>
 			<mapZone other="Chile" territory="001" type="America/Santiago"/>
 			<mapZone other="China" territory="001" type="Asia/Shanghai"/>
-			<mapZone other="Choibalsan" territory="001" type="Asia/Choibalsan"/>
 			<mapZone other="Christmas" territory="001" type="Indian/Christmas"/>
 			<mapZone other="Cocos" territory="001" type="Indian/Cocos"/>
 			<mapZone other="Colombia" territory="001" type="America/Bogota"/>
@@ -1776,6 +1762,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Japan" territory="001" type="Asia/Tokyo"/>
 			<mapZone other="Kamchatka" territory="001" type="Asia/Kamchatka"/>
 			<mapZone other="Karachi" territory="001" type="Asia/Karachi"/>
+			<mapZone other="Kazakhstan" territory="001" type="Asia/Almaty"/>
 			<mapZone other="Kazakhstan_Eastern" territory="001" type="Asia/Almaty"/>
 			<mapZone other="Kazakhstan_Western" territory="001" type="Asia/Aqtobe"/>
 			<mapZone other="Kizilorda" territory="001" type="Asia/Qyzylorda"/>
@@ -1909,7 +1896,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="chat" longId="Chatham" />
 			<metazoneId shortId="chil" longId="Chile" />
 			<metazoneId shortId="chin" longId="China" />
-			<metazoneId shortId="choi" longId="Choibalsan" />
 			<metazoneId shortId="chri" longId="Christmas" />
 			<metazoneId shortId="coco" longId="Cocos" />
 			<metazoneId shortId="colo" longId="Colombia" />
@@ -1953,6 +1939,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="isra" longId="Israel" />
 			<metazoneId shortId="japa" longId="Japan" />
 			<metazoneId shortId="kamc" longId="Kamchatka" />
+			<metazoneId shortId="kaza" longId="Kazakhstan" />
 			<metazoneId shortId="kaea" longId="Kazakhstan_Eastern" />
 			<metazoneId shortId="kawe" longId="Kazakhstan_Western" />
 			<metazoneId shortId="kore" longId="Korea" />

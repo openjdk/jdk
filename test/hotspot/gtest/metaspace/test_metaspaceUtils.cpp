@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,12 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "oops/compressedKlass.hpp"
 #include "unittest.hpp"
 
-TEST_VM(MetaspaceUtils, reserved) {
+TEST_VM(metaspace, MetaspaceUtils_reserved) {
   size_t reserved = MetaspaceUtils::reserved_bytes();
   EXPECT_GT(reserved, 0UL);
 
@@ -37,19 +37,17 @@ TEST_VM(MetaspaceUtils, reserved) {
   EXPECT_LE(reserved_metadata, reserved);
 }
 
-TEST_VM(MetaspaceUtils, reserved_compressed_class_pointers) {
-  if (!UseCompressedClassPointers) {
-    return;
+TEST_VM(metaspace, MetaspaceUtils_reserved_compressed_class_pointers) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
+    size_t reserved = MetaspaceUtils::reserved_bytes();
+    EXPECT_GT(reserved, 0UL);
+    size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
+    EXPECT_GT(reserved_class, 0UL);
+    EXPECT_LE(reserved_class, reserved);
   }
-  size_t reserved = MetaspaceUtils::reserved_bytes();
-  EXPECT_GT(reserved, 0UL);
-
-  size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
-  EXPECT_GT(reserved_class, 0UL);
-  EXPECT_LE(reserved_class, reserved);
 }
 
-TEST_VM(MetaspaceUtils, committed) {
+TEST_VM(metaspace, MetaspaceUtils_committed) {
   size_t committed = MetaspaceUtils::committed_bytes();
   EXPECT_GT(committed, 0UL);
 
@@ -61,19 +59,17 @@ TEST_VM(MetaspaceUtils, committed) {
   EXPECT_LE(committed_metadata, committed);
 }
 
-TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
-  if (!UseCompressedClassPointers) {
-    return;
+TEST_VM(metaspace, MetaspaceUtils_committed_compressed_class_pointers) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
+    size_t committed = MetaspaceUtils::committed_bytes();
+    EXPECT_GT(committed, 0UL);
+    size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
+    EXPECT_GT(committed_class, 0UL);
+    EXPECT_LE(committed_class, committed);
   }
-  size_t committed = MetaspaceUtils::committed_bytes();
-  EXPECT_GT(committed, 0UL);
-
-  size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-  EXPECT_GT(committed_class, 0UL);
-  EXPECT_LE(committed_class, committed);
 }
 
-TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
+TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
   if (UseCompressedClassPointers) {
     return;
   }
@@ -99,14 +95,14 @@ static void check_metaspace_stats_are_not_null(const MetaspaceStats& stats) {
   EXPECT_GT(stats.used(), 0UL);
 }
 
-TEST_VM(MetaspaceUtils, get_statistics) {
+TEST_VM(MetaspaceUtils, MetaspaceUtils_get_statistics) {
   MetaspaceCombinedStats combined_stats = MetaspaceUtils::get_combined_statistics();
   check_metaspace_stats_are_not_null(combined_stats);
   check_metaspace_stats_are_consistent(combined_stats);
   check_metaspace_stats_are_not_null(combined_stats.non_class_space_stats());
   check_metaspace_stats_are_consistent(combined_stats.non_class_space_stats());
 
-  if (UseCompressedClassPointers) {
+  if (CompressedKlassPointers::needs_class_space() && UseCompressedClassPointers) {
     check_metaspace_stats_are_not_null(combined_stats.class_space_stats());
     check_metaspace_stats_are_consistent(combined_stats.class_space_stats());
   } else {

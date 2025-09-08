@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1Trace.hpp"
+#include "gc/g1/g1VMOperations.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
@@ -51,14 +50,18 @@ bool VM_G1CollectFull::skip_operation() const {
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
-                                          false /* do_maximal_compaction */);
+  bool clear_all_soft_refs = _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
+                             _gc_cause == GCCause::_wb_full_gc;
+  g1h->do_full_collection(clear_all_soft_refs /* clear_all_soft_refs */,
+                          false /* do_maximal_compaction */,
+                          size_t(0) /* allocation_word_size */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count_before, gc_cause),
+  VM_GC_Collect_Operation(gc_count_before, gc_cause),
   _transient_failure(false),
+  _mark_in_progress(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
   _terminating(false),
@@ -83,6 +86,9 @@ void VM_G1TryInitiateConcMark::doit() {
   // Record for handling by caller.
   _terminating = g1h->concurrent_mark_is_terminating();
 
+  _mark_in_progress = g1h->collector_state()->mark_in_progress();
+  _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
+
   if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
     // When terminating, the request to initiate a concurrent cycle will be
     // ignored by do_collection_pause_at_safepoint; instead it will just do
@@ -91,9 +97,8 @@ void VM_G1TryInitiateConcMark::doit() {
     // requests the alternative GC might still be needed.
   } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
-    // there is already a concurrent marking cycle in progress.  Set flag
-    // to notify the caller and return immediately.
-    _cycle_already_in_progress = true;
+    // there is already a concurrent marking cycle in progress. Flags to indicate
+    // that were already set, so return immediately.
   } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
              ConcurrentGCBreakpoints::is_controlled()) {
     // WhiteBox wants to be in control of concurrent cycles, so don't try to
@@ -102,34 +107,32 @@ void VM_G1TryInitiateConcMark::doit() {
     // we've rejected this request.
     _whitebox_attached = true;
   } else {
-    _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-    assert(_gc_succeeded, "No reason to fail");
+    g1h->do_collection_pause_at_safepoint();
+    _gc_succeeded = true;
   }
 }
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause) :
-  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false) {}
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-  assert(_gc_succeeded, "no reason to fail");
+  g1h->do_collection_pause_at_safepoint();
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+    _result = g1h->satisfy_failed_allocation(_word_size);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are
     // absolutely no regions left to allocate into, do a full compaction.
-    _gc_succeeded = g1h->upgrade_to_full_collection();
+    g1h->upgrade_to_full_collection();
   }
 }
 

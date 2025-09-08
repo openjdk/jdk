@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 options,
                                 sd.address());
         } catch (WindowsException x) {
@@ -142,7 +141,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newAsynchronousFileChannel(file.getPathForWin32Calls(),
-                                            file.getPathForPermissionCheck(),
                                             options,
                                             sd.address(),
                                             pool);
@@ -227,7 +225,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 options,
                                 sd.address());
         } catch (WindowsException x) {
@@ -241,13 +238,13 @@ class WindowsFileSystemProvider
     @Override
     boolean implDelete(Path obj, boolean failIfNotExists) throws IOException {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        file.checkDelete();
 
         WindowsFileAttributes attrs = null;
         try {
              // need to know if file is a directory or junction
              attrs = WindowsFileAttributes.get(file, false);
-             if (attrs.isDirectory() || attrs.isDirectoryLink()) {
+             if (attrs.isDirectory() || attrs.isDirectoryLink() ||
+                 attrs.isDirectoryJunction()) {
                 RemoveDirectory(file.getPathForWin32Calls());
              } else {
                 DeleteFile(file.getPathForWin32Calls());
@@ -324,7 +321,6 @@ class WindowsFileSystemProvider
             Set<OpenOption> opts = Collections.emptySet();
             FileChannel fc = WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 opts,
                                 0L);
             fc.close();
@@ -371,7 +367,6 @@ class WindowsFileSystemProvider
 
         // check file exists only
         if (!(r || w || x)) {
-            file.checkRead();
             try {
                 WindowsFileAttributes.get(file, true);
                 return;
@@ -389,18 +384,12 @@ class WindowsFileSystemProvider
 
         int mask = 0;
         if (r) {
-            file.checkRead();
             mask |= FILE_READ_DATA;
         }
         if (w) {
-            file.checkWrite();
             mask |= FILE_WRITE_DATA;
         }
         if (x) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkExec(file.getPathForPermissionCheck());
             mask |= FILE_EXECUTE;
         }
 
@@ -440,17 +429,20 @@ class WindowsFileSystemProvider
             return false;
         WindowsPath file2 = (WindowsPath)obj2;
 
-        // check security manager access to both files
-        file1.checkRead();
-        file2.checkRead();
-
         // open both files and see if they are the same
         long h1 = 0L;
         try {
             h1 = file1.openForReadAttributeAccess(true);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(file1);
+            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                x.lastError() != ERROR_PATH_NOT_FOUND)
+                x.rethrowAsIOException(file1);
         }
+
+        // if file1 does not exist, it cannot equal file2
+        if (h1 == 0L)
+            return false;
+
         try {
             WindowsFileAttributes attrs1 = null;
             try {
@@ -462,8 +454,15 @@ class WindowsFileSystemProvider
             try {
                 h2 = file2.openForReadAttributeAccess(true);
             } catch (WindowsException x) {
-                x.rethrowAsIOException(file2);
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND)
+                    x.rethrowAsIOException(file2);
             }
+
+            // if file2 does not exist, it cannot equal file1, which does
+            if (h2 == 0L)
+                return false;
+
             try {
                 WindowsFileAttributes attrs2 = null;
                 try {
@@ -483,7 +482,6 @@ class WindowsFileSystemProvider
     @Override
     public boolean isHidden(Path obj) throws IOException {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        file.checkRead();
         WindowsFileAttributes attrs = null;
         try {
             attrs = WindowsFileAttributes.get(file, true);
@@ -496,12 +494,6 @@ class WindowsFileSystemProvider
     @Override
     public FileStore getFileStore(Path obj) throws IOException {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
-            file.checkRead();
-        }
         return WindowsFileStore.create(file);
     }
 
@@ -511,7 +503,6 @@ class WindowsFileSystemProvider
         throws IOException
     {
         WindowsPath dir = WindowsPath.toWindowsPath(obj);
-        dir.checkWrite();
         WindowsSecurityDescriptor sd = WindowsSecurityDescriptor.fromAttribute(attrs);
         try {
             CreateDirectory(dir.getPathForWin32Calls(), sd.address());
@@ -535,7 +526,6 @@ class WindowsFileSystemProvider
         throws IOException
     {
         WindowsPath dir = WindowsPath.toWindowsPath(obj);
-        dir.checkRead();
         if (filter == null)
             throw new NullPointerException();
         return new WindowsDirectoryStream(dir, filter);
@@ -553,14 +543,6 @@ class WindowsFileSystemProvider
             WindowsSecurityDescriptor.fromAttribute(attrs);  // may throw NPE or UOE
             throw new UnsupportedOperationException("Initial file attributes" +
                 "not supported when creating symbolic link");
-        }
-
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("symbolic"));
-            link.checkWrite();
         }
 
         /**
@@ -611,15 +593,6 @@ class WindowsFileSystemProvider
         WindowsPath link = WindowsPath.toWindowsPath(obj1);
         WindowsPath existing = WindowsPath.toWindowsPath(obj2);
 
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("hard"));
-            link.checkWrite();
-            existing.checkWrite();
-        }
-
         // create hard link
         try {
             CreateHardLink(link.getPathForWin32Calls(),
@@ -633,15 +606,6 @@ class WindowsFileSystemProvider
     public Path readSymbolicLink(Path obj1) throws IOException {
         WindowsPath link = WindowsPath.toWindowsPath(obj1);
         WindowsFileSystem fs = link.getFileSystem();
-
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission perm = new FilePermission(link.getPathForPermissionCheck(),
-                SecurityConstants.FILE_READLINK_ACTION);
-            sm.checkPermission(perm);
-        }
 
         String target = WindowsLinkSupport.readLink(link);
         return WindowsPath.createFromNormalizedPath(fs, target);

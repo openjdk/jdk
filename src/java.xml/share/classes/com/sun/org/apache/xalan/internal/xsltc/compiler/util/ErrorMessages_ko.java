@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -979,8 +979,6 @@ public class ErrorMessages_ko extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "\uB0B4\uBD80 XSLTC \uC624\uB958: translet\uC758 \uBA54\uC18C\uB4DC\uAC00 Java Virtual Machine\uC758 \uBA54\uC18C\uB4DC \uAE38\uC774 \uC81C\uD55C\uC778 64KB\uB97C \uCD08\uACFC\uD569\uB2C8\uB2E4. \uB300\uAC1C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC758 \uD15C\uD50C\uB9AC\uD2B8\uAC00 \uB9E4\uC6B0 \uD06C\uAE30 \uB54C\uBB38\uC5D0 \uBC1C\uC0DD\uD569\uB2C8\uB2E4. \uB354 \uC791\uC740 \uD15C\uD50C\uB9AC\uD2B8\uB97C \uC0AC\uC6A9\uD558\uB3C4\uB85D \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uC7AC\uAD6C\uC131\uD574 \uBCF4\uC2ED\uC2DC\uC624."
         },
-
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Java \uBCF4\uC548\uC774 \uC0AC\uC6A9\uC73C\uB85C \uC124\uC815\uB41C \uACBD\uC6B0 TemplatesImpl \uC9C1\uB82C\uD654 \uD574\uC81C\uC5D0 \uB300\uD55C \uC9C0\uC6D0\uC774 \uC0AC\uC6A9 \uC548\uD568\uC73C\uB85C \uC124\uC815\uB429\uB2C8\uB2E4. jdk.xml.enableTemplatesImplDeserialization \uC2DC\uC2A4\uD15C \uC18D\uC131\uC744 true\uB85C \uC124\uC815\uD558\uBA74 \uC774\uB97C \uBB34\uD6A8\uD654\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."}
 
     };
 

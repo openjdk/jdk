@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,10 @@ public interface ClassLoaderRepository {
      * the same time.  The {@link #loadClassBefore} method is
      * recommended to avoid the risk of deadlock.</p>
      *
-     * @param className The name of the class to be loaded.
      * @param exclude The class loader to be excluded.  May be null,
      * in which case this method is equivalent to {@link #loadClass
      * loadClass(className)}.
+     * @param className The name of the class to be loaded.
      *
      * @return the loaded class.
      *
@@ -133,10 +133,10 @@ public interface ClassLoaderRepository {
      * search as soon as <code>stop</code> is reached, a potential
      * deadlock with concurrent class loading is avoided.</p>
      *
-     * @param className The name of the class to be loaded.
      * @param stop The class loader at which to stop.  May be null, in
      * which case this method is equivalent to {@link #loadClass(String)
      * loadClass(className)}.
+     * @param className The name of the class to be loaded.
      *
      * @return the loaded class.
      *

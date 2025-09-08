@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 /*
  * @test
@@ -29,7 +29,7 @@ import jdk.internal.org.objectweb.asm.*;
  *          52 class file.
  * @bug 8175383
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @compile -XDignore.symbol.file ACCModule52.java
  * @run main ACCModule52
  */

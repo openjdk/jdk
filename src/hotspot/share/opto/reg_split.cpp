@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -495,7 +494,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
 uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
-  Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
+  Compile::TracePhase tp(_t_regAllocSplit);
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);

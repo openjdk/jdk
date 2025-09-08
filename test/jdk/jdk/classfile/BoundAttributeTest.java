@@ -41,6 +41,7 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.attribute.MethodParameterInfo;
 import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.lang.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -88,6 +89,11 @@ class BoundAttributeTest {
                     b.writeU2(2);
                     b.writeIndex(oneClass);
                     b.writeIndex(oneClassString);
+                }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return cp.utf8Entry(Attributes.NAME_NEST_MEMBERS);
                 }
             });
         });

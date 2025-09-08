@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class LowModuleTest {
 
     private void testRead0(ClassModel classLow) {
         for (Attribute<?> attr : classLow.attributes()) {
-            switch (attr.attributeName()) {
+            switch (attr.attributeName().stringValue()) {
                 case Attributes.NAME_SOURCE_FILE: {
                     SourceFileAttribute sfa = (SourceFileAttribute) attr;
                     Utf8Entry sf = sfa.sourceFile();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,6 @@ class BasicLock {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-  // * For LM_MONITOR
-  // Unused.
-  // * For LM_LEGACY
-  // This is either the actual displaced header from a locked object, or
-  // a sentinel zero value indicating a recursive stack-lock.
-  // * For LM_LIGHTWEIGHT
   // Used as a cache of the ObjectMonitor* used when locking. Must either
   // be nullptr or the ObjectMonitor* used when locking.
   volatile uintptr_t _metadata;
@@ -50,15 +44,12 @@ class BasicLock {
   static int metadata_offset_in_bytes() { return (int)offset_of(BasicLock, _metadata); }
 
  public:
-  // LM_MONITOR
+  BasicLock() : _metadata(0) {}
+
   void set_bad_metadata_deopt() { set_metadata(badDispHeaderDeopt); }
 
-  // LM_LEGACY
-  inline markWord displaced_header() const;
-  inline void set_displaced_header(markWord header);
   static int displaced_header_offset_in_bytes() { return metadata_offset_in_bytes(); }
 
-  // LM_LIGHTWEIGHT
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
@@ -88,6 +79,7 @@ class BasicObjectLock {
  public:
   // Manipulation
   oop      obj() const                                { return _obj;  }
+  oop*     obj_adr()                                  { return &_obj; }
   void set_obj(oop obj)                               { _obj = obj; }
   BasicLock* lock()                                   { return &_lock; }
 

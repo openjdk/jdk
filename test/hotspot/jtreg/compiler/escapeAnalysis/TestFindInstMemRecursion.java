@@ -29,7 +29,6 @@
  *
  * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
  *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
- *                   -XX:CompileCommand=MemLimit,*.*,0
  *                   compiler.escapeAnalysis.TestFindInstMemRecursion
  *
  */

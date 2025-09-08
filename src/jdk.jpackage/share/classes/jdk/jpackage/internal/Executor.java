@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,10 @@ public final class Executor {
             pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
         }
 
-        Log.verbose(String.format("Running %s", createLogMessage(pb, true)));
+        if (!quietCommand) {
+            Log.verbose(String.format("Running %s", createLogMessage(pb, true)));
+        }
+
         Process p = pb.start();
 
         int code = 0;

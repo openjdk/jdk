@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -69,24 +67,15 @@ final class TokenStorage {
     private static final String REL_NAME_SECONDARY =
             ".awt/robot/screencast-tokens.properties";
 
+    private static final String REL_RD_NAME =
+            ".java/robot/remote-desktop-tokens.properties";
+
     private static final Properties PROPS = new Properties();
     private static final Path PROPS_PATH;
     private static final Path PROP_FILENAME;
 
-    @SuppressWarnings("removal")
-    private static void doPrivilegedRunnable(Runnable runnable) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            runnable.run();
-            return null;
-        });
-    }
-
     static {
-        @SuppressWarnings("removal")
-        Path propsPath = AccessController
-                .doPrivileged((PrivilegedAction<Path>) () -> setupPath());
-
-        PROPS_PATH = propsPath;
+        PROPS_PATH = setupPath();
 
         if (PROPS_PATH != null) {
             PROP_FILENAME = PROPS_PATH.getFileName();
@@ -107,11 +96,18 @@ final class TokenStorage {
             return null;
         }
 
-        Path path = Path.of(userHome, REL_NAME);
-        Path secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+        Path path;
+        Path secondaryPath = null;
+
+        if (XdgDesktopPortal.isRemoteDesktop()) {
+            path = Path.of(userHome, REL_RD_NAME);
+        } else {
+            path = Path.of(userHome, REL_NAME);
+            secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+        }
 
         boolean copyFromSecondary = !Files.isWritable(path)
-                && Files.isWritable(secondaryPath);
+                && secondaryPath != null && Files.isWritable(secondaryPath);
 
         Path workdir = path.getParent();
 
@@ -188,7 +184,7 @@ final class TokenStorage {
         return false;
     }
 
-    private static class WatcherThread extends Thread {
+    private static final class WatcherThread extends Thread {
         private final WatchService watcher;
 
         public WatcherThread(WatchService watchService) {
@@ -226,9 +222,9 @@ final class TokenStorage {
                     }
 
                     if (kind == ENTRY_CREATE) {
-                        doPrivilegedRunnable(() -> setFilePermission(PROPS_PATH));
+                        setFilePermission(PROPS_PATH);
                     } else if (kind == ENTRY_MODIFY) {
-                        doPrivilegedRunnable(() -> readTokens(PROPS_PATH));
+                        readTokens(PROPS_PATH);
                     } else if (kind == ENTRY_DELETE) {
                         synchronized (PROPS) {
                             PROPS.clear();
@@ -244,25 +240,23 @@ final class TokenStorage {
     private static WatchService watchService;
 
     private static void setupWatch() {
-        doPrivilegedRunnable(() -> {
-            try {
-                watchService =
-                        FileSystems.getDefault().newWatchService();
+        try {
+            watchService =
+                    FileSystems.getDefault().newWatchService();
 
-                PROPS_PATH
-                        .getParent()
-                        .register(watchService,
-                                ENTRY_CREATE,
-                                ENTRY_DELETE,
-                                ENTRY_MODIFY);
+            PROPS_PATH
+                    .getParent()
+                    .register(watchService,
+                            ENTRY_CREATE,
+                            ENTRY_DELETE,
+                            ENTRY_MODIFY);
 
-            } catch (Exception e) {
-                if (SCREENCAST_DEBUG) {
-                    System.err.printf("Token storage: failed to setup " +
-                            "file watch %s\n", e);
-                }
+        } catch (Exception e) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf("Token storage: failed to setup " +
+                        "file watch %s\n", e);
             }
-        });
+        }
 
         if (watchService != null) {
             new WatcherThread(watchService).start();
@@ -317,7 +311,7 @@ final class TokenStorage {
             }
 
             if (changed) {
-                doPrivilegedRunnable(() -> store(PROPS_PATH, "save tokens"));
+                store(PROPS_PATH, "save tokens");
             }
         }
     }
@@ -372,7 +366,7 @@ final class TokenStorage {
                     .toList();
         }
 
-        doPrivilegedRunnable(() -> removeMalformedRecords(malformed));
+        removeMalformedRecords(malformed);
 
         // 1. Try to find exact matches
         for (TokenItem tokenItem : allTokenItems) {

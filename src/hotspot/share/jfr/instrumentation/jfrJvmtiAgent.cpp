@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
@@ -79,19 +78,6 @@ extern "C" void JNICALL jfr_on_class_file_load_hook(jvmtiEnv *jvmti_env,
                                                     const unsigned char* class_data,
                                                     jint* new_class_data_len,
                                                     unsigned char** new_class_data) {
-  if (class_being_redefined == nullptr) {
-    return;
-  }
-  JavaThread* jt = JavaThread::thread_from_jni_environment(jni_env);
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));;
-  ThreadInVMfromNative tvmfn(jt);
-  JfrUpcalls::on_retransform(JfrTraceId::load_raw(class_being_redefined),
-                             class_being_redefined,
-                             class_data_len,
-                             class_data,
-                             new_class_data_len,
-                             new_class_data,
-                             jt);
 }
 
 // caller needs ResourceMark
@@ -103,7 +89,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   if (nullptr == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
     jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,
-      "Thread local allocation (native) of " SIZE_FORMAT " bytes failed "
+      "Thread local allocation (native) of %zu bytes failed "
       "in retransform classes", sizeof(jclass) * classes_count);
     log_error(jfr, system)("%s", error_buffer);
     JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_NULL);
@@ -133,7 +119,7 @@ static void log_and_throw(jvmtiError error, TRAPS) {
 
 static void check_exception_and_log(JNIEnv* env, TRAPS) {
   assert(env != nullptr, "invariant");
-  if (env->ExceptionOccurred()) {
+  if (env->ExceptionCheck()) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn(THREAD);
@@ -176,6 +162,10 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
       }
     }
   }
+  retransform_classes(env, classes, classes_count, THREAD);
+}
+
+void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jclass* classes, jint classes_count, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   const jvmtiError result = jfr_jvmti_env->RetransformClasses(classes_count, classes);
   if (result != JVMTI_ERROR_NONE) {
