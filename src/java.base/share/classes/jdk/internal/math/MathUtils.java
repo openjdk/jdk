@@ -82,6 +82,16 @@ final class MathUtils {
      * That is,
      *      GE_MIN = min(-K_MAX, E_THR_Z - (N - 1))
      *      GE_MAX = max(-K_MIN, E_THR_I - 2)
+     *
+     * For the record, while the definition of g allows the case g = 2^126,
+     * the maximal g1 in the lookup table is 0x7FDD_E7F4_CA72_E30FL (e = -146),
+     * the minimal g1 is 0x4000_0000_0000_0000L (for e = 0),
+     * and the minimal g0 is 1.
+     * Hence, as easily verified, we always have
+     *      g1 + 1 < 2^31 (2^32 - 1)
+     *      2^125 + 1 <= g = g1 2^63 + g0 < (g1 + 1) 2^63 < 2^94 (2^32 - 1).
+     * We will assume these bounds observed by glancing at the lookup table,
+     * and use them liberally when so needed.
      */
     static final int GE_MIN = -342;
     static final int GE_MAX = 324;

@@ -1059,10 +1059,228 @@ public class FloatingDecimal {
         }
 
         private double highPrecisionDoubleValue(long f) {
+            f *= MathUtils.pow10(MathUtils.N - n);
+            int ep = e - MathUtils.N;
             /*
-             * TODO add fast paths when 0 < f < 10^19 considered as unsigned long.
-             *  For now just resort to full precision.
+             * As N = 19, we now have
+             *      |x| = f 10^ep
+             *      2^59 < 3 2^58 < 10^(N-1) ≤ f < 10^N < 3 2^62 < 2^64,
+             * (Different bounds serve different purposes.)
+             *
+             * We approximate |x| = f 10^ep as follows.
+             * Let integers g and r such that (see comments in MathUtils)
+             *      (g - 1) 2^r ≤ 10^ep < g 2^r
+             * Thus,
+             *      f (g - 1) ≤ |x| 2^(-r) < f g
+             * If both the products f (g - 1) and f g round to the same double,
+             * so does |x| 2^(-r).
+             * 
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             * We choose g such that (see MathUtils for the details of g0, g1)
+             *      2^125 ≤ g - 1 < g < 2^126
+             *      g = g1 2^63 + g0
+             * where
+             *      2^62 < g1 + 1 < 2^31 (2^32 - 1), 0 < g0 < 2^63
+             * leading to
+             *      f (g1 - 1) 2^63 < f (g - 1) < f g < f (g1 + 1) 2^63
+             * hence to
+             *      f (g1 - 1) < |x| 2^(-r-63) < f (g1 + 1)
+             *
+             * We further have
+             *      f (g1 - 1) > 3 2^58 (2^62 - 1) = 2^121 + 2^120 - 3 2^58
+             *          > 2^121 + 2^120 - 4 2^58 = 2^121 + 2^120 - 2^60 > 2^121
+             * Similarly,
+             *      f (g1 + 1) < 2^64 2^31 (2^32 - 1) < 2^64 2^63 = 2^127
+             * This shows that both products f (g1 - 1) and f (g1 + 1) are
+             * well inside the normal double range.
+             * If they both round to the same double, then so does |x| 2^(-r-63).
+             *
+             * Now, both products are much wider than a long, having a bitlength
+             * in the interval [122, 127], as shown above.
+             * Note, however, that the minimal bitlength of 122 means that
+             * discarding the lowermost 64 bits still leaves 58 bits in the
+             * higher part, which has room for P bits + 1 rounding bit
+             * + at least one sticky bit.
+             * Therefore, rather than rounding the wide products directly,
+             * we split them into the lower 64 bits and the higher bits.
+             *      f (g1 - 1) = l1 2^64 + l0
+             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
+             *      l0 = f (g1 - 1) % 2^64
+             * and similarly for f (g1 + 1)
+             *      f (g1 + 1) = h1 2^64 + h0
+             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
+             *      h0 = f (g1 + 1) % 2^64
+             * We then modify the least significant bit of l1 and h1
+             * to represent the sticky bits of the wide products.
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             * We get
+             *      l1 < |x| 2^(-r-127) < h1 + 1
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             * We further have
+             *      f (g1 - 1) > 3 2^58 (2^62 - 1) = 2^121 + 2^120 - 3 2^58
+             *          > 2^121 + 2^120 - 2^60 > 2^121
+             * so
+             *      l1 = ⌊f (g1 - 1) 2^(-64)⌋ ≥ ⌊2^121 2^(-64)⌋ = 2^57
+             * Similarly,
+             *      f (g1 - 1) < 2^64 (2^31 (2^32 - 1) - 1)
+             *          < 2^64 2^63 = 2^127
+             * so
+             *      l1 = ⌊f (g1 - 1) 2^(-64)⌋ < 2^63
+             * and finally
+             *      2^57 ≤ l1 < 2^63
+             * The bitlength of l1 is in the interval [58, 63], and l1 itself
+             * is well inside the normal range of a double.
+             *
+             * A similar reasoning shows that
+             *      2^57 < h1 + 1 < 2^63
+             * so the bitlength of h1 + 1 is in the same interval [58, 63] and
+             * h1 + 1 itself is in the normal range of a double
+             *
+             * The above inequality
+             *      l1 < |x| 2^(-r-127) < h1 + 1
+             * shows that if both l1 and h1 + 1 round to the same double x',
+             * so does |x| 2^(-r-127).
+             * TODO Then |x| rounds to x' 2^(r+127), including when it overflows to
+             *  infinity or when it underflows.
+             *
+             *
+             *
+             * where
+             *      2^184 = 2^59 2^125 < f (g - 1) < f g < 2^64 2^126 = 2^190
+             * Both products are thus well inside the range of normal doubles.
+             * If they both round to the same double x', so does |x| 2^(-r).
+             * TODO Then |x| rounds to x' 2^r, including when it overflows to
+             *  infinity or when it underflows.
+             *
+             * We pursue these observations by attempting with smaller
+             * quantities.
+             * We have (see MathUtils for the details of g0, g1)
+             *      g = g1 2^63 + g0
+             * where
+             *      2^62 ≤ g1 < 2^31 (2^32 - 1) - 1, 0 < g0 < 2^63
+             * leading to
+             *      f (g1 - 1) 2^63 < f (g - 1) < f g < f (g1 + 1) 2^63
+             * Split f (g1 - 1) into the lower 64 bits l0 and the higher bits l1
+             *      f (g1 - 1) = l1 2^64 + l0
+             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
+             *      l0 = f (g1 - 1) % 2^64
+             * and similarly for f (g1 + 1)
+             *      f (g1 + 1) = h1 2^64 + h0
+             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
+             *      h0 = f (g1 + 1) % 2^64
+             *
+             * On the one hand,
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             *      3 2^58 (2^62 - 1) < f (g1 - 1) 2^63 < g - 1 and f (g1 - 1) 2^63 < f (g - 1)
+             * and thus // TODO
+             *      l1 2^127 < f (g - 1)
+             *      l1 2^(127+r) < |x|
+             *
+             *
+             * so
+             *      g < (g1 + 1) 2^63 and f g < f (g1 + 1) 2^63
+             *
+             *
+             * where f (g1 + 1) < 2^64 2^63, meaning that this product fits
+             * in two longs.
+             * Split it into the lower 64 bits h0 and the higher bits h1.
+             *      f (g1 + 1) = h1 2^64 + h0
+             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
+             *      h0 = f (g1 + 1) % 2^64
+             * Hence,
+             *      f (g1 + 1) < h1 2^64 + 2^64 = (h1 + 1) 2^64
+             * leading to
+             *      f g < f (g1 + 1) 2^63 < (h1 + 1) 2^127
+             *      |x| < f g 2^r < (h1 + 1) 2^(127+r)
+             *
+             * Similarly,
+             *      (g1 - 1) 2^63 < g - 1 and f (g1 - 1) 2^63 < f (g - 1)
+             * Again, split f (g1 - 1), obtaining
+             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
+             *      l0 = f (g1 - 1) % 2^64
+             * and thus // TODO
+             *      l1 2^127 < f (g - 1)
+             *      l1 2^(127+r) < |x|
+             *
+             * Putting all together we get
+             *      l1 < |x| 2^(-127-r) < h1 + 1
+             * We conclude that when l1 and h1 + 1 round to the same double x',
+             * then so does |x| 2^(-127-r).
+             * Then |x| rounds to x' 2^(127+r).
+             *
+             * Since r = floor(log2(10^ep)) - 125 (see MathUtils), we end up
+             * with the code below.
              */
+            long g1 = MathUtils.g1(ep);
+            long l1 = Math.unsignedMultiplyHigh(f, g1 - 1);
+            long l0 = f * (g1 - 1);
+            l1 |= l0 != 0 ? 1 : 0;
+            long h1 = Math.unsignedMultiplyHigh(f, g1 + 1);
+            long h0 = f * (g1 + 1);
+            h1 |= h0 != 0 ? 1 : 0;
+            double xp = (double) l1;
+            if (xp == (double) h1) {
+                int rp = MathUtils.flog2pow10(ep) + 2;
+                double xabs = Math.scalb(xp, rp);
+                return isNegative ? -xabs : xabs;
+            }
+
+            /*
+             * If the above fails, we could further compute the full precision
+             * f (g - 1) and f g products and proceed analogously.
+             * It would be quite rare to encounter such cases, though,
+             * and the code gets messy fast.
+             * Instead, we failover to the full precision product f 10^e
+             * using big integer arithmetic.
+             */
+            System.out.printf("%dE%d%n", f, ep);
             return fullPrecisionDoubleValue();
         }
 
