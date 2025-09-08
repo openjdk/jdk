@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
  * @summary Test Smashing Error when user language is Japanese
  * @library /tools/lib /jdk/jshell
  * @build KullaTesting
- * @run testng/othervm -Duser.language=ja JShellTest8146368
+ * @run junit/othervm -Duser.language=ja JShellTest8146368
  */
 
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JShellTest8146368 extends KullaTesting {
+    @Test
     public void test() {
         assertEval("class A extends B {}", added(RECOVERABLE_NOT_DEFINED));
         assertEval("und m() { return new und(); }", added(RECOVERABLE_NOT_DEFINED));

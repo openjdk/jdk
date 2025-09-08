@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474 8246774 8276149
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
- * @run testng CompletenessTest
+ * @run junit CompletenessTest
  */
 
 import java.util.Map;
@@ -35,13 +35,11 @@ import java.util.function.Consumer;
 import javax.lang.model.SourceVersion;
 import jdk.jshell.JShell;
 
-import org.testng.annotations.Test;
 import jdk.jshell.SourceCodeAnalysis.Completeness;
 
 import static jdk.jshell.SourceCodeAnalysis.Completeness.*;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class CompletenessTest extends KullaTesting {
 
     // Add complete units that end with semicolon to complete_with_semi (without
@@ -278,30 +276,37 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void test_complete() {
          assertStatus(complete, COMPLETE);
     }
 
+    @Test
     public void test_expression() {
         assertStatus(expression, COMPLETE);
     }
 
+    @Test
     public void test_complete_with_semi() {
         assertStatus(complete_with_semi, COMPLETE_WITH_SEMI);
     }
 
+    @Test
     public void test_considered_incomplete() {
         assertStatus(considered_incomplete, CONSIDERED_INCOMPLETE);
     }
 
+    @Test
     public void test_definitely_incomplete() {
         assertStatus(definitely_incomplete, DEFINITELY_INCOMPLETE);
     }
 
+    @Test
     public void test_unknown() {
         assertStatus(definitely_incomplete, DEFINITELY_INCOMPLETE);
     }
 
+    @Test
     public void testCompleted_complete_with_semi() {
         for (String in : complete_with_semi) {
             String input = in + ";";
@@ -309,6 +314,7 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testCompleted_expression_with_semi() {
         for (String in : expression) {
             String input = in + ";";
@@ -316,6 +322,7 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testCompleted_considered_incomplete() {
         for (String in : considered_incomplete) {
             String input = in + ";";
@@ -332,12 +339,14 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testCompleteSource_complete() {
         for (String input : complete) {
             assertSourceByStatus(input);
         }
     }
 
+    @Test
     public void testCompleteSource_complete_with_semi() {
         for (String in : complete_with_semi) {
             String input = in + ";";
@@ -345,6 +354,7 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testCompleteSource_expression() {
         for (String in : expression) {
             String input = in + ";";
@@ -352,6 +362,7 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testCompleteSource_considered_incomplete() {
         for (String in : considered_incomplete) {
             String input = in + ";";
@@ -359,15 +370,18 @@ public class CompletenessTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testTrailingSlash() {
         assertStatus("\"abc\\", UNKNOWN, "\"abc\\");
     }
 
+    @Test
     public void testOpenComment() {
         assertStatus("int xx; /* hello", DEFINITELY_INCOMPLETE, null);
         assertStatus("/**  test", DEFINITELY_INCOMPLETE, null);
     }
 
+    @Test
     public void testTextBlocks() {
         assertStatus("\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"broken", DEFINITELY_INCOMPLETE, null);
@@ -382,6 +396,7 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("\"\"\"\n\\", DEFINITELY_INCOMPLETE, null);
     }
 
+    @Test
     public void testMiscSource() {
         assertStatus("if (t) if ", DEFINITELY_INCOMPLETE, "if (t) if"); //Bug
         assertStatus("int m() {} dfd", COMPLETE, "int m() {}");
@@ -390,6 +405,7 @@ public class CompletenessTest extends KullaTesting {
                      "int[] m = {1, 2}, n = new int[0];");
     }
 
+    @Test
     public void testInstanceOf() {
         assertStatus("i instanceof Integer", COMPLETE, "i instanceof Integer");
         assertStatus("i instanceof int", COMPLETE, "i instanceof int");

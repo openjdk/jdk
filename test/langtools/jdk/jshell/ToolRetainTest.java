@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
  * @summary Tests of what information is retained across jshell tool runs
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ToolRetainTest ReplToolTesting
- * @run testng ToolRetainTest
+ * @run junit ToolRetainTest
  */
 
 import java.util.Locale;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolRetainTest extends ReplToolTesting {
 
+    @Test
     public void testRetainMode() {
         test(
                 (a) -> assertCommand(a, "/set mode trm -quiet", "|  Created new feedback mode: trm"),
@@ -53,6 +53,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetain2Mode() {
         test(
                 (a) -> assertCommand(a, "/set mode trm1 -quiet", "|  Created new feedback mode: trm1"),
@@ -81,6 +82,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainFeedback() {
         test(
                 (a) -> assertCommand(a, "/set feedback -retain verbose", "|  Feedback mode: verbose"),
@@ -95,6 +97,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainFeedbackBlank() {
         String feedbackOut =
                         "|  /set feedback -retain verbose\n" +
@@ -116,6 +119,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainEditor() {
         test(
                 (a) -> assertCommand(a, "/set editor -retain nonexistent",
@@ -130,6 +134,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainEditorBlank() {
         test(
                 (a) -> assertCommand(a, "/set editor nonexistent", "|  Editor set to: nonexistent"),
@@ -142,6 +147,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainModeNeg() {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/set mode -retain verbose",
@@ -151,6 +157,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testRetainFeedbackNeg() {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/set feedback -retain babble1",
@@ -167,6 +174,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testNoRetainMode() {
         test(
                 (a) -> assertCommand(a, "/set mode trm -quiet", "|  Created new feedback mode: trm"),
@@ -182,6 +190,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testNoRetainFeedback() {
         test(
                 (a) -> assertCommand(a, "/set feedback verbose", "|  Feedback mode: verbose"),
