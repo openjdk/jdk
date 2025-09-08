@@ -37,17 +37,19 @@ import java.util.Objects;
  * {@code PEM} is a {@link DEREncodable} that represents Privacy-Enhanced
  * Mail (PEM) data by its type and Base64 content.
  *
- * <p> {@link PEMDecoder} returns a {@code PEM} object when there is no
- * {@code DEREncodable} implementation available for a particular data
- * {@code type}.  When an implementation exists but decoding to a specific
- * cryptographic object is not desired, {@code PEM.class} can be used with
- * {@link PEMDecoder#decode(String, Class)} or
- * {@link PEMDecoder#decode(InputStream, Class)}.
+ * <p> Methods {@link PEMDecoder#decode(String)} and
+ * {@link PEMDecoder#decode(InputStream)} return a {@code PEM} object when no
+ * cryptographic object is available to represent the data type.
+ * If {@code PEM} is desired instead of an available cryptographic object,
+ * decoding methods {@link PEMDecoder#decode(String, Class)} or
+ * {@link PEMDecoder#decode(InputStream, Class)} are used with
+ * {@code PEM.class} as an argument.
  *
  * <p> A {@code PEM} object can be encoded back to its textual format by using
- * {@link PEMEncoder} or the {@link #toString()} method.
+ * encode methods in {@link PEMEncoder} or the {@link #toString()} method.
  *
- * <p> {@code type} and {@code content} may not be {@code null}.
+ * <p> When constructing a {@code PEM} instance, {@code type} and
+ * {@code content} may not be {@code null}.
  *
  * <p>No validation is performed during instantiation to ensure that
  * {@code type} conforms to {@code RFC 7468} or other legacy formats, that

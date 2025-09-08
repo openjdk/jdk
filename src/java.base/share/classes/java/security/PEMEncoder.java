@@ -163,16 +163,16 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns a PEM encoded
      * string.
      *
-     * @param derEncodable the {@code DEREncodable} to be encoded
+     * @param de the {@code DEREncodable} to be encoded
      * @return a {@code String} containing the PEM encoded data
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
-    public String encodeToString(DEREncodable derEncodable) {
-        Objects.requireNonNull(derEncodable);
-        return switch (derEncodable) {
+    public String encodeToString(DEREncodable de) {
+        Objects.requireNonNull(de);
+        return switch (de) {
             case PublicKey pu -> buildKey(pu.getEncoded(), null);
             case PrivateKey pr -> buildKey(null, pr.getEncoded());
             case KeyPair kp -> {
@@ -230,7 +230,7 @@ public final class PEMEncoder {
             }
 
             default -> throw new IllegalArgumentException("PEM does not " +
-                "support " + derEncodable.getClass().getCanonicalName());
+                "support " + de.getClass().getCanonicalName());
         };
     }
 
@@ -238,16 +238,15 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns the PEM encoding
      * in a byte array.
      *
-     * @param derEncodable the {@code DEREncodable} to be encoded
+     * @param de the {@code DEREncodable} to be encoded
      * @return a PEM encoded byte array
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
-    public byte[] encode(DEREncodable derEncodable) {
-        return encodeToString(derEncodable).getBytes(
-            StandardCharsets.ISO_8859_1);
+    public byte[] encode(DEREncodable de) {
+        return encodeToString(de).getBytes(StandardCharsets.ISO_8859_1);
     }
 
     /**
@@ -321,16 +320,21 @@ public final class PEMEncoder {
 
         // If `key` is non-null, this is an encoder ready to encrypt.
         if (key != null) {
-            byte[] encoding = null;
             if (privateEncoding == null) {
                 throw new IllegalArgumentException("This DEREncodable cannot " +
                     "be encrypted.");
             }
 
+            byte[] encoding = null;
             try {
-                // publicBytes will be ignored if null.
-                encoding = new PKCS8Key(publicEncoding, privateEncoding).
-                    generateEncoding();
+                if (publicEncoding == null) {
+                    encoding = privateEncoding;
+                } else {
+                    encoding = new PKCS8Key(publicEncoding, privateEncoding).
+                        generateEncoding();
+                    // The public key is part of the private encoding.
+                    publicEncoding = null;
+                }
                 privateEncoding = EncryptedPrivateKeyInfo.encryptKey(
                     new PKCS8EncodedKeySpec(encoding), key, null, null, null,
                     null).getEncoded();
@@ -341,10 +345,6 @@ public final class PEMEncoder {
                     Arrays.fill(encoding, (byte) 0x0);
                 }
             }
-
-            // If the public key is non-null, it's now part of the privateBytes
-            publicEncoding = null;
-
         }
 
         // X509 only

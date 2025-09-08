@@ -104,10 +104,10 @@ import java.util.Objects;
  * {@link CertificateFactory} instances from the specified {@code Provider}.
  * {@link #withDecryption(char[])} configures the decoder to process
  * encrypted private key PEM data using the given password.
- * Configuring for decryption does not prevent decoding of unencrypted PEM.
  * If decryption fails, a {@link RuntimeException} is thrown.
  * If an encrypted private key PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} object is returned.
+ * Decryption configured instances will decode unencrypted PEM.
  *
  * <p> This class is immutable and thread-safe.
  *
