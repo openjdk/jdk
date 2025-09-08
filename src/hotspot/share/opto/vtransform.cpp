@@ -1030,7 +1030,7 @@ void VTransformPopulateIndexNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("Prototype[orig=[%d %s] sopc=%s vlen=%d element_bt=%s]",
+  tty->print("Properties[orig=[%d %s] sopc=%s vlen=%d element_bt=%s]",
              approximate_origin()->_idx,
              approximate_origin()->Name(),
              NodeClassNames[scalar_opcode()],

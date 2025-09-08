@@ -597,29 +597,29 @@ public:
 };
 
 // Bundle the information needed for vector nodes.
-class VTransformVectorNodePrototype : public StackObj {
+class VTransformVectorNodeProperties : public StackObj {
 private:
   Node* _approximate_origin; // for proper propagation of node notes
   const int _scalar_opcode;
   const uint _vector_length;
   const BasicType _element_basic_type;
 
-  VTransformVectorNodePrototype(Node* approximate_origin,
-                                int scalar_opcode,
-                                uint vector_length,
-                                BasicType element_basic_type) :
+  VTransformVectorNodeProperties(Node* approximate_origin,
+                                 int scalar_opcode,
+                                 uint vector_length,
+                                 BasicType element_basic_type) :
     _approximate_origin(approximate_origin),
     _scalar_opcode(scalar_opcode),
     _vector_length(vector_length),
     _element_basic_type(element_basic_type) {}
 
 public:
-  static VTransformVectorNodePrototype make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+  static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
     Node* first = pack->at(0);
     int opc = first->Opcode();
     int vlen = pack->size();
     BasicType bt = vloop_analyzer.types().velt_basic_type(first);
-    return VTransformVectorNodePrototype(first, opc, vlen, bt);
+    return VTransformVectorNodeProperties(first, opc, vlen, bt);
   }
 
   Node* approximate_origin()     const { return _approximate_origin; }
@@ -631,16 +631,16 @@ public:
 // Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
-  const VTransformVectorNodePrototype _prototype;
+  const VTransformVectorNodeProperties _properties;
 protected:
   GrowableArray<Node*> _nodes;
 public:
-  VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype) :
+  VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
     VTransformNode(vtransform, req),
-    _prototype(prototype),
+    _properties(properties),
     _nodes(vtransform.arena(),
-           prototype.vector_length(),
-           prototype.vector_length(),
+           properties.vector_length(),
+           properties.vector_length(),
            nullptr) {}
 
   void set_nodes(const Node_List* pack) {
@@ -654,10 +654,10 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 
 protected:
-  Node* approximate_origin()     const { return _prototype.approximate_origin(); }
-  int scalar_opcode()            const { return _prototype.scalar_opcode(); }
-  uint vector_length()           const { return _prototype.vector_length(); }
-  BasicType element_basic_type() const { return _prototype.element_basic_type(); }
+  Node* approximate_origin()     const { return _properties.approximate_origin(); }
+  int scalar_opcode()            const { return _properties.scalar_opcode(); }
+  uint vector_length()           const { return _properties.vector_length(); }
+  BasicType element_basic_type() const { return _properties.element_basic_type(); }
 };
 
 // Catch all for all element-wise vector operations.
@@ -665,8 +665,8 @@ class VTransformElementWiseVectorNode : public VTransformVectorNode {
 private:
   const int _vector_opcode;
 public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodePrototype prototype, const int vector_opcode) :
-    VTransformVectorNode(vtransform, req, prototype), _vector_opcode(vector_opcode) {}
+  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties, const int vector_opcode) :
+    VTransformVectorNode(vtransform, req, properties), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
@@ -678,8 +678,8 @@ public:
 // Hence, we vectorize it as: long --long_op--> long --cast--> int
 class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVectorNode {
 public:
-  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, 2, prototype) {}
+  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 2, properties) {}
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
 };
@@ -688,8 +688,8 @@ class VTransformReinterpretVectorNode : public VTransformVectorNode {
 private:
   const BasicType _src_bt;
 public:
-  VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const BasicType src_bt) :
-    VTransformVectorNode(vtransform, 2, prototype), _src_bt(src_bt) {}
+  VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const BasicType src_bt) :
+    VTransformVectorNode(vtransform, 2, properties), _src_bt(src_bt) {}
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -707,8 +707,8 @@ struct VTransformBoolTest {
 // The Bool node takes care of "apply".
 class VTransformCmpVectorNode : public VTransformVectorNode {
 public:
-  VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, 3, prototype) {}
+  VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
@@ -718,8 +718,8 @@ class VTransformBoolVectorNode : public VTransformVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
-  VTransformBoolVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, VTransformBoolTest test) :
-    VTransformVectorNode(vtransform, 2, prototype), _test(test) {}
+  VTransformBoolVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, VTransformBoolTest test) :
+    VTransformVectorNode(vtransform, 2, properties), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
@@ -730,8 +730,8 @@ public:
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, scalar init, vector]
-  VTransformReductionVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype) :
-    VTransformVectorNode(vtransform, 3, prototype) {}
+  VTransformReductionVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
@@ -744,8 +744,8 @@ protected:
   const TypePtr* _adr_type;
 
 public:
-  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
-    VTransformVectorNode(vtransform, req, prototype),
+  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformVectorNode(vtransform, req, properties),
     _vpointer(vpointer),
     _adr_type(adr_type) {}
 
@@ -758,8 +758,8 @@ public:
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
-    VTransformMemVectorNode(vtransform, 3, prototype, vpointer, adr_type) {}
+  VTransformLoadVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
@@ -770,8 +770,8 @@ public:
 class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodePrototype prototype, const VPointer& vpointer, const TypePtr* adr_type) :
-    VTransformMemVectorNode(vtransform, 4, prototype, vpointer, adr_type) {}
+  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 4, properties, vpointer, adr_type) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
