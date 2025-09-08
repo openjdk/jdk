@@ -1830,7 +1830,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // At this point we only have the address of a "raw result" and
   // we just call into the interpreter to convert this into a jvalue.
   // This method always makes transition to vm and back where GC can happen.
-  // So it is needed to preserve result  and then restore it
+  // So it is needed to preserve result and then restore it
   // even if events are not actually posted.
   // Saving oop_result into value.j is deferred until jvmti state is ready.
   HandleMark hm(thread);
@@ -1840,8 +1840,8 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   jvalue value;
   value.j = 0L;
   BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-  assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
-          "Stack shouldn't be empty");
+  assert(mh->is_native() || type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+         "Stack shouldn't be empty");
   if (is_reference_type(type)) {
     result = Handle(thread, oop_result);
   }
