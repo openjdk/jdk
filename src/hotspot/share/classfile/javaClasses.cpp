@@ -22,12 +22,12 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -939,7 +939,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
 
   // If the offset was read from the shared archive, it was fixed up already
-  if (!k->is_shared()) {
+  if (!k->in_aot_cache()) {
     if (k->is_instance_klass()) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
@@ -977,7 +977,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     }
   }
 
-  if (k->is_shared() && k->has_archived_mirror_index()) {
+  if (k->in_aot_cache() && k->has_archived_mirror_index()) {
     if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
@@ -2619,14 +2619,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
-
+  int buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
+  assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
   // Print module information
   if (module_name != nullptr) {
     if (module_version != nullptr) {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     } else {
-      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
+      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
     }
   }
 
@@ -2641,13 +2643,16 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != nullptr && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else if (source_file_name != nullptr) {
         // Just sourcename
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
+        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
