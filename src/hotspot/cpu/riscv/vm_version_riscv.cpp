@@ -35,15 +35,19 @@
 
 uint32_t VM_Version::_initial_vector_length = 0;
 
-#define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
-VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
+#define DEF_RV_FEATURE(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF)                 \
+VM_Version::NAME##RVFeatureValue VM_Version::NAME(#PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING);
 RV_FEATURE_FLAGS(DEF_RV_FEATURE)
+#undef DEF_RV_FEATURE
 
-#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, BIT, FSTRING, FLAGF) \
-    &VM_Version::NAME,
-VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
-RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
+#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF) \
+     &VM_Version::NAME,
+ VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
+ RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
   nullptr};
+#undef ADD_RV_FEATURE_IN_LIST
+
+VM_Version::RVFeatures* VM_Version::_rv_features = new VM_Version::RVFeatures();
 
 void VM_Version::useRVA20U64Profile() {
   RV_USE_RVA20U64;
