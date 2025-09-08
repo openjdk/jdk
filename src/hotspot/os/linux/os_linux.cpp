@@ -332,10 +332,12 @@ bool os::free_swap_space(size_t& value) {
   }
   size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
+    // We are using jlong for various delta calculations since negative values
+    // might be out of range for ssize_t (which has range [-1,SSIZE_MAX])
+
     ssize_t mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     ssize_t mem_limit = OSContainer::memory_limit_in_bytes();
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
-      // using jlong as that is potentially out of range for ssize_t
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
         value = 0;
@@ -344,10 +346,8 @@ bool os::free_swap_space(size_t& value) {
       ssize_t mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       ssize_t mem_usage = OSContainer::memory_usage_in_bytes();
       if (mem_swap_usage > 0 && mem_usage > 0) {
-        // using jlong as that is potentially out of range for ssize_t
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
-          // using jlong as that is potentially out of range for ssize_t
           jlong free_swap = delta_limit - delta_usage;
           value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
           return true;
