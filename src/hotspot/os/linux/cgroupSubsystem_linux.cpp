@@ -22,20 +22,21 @@
  *
  */
 
-#include <string.h>
-#include <math.h>
-#include <errno.h>
-#include <sys/vfs.h>
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
-#include "cgroupUtil_linux.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <errno.h>
+#include <math.h>
+#include <string.h>
+#include <sys/vfs.h>
 
 // Inlined from <linux/magic.h> for portability.
 #ifndef CGROUP2_SUPER_MAGIC
