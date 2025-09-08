@@ -1519,7 +1519,7 @@ void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
        int old_index, int new_index) {
   if (old_index < 1 || old_index >= _index_map_p->length()) {
     // Out of range, give up
-    return 0;
+    return;
   }
 
   if (old_index == new_index) {
