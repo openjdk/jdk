@@ -337,9 +337,9 @@ void Assembler::emit_arith_operand_imm32(int op1, Register rm, Address adr, int3
   emit_int32(imm32);
 }
 
-void Assembler::emit_arith(int op1, int op2, Register dst, Register src, bool swap) {
+void Assembler::emit_arith(int op1, int op2, Register dst, Register src) {
   assert(isByte(op1) && isByte(op2), "wrong opcode");
-  emit_int16(op1, (op2 | encode(swap ? src : dst) << 3 | encode(swap ? dst : src)));
+  emit_int16(op1, (op2 | encode(dst) << 3 | encode(src)));
 }
 
 
@@ -13077,17 +13077,12 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
 }
 
 int Assembler::emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool second_operand_demotable) {
-  bool first_operand_demotable = is_demotable(no_flags, dst_enc, nds_enc);
-  if (first_operand_demotable || second_operand_demotable) {
+                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool demotable) {
+  if (demotable || is_demotable(no_flags, dst_enc, nds_enc)) {
     if (pre == VEX_SIMD_66) {
       emit_int8(0x66);
     }
-    if (second_operand_demotable) {
-      return use_prefixq ? prefixq_and_encode(nds_enc, dst_enc) : prefix_and_encode(nds_enc, dst_enc);
-    } else {
-      return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
-    }
+    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
   }
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
@@ -13116,11 +13111,20 @@ int Assembler::eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc,
 
 void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
                                                InstructionAttr *attributes, int op1, int op2, bool no_flags, bool use_prefixq, bool is_commutative) {
-  bool second_operand_demotable = is_commutative && is_demotable(no_flags, dst->encoding(), src2->encoding());
+  bool demotable = is_demotable(no_flags, dst->encoding(), src1->encoding());
+  if (!demotable && is_commutative) {
+    if (is_demotable(no_flags, dst->encoding(), src2->encoding())) {
+      demotable = true;
+      // swap src1 and src2
+      Register tmp = src1;
+      src1 = src2;
+      src2 = tmp;
+    }
+  }
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
   // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, attributes, no_flags, use_prefixq, second_operand_demotable);
-  emit_arith(op1, op2, src1, src2, second_operand_demotable);
+  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, attributes, no_flags, use_prefixq, demotable);
+  emit_arith(op1, op2, src1, src2);
 }
 
 void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,

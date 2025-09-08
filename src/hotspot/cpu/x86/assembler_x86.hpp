@@ -802,7 +802,7 @@ private:
   int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool second_operand_demotable = false);
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demotable = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
@@ -838,7 +838,7 @@ private:
   void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
-  void emit_arith(int op1, int op2, Register dst, Register src, bool swap = false);
+  void emit_arith(int op1, int op2, Register dst, Register src);
 
   bool emit_compressed_disp_byte(int &disp);
 
