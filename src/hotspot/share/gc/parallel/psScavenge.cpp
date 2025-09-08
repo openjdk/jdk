@@ -558,16 +558,20 @@ bool PSScavenge::should_attempt_scavenge() {
     return SHOULD_RUN_FULL_GC;
   }
 
-  assert(old_gen->committed().byte_size() >= old_gen->used_in_bytes(), "inv");
-  // Check OS has enough free memory to commit and expand old-gen.
-  size_t free_mem_in_os;
-  if (os::free_memory(free_mem_in_os)) {
-    size_t free_in_old_gen_and_os = old_gen->committed().byte_size() - old_gen->used_in_bytes()
-                                  + free_mem_in_os;
-    if (promotion_estimate >= free_in_old_gen_and_os) {
-      log_debug(gc, ergo)("Run full-gc; predicted promotion size >= free space in old-gen and OS: %zu >= %zu",
-        promotion_estimate, free_in_old_gen_and_os);
-      return SHOULD_RUN_FULL_GC;
+  if (UseAdaptiveSizePolicy) {
+    // Also checking OS has enough free memory to commit and expand old-gen.
+    // Otherwise, the recorded gc-pause-time might be inflated to include time
+    // of OS preparing free memory, resulting in inaccurate young-gen resizing.
+    assert(old_gen->committed().byte_size() >= old_gen->used_in_bytes(), "inv");
+    size_t free_mem_in_os;
+    if (os::free_memory(free_mem_in_os)) {
+      size_t free_in_old_gen_and_os = old_gen->committed().byte_size() - old_gen->used_in_bytes()
+                                    + free_mem_in_os;
+      if (promotion_estimate >= free_in_old_gen_and_os) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size >= free space in old-gen and OS: %zu >= %zu",
+          promotion_estimate, free_in_old_gen_and_os);
+        return SHOULD_RUN_FULL_GC;
+      }
     }
   }
 
