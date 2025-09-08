@@ -159,27 +159,6 @@ class MutableBigInteger {
     }
 
     /**
-     * Returns a MutableBigInteger with a magnitude specified by
-     * the absolute value of the double val. Any fractional part is discarded.
-     *
-     * Assume val is in the finite double range.
-     */
-    private static MutableBigInteger valueOf(double val) {
-        val = Math.abs(val);
-        if (val < 0x1p63)
-            return new MutableBigInteger((long) val);
-        // Translate the double into exponent and significand, according
-        // to the formulae in JLS, Section 20.10.22.
-        int exponent = Math.getExponent(val) - 52;
-        long significand = (Double.doubleToRawLongBits(val) & ((1L << 52) - 1))
-                | (1L << 52); // Add the implicit bit
-        // At this point, val == significand * 2^exponent, with exponent > 0
-        MutableBigInteger result = new MutableBigInteger(significand);
-        result.leftShift(exponent);
-        return result;
-    }
-
-    /**
      * Makes this number an {@code n}-int number all of whose bits are ones.
      * Used by Burnikel-Ziegler division.
      * @param n number of ints in the {@code value} array
