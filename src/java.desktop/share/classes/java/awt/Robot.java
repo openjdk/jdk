@@ -958,7 +958,7 @@ public class Robot {
 
     /**
      * A convenience method that simulates typing a key by calling {@code keyPress}
-     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of 20 milliseconds
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of {@value #DEFAULT_DELAY} milliseconds
      * after {@code keyPress} and {@code keyRelease} calls.
      * <p>
      * Key codes that have more than one physical key associated with them
