@@ -348,23 +348,6 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _humongous_waste[partition_id] = 0;
     _available[partition_id] = FreeSetUnderConstruction;
   }
-#ifdef KELVIN_DEPRECATE
-  _total_region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] =
-    _total_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-
-  // KELVIN deprecates the following on 9/8/2025 after adding above
-  // _region_counts[partition_id] = 0; 
-  // _empty_region_counts[partition_id] = 0;
-  // KELVIN notes that _capacity was already initialized to zero above, redundantly.
-  // KELVIN observed an inconsistency crash resulting from setting old capacity to 0, but allowing old empty_region_counts
-  //   to remain equal to 2.  When we recompute _old_affiliated_regions, we end up with 0 - 2, which is a huge unsigned number,
-  //   which is toxic to a proximate ShenandoahGenerationalMemoryPool::get_memory_usage() invocation.
-
-  _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = _capacity[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-  _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-  _empty_region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] =
-    _empty_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-#endif
 }
 
 void ShenandoahRegionPartitions::establish_mutator_intervals(index_type mutator_leftmost, index_type mutator_rightmost,
