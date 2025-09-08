@@ -28,15 +28,14 @@ import java.awt.Dimension;
 import java.awt.Robot;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
  * @key headful
  * @summary setExtendedFrame not executed immediately
+ * @requires (os.family != "linux")
  * @run main MaximizeWindowTest
  */
-@SuppressWarnings("serial")
 public class MaximizeWindowTest extends JFrame {
     private static JFrame frame;
     private static final Dimension ORIGINAL_SIZE = new Dimension(200, 200);
