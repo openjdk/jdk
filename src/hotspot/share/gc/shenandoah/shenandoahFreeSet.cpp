@@ -2222,26 +2222,27 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
       return obj;
     }
 
-    // try to steal from other directly allocatable regions
-    uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
-    uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
-    obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
-                                                   steal_alloc_probes,
-                                                   req,
-                                                   in_new_region);
-    if (obj != nullptr) {
-      return obj;
-    }
-
     uint next_start_index = ShenandoahDirectlyAllocatableRegionCount;
-    if (!try_allocate_directly_allocatable_regions(start_idx, true, req, obj, in_new_region, next_start_index)) {
+    if (!try_allocate_directly_allocatable_regions(start_idx, false, req, obj, in_new_region, next_start_index)) {
       if (obj != nullptr) {
         return obj;
       }
+
       // No new directly allocatable region, but an existing region with sufficient memory has been found.
       if (next_start_index != ShenandoahDirectlyAllocatableRegionCount) {
         start_idx = next_start_index;
       } else {
+        // try to steal from other directly allocatable regions
+        uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
+        uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
+        obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
+                                                       steal_alloc_probes,
+                                                       req,
+                                                       in_new_region);
+        if (obj != nullptr) {
+          return obj;
+        }
+
         // No new directly allocatable region, no existing region directly allocatable region has sufficient memory.
         return nullptr;
       }
