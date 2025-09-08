@@ -246,7 +246,6 @@ class APITest {
             "script-files/script.js",
             "script-files/search.js",
             "script-files/search-page.js",
-            "script-files/toc.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
