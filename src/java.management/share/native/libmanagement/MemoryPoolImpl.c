@@ -59,15 +59,6 @@ Java_sun_management_MemoryPoolImpl_getPeakUsage0
 {
     jobject usage = jmm_interface->GetPeakMemoryPoolUsage(env, pool);
     if (usage == NULL) {
-
-#define KELVIN_DIAGNOSE
-#ifdef KELVIN_DIAGNOSE
-      // cause a SIGSEGV so I can catch this error here, and walk back
-      // through the stack backtrace, and reverse-next into
-      // jmm_interface->GetPeakMemoryPoolUsage()
-      size_t* p = (size_t *) usage;
-      *p = (size_t) 5;
-#endif
         // Throw internal error since this implementation expects the
         // pool will never become invalid.
         JNU_ThrowInternalError(env, "Memory Pool not found");
