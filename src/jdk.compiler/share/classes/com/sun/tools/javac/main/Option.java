@@ -499,15 +499,14 @@ public enum Option {
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
             TreeMap<String, String> keyDescMap = new TreeMap<>();       // alphabetize categories and aliases together
             Stream.of(LintCategory.values()).forEach(lc ->
-              lc.optionList.stream().forEach(ident -> keyDescMap.put(ident, ident.equals(lc.option) ?
-                String.format(LINT_KEY_FORMAT,
-                              lc.enabledByDefault ? '*' : ' ',
-                              ident,
-                              log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident)) :
-                String.format(LINT_KEY_FORMAT,
-                              lc.enabledByDefault ? '*' : ' ',
-                              ident,
-                              log.localize(PrefixKind.JAVAC, "opt.Xlint.alias.of", lc.option, ident)))));
+              lc.optionList.stream()
+                .forEach(key -> keyDescMap.put(key,
+                  String.format(LINT_KEY_FORMAT,
+                                lc.enabledByDefault ? '*' : ' ',
+                                key,
+                                key.equals(lc.option) ?
+                                  log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + key) :
+                                  log.localize(PrefixKind.JAVAC, "opt.Xlint.alias.of", lc.option, key)))));
             keyDescMap.values().forEach(desc -> log.printRawLines(WriterKind.STDOUT, desc));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
