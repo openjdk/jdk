@@ -31,21 +31,21 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
+#include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <ifaddrs.h>
+#include <limits.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <stdlib.h>
-#include <dlfcn.h>
-#include <pthread.h>
-#include <limits.h>
-#include <ifaddrs.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /**
    /proc/[number]/stat
