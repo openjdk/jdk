@@ -52,6 +52,22 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
+  // To minimize `count_leading_zeros(x)`, we should make the highest 1 bit in x
+  // as far to the left as possible. A bit in x can be 1 iff this bit is not
+  // forced to be 0, i.e. the corresponding bit in `x._bits._zeros` is 0. Thus:
+  //   min(clz(x)) = number of bits to the left of the highest 0 bit in x._bits._zeros
+  //               = count_leading_ones(x._bits._zeros) = clz(~x._bits._zeros)
+  //
+  // To maximize `count_leading_zeros(x)`, we should make the leading zeros as
+  // many as possible. A bit in x can be 0 iff this bit is not forced to be 1,
+  // i.e. the corresponding bit in `x._bits._ones` is 0. Thus:
+  //   max(clz(x)) = clz(x._bits._ones)
+  //
+  // Therefore, the range of `count_leading_zeros(x)` is:
+  //   [clz(~x._bits._zeros), clz(x._bits._ones)]
+  //
+  // A more detailed proof using Z3 can be found at:
+  //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
   const TypeInt* ti = t->is_int();
   return TypeInt::make(count_leading_zeros_int(~ti->_bits._zeros),
                        count_leading_zeros_int(ti->_bits._ones),
@@ -65,6 +81,8 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
+  // The proof of correctness is same as the above comments
+  // in `CountLeadingZerosINode::Value`.
   const TypeLong* tl = t->is_long();
   return TypeInt::make(count_leading_zeros_long(~tl->_bits._zeros),
                        count_leading_zeros_long(tl->_bits._ones),
@@ -78,6 +96,22 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
+  // To minimize `count_trailing_zeros(x)`, we should make the lowest 1 bit in x
+  // as far to the right as possible. A bit in x can be 1 iff this bit is not
+  // forced to be 0, i.e. the corresponding bit in `x._bits._zeros` is 0. Thus:
+  //   min(ctz(x)) = number of bits to the right of the lowest 0 bit in x._bits._zeros
+  //               = count_trailing_ones(x._bits._zeros) = ctz(~x._bits._zeros)
+  //
+  // To maximize `count_trailing_zeros(x)`, we should make the trailing zeros as
+  // many as possible. A bit in x can be 0 iff this bit is not forced to be 1,
+  // i.e. the corresponding bit in `x._bits._ones` is 0. Thus:
+  //   max(ctz(x)) = ctz(x._bits._ones)
+  //
+  // Therefore, the range of `count_trailing_zeros(x)` is:
+  //   [ctz(~x._bits._zeros), ctz(x._bits._ones)]
+  //
+  // A more detailed proof using Z3 can be found at:
+  //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
   const TypeInt* ti = t->is_int();
   return TypeInt::make(count_trailing_zeros_int(~ti->_bits._zeros),
                        count_trailing_zeros_int(ti->_bits._ones),
@@ -91,6 +125,8 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
+  // The proof of correctness is same as the above comments
+  // in `CountTrailingZerosINode::Value`.
   const TypeLong* tl = t->is_long();
   return TypeInt::make(count_trailing_zeros_long(~tl->_bits._zeros),
                        count_trailing_zeros_long(tl->_bits._ones),
