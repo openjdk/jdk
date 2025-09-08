@@ -123,8 +123,8 @@ public final class JdkConsoleImpl implements JdkConsole {
                     "console since a real console already exists");
             }
 
-            // If stdin is NOT redirected, return a JdkConsoleImpl instance,
-            // otherwise null
+            // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
+            // instance, otherwise an empty Optional.
             return SharedSecrets.getJavaIOAccess().isStdinTty() ?
                 Optional.of(
                     new JdkConsoleImpl(
