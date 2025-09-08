@@ -13074,8 +13074,8 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
 }
 
 int Assembler::emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool demotable) {
-  if (demotable || is_demotable(no_flags, dst_enc, nds_enc)) {
+                                               InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+  if (is_demotable(no_flags, dst_enc, nds_enc)) {
     if (pre == VEX_SIMD_66) {
       emit_int8(0x66);
     }
@@ -13111,7 +13111,6 @@ void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src
   bool demotable = is_demotable(no_flags, dst->encoding(), src1->encoding());
   if (!demotable && is_commutative) {
     if (is_demotable(no_flags, dst->encoding(), src2->encoding())) {
-      demotable = true;
       // swap src1 and src2
       Register tmp = src1;
       src1 = src2;
@@ -13123,7 +13122,7 @@ void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src
   InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
   // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, &attributes, no_flags, use_prefixq, demotable);
+  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc, &attributes, no_flags, use_prefixq);
   emit_arith(op1, op2, src1, src2);
 }
 
