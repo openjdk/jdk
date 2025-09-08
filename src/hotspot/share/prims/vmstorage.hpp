@@ -24,12 +24,12 @@
 #ifndef SHARE_PRIMS_VMSTORAGE_HPP
 #define SHARE_PRIMS_VMSTORAGE_HPP
 
-#include <cstdint>
-
 #include "code/vmreg.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
+#include <cstdint>
 
 enum class StorageType : int8_t; // defined in arch specific headers
 

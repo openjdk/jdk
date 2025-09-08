@@ -28,6 +28,7 @@
 #include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
+
 #include <limits>
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.

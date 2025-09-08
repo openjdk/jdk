@@ -26,35 +26,35 @@
  * @summary Test virtual threads using Object.wait/notifyAll
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
  * @test id=Xint
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native/timeout=480 -Xint --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
  * @test id=Xcomp
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native/timeout=480 -Xcomp --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
  * @test id=Xcomp-TieredStopAtLevel1
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
  * @test id=Xcomp-noTieredCompilation
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 import java.util.ArrayList;

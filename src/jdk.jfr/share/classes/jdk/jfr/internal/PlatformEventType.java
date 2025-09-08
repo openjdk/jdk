@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.TimespanRate;
@@ -107,9 +106,9 @@ public final class PlatformEventType extends Type {
             return switch (getName()) {
                 case Type.EVENT_NAME_PREFIX + "SocketRead",
                      Type.EVENT_NAME_PREFIX + "SocketWrite",
-                     Type.EVENT_NAME_PREFIX + "FileRead",
                      Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
-                case Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                case Type.EVENT_NAME_PREFIX + "FileRead",
+                     Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
                 default -> 3;
             };
         }

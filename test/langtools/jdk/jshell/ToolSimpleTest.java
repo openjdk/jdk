@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  *          java.desktop
  * @build KullaTesting TestingInputStream
- * @run testng ToolSimpleTest
+ * @run junit/timeout=480 ToolSimpleTest
  */
 
 import java.util.ArrayList;
@@ -47,10 +47,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class ToolSimpleTest extends ReplToolTesting {
 
@@ -543,7 +542,7 @@ public class ToolSimpleTest extends ReplToolTesting {
         String[] res = trimmed.isEmpty()
                 ? new String[0]
                 : trimmed.split("\n");
-        assertEquals(res.length, match.size(), "Got: " + Arrays.asList(res));
+        assertEquals(match.size(), res.length, "Got: " + Arrays.asList(res));
         for (int i = 0; i < match.size(); ++i) {
             assertTrue(res[i].contains(match.get(i)));
         }
@@ -619,7 +618,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommandCheckOutput(a, "/methods print println printf",
                         s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandCheckOutput(a, "/methods println",
-                        s -> assertEquals(s.trim().split("\n").length, 10)),
+                        s -> assertEquals(10, s.trim().split("\n").length)),
                 a -> assertCommandCheckOutput(a, "/methods",
                         s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandOutputStartsWith(a, "/methods " + arg,

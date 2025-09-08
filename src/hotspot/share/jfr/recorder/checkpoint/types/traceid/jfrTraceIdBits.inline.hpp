@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ inline uint8_t* traceid_meta_byte(const T* ptr) {
 template <>
 inline uint8_t* traceid_meta_byte<Method>(const Method* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->trace_meta_addr();
+  return ptr->trace_flags_meta_addr();
 }
 
 inline uint8_t traceid_and(uint8_t bits, uint8_t current) {

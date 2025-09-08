@@ -67,9 +67,6 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
-    /** flag: is the "preview" lint category enabled? */
-    private final boolean verbose;
-
     /** test flag: should all features be considered as preview features? */
     private final boolean forcePreview;
 
@@ -100,7 +97,6 @@ public class Preview {
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
         source = Source.instance(context);
-        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -184,9 +180,7 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (verbose) {
-            log.warning(LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
-        }
+        log.warning(LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
     }
 
     /**
