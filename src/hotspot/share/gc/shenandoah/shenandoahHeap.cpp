@@ -2673,7 +2673,21 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
 }
 
 MemoryUsage ShenandoahHeap::memory_usage() {
+#define KELVIN_MEMORY_USAGE
+#ifdef KELVIN_MEMORY_USAGE
+  size_t used_ = used();
+  size_t committed_ = committed();
+  size_t max_capacity_ = max_capacity();
+  assert(_initial_size <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(used_ <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(committed_ <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(max_capacity_ <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  log_info(gc)("ShenandoahHeap::MemoryUsage(initial: %zu, used: %zu, committed: %zu, max: %zu)",
+               _initial_size, used_, committed_, max_capacity_);
+  return MemoryUsage(_initial_size, used_, committed_, max_capacity_);
+#else
   return MemoryUsage(_initial_size, used(), committed(), max_capacity());
+#endif
 }
 
 ShenandoahRegionIterator::ShenandoahRegionIterator() :

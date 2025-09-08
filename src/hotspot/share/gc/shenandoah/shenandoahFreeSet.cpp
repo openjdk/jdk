@@ -342,6 +342,8 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _leftmosts_empty[partition_id] = _max;
     _rightmosts_empty[partition_id] = -1;;
     _capacity[partition_id] = 0;
+    _region_counts[partition_id] = 0;
+    _empty_region_counts[partition_id] = 0;
     _used[partition_id] = 0;
     _humongous_waste[partition_id] = 0;
     _available[partition_id] = FreeSetUnderConstruction;
@@ -349,11 +351,20 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
 #ifdef KELVIN_DEPRECATE
   _total_region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] =
     _total_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-#endif
+
+  // KELVIN deprecates the following on 9/8/2025 after adding above
+  // _region_counts[partition_id] = 0; 
+  // _empty_region_counts[partition_id] = 0;
+  // KELVIN notes that _capacity was already initialized to zero above, redundantly.
+  // KELVIN observed an inconsistency crash resulting from setting old capacity to 0, but allowing old empty_region_counts
+  //   to remain equal to 2.  When we recompute _old_affiliated_regions, we end up with 0 - 2, which is a huge unsigned number,
+  //   which is toxic to a proximate ShenandoahGenerationalMemoryPool::get_memory_usage() invocation.
+
   _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = _capacity[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _empty_region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] =
     _empty_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
+#endif
 }
 
 void ShenandoahRegionPartitions::establish_mutator_intervals(index_type mutator_leftmost, index_type mutator_rightmost,
@@ -2173,6 +2184,7 @@ void ShenandoahFreeSet::clear_internal() {
 void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_regions, size_t &old_trashed_regions,
                                                          size_t &first_old_region, size_t &last_old_region,
                                                          size_t &old_region_count) {
+  // This resets all state information, removing all regions from all sets.
   clear_internal();
 
   first_old_region = _heap->num_regions();
@@ -2734,8 +2746,6 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t &old_trashed_regions,
                                            size_t &first_old_region, size_t &last_old_region, size_t &old_region_count) {
   shenandoah_assert_heaplocked();
-  // This resets all state information, removing all regions from all sets.
-  clear();
   log_debug(gc, free)("Rebuilding FreeSet");
 
   // This places regions that have alloc_capacity into the old_collector set if they identify as is_old() or the
