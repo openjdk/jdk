@@ -97,11 +97,13 @@ CFLAGS_VM_VERSION := \
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     empty-body format-zero-length implicit-fallthrough int-in-bool-context \
+    invalid-offsetof \
     maybe-uninitialized missing-field-initializers \
     shift-negative-value unknown-pragmas unused-but-set-variable \
     unused-local-typedefs unused-variable
 
-DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor missing-braces \
+DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor \
+    invalid-offsetof missing-braces \
     sometimes-uninitialized unknown-pragmas unused-but-set-variable \
     unused-function unused-local-typedef unused-private-field unused-variable
 

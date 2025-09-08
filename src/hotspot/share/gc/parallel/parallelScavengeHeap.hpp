@@ -102,9 +102,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   inline bool should_alloc_in_eden(size_t size) const;
 
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
@@ -192,12 +190,8 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
 
-  // Memory allocation.   "gc_time_limit_was_exceeded" will
-  // be set to true if the adaptive size policy determine that
-  // an excessive amount of time is being spent doing collections
-  // and caused a null to be returned.  If a null is not returned,
-  // "gc_time_limit_was_exceeded" has an undefined meaning.
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  // Memory allocation.
+  HeapWord* mem_allocate(size_t size) override;
 
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
