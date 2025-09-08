@@ -90,7 +90,7 @@ public class TestVerify {
                     }
                     builder.with(element);
                 });
-                var classTransform = ClassTransform.transformingMethods(mm -> mm.methodName().stringValue().equals("parse"), methodTransform);
+                var classTransform = ClassTransform.transformingMethods(mm -> mm.methodName().equalsString("parse"), methodTransform);
 
                 byte[] bytes;
                 try {
