@@ -46,7 +46,7 @@ class VM_Version : public Abstract_VM_Version {
     RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
   };
 
-  class RVFeatures;
+  class RVExtFeatures;
 
   class RVFeatureValue {
     const char* const _pretty;
@@ -117,15 +117,15 @@ class VM_Version : public Abstract_VM_Version {
       _cpu_feature_index(cpu_feature_index) {
     }
     bool enabled() {
-      return RVFeatures::current()->supports_feature(_cpu_feature_index);
+      return RVExtFeatures::current()->supports_feature(_cpu_feature_index);
     }
     void enable_feature(int64_t value = 0) {
       RVFeatureValue::enable_feature(value);
-      RVFeatures::current()->set_feature(_cpu_feature_index);
+      RVExtFeatures::current()->set_feature(_cpu_feature_index);
     }
     void disable_feature() {
       RVFeatureValue::disable_feature();
-      RVFeatures::current()->clear_feature(_cpu_feature_index);
+      RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
   };
 
@@ -266,7 +266,7 @@ class VM_Version : public Abstract_VM_Version {
 
 private:
   // Utility for AOT CPU feature store/check.
-  class RVFeatures : public CHeapObj<mtCode> {
+  class RVExtFeatures : public CHeapObj<mtCode> {
    public:
     enum RVFeatureIndex {
       #define DECLARE_RV_FEATURE_ENUM(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF) CPU_##NAME=(CPU_FEATURE_INDEX),
@@ -279,7 +279,7 @@ private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
     STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
-    // Number of 8-byte elements in _bitmap.
+    // Number of 8-byte elements in _features_bitmap.
     constexpr static int features_bitmap_element_count() {
       return sizeof(_features_bitmap) / sizeof(uint64_t);
     }
@@ -308,11 +308,11 @@ private:
     }
 
    public:
-    static RVFeatures* current() {
-      return _rv_features;
+    static RVExtFeatures* current() {
+      return _rv_ext_features;
     }
 
-    RVFeatures() {
+    RVExtFeatures() {
       for (int i = 0; i < features_bitmap_element_count(); i++) {
         _features_bitmap[i] = 0;
       }
@@ -407,10 +407,9 @@ private:
     MISALIGNED_UNSUPPORTED = 4
   };
 
-  // TODO: move into RVFeatures
   // Null terminated list
   static RVFeatureValue* _feature_list[];
-  static RVFeatures* _rv_features;
+  static RVExtFeatures* _rv_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
