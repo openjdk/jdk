@@ -795,6 +795,22 @@ void MacroAssembler::pop_d(XMMRegister r) {
   addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
+void MacroAssembler::push_ppx(Register src) {
+  if (VM_Version::supports_apx_f()) {
+    pushp(src);
+  } else {
+    Assembler::push(src);
+  }
+}
+
+void MacroAssembler::pop_ppx(Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    popp(dst);
+  } else {
+    Assembler::pop(dst);
+  }
+}
+
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   // Used in sign-masking with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
@@ -6011,32 +6027,46 @@ void MacroAssembler::evpbroadcast(BasicType type, XMMRegister dst, Register src,
   }
 }
 
-// encode char[] to byte[] in ISO_8859_1 or ASCII
-   //@IntrinsicCandidate
-   //private static int implEncodeISOArray(byte[] sa, int sp,
-   //byte[] da, int dp, int len) {
-   //  int i = 0;
-   //  for (; i < len; i++) {
-   //    char c = StringUTF16.getChar(sa, sp++);
-   //    if (c > '\u00FF')
-   //      break;
-   //    da[dp++] = (byte)c;
-   //  }
-   //  return i;
-   //}
-   //
-   //@IntrinsicCandidate
-   //private static int implEncodeAsciiArray(char[] sa, int sp,
-   //    byte[] da, int dp, int len) {
-   //  int i = 0;
-   //  for (; i < len; i++) {
-   //    char c = sa[sp++];
-   //    if (c >= '\u0080')
-   //      break;
-   //    da[dp++] = (byte)c;
-   //  }
-   //  return i;
-   //}
+// Encode given char[]/byte[] to byte[] in ISO_8859_1 or ASCII
+//
+// @IntrinsicCandidate
+// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(
+//         char[] sa, int sp, byte[] da, int dp, int len) {
+//     int i = 0;
+//     for (; i < len; i++) {
+//         char c = sa[sp++];
+//         if (c > '\u00FF')
+//             break;
+//         da[dp++] = (byte) c;
+//     }
+//     return i;
+// }
+//
+// @IntrinsicCandidate
+// int java.lang.StringCoding.encodeISOArray0(
+//         byte[] sa, int sp, byte[] da, int dp, int len) {
+//   int i = 0;
+//   for (; i < len; i++) {
+//     char c = StringUTF16.getChar(sa, sp++);
+//     if (c > '\u00FF')
+//       break;
+//     da[dp++] = (byte) c;
+//   }
+//   return i;
+// }
+//
+// @IntrinsicCandidate
+// int java.lang.StringCoding.encodeAsciiArray0(
+//         char[] sa, int sp, byte[] da, int dp, int len) {
+//   int i = 0;
+//   for (; i < len; i++) {
+//     char c = sa[sp++];
+//     if (c >= '\u0080')
+//       break;
+//     da[dp++] = (byte) c;
+//   }
+//   return i;
+// }
 void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
@@ -8841,6 +8871,10 @@ void MacroAssembler::evpmins(BasicType type, XMMRegister dst, KRegister mask, XM
       evpminsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpminsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8856,6 +8890,10 @@ void MacroAssembler::evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XM
       evpmaxsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpmaxsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8871,6 +8909,10 @@ void MacroAssembler::evpmins(BasicType type, XMMRegister dst, KRegister mask, XM
       evpminsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpminsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8886,6 +8928,10 @@ void MacroAssembler::evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XM
       evpmaxsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpmaxsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }

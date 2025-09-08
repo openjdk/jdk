@@ -534,6 +534,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -548,6 +549,25 @@ static SpecialFlag const special_jvm_flags[] = {
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
+
+  { "AdaptiveSizeMajorGCDecayTimeScale",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyInitializingSteps",              JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyOutputInterval",                 JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizeThroughPutPolicy",                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveTimeWeight",                               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "PausePadding",                                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "SurvivorPadding",                                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeIncrement",                   JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplement",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplementDecay",             JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMajorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMinorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizeDecayMajorGCCost",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+
+  { "PretenureSizeThreshold",       JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1469,19 +1489,16 @@ jint Arguments::set_ergonomics_flags() {
 }
 
 size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  size_t max_allocatable;
-  size_t result = limit;
-  if (os::has_allocatable_memory_limit(&max_allocatable)) {
-    // The AggressiveHeap check is a temporary workaround to avoid calling
-    // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
-    // selected. This works because AggressiveHeap implies UseParallelGC
-    // where we know the ratio will be 1. Once the AggressiveHeap option is
-    // removed, this can be cleaned up.
-    size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-    size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
-    result = MIN2(result, max_allocatable / fraction);
-  }
-  return result;
+  // The AggressiveHeap check is a temporary workaround to avoid calling
+  // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
+  // selected. This works because AggressiveHeap implies UseParallelGC
+  // where we know the ratio will be 1. Once the AggressiveHeap option is
+  // removed, this can be cleaned up.
+  size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
+  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
+  size_t max_allocatable = os::commit_memory_limit();
+
+  return MIN2(limit, max_allocatable / fraction);
 }
 
 // Use static initialization to get the default before parsing
@@ -1502,13 +1519,13 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      phys_mem = os::physical_memory();
+      phys_mem = static_cast<julong>(os::physical_memory());
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
       phys_mem = (julong)MaxRAM;
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(os::physical_memory()), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
 
@@ -1575,7 +1592,7 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          aot_log_info(aot)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+          aot_log_info(aot)("UseCompressedOops disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
@@ -1630,7 +1647,8 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  julong total_memory = os::physical_memory();
+  size_t phys_mem = os::physical_memory();
+  julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {
     jio_fprintf(defaultStream::error_stream(),
@@ -2396,30 +2414,54 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;
-      int maxf = (int)(strtod(tail, &err) * 100);
+      double dmaxf = strtod(tail, &err);
       if (*err != '\0' || *tail == '\0') {
         jio_fprintf(defaultStream::error_stream(),
-                    "Bad max heap free percentage size: %s\n",
+                    "Bad max heap free ratio: %s\n",
                     option->optionString);
         return JNI_EINVAL;
-      } else {
-        if (FLAG_SET_CMDLINE(MaxHeapFreeRatio, maxf) != JVMFlag::SUCCESS) {
-            return JNI_EINVAL;
-        }
+      }
+      if (dmaxf < 0.0 || dmaxf > 1.0) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xmaxf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                    option->optionString);
+        return JNI_EINVAL;
+      }
+      const uintx umaxf = (uintx)(dmaxf * 100);
+      if (MinHeapFreeRatio > umaxf) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xmaxf value (%s) must be greater than or equal to the implicit -Xminf value (%.2f)\n",
+                    tail, MinHeapFreeRatio / 100.0f);
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(MaxHeapFreeRatio, umaxf) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
       }
     // Xminf
     } else if (match_option(option, "-Xminf", &tail)) {
       char* err;
-      int minf = (int)(strtod(tail, &err) * 100);
+      double dminf = strtod(tail, &err);
       if (*err != '\0' || *tail == '\0') {
         jio_fprintf(defaultStream::error_stream(),
-                    "Bad min heap free percentage size: %s\n",
+                    "Bad min heap free ratio: %s\n",
                     option->optionString);
         return JNI_EINVAL;
-      } else {
-        if (FLAG_SET_CMDLINE(MinHeapFreeRatio, minf) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
+      }
+      if (dminf < 0.0 || dminf > 1.0) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xminf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                    tail);
+        return JNI_EINVAL;
+      }
+      const uintx uminf = (uintx)(dminf * 100);
+      if (MaxHeapFreeRatio < uminf) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xminf value (%s) must be less than or equal to the implicit -Xmaxf value (%.2f)\n",
+                    tail, MaxHeapFreeRatio / 100.0f);
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(MinHeapFreeRatio, uminf) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
       }
     // -Xss
     } else if (match_option(option, "-Xss", &tail)) {

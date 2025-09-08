@@ -77,13 +77,13 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
@@ -782,7 +782,7 @@ class NameSigHash: public ResourceObj {
   }
 };
 
-using NameSigHashtable = ResourceHashtable<NameSigHash, int,
+using NameSigHashtable = HashTable<NameSigHash, int,
                                            NameSigHash::HASH_ROW_SIZE,
                                            AnyObj::RESOURCE_AREA, mtInternal,
                                            &NameSigHash::hash, &NameSigHash::equals>;
@@ -849,7 +849,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
     // Set containing interface names
-    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    HashTable<Symbol*, int>* interface_names = new HashTable<Symbol*, int>();
     for (index = 0; index < itfs_len; index++) {
       const InstanceKlass* const k = _local_interfaces->at(index);
       Symbol* interface_name = k->name();
@@ -941,6 +941,8 @@ public:
     _jdk_internal_ValueBased,
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
+    _jdk_internal_vm_annotation_AOTSafeClassInitializer,
+    _method_AOTRuntimeSetup,
     _annotation_LIMIT
   };
   const Location _location;
@@ -976,6 +978,8 @@ public:
 
   void set_stable(bool stable) { set_annotation(_field_Stable); }
   bool is_stable() const { return has_annotation(_field_Stable); }
+
+  bool has_aot_runtime_setup() const { return has_annotation(_method_AOTRuntimeSetup); }
 };
 
 // This class also doubles as a holder for metadata cleanup.
@@ -1896,6 +1900,16 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_AOTSafeClassInitializer;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTRuntimeSetup_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_AOTRuntimeSetup;
+    }
     default: {
       break;
     }
@@ -1975,6 +1989,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       m->set_deprecated_for_removal();
     }
   }
+  if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
+    ik->set_has_aot_safe_initializer();
+  }
 }
 
 #define MAX_ARGS_SIZE 255
@@ -2005,7 +2022,7 @@ void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
 
   ResourceMark rm(THREAD);
 
-  typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
+  typedef HashTable<LocalVariableTableElement, LocalVariableTableElement*,
                             256, AnyObj::RESOURCE_AREA, mtInternal,
                             &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
 
@@ -2660,6 +2677,13 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
     m->set_is_hidden();
+  }
+  if (parsed_annotations.has_aot_runtime_setup()) {
+    if (name != vmSymbols::runtimeSetup() || signature != vmSymbols::void_method_signature() ||
+        !access_flags.is_private() || !access_flags.is_static()) {
+      classfile_parse_error("@AOTRuntimeSetup method must be declared private static void runtimeSetup() for class %s", CHECK_NULL);
+    }
+    _has_aot_runtime_setup_method = true;
   }
 
   // Copy annotations
@@ -3779,39 +3803,30 @@ AnnotationArray* ClassFileParser::allocate_annotations(const u1* const anno,
   return annotations;
 }
 
-const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
-                                                        const int super_class_index,
-                                                        const bool need_verify,
-                                                        TRAPS) {
+void ClassFileParser::check_super_class(ConstantPool* const cp,
+                                        const int super_class_index,
+                                        const bool need_verify,
+                                        TRAPS) {
   assert(cp != nullptr, "invariant");
-  const InstanceKlass* super_klass = nullptr;
 
   if (super_class_index == 0) {
     guarantee_property(_class_name == vmSymbols::java_lang_Object(),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
   } else {
     guarantee_property(valid_klass_reference_at(super_class_index),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
+
     // The class name should be legal because it is checked when parsing constant pool.
     // However, make sure it is not an array type.
-    bool is_array = false;
-    if (cp->tag_at(super_class_index).is_klass()) {
-      super_klass = InstanceKlass::cast(cp->resolved_klass_at(super_class_index));
-      if (need_verify)
-        is_array = super_klass->is_array_klass();
-    } else if (need_verify) {
-      is_array = (cp->klass_name_at(super_class_index)->char_at(0) == JVM_SIGNATURE_ARRAY);
-    }
     if (need_verify) {
-      guarantee_property(!is_array,
-                        "Bad superclass name in class file %s", CHECK_NULL);
+      guarantee_property(cp->klass_name_at(super_class_index)->char_at(0) != JVM_SIGNATURE_ARRAY,
+                        "Bad superclass name in class file %s", CHECK);
     }
   }
-  return super_klass;
 }
 
 OopMapBlocksBuilder::OopMapBlocksBuilder(unsigned int max_blocks) {
@@ -3933,7 +3948,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const InstanceKlass* const super = ik->java_super();
+  const InstanceKlass* const super = ik->super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -3977,6 +3992,15 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     // Forbid fast-path allocation.
     const jint lh = Klass::instance_layout_helper(ik->size_helper(), true);
     ik->set_layout_helper(lh);
+  }
+
+  // Propagate the AOT runtimeSetup method discovery
+  if (_has_aot_runtime_setup_method) {
+    ik->set_is_runtime_setup_required();
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Found @AOTRuntimeSetup class %s", ik->external_name());
+    }
   }
 }
 
@@ -4059,31 +4083,29 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
 
 void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != nullptr, "invariant");
-  const Klass* const super = this_klass->super();
+  const InstanceKlass* const super = this_klass->super();
 
   if (super != nullptr) {
-    const InstanceKlass* super_ik = InstanceKlass::cast(super);
-
     if (super->is_final()) {
-      classfile_icce_error("class %s cannot inherit from final class %s", super_ik, THREAD);
+      classfile_icce_error("class %s cannot inherit from final class %s", super, THREAD);
       return;
     }
 
-    if (super_ik->is_sealed()) {
+    if (super->is_sealed()) {
       stringStream ss;
       ResourceMark rm(THREAD);
-      if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
+      if (!super->has_as_permitted_subclass(this_klass, ss)) {
         classfile_icce_error(ss.as_string(), THREAD);
         return;
       }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
+      Reflection::verify_class_access(this_klass, super, false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
       char* msg = Reflection::verify_class_access_msg(this_klass,
-                                                      InstanceKlass::cast(super),
+                                                      super,
                                                       vca_result);
 
       // Names are all known to be < 64k so we know this formatted message is not excessively large.
@@ -4179,13 +4201,13 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const InstanceKlass* k = this_klass->java_super();
+      const InstanceKlass* k = this_klass->super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
         if (k->has_final_method()) {
           // lookup a matching method in the super class hierarchy
-          super_m = InstanceKlass::cast(k)->lookup_method(name, signature);
+          super_m = k->lookup_method(name, signature);
           if (super_m == nullptr) {
             break; // didn't find any match; get out
           }
@@ -4211,11 +4233,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->java_super();
+          k = super_m->method_holder()->super();
           continue;
         }
 
-        k = k->java_super();
+        k = k->super();
       }
     }
   }
@@ -5117,8 +5139,47 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   check_methods_for_intrinsics(ik, methods);
 
   // Fill in field values obtained by parse_classfile_attributes
-  if (_parsed_annotations->has_any_annotations()) {
+  if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
+
+  // AOT-related checks.
+  // Note we cannot check this in general due to instrumentation or module patching
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
+    // Check the aot initialization safe status.
+    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
+    // in the AOT assembly phase.
+    if (ik->has_aot_safe_initializer()) {
+      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
+      //   - all super classes must be included
+      //   - all super interfaces that have <clinit> must be included.
+      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
+      // ik's <clinit>.
+      if (_super_klass != nullptr) {
+        guarantee_property(_super_klass->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superclass %s for class %s",
+                           _super_klass->external_name(),
+                           CHECK);
+      }
+
+      int len = _local_interfaces->length();
+      for (int i = 0; i < len; i++) {
+        InstanceKlass* intf = _local_interfaces->at(i);
+        guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
+                           "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
+                           intf->external_name(),
+                           CHECK);
+      }
+
+      if (log_is_enabled(Info, aot, init)) {
+        ResourceMark rm;
+        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
+      }
+    } else {
+      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
+      guarantee_property(!ik->is_runtime_setup_required(),
+                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
+                         CHECK);
+    }
   }
 
   apply_parsed_class_attributes(ik);
@@ -5176,7 +5237,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(module_entry != nullptr, "module_entry should always be set");
 
   // Obtain java.lang.Module
-  Handle module_handle(THREAD, module_entry->module());
+  Handle module_handle(THREAD, module_entry->module_oop());
 
   // Allocate mirror and initialize static fields
   java_lang_Class::create_mirror(ik,
@@ -5222,10 +5283,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
-      if (ik->java_super() != nullptr) {
+      if (ik->super() != nullptr) {
         log_debug(class, resolve)("%s %s (super)",
                    from,
-                   ik->java_super()->external_name());
+                   ik->super()->external_name());
       }
       // print out each of the interface classes referred to by this class.
       const Array<InstanceKlass*>* const local_interfaces = ik->local_interfaces();
@@ -5326,6 +5387,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _has_aot_runtime_setup_method(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {
@@ -5596,10 +5658,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   // SUPERKLASS
   _super_class_index = stream->get_u2_fast();
-  _super_klass = parse_super_class(cp,
-                                   _super_class_index,
-                                   _need_verify,
-                                   CHECK);
+  check_super_class(cp,
+                    _super_class_index,
+                    _need_verify,
+                    CHECK);
 
   // Interfaces
   _itfs_len = stream->get_u2_fast();
@@ -5702,12 +5764,14 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_loader_data != nullptr, "invariant");
 
   if (_class_name == vmSymbols::java_lang_Object()) {
+    precond(_super_class_index == 0);
+    precond(_super_klass == nullptr);
     guarantee_property(_local_interfaces == Universe::the_empty_instance_klass_array(),
                        "java.lang.Object cannot implement an interface in class file %s",
                        CHECK);
-  }
-  // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && nullptr == _super_klass) {
+  } else {
+    // Set _super_klass after class file is parsed and format is checked
+    assert(_super_class_index > 0, "any class other than Object must have a super class");
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
@@ -5718,6 +5782,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     }
     Handle loader(THREAD, _loader_data->class_loader());
     if (loader.is_null() && super_class_name == vmSymbols::java_lang_Object()) {
+      // fast path to avoid lookup
       _super_klass = vmClasses::Object_klass();
     } else {
       _super_klass = (const InstanceKlass*)

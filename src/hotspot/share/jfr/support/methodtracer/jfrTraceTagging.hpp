@@ -39,18 +39,16 @@ template <typename E> class GrowableArray;
 class JfrTraceTagging : AllStatic {
  private:
   static void tag_dynamic(const InstanceKlass* ik);
-  static void tag_dynamic(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
   static void tag_dynamic(const Method* method);
   static void tag_sticky(const InstanceKlass* ik);
   static void tag_sticky(const Method* method);
-  static void tag_sticky(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
-  static void tag_timing(const InstanceKlass* ik);
+  static void tag_sticky(const GrowableArray<JfrTracedMethod>* methods);
+  static void tag_sticky_enqueue(const InstanceKlass* ik);
  public:
-  static void set_dynamic_tag(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
-  static void set_dynamic_tag_for_sticky_bit(const InstanceKlass* ik);
-  static void install_sticky_bit_for_retransform_klass(const InstanceKlass* existing_klass, const GrowableArray<JfrTracedMethod>* methods, bool timing);
-  static void set_sticky_bit(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
-  static void clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag = true);
+  static void clear_sticky(const InstanceKlass* ik, bool dynamic_tag = true);
+  static void tag_sticky(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
+  static void tag_sticky_for_retransform_klass(const InstanceKlass* existing_klass, const InstanceKlass* scratch_klass, const GrowableArray<JfrTracedMethod>* methods, bool timing);
+  static void on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass);
 };
 
 #endif /* SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACETAGGING_HPP */

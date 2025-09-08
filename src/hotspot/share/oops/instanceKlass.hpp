@@ -444,6 +444,9 @@ public:
     assert(_nest_host != nullptr, "must be");
     return _nest_host;
   }
+  InstanceKlass* nest_host_or_null() {
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns null if there was no error.
@@ -907,8 +910,14 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
+  // This hides Klass::super(). The _super of an InstanceKlass is
+  // always an InstanceKlass (or nullptr)
+  InstanceKlass* super() const {
+    return (Klass::super() == nullptr) ? nullptr : InstanceKlass::cast(Klass::super());
+  }
+
   virtual InstanceKlass* java_super() const {
-    return (super() == nullptr) ? nullptr : cast(super());
+    return InstanceKlass::super();
   }
 
   // Sizing (in words)
@@ -977,7 +986,7 @@ public:
   static void deallocate_methods(ClassLoaderData* loader_data,
                                  Array<Method*>* methods);
   void static deallocate_interfaces(ClassLoaderData* loader_data,
-                                    const Klass* super_klass,
+                                    const InstanceKlass* super_klass,
                                     Array<InstanceKlass*>* local_interfaces,
                                     Array<InstanceKlass*>* transitive_interfaces);
   void static deallocate_record_components(ClassLoaderData* loader_data,
@@ -1194,7 +1203,7 @@ public:
 class JNIid: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
-  Klass*             _holder;
+  InstanceKlass*     _holder;
   JNIid*             _next;
   int                _offset;
 #ifdef ASSERT
@@ -1203,11 +1212,11 @@ class JNIid: public CHeapObj<mtClass> {
 
  public:
   // Accessors
-  Klass* holder() const           { return _holder; }
+  InstanceKlass* holder() const   { return _holder; }
   int offset() const              { return _offset; }
   JNIid* next()                   { return _next; }
   // Constructor
-  JNIid(Klass* holder, int offset, JNIid* next);
+  JNIid(InstanceKlass* holder, int offset, JNIid* next);
   // Identifier lookup
   JNIid* find(int offset);
 
@@ -1221,7 +1230,7 @@ class JNIid: public CHeapObj<mtClass> {
   bool is_static_field_id() const { return _is_static_field_id; }
   void set_is_static_field_id()   { _is_static_field_id = true; }
 #endif
-  void verify(Klass* holder);
+  void verify(InstanceKlass* holder);
 };
 
 // An iterator that's used to access the inner classes indices in the

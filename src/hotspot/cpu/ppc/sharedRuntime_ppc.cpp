@@ -2446,14 +2446,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for locking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
-      __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
-    } else {
-      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      __ compiler_fast_lock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    }
+    // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+    Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
+    __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
     __ beq(CR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2620,7 +2615,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ stw(R0, thread_(thread_state));
 
     // Check preemption for Object.wait()
-    if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    if (method->is_object_wait0()) {
       Label not_preempted;
       __ ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
       __ cmpdi(CR0, R0, 0);
@@ -2672,11 +2667,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    } else {
-      __ compiler_fast_unlock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    }
+    __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     __ beq(CR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.
@@ -2717,7 +2708,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   // Last java frame won't be set if we're resuming after preemption
-  bool maybe_preempted = LockingMode != LM_LEGACY && method->is_object_wait0();
+  bool maybe_preempted = method->is_object_wait0();
   __ reset_last_Java_frame(!maybe_preempted /* check_last_java_sp */);
 
   // Unbox oop result, e.g. JNIHandles::resolve value.
@@ -2947,7 +2938,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -3170,7 +3161,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -3302,7 +3293,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 #endif // COMPILER2
 
 // Generate a special Compile2Runtime blob that saves all registers, and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
@@ -3320,7 +3311,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   int frame_size_in_bytes = 0;
 
   RegisterSaver::ReturnPCLocation return_pc_location;
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
   if (cause_return) {
     // Nothing to do here. The frame has already been popped in MachEpilogNode.
     // Register LR already contains the return pc.
@@ -3330,7 +3321,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;
   }
 
-  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
+  bool save_vectors = (id == StubId::shared_polling_page_vectors_safepoint_handler_id);
 
   // Save registers, fpu state, and flags. Set R31 = return pc.
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
@@ -3417,7 +3408,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert(is_resolve_id(id), "expected a resolve stub id");
 
   // allocate space for the code
@@ -3521,7 +3512,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // Note: the routine set_pc_not_at_call_for_caller in
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);
@@ -3844,7 +3835,7 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -3881,7 +3872,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
 // For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

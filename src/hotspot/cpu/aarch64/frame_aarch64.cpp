@@ -441,8 +441,8 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 
   JavaThread** thread_addr;
 #ifdef COMPILER1
-  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
-      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+  if (cb == Runtime1::blob_for(StubId::c1_monitorenter_id) ||
+      cb == Runtime1::blob_for(StubId::c1_monitorenter_nofpu_id)) {
     thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
   } else
 #endif
@@ -702,10 +702,10 @@ static void printbc(Method *m, intptr_t bcx) {
   if (m->validate_bci_from_bcp((address)bcx) < 0
       || !m->contains((address)bcx)) {
     name = "???";
-    snprintf(buf, sizeof buf, "(bad)");
+    os::snprintf_checked(buf, sizeof buf, "(bad)");
   } else {
     int bci = m->bci_from((address)bcx);
-    snprintf(buf, sizeof buf, "%d", bci);
+    os::snprintf_checked(buf, sizeof buf, "%d", bci);
     name = Bytecodes::name(m->code_at(bci));
   }
   ResourceMark rm;

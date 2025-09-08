@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/cds_globals.hpp"
-#include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
+#include "cds/filemap.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
@@ -115,6 +115,8 @@ class DumpTimeSharedClassTable;
 class RunTimeClassInfo;
 class RunTimeSharedDictionary;
 
+template <typename E> class GrowableArray;
+
 class SharedClassLoadingMark {
  private:
   Thread* THREAD;
@@ -125,7 +127,7 @@ class SharedClassLoadingMark {
     assert(THREAD != nullptr, "Current thread is nullptr");
     assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
-      if (_klass->is_shared()) {
+      if (_klass->in_aot_cache()) {
         _klass->set_shared_loading_failed();
       }
     }
@@ -269,6 +271,7 @@ public:
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);
   static const char* loader_type_for_shared_class(Klass* k);
+  static void get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
@@ -294,7 +297,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
+    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);
