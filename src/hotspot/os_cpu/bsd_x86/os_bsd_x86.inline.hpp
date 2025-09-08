@@ -27,6 +27,13 @@
 
 #include "runtime/os.hpp"
 
+ALWAYSINLINE address os::current_stack_pointer() {
+  using get_sp_func = address();
+  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
+                                     StubRoutines::x86::get_previous_sp_entry());
+  return (*func)();
+}
+
 #if defined(__APPLE__) && defined(COMPATIBLE_CDS_ALIGNMENT)
 #define HAVE_CDS_CORE_REGION_ALIGNMENT 1
 inline size_t os::cds_core_region_alignment() {
