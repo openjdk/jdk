@@ -40,7 +40,6 @@
 #include "os_linux.hpp"
 #endif
 
-// put OS-includes here
 # include <errno.h>
 # include <pwd.h>
 # include <signal.h>
