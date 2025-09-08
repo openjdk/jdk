@@ -110,27 +110,13 @@ intptr_t oopDesc::slow_identity_hash() {
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
-  if (!Universe::heap()->is_oop(obj)) {
-    return false;
-  }
-
-  // Header verification: the mark is typically non-zero. If we're
-  // at a safepoint, it must not be zero, except when using the new lightweight locking.
-  // Outside of a safepoint, the header could be changing (for example,
-  // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
-    return true;
-  }
-  if (obj->mark().value() != 0) {
-    return true;
-  }
-  return LockingMode == LM_LIGHTWEIGHT || !SafepointSynchronize::is_at_safepoint();
+bool oopDesc::is_oop(oop obj) {
+  return Universe::heap()->is_oop(obj);
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
-  return obj == nullptr ? true : is_oop(obj, ignore_mark_word);
+bool oopDesc::is_oop_or_null(oop obj) {
+  return obj == nullptr ? true : is_oop(obj);
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;

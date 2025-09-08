@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,17 +198,8 @@ class markWord {
   markWord set_unlocked() const {
     return markWord(value() | unlocked_value);
   }
-  bool has_locker() const {
-    assert(LockingMode == LM_LEGACY, "should only be called with legacy stack locking");
-    return (value() & lock_mask_in_place) == locked_value;
-  }
-  BasicLock* locker() const {
-    assert(has_locker(), "check");
-    return (BasicLock*) value();
-  }
 
   bool is_fast_locked() const {
-    assert(LockingMode == LM_LIGHTWEIGHT, "should only be called with new lightweight locking");
     return (value() & lock_mask_in_place) == locked_value;
   }
   markWord set_fast_locked() const {
@@ -227,11 +218,7 @@ class markWord {
   }
   bool has_displaced_mark_helper() const {
     intptr_t lockbits = value() & lock_mask_in_place;
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return !UseObjectMonitorTable && lockbits == monitor_value;
-    }
-    // monitor (0b10) | stack-locked (0b00)?
-    return (lockbits & unlocked_value) == 0;
+    return !UseObjectMonitorTable && lockbits == monitor_value;
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;
@@ -304,17 +291,14 @@ class markWord {
   inline void* decode_pointer() const { return (void*)clear_lock_bits().value(); }
 
   inline bool is_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return mask_bits(value(), self_fwd_mask_in_place) != 0;
   }
 
   inline markWord set_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() | self_fwd_mask_in_place);
   }
 
   inline markWord unset_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() & ~self_fwd_mask_in_place);
   }
 

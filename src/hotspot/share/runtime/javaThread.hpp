@@ -755,9 +755,6 @@ public:
     return (_suspend_flags & _obj_deopt) != 0;
   }
 
-  // Stack-locking support (not for LM_LIGHTWEIGHT)
-  bool is_lock_owned(address adr) const;
-
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
   // unpack the head must contain the vframe array to unpack.

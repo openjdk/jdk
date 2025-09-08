@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ inline HeapWord* G1HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion
     assert(bitmap->is_marked(cur), "inv");
 
     oop obj = cast_to_oop(cur);
-    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(oopDesc::is_oop(obj), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     cur += obj->size();
     bool is_precise;
@@ -418,7 +418,7 @@ inline HeapWord* G1HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* 
   // All objects >= pb are parsable. So we can just take object sizes directly.
   while (true) {
     oop obj = cast_to_oop(cur);
-    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(oopDesc::is_oop(obj), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     bool is_precise = false;
 
