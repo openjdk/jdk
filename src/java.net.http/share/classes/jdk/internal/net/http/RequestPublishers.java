@@ -350,7 +350,7 @@ public final class RequestPublishers {
                 } catch (IOException e) {
                     haveNext = false;
                     need2Read = false;
-                    throw new IOException(e);
+                    throw e;
                 } finally {
                     if (!haveNext) {
                         is.close();
@@ -479,7 +479,7 @@ public final class RequestPublishers {
                 }
             } catch (IOException ioe) {
                 terminated = true;
-                throw new IOException(ioe);
+                throw ioe;
             }
             return buffer.flip();
         }
