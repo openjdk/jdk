@@ -99,8 +99,8 @@ public class TestTransparentHugePagesHeap {
     class VerifyTHPEnabledForHeap {
 
         public static void main(String args[]) throws Exception {
-            // Read the heapRange from pagesize logging
-            Range heapRange = readHeapAddressInLog();
+            // Extract the heap start from pagesize logging
+            BigInteger heapStart = extractHeapStartFromLog();
 
             Path smaps = makeSmapsCopy();
 
@@ -114,18 +114,17 @@ public class TestTransparentHugePagesHeap {
                     continue;
                 }
 
-                // Found an address line, is it inside the reported heap?
+                // Found an address range line in the smaps file
 
-                String addressStart = addressRangeMatcher.group(1);
-                String addressEnd = addressRangeMatcher.group(2);
+                BigInteger addressStart = new BigInteger(addressRangeMatcher.group(1), 16);
+                BigInteger addressEnd = new BigInteger(addressRangeMatcher.group(2), 16);
 
-                Range addressRange = new Range(new BigInteger(addressStart, 16),
-                                               new BigInteger(addressEnd, 16));
+                // Linux sometimes merges adjacent VMAs so we can't search for a range that
+                // exactly matches the heap range. Instead we look for the first range that
+                // contains the start of the heap and verify that that range is THP eligible.
 
-                // Linux sometimes merges adjacent VMAs. We need to do some fuzzy matching
-                // to see if the address range found in the smaps file contains the heap.
-                if (heapRange.overlaps(addressRange)) {
-                    // Found the first heap section, verify that it is THP eligible
+                if (addressStart.compareTo(heapStart) <= 0 && heapStart.compareTo(addressEnd) < 0) {
+                    // Found a range that contains the start of the heap, verify that it is THP eligible.
                     while (smapsFile.hasNextLine()) {
                         Matcher m = thpEligiblePattern.matcher(smapsFile.nextLine());
                         if (!m.matches()) {
@@ -134,12 +133,13 @@ public class TestTransparentHugePagesHeap {
 
                         // Found the THPeligible line
                         if (m.group(1).equals("1")) {
-                            // THPeligible is 1, heap can be backed by huge pages
+                            // Success - THPeligible is 1, heap can be backed by huge pages
                             return;
                         }
 
-                        throw new RuntimeException("First address range " + addressRange
-                                                   + " that overlaps with the heap range " + heapRange
+                        throw new RuntimeException("The address range 0x" + addressStart.toString(16)
+                                                   + "-0x" + addressEnd.toString(16)
+                                                   + " that contains the heap start" + heapStart
                                                    + " is not THPeligible");
                     }
 
@@ -147,51 +147,24 @@ public class TestTransparentHugePagesHeap {
                 }
             }
 
-            throw new RuntimeException("Could not find heap range " + heapRange + " in the smaps file");
+            throw new RuntimeException("Could not find an address range containing the heap start " + heapStart + " in the smaps file");
         }
 
-        private static record Range(BigInteger start, BigInteger end) {
-            boolean overlaps(Range r) {
-                return this.start.compareTo(r.start) <= 0 && this.end.compareTo(r.start) > 0 ||
-                       this.start.compareTo(r.start) > 0 && this.start.compareTo(r.end) < 0;
-            }
-
-            public String toString() {
-                return "0x" + start.toString(16) + "-0x" + end.toString(16);
-            }
-        }
-
-        private static int memSuffixToInt(String memSuffix) {
-            return switch (memSuffix) {
-                case "K": yield 1024;
-                case "M": yield 1024 * 1024;
-                case "G": yield 1024 * 1024 * 1024;
-                default:
-                    throw new RuntimeException("Unknown memSuffix: " + memSuffix);
-            };
-        }
-
-        private static Range readHeapAddressInLog() throws Exception {
-            //[0.041s][info][pagesize] Heap:  min=128M max=128M base=0x0000ffff5c600000 size=128M page_size=2M
-            final Pattern heapAddressPattern = Pattern.compile(".* Heap: .*base=0x([0-9A-Fa-f]*).*size=([^ ]+)([KMG]) page_size.*");
+        private static BigInteger extractHeapStartFromLog() throws Exception {
+            // [0.041s][info][pagesize] Heap:  min=128M max=128M base=0x0000ffff5c600000 size=128M page_size=2M
+            final Pattern heapAddress = Pattern.compile(".* Heap: .*base=0x([0-9A-Fa-f]*).*");
 
             Scanner logFile = new Scanner(Paths.get("thp-" + ProcessHandle.current().pid() + ".log"));
             while (logFile.hasNextLine()) {
-                String heapAddressLine = logFile.nextLine();
-                Matcher m = heapAddressPattern.matcher(heapAddressLine);
+                String line = logFile.nextLine();
+
+                Matcher m = heapAddress.matcher(line);
                 if (m.matches()) {
-                    String address = m.group(1);
-                    String size = m.group(2);
-                    String memSuffix = m.group(3);
-
-                    BigInteger start = new BigInteger(address, 16);
-                    BigInteger end = start.add(BigInteger.valueOf(Long.parseLong(size) * memSuffixToInt(memSuffix)));
-
-                    return new Range(start, end);
+                    return new BigInteger(m.group(1), 16);
                 }
             }
 
-            throw new RuntimeException("Failed to parse heap address, failing test");
+            throw new RuntimeException("Failed to find heap start");
         }
 
         private static Path makeSmapsCopy() throws Exception {
