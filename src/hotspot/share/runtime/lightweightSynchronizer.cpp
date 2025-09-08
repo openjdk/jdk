@@ -765,7 +765,7 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
   monitor->exit(current);
 }
 
-// LightweightSynchronizer::inflate_locked_or_imse is used to to get an
+// LightweightSynchronizer::inflate_locked_or_imse is used to get an
 // inflated ObjectMonitor* from contexts which require that, such as
 // notify/wait and jni_exit. Lightweight locking keeps the invariant that it
 // only inflates if it is already locked by the current thread or the current
@@ -817,9 +817,8 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
 
 ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current) {
 
-  // The JavaThread* locking parameter requires that the
-  // locking_thread == JavaThread::current, or is suspended throughout
-  // the call by some other mechanism.
+  // The JavaThread* locking parameter requires that the locking_thread == JavaThread::current,
+  // or is suspended throughout the call by some other mechanism.
   // Even with lightweight locking the thread might be nullptr when called from a non
   // JavaThread. (As may still be the case from FastHashCode). However it is only
   // important for the correctness of the lightweight locking algorithm that the thread
