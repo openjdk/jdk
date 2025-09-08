@@ -57,15 +57,15 @@ namespace {
     check_inner((vmt), (rmr), nullptr, 0, __FILE__, __LINE__);  \
   } while (false)
 
-static void diagnostic_print(VirtualMemoryTracker& vmt, const ReservedMemoryRegion& rmr) {
+static void diagnostic_print(VirtualMemoryTracker& vmt, const VirtualMemoryRegion& rmr) {
   LOG("In reserved region " PTR_FORMAT ", size %X:", p2i(rmr.base()), rmr.size());
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr, [&](CommittedMemoryRegion& region) {
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr, [&](VirtualMemoryRegion& region) {
     LOG("   committed region: " PTR_FORMAT ", size %X", p2i(region.base()), region.size());
     return true;
   });
 }
 
-static void check_inner(VirtualMemoryTracker& vmt, const ReservedMemoryRegion& rmr, R* regions, size_t regions_size, const char* file, int line) {
+static void check_inner(VirtualMemoryTracker& vmt, const VirtualMemoryRegion& rmr, R* regions, size_t regions_size, const char* file, int line) {
   size_t i = 0;
   size_t size = 0;
 
@@ -74,7 +74,7 @@ static void check_inner(VirtualMemoryTracker& vmt, const ReservedMemoryRegion& r
 
 #define WHERE " from " << file << ":" << line
 
-  vmt.tree()->visit_committed_regions(rmr, [&](CommittedMemoryRegion& region) {
+  vmt.tree()->visit_committed_regions(rmr, [&](VirtualMemoryRegion& region) {
     EXPECT_LT(i, regions_size) << WHERE;
     EXPECT_EQ(region.base(), regions[i]._addr) << WHERE;
     EXPECT_EQ(region.size(), regions[i]._size) << WHERE;
@@ -104,7 +104,7 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
+    VirtualMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
     ASSERT_EQ(rmr.base(), addr);
@@ -179,7 +179,7 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
+    VirtualMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
     ASSERT_EQ(rmr.base(), addr);
@@ -267,7 +267,7 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
+    VirtualMemoryRegion rmr = rtree->find_reserved_region(addr);
 
 
     ASSERT_EQ(rmr.size(), size);
@@ -442,7 +442,7 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
+    VirtualMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
     ASSERT_EQ(rmr.base(), addr);

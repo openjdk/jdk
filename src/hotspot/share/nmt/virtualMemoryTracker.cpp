@@ -190,14 +190,14 @@ bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outp
 }
 
 bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
-  ReservedMemoryRegion rmr = tree()->find_reserved_region((address)p);
-  if (!rmr.contain_address((address)p)) {
+  VirtualMemoryRegion rmr = tree()->find_reserved_region((address)p);
+  if (!rmr.is_valid() || !rmr.contain_address((address)p)) {
     return false;
   }
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
                p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
-    rmr.call_stack()->print_on(st);
+    rmr.reserved_call_stack()->print_on(st);
   }
   st->cr();
   return true;
@@ -210,7 +210,7 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   MemTracker::NmtVirtualMemoryLocker nvml;
-  tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  tree()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
       return false;
     }
@@ -219,29 +219,29 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return true;
 }
 
-size_t VirtualMemoryTracker::committed_size(const ReservedMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::committed_size(const VirtualMemoryRegion* rmr) {
   size_t result = 0;
-  tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
+  tree()->visit_committed_regions(*rmr, [&](VirtualMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });
   return result;
 }
 
-size_t VirtualMemoryTracker::Instance::committed_size(const ReservedMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::Instance::committed_size(const VirtualMemoryRegion* rmr) {
   assert(_tracker != nullptr, "Sanity check");
   return _tracker->committed_size(rmr);
 }
 
-address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
+address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr) {
   assert(_tracker != nullptr, "Sanity check");
   return _tracker->thread_stack_uncommitted_bottom(rmr);
 }
 
-address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
+address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr) {
   address bottom = rmr->base();
   address top = rmr->end();
-    tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
+    tree()->visit_committed_regions(*rmr, [&](VirtualMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them
@@ -295,7 +295,7 @@ class SnapshotThreadStackWalker : public VirtualMemoryWalker {
 public:
   SnapshotThreadStackWalker() {}
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+  bool do_allocation_site(const VirtualMemoryRegion* rgn) {
     if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
@@ -336,9 +336,9 @@ void VirtualMemoryTracker::Instance::snapshot_thread_stacks() {
   walk_virtual_memory(&walker);
 }
 
-ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
-    ReservedMemoryRegion rmr;
-    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
+VirtualMemoryRegion RegionsTree::find_reserved_region(address addr) {
+    VirtualMemoryRegion rmr;
+    auto contain_region = [&](VirtualMemoryRegion& region_in_tree) {
       if (region_in_tree.contain_address(addr)) {
         rmr = region_in_tree;
         return false;
@@ -349,6 +349,6 @@ ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
     return rmr;
 }
 
-bool CommittedMemoryRegion::equals(const ReservedMemoryRegion& rmr) const {
-  return size() == rmr.size() && call_stack()->equals(*(rmr.call_stack()));
+bool VirtualMemoryRegion::equals_including_stacks(const VirtualMemoryRegion& rmr) const {
+  return size() == rmr.size() && committed_call_stack()->equals(*(rmr.reserved_call_stack()));
 }

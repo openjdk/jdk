@@ -107,7 +107,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
  private:
-  typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
+  typedef LinkedListImpl<VirtualMemoryRegion, AnyObj::C_HEAP, mtNMT,
                          AllocFailStrategy::RETURN_NULL> EntryList;
   EntryList _virtual_memory_regions;
   DEBUG_ONLY(address _last_base;)
@@ -116,7 +116,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
     DEBUG_ONLY(_last_base = nullptr);
   }
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
+  bool do_allocation_site(const VirtualMemoryRegion* rgn)  {
     assert(rgn->base() >= _last_base, "region unordered?");
     DEBUG_ONLY(_last_base = rgn->base());
     if (rgn->size() > 0) {
@@ -131,7 +131,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
     }
   }
 
-  LinkedList<ReservedMemoryRegion>* virtual_memory_allocations() {
+  LinkedList<VirtualMemoryRegion>* virtual_memory_allocations() {
     return &_virtual_memory_regions;
   }
 };
@@ -203,10 +203,10 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
 
   VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
+  const VirtualMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   while ((rgn = itr.next()) != nullptr) {
-    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->mem_tag());
+    VirtualMemoryAllocationSite tmp(*rgn->reserved_call_stack(), rgn->mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =

@@ -35,7 +35,7 @@
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
-typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
+typedef LinkedListIterator<VirtualMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
@@ -71,7 +71,7 @@ class MemBaseline {
   LinkedListImpl<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  LinkedListImpl<VirtualMemoryRegion>        _virtual_memory_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order

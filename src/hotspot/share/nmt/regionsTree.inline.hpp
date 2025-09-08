@@ -28,7 +28,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 
 template<typename F>
-void RegionsTree::visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
+void RegionsTree::visit_committed_regions(const VirtualMemoryRegion& rgn, F func) {
   position start = (position)rgn.base();
   size_t end = reinterpret_cast<size_t>(rgn.end()) + 1;
   size_t comm_size = 0;
@@ -37,7 +37,7 @@ void RegionsTree::visit_committed_regions(const ReservedMemoryRegion& rgn, F fun
   visit_range_in_order(start, end, [&](Node* node) {
     NodeHelper curr(node);
     if (prev.is_valid() && prev.is_committed_begin()) {
-      CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(prev));
+      VirtualMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(prev), true /*committed*/);
       if (!func(cmr)) {
         return false;
       }
@@ -67,7 +67,7 @@ void RegionsTree::visit_reserved_regions(F func) {
         prev.clear_node();
         return true;
       }
-      ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
+      VirtualMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
       if (!func(rmr)) {
         return false;
       }
