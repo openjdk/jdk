@@ -125,6 +125,7 @@ public class TestGeneral extends PKCS11Test {
             test("Blowfish", cc20Key, p, TestResult.FAIL);
             test("Blowfish", bf_128Key, p, TestResult.PASS);
         } catch (SkippedException skippedException){
+            skippedException.printStackTrace();
             skippedList.add(skippedException.getMessage());
         }
 
