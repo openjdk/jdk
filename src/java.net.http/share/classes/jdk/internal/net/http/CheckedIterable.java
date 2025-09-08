@@ -28,7 +28,7 @@ package jdk.internal.net.http;
 import java.util.Iterator;
 
 /**
- * An {@link Iterable} clone for {@link CheckedIterator}.
+ * An {@link Iterable} clone supporting checked exceptions.
  *
  * @param <E> the type of elements returned by the produced iterators
  */
@@ -38,7 +38,7 @@ interface CheckedIterable<E> {
     /**
      * {@return an {@linkplain CheckedIterator iterator} over elements of type {@code E}}
      */
-    CheckedIterator<E> iterator();
+    CheckedIterator<E> iterator() throws Exception;
 
     static <E> CheckedIterable<E> fromIterable(Iterable<E> iterable) {
         return () -> {
