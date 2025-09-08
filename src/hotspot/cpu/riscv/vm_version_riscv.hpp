@@ -63,13 +63,13 @@ class VM_Version : public Abstract_VM_Version {
     void enable_feature(int64_t value = 0) {
       _enabled = true;
       _value = value;
-      RVFeatures::own()->set_feature(_cpu_feature_index);
+      RVFeatures::current()->set_feature(_cpu_feature_index);
     }
     // TODO: when user override the default VM flag, needs to enable or disable the CPU feature accordingly.
     void disable_feature() {
       _enabled = false;
       _value = -1;
-      RVFeatures::own()->clear_feature(_cpu_feature_index);
+      RVFeatures::current()->clear_feature(_cpu_feature_index);
     }
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _linux_feature_bit; }
@@ -271,7 +271,7 @@ private:
     }
 
    public:
-    static RVFeatures* own() {
+    static RVFeatures* current() {
       return _rv_features;
     }
 
