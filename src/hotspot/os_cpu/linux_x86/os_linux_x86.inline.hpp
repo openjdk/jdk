@@ -27,13 +27,6 @@
 
 #include "runtime/os.hpp"
 
-ALWAYSINLINE address os::current_stack_pointer() {
-  using get_sp_func = address();
-  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
-                                     StubRoutines::x86::get_previous_sp_entry());
-  return (*func)();
-}
-
 // See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
 inline jlong os::rdtsc() {
 #ifndef AMD64
