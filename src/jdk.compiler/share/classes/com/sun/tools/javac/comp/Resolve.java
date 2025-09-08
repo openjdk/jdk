@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3834,7 +3834,7 @@ public class Resolve {
      */
     Symbol findLocalClassOwner(Env<AttrContext> env, TypeSymbol c) {
         Symbol owner = c.owner;
-        Assert.check(owner.kind == MTH);
+        Assert.check(owner.kind == MTH || owner.kind == VAR);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
@@ -3846,20 +3846,23 @@ public class Resolve {
             if (isStatic(env1)) staticOnly = true;
             env1 = env1.outer;
         }
-        return methodNotFound;
+        return owner.kind == MTH ?
+                methodNotFound :
+                varNotFound;
     }
 
     /**
      * Resolve `c.name' where name == this or name == super.
      * @param pos           The position to use for error reporting.
      * @param env           The environment current at the expression.
-     * @param c             The qualifier.
-     * @param name          The identifier's name.
+     * @param c             The type of the selected expression
+     * @param tree          The expression
      */
     Symbol resolveSelf(DiagnosticPosition pos,
                        Env<AttrContext> env,
                        TypeSymbol c,
-                       Name name) {
+                       JCFieldAccess tree) {
+        Name name = tree.name;
         Assert.check(name == names._this || name == names._super);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
@@ -3870,7 +3873,9 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
+                    else if (env1.info.ctorPrologue &&
+                            !isReceiverParameter(env, tree) &&
+                            !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                             name, true);
@@ -3921,6 +3926,12 @@ public class Resolve {
             }
         }
         return result.toList();
+    }
+    private boolean isReceiverParameter(Env<AttrContext> env, JCFieldAccess tree) {
+        if (env.tree.getTag() != METHODDEF)
+            return false;
+        JCMethodDecl method = (JCMethodDecl)env.tree;
+        return method.recvparam != null && tree == method.recvparam.nameexpr;
     }
 
     /**
@@ -3997,11 +4008,19 @@ public class Resolve {
      * @param v      The variable
      */
     public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
-        return env.info.ctorPrologue &&
-            (v.flags() & STATIC) == 0 &&
-            v.owner.kind == TYP &&
-            types.isSubtype(env.enclClass.type, v.owner.type) &&
-            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
+        if (env.info.ctorPrologue &&
+                (v.flags() & STATIC) == 0 &&
+                v.isMemberOf(env.enclClass.sym, types)) {
+
+            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
+            if (base != null) {
+                return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
+            }
+
+            // It's an early reference to an instance field member of the current instance
+            return true;
+        }
+        return false;
     }
 
 /* ***************************************************************************
@@ -5191,7 +5210,6 @@ public class Resolve {
          * while inapplicable candidates contain further details about the
          * reason why the method has been considered inapplicable.
          */
-        @SuppressWarnings("overrides")
         class Candidate {
 
             final MethodResolutionPhase step;

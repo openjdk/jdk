@@ -25,7 +25,7 @@
  * @test
  * @bug     6215213
  * @summary Compiler JDK1.5 crashes with uses of generics
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6215213.java
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=0. Fill up a region to at least 33 percent,
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -39,6 +40,7 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=25. Fill up a region to at least 33 percent,
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -50,6 +52,7 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=100. Fill up a region to at least 33 percent,
  * the region should be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

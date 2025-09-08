@@ -88,7 +88,7 @@ private:
   bool coalesce_and_fill();
 
 public:
-  ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity);
+  ShenandoahOldGeneration(uint max_queues, size_t max_capacity);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
@@ -232,7 +232,8 @@ public:
   // Alternatively, we could inspect the state of the heap and the age of the
   // object at the barrier, but we reject this approach because it is likely
   // the performance impact would be too severe.
-  void transfer_pointers_from_satb();
+  void transfer_pointers_from_satb() const;
+  void concurrent_transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();

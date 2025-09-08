@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,8 +318,12 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         }
 
         @Override
-        protected void done() {
-            executor.taskComplete(thread);
+        public void run() {
+            try {
+                super.run();
+            } finally {
+                executor.taskComplete(thread);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -53,10 +52,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-// Current thread is maintained as a thread-local variable
 THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
-#endif
 
 // ======= Thread ========
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
@@ -93,7 +89,7 @@ Thread::Thread(MemTag mem_tag) {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = nullptr;)
+  DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -158,11 +154,28 @@ void Thread::initialize_tlab() {
   }
 }
 
+void Thread::retire_tlab(ThreadLocalAllocStats* stats) {
+  // Sampling and serviceability support
+  if (tlab().end() != nullptr) {
+    incr_allocated_bytes(tlab().used_bytes());
+    heap_sampler().retire_tlab(tlab().top());
+  }
+
+  // Retire the TLAB
+  tlab().retire(stats);
+}
+
+void Thread::fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size) {
+  // Thread allocation sampling support
+  heap_sampler().set_tlab_top_at_sample_start(start);
+
+  // Fill the TLAB
+  tlab().fill(start, start + pre_reserved, new_size);
+}
+
 void Thread::initialize_thread_current() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == nullptr, "Thread::current already initialized");
   _thr_current = this;
-#endif
   assert(ThreadLocalStorage::thread() == nullptr, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
@@ -170,9 +183,7 @@ void Thread::initialize_thread_current() {
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   _thr_current = nullptr;
-#endif
   ThreadLocalStorage::set_thread(nullptr);
 }
 
@@ -218,8 +229,8 @@ void Thread::call_run() {
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
-    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+  log_debug(os, thread)("Thread %zu stack dimensions: "
+    PTR_FORMAT "-" PTR_FORMAT " (%zuk).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
@@ -246,6 +257,9 @@ void Thread::call_run() {
   // delete themselves when they terminate. But no thread should ever be deleted
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
+
+  // Logically we should do this->unregister_thread_stack_with_NMT() here, but we
+  // had to move that into post_run() because of the `this` deletion issue.
 
   assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
@@ -377,7 +391,7 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
 }
@@ -472,7 +486,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
-      st->print("allocated=" SIZE_FORMAT "%s ",
+      st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
                 );
@@ -486,7 +500,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   }
   ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
-  debug_only(if (WizardMode) print_owned_locks_on(st);)
+  DEBUG_ONLY(if (WizardMode) print_owned_locks_on(st);)
 }
 
 void Thread::print() const { print_on(tty); }
@@ -554,22 +568,13 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   return os::create_main_thread(jt);
 }
 
-// Ad-hoc mutual exclusion primitives: SpinLock
+// Ad-hoc mutual exclusion primitive: spin lock
 //
-// We employ SpinLocks _only for low-contention, fixed-length
+// We employ a spin lock _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-//
-// TODO-FIXME: ListLock should be of type SpinLock.
-// We should make this a 1st-class type, integrated into the lock
-// hierarchy as leaf-locks.  Critically, the SpinLock structure
-// should have sufficient padding to avoid false-sharing and excessive
-// cache-coherency traffic.
 
-
-typedef volatile int SpinLockT;
-
-void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
+void Thread::SpinAcquire(volatile int * adr) {
   if (Atomic::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }
@@ -597,7 +602,6 @@ void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
 
 void Thread::SpinRelease(volatile int * adr) {
   assert(*adr != 0, "invariant");
-  OrderAccess::fence();      // guarantee at least release consistency.
   // Roach-motel semantics.
   // It's safe if subsequent LDs and STs float "up" into the critical section,
   // but prior LDs and STs within the critical section can't be allowed
@@ -605,8 +609,7 @@ void Thread::SpinRelease(volatile int * adr) {
   // Loads and stores in the critical section - which appear in program
   // order before the store that releases the lock - must also appear
   // before the store that releases the lock in memory visibility order.
-  // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
-  // the ST of 0 into the lock-word which releases the lock, so fence
-  // more than covers this on all platforms.
-  *adr = 0;
+  // So we need a #loadstore|#storestore "release" memory barrier before
+  // the ST of 0 into the lock-word which releases the lock.
+  Atomic::release_store(adr, 0);
 }

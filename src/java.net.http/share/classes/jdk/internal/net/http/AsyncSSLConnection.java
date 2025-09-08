@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,13 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     final PlainHttpPublisher writePublisher;
     private volatile SSLTube flow;
 
-    AsyncSSLConnection(InetSocketAddress addr,
+    AsyncSSLConnection(Origin originServer,
+                       InetSocketAddress addr,
                        HttpClientImpl client,
-                       String[] alpn) {
-        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn);
-        plainConnection = new PlainHttpConnection(addr, client);
+                       String[] alpn,
+                       String label) {
+        super(originServer, addr, client, alpn, label);
+        plainConnection = new PlainHttpConnection(originServer, addr, client, label);
         writePublisher = new PlainHttpPublisher();
     }
 
@@ -72,7 +74,7 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
                     if (ex == null) {
                         return plainConnection.finishConnect();
                     } else {
-                        plainConnection.close();
+                        plainConnection.close(ex);
                         return MinimalFuture.<Void>failedFuture(ex);
                     } })
                 .thenCompose(Function.identity());

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -96,6 +96,7 @@ instruct zLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
   match(Set dst (LoadP mem));
   predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, TEMP tmp, KILL cr);
+  ins_is_late_expanded_null_check_candidate(true);
 
   ins_cost(4 * DEFAULT_COST);
 

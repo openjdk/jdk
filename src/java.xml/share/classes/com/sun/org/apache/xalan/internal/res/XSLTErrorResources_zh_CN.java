@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
  * Array. You also need to update MAX_CODE for error strings
  * and MAX_WARNING for warnings ( Needed for only information
  * purpose )
- * @LastModified: May 2022
+ * @LastModified: Dec 2024
  */
 public class XSLTErrorResources_zh_CN extends ListResourceBundle
 {
@@ -1197,7 +1197,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
       "\u65E0\u6CD5\u5BF9\u6B64 TransformerFactory \u8BBE\u7F6E\u529F\u80FD ''{0}''\u3002"},
 
     { ER_EXTENSION_ELEMENT_NOT_ALLOWED_IN_SECURE_PROCESSING,
-          "\u5F53\u5B89\u5168\u5904\u7406\u529F\u80FD\u8BBE\u7F6E\u4E3A\u201C\u771F\u201D\u65F6, \u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u5143\u7D20 ''{0}''\u3002"},
+        "\u5F53\u6269\u5C55\u51FD\u6570\u88AB\u5B89\u5168\u5904\u7406\u529F\u80FD\u6216\u5C5E\u6027 ''jdk.xml.enableExtensionFunctions'' \u7981\u7528\u65F6\uFF0C\u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u51FD\u6570 ''{0}''\u3002\u8981\u542F\u7528\u6269\u5C55\u51FD\u6570\uFF0C\u8BF7\u5C06 ''jdk.xml.enableExtensionFunctions'' \u8BBE\u7F6E\u4E3A ''true''\u3002"},
 
     { ER_NAMESPACE_CONTEXT_NULL_NAMESPACE,
       "\u65E0\u6CD5\u83B7\u53D6\u7A7A\u540D\u79F0\u7A7A\u95F4 uri \u7684\u524D\u7F00\u3002"},

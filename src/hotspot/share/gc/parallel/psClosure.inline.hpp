@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public:
       oop new_obj = o->forwardee();
       if (log_develop_is_enabled(Trace, gc, scavenge)) {
         ResourceMark rm; // required by internal_name()
-        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (" SIZE_FORMAT ")}",
+        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%zu)}",
                                         "forwarding",
                                         new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
       }

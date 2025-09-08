@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,9 @@ package sun.nio.cs;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
-import sun.nio.cs.DoubleByte;
-import sun.nio.cs.Surrogate;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 public class HKSCS {
@@ -353,12 +350,6 @@ public class HKSCS {
                 return encodeArrayLoop(src, dst);
             else
                 return encodeBufferLoop(src, dst);
-        }
-
-        @SuppressWarnings("this-escape")
-        private byte[] repl = replacement();
-        protected void implReplaceWith(byte[] newReplacement) {
-            repl = newReplacement;
         }
 
         public int encode(char[] src, int sp, int len, byte[] dst) {

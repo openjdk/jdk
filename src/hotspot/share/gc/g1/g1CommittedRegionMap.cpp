@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
@@ -184,7 +183,7 @@ void G1CommittedRegionMap::guarantee_mt_safety_active() const {
 
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
-              FreeList_lock->owned_by_self(),
+              G1FreeList_lock->owned_by_self(),
               "G1CommittedRegionMap _active-map MT safety protocol at a safepoint");
   } else {
     guarantee(Heap_lock->owned_by_self(),
@@ -205,10 +204,10 @@ void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
 
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
-              FreeList_lock->owned_by_self(),
+              G1FreeList_lock->owned_by_self(),
               "G1CommittedRegionMap MT safety protocol at a safepoint");
   } else {
-    guarantee(Uncommit_lock->owned_by_self(),
+    guarantee(G1Uncommit_lock->owned_by_self(),
               "G1CommittedRegionMap MT safety protocol outside a safepoint");
   }
 }
@@ -233,7 +232,7 @@ void G1CommittedRegionMap::verify_free_range(uint start, uint end) const {
 
 void G1CommittedRegionMap::verify_no_inactive_regons() const {
   BitMap::idx_t first_inactive = _inactive.find_first_set_bit(0);
-  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: " SIZE_FORMAT, first_inactive);
+  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: %zu", first_inactive);
 }
 
 void G1CommittedRegionMap::verify_active_count(uint start, uint end, uint expected) const {

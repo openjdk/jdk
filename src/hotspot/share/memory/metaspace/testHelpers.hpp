@@ -31,7 +31,7 @@
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // This is just convenience classes for metaspace-related tests

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 7110149 8184306 6341887
- * @summary Test basic deflater & inflater functionality
+ * @bug 7110149 8184306 6341887 8357145
+ * @summary Test basic deflater and inflater functionality
  * @key randomness
+ * @run main/timeout=480 DeInflate
  */
 
 import java.io.*;
+import java.lang.foreign.Arena;
 import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
@@ -203,6 +205,16 @@ public class DeInflate {
         bbOut2 = ByteBuffer.allocateDirect(out2.length);
         checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, false);
         checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+
+        // segment
+        try (var arena = Arena.ofConfined()) {
+            bbIn = arena.allocate(in.length).asByteBuffer();
+            bbIn.put(in, 0, n).flip();
+            bbOut1 = arena.allocate(out1.length).asByteBuffer();
+            bbOut2 = arena.allocate(out2.length).asByteBuffer();
+            checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, false);
+            checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+        }
     }
 
     static void checkDict(Deflater def, Inflater inf, byte[] src,

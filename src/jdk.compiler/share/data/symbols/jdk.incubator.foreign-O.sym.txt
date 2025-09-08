@@ -45,11 +45,19 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 -method name mismatch descriptor (Ljava/lang/foreign/MemorySegment;JJLjava/lang/foreign/MemorySegment;JJ)J
 -method name reinterpretInternal descriptor (Ljava/lang/Class;JLjava/lang/foreign/MemorySegment$Scope;Ljava/util/function/Consumer;)Ljava/lang/foreign/MemorySegment;
 -method name scope descriptor ()Ljava/lang/foreign/MemorySegment$Scope;
+-method name getString descriptor (J)Ljava/lang/String;
+-method name getString descriptor (JLjava/nio/charset/Charset;)Ljava/lang/String;
+-method name setString descriptor (JLjava/lang/String;)V
+-method name setString descriptor (JLjava/lang/String;Ljava/nio/charset/Charset;)V
 method name fill descriptor (B)Ljava/lang/foreign/MemorySegment; flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name checkEnclosingLayout descriptor (JLjava/lang/foreign/MemoryLayout;Z)V flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name ofBuffer descriptor (Ljava/nio/Buffer;)Ljdk/internal/foreign/AbstractMemorySegmentImpl; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name scope descriptor ()Ljdk/internal/foreign/MemorySessionImpl; flags 1
 method name scope descriptor ()Ljava/lang/foreign/MemorySegment$Scope; flags 1041
+method name getString descriptor (J)Ljava/lang/String; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getString descriptor (JLjava/nio/charset/Charset;)Ljava/lang/String; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setString descriptor (JLjava/lang/String;)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setString descriptor (JLjava/lang/String;Ljava/nio/charset/Charset;)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name jdk/internal/foreign/GlobalSession
 -method name isCloseable descriptor ()Z

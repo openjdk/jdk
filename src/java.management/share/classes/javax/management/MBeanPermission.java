@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,14 @@ import java.security.Permission;
  * @apiNote
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
+ * Consequently this class is deprecated for removal in a future release.
+ *
+ * @deprecated This class was only useful in conjunction with the Security Manager,
+ * which is no longer supported. There is no replacement for this class.
  *
  * @since 1.5
  */
+@Deprecated(since="25", forRemoval=true)
 public class MBeanPermission extends Permission {
 
     private static final long serialVersionUID = -2416928705275160661L;
@@ -217,7 +222,7 @@ public class MBeanPermission extends Permission {
         UnregisterMBean;
 
     /**
-     * The actions string.
+     * @serial The actions string.
      */
     private String actions;
 

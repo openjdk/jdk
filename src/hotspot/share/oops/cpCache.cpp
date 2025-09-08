@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
@@ -32,8 +31,8 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
-#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/rewriter.hpp"
@@ -409,6 +408,17 @@ void ConstantPoolCache::remove_unshareable_info() {
   if (_resolved_method_entries != nullptr) {
     remove_resolved_method_entries_if_non_deterministic();
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  _archived_references_index = -1;
+  if (CDSConfig::is_dumping_heap()) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
+    oop rr = HeapShared::scratch_resolved_references(src_cp);
+    if (rr != nullptr) {
+      _archived_references_index = HeapShared::append_root(rr);
+    }
+  }
+#endif
 }
 
 void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
@@ -427,7 +437,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       rfi->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -467,7 +477,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       rme->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -507,7 +517,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       rei->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int bsm = cp->bootstrap_method_ref_index_at(cp_index);
@@ -528,8 +538,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
 
 bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry) {
   InstanceKlass* pool_holder = constant_pool()->pool_holder();
-  if (!(pool_holder->is_shared_boot_class() || pool_holder->is_shared_platform_class() ||
-        pool_holder->is_shared_app_class())) {
+  if (pool_holder->defined_by_other_loaders()) {
     // Archiving resolved cp entries for classes from non-builtin loaders
     // is not yet supported.
     return false;
@@ -562,7 +571,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
       method_entry->is_resolved(Bytecodes::_invokespecial)) {
     return true;
   } else if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // invokehandle depends on archived MethodType and LambdaForms.
       return true;
     } else {
@@ -575,7 +584,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
 #endif // INCLUDE_CDS
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
-  assert(!is_shared(), "shared caches are not deallocated");
+  assert(!in_aot_cache(), "objects in aot metaspace are not deallocated");
   data->remove_handle(_resolved_references);
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
@@ -609,11 +618,6 @@ void ConstantPoolCache::clear_archived_references() {
     HeapShared::clear_root(_archived_references_index);
     _archived_references_index = -1;
   }
-}
-
-void ConstantPoolCache::set_archived_references(int root_index) {
-  assert(CDSConfig::is_dumping_heap(), "sanity");
-  _archived_references_index = root_index;
 }
 #endif
 
@@ -700,7 +704,7 @@ void ConstantPoolCache::dump_cache() {
 #endif // INCLUDE_JVMTI
 
 void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPoolCache): %p", this);
+  log_trace(aot)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
   if (_resolved_indy_entries != nullptr) {

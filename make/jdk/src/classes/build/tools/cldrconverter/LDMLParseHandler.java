@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -844,6 +844,26 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 });
             break;
 
+        // Lenient parsing
+        case "parseLenients":
+            if ("lenient".equals(attributes.getValue("level"))) {
+                pushKeyContainer(qName, attributes, attributes.getValue("scope"));
+            } else {
+                pushIgnoredContainer(qName);
+            }
+            break;
+
+        case "parseLenient":
+            // Use only the lenient minus sign for now
+            if (currentContainer instanceof KeyContainer kc
+                && kc.getKey().equals("number")
+                && attributes.getValue("sample").equals("-")) {
+                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/lenientMinusSigns");
+            } else {
+                pushIgnoredContainer(qName);
+            }
+            break;
+
         default:
             // treat anything else as a container
             pushContainer(qName, attributes);
@@ -1079,7 +1099,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public void endElement(String uri, String localName, String qName) throws SAXException {
         assert qName.equals(currentContainer.getqName()) : "current=" + currentContainer.getqName() + ", param=" + qName;
         switch (qName) {
@@ -1151,6 +1170,14 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             currentStyle = "";
             putIfEntry();
             break;
+        case "parseLenient":
+            if (currentContainer instanceof StringEntry se) {
+                // Convert to a simple concatenation of lenient minuses
+                // e.g. "[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]" -> "-－﹣‐‑‒–−⁻₋➖" for the root locale
+                put(se.getKey(), se.getValue().replaceAll("[\\[\\]\\\\ ]", ""));
+            }
+            break;
+
         default:
             putIfEntry();
         }

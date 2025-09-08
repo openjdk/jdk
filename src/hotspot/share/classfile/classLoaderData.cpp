@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -66,6 +65,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -415,7 +415,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
       if (!InstanceKlass::cast(k)->is_loaded()) {
         continue;
       }
-    } else if (k->is_shared() && k->is_objArray_klass()) {
+    } else if (k->in_aot_cache() && k->is_objArray_klass()) {
       Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
       if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
         // This could happen if <bottom> is a shared class that has been restored
@@ -579,6 +579,33 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   ShouldNotReachHere();   // should have found this class!!
 }
 
+void ClassLoaderData::add_jmethod_id(jmethodID mid) {
+  MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+  if (_jmethod_ids == nullptr) {
+    _jmethod_ids = new (mtClass) GrowableArray<jmethodID>(32, mtClass);
+  }
+  _jmethod_ids->push(mid);
+}
+
+// Method::remove_jmethod_ids removes jmethodID entries from the table which
+// releases memory.
+// Because native code (e.g., JVMTI agent) holding jmethod_ids may access them
+// after the associated classes and class loader are unloaded, subsequent lookups
+// for these ids will return null since they are no longer found in the table.
+// The Java Native Interface Specification says "method ID
+// does not prevent the VM from unloading the class from which the ID has
+// been derived. After the class is unloaded, the method or field ID becomes
+// invalid".
+void ClassLoaderData::remove_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  for (int i = 0; i < _jmethod_ids->length(); i++) {
+    jmethodID mid = _jmethod_ids->at(i);
+    JmethodIDTable::remove(mid);
+  }
+  delete _jmethod_ids;
+  _jmethod_ids = nullptr;
+}
+
 void ClassLoaderData::unload() {
   _unloading = true;
 
@@ -600,19 +627,8 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
-  // Method::clear_jmethod_ids only sets the jmethod_ids to null without
-  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
-  // This is done intentionally because native code (e.g. JVMTI agent) holding
-  // jmethod_ids may access them after the associated classes and class loader
-  // are unloaded. The Java Native Interface Specification says "method ID
-  // does not prevent the VM from unloading the class from which the ID has
-  // been derived. After the class is unloaded, the method or field ID becomes
-  // invalid". In real world usages, the native code may rely on jmethod_ids
-  // being null after class unloading. Hence, it is unsafe to free the memory
-  // from the VM side without knowing when native code is going to stop using
-  // them.
   if (_jmethod_ids != nullptr) {
-    Method::clear_jmethod_ids(this);
+    remove_jmethod_ids();
   }
 }
 
@@ -852,7 +868,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
 // a safepoint which checks if handles point to this metadata field.
 void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   // Metadata in shared region isn't deleted.
-  if (!m->is_shared()) {
+  if (!m->in_aot_cache()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == nullptr) {
       _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
@@ -1038,9 +1054,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
     out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
   }
   if (_jmethod_ids != nullptr) {
-    out->print   (" - jmethod count       ");
-    Method::print_jmethod_ids_count(this, out);
-    out->print_cr("");
+    out->print_cr(" - jmethod count       %d", _jmethod_ids->length());
   }
   out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
   out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));

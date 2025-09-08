@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ package test.java.awt.regtesthelpers;
      @build Util
      @run main YourTest
    </pre>
- * Note that if you are about to create a test based on
- * Applet-template, then put those lines into html-file, not in java-file.
  * <p> And put an
  * import test.java.awt.regtesthelpers.Util;
  * into the java source of test.

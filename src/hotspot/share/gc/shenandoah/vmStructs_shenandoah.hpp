@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 #define SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 
@@ -39,7 +39,7 @@
   volatile_nonstatic_field(ShenandoahGeneration, _used,            size_t)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                            \
-  nonstatic_field(ShenandoahHeapRegion, _state,                    ShenandoahHeapRegion::RegionState) \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _state,           ShenandoahHeapRegion::RegionState) \
   nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                      \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                   \
   nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                         \

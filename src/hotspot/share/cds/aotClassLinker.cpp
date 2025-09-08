@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassTable.hpp"
@@ -65,8 +64,6 @@ void AOTClassLinker::initialize() {
   }
 
   assert(is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::initialize();
 }
 
 void AOTClassLinker::dispose() {
@@ -80,8 +77,6 @@ void AOTClassLinker::dispose() {
   _sorted_candidates = nullptr;
 
   assert(!is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::dispose();
 }
 
 bool AOTClassLinker::is_vm_class(InstanceKlass* ik) {
@@ -98,7 +93,7 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
       bool v = try_add_candidate(ik);
       assert(v, "must succeed for VM class");
     }
-    InstanceKlass* super = ik->java_super();
+    InstanceKlass* super = ik->super();
     if (super != nullptr) {
       add_vm_class(super);
     }
@@ -118,9 +113,9 @@ void AOTClassLinker::add_new_candidate(InstanceKlass* ik) {
   _candidates->put_when_absent(ik, true);
   _sorted_candidates->append(ik);
 
-  if (log_is_enabled(Info, cds, aot, link)) {
+  if (log_is_enabled(Info, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, link)("%s %s %p", class_category_name(ik), ik->external_name(), ik);
+    log_info(aot, link)("%s %s %p", class_category_name(ik), ik->external_name(), ik);
   }
 }
 
@@ -142,24 +137,21 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   if (ik->is_hidden()) {
-    assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
-    if (!CDSConfig::is_dumping_invokedynamic()) {
-      return false;
-    }
-    if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
+    assert(!ik->defined_by_other_loaders(), "hidden classes are archived only for builtin loaders");
+    if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
     if (HeapShared::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
       if (!try_add_candidate(nest_host)) {
         ResourceMark rm;
-        log_warning(cds, aot, link)("%s cannot be aot-linked because it nest host is not aot-linked", ik->external_name());
+        log_warning(aot, link)("%s cannot be aot-linked because it nest host is not aot-linked", ik->external_name());
         return false;
       }
     }
   }
 
-  InstanceKlass* s = ik->java_super();
+  InstanceKlass* s = ik->super();
   if (s != nullptr && !try_add_candidate(s)) {
     return false;
   }
@@ -220,7 +212,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
       continue;
     }
 
-    if (ik->is_shared() && CDSConfig::is_dumping_dynamic_archive()) {
+    if (ik->in_aot_cache() && CDSConfig::is_dumping_dynamic_archive()) {
       if (CDSConfig::is_using_aot_linked_classes()) {
         // This class was recorded as AOT-linked for the base archive,
         // so there's no need to do so again for the dynamic archive.
@@ -236,7 +228,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
     return nullptr;
   } else {
     const char* category = class_category_name(list.at(0));
-    log_info(cds, aot, link)("wrote %d class(es) for category %s", list.length(), category);
+    log_info(aot, link)("wrote %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }
@@ -316,4 +308,3 @@ const char* AOTClassLinker::class_category_name(AOTLinkedClassCategory category)
       return "unreg";
   }
 }
-

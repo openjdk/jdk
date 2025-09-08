@@ -141,10 +141,12 @@
           "GC heuristics to use. This fine-tunes the GC mode selected, "    \
           "by choosing when to start the GC, how much to process on each "  \
           "cycle, and what other features to automatically enable. "        \
-          "Possible values are:"                                            \
+          "When -XX:ShenandoahGCMode is generational, the only supported "  \
+          "option is the default, adaptive. Possible values are:"           \
           " adaptive - adapt to maintain the given amount of free heap "    \
           "at all times, even during the GC cycle;"                         \
-          " static -  trigger GC when free heap falls below the threshold;" \
+          " static - trigger GC when free heap falls below a specified "    \
+          "threshold;"                                                      \
           " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
@@ -300,12 +302,14 @@
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalMax, 10, EXPERIMENTAL,            \
           "The maximum sleep interval for control loop that drives "        \
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalAdjustPeriod, 1000, EXPERIMENTAL, \
           "The time period for one step in control loop interval "          \
@@ -405,40 +409,6 @@
           "generation. Heuristics will not adjust the young generation "    \
           "to be more than this.")                                          \
           range(0, 100)                                                     \
-                                                                            \
-  product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \
-          "Pace application allocations to give GC chance to start "        \
-          "and complete before allocation failure is reached.")             \
-                                                                            \
-  product(uintx, ShenandoahPacingMaxDelay, 10, EXPERIMENTAL,                \
-          "Max delay for pacing application allocations. Larger values "    \
-          "provide more resilience against out of memory, at expense at "   \
-          "hiding the GC latencies in the allocation path. Time is in "     \
-          "milliseconds. Setting it to arbitrarily large value makes "      \
-          "GC effectively stall the threads indefinitely instead of going " \
-          "to degenerated or Full GC.")                                     \
-                                                                            \
-  product(uintx, ShenandoahPacingIdleSlack, 2, EXPERIMENTAL,                \
-          "How much of heap counted as non-taxable allocations during idle "\
-          "phases. Larger value makes the pacing milder when collector is " \
-          "idle, requiring less rendezvous with control thread. Lower "     \
-          "value makes the pacing control less responsive to out-of-cycle " \
-          "allocs. In percent of total heap size.")                         \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahPacingCycleSlack, 10, EXPERIMENTAL,              \
-          "How much of free space to take as non-taxable allocations "      \
-          "the GC cycle. Larger value makes the pacing milder at the "      \
-          "beginning of the GC cycle. Lower value makes the pacing less "   \
-          "uniform during the cycle. In percent of free space.")            \
-          range(0, 100)                                                     \
-                                                                            \
-  product(double, ShenandoahPacingSurcharge, 1.1, EXPERIMENTAL,             \
-          "Additional pacing tax surcharge to help unclutter the heap. "    \
-          "Larger values makes the pacing more aggressive. Lower values "   \
-          "risk GC cycles finish with less memory than were available at "  \
-          "the beginning of it.")                                           \
-          range(1.0, 100.0)                                                 \
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \

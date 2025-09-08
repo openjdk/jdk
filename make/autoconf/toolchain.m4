@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
       TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+      if test "x$TOOLCHAIN_VERSION" = "x16" || test "x$TOOLCHAIN_VERSION" = "x16.1" ; then
+        AC_MSG_NOTICE([Xcode $TOOLCHAIN_VERSION has a compiler bug that causes the build to fail.])
+        AC_MSG_NOTICE([Please use Xcode 16.2 or later, or a version prior to 16.])
+        AC_MSG_ERROR([Compiler version is not supported.])
+      fi
     fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
@@ -620,6 +625,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # Force use of lld, since that is what we expect when setting flags later on
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+        LD="$LD -fuse-ld=lld"
+        LDCXX="$LDCXX -fuse-ld=lld"
+      fi
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
@@ -643,8 +655,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assembler is "ml64.exe"
+    if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+      # On Windows aarch64, the assembler is "armasm64.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, armasm64)
+    elif test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      # On Windows x64, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
       # otherwise, the assembler is "ml.exe"

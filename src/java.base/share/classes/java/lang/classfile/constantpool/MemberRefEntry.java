@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,45 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
- * Models a member reference constant in the constant pool of a classfile,
- * which includes references to fields, methods, and interface methods.
+ * Superinterface modeling symbolic references to a member of a class or interface
+ * in the constant pool of a {@code class} file, which include references to
+ * {@linkplain FieldRefEntry fields}, {@linkplain MethodRefEntry class methods},
+ * and {@linkplain InterfaceMethodRefEntry interface methods}.
+ * <p>
+ * Different types of symbolic references to a member of a class or interface
+ * bear structural similarities and share parts of the resolution processes, and
+ * they can sometimes appear in the same locations.  For example, both {@link
+ * MethodRefEntry} and {@link InterfaceMethodRefEntry} can appear in an {@link
+ * Opcode#INVOKESTATIC invokestatic} instruction.
+ * <p>
+ * A member reference entry is composite:
+ * {@snippet lang=text :
+ * MemberRefEntry(
+ *     ClassEntry owner, // @link substring="owner" target="#owner()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
+ * }
  *
+ * @jvms 4.4.2 The {@code CONSTANT_Fieldref_info}, {@code
+ *             CONSTANT_Methodref_info}, and {@code
+ *             CONSTANT_InterfaceMethodref_info} Structures
  * @sealedGraph
  * @since 24
  */
 public sealed interface MemberRefEntry extends PoolEntry
         permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {
     /**
-     * {@return the class in which this member ref lives}
+     * {@return the class or interface which this member belongs to}
      */
     ClassEntry owner();
 
     /**
-     * {@return the name and type of the member}
+     * {@return the name and descriptor string of the member}
      */
     NameAndTypeEntry nameAndType();
 
@@ -53,7 +74,14 @@ public sealed interface MemberRefEntry extends PoolEntry
     }
 
     /**
-     * {@return the type of the member}
+     * {@return the descriptor string of the member}  This is a field descriptor
+     * string if this entry is a {@link FieldRefEntry}, or a method descriptor
+     * string if this entry is a {@link MethodRefEntry} or {@link
+     * InterfaceMethodRefEntry}.
+     *
+     * @apiNote
+     * Each subinterface defines a {@code typeSymbol()} accessor for the
+     * symbolic descriptor for the member type.
      */
     default Utf8Entry type() {
         return nameAndType().type();

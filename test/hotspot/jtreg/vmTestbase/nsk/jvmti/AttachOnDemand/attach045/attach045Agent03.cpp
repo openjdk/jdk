@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ VMObjectAllocHandler(jvmtiEnv *jvmti,
     char threadName[MAX_STRING_LENGTH];
     char className[MAX_STRING_LENGTH];
     int success = 1;
+    bool finish = false;
 
     if (!nsk_jvmti_aod_getClassName(jvmti, object_klass, className)) {
         nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, 0, jvmti, jni);
@@ -84,8 +85,7 @@ VMObjectAllocHandler(jvmtiEnv *jvmti,
 
         if (eventsCounter == EXPECTED_EVENTS_NUMBER) {
             NSK_DISPLAY2("%s: all expected events were received (eventsCounter: %d)\n", agentName, eventsCounter);
-
-            nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, success, jvmti, jni);
+            finish = true;
         }
 
         if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
@@ -95,8 +95,8 @@ VMObjectAllocHandler(jvmtiEnv *jvmti,
         success = 0;
     }
 
-    if (!success) {
-        nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, 0, jvmti, jni);
+    if (finish || !success) {
+        nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, success, jvmti, jni);
     }
 }
 

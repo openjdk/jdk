@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
@@ -613,12 +612,12 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
@@ -638,7 +637,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_entry = __ pc();
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, nullptr);
+  return;
 }
 
 
@@ -1139,41 +1139,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime lock fast");
-      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                          0x7 /* savemask */, slow_lock);
+    log_trace(fastlock)("SharedRuntime lock fast");
+    __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                        0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
-    } else if (LockingMode == LM_LEGACY) {
-      const Register mark = tmp;
-      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-      // That would be acceptable as either CAS or slow case path is taken in that case
-
-      __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-      __ tst(mark, markWord::unlocked_value);
-      __ b(fast_lock, ne);
-
-      // Check for recursive lock
-      // See comments in InterpreterMacroAssembler::lock_object for
-      // explanations on the fast recursive locking check.
-      // Check independently the low bits and the distance to SP
-      // -1- test low 2 bits
-      __ movs(Rtemp, AsmOperand(mark, lsl, 30));
-      // -2- test (hdr - SP) if the low two bits are 0
-      __ sub(Rtemp, mark, SP, eq);
-      __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-      // If still 'eq' then recursive locking OK
-      // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
-      __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ b(lock_done, eq);
-      __ b(slow_lock);
-
-      __ bind(fast_lock);
-      __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-
-      __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-    }
     __ bind(lock_done);
   }
 
@@ -1226,21 +1195,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime unlock fast");
-      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                            7 /* savemask */, slow_unlock);
-      // Fall through
-    } else if (LockingMode == LM_LEGACY) {
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(sync_obj, Address(sync_handle));
+    log_trace(fastlock)("SharedRuntime unlock fast");
+    __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                          7 /* savemask */, slow_unlock);
+    // Fall through
 
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ cbz(R2, unlock_done);
-
-      __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
-    }
     __ bind(unlock_done);
   }
 
@@ -1366,7 +1325,7 @@ VMReg SharedRuntime::thread_register() {
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 1024, 1024);
   int frame_size_in_words;
   OopMapSet* oop_maps;
@@ -1608,7 +1567,7 @@ void SharedRuntime::generate_deopt_blob() {
 // setup oopmap, and calls safepoint code to stop the compiled code for
 // a safepoint.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
 
@@ -1618,7 +1577,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   int frame_size_words;
   OopMapSet* oop_maps;
 
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
 
   MacroAssembler* masm = new MacroAssembler(&buffer);
   address start = __ pc();
@@ -1680,7 +1639,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   return SafepointBlob::create(&buffer, oop_maps, frame_size_words);
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -1718,7 +1677,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // Overwrite saved register values
 
   // Place metadata result of VM call into Rmethod
-  __ get_vm_result_2(R1, Rtemp);
+  __ get_vm_result_metadata(R1, Rtemp);
   __ str(R1, Address(SP, RegisterSaver::Rmethod_offset * wordSize));
 
   // Place target address (VM call result) into Rtemp
@@ -1731,7 +1690,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   RegisterSaver::restore_live_registers(masm);
   const Register Rzero = __ zero_register(Rtemp);
-  __ str(Rzero, Address(Rthread, JavaThread::vm_result_2_offset()));
+  __ str(Rzero, Address(Rthread, JavaThread::vm_result_metadata_offset()));
   __ mov(Rexception_pc, LR);
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
@@ -1744,7 +1703,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // Continuation point for throwing of implicit exceptions that are not handled in
 // the current activation. Fabricates an exception oop and initiates normal
 // exception dispatching in this frame.
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);
@@ -1808,7 +1767,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -1852,7 +1811,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
     framesize // inclusive of return address
   };
 
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

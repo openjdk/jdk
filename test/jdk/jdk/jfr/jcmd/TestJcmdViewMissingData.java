@@ -30,7 +30,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary The test verifies JFR.view command
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdViewMissingData

@@ -236,20 +236,16 @@ public class HtmlLinkFactory {
     protected Content getClassLink(HtmlLinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
         TypeElement typeElement = linkInfo.getTypeElement();
-        // Create a tool tip if we are linking to a class or interface.  Don't
-        // create one if we are linking to a member.
-        String title = "";
-        String fragment = linkInfo.getFragment();
-        boolean hasFragment = fragment != null && !fragment.isEmpty();
-        if (!hasFragment) {
-            boolean isTypeLink = linkInfo.getType() != null &&
-                     utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
-            title = getClassToolTip(typeElement, isTypeLink);
-            if (isTypeLink) {
-                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
-                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
-                        typeElement).name());
-            }
+        // Create a tool tip if we are linking to a class or interface, or one of
+        // its summary sections. Don't create one if we are linking to a member.
+        boolean isPageOrSummaryLink = linkInfo.isPageOrSummaryLink();
+        TypeMirror type = linkInfo.getType();
+        if (type != null && utils.isTypeVariable(utils.getComponentType(type))) {
+            linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                    utils.getTypeName(utils.getComponentType(type), false), typeElement).name())
+                    .title(getClassToolTip(typeElement, true));
+        } else if (isPageOrSummaryLink) {
+            linkInfo.title(getClassToolTip(typeElement, false));
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
@@ -261,7 +257,7 @@ public class HtmlLinkFactory {
         Element previewTarget;
         ExecutableElement restrictedTarget;
         boolean showPreview = !linkInfo.isSkipPreview();
-        if (!hasFragment && showPreview) {
+        if (isPageOrSummaryLink && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
             restrictedTarget = null;
@@ -274,7 +270,7 @@ public class HtmlLinkFactory {
             TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
             if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
-                if (enclosing.equals(m_writer.getCurrentPageElement())) {
+                if (enclosing.equals(m_writer.getCurrentTypeElement())) {
                     //skip the PREVIEW tag:
                     flags = EnumSet.copyOf(flags);
                     flags.remove(ElementFlag.PREVIEW);
@@ -296,12 +292,12 @@ public class HtmlLinkFactory {
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
-            if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
+            if (configuration.isGeneratedDoc(typeElement) && !utils.isHidden(typeElement)) {
                 DocPath fileName = getPath(linkInfo);
-                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
+                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentTypeElement()) {
                         link.add(m_writer.links.createLink(
                                 fileName.fragment(linkInfo.getFragment()),
-                                label, linkInfo.getStyle(), title));
+                                label, linkInfo.getStyle(), linkInfo.getTitle()));
                         addSuperscript(link, flags, fileName, null, previewTarget, restrictedTarget);
                         return link;
                 }
@@ -461,11 +457,12 @@ public class HtmlLinkFactory {
      * Given a class, return the appropriate tool tip.
      *
      * @param typeElement the class to get the tool tip for.
+     * @param isTypeParamLink true if link target is a type parameter
      * @return the tool tip for the appropriate class.
      */
-    private String getClassToolTip(TypeElement typeElement, boolean isTypeLink) {
+    private String getClassToolTip(TypeElement typeElement, boolean isTypeParamLink) {
         Resources resources = m_writer.configuration.getDocResources();
-        if (isTypeLink) {
+        if (isTypeParamLink) {
             return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));
         } else if (utils.isPlainInterface(typeElement)){

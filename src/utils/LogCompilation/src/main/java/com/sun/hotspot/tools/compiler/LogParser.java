@@ -1099,6 +1099,10 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             e.setCompileKind(compileKind);
             String level = atts.getValue("level");
             e.setLevel(level);
+            String reason = atts.getValue("reason");
+            if (reason != null) {
+              e.setReason(reason);
+            }
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");

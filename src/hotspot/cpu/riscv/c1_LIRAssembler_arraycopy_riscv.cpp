@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -211,7 +210,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     Label cont, slow;
 
 #define PUSH(r1, r2)                                     \
-    __ addi(sp, sp, -2 * wordSize);                      \
+    __ subi(sp, sp, 2 * wordSize);                       \
     __ sd(r1, Address(sp, 1 * wordSize));                \
     __ sd(r2, Address(sp, 0));
 
@@ -226,7 +225,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
     PUSH(src, dst);
-    __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
+    __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
     POP(src, dst);
     __ bnez(dst, cont);
 
@@ -337,10 +336,10 @@ void LIR_Assembler::arraycopy_prepare_params(Register src, Register src_pos, Reg
                                              Register dst, Register dst_pos, BasicType basic_type) {
   int scale = array_element_size(basic_type);
   __ shadd(c_rarg0, src_pos, src, t0, scale);
-  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ addi(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg0, dst, dst_pos, length);
   __ shadd(c_rarg1, dst_pos, dst, t0, scale);
-  __ add(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ addi(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg1, dst, length);
   __ mv(c_rarg2, length);
   assert_different_registers(c_rarg2, dst);

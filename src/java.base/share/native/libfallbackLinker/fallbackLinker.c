@@ -165,7 +165,7 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
 static void do_upcall(ffi_cif* cif, void* ret, void** args, void* user_data) {
   // attach thread
   JNIEnv* env;
-  jint result = (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
+  (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
 
   // call into doUpcall in LibFallback
   jobject upcall_data = (jobject) user_data;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,16 +266,7 @@ public class eventiterator001 extends JDIBase {
 
                 cpRequest.disable();
                 debuggeeClass = event.referenceType();
-
-                String          bPointMethod = "methodForCommunication";
-                String          lineForComm  = "lineForComm";
-                ThreadReference mainThread   = debuggee.threadByNameOrThrow("main");
-
-                BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                              debuggeeClass,
-                                              bPointMethod, lineForComm, "zero");
-                bpRequest.enable();
-
+                setupBreakpointForCommunication(debuggeeClass);
             } else if (property.equals("TestClassPrepareRequest")) {
                 nn2++;
                 if (nn2 > 1)

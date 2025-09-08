@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (c.name == names.module_info) {
+        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
             return 0;
         }
 
@@ -257,22 +257,17 @@ public class ClassFinder {
             try {
                 ModuleSymbol owningModule = packge.modle;
                 if (owningModule == syms.noModule) {
-                    if (jrtIndex != null && jrtIndex.isInJRT(c.classfile)) {
-                        JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
-                        Profile minProfile = Profile.DEFAULT;
-                        if (ctSym.proprietary)
-                            newFlags |= PROPRIETARY;
-                        if (ctSym.minProfile != null)
-                            minProfile = Profile.lookup(ctSym.minProfile);
-                        if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                            newFlags |= NOT_IN_PROFILE;
-                        }
+                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                    Profile minProfile = Profile.DEFAULT;
+                    if (ctSym.proprietary)
+                        newFlags |= PROPRIETARY;
+                    if (ctSym.minProfile != null)
+                        minProfile = Profile.lookup(ctSym.minProfile);
+                    if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                        newFlags |= NOT_IN_PROFILE;
                     }
                 } else if (owningModule.name == names.jdk_unsupported) {
                     newFlags |= PROPRIETARY;
-                } else {
-                    // don't accumulate user modules in supplementaryFlags
-                    return 0;
                 }
             } catch (IOException ignore) {
             }
@@ -719,7 +714,6 @@ public class ClassFinder {
                     EnumSet.of(JavaFileObject.Kind.CLASS)));
     }
     // where
-        @SuppressWarnings("fallthrough")
         private void fillIn(PackageSymbol p,
                             Location location,
                             Iterable<JavaFileObject> files)

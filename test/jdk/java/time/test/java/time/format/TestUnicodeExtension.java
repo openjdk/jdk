@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8176841 8202537 8244245 8265315 8284840 8296248 8306116 8333582
+ *      8346948
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -345,7 +346,7 @@ public class TestUnicodeExtension {
     Object[][] shortTZID() {
         return new Object[][] {
             // LDML's short ID, Expected Zone,
-            // Based on timezone.xml from CLDR v46
+            // Based on timezone.xml from CLDR v47
             {"adalv", "Europe/Andorra"},
             {"aedxb", "Asia/Dubai"},
             {"afkbl", "Asia/Kabul"},

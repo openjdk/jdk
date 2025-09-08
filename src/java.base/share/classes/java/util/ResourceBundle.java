@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.spi.ResourceBundleControlProvider;
 import java.util.spi.ResourceBundleProvider;
@@ -487,7 +488,20 @@ public abstract class ResourceBundle {
     /**
      * A Set of the keys contained only in this ResourceBundle.
      */
-    private volatile Set<String> keySet;
+    private final Supplier<Set<String>> keySet = StableValue.supplier(
+            new Supplier<>() { public Set<String> get() { return keySet0(); }});
+
+    private Set<String> keySet0() {
+        final Set<String> keys = new HashSet<>();
+        final Enumeration<String> enumKeys = getKeys();
+        while (enumKeys.hasMoreElements()) {
+            final String key = enumKeys.nextElement();
+            if (handleGetObject(key) != null) {
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
 
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -2298,22 +2312,7 @@ public abstract class ResourceBundle {
      * @since 1.6
      */
     protected Set<String> handleKeySet() {
-        if (keySet == null) {
-            synchronized (this) {
-                if (keySet == null) {
-                    Set<String> keys = new HashSet<>();
-                    Enumeration<String> enumKeys = getKeys();
-                    while (enumKeys.hasMoreElements()) {
-                        String key = enumKeys.nextElement();
-                        if (handleGetObject(key) != null) {
-                            keys.add(key);
-                        }
-                    }
-                    keySet = keys;
-                }
-            }
-        }
-        return keySet;
+        return keySet.get();
     }
 
 
@@ -3053,8 +3052,8 @@ public abstract class ResourceBundle {
          * {@code IllegalArgumentException} is thrown.</li>
          *
          * <li>If the {@code locale}'s language is one of the
-         * <a href="./Locale.html#legacy_language_codes">Legacy language
-         * codes</a>, either old or new, then repeat the loading process
+         * {@linkplain Locale##legacy_language_codes Legacy language
+         * codes}, either old or new, then repeat the loading process
          * if needed, with the bundle name with the other language.
          * For example, "iw" for "he" and vice versa.
          *
@@ -3511,7 +3510,6 @@ public abstract class ResourceBundle {
          */
         static ResourceBundle newResourceBundle(Class<? extends ResourceBundle> bundleClass) {
             try {
-                @SuppressWarnings("unchecked")
                 Constructor<? extends ResourceBundle> ctor =
                     bundleClass.getConstructor();
                 if (!Modifier.isPublic(ctor.getModifiers())) {
@@ -3654,8 +3652,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.getBoolean(
-        System.getProperty("resource.bundle.debug", "false"));
+    private static final boolean TRACE_ON = Boolean.getBoolean("resource.bundle.debug");
 
     private static void trace(String format, Object... params) {
         if (TRACE_ON)

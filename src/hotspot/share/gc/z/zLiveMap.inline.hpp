@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,6 @@ inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
   return segment_live_bits().find_first_set_bit(segment + 1, NumSegments);
 }
 
-inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap.size() / NumSegments;
-}
-
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
   return index >> _segment_shift;
 }
@@ -125,11 +121,11 @@ inline void ZLiveMap::inc_live(uint32_t objects, size_t bytes) {
 }
 
 inline BitMap::idx_t ZLiveMap::segment_start(BitMap::idx_t segment) const {
-  return segment_size() * segment;
+  return segment * _segment_size;
 }
 
 inline BitMap::idx_t ZLiveMap::segment_end(BitMap::idx_t segment) const {
-  return segment_start(segment) + segment_size();
+  return segment_start(segment) + _segment_size;
 }
 
 inline size_t ZLiveMap::do_object(ObjectClosure* cl, zaddress addr) const {
@@ -222,7 +218,7 @@ inline BitMap::idx_t ZLiveMap::find_base_bit_in_segment(BitMap::idx_t start, Bit
   }
 
   // The bitmaps contain pairs of bits to deal with strongly marked vs only
-  // finalizable marked. Align down to get the the first bit position.
+  // finalizable marked. Align down to get the first bit position.
   return bit & ~BitMap::idx_t(1);
 }
 

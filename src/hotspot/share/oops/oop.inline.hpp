@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,28 @@
 
 #include "oops/oop.hpp"
 
-#include "memory/universe.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/objLayout.inline.hpp"
 #include "oops/markWord.inline.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
+
+void* oopDesc::base_addr() { return this; }
+const void* oopDesc::base_addr() const { return this; }
 
 markWord oopDesc::mark() const {
   return Atomic::load(&_mark);
@@ -53,10 +56,6 @@ markWord oopDesc::mark() const {
 
 markWord oopDesc::mark_acquire() const {
   return Atomic::load_acquire(&_mark);
-}
-
-markWord* oopDesc::mark_addr() const {
-  return (markWord*) &_mark;
 }
 
 void oopDesc::set_mark(markWord m) {
@@ -141,6 +140,17 @@ Klass* oopDesc::klass_without_asserts() const {
   }
 }
 
+narrowKlass oopDesc::narrow_klass() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark().narrow_klass();
+    case ObjLayout::Compressed:
+      return _metadata._compressed_klass;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
@@ -220,8 +230,8 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, s);
-  assert(is_object_aligned(s), "Oop size is not properly aligned: " SIZE_FORMAT, s);
+  assert(s > 0, "Oop size must be greater than zero, not %zu", s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: %zu", s);
   return s;
 }
 
@@ -452,7 +462,7 @@ bool oopDesc::mark_must_be_preserved() const {
 }
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
-  return m.must_be_preserved(this);
+  return m.must_be_preserved();
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

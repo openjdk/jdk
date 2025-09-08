@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class LoopSelector;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -79,7 +80,12 @@ protected:
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
          LoopNestInnerLoop     = 1<<15,
-         LoopNestLongOuterLoop = 1<<16 };
+         LoopNestLongOuterLoop = 1<<16,
+         MultiversionFastLoop         = 1<<17,
+         MultiversionSlowLoop         = 2<<17,
+         MultiversionDelayedSlowLoop  = 3<<17,
+         MultiversionFlagsMask        = 3<<17,
+       };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -126,6 +132,10 @@ public:
 
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
+
+#ifndef PRODUCT
+  uint _stress_peeling_attempts = 0;
+#endif
 
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
@@ -208,6 +218,18 @@ public:
   jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
+
+  virtual void set_trip_count(julong tc) = 0;
+  virtual julong trip_count() const = 0;
+
+  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
+  void set_exact_trip_count(julong tc) {
+    set_trip_count(tc);
+    _loop_flags |= HasExactTripCount;
+  }
+  void set_nonexact_trip_count() {
+    _loop_flags &= ~HasExactTripCount;
+  }
 };
 
 
@@ -284,25 +306,21 @@ public:
   bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
+  IfNode* find_multiversion_if_from_multiversion_fast_main_loop();
+
   int main_idx() const { return _main_idx; }
 
+  void set_trip_count(julong tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
+    _trip_count = checked_cast<uint>(tc);
+  }
+  julong trip_count() const      { return _trip_count; }
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
-  uint trip_count()            { return _trip_count; }
-
-  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
-  void set_exact_trip_count(uint tc) {
-    _trip_count = tc;
-    _loop_flags |= HasExactTripCount;
-  }
-  void set_nonexact_trip_count() {
-    _loop_flags &= ~HasExactTripCount;
-  }
   void set_notpassed_slp() {
     _loop_flags &= ~PassedSlpAnalysis;
   }
@@ -314,6 +332,32 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions, and the multiversion_if
+  // decides which one is taken:
+  // (1) fast_loop: We enter this loop by default, by default the multiversion_if has its condition set to
+  //                "true", guarded by a OpaqueMultiversioning. If we want to make a speculative assumption
+  //                for an optimization, we can add the runtime-check to the multiversion_if, and if the
+  //                assumption fails we take the slow_loop instead, where we do not make the same speculative
+  //                assumption.
+  //                We call it the "fast_loop" because it has more optimizations, enabled by the speculative
+  //                runtime-checks at the multiversion_if, and we expect the fast_loop to execute faster.
+  // (2) slow_loop: By default, it is not taken, until a runtime-check is added to the multiversion_if while
+  //                optimizing the fast_looop. If such a runtime-check is never added, then after loop-opts
+  //                the multiversion_if constant folds to true, and the slow_loop is folded away. To save
+  //                compile time, we delay the optimization of the slow_loop until a runtime-check is added
+  //                to the multiversion_if, at which point we resume optimizations for the slow_loop.
+  //                We call it the "slow_loop" because it has fewer optimizations, since this is the fall-back
+  //                loop where we do not make any of the speculative assumptions we make for the fast_loop.
+  //                Hence, we expect the slow_loop to execute slower.
+  bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
+  bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
+  bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
+  bool is_multiversion_delayed_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionDelayedSlowLoop; }
+  void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
+  void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
+  void set_multiversion_delayed_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionDelayedSlowLoop; }
+  void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -331,15 +375,23 @@ public:
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
 
+  Node* uncasted_init_trip(bool uncasted);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
+private:
+  virtual uint size_of() const { return sizeof(*this); }
+
+  // Known trip count calculated by compute_exact_trip_count()
+  julong _trip_count;
+
 public:
   LongCountedLoopNode(Node *entry, Node *backedge)
-    : BaseCountedLoopNode(entry, backedge) {
+    : BaseCountedLoopNode(entry, backedge), _trip_count(max_julong) {
     init_class_id(Class_LongCountedLoop);
   }
 
@@ -348,6 +400,12 @@ public:
   virtual BasicType bt() const {
     return T_LONG;
   }
+
+  void set_trip_count(julong tc) {
+    assert(tc < max_julong, "Cannot set trip count to max_julong");
+    _trip_count = tc;
+  }
+  julong trip_count() const      { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
@@ -530,7 +588,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+  void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
+  void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -546,6 +605,10 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+  CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
+  CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
@@ -694,7 +757,7 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   bool do_one_iteration_loop( PhaseIdealLoop *phase );
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
@@ -730,7 +793,7 @@ public:
   uint est_loop_unroll_sz(uint factor) const;
 
   // Compute loop trip count if possible
-  void compute_trip_count(PhaseIdealLoop* phase);
+  void compute_trip_count(PhaseIdealLoop* phase, BasicType bt);
 
   // Compute loop trip count from profile data
   float compute_profile_trip_cnt_helper(Node* n);
@@ -900,6 +963,7 @@ private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
   Node_List _zero_trip_guard_opaque_nodes;
+  Node_List _multiversion_opaque_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -938,24 +1002,36 @@ private:
     return ctrl;
   }
 
+  void cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
+
 #ifdef ASSERT
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
  private:
-  static void get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
-  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
+  static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
+                                                            Unique_Node_List& list);
+  void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
                                                        const Node_List& old_new);
   void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
                                                      CountedLoopNode* main_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body,
+                                                     uint first_node_index_in_pre_loop_body,
+                                                     uint last_node_index_in_pre_loop_body,
+                                                     DEBUG_ONLY(uint last_node_index_from_backedge_goo COMMA)
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
+  void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
+                                                        CountedLoopNode* target_loop_head,
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool kill_old_template);
+  void rewire_old_target_loop_entry_dependency_to_new_entry(CountedLoopNode* target_loop_head,
+                                                            const Node* old_target_loop_entry,
+                                                            uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
@@ -979,6 +1055,10 @@ public:
     assert( ctrl->in(0), "cannot set dead control node" );
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
     _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
+  }
+  void set_root_as_ctrl(Node* n) {
+    assert(!has_node(n) || has_ctrl(n), "");
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)C->root() + 1));
   }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
@@ -1220,8 +1300,8 @@ public:
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
   Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_iv_stride(Node* incr, Node*& xphi);
+  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
@@ -1233,7 +1313,7 @@ public:
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 
@@ -1303,7 +1383,7 @@ public:
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
@@ -1345,10 +1425,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(
-      ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
-      bool rewire_uncommon_proj_phi_inputs = false,
-      AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None);
+  IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1362,6 +1441,12 @@ public:
 
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
+
+  // Replace the control input of 'node' with 'new_control' and set the dom depth to the one of 'new_control'.
+  void replace_control(Node* node, Node* new_control) {
+    _igvn.replace_input_of(node, 0, new_control);
+    set_idom(node, new_control, dom_depth(new_control));
+  }
 
   void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
     _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
@@ -1389,20 +1474,10 @@ public:
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void eliminate_useless_predicates();
-
-  void eliminate_useless_parse_predicates();
-  void mark_all_parse_predicates_useless() const;
-  void mark_loop_associated_parse_predicates_useful();
-  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
-  void add_useless_parse_predicates_to_igvn_worklist();
-
-  void eliminate_useless_template_assertion_predicates();
-  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
-  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
-  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  void eliminate_useless_predicates() const;
 
   void eliminate_useless_zero_trip_guard();
+  void eliminate_useless_multiversion_if();
 
  public:
   // Change the control input of expensive nodes to allow commoning by
@@ -1439,6 +1514,8 @@ public:
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
                                             const LoopNode* original_head, const LoopNode* new_head);
+  static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                const LoopNode* original_head, const LoopNode* new_head);
 #endif
 
  public:
@@ -1464,6 +1541,11 @@ public:
     TriedAndFailed,  // We tried to vectorize, but failed.
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
+
+  void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
+  void do_multiversioning(IdealLoopTree* lpt, Node_List& old_new);
+  IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
+  bool try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
@@ -1529,8 +1611,6 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
-  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
-
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1549,6 +1629,64 @@ public:
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
+
+private:
+  // Class to keep track of wins in split_thru_phi.
+  class SplitThruPhiWins {
+  private:
+    // Region containing the phi we are splitting through.
+    const Node* _region;
+
+    // Sum of all wins regardless of where they happen. This applies to Loops phis as well as non-loop phis.
+    int _total_wins;
+
+    // For Loops, wins have different impact depending on if they happen on loop entry or on the backedge.
+    // Number of wins on a loop entry edge if the split is through a loop head,
+    // otherwise 0. Entry edge wins only pay dividends once on loop entry.
+    int _loop_entry_wins;
+    // Number of wins on a loop back-edge, which pay dividends on every iteration.
+    int _loop_back_wins;
+
+  public:
+    SplitThruPhiWins(const Node* region) :
+      _region(region),
+      _total_wins(0),
+      _loop_entry_wins(0),
+      _loop_back_wins(0) {};
+
+    void reset() {_total_wins = 0; _loop_entry_wins = 0; _loop_back_wins = 0;}
+    void add_win(int ctrl_index) {
+      if (_region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+        _loop_entry_wins++;
+      } else if (_region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+        _loop_back_wins++;
+      }
+      _total_wins++;
+    }
+    // Is this split profitable with respect to the policy?
+    bool profitable(int policy) const {
+      assert(_region->is_Loop() || (_loop_entry_wins == 0 && _loop_back_wins == 0), "wins on loop edges without a loop");
+      assert(!_region->is_Loop() || _total_wins == _loop_entry_wins + _loop_back_wins, "missed some win");
+      // In general this means that the split has to have more wins than specified
+      // in the policy. However, for loops we need to take into account where the
+      // wins happen. We need to be careful when splitting, because splitting nodes
+      // related to the iv through the phi can sufficiently rearrange the loop
+      // structure to prevent RCE and thus vectorization. Thus, we only deem splitting
+      // profitable if the win of a split is not on the entry edge, as such wins
+      // only pay off once and have a high chance of messing up the loop structure.
+      return (_loop_entry_wins == 0 && _total_wins > policy) ||
+      // If there are wins on the entry edge but the backadge also has sufficient wins,
+      // there is sufficient profitability to spilt regardless of the risk of messing
+      // up the loop structure.
+             _loop_back_wins > policy ||
+      // If the policy is less than 0, a split is always profitable, i.e. we always
+      // split. This is needed when we split a node and then must also split a
+      // dependant node, i.e. spliting a Bool node after splitting a Cmp node.
+             policy < 0;
+    }
+  };
+
+public:
 
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
@@ -1651,28 +1789,7 @@ private:
     _nodes_required = UINT_MAX;
   }
 
- public:
-  // Clone Parse Predicates to slow and fast loop when unswitching a loop
-  void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
-                                                               IfProjNode*& true_path_loop_entry,
-                                                               IfProjNode*& false_path_loop_entry);
  private:
-  void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                            const PredicateBlock* predicate_block,
-                                                            Deoptimization::DeoptReason reason,
-                                                            IfProjNode*& true_path_loop_entry,
-                                                            IfProjNode*& false_path_loop_entry);
-  void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
-                                                 IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                                       Deoptimization::DeoptReason reason, bool slow_loop);
-  void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                     ParsePredicateSuccessProj* old_parse_predicate_proj,
-                                                     ParsePredicateNode* true_path_loop_parse_predicate,
-                                                     ParsePredicateNode* false_path_loop_parse_predicate);
-  IfTrueNode* clone_assertion_predicate_for_unswitched_loops(IfTrueNode* template_assertion_predicate_success_proj,
-                                                             ParsePredicateNode* unswitched_loop_parse_predicate);
-  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)
@@ -1784,6 +1901,18 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
+
+  ConINode* intcon(jint i);
+
+  ConLNode* longcon(jlong i);
+
+  ConNode* makecon(const Type* t);
+
+  ConNode* integercon(jlong l, BasicType bt);
+
+  ConNode* zerocon(BasicType bt);
 };
 
 
@@ -1911,7 +2040,7 @@ class DataNodeGraph : public StackObj {
   DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
       : _phase(phase),
         _data_nodes(data_nodes),
-        // Use 107 as best guess which is the first resize value in ResizeableResourceHashtable::large_table_sizes.
+        // Use 107 as best guess which is the first resize value in ResizeableHashTable::large_table_sizes.
         _orig_to_new(107, MaxNodeLimit)
   {
 #ifdef ASSERT

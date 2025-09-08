@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,16 @@
 
 /*
  * @test
- * @bug 8288109 8235786
+ * @bug 8288109
  * @summary Tests for HttpExchange set/getAttribute
  * @library /test/lib
  * @run junit/othervm ExchangeAttributeTest
  */
 
-import com.sun.net.httpserver.Filter;
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -56,87 +53,44 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ExchangeAttributeTest {
 
-    private static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
-    private static final boolean ENABLE_LOGGING = true;
-    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
-
-    private static HttpServer server;
+    static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
+    static final boolean ENABLE_LOGGING = true;
+    static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public static void setup() throws Exception {
+    public static void setup() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             logger.setLevel(Level.ALL);
             ch.setLevel(Level.ALL);
             logger.addHandler(ch);
         }
-        server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
-        server.createContext("/normal", new AttribHandler());
-        final HttpContext filteredCtx = server.createContext("/filtered", new AttribHandler());
-        filteredCtx.getFilters().add(new AttributeAddingFilter());
-        server.start();
-        System.out.println("Server started at " + server.getAddress());
     }
 
-    @AfterAll
-    public static void afterAll() {
-        if (server != null) {
-            System.out.println("Stopping server " + server.getAddress());
-            server.stop(0);
-        }
-    }
-
-    /*
-     * Verifies that HttpExchange.setAttribute() allows for null value.
-     */
     @Test
-    public void testNullAttributeValue() throws Exception {
-        try (var client = HttpClient.newBuilder().proxy(NO_PROXY).build()) {
-            var request = HttpRequest.newBuilder(uri(server, "/normal", null)).build();
+    public void testExchangeAttributes() throws Exception {
+        var handler = new AttribHandler();
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, response.statusCode());
-        }
-    }
-
-    /*
-     * Verifies that an attribute set on one exchange is accessible to another exchange that
-     * belongs to the same HttpContext.
-     */
-    @Test
-    public void testSharedAttribute() throws Exception {
-        try (var client = HttpClient.newBuilder().proxy(NO_PROXY).build()) {
-            final var firstReq = HttpRequest.newBuilder(uri(server, "/filtered", "firstreq"))
-                    .build();
-            System.out.println("issuing request " + firstReq);
-            final var firstResp = client.send(firstReq, HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, firstResp.statusCode());
-
-            // issue the second request
-            final var secondReq = HttpRequest.newBuilder(uri(server, "/filtered", "secondreq"))
-                    .build();
-            System.out.println("issuing request " + secondReq);
-            final var secondResp = client.send(secondReq, HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, secondResp.statusCode());
-
-            // verify that the filter was invoked for both the requests. the filter internally
-            // does the setAttribute() and getAttribute() and asserts that the attribute value
-            // set by the first exchange was available through the second exchange.
-            assertTrue(AttributeAddingFilter.filteredFirstReq, "Filter wasn't invoked for "
-                    + firstReq.uri());
-            assertTrue(AttributeAddingFilter.filteredSecondReq, "Filter wasn't invoked for "
-                    + secondReq.uri());
+        } finally {
+            server.stop(0);
         }
     }
 
     // --- infra ---
 
-    static URI uri(HttpServer server, String path, String query) throws URISyntaxException {
+    static URI uri(HttpServer server, String path) throws URISyntaxException {
         return URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
                 .port(server.getAddress().getPort())
                 .path(path)
-                .query(query)
                 .build();
     }
 
@@ -156,56 +110,6 @@ public class ExchangeAttributeTest {
                 t.printStackTrace();
                 exchange.sendResponseHeaders(500, -1);
             }
-        }
-    }
-
-    private static final class AttributeAddingFilter extends Filter {
-
-        private static final String ATTR_NAME ="foo-bar";
-        private static final String ATTR_VAL ="hello-world";
-        private static volatile boolean filteredFirstReq;
-        private static volatile boolean filteredSecondReq;
-
-        @Override
-        public void doFilter(final HttpExchange exchange, final Chain chain) throws IOException {
-            if (exchange.getRequestURI().getQuery().contains("firstreq")) {
-                filteredFirstReq = true;
-                // add a request attribute through the exchange, for this first request
-                // and at the same time verify that the attribute doesn't already exist
-                final Object attrVal = exchange.getAttribute(ATTR_NAME);
-                if (attrVal != null) {
-                    throw new IOException("attribute " + ATTR_NAME + " with value: " + attrVal
-                            + " unexpectedly present in exchange: " + exchange.getRequestURI());
-                }
-                // set the value
-                exchange.setAttribute(ATTR_NAME, ATTR_VAL);
-                System.out.println(exchange.getRequestURI() + " set attribute "
-                        + ATTR_NAME + "=" + ATTR_VAL);
-            } else if (exchange.getRequestURI().getQuery().contains("secondreq")) {
-                filteredSecondReq = true;
-                // verify the attribute is already set and the value is the expected one.
-                final Object attrVal = exchange.getAttribute(ATTR_NAME);
-                if (attrVal == null) {
-                    throw new IOException("attribute " + ATTR_NAME + " is missing in exchange: "
-                            + exchange.getRequestURI());
-                }
-                if (!ATTR_VAL.equals(attrVal)) {
-                    throw new IOException("unexpected value: " + attrVal + " for attribute "
-                            + ATTR_NAME + " in exchange: " + exchange.getRequestURI());
-                }
-                System.out.println(exchange.getRequestURI() + " found attribute "
-                        + ATTR_NAME + "=" + attrVal);
-            } else {
-                // unexpected request
-                throw new IOException("unexpected request " + exchange.getRequestURI());
-            }
-            // let the request proceed
-            chain.doFilter(exchange);
-        }
-
-        @Override
-        public String description() {
-            return "AttributeAddingFilter";
         }
     }
 }

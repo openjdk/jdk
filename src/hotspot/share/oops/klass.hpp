@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class Klass : public Metadata {
   friend class JVMCIVMStructs;
  public:
   // Klass Kinds for all subclasses of Klass
-  enum KlassKind {
+  enum KlassKind : u2 {
     InstanceKlassKind,
     InstanceRefKlassKind,
     InstanceMirrorKlassKind,
@@ -113,15 +113,17 @@ class Klass : public Metadata {
   //
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
-  jint        _layout_helper;
+  jint _layout_helper;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
   //  - Various type checking in the JVM
   const KlassKind _kind;
 
-  // Processed access flags, for use by Class.getModifiers.
-  jint        _modifier_flags;
+  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
+  KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -157,52 +159,48 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  markWord _prototype_header;   // Used to initialize objects' header
+
   // Bitmap and hash code used by hashed secondary supers.
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
-  markWord _prototype_header;   // Used to initialize objects' header
-
-  int _vtable_len;              // vtable length. This field may be read very often when we
-                                // have lots of itable dispatches (e.g., lambdas and streams).
-                                // Keep it away from the beginning of a Klass to avoid cacheline
-                                // contention that may happen when a nearby object is modified.
-  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
-                                // Some flags created by the JVM, not in the class file itself,
-                                // are in _misc_flags below.
-
-  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
-
 private:
-  // This is an index into FileMapHeader::_shared_path_table[], to
-  // associate this class with the JAR file where it's loaded from during
-  // dump time. If a class is not loaded from the shared archive, this field is
+  // This is an index into AOTClassLocationConfig::class_locations(), to
+  // indicate the AOTClassLocation where this class is loaded from during
+  // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
   s2 _shared_class_path_index;
 
 #if INCLUDE_CDS
   // Various attributes for shared classes. Should be zero for a non-shared class.
-  u2     _shared_class_flags;
-  enum CDSSharedClassFlags {
-    _is_shared_class                       = 1 << 0,  // shadows MetaspaceObj::is_shared
+  u2 _aot_class_flags;
+  enum  {
+    _in_aot_cache                          = 1 << 0,
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    // This class was not loaded from a classfile in the module image
-    // or classpath.
-    _is_generated_shared_class             = 1 << 5,
-    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
-    _has_aot_initialized_mirror            = 1 << 6,
-    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
-    // method during the production run?
-    _is_runtime_setup_required             = 1 << 7,
+    _is_aot_generated_class                = 1 << 5, // this class was not loaded from a classfile in the module image
+                                                     // or classpath, but was generated during AOT cache assembly.
+    _has_aot_initialized_mirror            = 1 << 6, // archived mirror already initialized by AOT cache assembly.
+                                                     // no further need to call <clinit>
+    _has_aot_safe_initializer              = 1 << 7, // has @AOTSafeClassInitializer annotation
+    _is_runtime_setup_required             = 1 << 8, // has a runtimeSetup method to be called when
+                                                     // this class is loaded from AOT cache
   };
 #endif
 
-  KlassFlags  _misc_flags;
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
+
+public:
+
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
 protected:
 
@@ -221,7 +219,9 @@ protected:
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
-  // If this is not what your code expects, you're probably looking for Klass::java_super().
+  // If this is not what your code expects, you're probably looking for:
+  // - Klass::java_super() - if you have a Klass*
+  // - InstanceKlass::super() - if you have an InstanceKlass* ik, ik->super() returns InstanceKlass*.
   Klass* super() const               { return _super; }
   void set_super(Klass* k)           { _super = k; }
 
@@ -281,7 +281,6 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }
@@ -290,10 +289,6 @@ protected:
   // Set java mirror OopHandle to null for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
-
-  // modifier flags
-  jint modifier_flags() const          { return _modifier_flags; }
-  void set_modifier_flags(jint flags)  { _modifier_flags = flags; }
 
   // size helper
   int layout_helper() const            { return _layout_helper; }
@@ -306,7 +301,6 @@ protected:
   Klass* subklass(bool log = false) const;
   Klass* next_sibling(bool log = false) const;
 
-  InstanceKlass* superklass() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 
   void set_next_link(Klass* k) { _next_link = k; }
@@ -333,75 +327,84 @@ protected:
   void clear_archived_mirror_index() NOT_CDS_JAVA_HEAP_RETURN;
 
   void set_lambda_proxy_is_available() {
-    CDS_ONLY(_shared_class_flags |= _archived_lambda_proxy_is_available;)
+    CDS_ONLY(_aot_class_flags |= _archived_lambda_proxy_is_available;)
   }
   void clear_lambda_proxy_is_available() {
-    CDS_ONLY(_shared_class_flags &= (u2)(~_archived_lambda_proxy_is_available);)
+    CDS_ONLY(_aot_class_flags &= (u2)(~_archived_lambda_proxy_is_available);)
   }
   bool lambda_proxy_is_available() const {
-    CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _archived_lambda_proxy_is_available) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
+    CDS_ONLY(_aot_class_flags |= _has_value_based_class_annotation;)
   }
   void clear_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags &= (u2)(~_has_value_based_class_annotation);)
+    CDS_ONLY(_aot_class_flags &= (u2)(~_has_value_based_class_annotation);)
   }
   bool has_value_based_class_annotation() const {
-    CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_value_based_class_annotation) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_verified_at_dump_time() {
-    CDS_ONLY(_shared_class_flags |= _verified_at_dump_time;)
+    CDS_ONLY(_aot_class_flags |= _verified_at_dump_time;)
   }
   bool verified_at_dump_time() const {
-    CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _verified_at_dump_time) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_archived_enum_objs() {
-    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+    CDS_ONLY(_aot_class_flags |= _has_archived_enum_objs;)
   }
   bool has_archived_enum_objs() const {
-    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_archived_enum_objs) != 0;)
     NOT_CDS(return false;)
   }
 
-  void set_is_generated_shared_class() {
-    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
+  void set_is_aot_generated_class() {
+    CDS_ONLY(_aot_class_flags |= _is_aot_generated_class;)
   }
-  bool is_generated_shared_class() const {
-    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
+  bool is_aot_generated_class() const {
+    CDS_ONLY(return (_aot_class_flags & _is_aot_generated_class) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_aot_initialized_mirror() {
-    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+    CDS_ONLY(_aot_class_flags |= _has_aot_initialized_mirror;)
   }
   bool has_aot_initialized_mirror() const {
-    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_aot_initialized_mirror) != 0;)
     NOT_CDS(return false;)
   }
 
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
+  void set_has_aot_safe_initializer() {
+    CDS_ONLY(_aot_class_flags |= _has_aot_safe_initializer;)
+  }
+  bool has_aot_safe_initializer() const {
+    CDS_ONLY(return (_aot_class_flags & _has_aot_safe_initializer) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
   void set_is_runtime_setup_required() {
-    assert(has_aot_initialized_mirror(), "sanity");
-    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+    CDS_ONLY(_aot_class_flags |= _is_runtime_setup_required;)
   }
   bool is_runtime_setup_required() const {
-    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 
-  bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
-    CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
+  bool in_aot_cache() const                { // shadows MetaspaceObj::in_aot_cache)()
+    CDS_ONLY(return (_aot_class_flags & _in_aot_cache) != 0;)
     NOT_CDS(return false;)
   }
 
-  void set_is_shared() {
-    CDS_ONLY(_shared_class_flags |= _is_shared_class;)
+  void set_in_aot_cache() {
+    CDS_ONLY(_aot_class_flags |= _in_aot_cache;)
   }
 
   // Obtain the module or package for this class
@@ -447,7 +450,6 @@ protected:
   static ByteSize secondary_supers_offset()      { return byte_offset_of(Klass, _secondary_supers); }
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
-  static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
@@ -628,7 +630,7 @@ public:
   virtual void remove_java_mirror();
 
   bool is_unshareable_info_restored() const {
-    assert(is_shared(), "use this for shared classes only");
+    assert(in_aot_cache(), "use this for shared classes only");
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
@@ -737,13 +739,14 @@ public:
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
   inline bool is_loader_alive() const;
+  inline bool is_loader_present_and_alive() const;
 
   void clean_subklass();
 
+  // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
-  static void clean_subklass_tree() {
-    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
-  }
+  // Clean out unnecessary weak klass links from the given InstanceKlass.
+  static void clean_weak_instanceklass_links(InstanceKlass* ik);
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
@@ -756,7 +759,13 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  virtual jint compute_modifier_flags() const = 0;
+  // Get modifier flags from Java mirror cache.
+  int modifier_flags() const;
+
+  // Compute modifier flags from the original data. This also allows
+  // accessing flags when Java mirror is already dead, e.g. during class
+  // unloading.
+  virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

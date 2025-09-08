@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import com.sun.jmx.mbeanserver.ModifiableClassLoaderRepository;
 import com.sun.jmx.mbeanserver.NamedObject;
 import com.sun.jmx.mbeanserver.Repository;
 import com.sun.jmx.mbeanserver.Repository.RegistrationContext;
-import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.lang.ref.WeakReference;
@@ -80,6 +79,8 @@ import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
 import javax.management.loading.ClassLoaderRepository;
+
+import sun.management.Util;
 
 /**
  * This is the default class for MBean manipulation on the agent side. It
@@ -290,8 +291,13 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         throws InstanceAlreadyExistsException, MBeanRegistrationException,
         NotCompliantMBeanException  {
 
-        // ------------------------------
-        // ------------------------------
+        if (object == null) {
+            final RuntimeException wrapped =
+                new IllegalArgumentException("Object cannot be null");
+            throw new RuntimeOperationsException(wrapped,
+                      "Exception occurred trying to register the MBean");
+        }
+
         Class<?> theClass = object.getClass();
 
         Introspector.checkCompliance(theClass);

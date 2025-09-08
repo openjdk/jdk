@@ -10,7 +10,7 @@ package jdk.internal.org.jline.terminal.impl;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ServiceLoader;
+import java.util.Arrays;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
@@ -24,10 +24,26 @@ import jdk.internal.org.jline.utils.OSUtils;
 public class Diag {
 
     public static void main(String[] args) {
-        diag(System.out);
+        diag(System.out, Arrays.asList(args).contains("--verbose"));
     }
 
     public static void diag(PrintStream out) {
+        diag(out, true);
+    }
+
+    public static void diag(PrintStream out, boolean verbose) {
+        new Diag(out, verbose).run();
+    }
+
+    private final PrintStream out;
+    private final boolean verbose;
+
+    public Diag(PrintStream out, boolean verbose) {
+        this.out = out;
+        this.verbose = verbose;
+    }
+
+    public void run() {
         out.println("System properties");
         out.println("=================");
         out.println("os.name =         " + System.getProperty("os.name"));
@@ -56,9 +72,9 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("ffm");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("FFM support not available: " + t);
+            error("FFM support not available", t);
         }
         out.println();
 
@@ -66,9 +82,9 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("jna");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("JNA support not available: " + t);
+            error("JNA support not available", t);
         }
         out.println();
 
@@ -76,9 +92,9 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("jansi");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("Jansi 2 support not available: " + t);
+            error("Jansi 2 support not available", t);
         }
         out.println();
 
@@ -86,9 +102,9 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("jni");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("JNI support not available: " + t);
+            error("JNI support not available", t);
         }
         out.println();
 
@@ -97,26 +113,31 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("exec");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("Exec support not available: " + t);
+            error("Exec support not available", t);
+        }
+
+        if (!verbose) {
+            out.println();
+            out.println("Run with --verbose argument to print stack traces");
         }
     }
 
-    private static void testProvider(PrintStream out, TerminalProvider provider) {
+    private void testProvider(TerminalProvider provider) {
         try {
             out.println("StdIn stream =    " + provider.isSystemStream(SystemStream.Input));
             out.println("StdOut stream =   " + provider.isSystemStream(SystemStream.Output));
             out.println("StdErr stream =   " + provider.isSystemStream(SystemStream.Error));
-        } catch (Throwable t2) {
-            out.println("Unable to check stream: " + t2);
+        } catch (Throwable t) {
+            error("Unable to check stream", t);
         }
         try {
             out.println("StdIn stream name =     " + provider.systemStreamName(SystemStream.Input));
             out.println("StdOut stream name =    " + provider.systemStreamName(SystemStream.Output));
             out.println("StdErr stream name =    " + provider.systemStreamName(SystemStream.Error));
-        } catch (Throwable t2) {
-            out.println("Unable to check stream names: " + t2);
+        } catch (Throwable t) {
+            error("Unable to check stream names", t);
         }
         try (Terminal terminal = provider.sysTerminal(
                 "diag",
@@ -132,9 +153,14 @@ public class Diag {
                 Attributes attr = terminal.enterRawMode();
                 try {
                     out.println("Terminal size: " + terminal.getSize());
-                    ForkJoinTask<Integer> t =
-                            new ForkJoinPool(1).submit(() -> terminal.reader().read(1));
-                    int r = t.get(1000, TimeUnit.MILLISECONDS);
+                    ForkJoinPool forkJoinPool = new ForkJoinPool(1);
+                    try {
+                        ForkJoinTask<Integer> t =
+                                forkJoinPool.submit(() -> terminal.reader().read(1));
+                        t.get(1000, TimeUnit.MILLISECONDS);
+                    } finally {
+                        forkJoinPool.shutdown();
+                    }
                     StringBuilder sb = new StringBuilder();
                     sb.append("The terminal seems to work: ");
                     sb.append("terminal ").append(terminal.getClass().getName());
@@ -146,22 +172,25 @@ public class Diag {
                                         .getName());
                     }
                     out.println(sb);
-                } catch (Throwable t3) {
-                    out.println("Unable to read from terminal: " + t3);
-                    t3.printStackTrace();
+                } catch (Throwable t2) {
+                    error("Unable to read from terminal", t2);
                 } finally {
                     terminal.setAttributes(attr);
                 }
             } else {
                 out.println("Not supported by provider");
             }
-        } catch (Throwable t2) {
-            out.println("Unable to open terminal: " + t2);
-            t2.printStackTrace();
+        } catch (Throwable t) {
+            error("Unable to open terminal", t);
         }
     }
 
-    static <S> S load(Class<S> clazz) {
-        return ServiceLoader.load(clazz, clazz.getClassLoader()).iterator().next();
+    private void error(String message, Throwable cause) {
+        if (verbose) {
+            out.println(message);
+            cause.printStackTrace(out);
+        } else {
+            out.println(message + ": " + cause);
+        }
     }
 }

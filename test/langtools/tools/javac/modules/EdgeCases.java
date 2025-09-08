@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1178,7 +1178,8 @@ public class EdgeCases extends ModuleTestBase {
 
         log = new JavacTask(tb)
             .outdir(classes)
-            .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
+            .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW",
+                     "--release", "24")
             .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
             .files(findJavaFiles(src))
             .run(Task.Expect.FAIL)
@@ -1186,7 +1187,7 @@ public class EdgeCases extends ModuleTestBase {
             .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = List.of(
-                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "Test.java:2:8: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.module.imports), 24, 25",
                 "1 error");
 
         if (!expected.equals(log))

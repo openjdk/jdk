@@ -55,10 +55,10 @@ import static java.lang.foreign.ValueLayout.*;
                             "--enable-native-access=ALL-UNNAMED"})
 public class InternalStrLen {
 
-    private AbstractMemorySegmentImpl singleByteSegment;
-    private AbstractMemorySegmentImpl singleByteSegmentMisaligned;
-    private AbstractMemorySegmentImpl doubleByteSegment;
-    private AbstractMemorySegmentImpl quadByteSegment;
+    private MemorySegment singleByteSegment;
+    private MemorySegment singleByteSegmentMisaligned;
+    private MemorySegment doubleByteSegment;
+    private MemorySegment quadByteSegment;
 
     @Param({"1", "4", "16", "251", "1024"})
     int size;
@@ -66,9 +66,9 @@ public class InternalStrLen {
     @Setup
     public void setup() {
         var arena = Arena.ofAuto();
-        singleByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Byte.BYTES);
-        doubleByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Short.BYTES);
-        quadByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Integer.BYTES);
+        singleByteSegment = arena.allocate((size + 1L) * Byte.BYTES);
+        doubleByteSegment = arena.allocate((size + 1L) * Short.BYTES);
+        quadByteSegment = arena.allocate((size + 1L) * Integer.BYTES);
         Stream.of(singleByteSegment, doubleByteSegment, quadByteSegment)
                 .forEach(s -> IntStream.range(0, (int) s.byteSize() - 1)
                         .forEach(i -> s.set(
@@ -79,7 +79,7 @@ public class InternalStrLen {
         singleByteSegment.set(ValueLayout.JAVA_BYTE, singleByteSegment.byteSize() - Byte.BYTES, (byte) 0);
         doubleByteSegment.set(ValueLayout.JAVA_SHORT, doubleByteSegment.byteSize() - Short.BYTES, (short) 0);
         quadByteSegment.set(ValueLayout.JAVA_INT, quadByteSegment.byteSize() - Integer.BYTES, 0);
-        singleByteSegmentMisaligned = (AbstractMemorySegmentImpl) arena.allocate(singleByteSegment.byteSize() + 1).
+        singleByteSegmentMisaligned = arena.allocate(singleByteSegment.byteSize() + 1).
                 asSlice(1);
         MemorySegment.copy(singleByteSegment, 0, singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
@@ -106,22 +106,22 @@ public class InternalStrLen {
 
     @Benchmark
     public int chunkedSingle() {
-        return StringSupport.strlenByte(singleByteSegment, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegment, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedSingleMisaligned() {
-        return StringSupport.strlenByte(singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedDouble() {
-        return StringSupport.strlenShort(doubleByteSegment, 0, doubleByteSegment.byteSize());
+        return StringSupport.strlenShort((AbstractMemorySegmentImpl) doubleByteSegment, 0, doubleByteSegment.byteSize());
     }
 
     @Benchmark
     public int changedElementQuad() {
-        return StringSupport.strlenInt(quadByteSegment, 0, quadByteSegment.byteSize());
+        return StringSupport.strlenInt((AbstractMemorySegmentImpl) quadByteSegment, 0, quadByteSegment.byteSize());
     }
 
     // These are the legacy methods

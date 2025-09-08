@@ -50,7 +50,6 @@ public interface ECPublicKey extends PublicKey, ECKey {
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
    long serialVersionUID = -3314988629879632826L;
 

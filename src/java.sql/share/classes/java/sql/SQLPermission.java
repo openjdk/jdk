@@ -32,7 +32,7 @@ import java.security.*;
  * A {@code SQLPermission} object contains
  * a name (also referred to as a "target name") but no actions
  * list; there is either a named permission or there is not.
- * The target name is the name of the permission (see below). The
+ * The target name is the name of the permission. The
  * naming convention follows the  hierarchical property naming convention.
  * In addition, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to

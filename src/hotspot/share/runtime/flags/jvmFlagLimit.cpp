@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.inline.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
-#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
-#include "gc/shared/referenceProcessor.hpp"
-#include "oops/markWord.hpp"
 #include "runtime/task.hpp"
 #include "utilities/vmError.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/defaultMethods.hpp"
@@ -583,7 +582,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
       resolved_klass->is_array_klass()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
-    jint new_flags = flags.as_int();
+    u2 new_flags = flags.as_method_flags();
     new_flags = new_flags & (~JVM_ACC_PROTECTED);
     new_flags = new_flags | JVM_ACC_PUBLIC;
     flags.set_flags(new_flags);
@@ -1201,7 +1200,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   }
 
   // ensure that invokespecial's interface method reference is in
-  // a direct superinterface, not an indirect superinterface
+  // a direct superinterface, not an indirect superinterface or unrelated interface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
@@ -1210,7 +1209,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
       stringStream ss;
       ss.print("Interface method reference: '");
       resolved_method->print_external_name(&ss);
-      ss.print("', is in an indirect superinterface of %s",
+      ss.print("', is not in a direct superinterface of %s",
                current_klass->external_name());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
 import static java.lang.Integer.numberOfLeadingZeros;
 import static java.lang.Math.multiplyHigh;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.Float16Math;
 
 /**
  * The {@code Float16} is a class holding 16-bit data
@@ -99,6 +101,7 @@ import static java.lang.Math.multiplyHigh;
 public final class Float16
     extends Number
     implements Comparable<Float16> {
+    /** @serial */
     private final short value;
     private static final long serialVersionUID = 16; // May not be needed when a value class?
 
@@ -321,6 +324,7 @@ public final class Float16
     *
     * @param  f a {@code float}
     */
+    @ForceInline
     public static Float16 valueOf(float f) {
         return new Float16(floatToFloat16(f));
     }
@@ -764,6 +768,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public byte byteValue() {
         return (byte)floatValue();
     }
@@ -785,6 +790,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public short shortValue() {
         return (short)floatValue();
     }
@@ -800,6 +806,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public int intValue() {
         return (int)floatValue();
     }
@@ -830,6 +837,7 @@ public final class Float16
      * @jls 5.1.2 Widening Primitive Conversion
      */
     @Override
+    @ForceInline
     public float floatValue() {
         return float16ToFloat(value);
     }
@@ -845,6 +853,7 @@ public final class Float16
      * @jls 5.1.2 Widening Primitive Conversion
      */
     @Override
+    @ForceInline
     public double doubleValue() {
         return (double)floatValue();
     }
@@ -1191,12 +1200,16 @@ public final class Float16
      * @see Math#sqrt(double)
      */
     public static Float16 sqrt(Float16 radicand) {
-        // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
-        // for preserving the correct final value. The conversion
-        // Float16 -> double preserves the exact numerical value. The
-        // conversion of double -> Float16 also benefits from the
-        // 2p+2 property of IEEE 754 arithmetic.
-        return valueOf(Math.sqrt(radicand.doubleValue()));
+        return Float16Math.sqrt(Float16.class, radicand,
+            (_radicand) -> {
+                // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
+                // for preserving the correct final value. The conversion
+                // Float16 -> double preserves the exact numerical value. The
+                // conversion of double -> Float16 also benefits from the
+                // 2p+2 property of IEEE 754 arithmetic.
+               return valueOf(Math.sqrt(_radicand.doubleValue()));
+            }
+        );
     }
 
     /**
@@ -1398,11 +1411,14 @@ public final class Float16
          *   harmless.
          */
 
-        // product is numerically exact in float before the cast to
-        // double; not necessary to widen to double before the
-        // multiply.
-        double product = (double)(a.floatValue() * b.floatValue());
-        return valueOf(product + c.doubleValue());
+         return Float16Math.fma(Float16.class, a, b, c,
+                (_a, _b, _c) -> {
+                    // product is numerically exact in float before the cast to
+                    // double; not necessary to widen to double before the
+                    // multiply.
+                    double product = (double)(_a.floatValue() * _b.floatValue());
+                    return valueOf(product + _c.doubleValue());
+                });
     }
 
     /**
@@ -2246,7 +2262,7 @@ public final class Float16
          * &lt; 10<sup><i>k</i>+1</sup>.
          * <p>
          * The result is correct when |{@code e}| &le; 6_432_162.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 2, which should meet
          *          |{@code e}| &le; 6_432_162 for safe results.
@@ -2263,7 +2279,7 @@ public final class Float16
          * <p>
          * The result is correct when
          * -3_606_689 &le; {@code e} &le; 3_150_619.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 2, which should meet
          *          -3_606_689 &le; {@code e} &le; 3_150_619 for safe results.
@@ -2280,7 +2296,7 @@ public final class Float16
          * &lt; 2<sup><i>k</i>+1</sup>.
          * <p>
          * The result is correct when |{@code e}| &le; 1_838_394.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 10, which should meet
          *          |{@code e}| &le; 1_838_394 for safe results.

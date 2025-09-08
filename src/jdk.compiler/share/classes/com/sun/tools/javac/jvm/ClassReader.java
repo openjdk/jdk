@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Directive.*;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
@@ -64,11 +63,11 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -118,10 +117,6 @@ public class ClassReader {
     /** Switch: allow records
      */
     boolean allowRecords;
-
-   /** Lint option: warn about classfile issues
-     */
-    boolean lintClassfile;
 
     /** Switch: warn (instead of error) on illegal UTF-8
      */
@@ -303,8 +298,6 @@ public class ClassReader {
         profile = Profile.instance(context);
 
         typevars = WriteableScope.create(syms.noSymbol);
-
-        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
         initAttributeReaders();
     }
@@ -852,11 +845,10 @@ public class ClassReader {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
 
-                if (lintClassfile && !warnedAttrs.contains(name)) {
+                if (!warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        log.warning(LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1203,11 +1195,6 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
-                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
-                                    !preview.participatesInPreview(syms, msym)) {
-                                    throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
-                                }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.STATIC_PHASE);
                                 }
@@ -1562,6 +1549,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.restrictedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == MTH);
                 sym.flags_field |= RESTRICTED;
+            } else if (proxy.type.tsym.flatName() == syms.requiresIdentityInternalType.tsym.flatName()) {
+                Assert.check(sym.kind == VAR);
+                sym.flags_field |= REQUIRES_IDENTITY;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1578,6 +1568,9 @@ public class ClassReader {
                 }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
                     Assert.check(sym.kind == MTH);
                     sym.flags_field |= RESTRICTED;
+                }  else if (proxy.type.tsym == syms.requiresIdentityType.tsym) {
+                    Assert.check(sym.kind == VAR);
+                    sym.flags_field |= REQUIRES_IDENTITY;
                 }
                 proxies.append(proxy);
             }
@@ -1609,9 +1602,7 @@ public class ClassReader {
         } else if (parameterAnnotations.length != numParameters) {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
-            if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
-            }
+            log.warning(LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
             }
@@ -2076,14 +2067,12 @@ public class ClassReader {
             // The method wasn't found: emit a warning and recover
             JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
             try {
-                if (lintClassfile) {
-                    if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
-                    } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                if (failure == null) {
+                    log.warning(LintWarnings.AnnotationMethodNotFound(container, name));
+                } else {
+                    log.warning(LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
-                    }
                 }
             } finally {
                 log.useSource(prevSource);
@@ -2819,9 +2808,8 @@ public class ClassReader {
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
-                if (annotations != null && annotations.proxies != null
-                        && !annotations.proxies.isEmpty()) {
-                    annotate.normal(new AnnotationCompleter(param, annotations.proxies));
+                if (annotations != null && annotations.proxies != null) {
+                    attachAnnotations(param, annotations.proxies);
                 }
             }
             nameIndexLvt += Code.width(t);
@@ -2959,9 +2947,7 @@ public class ClassReader {
 
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
-        if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
-        }
+        log.warning(LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
     }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.

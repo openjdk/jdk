@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -45,7 +44,6 @@
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
-#include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -62,7 +60,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -385,7 +382,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
@@ -419,10 +416,16 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 }
 
 JvmtiThreadState*
-JvmtiExport::get_jvmti_thread_state(JavaThread *thread) {
+JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
+    if (allow_suspend && thread->is_suspended()) {
+      // Suspend here if thread_started got a suspend request during its execution.
+      // Within thread_started we could block on a VM mutex and pick up a suspend
+      // request from debug agent which we need to honor before proceeding.
+      ThreadBlockInVM tbivm(thread, true /* allow suspend */);
+    }
   }
   return thread->jvmti_thread_state();
 }
@@ -670,6 +673,13 @@ void JvmtiExport::post_early_vm_start() {
 void JvmtiExport::post_vm_start() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_START, ("Trg VM start event triggered" ));
 
+  // The JvmtiThreadState is incomplete if initialized in post_early_vm_start
+  // before classes are initialized. It should be updated now.
+  JavaThread *thread  = JavaThread::current();
+  if (thread->jvmti_thread_state() != nullptr) {
+    thread->jvmti_thread_state()->update_thread_oop_during_vm_start();
+  }
+
   // can now enable some events
   JvmtiEventController::vm_start();
 
@@ -679,7 +689,6 @@ void JvmtiExport::post_vm_start() {
     if (!env->early_vmstart_env() && env->is_enabled(JVMTI_EVENT_VM_START)) {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt VM start event sent" ));
 
-      JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMStart callback = env->callbacks()->VMStart;
@@ -854,47 +863,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   return JVMTI_ERROR_NONE;
 }
 
-// Convert an oop to a JavaThread found on the specified ThreadsList.
-// The ThreadsListHandle in the caller "protects" the returned
-// JavaThread *.
-//
-// On success, *jt_pp is set to the converted JavaThread * and
-// JVMTI_ERROR_NONE is returned. On error, returns various
-// JVMTI_ERROR_* values.
-//
-jvmtiError
-JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                  JavaThread ** jt_pp) {
-  assert(t_list != nullptr, "must have a ThreadsList");
-  assert(thread_oop != nullptr, "must have an oop");
-  assert(jt_pp != nullptr, "must have a return JavaThread pointer");
-
-  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
-    // The oop is not a java.lang.Thread.
-    return JVMTI_ERROR_INVALID_THREAD;
-  }
-  // Looks like a java.lang.Thread oop at this point.
-
-  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
-  if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-  // Looks like a live JavaThread at this point.
-
-  if (!t_list->includes(java_thread)) {
-    // Not on the JavaThreads list so it is not alive.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-
-  // Return a live JavaThread that is "protected" by the
-  // ThreadsListHandle in the caller.
-  *jt_pp = java_thread;
-
-  return JVMTI_ERROR_NONE;
-}
-
 class JvmtiClassFileLoadHookPoster : public StackObj {
  private:
   Symbol*            _h_name;
@@ -929,8 +897,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _cached_class_file_ptr = cache_ptr;
     _has_been_modified = false;
 
-    assert(!_thread->is_in_VTMS_transition(), "CFLH events are not allowed in VTMS transition");
-
     _state = JvmtiExport::get_jvmti_thread_state(_thread);
     if (_state != nullptr) {
       _class_being_redefined = _state->get_class_being_redefined();
@@ -940,12 +906,12 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         ModuleEntry* module_entry = InstanceKlass::cast(klass)->module();
         assert(module_entry != nullptr, "module_entry should always be set");
         if (module_entry->is_named() &&
-            module_entry->module() != nullptr &&
+            module_entry->module_oop() != nullptr &&
             !module_entry->has_default_read_edges()) {
           if (!module_entry->set_has_default_read_edges()) {
             // We won a potential race.
             // Add read edges to the unnamed modules of the bootstrap and app class loaders
-            Handle class_module(_thread, module_entry->module()); // Obtain j.l.r.Module
+            Handle class_module(_thread, module_entry->module_oop()); // Obtain j.l.r.Module
             JvmtiExport::add_default_read_edges(class_module, _thread);
           }
         }
@@ -1101,8 +1067,8 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
     return false;
   }
 
-  if (JavaThread::current()->is_in_VTMS_transition()) {
-    return false; // no events should be posted if thread is in VTMS transition
+  if (JavaThread::current()->should_hide_jvmti_events()) {
+    return false;
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -1238,8 +1204,8 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, Method* method, addres
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_BREAKPOINT, ("[%s] Trg Breakpoint triggered",
@@ -1250,7 +1216,7 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, Method* method, addres
     if (!ets->breakpoint_posted() && ets->is_enabled(JVMTI_EVENT_BREAKPOINT)) {
       ThreadState old_os_state = thread->osthread()->get_state();
       thread->osthread()->set_state(BREAKPOINTED);
-      EVT_TRACE(JVMTI_EVENT_BREAKPOINT, ("[%s] Evt Breakpoint sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_BREAKPOINT, ("[%s] Evt Breakpoint sent %s.%s @ %zd",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -1378,8 +1344,12 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassLoad events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassLoad event during JVMTI upcall");
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_LOAD, ("[%s] Trg Class Load triggered",
@@ -1415,8 +1385,12 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassPrepare events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassPrepare event during JVMTI upcall");
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_PREPARE, ("[%s] Trg Class Prepare triggered",
@@ -1753,8 +1727,8 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   assert(objects != nullptr, "Nothing to post");
 
   JavaThread *javaThread = JavaThread::current();
-  if (javaThread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (javaThread->should_hide_jvmti_events()) {
+    return;
   }
   if (!env->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     return; // the event type has been already disabled
@@ -1777,8 +1751,8 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
 
   JavaThread *thread  = JavaThread::current();
 
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   log_error(jvmti)("Posting Resource Exhausted event: %s",
@@ -1820,8 +1794,8 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
     // for any thread that actually wants method entry, interp_only_mode is set
     return;
   }
-  if (mh->jvmti_mount_transition() || thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
+    return;
   }
   EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_ENTRY, ("[%s] Trg Method Entry triggered %s.%s",
                      JvmtiTrace::safe_get_thread_name(thread),
@@ -1862,25 +1836,20 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     return;
   }
 
-  // return a flag when a method terminates by throwing an exception
-  // i.e. if an exception is thrown and it's not caught by the current method
-  bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
   Handle result;
   jvalue value;
   value.j = 0L;
 
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-    // if the method hasn't been popped because of an exception then we populate
-    // the return_value parameter for the callback. At this point we only have
-    // the address of a "raw result" and we just call into the interpreter to
-    // convert this into a jvalue.
-    if (!exception_exit) {
-      oop oop_result;
-      BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-      if (is_reference_type(type)) {
-        result = Handle(thread, oop_result);
-        value.l = JNIHandles::make_local(thread, result());
-      }
+    // At this point we only have the address of a "raw result" and
+    // we just call into the interpreter to convert this into a jvalue.
+    oop oop_result;
+    BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+    assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+           "Stack shouldn't be empty");
+    if (is_reference_type(type)) {
+      result = Handle(thread, oop_result);
+      value.l = JNIHandles::make_local(thread, result());
     }
   }
 
@@ -1888,12 +1857,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // depth 0 as it is already late in the method exiting dance.
   state->set_top_frame_is_exiting();
 
-  // Deferred transition to VM, so we can stash away the return oop before GC
-  // Note that this transition is not needed when throwing an exception, because
-  // there is no oop to retain.
+  // Deferred transition to VM, so we can stash away the return oop before GC.
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
-    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
+    post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
   JRT_BLOCK_END
 
   // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
@@ -1912,8 +1879,8 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          bool exception_exit,
                                          frame current_frame,
                                          jvalue& value) {
-  if (mh->jvmti_mount_transition() || thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_EXIT, ("[%s] Trg Method Exit triggered %s.%s",
@@ -1969,7 +1936,10 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
         // remove the frame's entry
         {
           MutexLocker mu(JvmtiThreadState_lock);
-          ets->clear_frame_pop(cur_frame_number);
+          // Need to recheck the condition as the JVMTI ClearAllFramePops can do its work at a safepoint.
+          if (ets->is_frame_pop(cur_frame_number)) {
+            ets->clear_frame_pop(cur_frame_number);
+          }
         }
       }
     }
@@ -1988,15 +1958,15 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   if (state == nullptr) {
     return;
   }
-  if (mh->jvmti_mount_transition() || thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
+    return;
   }
 
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     ets->compare_and_set_current_location(mh(), location, JVMTI_EVENT_SINGLE_STEP);
     if (!ets->single_stepping_posted() && ets->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
-      EVT_TRACE(JVMTI_EVENT_SINGLE_STEP, ("[%s] Evt Single Step sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_SINGLE_STEP, ("[%s] Evt Single Step sent %s.%s @ %zd",
                     JvmtiTrace::safe_get_thread_name(thread),
                     (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                     (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2030,8 +2000,8 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_EXCEPTION, ("[%s] Trg Exception thrown triggered",
@@ -2043,7 +2013,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
       if (ets->is_enabled(JVMTI_EVENT_EXCEPTION) && (exception != nullptr)) {
 
         EVT_TRACE(JVMTI_EVENT_EXCEPTION,
-                     ("[%s] Evt Exception thrown sent %s.%s @ " INTX_FORMAT,
+                     ("[%s] Evt Exception thrown sent %s.%s @ %zd",
                       JvmtiTrace::safe_get_thread_name(thread),
                       (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                       (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2119,7 +2089,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
     return;
   }
   EVT_TRIG_TRACE(JVMTI_EVENT_EXCEPTION_CATCH,
-                    ("[%s] Trg unwind_due_to_exception triggered %s.%s @ %s" INTX_FORMAT " - %s",
+                    ("[%s] Trg unwind_due_to_exception triggered %s.%s @ %s%zd - %s",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2152,14 +2122,14 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
       assert(!state->is_exception_caught(), "exception must not be caught yet.");
       state->set_exception_caught();
 
-      if (mh->jvmti_mount_transition() || thread->is_in_VTMS_transition()) {
-        return; // no events should be posted if thread is in VTMS transition
+      if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
+        return;
       }
       JvmtiEnvThreadStateIterator it(state);
       for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
         if (ets->is_enabled(JVMTI_EVENT_EXCEPTION_CATCH) && (exception_handle() != nullptr)) {
           EVT_TRACE(JVMTI_EVENT_EXCEPTION_CATCH,
-                     ("[%s] Evt ExceptionCatch sent %s.%s @ " INTX_FORMAT,
+                     ("[%s] Evt ExceptionCatch sent %s.%s @ %zd",
                       JvmtiTrace::safe_get_thread_name(thread),
                       (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                       (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2198,8 +2168,8 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   // function don't make the call unless there is a Java context.
   assert(thread->has_last_Java_frame(), "must be called with a Java context");
 
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   ResourceMark rm;
@@ -2234,8 +2204,8 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_FIELD_ACCESS, ("[%s] Trg Field Access event triggered",
@@ -2243,7 +2213,7 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if (ets->is_enabled(JVMTI_EVENT_FIELD_ACCESS)) {
-      EVT_TRACE(JVMTI_EVENT_FIELD_ACCESS, ("[%s] Evt Field Access event sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_FIELD_ACCESS, ("[%s] Evt Field Access event sent %s.%s @ %zd",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2284,8 +2254,8 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
   // function don't make the call unless there is a Java context.
   assert(thread->has_last_Java_frame(), "must be called with Java context");
 
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   ResourceMark rm;
@@ -2315,8 +2285,8 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   address location, Klass* field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value) {
 
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   if (sig_type == JVM_SIGNATURE_INT || sig_type == JVM_SIGNATURE_BOOLEAN ||
@@ -2390,8 +2360,8 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_FIELD_MODIFICATION,
@@ -2401,7 +2371,7 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if (ets->is_enabled(JVMTI_EVENT_FIELD_MODIFICATION)) {
       EVT_TRACE(JVMTI_EVENT_FIELD_MODIFICATION,
-                   ("[%s] Evt Field Modification event sent %s.%s @ " INTX_FORMAT,
+                   ("[%s] Evt Field Modification event sent %s.%s @ %zd",
                     JvmtiTrace::safe_get_thread_name(thread),
                     (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                     (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2429,8 +2399,8 @@ void JvmtiExport::post_native_method_bind(Method* method, address* function_ptr)
   HandleMark hm(thread);
   methodHandle mh(thread, method);
 
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
   EVT_TRIG_TRACE(JVMTI_EVENT_NATIVE_METHOD_BIND, ("[%s] Trg Native Method Bind event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -2503,7 +2473,7 @@ void JvmtiExport::post_compiled_method_load(nmethod *nm) {
   }
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->is_in_VTMS_transition(), "compiled method load events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in critical sections");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
                  ("[%s] method compile load event triggered",
@@ -2526,7 +2496,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   }
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->is_in_VTMS_transition(), "compiled method load events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in critical sections");
 
   EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
            ("[%s] method compile load event sent %s.%s  ",
@@ -2551,7 +2521,7 @@ void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const v
 
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->is_in_VTMS_transition(), "dynamic code generated events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in critical sections");
 
   // In theory everyone coming thru here is in_vm but we need to be certain
   // because a callee will do a vm->native transition
@@ -2599,7 +2569,7 @@ void JvmtiExport::post_dynamic_code_generated(JvmtiEnv* env, const char *name,
 {
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->is_in_VTMS_transition(), "dynamic code generated events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in critical sections");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_DYNAMIC_CODE_GENERATED,
                  ("[%s] dynamic code generated event triggered (by GenerateEvents)",
@@ -2628,7 +2598,7 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // jvmti thread state.
   // The collector and/or state might be null if JvmtiDynamicCodeEventCollector
   // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = get_jvmti_thread_state(thread, false /* allow_suspend */);
   if (state != nullptr) {
     JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
     if (collector != nullptr) {
@@ -2754,8 +2724,8 @@ void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_CONTENDED_ENTER,
@@ -2787,8 +2757,8 @@ void JvmtiExport::post_monitor_contended_entered(JavaThread *thread, ObjectMonit
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_CONTENDED_ENTERED,
@@ -2821,8 +2791,8 @@ void JvmtiExport::post_monitor_wait(JavaThread *thread, oop object,
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_WAIT,
@@ -2855,8 +2825,8 @@ void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mnt
   if (state == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_MONITOR_WAITED,
@@ -2897,8 +2867,8 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (object == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
   HandleMark hm(thread);
   Handle h(thread, object);
@@ -2934,8 +2904,8 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (object == nullptr) {
     return;
   }
-  if (thread->is_in_VTMS_transition()) {
-    return; // no events should be posted if thread is in VTMS transition
+  if (thread->should_hide_jvmti_events()) {
+    return;
   }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,

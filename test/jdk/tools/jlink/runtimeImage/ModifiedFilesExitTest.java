@@ -40,7 +40,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m ModifiedFilesExitTest
+ * @run main/othervm -Xmx1g ModifiedFilesExitTest
  */
 public class ModifiedFilesExitTest extends ModifiedFilesTest {
 

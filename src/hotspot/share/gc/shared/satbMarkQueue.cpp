@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -54,8 +53,8 @@ static void print_satb_buffer(const char* name,
                               void** buf,
                               size_t index,
                               size_t capacity) {
-  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT
-                " capacity: " SIZE_FORMAT,
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: %zu"
+                " capacity: %zu",
                 name, p2i(buf), index, capacity);
 }
 
@@ -307,7 +306,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   int i = 0;
   while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
-    os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
+    os::snprintf_checked(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
     print_satb_buffer(buffer, buf, nd->index(), nd->capacity());
     nd = nd->next();
     i += 1;
@@ -322,7 +321,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
       _qset(qset), _buffer(buffer) {}
 
     virtual void do_thread(Thread* t) {
-      os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+      (void) os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
       _qset->satb_queue_for_thread(t).print(_buffer);
     }
   } closure(this, buffer);

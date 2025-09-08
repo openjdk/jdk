@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -34,11 +37,12 @@ import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
 
-/**
+/*
  * @test
  * @bug 8170064 8276559
- * @summary  HttpRequest[.Builder] API and behaviour checks
+ * @summary HttpRequest[.Builder] API and behaviour checks
  */
+
 public class HttpRequestBuilderTest {
 
     static final URI TEST_URI = URI.create("http://www.foo.com/");
@@ -262,13 +266,11 @@ public class HttpRequestBuilderTest {
         // verify that the default HEAD() method implementation in HttpRequest.Builder
         // interface works as expected
         HttpRequest defaultHeadReq = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
-        String actualMethod = defaultHeadReq.method();
-        if (!actualMethod.equals("HEAD")) {
-            throw new AssertionError("failed: expected HEAD method but got method: " + actualMethod);
-        }
-        if (defaultHeadReq.bodyPublisher().isEmpty()) {
-            throw new AssertionError("failed: missing bodyPublisher on HEAD request");
-        }
+        assertEquals("HEAD", defaultHeadReq.method(), "Method");
+        assertEquals(false, defaultHeadReq.bodyPublisher().isEmpty(), "Body publisher absence");
+
+        verifyCopy();
+
     }
 
     private static boolean shouldFail(Class<? extends Exception> ...exceptions) {
@@ -295,13 +297,7 @@ public class HttpRequestBuilderTest {
             throw new AssertionError("failed: " + name
                     + ". Unexpected body processor for GET: "
                     + request.bodyPublisher().get());
-
-        if (expectedMethod.equals(method)) {
-            System.out.println("success: " + name);
-        } else {
-            throw new AssertionError("failed: " + name
-                    + ". Expected " + expectedMethod + ", got " + method);
-        }
+        assertEquals(expectedMethod, method, "Method");
     }
 
     static void test0(String name,
@@ -375,6 +371,45 @@ public class HttpRequestBuilderTest {
                         + arg2 + ") - Got expected exception: " + x);
                 return receiver;
             }
+        }
+    }
+
+    private static void verifyCopy() {
+
+        // Create the request builder
+        HttpRequest.Builder requestBuilder = HttpRequest
+                .newBuilder(TEST_URI)
+                .header("X-Foo", "1")
+                .method("GET", noBody())
+                .expectContinue(true)
+                .timeout(Duration.ofSeconds(0xBEEF))
+                .version(HttpClient.Version.HTTP_2);
+
+        // Create the original and the _copy_ requests
+        HttpRequest request = requestBuilder.build();
+        HttpRequest copiedRequest = requestBuilder
+                .copy()
+                .header("X-Foo", "2")
+                .header("X-Bar", "3")
+                .build();
+
+        // Verify copied _references_
+        assertEquals(request.uri(), copiedRequest.uri(), "URI");
+        assertEquals(request.method(), copiedRequest.method(), "Method");
+        assertEquals(request.expectContinue(), copiedRequest.expectContinue(), "Expect continue setting");
+        assertEquals(request.timeout(), copiedRequest.timeout(), "Timeout");
+        assertEquals(request.version(), copiedRequest.version(), "Version");
+
+        // Verify headers
+        assertEquals(request.headers().map(), Map.of("X-Foo", List.of("1")), "Request headers");
+        assertEquals(copiedRequest.headers().map(), Map.of("X-Foo", List.of("1", "2"), "X-Bar", List.of("3")), "Copied request headers");
+
+    }
+
+    private static void assertEquals(Object expected, Object actual, Object name) {
+        if (!Objects.equals(expected, actual)) {
+            String message = String.format("%s mismatch!%nExpected: %s%nActual: %s", name, expected, actual);
+            throw new AssertionError(message);
         }
     }
 

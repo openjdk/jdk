@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8231358
- * @compile ../../nio/file/spi/TestProvider.java AddressTest.java
+ * @compile ../../nio/file/spi/testfsp/testfsp/TestProvider.java AddressTest.java
  * @run testng/othervm AddressTest
  */
 
@@ -51,8 +51,8 @@ public class AddressTest {
 
     @Test
     public static void runTest() throws Exception {
-        TestProvider prov = new TestProvider(FileSystems.getDefault().provider());
-        Path path = prov.getPath(URI.create("file:/"));
+        var fsp = new testfsp.TestProvider(FileSystems.getDefault().provider());
+        Path path = fsp.getPath(URI.create("file:/"));
         assertThrows(IAE, () -> UnixDomainSocketAddress.of(path));
     }
 }

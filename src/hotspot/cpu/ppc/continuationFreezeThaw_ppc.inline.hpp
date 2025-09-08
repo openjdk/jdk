@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,6 +332,9 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
     patch_callee_link(hf, (intptr_t*)badAddress);
   }
 #endif
+}
+
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
 }
 
 //////// Thaw

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.management;
 import java.lang.System.Logger.Level;
 import com.sun.jmx.defaults.JmxProperties;
 import com.sun.jmx.defaults.ServiceName;
-import com.sun.jmx.mbeanserver.Util;
+import sun.management.Util;
 
 /**
  * Represents the MBean server from the management point of view.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * {@link Object#equals(Object) equals} method.
  *
  * @see Annotation
- * @see AnnotationValue
- *
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
+ * @jvms 4.7.16.1 The {@code element_value} structure
  * @since 24
  */
 public sealed interface AnnotationElement
@@ -209,6 +209,8 @@ public sealed interface AnnotationElement
      * @param name the name of the key
      * @param values the associated values
      * @see AnnotationValue#ofArray(AnnotationValue...) AnnotationValue::ofArray
+     * @throws IllegalArgumentException if the number of associated values
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static AnnotationElement ofArray(String name,
                                      AnnotationValue... values) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,16 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
-  class AllowedSpec;
-  static bool is_allowed(AllowedSpec* specs, InstanceKlass* ik);
-
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.
   static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
 
-  static bool is_runtime_setup_required(InstanceKlass* ik);
   static void call_runtime_setup(JavaThread* current, InstanceKlass* ik);
+
+  // Support for regression testing. Available in debug builds only.
+  static void init_test_class(TRAPS) NOT_DEBUG_RETURN;
+  static bool has_test_class() NOT_DEBUG({ return false; });
 };
 
 #endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP

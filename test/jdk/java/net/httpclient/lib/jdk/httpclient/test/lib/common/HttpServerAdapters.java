@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ public interface HttpServerAdapters {
         public abstract OutputStream  getResponseBody();
         public abstract HttpTestRequestHeaders getRequestHeaders();
         public abstract HttpTestResponseHeaders getResponseHeaders();
-        public abstract void sendResponseHeaders(int code, int contentLength) throws IOException;
+        public abstract void sendResponseHeaders(int code, long contentLength) throws IOException;
         public abstract URI getRequestURI();
         public abstract String getRequestMethod();
         public abstract void close();
@@ -292,7 +292,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);
@@ -355,7 +355,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);
@@ -765,7 +765,7 @@ public interface HttpServerAdapters {
     /**
      * A version agnostic adapter class for HTTP Servers.
      */
-    public static abstract class HttpTestServer {
+    abstract class HttpTestServer implements AutoCloseable {
         private static final class ServerLogging {
             private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
             static void enableLogging() {
@@ -781,6 +781,11 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
         public abstract void setRequestApprover(final Predicate<String> approver);
+
+        @Override
+        public void close() throws Exception {
+            stop();
+        }
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -971,6 +976,13 @@ public interface HttpServerAdapters {
                 System.out.println("Http2TestServerImpl: stop");
                 impl.stop();
             }
+
+            @Override
+            public void close() throws Exception {
+                System.out.println("Http2TestServerImpl: close");
+                impl.close();
+            }
+
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()

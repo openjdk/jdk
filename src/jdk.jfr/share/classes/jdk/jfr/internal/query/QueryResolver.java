@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,9 +98,17 @@ final class QueryResolver {
         resolveGroupBy();
         resolveOrderBy();
         resolveWhere();
+        applyIndex();
         applyColumn();
         applyFormat();
         return resultFields;
+    }
+
+    private void applyIndex() {
+        int index = 0;
+        for (Field field : resultFields) {
+            field.index = index++;
+        }
     }
 
     private void resolveWhere() throws QuerySyntaxException {
@@ -238,7 +246,6 @@ final class QueryResolver {
             }
         }
         for (Field field: fields) {
-            field.index = resultFields.size();
             primary.sourceFields.add(field);
             // Convert to String if field data types mismatch
             if (mixedTypes) {

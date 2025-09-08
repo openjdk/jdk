@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -283,10 +283,10 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
   if (framesize != 0) {
-    st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
+    st->print   ("SUB    R_SP, R_SP, %zu", framesize);
   }
 
-  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() == nullptr) {
     st->print("ldr t0, [guard]\n\t");
     st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp t0, t1\n\t");
@@ -362,7 +362,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
-    st->print("ADD    R_SP, R_SP, " SIZE_FORMAT "\n\t",framesize);
+    st->print("ADD    R_SP, R_SP, %zu\n\t",framesize);
   }
   st->print("POP    R_FP|R_LR_LR");
 
@@ -999,6 +999,10 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -1234,11 +1238,11 @@ encode %{
   enc_class save_last_PC %{
     // preserve mark
     address mark = __ inst_mark();
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     int ret_addr_offset = as_MachCall()->ret_addr_offset();
     __ adr(LR, mark + ret_addr_offset);
     __ str(LR, Address(Rthread, JavaThread::last_Java_pc_offset()));
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == 2 * Assembler::InstructionSize, "correct size prediction");
     // restore mark
     __ set_inst_mark(mark);
@@ -1247,11 +1251,11 @@ encode %{
   enc_class preserve_SP %{
     // preserve mark
     address mark = __ inst_mark();
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     // FP is preserved across all calls, even compiled calls.
     // Use it to preserve SP in places where the callee might change the SP.
     __ mov(Rmh_SP_save, SP);
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == 4, "correct size prediction");
     // restore mark
     __ set_inst_mark(mark);
@@ -4506,18 +4510,6 @@ instruct unnecessary_membar_volatile() %{
 %}
 
 //----------Register Move Instructions-----------------------------------------
-// instruct roundDouble_nop(regD dst) %{
-//   match(Set dst (RoundDouble dst));
-//   ins_pipe(empty);
-// %}
-
-
-// instruct roundFloat_nop(regF dst) %{
-//   match(Set dst (RoundFloat dst));
-//   ins_pipe(empty);
-// %}
-
-
 
 // Cast Index to Pointer for unsafe natives
 instruct castX2P(iRegX src, iRegP dst) %{
@@ -8896,13 +8888,8 @@ instruct TailCalljmpInd(IPRegP jump_target, inline_cache_regP method_ptr) %{
   match(TailCall jump_target method_ptr);
 
   ins_cost(CALL_COST);
-  format %{ "MOV    Rexception_pc, LR\n\t"
-            "jump   $jump_target  \t! $method_ptr holds method" %}
+  format %{ "jump   $jump_target  \t! $method_ptr holds method" %}
   ins_encode %{
-    __ mov(Rexception_pc, LR);   // this is used only to call
-                                 // StubRoutines::forward_exception_entry()
-                                 // which expects PC of exception in
-                                 // R5. FIXME?
     __ jump($jump_target$$Register);
   %}
   ins_pipe(tail_call);
@@ -8947,8 +8934,10 @@ instruct ForwardExceptionjmp()
   match(ForwardException);
   ins_cost(CALL_COST);
 
-  format %{ "b    forward_exception_stub" %}
+  format %{ "MOV  Rexception_pc, LR\n\t"
+            "b    forward_exception_entry" %}
   ins_encode %{
+    __ mov(Rexception_pc, LR);
     // OK to trash Rtemp, because Rtemp is used by stub
     __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
   %}
@@ -9000,7 +8989,8 @@ instruct ShouldNotReachHere( )
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(tail_call);

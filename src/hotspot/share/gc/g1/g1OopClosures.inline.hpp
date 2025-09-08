@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 
@@ -50,8 +50,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr(), 0);
-  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
+  Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
+  Prefetch::read(obj->base_addr(), oopDesc::mark_offset_in_bytes() + (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
@@ -150,7 +150,11 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
-    to_rem_set->add_reference(p, _worker_id);
+    G1HeapRegion* from = _g1h->heap_region_containing(p);
+
+    if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
+      to_rem_set->add_reference(p, _worker_id);
+    }
   }
 }
 
@@ -268,7 +272,11 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    rem_set->add_reference(p, _worker_id);
+    G1HeapRegion* from = _g1h->heap_region_containing(p);
+
+    if (from->rem_set()->cset_group() != rem_set->cset_group()) {
+      rem_set->add_reference(p, _worker_id);
+    }
   }
 }
 

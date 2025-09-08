@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "opto/vtransform.hpp"
-#include "opto/vectornode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
@@ -57,7 +58,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_req_or_dependency(stack);
+  collect_nodes_without_strong_in_edges(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -72,8 +73,11 @@ bool VTransformGraph::schedule() {
       //   No  -> we are mid-visit.
       bool all_uses_already_visited = true;
 
-      for (int i = 0; i < vtn->outs(); i++) {
-        VTransformNode* use = vtn->out(i);
+      // We only need to respect the strong edges (data edges and strong memory edges).
+      // Violated weak memory edges are allowed, but require a speculative aliasing
+      // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
+      for (uint i = 0; i < vtn->out_strong_edges(); i++) {
+        VTransformNode* use = vtn->out_strong_edge(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -109,11 +113,11 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no strong input edges (data edges and strong memory edges):
+void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dependency()) {
+    if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
   }
@@ -144,57 +148,346 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-// We use two comparisons, because a subtraction could underflow.
-#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
-  if (a < b) { return -1; }                 \
-  if (a > b) { return  1; }
+void VTransform::apply_speculative_alignment_runtime_checks() {
+  if (VLoop::vectors_should_be_aligned()) {
+#ifdef ASSERT
+    if (_trace._align_vector || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
+    }
+#endif
+
+    const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
+    for (int i = 0; i < vtnodes.length(); i++) {
+      VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+      if (vtn == nullptr) { continue; }
+      MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
+      if (p0 == nullptr) { continue; }
+      const VPointer& vp = vpointer(p0);
+      if (vp.mem_pointer().base().is_object()) { continue; }
+      assert(vp.mem_pointer().base().is_native(), "VPointer base must be object or native");
+
+      // We have a native memory reference. Build a runtime check for it.
+      // See: AlignmentSolver::solve
+      // In a future RFE we may be able to speculate on invar alignment as
+      // well, and allow vectorization of more cases.
+      add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
+    }
+  }
+}
+
+#define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
+  DEBUG_ONLY(                                                         \
+    if (_trace._align_vector || _trace._speculative_runtime_checks) { \
+      tty->print("  " #node ": ");                                    \
+      node->dump();                                                   \
+    }                                                                 \
+  )                                                                   \
+}                                                                     \
+
+// Check: (node % alignment) == 0.
+void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  Node* ctrl = phase()->get_ctrl(node);
+
+  // Cast adr/long -> int
+  if (node->bottom_type()->basic_type() == T_ADDRESS) {
+    // adr -> int/long
+    node = new CastP2XNode(nullptr, node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+  if (node->bottom_type()->basic_type() == T_LONG) {
+    // long -> int
+    node  = new ConvL2INode(node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+
+  Node* mask_alignment = phase()->intcon(alignment-1);
+  Node* base_alignment = new AndINode(node, mask_alignment);
+  phase()->register_new_node(base_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(mask_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(base_alignment);
+
+  Node* zero = phase()->intcon(0);
+  Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
+  BoolNode* bol_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
+  phase()->register_new_node(cmp_alignment, ctrl);
+  phase()->register_new_node(bol_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
+
+  add_speculative_check([&] (Node* ctrl) { return bol_alignment; });
+}
+
+class VPointerWeakAliasingPair : public StackObj {
+private:
+  // Using references instead of pointers would be preferrable, but GrowableArray
+  // requires a default constructor, and we do not have a default constructor for
+  // VPointer.
+  const VPointer* _vp1 = nullptr;
+  const VPointer* _vp2 = nullptr;
+
+  VPointerWeakAliasingPair(const VPointer& vp1, const VPointer& vp2) : _vp1(&vp1), _vp2(&vp2) {
+    assert(vp1.is_valid(), "sanity");
+    assert(vp2.is_valid(), "sanity");
+    assert(!vp1.never_overlaps_with(vp2), "otherwise no aliasing");
+    assert(!vp1.always_overlaps_with(vp2), "otherwise must be strong");
+    assert(VPointer::cmp_summands_and_con(vp1, vp2) <= 0, "must be sorted");
+  }
+
+public:
+  // Default constructor to make GrowableArray happy.
+  VPointerWeakAliasingPair() : _vp1(nullptr), _vp2(nullptr) {}
+
+  static VPointerWeakAliasingPair make(const VPointer& vp1, const VPointer& vp2) {
+    if (VPointer::cmp_summands_and_con(vp1, vp2) <= 0) {
+      return VPointerWeakAliasingPair(vp1, vp2);
+    } else {
+      return VPointerWeakAliasingPair(vp2, vp1);
+    }
+  }
+
+  const VPointer& vp1() const { return *_vp1; }
+  const VPointer& vp2() const { return *_vp2; }
+
+  // Sort by summands, so that pairs with same summands (summand1, summands2) are adjacent.
+  static int cmp_for_sort(VPointerWeakAliasingPair* pair1, VPointerWeakAliasingPair* pair2) {
+    int cmp_summands1 = VPointer::cmp_summands(pair1->vp1(), pair2->vp1());
+    if (cmp_summands1 != 0) { return cmp_summands1; }
+    return VPointer::cmp_summands(pair1->vp2(), pair2->vp2());
+  }
+};
+
+void VTransform::apply_speculative_aliasing_runtime_checks() {
+
+  if (_vloop.use_speculative_aliasing_checks()) {
+
+#ifdef ASSERT
+    if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_aliasing_runtime_checks: speculative aliasing analysis runtime checks");
+    }
+#endif
+
+    // It would be nice to add a ResourceMark here. But it would collide with resource allocation
+    // in PhaseIdealLoop::set_idom for _idom and _dom_depth. See also JDK-8337015.
+    VectorSet visited;
+    GrowableArray<VPointerWeakAliasingPair> weak_aliasing_pairs;
+
+    const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
+    for (int i = 0; i < schedule.length(); i++) {
+      VTransformNode* vtn = schedule.at(i);
+      for (uint i = 0; i < vtn->out_weak_edges(); i++) {
+        VTransformNode* use = vtn->out_weak_edge(i);
+        if (visited.test(use->_idx)) {
+          // The use node was already visited, i.e. is higher up in the schedule.
+          // The "out" edge thus points backward, i.e. it is violated.
+          const VPointer& vp1 = vtn->vpointer();
+          const VPointer& vp2 = use->vpointer();
+#ifdef ASSERT
+          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+            tty->print_cr("\nViolated Weak Edge:");
+            vtn->print();
+            vp1.print_on(tty);
+            use->print();
+            vp2.print_on(tty);
+          }
+#endif
+
+          // We could generate checks for the pair (vp1, vp2) directly. But in
+          // some graphs, this generates quadratically many checks. Example:
+          //
+          //   set1: a[i+0] a[i+1] a[i+2] a[i+3]
+          //   set2: b[i+0] b[i+1] b[i+2] b[i+3]
+          //
+          // We may have a weak memory edge between every memory access from
+          // set1 to every memory access from set2. In this example, this would
+          // be 4 * 4 = 16 checks. But instead, we can create a union VPointer
+          // for set1 and set2 each, and only create a single check.
+          //
+          //   set1: a[i+0, size = 4]
+          //   set1: b[i+0, size = 4]
+          //
+          // For this, we add all pairs to an array, and process it below.
+          weak_aliasing_pairs.push(VPointerWeakAliasingPair::make(vp1, vp2));
+        }
+      }
+      visited.set(vtn->_idx);
+    }
+
+    // Sort so that all pairs with the same summands (summands1, summands2)
+    // are consecutive, i.e. in the same group. This allows us to do a linear
+    // walk over all pairs of a group and create the union VPointers.
+    weak_aliasing_pairs.sort(VPointerWeakAliasingPair::cmp_for_sort);
+
+    int group_start = 0;
+    while (group_start < weak_aliasing_pairs.length()) {
+      // New group: pick the first pair as the reference.
+      const VPointer* vp1 = &weak_aliasing_pairs.at(group_start).vp1();
+      const VPointer* vp2 = &weak_aliasing_pairs.at(group_start).vp2();
+      jint size1 = vp1->size();
+      jint size2 = vp2->size();
+      int group_end = group_start + 1;
+      while (group_end < weak_aliasing_pairs.length()) {
+        const VPointer* vp1_next = &weak_aliasing_pairs.at(group_end).vp1();
+        const VPointer* vp2_next = &weak_aliasing_pairs.at(group_end).vp2();
+        jint size1_next = vp1_next->size();
+        jint size2_next = vp2_next->size();
+
+        // Different summands -> different group.
+        if (VPointer::cmp_summands(*vp1, *vp1_next) != 0) { break; }
+        if (VPointer::cmp_summands(*vp2, *vp2_next) != 0) { break; }
+
+        // Pick the one with the lower con as the reference.
+        if (vp1->con() > vp1_next->con()) {
+          swap(vp1, vp1_next);
+          swap(size1, size1_next);
+        }
+        if (vp2->con() > vp2_next->con()) {
+          swap(vp2, vp2_next);
+          swap(size2, size2_next);
+        }
+
+        // Compute the distance from vp1 to vp1_next + size, to get a size that would include vp1_next.
+        NoOverflowInt new_size1 = NoOverflowInt(vp1_next->con()) + NoOverflowInt(size1_next) - NoOverflowInt(vp1->con());
+        NoOverflowInt new_size2 = NoOverflowInt(vp2_next->con()) + NoOverflowInt(size2_next) - NoOverflowInt(vp2->con());
+        if (new_size1.is_NaN() || new_size2.is_NaN()) { break; /* overflow -> new group */ }
+
+        // The "next" VPointer indeed belong to the group.
+        //
+        // vp1:       |-------------->
+        // vp1_next:            |---------------->
+        // result:    |-------------------------->
+        //
+        // vp1:       |-------------------------->
+        // vp1_next:            |------->
+        // result:    |-------------------------->
+        //
+        size1 = MAX2(size1, new_size1.value());
+        size2 = MAX2(size2, new_size2.value());
+        group_end++;
+      }
+      // Create "union" VPointer that cover all VPointer from the group.
+      const VPointer vp1_union = vp1->make_with_size(size1);
+      const VPointer vp2_union = vp2->make_with_size(size2);
+
+#ifdef ASSERT
+      if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+        tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
+        vp1_union.print_on(tty);
+        vp2_union.print_on(tty);
+      }
+
+      // Verification - union must contain all VPointer of the group.
+      for (int i = group_start; i < group_end; i++) {
+        const VPointer& vp1_i = weak_aliasing_pairs.at(i).vp1();
+        const VPointer& vp2_i = weak_aliasing_pairs.at(i).vp2();
+        assert(vp1_union.con() <= vp1_i.con(), "must start before");
+        assert(vp2_union.con() <= vp2_i.con(), "must start before");
+        assert(vp1_union.size() >= vp1_i.size(), "must end after");
+        assert(vp2_union.size() >= vp2_i.size(), "must end after");
+      }
+#endif
+
+      add_speculative_check([&] (Node* ctrl) {
+        return vp1_union.make_speculative_aliasing_check_with(vp2_union, ctrl);
+      });
+
+      group_start = group_end;
+    }
+  }
+}
+
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check:
+//   - Alignment:
+//       See VTransform::add_speculative_alignment_check
+//   - Aliasing:
+//       See VTransform::apply_speculative_aliasing_runtime_checks
+//   There is a two staged approach for compilation:
+//   - AutoVectorization Predicate:
+//       See VM flag UseAutoVectorizationPredicate and documentation in predicates.hpp
+//       We speculate that the checks pass, and only compile a vectorized  loop.
+//       We expect the checks to pass in almost all cases, and so we only need
+//       to compile and cache the vectorized loop.
+//       If the predicate ever fails, we deoptimize, and eventually compile
+//       without predicate. This means we will recompile with multiversioning.
+//    - Multiversioning:
+//       See VM Flag LoopMultiversioning and documentaiton in loopUnswitch.cpp
+//       If the predicate is not available or previously failed, then we compile
+//       a vectorized and a scalar loop. If the runtime check passes we take the
+//       vectorized loop, else the scalar loop.
+//       Multiversioning takes more compile time and code cache, but it also
+//       produces fast code for when the runtime check passes (vectorized) and
+//       when it fails (scalar performance).
+//
+// Callback:
+//   In some cases, we require the ctrl just before the check iff_speculate to
+//   generate the values required in the check. We pass this ctrl into the
+//   callback, which is expected to produce the check, i.e. a BoolNode.
+template<typename Callback>
+void VTransform::add_speculative_check(Callback callback) {
+  assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
+  ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
+  IfTrueNode* new_check_proj = nullptr;
+  if (parse_predicate_proj != nullptr) {
+    new_check_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                          Deoptimization::Reason_auto_vectorization_check,
+                                                          Op_If);
+  } else {
+    new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
+  }
+  Node* iff_speculate = new_check_proj->in(0);
+
+  // Create the check, given the ctrl just before the iff.
+  BoolNode* bol = callback(iff_speculate->in(0));
+
+  igvn().replace_input_of(iff_speculate, 1, bol);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
+}
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
-// It represents a memory region: [ptr, ptr + memory_size)
-class VMemoryRegion : public StackObj {
+// It wraps a VPointer. The VPointer has an iv_offset applied, which
+// simulates a virtual unrolling. They represent the memory region:
+//   [adr, adr + size)
+//   adr = base + invar + iv_scale * (iv + iv_offset) + con
+class VMemoryRegion : public ResourceObj {
 private:
-  Node* _base;        // ptr = base + offset + invar + scale * iv
-  int _scale;
-  Node* _invar;
-  int _offset;
-  uint _memory_size;
+  // Note: VPointer has no default constructor, so we cannot use VMemoryRegion
+  //       in-place in a GrowableArray. Hence, we make VMemoryRegion a resource
+  //       allocated object, so the GrowableArray of VMemoryRegion* has a default
+  //       nullptr element.
+  const VPointer _vpointer;
   bool _is_load;      // load or store?
   uint _schedule_order;
 
 public:
-  VMemoryRegion() {} // empty constructor for GrowableArray
-  VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, uint schedule_order) :
-    _base(vpointer.base()),
-    _scale(vpointer.scale_in_bytes()),
-    _invar(vpointer.invar()),
-    _offset(vpointer.offset_in_bytes() + _scale * iv_offset),
-    _memory_size(vpointer.memory_size() * vector_length),
-    _is_load(vpointer.mem()->is_Load()),
+  VMemoryRegion(const VPointer& vpointer, bool is_load, uint schedule_order) :
+    _vpointer(vpointer),
+    _is_load(is_load),
     _schedule_order(schedule_order) {}
 
-    Node* base()          const { return _base; }
-    int scale()           const { return _scale; }
-    Node* invar()         const { return _invar; }
-    int offset()          const { return _offset; }
-    uint memory_size()    const { return _memory_size; }
+    const VPointer& vpointer() const { return _vpointer; }
     bool is_load()        const { return _is_load; }
     uint schedule_order() const { return _schedule_order; }
 
     static int cmp_for_sort_by_group(VMemoryRegion* r1, VMemoryRegion* r2) {
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->base()->_idx, r2->base()->_idx);
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->scale(),      r2->scale());
-      int r1_invar_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
-      int r2_invar_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_invar_idx,      r2_invar_idx);
-      return 0; // equal
+      // Sort by mem_pointer (base, invar, iv_scale), except for the con.
+      return MemPointer::cmp_summands(r1->vpointer().mem_pointer(),
+                                      r2->vpointer().mem_pointer());
     }
 
-    static int cmp_for_sort(VMemoryRegion* r1, VMemoryRegion* r2) {
-      int cmp_group = cmp_for_sort_by_group(r1, r2);
+    static int cmp_for_sort(VMemoryRegion** r1, VMemoryRegion** r2) {
+      int cmp_group = cmp_for_sort_by_group(*r1, *r2);
       if (cmp_group != 0) { return cmp_group; }
 
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->offset(),     r2->offset());
-      return 0; // equal
+      // We use two comparisons, because a subtraction could underflow.
+      jint con1 = (*r1)->vpointer().con();
+      jint con2 = (*r2)->vpointer().con();
+      if (con1 < con2) { return -1; }
+      if (con1 > con2) { return  1; }
+      return 0;
     }
 
     enum Aliasing { DIFFERENT_GROUP, BEFORE, EXACT_OVERLAP, PARTIAL_OVERLAP, AFTER };
@@ -204,26 +497,23 @@ public:
       VMemoryRegion* p2 = &other;
       if (cmp_for_sort_by_group(p1, p2) != 0) { return DIFFERENT_GROUP; }
 
-      jlong offset1 = p1->offset();
-      jlong offset2 = p2->offset();
-      jlong memory_size1 = p1->memory_size();
-      jlong memory_size2 = p2->memory_size();
+      jlong con1 = p1->vpointer().con();
+      jlong con2 = p2->vpointer().con();
+      jlong size1 = p1->vpointer().size();
+      jlong size2 = p2->vpointer().size();
 
-      if (offset1 >= offset2 + memory_size2) { return AFTER; }
-      if (offset2 >= offset1 + memory_size1) { return BEFORE; }
-      if (offset1 == offset2 && memory_size1 == memory_size2) { return EXACT_OVERLAP; }
+      if (con1 >= con2 + size2) { return AFTER; }
+      if (con2 >= con1 + size1) { return BEFORE; }
+      if (con1 == con2 && size1 == size2) { return EXACT_OVERLAP; }
       return PARTIAL_OVERLAP;
     }
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), base",
-               _is_load ? "load " : "store", _memory_size, _schedule_order);
-    VPointer::print_con_or_idx(_base);
-    tty->print(" + offset(%4d)", _offset);
-    tty->print(" + invar");
-    VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%4d) * iv]", _scale);
+    tty->print("VMemoryRegion[%s schedule_order(%4d), ",
+               _is_load ? "load, " : "store,", _schedule_order);
+    vpointer().print_on(tty, false);
+    tty->print_cr("]");
   }
 #endif
 };
@@ -329,7 +619,8 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // Collect all pointers for scalar and vector loads/stores.
   ResourceMark rm;
-  GrowableArray<VMemoryRegion> memory_regions;
+  // Use pointers because no default constructor for elements available.
+  GrowableArray<VMemoryRegion*> memory_regions;
 
   // To detect store-to-load-forwarding failures at the iteration threshold or below, we
   // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
@@ -350,11 +641,16 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
-        if (p.valid()) {
+        const VPointer& p = vtn->vpointer();
+        if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
-          uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
-          memory_regions.push(VMemoryRegion(p, iv_offset, vector_length, schedule_order++));
+          bool is_load = vtn->is_load_in_loop();
+          const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
+          if (iv_offset_p.is_valid()) {
+            // The iv_offset may lead to overflows. This is a heuristic, so we do not
+            // care too much about those edge cases.
+            memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          }
         }
       }
     }
@@ -369,7 +665,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
     tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
     for (int i = 0; i < memory_regions.length(); i++) {
-      VMemoryRegion& region = memory_regions.at(i);
+      VMemoryRegion& region = *memory_regions.at(i);
       region.print();
     }
   }
@@ -377,10 +673,10 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // For all pairs of pointers in the same group, check if they have a partial overlap.
   for (int i = 0; i < memory_regions.length(); i++) {
-    VMemoryRegion& region1 = memory_regions.at(i);
+    VMemoryRegion& region1 = *memory_regions.at(i);
 
     for (int j = i + 1; j < memory_regions.length(); j++) {
-      VMemoryRegion& region2 = memory_regions.at(j);
+      VMemoryRegion& region2 = *memory_regions.at(j);
 
       const VMemoryRegion::Aliasing aliasing = region1.aliasing(region2);
       if (aliasing == VMemoryRegion::Aliasing::DIFFERENT_GROUP ||
@@ -412,69 +708,88 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   return false;
 }
 
-Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
-  assert(n != nullptr, "must find input IR node");
+void VTransformApplyState::set_transformed_node(VTransformNode* vtn, Node* n) {
+  assert(_vtnode_idx_to_transformed_node.at(vtn->_idx) == nullptr, "only set once");
+  _vtnode_idx_to_transformed_node.at_put(vtn->_idx, n);
+}
+
+Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
+  Node* n = _vtnode_idx_to_transformed_node.at(vtn->_idx);
+  assert(n != nullptr, "must find IR node for vtnode");
   return n;
 }
 
-VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                  const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                     const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
+  // This was just wrapped. Now we simply unwap without touching the inputs.
+  return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
+  Node* val = apply_state.transformed_node(in_req(1));
   VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
-  register_new_node_from_vectorization(vloop_analyzer, vn, val);
+  register_new_node_from_vectorization(apply_state, vn, val);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_state) const {
+  Node* val = apply_state.transformed_node(in_req(1));
   Node* n = new ConvI2LNode(val);
-  register_new_node_from_vectorization(vloop_analyzer, n, val);
+  register_new_node_from_vectorization(apply_state, n, val);
   return VTransformApplyResult::make_scalar(n);
 }
 
-VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  Node* shift_count_in = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* shift_count_in = apply_state.transformed_node(in_req(1));
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.
-  Node* shift_count_masked = new AndINode(shift_count_in, phase->igvn().intcon(_mask));
-  register_new_node_from_vectorization(vloop_analyzer, shift_count_masked, shift_count_in);
+  Node* shift_count_masked = new AndINode(shift_count_in, phase->intcon(_mask));
+  register_new_node_from_vectorization(apply_state, shift_count_masked, shift_count_in);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
   VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
-  register_new_node_from_vectorization(vloop_analyzer, vn, shift_count_in);
+  register_new_node_from_vectorization(apply_state, vn, shift_count_in);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
 
-VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                         const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* val = apply_state.transformed_node(in_req(1));
   assert(val->is_Phi(), "expected to be iv");
   assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
-  VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
-  register_new_node_from_vectorization(vloop_analyzer, vn, val);
+  VectorNode* vn = new PopulateIndexNode(val, phase->intcon(1), vt);
+  register_new_node_from_vectorization(apply_state, vn, val);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                             const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
 
   if (first->is_Cmp()) {
     // Cmp + Bool -> VectorMaskCmp
@@ -484,9 +799,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
-  Node* in1 =                find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* in2 = (req() >= 3) ? find_transformed_input(2, vnode_idx_to_transformed_node) : nullptr;
-  Node* in3 = (req() >= 4) ? find_transformed_input(3, vnode_idx_to_transformed_node) : nullptr;
+  Node* in1 =                apply_state.transformed_node(in_req(1));
+  Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
+  Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
@@ -495,6 +810,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    const TypeVect* vt = TypeVect::make(bt, vlen);
+    vn = new VectorReinterpretNode(in1, in1->bottom_type()->is_vect(), vt);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
@@ -502,7 +821,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
     VectorNode* long_vn = VectorNode::make(opc, in1, nullptr, vlen, T_LONG);
-    register_new_node_from_vectorization(vloop_analyzer, long_vn, first);
+    register_new_node_from_vectorization(apply_state, long_vn, first);
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
@@ -511,58 +830,56 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD ||
-           opc == Op_FmaF ||
+    assert(opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");
     vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
   }
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& apply_state) const {
   BoolNode* first = nodes().at(0)->as_Bool();
   uint  vlen = nodes().length();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
+  VTransformElementWiseVectorNode* vtn_cmp = in_req(1)->isa_ElementWiseVector();
   assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
-  Node* cmp_in1 = vtn_cmp->find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* cmp_in2 = vtn_cmp->find_transformed_input(2, vnode_idx_to_transformed_node);
+  Node* cmp_in1 = apply_state.transformed_node(vtn_cmp->in_req(1));
+  Node* cmp_in2 = apply_state.transformed_node(vtn_cmp->in_req(2));
   BoolTest::mask mask = test()._mask;
 
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  ConINode* mask_node  = phase->igvn().intcon((int)mask);
+  PhaseIdealLoop* phase = apply_state.phase();
+  ConINode* mask_node  = phase->intcon((int)mask);
   const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                           const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
   BasicType bt = first->bottom_type()->basic_type();
 
-  Node* init = find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
+  Node* init = apply_state.transformed_node(in_req(1));
+  Node* vec  = apply_state.transformed_node(in_req(2));
 
   ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
   LoadNode* first = nodes().at(0)->as_Load();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -570,29 +887,29 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   Node* adr  = first->in(MemNode::Address);
   int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  BasicType bt = apply_state.vloop_analyzer().types().velt_basic_type(first);
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
+  const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
-    VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
-    if (p_store.overlap_possible_with_any_in(nodes())) {
-      break;
-    } else {
+    VPointer store_p(mem->as_Mem(), apply_state.vloop());
+    if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
+    } else {
+      break;
     }
   }
 
   LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& apply_state) const {
   StoreNode* first = nodes().at(0)->as_Store();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -601,18 +918,18 @@ VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
 
-  Node* value = find_transformed_input(MemNode::ValueIn, vnode_idx_to_transformed_node);
+  Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
   StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   Node* first = nodes().at(0);
 
-  register_new_node_from_vectorization(vloop_analyzer, vn, first);
+  register_new_node_from_vectorization(apply_state, vn, first);
 
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
@@ -620,8 +937,8 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
   }
 }
 
-void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn, Node* old_node) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   phase->register_new_node_with_ctrl_of(vn, old_node);
   phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
@@ -663,14 +980,26 @@ void VTransformNode::print() const {
     print_node_idx(_in.at(i));
   }
   if ((uint)_in.length() > _req) {
-    tty->print(" |");
-    for (int i = _req; i < _in.length(); i++) {
+    tty->print(" | strong:");
+    for (uint i = _req; i < _in_end_strong_memory_edges; i++) {
+      print_node_idx(_in.at(i));
+    }
+  }
+  if ((uint)_in.length() > _in_end_strong_memory_edges) {
+    tty->print(" | weak:");
+    for (uint i = _in_end_strong_memory_edges; i < (uint)_in.length(); i++) {
       print_node_idx(_in.at(i));
     }
   }
   tty->print(") [");
-  for (int i = 0; i < _out.length(); i++) {
+  for (uint i = 0; i < _out_end_strong_edges; i++) {
     print_node_idx(_out.at(i));
+  }
+  if ((uint)_out.length() > _out_end_strong_edges) {
+    tty->print(" | weak:");
+    for (uint i = _out_end_strong_edges; i < (uint)_out.length(); i++) {
+      print_node_idx(_out.at(i));
+    }
   }
   tty->print("] ");
   print_spec();
@@ -685,7 +1014,24 @@ void VTransformNode::print_node_idx(const VTransformNode* vtn) {
   }
 }
 
-void VTransformScalarNode::print_spec() const {
+void VTransformMemopScalarNode::print_spec() const {
+  tty->print("node[%d %s] ", _node->_idx, _node->Name());
+  _vpointer.print_on(tty, false);
+}
+
+void VTransformDataScalarNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformLoopPhiNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformCFGNode::print_spec() const {
+  tty->print("node[%d %s]", _node->_idx, _node->Name());
+}
+
+void VTransformOuterNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
@@ -713,5 +1059,9 @@ void VTransformVectorNode::print_spec() const {
     tty->print("%d %s", n->_idx, n->Name());
   }
   tty->print("]");
+  if (is_load_or_store_in_loop()) {
+    tty->print(" ");
+    vpointer().print_on(tty, false);
+  }
 }
 #endif
