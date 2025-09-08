@@ -217,7 +217,7 @@ public:
   void push_va(ciEnv* ci, const char* fmt, va_list args) {
     char *e = ci->_dyno_name + strlen(ci->_dyno_name);
     char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
-    os::vsnprintf(e, m - e, fmt, args);
+    (void) os::vsnprintf(e, m - e, fmt, args);
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 

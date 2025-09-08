@@ -26,14 +26,45 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP
 
 #include "gc/shared/ageTable.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "utilities/ostream.hpp"
 
 class ShenandoahEvacuationStats : public CHeapObj<mtGC> {
 private:
-  size_t _evacuations_completed;
-  size_t _bytes_completed;
-  size_t _evacuations_attempted;
-  size_t _bytes_attempted;
+  struct ShenandoahEvacuations {
+    size_t _evacuations_completed;
+    size_t _bytes_completed;
+    size_t _evacuations_attempted;
+    size_t _bytes_attempted;
+    ShenandoahEvacuations()
+      : _evacuations_completed(0)
+      , _bytes_completed(0)
+      , _evacuations_attempted(0)
+      , _bytes_attempted(0) {
+    }
+
+    void accumulate(const ShenandoahEvacuations& other) {
+      _evacuations_completed += other._evacuations_completed;
+      _bytes_completed += other._bytes_completed;
+      _evacuations_attempted += other._evacuations_attempted;
+      _bytes_attempted += other._bytes_attempted;
+    }
+
+    void reset() {
+      _evacuations_completed = 0;
+      _bytes_completed = 0;
+      _evacuations_attempted = 0;
+      _bytes_attempted = 0;
+    }
+
+    void print_on(outputStream* st) const;
+  };
+
+  ShenandoahEvacuations* get_category(ShenandoahAffiliation from, ShenandoahAffiliation to);
+
+  ShenandoahEvacuations _young;
+  ShenandoahEvacuations _old;
+  ShenandoahEvacuations _promotion;
 
   bool      _use_age_table;
   AgeTable* _age_table;
@@ -43,11 +74,14 @@ private:
 
   AgeTable* age_table() const;
 
-  void begin_evacuation(size_t bytes);
-  void end_evacuation(size_t bytes);
+  // Record that the current thread is attempting to copy this many bytes.
+  void begin_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
+
+  // Record that the current thread has completed copying this many bytes.
+  void end_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
   void record_age(size_t bytes, uint age);
 
-  void print_on(outputStream* st);
+  void print_on(outputStream* st) const;
   void accumulate(const ShenandoahEvacuationStats* other);
   void reset();
 };
@@ -66,8 +100,12 @@ private:
 public:
   ShenandoahEvacuationTracker() = default;
 
-  void begin_evacuation(Thread* thread, size_t bytes);
-  void end_evacuation(Thread* thread, size_t bytes);
+  // Record that the given thread has begun to evacuate an object of this size.
+  void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
+
+  // Multiple threads may attempt to evacuate the same object, but only the successful thread will end the evacuation.
+  // Evacuations that were begun, but not ended are considered 'abandoned'.
+  void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
   void record_age(Thread* thread, size_t bytes, uint age);
 
   void print_global_on(outputStream* st);

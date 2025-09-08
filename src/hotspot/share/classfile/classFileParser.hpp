@@ -192,6 +192,7 @@ class ClassFileParser {
   bool _has_localvariable_table;
   bool _has_final_method;
   bool _has_contended_fields;
+  bool _has_aot_runtime_setup_method;
 
   // precomputed flags
   bool _has_finalizer;
@@ -241,10 +242,10 @@ class ClassFileParser {
                         bool* has_nonstatic_concrete_methods,
                         TRAPS);
 
-  const InstanceKlass* parse_super_class(ConstantPool* const cp,
-                                         const int super_class_index,
-                                         const bool need_verify,
-                                         TRAPS);
+  void check_super_class(ConstantPool* const cp,
+                         const int super_class_index,
+                         const bool need_verify,
+                         TRAPS);
 
   // Field parsing
   void parse_field_attributes(const ClassFileStream* const cfs,

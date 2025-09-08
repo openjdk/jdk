@@ -81,19 +81,19 @@ class G1YoungGCTraceTime {
     evacuation_failed_string[0] = '\0';
 
     if (_collector->evacuation_failed()) {
-      snprintf(evacuation_failed_string,
-               ARRAY_SIZE(evacuation_failed_string),
-               " (Evacuation Failure: %s%s%s)",
-               _collector->evacuation_alloc_failed() ? "Allocation" : "",
-               _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
-               _collector->evacuation_pinned() ? "Pinned" : "");
+      os::snprintf_checked(evacuation_failed_string,
+                           ARRAY_SIZE(evacuation_failed_string),
+                           " (Evacuation Failure: %s%s%s)",
+                           _collector->evacuation_alloc_failed() ? "Allocation" : "",
+                           _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
+                           _collector->evacuation_pinned() ? "Pinned" : "");
     }
-    snprintf(_young_gc_name_data,
-             MaxYoungGCNameLength,
-             "Pause Young (%s) (%s)%s",
-             G1GCPauseTypeHelper::to_string(_pause_type),
-             GCCause::to_string(_pause_cause),
-             evacuation_failed_string);
+    os::snprintf_checked(_young_gc_name_data,
+                         MaxYoungGCNameLength,
+                         "Pause Young (%s) (%s)%s",
+                         G1GCPauseTypeHelper::to_string(_pause_type),
+                         GCCause::to_string(_pause_cause),
+                         evacuation_failed_string);
     return _young_gc_name_data;
   }
 
@@ -271,7 +271,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->initial_region_length() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -519,7 +519,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
     sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
-
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
