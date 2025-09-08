@@ -44,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @build ByteBufferUtils
  *        RecordingSubscriber
  * @run junit OfInputStreamTest
+ *
+ * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
  * @run main/othervm -Xmx64m OfInputStreamTest testOOM
  */
 
@@ -183,6 +185,9 @@ public class OfInputStreamTest {
 
     }
 
+    /**
+     * Initiates tests that depend on a custom-configured JVM.
+     */
     public static void main(String[] args) throws Exception {
         if ("testOOM".equals(args[0])) {
             testOOM();

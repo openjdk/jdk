@@ -49,6 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @build ByteBufferUtils
  *        RecordingSubscriber
  * @run junit OfByteArraysTest
+ *
+ * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
  * @run main/othervm -Xmx64m OfByteArraysTest testOOM
  */
 
@@ -255,6 +257,9 @@ public class OfByteArraysTest {
 
     }
 
+    /**
+     * Initiates tests that depend on a custom-configured JVM.
+     */
     public static void main(String[] args) throws Exception {
         if ("testOOM".equals(args[0])) {
             testOOM();

@@ -124,7 +124,7 @@ public final class RequestPublishers {
         // The ByteBufferIterator will iterate over the byte[] arrays in
         // the content one at the time.
         //
-        class ByteBufferIterator implements Iterator<ByteBuffer> {
+        private final class ByteBufferIterator implements CheckedIterator<ByteBuffer> {
             final ConcurrentLinkedQueue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
             final Iterator<byte[]> iterator = content.iterator();
             @Override
@@ -169,13 +169,9 @@ public final class RequestPublishers {
             }
         }
 
-        public Iterator<ByteBuffer> iterator() {
-            return new ByteBufferIterator();
-        }
-
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            CheckedIterable<ByteBuffer> iterable = () -> CheckedIterator.fromIterator(iterator());
+            CheckedIterable<ByteBuffer> iterable = () -> new ByteBufferIterator();
             var delegate = new PullPublisher<>(iterable);
             delegate.subscribe(subscriber);
         }
@@ -405,7 +401,7 @@ public final class RequestPublishers {
             publisher.subscribe(subscriber);
         }
 
-        CheckedIterable<ByteBuffer> iterableOf(InputStream is) {
+        private CheckedIterable<ByteBuffer> iterableOf(InputStream is) {
             return () -> new StreamIterator(is);
         }
 

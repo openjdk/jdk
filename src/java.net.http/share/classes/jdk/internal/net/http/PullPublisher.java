@@ -31,8 +31,8 @@ import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.SequentialScheduler;
 
 /**
- * A {@linkplain Flow.Publisher publisher} that publishes items obtained from the given {@link CheckedIterator} supplier.
- * Each new subscription gets a new {@code CheckedIterator}.
+ * A {@linkplain Flow.Publisher publisher} that publishes items obtained from the given {@link CheckedIterable}.
+ * Each new subscription gets a new {@link CheckedIterator}.
  */
 class PullPublisher<T> implements Flow.Publisher<T> {
 

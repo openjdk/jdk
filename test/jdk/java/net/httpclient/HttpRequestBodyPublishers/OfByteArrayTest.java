@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofByteArray` behavior
  * @build RecordingSubscriber
  * @run junit OfByteArrayTest
- * @comment Using `main/othervm` to test cases requiring buffer size configurations
+ *
+ * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
  * @run main/othervm -Djdk.httpclient.bufsize=-1 OfByteArrayTest testInvalidBufferSize
  * @run main/othervm -Djdk.httpclient.bufsize=0 OfByteArrayTest testInvalidBufferSize
  * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking "" 0 0 ""
@@ -83,7 +84,7 @@ public class OfByteArrayTest {
     }
 
     /**
-     * Tests cases requiring buffer size configurations.
+     * Initiates tests that depend on a custom-configured JVM.
      */
     public static void main(String[] args) throws InterruptedException {
         switch (args[0]) {

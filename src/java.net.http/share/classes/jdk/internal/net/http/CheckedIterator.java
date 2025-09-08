@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An {@link java.util.Iterator} clone supporting checked exceptions.
+ * An {@link Iterator} clone supporting checked exceptions.
  *
  * @param <E> the type of elements returned by this iterator
  */
