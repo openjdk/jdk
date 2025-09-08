@@ -2205,7 +2205,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (signum == 0) {
             if (n < 0)
                 throw new ArithmeticException("Zero radicand with negative root degree");
-            
+
             return zeroValueOf(preferredScale);
         }
 
