@@ -127,7 +127,7 @@ class SharedClassLoadingMark {
     assert(THREAD != nullptr, "Current thread is nullptr");
     assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
-      if (_klass->is_shared()) {
+      if (_klass->in_aot_cache()) {
         _klass->set_shared_loading_failed();
       }
     }
@@ -297,7 +297,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
+    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);

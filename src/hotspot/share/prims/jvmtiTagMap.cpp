@@ -451,7 +451,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   // Static fields of interfaces and superclasses are reported as references from the interfaces/superclasses.
   // Need to calculate start index of this class fields: number of fields in all interfaces and superclasses.
   int index = interfaces_field_count(ik);
-  for (InstanceKlass* super_klass = ik->java_super(); super_klass != nullptr; super_klass = super_klass->java_super()) {
+  for (InstanceKlass* super_klass = ik->super(); super_klass != nullptr; super_klass = super_klass->super()) {
     FilteredJavaFieldStream super_fld(super_klass);
     index += super_fld.field_count();
   }
@@ -478,12 +478,12 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
 
   // fields of the superclasses are reported first, so need to know total field number to calculate field indices
   int total_field_number = interfaces_field_count(ik);
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
     FilteredJavaFieldStream fld(klass);
     total_field_number += fld.field_count();
   }
 
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
     FilteredJavaFieldStream fld(klass);
     int start_index = total_field_number - fld.field_count();
     for (int index = 0; !fld.done(); fld.next(), index++) {
@@ -2597,10 +2597,10 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     oop mirror = klass->java_mirror();
 
     // super (only if something more interesting than java.lang.Object)
-    InstanceKlass* java_super = ik->java_super();
-    if (java_super != nullptr && java_super != vmClasses::Object_klass()) {
-      oop super = java_super->java_mirror();
-      if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
+    InstanceKlass* super_klass = ik->super();
+    if (super_klass != nullptr && super_klass != vmClasses::Object_klass()) {
+      oop super_oop = super_klass->java_mirror();
+      if (!CallbackInvoker::report_superclass_reference(mirror, super_oop)) {
         return false;
       }
     }

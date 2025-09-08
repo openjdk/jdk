@@ -75,6 +75,8 @@ public sealed interface StackMapTableAttribute
      * {@return a stack map table attribute}
      *
      * @param entries the stack map frames
+     * @throws IllegalArgumentException if the number of frames exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     public static StackMapTableAttribute of(List<StackMapFrameInfo> entries) {
         return new UnboundAttribute.UnboundStackMapTableAttribute(entries);
