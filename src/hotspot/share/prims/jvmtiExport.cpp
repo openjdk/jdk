@@ -1861,7 +1861,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       // depth 0 as it is already late in the method exiting dance.
       state->set_top_frame_is_exiting();
 
-      post_method_exit_inner(thread, mh, state, false /* not exception exit */, value);
+      post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
   if (state != nullptr && state->is_interp_only_mode()) {
@@ -1870,6 +1870,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     state->clr_top_frame_is_exiting();
   }
   if (result.not_null() && !mh->is_native()) {
+    // We have to restore the oop on the stack for interpreter frames
     *(oop*)current_frame.interpreter_frame_tos_address() = result();
   }
 }
@@ -1878,6 +1879,7 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          methodHandle& mh,
                                          JvmtiThreadState *state,
                                          bool exception_exit,
+                                         frame current_frame,
                                          jvalue& value) {
   if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
     return;
@@ -2107,7 +2109,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
         // When these events are enabled code should be in running in interp mode.
         jvalue no_value;
         no_value.j = 0L;
-        JvmtiExport::post_method_exit_inner(thread, mh, state, true, no_value);
+        JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
         // The cached cur_stack_depth might have changed from the
         // operations of frame pop or method exit. We are not 100% sure
         // the cached cur_stack_depth is still valid depth so invalidate
