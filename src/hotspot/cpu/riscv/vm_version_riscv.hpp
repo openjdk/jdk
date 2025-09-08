@@ -52,26 +52,23 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
-    const uint32_t    _cpu_feature_index;
     int64_t           _value;
    public:
-    RVFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
+    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _cpu_feature_index(cpu_feature_index), _value(-1) {
+      _value(-1) {
     }
-    void enable_feature(int64_t value = 0) {
+    virtual void enable_feature(int64_t value = 0) {
       _value = value;
-      RVFeatures::current()->set_feature(_cpu_feature_index);
     }
-    void disable_feature() {
+    virtual void disable_feature() {
       _value = -1;
-      RVFeatures::current()->clear_feature(_cpu_feature_index);
     }
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    bool enabled()               { return RVFeatures::current()->supports_feature(_cpu_feature_index); }
     int64_t value()              { return _value; }
+    virtual bool enabled() = 0;
     virtual void update_flag() = 0;
   };
 
@@ -110,6 +107,45 @@ class VM_Version : public Abstract_VM_Version {
 
   #define NO_UPDATE_DEFAULT                \
   void update_flag() {}                    \
+
+
+  class RVExtFeatureValue : public RVFeatureValue {
+    const uint32_t _cpu_feature_index;
+   public:
+    RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _cpu_feature_index(cpu_feature_index) {
+    }
+    bool enabled() {
+      return RVFeatures::current()->supports_feature(_cpu_feature_index);
+    }
+    void enable_feature(int64_t value = 0) {
+      RVFeatureValue::enable_feature(value);
+      RVFeatures::current()->set_feature(_cpu_feature_index);
+    }
+    void disable_feature() {
+      RVFeatureValue::disable_feature();
+      RVFeatures::current()->clear_feature(_cpu_feature_index);
+    }
+  };
+
+  class RVNonExtFeatureValue : public RVFeatureValue {
+    bool _enabled;
+   public:
+    RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _enabled(false) {
+    }
+    bool enabled()               { return _enabled; }
+    void enable_feature(int64_t value = 0) {
+      RVFeatureValue::enable_feature(value);
+      _enabled = true;
+    }
+    void disable_feature() {
+      RVFeatureValue::disable_feature();
+      _enabled = false;
+    }
+  };
 
   // Frozen standard extensions
   // I RV64I
@@ -164,7 +200,7 @@ class VM_Version : public Abstract_VM_Version {
   //
   // Fields description in `decl`:
   //    declaration name, extension name, bit value from linux, cpu feature index, feature string?, mapped flag)
-  #define RV_FEATURE_FLAGS(decl)                                                                            \
+  #define RV_EXT_FEATURE_FLAGS(decl)                                                                        \
   decl(ext_I            ,  i           ,     ('I' - 'A'),  0,   true ,  NO_UPDATE_DEFAULT)                  \
   decl(ext_M            ,  m           ,     ('M' - 'A'),  1,   true ,  NO_UPDATE_DEFAULT)                  \
   decl(ext_A            ,  a           ,     ('A' - 'A'),  2,   true ,  NO_UPDATE_DEFAULT)                  \
@@ -198,22 +234,35 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zvfh         ,  Zvfh        ,  RV_NO_FLAG_BIT,  30,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, ext_V)) \
   decl(ext_Zvkn         ,  Zvkn        ,  RV_NO_FLAG_BIT,  31,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, ext_V)) \
   decl(ext_Zicond       ,  Zicond      ,  RV_NO_FLAG_BIT,  32,  true ,  UPDATE_DEFAULT(UseZicond))          \
-  decl(unaligned_access ,  Unaligned   ,  RV_NO_FLAG_BIT,  33,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(mvendorid        ,  VendorId    ,  RV_NO_FLAG_BIT,  34,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(marchid          ,  ArchId      ,  RV_NO_FLAG_BIT,  35,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(mimpid           ,  ImpId       ,  RV_NO_FLAG_BIT,  36,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(satp_mode        ,  SATP        ,  RV_NO_FLAG_BIT,  37,  false,  NO_UPDATE_DEFAULT)                  \
 
-  #define DECLARE_RV_FEATURE(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF)                    \
-  struct NAME##RVFeatureValue : public RVFeatureValue {                                                     \
-    NAME##RVFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) : \
-      RVFeatureValue(pretty, linux_bit_num, cpu_feature_index, fstring) {}                                  \
-    FLAGF;                                                                                                  \
-  };                                                                                                        \
-  static NAME##RVFeatureValue NAME;                                                                         \
+  #define DECLARE_RV_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF)                   \
+  struct NAME##RVExtFeatureValue : public RVExtFeatureValue {                                                  \
+    NAME##RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) : \
+      RVExtFeatureValue(pretty, linux_bit_num, cpu_feature_index, fstring) {}                                  \
+    FLAGF;                                                                                                     \
+  };                                                                                                           \
+  static NAME##RVExtFeatureValue NAME;                                                                         \
 
-  RV_FEATURE_FLAGS(DECLARE_RV_FEATURE)
-  #undef DECLARE_RV_FEATURE
+  RV_EXT_FEATURE_FLAGS(DECLARE_RV_EXT_FEATURE)
+
+  // Non-extension features
+  //
+  #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                               \
+  decl(unaligned_access ,  Unaligned   ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(mvendorid        ,  VendorId    ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(marchid          ,  ArchId      ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(mimpid           ,  ImpId       ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(satp_mode        ,  SATP        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+
+  #define DECLARE_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)                  \
+  struct NAME##RVNonExtFeatureValue : public RVNonExtFeatureValue {                            \
+    NAME##RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :          \
+      RVNonExtFeatureValue(pretty, linux_bit_num, fstring) {}                                  \
+    FLAGF;                                                                                     \
+  };                                                                                           \
+  static NAME##RVNonExtFeatureValue NAME;                                                      \
+
+  RV_NON_EXT_FEATURE_FLAGS(DECLARE_RV_NON_EXT_FEATURE)
 
 private:
   // Utility for AOT CPU feature store/check.
@@ -222,7 +271,7 @@ private:
     enum RVFeatureIndex {
       #define DECLARE_RV_FEATURE_ENUM(NAME, PRETTY, LINUX_BIT, CPU_FEATURE_INDEX, FSTRING, FLAGF) CPU_##NAME=(CPU_FEATURE_INDEX),
 
-      RV_FEATURE_FLAGS(DECLARE_RV_FEATURE_ENUM)
+      RV_EXT_FEATURE_FLAGS(DECLARE_RV_FEATURE_ENUM)
       MAX_CPU_FEATURE_INDEX
       #undef DECLARE_RV_FEATURE_ENUM
     };
@@ -285,20 +334,6 @@ private:
       RVFeatureIndex f = convert(feature);
       int idx = index(f);
       return (_features_bitmap[idx] & bit_mask(f)) != 0;
-    }
-
-    bool supports_features(RVFeatures* features_to_test) {
-      for (int i = 0; i < features_bitmap_element_count(); i++) {
-        if ((_features_bitmap[i] & features_to_test->_features_bitmap[i]) != features_to_test->_features_bitmap[i]) {
-          return false;
-       }
-      }
-      return true;
-    }
-
-    RVFeatureValue* operator [](int cpu_feature_index) {
-      assert(cpu_feature_index < MAX_CPU_FEATURE_INDEX - 1, "must");
-      return VM_Version::_feature_list[cpu_feature_index];
     }
   };
 
