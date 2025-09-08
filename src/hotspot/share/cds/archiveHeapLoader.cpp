@@ -22,10 +22,10 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -261,7 +261,7 @@ class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
 bool ArchiveHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
                                            MemRegion& archive_space) {
   size_t total_bytes = 0;
-  FileMapRegion* r = mapinfo->region_at(MetaspaceShared::hp);
+  FileMapRegion* r = mapinfo->region_at(AOTMetaspace::hp);
   r->assert_is_heap_region();
   if (r->used() == 0) {
     return false;
@@ -269,7 +269,7 @@ bool ArchiveHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHe
 
   assert(is_aligned(r->used(), HeapWordSize), "must be");
   total_bytes += r->used();
-  loaded_region->_region_index = MetaspaceShared::hp;
+  loaded_region->_region_index = AOTMetaspace::hp;
   loaded_region->_region_size = r->used();
   loaded_region->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address();
 
@@ -447,20 +447,20 @@ class PatchNativePointers: public BitMapClosure {
 
   bool do_bit(size_t offset) {
     Metadata** p = _start + offset;
-    *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
+    *p = (Metadata*)(address(*p) + AOTMetaspace::relocation_delta());
     return true;
   }
 };
 
 void ArchiveHeapLoader::patch_native_pointers() {
-  if (MetaspaceShared::relocation_delta() == 0) {
+  if (AOTMetaspace::relocation_delta() == 0) {
     return;
   }
 
-  FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
+  FileMapRegion* r = FileMapInfo::current_info()->region_at(AOTMetaspace::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(aot, heap)("Patching native pointers in heap region");
-    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
+    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(AOTMetaspace::hp);
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
   }

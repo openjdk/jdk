@@ -23,7 +23,6 @@
  */
 
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -705,7 +704,7 @@ void TrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
-  return k->meta() == nullptr || MetaspaceObj::is_shared(k->meta());
+  return k->meta() == nullptr || MetaspaceObj::in_aot_cache(k->meta());
 }
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {
