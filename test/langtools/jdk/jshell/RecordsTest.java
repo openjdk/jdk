@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,27 @@
  * @summary Tests for evalution of records
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng RecordsTest
+ * @run junit RecordsTest
  */
 
-import org.testng.annotations.Test;
 
 import javax.lang.model.SourceVersion;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.UnresolvedReferenceException;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.BeforeMethod;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class RecordsTest extends KullaTesting {
 
+    @Test
     public void testRecordClass() {
         assertEval("record R(String s, int i) { }");
-        assertEquals(varKey(assertEval("R r = new R(\"r\", 42);")).name(), "r");
+        assertEquals("r", varKey(assertEval("R r = new R(\"r\", 42);")).name());
         assertEval("r.s()", "\"r\"");
         assertEval("r.i()", "42");
     }
 
+    @Test
     public void testRecordCorralling() {
         //simple record with a mistake that can be fixed by corralling:
         assertEval("record R1(int i) { int g() { return j; } }", ste(MAIN_SNIPPET, Status.NONEXISTENT, Status.RECOVERABLE_DEFINED, true, null));
@@ -66,13 +66,15 @@ public class RecordsTest extends KullaTesting {
         assertEval("R5 r5 = new R5(1);", null, UnresolvedReferenceException.class, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, added(Status.VALID));
     }
 
+    @Test
     public void testRecordField() {
-        assertEquals(varKey(assertEval("String record = \"\";")).name(), "record");
+        assertEquals("record", varKey(assertEval("String record = \"\";")).name());
         assertEval("record.length()", "0");
     }
 
+    @Test
     public void testRecordMethod() {
-        assertEquals(methodKey(assertEval("String record(String record) { return record + record; }")).name(), "record");
+        assertEquals("record", methodKey(assertEval("String record(String record) { return record + record; }")).name());
         assertEval("record(\"r\")", "\"rr\"");
         assertEval("record(\"r\").length()", "2");
     }

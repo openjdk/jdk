@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
-class MetaspaceShared;
+class AOTMetaspace;
 class MetaspaceTracer;
 class Mutex;
 class outputStream;
@@ -43,7 +43,7 @@ class ReservedSpace;
 // (auxiliary stuff goes into MetaspaceUtils)
 class Metaspace : public AllStatic {
 
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
 
 public:
   enum MetadataType {
@@ -130,7 +130,7 @@ public:
   // Returns true if the pointer points into class space, non-class metaspace, or the
   // metadata portion of the CDS archive.
   static bool contains(const void* ptr) {
-    return is_in_shared_metaspace(ptr) || // in cds
+    return in_aot_cache(ptr) || // in cds
            is_in_class_space(ptr) ||      // in class space
            is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
   }
@@ -142,7 +142,7 @@ public:
   }
 
   // Returns true if pointer points into the CDS klass region.
-  static bool is_in_shared_metaspace(const void* ptr);
+  static bool in_aot_cache(const void* ptr);
 
   // Returns true if pointer points into one of the non-class-space metaspace regions.
   static bool is_in_nonclass_metaspace(const void* ptr);
