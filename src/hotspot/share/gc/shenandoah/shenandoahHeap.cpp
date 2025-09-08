@@ -29,10 +29,10 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -1216,6 +1216,11 @@ public:
       //  1. We need to make the plab memory parsable by remembered-set scanning.
       //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
       ShenandoahGenerationalHeap::heap()->retire_plab(plab, thread);
+
+      // Re-enable promotions for the next evacuation phase.
+      ShenandoahThreadLocalData::enable_plab_promotions(thread);
+
+      // Reset the fill size for next evacuation phase.
       if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
         ShenandoahThreadLocalData::set_plab_size(thread, 0);
       }

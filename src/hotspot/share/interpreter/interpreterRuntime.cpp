@@ -46,8 +46,8 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -925,7 +925,7 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
     ResourceMark rm;
     InstanceKlass* resolved_iklass = InstanceKlass::cast(link_info.resolved_klass());
     log_info(aot, resolve)("Not resolved: class not linked: %s %s %s",
-                           resolved_iklass->is_shared() ? "is_shared" : "",
+                           resolved_iklass->in_aot_cache() ? "in_aot_cache" : "",
                            resolved_iklass->init_state_name(),
                            resolved_iklass->external_name());
   }

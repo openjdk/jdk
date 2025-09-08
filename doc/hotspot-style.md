@@ -135,6 +135,17 @@ lines of code.  Name what you must repeat.
 change should be done with a "setter" accessor matched to the simple
 "getter".
 
+#### Conventions for Lock-free Code
+
+Sometimes variables are accessed concurrently without appropriate synchronization
+context, such as a held mutex or at a safepoint. In such cases the variable should
+be declared `volatile` and it should NOT be accessed as a normal C++ lvalue. Rather,
+access should be performed via functions from `Atomic`, such as `Atomic::load`,
+`Atomic::store`, etc.
+
+This special formulation makes it more clear to maintainers that the variable is
+accessed concurrently in a lock-free manner.
+
 ### Source Files
 
 * All source files must have a globally unique basename. The build
