@@ -53,28 +53,24 @@ class VM_Version : public Abstract_VM_Version {
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
     const uint32_t    _cpu_feature_index;
-    bool              _enabled;
     int64_t           _value;
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
       _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _cpu_feature_index(cpu_feature_index), _enabled(false), _value(-1) {
+      _cpu_feature_index(cpu_feature_index), _value(-1) {
     }
     void enable_feature(int64_t value = 0) {
-      _enabled = true;
       _value = value;
       RVFeatures::current()->set_feature(_cpu_feature_index);
     }
-    // TODO: when user override the default VM flag, needs to enable or disable the CPU feature accordingly.
     void disable_feature() {
-      _enabled = false;
       _value = -1;
       RVFeatures::current()->clear_feature(_cpu_feature_index);
     }
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    bool enabled()               { return _enabled; }
+    bool enabled()               { return RVFeatures::current()->supports_feature(_cpu_feature_index); }
     int64_t value()              { return _value; }
     virtual void update_flag() = 0;
   };
@@ -215,7 +211,6 @@ class VM_Version : public Abstract_VM_Version {
     FLAGF;                                                                                                  \
   };                                                                                                        \
   static NAME##RVFeatureValue NAME;                                                                         \
-  // TODO: move `NAME##RVFeatureValue NAME` into RVFeatures
 
   RV_FEATURE_FLAGS(DECLARE_RV_FEATURE)
   #undef DECLARE_RV_FEATURE
@@ -232,13 +227,6 @@ private:
       #undef DECLARE_RV_FEATURE_ENUM
     };
    private:
-    // TODO: move VM_Version::_feature_list here.
-    // static RVFeatureValue* _feature_list[] = {
-    //   RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
-    //   nullptr
-    // };
-    // #undef ADD_RV_FEATURE_IN_LIST
-
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
     STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
