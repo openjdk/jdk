@@ -23,8 +23,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "os_posix.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
@@ -117,7 +117,7 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
       const void* const fault_addr = si->si_addr;
       if (fault_addr != nullptr) {
-        if (MetaspaceShared::is_in_shared_metaspace(fault_addr)) {
+        if (AOTMetaspace::in_aot_cache(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");
         }

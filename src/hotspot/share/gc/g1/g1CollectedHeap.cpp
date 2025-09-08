@@ -74,6 +74,7 @@
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -395,8 +396,7 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
 }
 
 HeapWord*
-G1CollectedHeap::mem_allocate(size_t word_size,
-                              bool*  gc_overhead_limit_was_exceeded) {
+G1CollectedHeap::mem_allocate(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
 
   if (is_humongous(word_size)) {
@@ -799,6 +799,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
+  finish_codecache_marking_cycle();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -2439,6 +2440,12 @@ void G1CollectedHeap::update_perf_counter_cpu_time() {
 }
 
 void G1CollectedHeap::start_new_collection_set() {
+  // Clear current young cset group to allow adding.
+  // It is fine to clear it this late - evacuation does not add any remembered sets
+  // by itself, but only marks cards.
+  // The regions had their association to this group already removed earlier.
+  young_regions_cset_group()->clear();
+
   collection_set()->start_incremental_building();
 
   clear_region_attr();
@@ -2795,6 +2802,8 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->stop_incremental_building();
 
   collection_set()->abandon_all_candidates();
+
+  young_regions_cset_group()->clear(true /* uninstall_group_cardset */);
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
@@ -3079,6 +3088,8 @@ void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != nullptr, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {

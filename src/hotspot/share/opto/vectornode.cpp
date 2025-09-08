@@ -992,6 +992,10 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
 
 bool VectorNode::is_reinterpret_opcode(int opc) {
   switch (opc) {
+    case Op_MoveF2I:
+    case Op_MoveD2L:
+    case Op_MoveL2D:
+    case Op_MoveI2F:
     case Op_ReinterpretHF2S:
     case Op_ReinterpretS2HF:
       return true;

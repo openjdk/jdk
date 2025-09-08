@@ -32,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -102,8 +103,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
 
   _size_policy = new PSAdaptiveSizePolicy(SpaceAlignment,
-                                          max_gc_pause_sec,
-                                          GCTimeRatio);
+                                          max_gc_pause_sec);
 
   assert((old_gen()->virtual_space()->high_boundary() ==
           young_gen()->virtual_space()->low_boundary()),
@@ -266,30 +266,33 @@ bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
 // and the rest will not be executed. For that reason, this method loops
 // during failed allocation attempts. If the java heap becomes exhausted,
 // we rely on the size_policy object to force a bail out.
-HeapWord* ParallelScavengeHeap::mem_allocate(size_t size,
-                                             bool* gc_overhead_limit_was_exceeded) {
+HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at safepoint");
   assert(Thread::current() != (Thread*)VMThread::vm_thread(), "should not be in vm thread");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   bool is_tlab = false;
-  return mem_allocate_work(size, is_tlab, gc_overhead_limit_was_exceeded);
+  return mem_allocate_work(size, is_tlab);
 }
 
-HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
-                                                  bool is_tlab,
-                                                  bool* gc_overhead_limit_was_exceeded) {
-  {
+HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
+  for (uint loop_count = 0; /* empty */; ++loop_count) {
+    // Try young-gen first.
     HeapWord* result = young_gen()->allocate(size);
     if (result != nullptr) {
       return result;
     }
-  }
 
-  uint loop_count = 0;
-  uint gc_count = 0;
+    // Try allocating from the old gen for non-TLAB in certain scenarios.
+    if (!is_tlab) {
+      if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
+        result = old_gen()->cas_allocate_noexpand(size);
+        if (result != nullptr) {
+          return result;
+        }
+      }
+    }
 
-  while (true) {
     // We don't want to have multiple collections for a single filled generation.
     // To prevent this, each thread tracks the total_collections() value, and if
     // the count has changed, does not do a new collection.
@@ -301,49 +304,31 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     // the collection count has already changed. To prevent duplicate collections,
     // The policy MUST attempt allocations during the same period it reads the
     // total_collections() value!
+    uint gc_count;
     {
       MutexLocker ml(Heap_lock);
       gc_count = total_collections();
-
-      HeapWord* result = young_gen()->allocate(size);
-      if (result != nullptr) {
-        return result;
-      }
-
-      // Try allocating from the old gen for non-TLAB in certain scenarios.
-      if (!is_tlab) {
-        if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
-          result = old_gen()->cas_allocate_noexpand(size);
-          if (result != nullptr) {
-            return result;
-          }
-        }
-      }
     }
 
     {
       VM_ParallelCollectForAllocation op(size, is_tlab, gc_count);
       VMThread::execute(&op);
 
-      // Did the VM operation execute? If so, return the result directly.
-      // This prevents us from looping until time out on requests that can
-      // not be satisfied.
       if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
-
         return op.result();
-      }
-      // Was the gc-overhead reached inside the safepoint? If so, this mutator should return null as well for global consistency.
-      if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
-        return nullptr;
       }
     }
 
-    loop_count++;
+    // Was the gc-overhead reached inside the safepoint? If so, this mutator
+    // should return null as well for global consistency.
+    if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
+      return nullptr;
+    }
+
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
-      log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
-      log_warning(gc)("\tsize=%zu", size);
+      log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times, size=%zu", loop_count, size);
     }
   }
 }
@@ -454,10 +439,8 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 }
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
-  bool dummy;
   HeapWord* result = mem_allocate_work(requested_size /* size */,
-                                       true /* is_tlab */,
-                                       &dummy);
+                                       true /* is_tlab */);
   if (result != nullptr) {
     *actual_size = requested_size;
   }
@@ -861,6 +844,8 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
 
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(nm);
 }
 
 void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
