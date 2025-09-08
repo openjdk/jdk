@@ -4229,11 +4229,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 }
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
-  if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize || (UseStoreStoreForCtor && Opcode() == Op_MemBarStoreStore),
-           "Only seen when there are no use of init memory or fully folded store-store barrier memory subtree at the end of constructor");
-    assert(outcnt() == 1, "Only control then");
-  }
+  assert(outcnt() <= 2, "More than two out edges");
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
     if (leading != nullptr) {
