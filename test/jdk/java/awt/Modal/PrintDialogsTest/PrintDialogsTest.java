@@ -49,40 +49,31 @@ import java.awt.event.ActionListener;
 
 public class PrintDialogsTest extends Panel implements ActionListener {
 
-    static final String INSTRUCTIONS = """
-        This test is free format, which means there is no enforced or guided sequence.
-
-        Please select each of
-        (a) The dialog parent type.
-        (b) The dialog modality type
-        (c) The print dialog type (Print dialog or Page Setup dialog)
-
-        Once the choices have been made click the "Start test" button.
-
-        Three windows will appear
-        (1) A Frame or a Dialog - in the case you selected "Dialog" as the parent type
-        (2) a Window (ie an undecorated top-level)
-        (3) A dialog with two buttons "Open" and "Finish"
-
-        Now check as follows whether modal blocking works as expected.
-        Windows (1) and (2) contain a button which you should be able to press
-        ONLY if you selected "Non-modal", or "Modeless" for modality type.
-        In other cases window (3) will block input to (1) and (2)
-
-        Then push the "Open" button on the Dialog to show the printing dialog and check
-        if it blocks the rest of the application - ie all of windows (1), (2) and (3)
-        should ALWAYS be blocked when the print dialog is showing.
-        Now cancel the printing dialog and check the correctness of modal blocking
-        behavior for the Dialog again.
-        To close all the 3 test windows please push the "Finish" button.
-
-        Repeat all the above for different combinations, which should include
-        using all of the Dialog parent choices and all of the Dialog Modality types.
-
-        If any behave incorrectly, note the combination of choices and press Fail.
-
-        If all behave correctly, press Pass.
-    """;
+    static final String INSTRUCTIONS =
+        "1. On the Test UI Select:\n" +
+        "The dialog parent type.\n" +
+        "The dialog modality type.\n" +
+        "The print dialog type (Print dialog or Page Setup dialog).\n\n" +
+        "2. Next, click on 'Start test'. Three windows will appear.\n" +
+        "A Frame or a Dialog (On selecting 'Dialog' as parent type).\n" +
+        "A Window (An undecorated top-level window).\n" +
+        "A Dialog with two buttons: 'Open' and 'Finish'.\n" +
+        "Windows (1) and (2) have a button.\n\n" +
+        "3.Press the button on Window (1) & Window (2) -\n" +
+        "Verification step:\n" +
+        "Button is presseed - only if Modality Selection was 'Non-modal' or 'Modeless'.\n" +
+        "In all other cases, Window (3) should block input to Windows (1) and (2).\n\n" +
+        "4. Next, press the 'Open' button in Window (3). This will show the print dialog.\n\n" +
+        "5. Press the button on Window (1) & Window (2) -\n" +
+        "Verification step:\n" +
+        "The print dialog should block all three windows (1, 2, and 3).\n\n" +
+        "6. Cancel the print dialog, Check again if Window (3) blocks Windows (1) and (2) correctly.\n" +
+        "Verification step:\n" +
+        "Button is presseed - only if Modality Selection was 'Non-modal' or 'Modeless'.\n" +
+        "To close all test windows, press 'Finish'.\n\n" +
+        "7. Repeat the steps for different combinations od Dialog Parent, Dialog Modality Type, Print Dialg Type.\n" +
+        "Try every dialog parent type and every dialog modality type.\n\n" +
+        "If any of the Verification step fails, note the combination and press 'Fail'.\n";
 
     public static void main(String[] args) throws Exception {
 
