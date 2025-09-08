@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import jdk.jshell.JShell;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -39,11 +39,11 @@ import static org.testng.Assert.assertEquals;
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build Compiler toolbox.ToolBox
- * @run testng MultipleDocumentationTest
+ * @run junit MultipleDocumentationTest
  */
-@Test
 public class MultipleDocumentationTest {
 
+    @Test
     public void testMultipleDocumentation() {
         String input = "java.lang.String";
 
@@ -68,7 +68,7 @@ public class MultipleDocumentationTest {
                                              .map(d -> d.javadoc())
                                              .collect(Collectors.toList());
 
-                assertEquals(javadocs2, javadocs1);
+                assertEquals(javadocs1, javadocs2);
             }
         }
     }

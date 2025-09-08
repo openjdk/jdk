@@ -22,15 +22,16 @@
  *
  */
 
-#include <string.h>
-#include <math.h>
-#include <errno.h>
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
+#include "cgroupSubsystem_linux.hpp"
 #include "logging/log.hpp"
 #include "os_linux.hpp"
 #include "osContainer_linux.hpp"
-#include "cgroupSubsystem_linux.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
+
+#include <errno.h>
+#include <math.h>
+#include <string.h>
 
 
 bool  OSContainer::_is_initialized   = false;
