@@ -718,27 +718,27 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
 }
 
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
