@@ -39,16 +39,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
@@ -167,28 +166,9 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return null;
         }
 
-        if (socket != null && socket.isConnected() &&
-                socket instanceof SSLSocket sslSocket) {
-
-            SSLSession session = sslSocket.getHandshakeSession();
-
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
-
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        // Peer supported certificate signature algorithms
-                        // sent with "signature_algorithms_cert" TLS extension.
-                        peerSupportedSignAlgs =
-                                extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forSocket(
-                            sslSocket, peerSupportedSignAlgs, true);
-                }
-            }
-
-            return SSLAlgorithmConstraints.forSocket(sslSocket, true);
+        if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
+            return SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
         }
 
         return SSLAlgorithmConstraints.DEFAULT;
@@ -201,26 +181,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return null;
         }
 
-        if (engine != null) {
-            SSLSession session = engine.getHandshakeSession();
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
-
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        // Peer supported certificate signature algorithms
-                        // sent with "signature_algorithms_cert" TLS extension.
-                        peerSupportedSignAlgs =
-                                extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forEngine(
-                            engine, peerSupportedSignAlgs, true);
-                }
-            }
-        }
-
-        return SSLAlgorithmConstraints.forEngine(engine, true);
+        return SSLAlgorithmConstraints.forEngine(
+                engine, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
     }
 
     // Algorithm constraints check.
