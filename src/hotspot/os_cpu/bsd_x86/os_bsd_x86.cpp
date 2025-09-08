@@ -279,7 +279,7 @@ address os::current_stack_pointer() {
   using get_sp_func = address();
   get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
                                      StubRoutines::x86::get_previous_sp_entry());
-  assert(func != nullptr);
+  assert(func != nullptr, "get_previous_sp_entry() returned null pointer");
   return (*func)();
 }
 
