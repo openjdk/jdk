@@ -46,6 +46,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -4100,6 +4101,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return "0";
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
+
+        if (mag.length <= 2 && bitLength() < Long.SIZE) {
+            // fits into long
+            return Long.toString(longValue(), radix);
+        }
 
         BigInteger abs = this.abs();
 
