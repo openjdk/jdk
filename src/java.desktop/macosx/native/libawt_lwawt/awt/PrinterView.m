@@ -86,8 +86,8 @@ static jclass sjc_PAbortEx = NULL;
     GET_CPRINTERJOB_CLASS();
     DECLARE_METHOD(jm_printToPathGraphics, sjc_CPrinterJob, "printToPathGraphics",
                    "(Lsun/print/PeekGraphics;Ljava/awt/print/PrinterJob;Ljava/awt/print/Printable;Ljava/awt/print/PageFormat;IJ)V");
-    DECLARE_METHOD(jm_getXRes, sjc_CPrinterJob, "getXRes", "()D");
-    DECLARE_METHOD(jm_getYRes, sjc_CPrinterJob, "getYRes", "()D");
+    DECLARE_METHOD(jm_getXRes, sjc_CPrinterJob, "getXRes", "(Ljava/awt/print/PageFormat;)D");
+    DECLARE_METHOD(jm_getYRes, sjc_CPrinterJob, "getYRes", "(Ljava/awt/print/PageFormat;)D");
 
     // Create and draw into a new CPrinterGraphics with the current Context.
     assert(fCurPageFormat != NULL);
@@ -107,20 +107,16 @@ static jclass sjc_PAbortEx = NULL;
     CGContextRef cgRef = (CGContextRef)[[printLoop context] graphicsPort];
 
     // Scale from the java document DPI to the user space DPI
-    jdouble hRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getXRes);
+    jdouble hRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getXRes, fCurPageFormat);
     CHECK_EXCEPTION();
-    jdouble vRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getYRes);
+    jdouble vRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getYRes, fCurPageFormat);
     CHECK_EXCEPTION();
     if (hRes > 0 && vRes > 0) {
         double defaultDeviceDPI = 72;
         double scaleX = defaultDeviceDPI / hRes;
         double scaleY = defaultDeviceDPI / vRes;
         if (scaleX != 1 || scaleY != 1) {
-            if ([[[NSPrintOperation currentOperation] printInfo] orientation] == NSPaperOrientationPortrait) {
-                CGContextScaleCTM(cgRef, scaleX, scaleY);
-            } else {
-                CGContextScaleCTM(cgRef, scaleY, scaleX);
-            }
+            CGContextScaleCTM(cgRef, scaleX, scaleY);
         }
     }
 

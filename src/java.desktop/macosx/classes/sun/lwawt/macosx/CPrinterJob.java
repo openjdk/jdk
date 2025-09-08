@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.Pageable;
@@ -486,6 +487,24 @@ public final class CPrinterJob extends RasterPrinterJob {
     }
 
     /**
+     * Returns the resolution in dots per inch across the width
+     * of the page. This method take into account the page orientation.
+     */
+    private double getXRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getXRes() : getYRes();
+    }
+
+    /**
+     * Returns the resolution in dots per inch across the height
+     * of the page. This method take into account the page orientation.
+     */
+    private double getYRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getYRes() : getXRes();
+    }
+
+    /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
@@ -772,27 +791,6 @@ public final class CPrinterJob extends RasterPrinterJob {
         return pageFormatArea;
     }
 
-    private PageFormat scalePageFormat(PageFormat page, double scaleX, double scaleY) {
-        PageFormat scaledPage = (PageFormat) page.clone();
-        if (scaleX == 1 && scaleY == 1) {
-            return scaledPage;
-        }
-        Paper paper = page.getPaper();
-        Paper scaledPaper = new Paper();
-        scaledPaper.setSize(
-                paper.getWidth() * scaleX,
-                paper.getHeight() * scaleY
-        );
-        scaledPaper.setImageableArea(
-                paper.getImageableX() * scaleX,
-                paper.getImageableY() * scaleY,
-                paper.getWidth() * scaleX,
-                paper.getHeight() * scaleY
-        );
-        scaledPage.setPaper(scaledPaper);
-        return scaledPage;
-    }
-
     private int getSides() {
         return (this.sidesAttr == null) ? -1 : this.sidesAttr.getValue();
     }
@@ -848,17 +846,17 @@ public final class CPrinterJob extends RasterPrinterJob {
         // This is called from the native side.
         Runnable r = new Runnable() { public void run() {
             try {
-                double scaleX = getXRes()/ USER_SPACE_DPI;
-                double scaleY = getYRes()/ USER_SPACE_DPI;
-                PageFormat scaledPage = scalePageFormat(page, scaleX, scaleY);
-                SurfaceData sd = CPrinterSurfaceData.createData(scaledPage, context); // Just stores page into an ivar
+                AffineTransform deviceTransform = new AffineTransform(
+                        getXRes(page) / USER_SPACE_DPI, 0, 0,
+                        getYRes(page) / USER_SPACE_DPI, 0, 0);
+                SurfaceData sd = CPrinterSurfaceData
+                        .createData(page, deviceTransform, context); // Just stores page into an ivar
                 if (defaultFont == null) {
                     defaultFont = new Font("Dialog", Font.PLAIN, 12);
                 }
                 Graphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
+
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
-                pathGraphics.scale(scaledPage.getWidth() / page.getWidth(),
-                        scaledPage.getHeight() / page.getHeight());
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
                 if (monochrome) {
@@ -895,21 +893,16 @@ public final class CPrinterJob extends RasterPrinterJob {
                 if (pageFormat != null) {
                     Printable printable = pageable.getPrintable(pageIndex);
                     if (printable != null) {
-                        double scaleX = getXRes() / USER_SPACE_DPI;
-                        double scaleY = getYRes() / USER_SPACE_DPI;
-                        PageFormat scaledPageFormat = scalePageFormat(pageFormat, scaleX, scaleY);
                         BufferedImage bimg =
-                              new BufferedImage(
-                                  (int)Math.round(scaledPageFormat.getWidth()),
-                                  (int)Math.round(scaledPageFormat.getHeight()),
-                                  BufferedImage.TYPE_INT_ARGB_PRE);
+                              new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
                         PeekGraphics peekGraphics =
                          createPeekGraphics(bimg.createGraphics(), printerJob);
-                        peekGraphics.scale(scaledPageFormat.getWidth() / pageFormat.getWidth(),
-                                scaledPageFormat.getHeight() / pageFormat.getHeight());
                         Rectangle2D pageFormatArea =
                              getPageFormatArea(pageFormat);
                         initPrinterGraphics(peekGraphics, pageFormatArea);
+                        double scaleX = getXRes(pageFormat) / USER_SPACE_DPI;
+                        double scaleY = getYRes(pageFormat) / USER_SPACE_DPI;
+                        peekGraphics.scale(scaleX, scaleY);
 
                         // Do the assignment here!
                         ret[0] = pageFormat;
