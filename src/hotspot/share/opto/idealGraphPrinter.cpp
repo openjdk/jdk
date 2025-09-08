@@ -623,6 +623,29 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("is_block_start", "true");
     }
 
+    // Dump escape analysis state for relevant nodes.
+    if (node->is_Allocate()) {
+      AllocateNode* alloc = node->as_Allocate();
+       if (alloc->_is_scalar_replaceable) {
+         print_prop("is_scalar_replaceable", "true");
+       }
+       if (alloc->_is_non_escaping) {
+         print_prop("is_non_escaping", "true");
+       }
+       if (alloc->does_not_escape_thread()) {
+         print_prop("does_not_escape_thread", "true");
+       }
+    }
+    if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
+      print_prop("has_ea_local_in_scope", "true");
+    }
+    if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
+      print_prop("arg_escape", "true");
+    }
+    if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
+      print_prop("does_not_escape", "true");
+    }
+
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;

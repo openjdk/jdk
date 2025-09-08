@@ -85,6 +85,10 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>
+        <file name="Color by escape analysis state.js" url="filters/colorEscapeAnalysis.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Color by escape analysis state"/>
+        </file>
         <file name="Color live ranges by allocation.js" url="filters/colorLiveRanges.filter">
             <attr name="enabled" boolvalue="true"/>
             <attr name="after" stringvalue="Hide exception blocks"/>
