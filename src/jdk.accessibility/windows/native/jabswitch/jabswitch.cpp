@@ -363,7 +363,6 @@ int regEnable() {
 int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
 {
     HKEY hKey;
- // DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(hFamilyKey, lpSubKey, NULL, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, &hKey);
     if (err != ERROR_SUCCESS)
