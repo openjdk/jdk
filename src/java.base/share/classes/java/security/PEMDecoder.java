@@ -38,6 +38,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -45,16 +46,16 @@ import java.util.Objects;
  * {@code PEMDecoder} implements a decoder for Privacy-Enhanced Mail (PEM) data.
  * PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRLs).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
- * Base64-formatted binary encoding enclosed by a type-identifying header
+ * lists (CRLs).  It is defined in RFC 1421 and RFC 7468.  A PEM structure
+ * consists of Base64-encoded binary data enclosed by a type-identifying header
  * and footer.
  *
- * <p> The {@linkplain #decode(String)} and {@linkplain #decode(InputStream)}
- * methods return an instance of a class that matches the data
- * type and implements {@link DEREncodable}.
+ * <p> The {@link #decode(String)} and {@link #decode(InputStream)}
+ * methods return an instance of a class matching the PEM type and
+ * implementing {@link DEREncodable}.
  *
- * <p> The following lists the supported PEM types and the {@code DEREncodable}
- * types that each are decoded as:
+ * <p> Supported PEM types and their decoded {@code DEREncodable} classes
+ * include:
  * <ul>
  *  <li>CERTIFICATE : {@code X509Certificate}</li>
  *  <li>X509 CRL : {@code X509CRL}</li>
@@ -69,44 +70,46 @@ import java.util.Objects;
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
  *  Decryption)</li>
+ *  <li>ENCRYPTED PRIVATE KEY : {@code KeyPair} (if configured with
+ *  Decryption)</li>
+ *  <li>ENCRYPTED PRIVATE KEY : {@code PKCS8EncodedKeySpec} (if configured with
+ *  Decryption)</li>
  *  <li>Other types : {@code PEM} </li>
  * </ul>
  *
- * <p> The {@code PublicKey} and {@code PrivateKey} types, an algorithm specific
- * subclass is returned if the underlying algorithm is supported. For example an
+ * <p> For {@code PublicKey} and {@code PrivateKey} types, an algorithm-specific
+ * subclass is returned if the algorithm is supported. For example an
  * ECPublicKey and ECPrivateKey for Elliptic Curve keys.
  *
  * <p> If the PEM type does not have a corresponding class,
  * {@code decode(String)} and {@code decode(InputStream)} will return a
  * {@link PEM}.
  *
- * <p> The {@linkplain #decode(String, Class)} and
- * {@linkplain #decode(InputStream, Class)} methods take a class parameter
- * which determines the type of {@code DEREncodable} that is returned. These
+ * <p> The {@link #decode(String, Class)} and
+ * {@link #decode(InputStream, Class)} methods take a class parameter
+ * to specify the returned {@code DEREncodable} type. These
  * methods are useful when extracting or changing the return class.
- * For example, if the PEM contains both public and private keys, the
- * class parameter can specify which to return. Use
- * {@code PrivateKey.class} to return only the private key.
- * If the class parameter is set to {@code X509EncodedKeySpec.class}, the
- * public key will be returned in that format.  Any type of PEM data can be
- * decoded into a {@code PEM} by specifying {@code PEM.class}.
+ * For example, if the PEM contains both a public and private keys, specifying
+ * {@code PrivateKey.class} returns only the private key.
+ * If the class parameter specifies {@code X509EncodedKeySpec.class}, the
+ * public key encoding is returned in that class.  Any type of PEM data can be
+ * decoded into a {@code PEM} object by specifying {@code PEM.class}.
  * If the class parameter doesn't match the PEM content, a
  * {@linkplain ClassCastException} will be thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
- * with {@linkplain #withFactory(Provider)} and/or
- * {@linkplain #withDecryption(char[])}. {@linkplain #withFactory(Provider)}
- * configures the decoder to use only {@linkplain KeyFactory} and
- * {@linkplain CertificateFactory} instances from the given {@code Provider}.
- * {@linkplain #withDecryption(char[])} configures the decoder to decrypt all
+ * with {@link #withFactory(Provider)} and/or
+ * {@link #withDecryption(char[])}. {@link #withFactory(Provider)}
+ * restricts decoding to {@link KeyFactory} and
+ * {@link CertificateFactory} instances from the specified {@code Provider}.
+ * {@link #withDecryption(char[])} configures the decoder to process
  * encrypted private key PEM data using the given password.
- * Configuring an instance for decryption does not prevent decoding with
- * unencrypted PEM. Any encrypted PEM that fails decryption
- * will throw a {@link RuntimeException}. When an encrypted private key PEM is
- * used with a decoder not configured for decryption, an
- * {@link EncryptedPrivateKeyInfo} object is returned.
+ * Configuring for decryption does not prevent decoding of unencrypted PEM.
+ * If decryption fails, a {@link RuntimeException} is thrown.
+ * If an encrypted private key PEM is processed by a decoder not configured
+ * for decryption, an {@link EncryptedPrivateKeyInfo} object is returned.
  *
- * <p>This class is immutable and thread-safe.
+ * <p> This class is immutable and thread-safe.
  *
  * <p> Here is an example of decoding a {@code PrivateKey} object:
  * {@snippet lang = java:
@@ -202,8 +205,7 @@ public final class PEMDecoder {
                     } else if (d instanceof PKCS8Key p8 &&
                         p8.getPubKeyEncoded() != null) {
                         // If the KeyFactory decoded an algorithm-specific
-                        // encodings, look for the public key again.  This
-                        // happens with EC and SEC1-v2 encoding
+                        // encodings, look for the public key again.
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8.getPubKeyEncoded(), algo);
                         yield new KeyPair(getKeyFactory(algo).
@@ -218,8 +220,11 @@ public final class PEMDecoder {
                         yield new EncryptedPrivateKeyInfo(decoder.decode(
                             pem.content()));
                     }
-                    yield new EncryptedPrivateKeyInfo(decoder.decode(pem.content())).
-                        getKey(password.getPassword());
+                    byte[] p8 = Pem.decryptEncoding(
+                        decoder.decode(pem.content()), password.getPassword());
+                    DEREncodable d = Pem.toDEREncodable(p8, true, factory);
+                    Arrays.fill(p8, (byte)0x0);
+                    yield d;
                 }
                 case Pem.CERTIFICATE, Pem.X509_CERTIFICATE,
                      Pem.X_509_CERTIFICATE -> {
@@ -325,7 +330,7 @@ public final class PEMDecoder {
      * an {@code IllegalArgumentException} is thrown.
      *
      * <p> If the class parameter is {@code PEM.class},
-     * a {@linkplain PEM} is returned containing the
+     * a {@link PEM} is returned containing the
      * type identifier and Base64 encoding. Any non-PEM data preceding
      * the PEM header will be stored in {@code leadingData}.  Other
      * class parameters will not return preceding non-PEM data.
@@ -366,7 +371,7 @@ public final class PEMDecoder {
      * on the {@code InputStream}.
      *
      * <p> If the class parameter is {@code PEM.class},
-     * a {@linkplain PEM} is returned containing the
+     * a {@link PEM} is returned containing the
      * type identifier and Base64 encoding. Any non-PEM data preceding
      * the PEM header will be stored in {@code leadingData}.  Other
      * class parameters will not return preceding non-PEM data.
@@ -382,7 +387,7 @@ public final class PEMDecoder {
      * @throws IOException on IO or PEM syntax error where the
      * {@code InputStream} did not complete decoding.
      * @throws EOFException at the end of the {@code InputStream}
-     * @throws IllegalArgumentException on error in decoding
+     * @throws IllegalArgumentException on error with arguments or in decoding
      * @throws ClassCastException if {@code tClass} is invalid for the PEM type
      * @throws NullPointerException when any input values are null
      *

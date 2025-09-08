@@ -27,10 +27,7 @@ package java.security;
 
 import jdk.internal.javac.PreviewFeature;
 import sun.security.pkcs.PKCS8Key;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
 import sun.security.util.Pem;
-import sun.security.x509.AlgorithmId;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
@@ -40,6 +37,7 @@ import java.security.cert.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -82,14 +80,18 @@ import java.util.concurrent.locks.ReentrantLock;
  * <ul>
  *  <li>{@code X509Certificate} : CERTIFICATE</li>
  *  <li>{@code X509CRL} : X509 CRL</li>
- *  <li>{@code PublicKey}: PUBLIC KEY</li>
+ *  <li>{@code PublicKey} : PUBLIC KEY</li>
  *  <li>{@code PrivateKey} : PRIVATE KEY</li>
  *  <li>{@code PrivateKey} (if configured with encryption):
  *  ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code KeyPair} : PRIVATE KEY</li>
+ *  <li>{@code KeyPair} (if configured with Encryption) : ENCRYPTED PRIVATE KEY
+ *  </li>
  *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
  *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
+ *  <li>{@code PKCS8EncodedKeySpec} (if configured with Encryption) :
+ *  ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code PEM} : {@code PEM.type()}</li>
  *  </ul>
  *
@@ -161,18 +163,18 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns a PEM encoded
      * string.
      *
-     * @param de the {@code DEREncodable} to be encoded
+     * @param derEncodable the {@code DEREncodable} to be encoded
      * @return a {@code String} containing the PEM encoded data
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
-    public String encodeToString(DEREncodable de) {
-        Objects.requireNonNull(de);
-        return switch (de) {
-            case PublicKey pu -> buildKey(null, pu.getEncoded());
-            case PrivateKey pr -> buildKey(pr.getEncoded(), null);
+    public String encodeToString(DEREncodable derEncodable) {
+        Objects.requireNonNull(derEncodable);
+        return switch (derEncodable) {
+            case PublicKey pu -> buildKey(pu.getEncoded(), null);
+            case PrivateKey pr -> buildKey(null, pr.getEncoded());
             case KeyPair kp -> {
                 if (kp.getPublic() == null) {
                     throw new IllegalArgumentException("KeyPair does not " +
@@ -182,13 +184,13 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException("KeyPair does not " +
                         "contain PrivateKey.");
                 }
-                yield buildKey(kp.getPrivate().getEncoded(),
-                    kp.getPublic().getEncoded());
+                yield buildKey(kp.getPublic().getEncoded(),
+                    kp.getPrivate().getEncoded());
             }
             case X509EncodedKeySpec x ->
-                buildKey(null, x.getEncoded());
+                buildKey(x.getEncoded(), null);
             case PKCS8EncodedKeySpec p ->
-                buildKey(p.getEncoded(), null);
+                buildKey(null, p.getEncoded());
             case EncryptedPrivateKeyInfo epki -> {
                 try {
                     yield Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY,
@@ -228,7 +230,7 @@ public final class PEMEncoder {
             }
 
             default -> throw new IllegalArgumentException("PEM does not " +
-                "support " + de.getClass().getCanonicalName());
+                "support " + derEncodable.getClass().getCanonicalName());
         };
     }
 
@@ -236,15 +238,16 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns the PEM encoding
      * in a byte array.
      *
-     * @param de the {@code DEREncodable} to be encoded
+     * @param derEncodable the {@code DEREncodable} to be encoded
      * @return a PEM encoded byte array
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
-    public byte[] encode(DEREncodable de) {
-        return encodeToString(de).getBytes(StandardCharsets.ISO_8859_1);
+    public byte[] encode(DEREncodable derEncodable) {
+        return encodeToString(derEncodable).getBytes(
+            StandardCharsets.ISO_8859_1);
     }
 
     /**
@@ -260,7 +263,7 @@ public final class PEMEncoder {
      * by the {@code jdk.epkcs8.defaultAlgorithm} security property and
      * uses the default encryption parameters of the provider that is selected.
      * For greater flexibility with encryption options and parameters, use
-     * {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, Key,
+     * {@link EncryptedPrivateKeyInfo#encryptKey(DEREncodable, Key,
      * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
      * returned object with {@link #encode(DEREncodable)}.
      *
@@ -277,14 +280,18 @@ public final class PEMEncoder {
 
     /**
      * Build PEM encoding.
+     *
+     * privateKeyEncoding will be zeroed when the method returns
      */
-    private String buildKey(byte[] privateBytes, byte[] publicBytes) {
-        DerOutputStream out = new DerOutputStream();
-        Cipher cipher;
-
-        if (privateBytes == null && publicBytes == null) {
+    private String buildKey(byte[] publicEncoding, byte[] privateEncoding) {
+        if (privateEncoding == null && publicEncoding == null) {
             throw new IllegalArgumentException("No encoded data given by the " +
                 "DEREncodable.");
+        }
+
+        if (publicEncoding != null && publicEncoding.length == 0) {
+            throw new IllegalArgumentException("Public key has no " +
+                "encoding");
         }
 
         // If `keySpec` is non-null, then `key` hasn't been established.
@@ -314,66 +321,52 @@ public final class PEMEncoder {
 
         // If `key` is non-null, this is an encoder ready to encrypt.
         if (key != null) {
-            if (privateBytes == null || publicBytes != null) {
-                throw new IllegalArgumentException("Can only encrypt a " +
-                    "PrivateKey.");
+            byte[] encoding = null;
+            if (privateEncoding == null) {
+                throw new IllegalArgumentException("This DEREncodable cannot " +
+                    "be encrypted.");
             }
 
             try {
-                cipher = Cipher.getInstance(Pem.DEFAULT_ALGO);
-                cipher.init(Cipher.ENCRYPT_MODE, key);
-            } catch (GeneralSecurityException e) {
-                throw new IllegalArgumentException("Security property " +
-                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
-                    "valid algorithm.  Operation cannot be performed.", e);
+                // publicBytes will be ignored if null.
+                encoding = new PKCS8Key(publicEncoding, privateEncoding).
+                    generateEncoding();
+                privateEncoding = EncryptedPrivateKeyInfo.encryptKey(
+                    new PKCS8EncodedKeySpec(encoding), key, null, null, null,
+                    null).getEncoded();
+            } catch (IOException | InvalidKeyException e) {
+                throw new IllegalArgumentException("Error while encoding", e);
+            } finally {
+                if (encoding != null) {
+                    Arrays.fill(encoding, (byte) 0x0);
+                }
             }
 
-            try {
-                new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
-                    cipher.getParameters()).encode(out);
-                out.putOctetString(cipher.doFinal(privateBytes));
-                return Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY,
-                    DerValue.wrap(DerValue.tag_Sequence, out).toByteArray());
-            } catch (GeneralSecurityException e) {
-                throw new IllegalArgumentException(e);
-            }
+            // If the public key is non-null, it's now part of the privateBytes
+            publicEncoding = null;
+
         }
 
         // X509 only
-        if (publicBytes != null && privateBytes == null) {
-            if (publicBytes.length == 0) {
+        if (publicEncoding != null && privateEncoding == null) {
+            if (publicEncoding.length == 0) {
                 throw new IllegalArgumentException("No public key encoding " +
                     "given by the DEREncodable.");
             }
-
-            return Pem.pemEncoded(Pem.PUBLIC_KEY, publicBytes);
+            return Pem.pemEncoded(Pem.PUBLIC_KEY, publicEncoding);
         }
 
-        // PKCS8 only
-        if (publicBytes == null && privateBytes != null) {
-            if (privateBytes.length == 0) {
-                throw new IllegalArgumentException("No private key encoding " +
-                    "given by the DEREncodable.");
-            }
-
-            return Pem.pemEncoded(Pem.PRIVATE_KEY, privateBytes);
-        }
-
-        // OneAsymmetricKey
-        if (privateBytes.length == 0) {
+        if (privateEncoding.length == 0) {
             throw new IllegalArgumentException("No private key encoding " +
                 "given by the DEREncodable.");
         }
 
-        if (publicBytes.length == 0) {
-            throw new IllegalArgumentException("No public key encoding " +
-                "given by the DEREncodable.");
-        }
         try {
-            return Pem.pemEncoded(Pem.PRIVATE_KEY,
-                PKCS8Key.getEncoded(publicBytes, privateBytes));
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            return Pem.pemEncoded(
+                (key == null ? Pem.PRIVATE_KEY : Pem.ENCRYPTED_PRIVATE_KEY),
+                privateEncoding);
+        } finally {
+            Arrays.fill(privateEncoding, (byte)0x0);
         }
     }
 

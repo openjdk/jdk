@@ -149,7 +149,7 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, RSAPrivateKey.class, "SunRsaSign");
 
-    public static final Entry ec25519priv = new Entry("ed25519priv",
+    public static final Entry ed25519priv = new Entry("ed25519priv",
         """
         -----BEGIN PRIVATE KEY-----
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
@@ -189,6 +189,7 @@ class PEMData {
         -----END PUBLIC KEY-----
         """, RSAPublicKey.class, "SunRsaSign");
 
+    // This is the public key contained in ecsecp256
     public static final Entry ecsecp256pub = new Entry("ecsecp256pub", """
         -----BEGIN PUBLIC KEY-----
         MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEi/kRGOL7wCPTN4KJ2ppeSt5UYB6u
@@ -285,6 +286,19 @@ class PEMData {
         RTQSNnSEgTaBD29l7FrhNRHX9lIKFZ23caCTBS6o3q3+KgPbq7ao
         -----END RSA PRIVATE KEY-----
         """, RSAPrivateKey.class, "SunRsaSign");
+
+    static final Entry ecsecp256ekpi = new Entry("ecsecp256epki",
+        """
+        -----BEGIN ENCRYPTED PRIVATE KEY-----
+        MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDhqUj1Oadj1GZXUMXT
+        b3QEAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBAgQQitxCfcZcMtoNu+X+
+        PQk+/wSBkFL1NddKkUL2tRv6pNf1TR7eI7qJReGRgJexU/6pDN+UQS5e5qSySa7E
+        k1m2pUHgZlySUblXZj9nOzCsNFfq/jxlL15ZpAviAM2fRINnNEJcvoB+qZTS5cRb
+        Xs3wC7wymHW3EdIZ9sxfSHq9t7j9SnC1jGHjno0v1rKcdIvJtYloxsRYjsG/Sxhz
+        uNYnx8AMuQ==
+        -----END ENCRYPTED PRIVATE KEY-----
+        """, EncryptedPrivateKeyInfo.class, "SunEC", "fish".toCharArray());
+
 
     static final Entry ed25519ep8 = new Entry("ed25519ep8",
         """
@@ -565,7 +579,7 @@ class PEMData {
         privList.add(rsaprivbc);
         privList.add(ecsecp256);
         privList.add(ecsecp384);
-        privList.add(ec25519priv);
+        privList.add(ed25519priv);
         privList.add(ed25519ekpi);  // The non-EKPI version needs decryption
         privList.add(rsaOpenSSL);
         oasList.add(oasrfc8410);

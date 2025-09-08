@@ -92,34 +92,6 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             throws InvalidKeyException {
         this.s = s;
         this.params = params;
-        makeEncoding(s);
-
-    }
-
-    ECPrivateKeyImpl(byte[] s, ECParameterSpec params)
-            throws InvalidKeyException {
-        this.arrayS = s.clone();
-        this.params = params;
-        makeEncoding(s);
-    }
-
-    private void makeEncoding(byte[] s) throws InvalidKeyException {
-        algid = new AlgorithmId
-                (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
-        DerOutputStream out = new DerOutputStream();
-        out.putInteger(1); // version 1
-        byte[] privBytes = s.clone();
-        ArrayUtil.reverse(privBytes);
-        out.putOctetString(privBytes);
-        Arrays.fill(privBytes, (byte) 0);
-        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        privKeyMaterial = val.toByteArray();
-        val.clear();
-    }
-
-    private void makeEncoding(BigInteger s) throws InvalidKeyException {
-        algid = new AlgorithmId(AlgorithmId.EC_oid,
-                ECParameters.getAlgorithmParameters(params));
         byte[] sArr = s.toByteArray();
         // convert to fixed-length array
         int numOctets = (params.getOrder().bitLength() + 7) / 8;
@@ -129,11 +101,26 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         int length = Math.min(sArr.length, sOctets.length);
         System.arraycopy(sArr, inPos, sOctets, outPos, length);
         Arrays.fill(sArr, (byte) 0);
+        makeEncoding(sOctets);
+        Arrays.fill(sOctets, (byte) 0);
+    }
 
+    ECPrivateKeyImpl(byte[] s, ECParameterSpec params)
+            throws InvalidKeyException {
+        this.arrayS = s.clone();
+        this.params = params;
+        byte[] privBytes = arrayS.clone();
+        ArrayUtil.reverse(privBytes);
+        makeEncoding(privBytes);
+        Arrays.fill(privBytes, (byte) 0);
+    }
+
+    private void makeEncoding(byte[] privBytes) throws InvalidKeyException {
+        algid = new AlgorithmId(AlgorithmId.EC_oid,
+            ECParameters.getAlgorithmParameters(params));
         DerOutputStream out = new DerOutputStream();
         out.putInteger(1); // version 1
-        out.putOctetString(sOctets);
-        Arrays.fill(sOctets, (byte) 0);
+        out.putOctetString(privBytes);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
         privKeyMaterial = val.toByteArray();
         val.clear();
@@ -247,10 +234,35 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         throw new InvalidObjectException(
                 "ECPrivateKeyImpl keys are not directly deserializable");
+    }
+
+    // Parse the SEC1v2 encoding to extract public key, if available.
+    public static BitArray parsePublicBits(byte[] privateBytes) {
+        try {
+            DerValue seq = new DerValue(privateBytes);
+            if (seq.tag == DerValue.tag_Sequence) {
+                int version = seq.data.getInteger();
+                if (version == 1) { // EC
+                    byte[] oct = seq.data.getOctetString();
+                    Arrays.fill(oct, (byte) 0x0);
+                    if (seq.data.available() != 0) {
+                        DerValue derValue = seq.data.getDerValue();
+                        if (derValue.isContextSpecific((byte) 1)) {
+                            derValue = derValue.data.getDerValue();
+                            return derValue.getUnalignedBitString();
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+        return null;
     }
 }

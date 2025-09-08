@@ -70,13 +70,13 @@ public class PEMEncoderTest {
         newEntryList.remove(PEMData.getEntry("ecsecp384"));
         keymap = generateObjKeyMap(newEntryList);
         System.out.println("Same instance re-encode test:");
-        keymap.keySet().stream().forEach(key -> test(key, encoder));
+        keymap.keySet().forEach(key -> test(key, encoder));
         System.out.println("New instance re-encode test:");
-        keymap.keySet().stream().forEach(key -> test(key, PEMEncoder.of()));
+        keymap.keySet().forEach(key -> test(key, PEMEncoder.of()));
         System.out.println("Same instance re-encode testToString:");
-        keymap.keySet().stream().forEach(key -> testToString(key, encoder));
+        keymap.keySet().forEach(key -> testToString(key, encoder));
         System.out.println("New instance re-encode testToString:");
-        keymap.keySet().stream().forEach(key -> testToString(key,
+        keymap.keySet().forEach(key -> testToString(key,
             PEMEncoder.of()));
         System.out.println("Same instance Encoder testEncodedKeySpec:");
         testEncodedKeySpec(encoder);
@@ -86,14 +86,14 @@ public class PEMEncoderTest {
         testEmptyAndNullKey(encoder);
         keymap = generateObjKeyMap(PEMData.encryptedList);
         System.out.println("Same instance Encoder match test:");
-        keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encoder));
+        keymap.keySet().forEach(key -> testEncryptedMatch(key, encoder));
         System.out.println("Same instance Encoder new withEnc test:");
-        keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
+        keymap.keySet().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
-        keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
+        keymap.keySet().forEach(key -> testEncrypted(key, PEMEncoder.of()));
         System.out.println("Same instance encrypted Encoder test:");
         PEMEncoder encEncoder = encoder.withEncryption("fish".toCharArray());
-        keymap.keySet().stream().forEach(key -> testSameEncryptor(key, encEncoder));
+        keymap.keySet().forEach(key -> testSameEncryptor(key, encEncoder));
         try {
             encoder.withEncryption(null);
         } catch (Exception e) {
@@ -107,12 +107,23 @@ public class PEMEncoderTest {
             d.decode(PEMData.ed25519ep8.pem(), PEM.class);
         PEMData.checkResults(PEMData.ed25519ep8, pem.toString());
 
-        // test PemRecord is encapsulated with PEM header and footer on encoding
+        // test PEM is encapsulated with PEM header and footer on encoding
         String[] pemLines = PEMData.ed25519ep8.pem().split("\n");
         String[] pemNoHeaderFooter = Arrays.copyOfRange(pemLines, 1, pemLines.length - 1);
         PEM pemR = new PEM("ENCRYPTED PRIVATE KEY", String.join("\n",
                 pemNoHeaderFooter));
         PEMData.checkResults(PEMData.ed25519ep8.pem(), encoder.encodeToString(pemR));
+
+        // Verify the same private key bytes are returned with an ECDSA private
+        // key PEM and an encrypted PEM.
+        KeyPair kp = d.decode(PEMData.ecsecp256.pem(), KeyPair.class);
+        var origPriv = kp.getPrivate();
+        String s = encoder.withEncryption(PEMData.ecsecp256ekpi.password()).encodeToString(kp);
+        kp = d.withDecryption(PEMData.ecsecp256ekpi.password()).decode(s, KeyPair.class);
+        var newPriv = kp.getPrivate();
+        if (Arrays.compare(origPriv.getEncoded(), newPriv.getEncoded()) != 0) {
+            throw new AssertionError("compare fails");
+        }
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {

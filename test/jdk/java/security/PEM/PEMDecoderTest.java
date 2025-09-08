@@ -137,12 +137,12 @@ public class PEMDecoderTest {
         testInputStream();
         testPEMRecord(PEMData.rsapub);
         testPEMRecord(PEMData.ecCert);
-        testPEMRecord(PEMData.ec25519priv);
+        testPEMRecord(PEMData.ed25519priv);
         testPEMRecord(PEMData.ecCSR);
         testPEMRecord(PEMData.ecCSRWithData);
         testPEMRecordDecode(PEMData.rsapub);
         testPEMRecordDecode(PEMData.ecCert);
-        testPEMRecordDecode(PEMData.ec25519priv);
+        testPEMRecordDecode(PEMData.ed25519priv);
         testPEMRecordDecode(PEMData.ecCSR);
         testPEMRecordDecode(PEMData.ecCSRWithData);
 
