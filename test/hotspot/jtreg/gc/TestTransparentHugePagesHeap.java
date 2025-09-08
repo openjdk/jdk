@@ -123,28 +123,32 @@ public class TestTransparentHugePagesHeap {
                 // exactly matches the heap range. Instead we look for the first range that
                 // contains the start of the heap and verify that that range is THP eligible.
 
-                if (addressStart.compareTo(heapStart) <= 0 && heapStart.compareTo(addressEnd) < 0) {
-                    // Found a range that contains the start of the heap, verify that it is THP eligible.
-                    while (smapsFile.hasNextLine()) {
-                        Matcher m = thpEligiblePattern.matcher(smapsFile.nextLine());
-                        if (!m.matches()) {
-                            continue;
-                        }
+                if (addressStart.compareTo(heapStart) > 0 || heapStart.compareTo(addressEnd) >= 0) {
+                    continue;
+                }
 
-                        // Found the THPeligible line
-                        if (m.group(1).equals("1")) {
-                            // Success - THPeligible is 1, heap can be backed by huge pages
-                            return;
-                        }
+                // Found a range that contains the start of the heap, verify that it is THP eligible.
 
-                        throw new RuntimeException("The address range 0x" + addressStart.toString(16)
-                                                   + "-0x" + addressEnd.toString(16)
-                                                   + " that contains the heap start" + heapStart
-                                                   + " is not THPeligible");
+                while (smapsFile.hasNextLine()) {
+                    Matcher m = thpEligiblePattern.matcher(smapsFile.nextLine());
+                    if (!m.matches()) {
+                        continue;
                     }
 
-                    throw new RuntimeException("Couldn't find THPeligible in the smaps file");
+                    // Found the THPeligible line
+
+                    if (m.group(1).equals("1")) {
+                        // Success - THPeligible is 1, heap can be backed by huge pages
+                        return;
+                    }
+
+                    throw new RuntimeException("The address range 0x" + addressStart.toString(16)
+                                               + "-0x" + addressEnd.toString(16)
+                                               + " that contains the heap start" + heapStart
+                                               + " is not THPeligible");
                 }
+
+                throw new RuntimeException("Couldn't find THPeligible in the smaps file");
             }
 
             throw new RuntimeException("Could not find an address range containing the heap start " + heapStart + " in the smaps file");
