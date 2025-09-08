@@ -808,7 +808,7 @@ private:
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
-                                      InstructionAttr *attributes, int op1, int op2, bool no_flags = false, bool use_prefixq = false, bool is_commutative = false);
+                                             int size, int op1, int op2, bool no_flags = false, bool is_commutative = false);
 
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
                                              int size, int op1, int op2, bool no_flags);

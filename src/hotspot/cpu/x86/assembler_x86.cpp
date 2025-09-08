@@ -1428,8 +1428,7 @@ void Assembler::addl(Register dst, Register src) {
 }
 
 void Assembler::eaddl(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x03, 0xC0, no_flags, false /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x03, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::addr_nop_4() {
@@ -1661,8 +1660,7 @@ void Assembler::andl(Register dst, Register src) {
 }
 
 void Assembler::eandl(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x23, 0xC0, no_flags, false /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x23, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::andnl(Register dst, Register src1, Register src2) {
@@ -4414,8 +4412,7 @@ void Assembler::enotl(Register dst, Register src) {
 }
 
 void Assembler::eorw(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_66, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x0B, 0xC0, no_flags, false /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_66, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_16bit, 0x0B, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::orl(Address dst, int32_t imm32) {
@@ -4459,8 +4456,7 @@ void Assembler::orl(Register dst, Register src) {
 }
 
 void Assembler::eorl(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x0B, 0xC0, no_flags, false /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x0B, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::orl(Address dst, Register src) {
@@ -7304,8 +7300,7 @@ void Assembler::xorl(Register dst, Register src) {
 }
 
 void Assembler::exorl(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x33, 0xC0, no_flags, false /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x33, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::xorl(Address dst, Register src) {
@@ -12928,15 +12923,17 @@ void Assembler::eevex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimd
 void Assembler::emit_eevex_or_demote(Register dst, Address src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
                                      int size, int opcode_byte, bool no_flags, bool is_map1, bool is_commutative) {
   if (is_commutative && is_demotable(no_flags, dst->encoding(), src2->encoding())) {
+    // Opcode byte adjustment due to mismatch between NDD and equivalent demotable variant
+    opcode_byte += 2;
     if (size == EVEX_64bit) {
-      emit_prefix_and_int8(get_prefixq(src1, dst, is_map1), opcode_byte + 2);
+      emit_prefix_and_int8(get_prefixq(src1, dst, is_map1), opcode_byte);
     } else {
       // For 32-bit, 16-bit and 8-bit
       if (size == EVEX_16bit) {
         emit_int8(0x66);
       }
       prefix(src1, dst, false, is_map1);
-      emit_int8(opcode_byte + 2);
+      emit_int8(opcode_byte);
     }
   } else {
     bool vex_w = (size == EVEX_64bit) ? true : false;
@@ -13110,7 +13107,7 @@ int Assembler::eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc,
 }
 
 void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
-                                               InstructionAttr *attributes, int op1, int op2, bool no_flags, bool use_prefixq, bool is_commutative) {
+                                                      int size, int op1, int op2, bool no_flags, bool is_commutative) {
   bool demotable = is_demotable(no_flags, dst->encoding(), src1->encoding());
   if (!demotable && is_commutative) {
     if (is_demotable(no_flags, dst->encoding(), src2->encoding())) {
@@ -13121,9 +13118,12 @@ void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src
       src2 = tmp;
     }
   }
+  bool vex_w = (size == EVEX_64bit) ? true : false;
+  bool use_prefixq = vex_w;
+  InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
   // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, attributes, no_flags, use_prefixq, demotable);
+  (void)emit_eevex_prefix_or_demote_ndd(src1->encoding(), dst->encoding(), src2->encoding(), pre, opc /* MAP4 */, &attributes, no_flags, use_prefixq, demotable);
   emit_arith(op1, op2, src1, src2);
 }
 
@@ -13137,7 +13137,6 @@ void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds
   } else {
     bool vex_w = (size == EVEX_64bit) ? true : false;
     InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    //attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, size);
     attributes.set_is_evex_instruction();
     vex_prefix_and_encode(0, dst_enc, nds_enc, pre, opc, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
 
@@ -14665,8 +14664,7 @@ void Assembler::addq(Register dst, Register src) {
 }
 
 void Assembler::eaddq(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x03, 0xC0, no_flags, true /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x03, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::adcxq(Register dst, Register src) {
@@ -14759,8 +14757,7 @@ void Assembler::andq(Register dst, Register src) {
 }
 
 void Assembler::eandq(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x23, 0xC0, no_flags, true /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x23, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::andq(Address dst, Register src) {
@@ -15619,8 +15616,7 @@ void Assembler::orq(Register dst, Register src) {
 }
 
 void Assembler::eorq(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x0B, 0xC0, no_flags, true /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x0B, 0xC0, no_flags, true /* is_commutative */);
 }
 void Assembler::popcntq(Register dst, Address src) {
   assert(VM_Version::supports_popcnt(), "must support");
@@ -16363,8 +16359,7 @@ void Assembler::xorq(Register dst, Register src) {
 }
 
 void Assembler::exorq(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, 0x33, 0xC0, no_flags, true /* use_prefixq */, true /* is_commutative */);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x33, 0xC0, no_flags, true /* is_commutative */);
 }
 
 void Assembler::xorq(Register dst, Address src) {
