@@ -40,8 +40,6 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/quickSort.hpp"
 
-#define KELVIN_RENAISSANCE
-
 template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
@@ -944,9 +942,6 @@ size_t ShenandoahGeneration::used_regions() const {
 #ifdef KELVIN_DEBUG
   log_info(gc)("used_regions(_type: %d) returning %zu", _type, result);
 #endif
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("used_regions(_type: %d) returning %zu", _type, result);
-#endif
   return result;
 }
 
@@ -965,10 +960,6 @@ size_t ShenandoahGeneration::max_capacity() const {
     total_regions = _free_set->total_global_regions();
     break;
   }
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("max_capacity(_type: %d) returning %zu", _type, total_regions * ShenandoahHeapRegion::region_size_bytes());
-#endif
-
 #ifdef KELVIN_DEBUG
   log_info(gc)("max_capacity(_type: %d) returning %zu", _type, total_regions * ShenandoahHeapRegion::region_size_bytes());
 #endif
@@ -990,10 +981,6 @@ size_t ShenandoahGeneration::free_unaffiliated_regions() const {
     free_regions = _free_set->global_unaffiliated_regions();
     break;
   }
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("free_unaffiliated_regions(_type: %d) returning %zu", _type, free_regions);
-#endif
-
 #ifdef KELVIN_DEBUG
   log_info(gc)("free_unaffiliated_regions(_type: %d) returning %zu", _type, free_regions);
 #endif
@@ -1018,9 +1005,6 @@ size_t ShenandoahGeneration::used_regions_size() const {
 #ifdef KELVIN_DEBUG
   log_info(gc)("used_regions_size(_type: %d) returning %zu", _type, used_regions * ShenandoahHeapRegion::region_size_bytes());
 #endif
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("used_regions_size(_type: %d) returning %zu", _type, used_regions * ShenandoahHeapRegion::region_size_bytes());
-#endif
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
@@ -1029,18 +1013,12 @@ size_t ShenandoahGeneration::available() const {
 #ifdef KELVIN_DEBUG
   log_info(gc)("available(_type: %d) returning %zu", _type, result);
 #endif
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("available(_type: %d) returning %zu", _type, result);
-#endif
   return result;
 }
 
 // For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
 size_t ShenandoahGeneration::available_with_reserve() const {
   size_t result = available(max_capacity());
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("available_with_reserve(_type: %d) returning %zu", _type, result);
-#endif
 #ifdef KELVIN_DEBUG
   log_info(gc)("available_with_reserve(_type: %d) returning %zu", _type, result);
 #endif
@@ -1049,9 +1027,6 @@ size_t ShenandoahGeneration::available_with_reserve() const {
 
 size_t ShenandoahGeneration::soft_available() const {
   size_t result = available(ShenandoahHeap::heap()->soft_max_capacity());
-#ifdef KELVIN_RENAISSANCE
-  log_info(gc)("soft_available(_type: %d) returning %zu", _type, result);
-#endif
 #ifdef KELVIN_DEBUG
   log_info(gc)("soft_available(_type: %d) returning %zu", _type, result);
 #endif

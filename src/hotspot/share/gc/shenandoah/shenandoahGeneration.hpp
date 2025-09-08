@@ -41,8 +41,6 @@ class ShenandoahHeuristics;
 class ShenandoahMode;
 class ShenandoahReferenceProcessor;
 
-#define KELVIN_RENAISSANCE
-
 class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {
   friend class VMStructs;
 private:
@@ -148,9 +146,6 @@ private:
       result = _free_set->global_used();
       break;
     }
-#ifdef KELVIN_RENAISSANCE
-    log_info(gc)("used(_type: %d) returning %zu", _type, result);
-#endif
 #undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
     log_info(gc)("used(_type: %d) returning %zu", _type, result);
@@ -163,9 +158,6 @@ private:
   size_t used_including_humongous_waste() const {
     // In the current implementation, used() includes humongous waste
     size_t result = used();
-#ifdef KELVIN_RENAISSANCE
-    log_info(gc)("used_including_humongous_waste(_type: %d) returning %zu", _type, result);
-#endif
 #ifdef KELVIN_DEBUG
     log_info(gc)("used_including_humongous_waste(_type: %d) returning %zu", _type, result);
 #endif
@@ -184,25 +176,16 @@ private:
 #ifdef KELVIN_DEBUG
       log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
 #endif
-#ifdef KELVIN_RENAISSANCE
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
       return result;
     } else if (_type == ShenandoahGenerationType::NON_GEN) {
       assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
       size_t result = _free_set->get_bytes_allocated_since_gc_start();
-#ifdef KELVIN_RENAISSANCE
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
 #ifdef KELVIN_DEBUG
       log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
 #endif
       return result;
     } else {
       size_t result = 0;
-#ifdef KELVIN_RENAISSANCE
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
 #ifdef KELVIN_DEBUG
       log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
 #endif
