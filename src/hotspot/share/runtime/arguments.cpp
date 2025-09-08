@@ -1854,24 +1854,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-  if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
-    // ObjectMonitorTable requires lightweight locking.
-    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
-    warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
-  }
-
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
-  if (LockingMode == LM_MONITOR) {
-    jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
-    return false;
-  }
-#endif
-  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
-    jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)\n");
-    return false;
-  }
   return status;
 }
 
