@@ -1847,9 +1847,11 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   }
   JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
+  bool interp_only; // might be changed in JRT_BLOCK_END
   JRT_BLOCK
     state = get_jvmti_thread_state(thread);
-    if (state != nullptr && state->is_interp_only_mode()) {
+    interp_only = state != nullptr && state->is_interp_only_mode();
+    if (interp_only) {
       if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
@@ -1864,7 +1866,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
-  if (state != nullptr && state->is_interp_only_mode()) {
+  if (interp_only) {
     // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
     // adding FramePop event requests as no safepoint can happen before removing activation.
     state->clr_top_frame_is_exiting();
