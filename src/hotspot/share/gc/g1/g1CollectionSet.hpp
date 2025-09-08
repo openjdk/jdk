@@ -41,19 +41,19 @@ class G1HeapRegionClosure;
 
 // The collection set.
 //
-// The set of regions that are evacuated during an evacuation pause.
+// The set of regions and candidate groups that were evacuated during an
+// evacuation pause.
 //
-// At the end of a collection, before freeing the collection set, this set
-// contains all regions that were evacuated during this collection:
+// At the end of a collection, before freeing it, this set contains all regions
+// and collection set groups that were evacuated during this collection:
 //
 // - survivor regions from the last collection (if any)
 // - eden regions allocated by the mutator
 // - old gen regions evacuated during mixed gc
 //
-// This set is built incrementally at mutator time as regions are retired, and
-// if this had been a mixed gc, some additional (during gc) incrementally added
-// old regions from the collection set candidates built during the concurrent
-// cycle.
+// This set is initially built at mutator time as regions are retired. If the
+// collection is a mixed gc, it contains some additional (during the pause)
+// incrementally added old regions from the collection set candidates.
 //
 // A more detailed overview of how the collection set changes over time follows:
 //
@@ -129,6 +129,7 @@ class G1HeapRegionClosure;
 // ||                              ... after step b6)
 // |SSS|                           ... after step 7), with three survivor regions
 //
+// Candidate groups are kept in sync with the contents of the collection set regions.
 class G1CollectionSet {
   G1CollectedHeap* _g1h;
   G1Policy* _policy;
@@ -137,48 +138,54 @@ class G1CollectionSet {
   G1CollectionSetCandidates _candidates;
 
   // The actual collection set as a set of region indices.
-  // All entries in _collection_set_regions below _collection_set_cur_length are
-  // assumed to be part of the collection set.
+  //
+  // All regions in _regions below _regions_cur_length are assumed to be part of the
+  // collection set.
   // We assume that at any time there is at most only one writer and (one or more)
-  // concurrent readers. This means we are good with using storestore and loadload
-  // barriers on the writer and reader respectively only.
-  uint* _collection_set_regions;
-  volatile uint _collection_set_cur_length;
-  uint _collection_set_max_length;
+  // concurrent readers. This means synchronization using storestore and loadload
+  // barriers on the writer and reader respectively only are sufficient.
+  //
+  // This corresponds to the regions referenced by the candidate groups further below.
+  uint* _regions;
+  uint _regions_max_length;
+
+  volatile uint _regions_cur_length;
 
   // Old gen groups selected for evacuation.
-  G1CSetCandidateGroupList _collection_set_groups;
+  G1CSetCandidateGroupList _groups;
 
-  // Groups are added to the collection set in increments when performing optional evacuations.
-  // We use the value below to track these increments.
-  uint _selected_groups_cur_length;
-  uint _selected_groups_inc_part_start;
+  uint groups_cur_length() const;
 
   uint _eden_region_length;
   uint _survivor_region_length;
   uint _initial_old_region_length;
 
   // When doing mixed collections we can add old regions to the collection set, which
-  // will be collected only if there is enough time. We call these optional (old) regions.
+  // will be collected only if there is enough time. We call these optional (old)
+  // groups. Regions are reachable via this list as well.
   G1CSetCandidateGroupList _optional_groups;
 
-  enum CSetBuildType {
+#ifdef ASSERT
+  enum class CSetBuildType {
     Active,             // We are actively building the collection set
     Inactive            // We are not actively building the collection set
   };
 
   CSetBuildType _inc_build_state;
-  size_t _inc_part_start;
+#endif
+  // Index into the _regions indicating the start of the current collection set increment.
+  size_t _regions_inc_part_start;
+  // Index into the _groups indicating the start of the current collection set increment.
+  uint _groups_inc_part_start;
 
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 
-  // Update the incremental collection set information when adding a region.
   void add_young_region_common(G1HeapRegion* hr);
 
-  // Add the given old region to the head of the current collection set.
+  // Add the given old region to the current collection set.
   void add_old_region(G1HeapRegion* hr);
 
   void prepare_optional_group(G1CSetCandidateGroup* gr, uint cur_index);
@@ -191,18 +198,15 @@ class G1CollectionSet {
 
   void select_candidates_from_retained(double time_remaining_ms);
 
-  // Select regions for evacuation from the optional candidates given the remaining time
-  // and return the number  of actually selected regions.
-  uint select_optional_collection_set_regions(double time_remaining_ms);
-  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected);
+  // Select groups for evacuation from the optional candidates given the remaining time
+  // and return the number of actually selected regions.
+  uint select_optional_groups(double time_remaining_ms);
+  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_groups_selected);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
-  // will take.
+  // will take. Returns the time remaining from the given target pause time.
   double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
-  // Perform any final calculations on the incremental collection set fields before we
-  // can use them.
-  void finalize_incremental_building();
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
@@ -223,27 +227,26 @@ public:
   // Initializes the collection set giving the maximum possible length of the collection set.
   void initialize(uint max_region_length);
 
+  // Drop all collection set candidates (only the candidates).
   void abandon_all_candidates();
 
   G1CollectionSetCandidates* candidates() { return &_candidates; }
   const G1CollectionSetCandidates* candidates() const { return &_candidates; }
 
-  G1CSetCandidateGroupList* collection_set_groups() { return &_collection_set_groups; }
-  const G1CSetCandidateGroupList* collection_set_groups() const { return &_collection_set_groups; }
-
-  void prepare_groups_for_scan();
+  void prepare_for_scan();
 
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
 
-  uint region_length() const       { return young_region_length() +
-                                            initial_old_region_length(); }
+  // Total length of the initial collection set in regions.
+  uint initial_region_length() const { return young_region_length() +
+                                              initial_old_region_length(); }
   uint young_region_length() const { return eden_region_length() +
                                             survivor_region_length(); }
 
-  uint eden_region_length() const     { return _eden_region_length; }
+  uint eden_region_length() const { return _eden_region_length; }
   uint survivor_region_length() const { return _survivor_region_length; }
-  uint initial_old_region_length() const      { return _initial_old_region_length; }
+  uint initial_old_region_length() const { return _initial_old_region_length; }
   uint num_optional_regions() const { return _optional_groups.num_regions(); }
 
   bool only_contains_young_regions() const { return (initial_old_region_length() + num_optional_regions()) == 0; }
@@ -258,28 +261,24 @@ public:
 
   // Initialize incremental collection set info.
   void start_incremental_building();
-  // Start a new collection set increment.
-  void update_incremental_marker() {
-    _inc_build_state = Active;
-    _inc_part_start = _collection_set_cur_length;
-    _selected_groups_inc_part_start = _selected_groups_cur_length;
-  }
+  // Start a new collection set increment, continuing the incremental building.
+  void continue_incremental_building();
   // Stop adding regions to the current collection set increment.
-  void stop_incremental_building() { _inc_build_state = Inactive; }
+  void stop_incremental_building();
 
   // Iterate over the current collection set increment applying the given G1HeapRegionClosure
   // from a starting position determined by the given worker id.
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
-  size_t increment_length() const { return _collection_set_cur_length - _inc_part_start; }
+  size_t regions_cur_length() const { return _regions_cur_length - _regions_inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
-  size_t cur_length() const { return _collection_set_cur_length; }
+  size_t cur_length() const { return _regions_cur_length; }
 
-  uint collection_groups_increment_length() const { return _selected_groups_cur_length - _selected_groups_inc_part_start; }
+  uint groups_increment_length() const;
 
   // Iterate over the entire collection set (all increments calculated so far), applying
-  // the given G1HeapRegionClosure on all of them.
+  // the given G1HeapRegionClosure on all of the regions.
   void iterate(G1HeapRegionClosure* cl) const;
   void par_iterate(G1HeapRegionClosure* cl,
                    G1HeapRegionClaimer* hr_claimer,
@@ -287,10 +286,11 @@ public:
 
   void iterate_optional(G1HeapRegionClosure* cl) const;
 
-  // Finalize the initial collection set consisting of all young regions potentially a
+  // Finalize the initial collection set consisting of all young regions and potentially a
   // few old gen regions.
   void finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor);
   // Finalize the next collection set from the set of available optional old gen regions.
+  // Returns whether there still were some optional regions.
   bool finalize_optional_for_evacuation(double remaining_pause_time);
   // Abandon (clean up) optional collection set regions that were not evacuated in this
   // pause.

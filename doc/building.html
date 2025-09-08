@@ -1451,10 +1451,10 @@ of a cross-compiling toolchain and a sysroot environment which can
 easily be used together with the <code>--with-devkit</code> configure
 option to cross compile the JDK. On Linux/x86_64, the following
 command:</p>
-<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64-linux-gnu &amp;&amp; make</code></pre>
-<p>will configure and build the JDK for Linux/ppc64 assuming that
-<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to Linux/ppc64
-devkit.</p>
+<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64le-linux-gnu &amp;&amp; make</code></pre>
+<p>will configure and build the JDK for Linux/ppc64le assuming that
+<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to
+Linux/ppc64le devkit.</p>
 <p>Devkits can be created from the <code>make/devkit</code> directory by
 executing:</p>
 <pre><code>make [ TARGETS=&quot;&lt;TARGET_TRIPLET&gt;+&quot; ] [ BASE_OS=&lt;OS&gt; ] [ BASE_OS_VERSION=&lt;VER&gt; ]</code></pre>
@@ -1481,10 +1481,10 @@ following targets are known to work:</p>
 <td>arm-linux-gnueabihf</td>
 </tr>
 <tr class="even">
-<td>ppc64-linux-gnu</td>
+<td>ppc64le-linux-gnu</td>
 </tr>
 <tr class="odd">
-<td>ppc64le-linux-gnu</td>
+<td>riscv64-linux-gnu</td>
 </tr>
 <tr class="even">
 <td>s390x-linux-gnu</td>
