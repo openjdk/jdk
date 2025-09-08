@@ -145,10 +145,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @throws     java.util.MissingResourceException
      *             if the resources for the specified locale cannot be
      *             found or cannot be loaded.
+     * @throws     NullPointerException if {@code locale} is null
      */
     public DateFormatSymbols(Locale locale)
     {
-        initializeData(locale);
+        initializeData(Objects.requireNonNull(locale,
+            "locale should not be null"));
     }
 
     /**
@@ -344,6 +346,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
+        Objects.requireNonNull(locale, "locale should not be null");
         DateFormatSymbols dfs = getProviderInstance(locale);
         if (dfs != null) {
             return dfs;
