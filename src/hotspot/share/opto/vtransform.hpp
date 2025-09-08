@@ -25,6 +25,7 @@
 #define SHARE_OPTO_VTRANSFORM_HPP
 
 #include "opto/node.hpp"
+#include "opto/vectornode.hpp"
 #include "opto/vectorization.hpp"
 
 // VTransform:
@@ -91,9 +92,12 @@ public:
     return VTransformApplyResult(n, 0, 0);
   }
 
-  static VTransformApplyResult make_vector(Node* n, uint vector_length, uint vector_width) {
-    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyResult(n, vector_length, vector_width);
+  static VTransformApplyResult make_vector(VectorNode* vn) {
+    return VTransformApplyResult(vn, vn->length(), vn->length_in_bytes());
+  }
+
+  static VTransformApplyResult make_vector(Node* n, const TypeVect* vt) {
+    return VTransformApplyResult(n, vt->length(), vt->length_in_bytes());
   }
 
   static VTransformApplyResult make_empty() {

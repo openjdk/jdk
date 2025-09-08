@@ -151,8 +151,8 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
   Node* p0 = pack->at(0);
   const VTransformVectorNodePrototype prototype = VTransformVectorNodePrototype::make_from_pack(pack, _vloop_analyzer);
-  const int  sopc = prototype.scalar_opcode();
-  const uint vlen = prototype.vector_length();
+  const int sopc     = prototype.scalar_opcode();
+  const uint vlen    = prototype.vector_length();
   const BasicType bt = prototype.element_basic_type();
 
   VTransformVectorNode* vtn = nullptr;
