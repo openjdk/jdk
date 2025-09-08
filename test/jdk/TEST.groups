@@ -317,13 +317,11 @@ jdk_loom = \
 core_tools = \
     tools \
     -tools/jpackage \
-    jdk/internal/jrtfs \
-    sun/tools/jrunscript
+    jdk/internal/jrtfs
 
 svc_tools = \
     com/sun/tools/attach \
     sun/tools \
-    -sun/tools/jrunscript \
     sun/jvmstat
 
 jdk_tools = \
