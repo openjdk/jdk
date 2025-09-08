@@ -74,6 +74,7 @@ bool VM_G1TryInitiateConcMark::doit_prologue() {
   // got scheduled and prevented the scheduling of the concurrent start GC.
   // In this case we want to retry the GC so that the concurrent start pause is
   // actually scheduled.
+  _terminating = G1CollectedHeap::heap()->is_shutting_down();
   if (!result) _transient_failure = true;
   return result;
 }
@@ -82,9 +83,6 @@ void VM_G1TryInitiateConcMark::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCCauseSetter x(g1h, _gc_cause);
-
-  // Record for handling by caller.
-  _terminating = g1h->concurrent_mark_is_terminating();
 
   _mark_in_progress = g1h->collector_state()->mark_in_progress();
   _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
@@ -119,7 +117,6 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
   g1h->do_collection_pause_at_safepoint();
@@ -156,6 +153,18 @@ void VM_G1PauseConcurrent::doit() {
 
 bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->is_shutting_down()) {
+    Heap_lock->unlock();
+    // JVM shutdown has started. Stall here until marking threads have been aborted.
+    // This ensures that any further operations will be properly aborted and will
+    // not interfere with the shutdown process.
+    MonitorLocker ml(G1CGC_lock, Mutex::_no_safepoint_check_flag);
+    while (!g1h->concurrent_mark()->has_aborted()) {
+      ml.wait();
+    }
+    return false;
+  }
   return true;
 }
 

@@ -277,6 +277,7 @@ CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
   _soft_ref_policy(),
+  _is_shutting_down(false),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -604,9 +605,18 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
+bool CollectedHeap::is_shutting_down() const {
+  return Atomic::load_acquire(&_is_shutting_down);
+}
+
 void CollectedHeap::before_exit() {
   print_tracing_info();
 
+  {
+    // Acquire the Heap_lock to ensure mutual exclusion with VM_GC_Operations.
+    MutexLocker ml(Heap_lock);
+    Atomic::release_store(&_is_shutting_down, true);
+  }
   // Stop any on-going concurrent work and prepare for exit.
   stop();
 }

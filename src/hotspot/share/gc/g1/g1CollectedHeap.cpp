@@ -468,6 +468,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
       log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
     }
+
+    if (is_shutting_down()) {
+      // If the VM is shutting down, we may have skipped allocation-triggered GCs.
+      // To avoid returning nullptr (which could cause premature OOME), we stall
+      // allocation requests here until the VM shutdown is complete.
+      MonitorLocker ml(BeforeExit_lock);
+      while (is_shutting_down()) {
+        ml.wait();
+      }
+    }
   }
 
   ShouldNotReachHere();
@@ -1502,10 +1512,6 @@ jint G1CollectedHeap::initialize() {
   FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
-}
-
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  return _cm_thread->should_terminate();
 }
 
 void G1CollectedHeap::stop() {

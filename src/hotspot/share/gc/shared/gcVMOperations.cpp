@@ -85,7 +85,7 @@ bool VM_GC_Operation::skip_operation() const {
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
   }
-  return skip;
+  return skip || Universe::heap()->is_shutting_down();
 }
 
 static bool should_use_gclocker() {

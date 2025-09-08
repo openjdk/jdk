@@ -110,6 +110,9 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
   static Klass* _filler_object_klass;
 
+  // Flag to indicate that VM is shutting down.
+  volatile bool _is_shutting_down;
+
  protected:
   // Not used by all GCs
   MemRegion _reserved;
@@ -248,6 +251,8 @@ protected:
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
+
+  bool is_shutting_down() const;
 
   void before_exit();
 
