@@ -63,15 +63,9 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   // to make sense under the race. See JDK-8207200.
   committed = MAX2(used, committed);
   assert(used <= committed, "used: %zu, committed: %zu", used,      committed);
-#define KELVIN_MEMORY_USAGE
-#ifdef KELVIN_MEMORY_USAGE
   assert(initial <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  assert(used <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   assert(committed <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   assert(max <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  log_info(gc)("ShenandoahMemoryPool::get_MemoryUsage(initial: %zu, used: %zu, committed: %zu, max: %zu)",
-               initial, used, committed, max);
-#endif
   return MemoryUsage(initial, used, committed, max);
 }
 
@@ -94,15 +88,10 @@ MemoryUsage ShenandoahGenerationalMemoryPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _generation->used_regions_size();
 
-#define KELVIN_MEMORY_USAGE
-#ifdef KELVIN_MEMORY_USAGE
   assert(initial <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   assert(used <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   assert(committed <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   assert(max <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  log_info(gc)("ShenandoahGenerationalMemoryPool MemoryUsage(initial: %zu, used: %zu, committed: %zu, max: %zu)",
-               initial, used, committed, max);
-#endif
   return MemoryUsage(initial, used, committed, max);
 }
 
