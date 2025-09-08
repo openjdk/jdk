@@ -42,7 +42,7 @@ import static sun.security.util.DisabledAlgorithmConstraints.*;
 
 /**
  * Algorithm constraints for disabled algorithms property
- *
+ * <p>
  * See the "jdk.certpath.disabledAlgorithms" specification in java.security
  * for the syntax of the disabled algorithm string.
  */

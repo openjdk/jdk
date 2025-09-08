@@ -63,13 +63,15 @@ import sun.security.x509.X500Name;
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm RsaSsaPssConstraints Rsa_pss_pss_Sha384 true
+ * @run main/othervm RsaSsaPssConstraints RsaSsa-Pss true
  * @run main/othervm RsaSsaPssConstraints rsa_pss_pss_sha256 false
  * @run main/othervm RsaSsaPssConstraints rsa_pss_pss_sha512 false
  * @run main/othervm RsaSsaPssConstraints rsa_pss_rsae_sha256 false
  * @run main/othervm RsaSsaPssConstraints rsa_pss_rsae_sha384 false
  * @run main/othervm RsaSsaPssConstraints rsa_pss_rsae_sha512 false
  * @run main/othervm RsaSsaPssConstraints rsa_pkcs1_sha384 false
- * @run main/othervm RsaSsaPssConstraints RsaSsa-Pss true
+ * @run main/othervm RsaSsaPssConstraints SHA384withRSA false
+ * @run main/othervm RsaSsaPssConstraints SHA384withECDSA false
  * @run main/othervm RsaSsaPssConstraints RSA false
  */
 
@@ -99,23 +101,30 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
 
         String algo = args[0];
         boolean fail = Boolean.parseBoolean(args[1]);
-        var test = new RsaSsaPssConstraints("TLS");
 
+        // Note: CertificateBuilder generates RSASSA-PSS certificate
+        // signature using SHA-384 digest algorithm by default.
         Security.setProperty("jdk.tls.disabledAlgorithms",
-                // CertificateBuilder generates RSASSA-PSS certificate
-                // signature using SHA-384 digest algorithm.
                 algo + " usage CertificateSignature");
 
-        if (fail) {
-            runAndCheckException(test::run,
-                    serverEx -> {
-                        assertTrue(serverEx instanceof SSLHandshakeException);
-                        assertEquals(serverEx.getMessage(),
-                                "(handshake_failure) "
-                                        + "No available authentication scheme");
-                    });
-        } else {
-            test.run();
+        for (String protocol : new String[]{"TLS", "TLSv1.2"}) {
+            var test = new RsaSsaPssConstraints(protocol);
+
+            final String errorMsg = protocol.equals("TLSv1.2") ?
+                    "no cipher suites in common" :
+                    "No available authentication scheme";
+
+            if (fail) {
+                runAndCheckException(test::run,
+                        serverEx -> {
+                            assertTrue(
+                                    serverEx instanceof SSLHandshakeException);
+                            assertEquals(serverEx.getMessage(),
+                                    "(handshake_failure) " + errorMsg);
+                        });
+            } else {
+                test.run();
+            }
         }
     }
 
@@ -230,5 +239,4 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
 
         return builder;
     }
-
 }
