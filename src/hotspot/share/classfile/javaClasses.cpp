@@ -2584,10 +2584,7 @@ class BacktraceIterator : public StackObj {
 
 
 // Print stack trace element to the specified output stream.
-// Historically, this was used for java_lang_Throwable and wrote everything to a raw buffer.
-// Presumably to avoid interleaving with other threads.
-// The current version retains that spirit by writing to a stringStream first before
-// flushing everything into the outputStream at once.
+// The output is formatted into a stringStream and written to the outputStream in one step.
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
                                           int version, int bci, Symbol* name) {
   ResourceMark rm;
