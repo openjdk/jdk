@@ -170,9 +170,9 @@ class MutableBigInteger {
             return new MutableBigInteger((long) val);
         // Translate the double into exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
-        long valBits = Double.doubleToRawLongBits(val);
-        int exponent = (int) ((valBits >> 52) & 0x7ffL) - 1075;
-        long significand = (valBits & ((1L << 52) - 1)) | (1L << 52);
+        int exponent = Math.getExponent(val) - 52;
+        long significand = (Double.doubleToRawLongBits(val) & ((1L << 52) - 1))
+                | (1L << 52); // Add the implicit bit
         // At this point, val == significand * 2^exponent, with exponent > 0
         MutableBigInteger result = new MutableBigInteger(significand);
         result.leftShift(exponent);
