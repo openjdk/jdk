@@ -1245,52 +1245,28 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 // by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
 u2 VM_RedefineClasses::find_new_index(int old_index) {
-  if (_index_map_count == 0) {
-    // map is empty so nothing can be found
-    return 0;
-  }
-
   if (old_index < 1 || old_index >= _index_map_p->length()) {
     // The old_index is out of range so it is not mapped. This should
     // not happen in regular constant pool merging use, but it can
     // happen if a corrupt annotation is processed.
     return 0;
   }
-
   int value = _index_map_p->at(old_index);
-  if (value == -1) {
-    // the old_index is not mapped
-    return 0;
-  }
-
   // constant pool indices are u2, unless the merged constant pool overflows which
   // we don't check for.
   return checked_cast<u2>(value);
 } // end find_new_index()
 
-
 // Find new bootstrap specifier index value for old bootstrap specifier index
 // value by searching the index map. Returns unused index (-1) if there is
 // no mapped value for the old bootstrap specifier index.
 int VM_RedefineClasses::find_new_operand_index(int old_index) {
-  if (_operands_index_map_count == 0) {
-    // map is empty so nothing can be found
-    return -1;
-  }
-
   if (old_index == -1 || old_index >= _operands_index_map_p->length()) {
     // The old_index is out of range so it is not mapped.
     // This should not happen in regular constant pool merging use.
     return -1;
   }
-
-  int value = _operands_index_map_p->at(old_index);
-  if (value == -1) {
-    // the old_index is not mapped
-    return -1;
-  }
-
-  return value;
+  return _operands_index_map_p->at(old_index);
 } // end find_new_operand_index()
 
 
@@ -1541,19 +1517,17 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 // for log calls.
 void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
        int old_index, int new_index) {
-  if (find_new_index(old_index) != 0) {
-    // old_index is already mapped
-    return;
+  if (old_index < 1 || old_index >= _index_map_p->length()) {
+    // Out of range, give up
+    return 0;
   }
 
   if (old_index == new_index) {
     // no mapping is needed
     return;
   }
-
   _index_map_p->at_put(old_index, new_index);
   _index_map_count++;
-
   log_trace(redefine, class, constantpool)
     ("mapped tag %d at index %d to %d", scratch_cp->tag_at(old_index).value(), old_index, new_index);
 } // end map_index()
@@ -1561,19 +1535,8 @@ void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
 
 // Map old_index to new_index as needed.
 void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
-  if (find_new_operand_index(old_index) != -1) {
-    // old_index is already mapped
-    return;
-  }
-
-  if (old_index == new_index) {
-    // no mapping is needed
-    return;
-  }
-
   _operands_index_map_p->at_put(old_index, new_index);
   _operands_index_map_count++;
-
   log_trace(redefine, class, constantpool)("mapped bootstrap specifier at index %d to %d", old_index, new_index);
 } // end map_index()
 
@@ -1805,7 +1768,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   ResourceMark rm(THREAD);
   _index_map_count = 0;
-  _index_map_p = new intArray(scratch_cp->length(), scratch_cp->length(), -1);
+  _index_map_p = new intArray(scratch_cp->length(), scratch_cp->length(), 0);
 
   _operands_cur_length = ConstantPool::operand_array_length(old_cp->operands());
   _operands_index_map_count = 0;
