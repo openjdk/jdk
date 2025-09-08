@@ -1029,14 +1029,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_link0(JNIEnv* env, jclass this,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_linkat0(JNIEnv* env, jclass this,
-                                             int dfd1, long addr1,
-                                             int dfd2, long addr2)
+                                             jint dfd1, jlong addr1,
+                                             jint dfd2, jlong addr2, jint flag)
 {
     int err;
     const char* name1 = (const char*)jlong_to_ptr(addr1);
     const char* name2 = (const char*)jlong_to_ptr(addr2);
 
-    RESTARTABLE(linkat(dfd1, name1, dfd2, name2, AT_SYMLINK_FOLLOW), err);
+    RESTARTABLE(linkat(dfd1, name1, dfd2, name2, flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }

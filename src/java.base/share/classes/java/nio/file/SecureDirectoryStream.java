@@ -220,7 +220,11 @@ public interface SecureDirectoryStream<T>
      * path then it locates the target file (the {@code targetdir} parameter is
      * ignored). If the {@code existing} parameter is a relative path it is
      * located relative to the open directory identified by the {@code
-     * targetdir} parameter.
+     * targetdir} parameter, unless {@code targetdir} is {@code null}, in which
+     * case it is located relative to the current working directory. By default,
+     * symbolic links are followed. If the option
+     * {@linkplain LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} is present then
+     * symbolic links are not followed.
      *
      * @param   link
      *          the link (directory entry) to create
@@ -228,6 +232,8 @@ public interface SecureDirectoryStream<T>
      *          the destination directory
      * @param   existing
      *          a path to an existing file
+     * @param   options
+     *          options indicating how symbolic links are handled
      *
      * @return  the path to the link (directory entry)
      *
@@ -247,7 +253,8 @@ public interface SecureDirectoryStream<T>
      *
      * @since 26
      */
-    T createLink(T link, SecureDirectoryStream<T> targetdir, T existing)
+    T createLink(T link, SecureDirectoryStream<T> targetdir, T existing,
+                 LinkOption... options)
         throws IOException;
 
     /**

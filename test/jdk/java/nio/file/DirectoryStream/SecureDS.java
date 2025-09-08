@@ -498,10 +498,6 @@ public class SecureDS {
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {
-            stream.createLink(link, null, file);
-            shouldNotGetHere();
-        } catch (NullPointerException x) { }
-        try {
             stream.createLink(link, stream, null);
             shouldNotGetHere();
         } catch (NullPointerException x) { }

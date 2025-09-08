@@ -217,7 +217,7 @@ class UnixSecureDirectoryStream
 
     @Override
     public Path createLink(Path link,  SecureDirectoryStream<Path> dir,
-                           Path target)
+                           Path target, LinkOption... options)
         throws IOException
     {
         UnixPath linkpath = UnixPath.toUnixPath(link);
@@ -229,7 +229,9 @@ class UnixSecureDirectoryStream
                 throw new ClosedDirectoryStreamException();
             try {
                 UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
-                linkat(that.dfd, targetpath, this.dfd, linkpath);
+                int targetfd = that != null ? that.dfd : AT_FDCWD;
+                int flag = Util.followLinks(options) ? AT_SYMLINK_FOLLOW : 0;
+                linkat(targetfd, targetpath, this.dfd, linkpath, flag);
             } catch (UnixException x) {
                 x.rethrowAsIOException(linkpath, targetpath);
                 return null; // keep compiler happy

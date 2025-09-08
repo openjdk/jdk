@@ -136,16 +136,17 @@ class UnixNativeDispatcher {
     /**
      * linkat(int fd1, const char *name1, int fd2, const char *name2, int flag)
      */
-    static void linkat(int dfd1, UnixPath path1, int dfd2, UnixPath path2)
+    static void linkat(int dfd1, UnixPath path1, int dfd2, UnixPath path2,
+                       int flag)
         throws UnixException
     {
         try (NativeBuffer buffer1 = copyToNativeBuffer(path1);
              NativeBuffer buffer2 = copyToNativeBuffer(path2)) {
-            linkat0(dfd1, buffer1.address(), dfd2, buffer2.address());
+            linkat0(dfd1, buffer1.address(), dfd2, buffer2.address(), flag);
         }
     }
     private static native void linkat0(int dfd1, long addr1,
-                                       int dfd2, long addr2)
+                                       int dfd2, long addr2, int flag)
         throws UnixException;
 
     /**
