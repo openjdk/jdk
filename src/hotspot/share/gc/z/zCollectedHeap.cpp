@@ -149,7 +149,7 @@ oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool d
   return allocator.allocate();
 }
 
-HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
+HeapWord* ZCollectedHeap::mem_allocate(size_t size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(size));
   return (HeapWord*)ZHeap::heap()->alloc_object(size_in_bytes);
 }
