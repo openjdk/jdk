@@ -323,7 +323,6 @@ void printVersion() {
 
 int regEnable() {
     HKEY hKey;
- // DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(HKEY_CURRENT_USER, ACCESSIBILITY_USER_KEY, NULL, KEY_READ|KEY_WRITE, &hKey);
     if (err == ERROR_SUCCESS) {
