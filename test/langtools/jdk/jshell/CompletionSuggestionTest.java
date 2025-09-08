@@ -902,7 +902,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @Test
     public void testAnnotation() {
-        assertCompletion("@Deprec|", "Deprecated");
+        assertCompletion("@Deprec|", "@Deprecated(");
         assertCompletion("@Deprecated(|", "forRemoval = ", "since = ");
         assertCompletion("@Deprecated(forRemoval = |", true, "false", "true");
         assertCompletion("@Deprecated(forRemoval = true, |", "since = ");

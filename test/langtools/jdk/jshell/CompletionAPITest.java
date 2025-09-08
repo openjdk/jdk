@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng CompletionAPITest
+ * @run junit CompletionAPITest
  */
 
 import java.lang.reflect.Field;
@@ -46,9 +46,8 @@ import javax.lang.model.element.QualifiedNameable;
 import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionState;
 import jdk.jshell.SourceCodeAnalysis.ElementSuggestion;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class CompletionAPITest extends KullaTesting {
 
@@ -59,34 +58,34 @@ public class CompletionAPITest extends KullaTesting {
         assertEval("String str = \"\";");
         List<String> actual;
         actual = completionSuggestions("str.", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.QUALIFIED));
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.length()"), String.valueOf(actual));
         actual = completionSuggestions("java.lang.", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.QUALIFIED));
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String"), String.valueOf(actual));
         actual = completionSuggestions("java.", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.QUALIFIED));
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang"), String.valueOf(actual));
         assertEval("@interface Ann2 { }");
         assertEval("@interface Ann1 { Ann2 value(); }");
         actual = completionSuggestions("@Ann", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.TYPES_AS_ANNOTATIONS));
+            assertEquals(EnumSet.of(CompletionContext.TYPES_AS_ANNOTATIONS), state.completionContext());
         });
         assertTrue(actual.containsAll(Set.of("Ann1", "Ann2")), String.valueOf(actual));
         actual = completionSuggestions("@Ann1(", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.ANNOTATION_ATTRIBUTE,
-                                                               CompletionContext.TYPES_AS_ANNOTATIONS));
+            assertEquals(EnumSet.of(CompletionContext.ANNOTATION_ATTRIBUTE,
+                                                               CompletionContext.TYPES_AS_ANNOTATIONS), state.completionContext());
         });
         assertTrue(actual.contains("Ann2"), String.valueOf(actual));
         actual = completionSuggestions("import static java.lang.String.", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN));
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.valueOf(int arg0)"), String.valueOf(actual));
         actual = completionSuggestions("java.util.function.IntFunction<String> f = String::", state -> {
-            assertEquals(state.completionContext(), EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN));
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.valueOf(int arg0)"), String.valueOf(actual));
     }
