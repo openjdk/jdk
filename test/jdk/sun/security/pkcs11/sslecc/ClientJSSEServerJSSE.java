@@ -40,6 +40,7 @@
 import java.security.Provider;
 import java.security.Security;
 import jdk.test.lib.security.Providers;
+import jtreg.SkippedException;
 
 public class ClientJSSEServerJSSE extends PKCS11Test {
 
@@ -58,8 +59,7 @@ public class ClientJSSEServerJSSE extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("KeyFactory", "EC") == null) {
-            System.out.println("Provider does not support EC, skipping");
-            return;
+            throw new SkippedException("Provider does not support EC, skipping");
         }
         Providers.setAt(p, 1);
         CipherTest.main(new JSSEFactory(), cmdArgs);
