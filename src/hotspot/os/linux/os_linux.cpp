@@ -2532,7 +2532,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
+    st->print_cr("%zd", j);
   } else {
     st->print_cr("unlimited or unavailable");
   }

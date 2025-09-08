@@ -235,9 +235,9 @@ void OSContainer::print_container_helper(outputStream* st, ssize_t j, const char
   st->print("%s: ", metrics);
   if (j >= 0) {
     if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / K);
+      st->print_cr("%zd k", (ssize_t)(j / K));
     } else {
-      st->print_cr(UINT64_FORMAT, uint64_t(j));
+      st->print_cr("%zd", j);
     }
   } else {
     // Usages are never unlimited (or -1). Only in the error case.
