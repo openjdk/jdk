@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
@@ -1199,7 +1199,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1414,7 +1414,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
