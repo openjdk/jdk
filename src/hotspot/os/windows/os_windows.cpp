@@ -2644,6 +2644,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exception_record->ExceptionCode;
 #if defined(_M_ARM64)
   address pc = (address) exceptionInfo->ContextRecord->Pc;
+
+  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
@@ -2663,10 +2667,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
-  }
-#elif defined(_M_ARM64)
-  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
-    return EXCEPTION_CONTINUE_EXECUTION;
   }
 #endif
 
