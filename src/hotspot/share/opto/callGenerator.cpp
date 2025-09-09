@@ -614,10 +614,13 @@ void CallGenerator::do_late_inline_helper() {
 
   uint endoff = call->jvms()->endoff();
   if (C->inlining_incrementally()) {
-    assert(endoff == call->req(), "reachability edge present"); // asserted in SafePointNode::grow_stack
+    // No reachability edges should be present when incremental inlining takes place.
+    // Inlining logic doesn't expect any extra edges past debug info and fails with
+    // an assert in SafePointNode::grow_stack.
+    assert(endoff == call->req(), "reachability edges not supported");
   } else {
-    if (call->req() > endoff) {
-      assert(OptimizeReachabilityFences, "reachability edge present");
+    if (call->req() > endoff) { // reachability edges present
+      assert(OptimizeReachabilityFences, "required");
       return; // keep the original call node as the holder of reachability info
     }
   }
