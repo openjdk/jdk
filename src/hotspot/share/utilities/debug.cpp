@@ -300,8 +300,9 @@ class Command : public StackObj {
   static int level;
   DebuggingContext _debugging;
   bool _has_rm;
-  // ResourceMark is only created if a Thread or a JavaThread is required,
-  // and we are actually on a Thread.
+  // Union members of class type are implicitly allocated but not constructed automatically.
+  // We therefore have to explicitly construct _rm with a placement new call (see 'onThread()') and
+  // clean it up afterwards with an explicit destructor call (see '~Command()').
   union { ResourceMark _rm; };
  public:
   Command(const char* str) : _has_rm(false) {
