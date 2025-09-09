@@ -3840,7 +3840,7 @@ attributes %{
   // Up to 4 instructions per bundle
   max_instructions_per_bundle = 4;
 
-  // The RISC-V processor 64 bytes...
+  // The RISC-V processor fetches 64 bytes...
   instruction_fetch_unit_size = 64;
 
   // ...in one line.
