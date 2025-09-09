@@ -36,7 +36,6 @@ final class LdapRequest {
     private static final BerDecoder CLOSED_MARKER = new BerDecoder(new byte[]{}, -1, 0);
     private static final BerDecoder CANCELLED_MARKER = new BerDecoder(new byte[]{}, -1, 0);
     private static final String CLOSE_MSG = "LDAP connection has been closed";
-    private static final String TIMEOUT_MSG_FMT = "LDAP response read timed out, timeout used: %d ms.";
 
     LdapRequest next;   // Set/read in synchronized Connection methods
     final int msgId;          // read-only
@@ -141,7 +140,7 @@ final class LdapRequest {
                 : replies.take();
         // poll from 'replies' blocking queue ended-up with timeout
         if (result == null) {
-            throw new IOException(String.format(TIMEOUT_MSG_FMT, millis));
+            throw new IOException("LDAP response read timed out, timeout used: " + millis + " ms.");
         }
         if (result == CANCELLED_MARKER) {
             throw new CommunicationException("Request: " + msgId +
