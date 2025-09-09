@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Random;
+import java.util.Collections;
 import jdk.test.lib.Utils;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -58,6 +59,7 @@ public class ExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static record MethodArgument(String name, CodeGenerationDataNameType type) {}
+    public static record StringPair(String s0, String s1) {}
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -98,6 +100,57 @@ public class ExpressionFuzzer {
             """
         ));
 
+        List<StringPair> unsignedCmp = List.of(
+            new StringPair("(val < ", ")"),
+            new StringPair("(val > ", ")"),
+            new StringPair("(val >= ", ")"),
+            new StringPair("(val <= ", ")"),
+            new StringPair("(val != ", ")"),
+            new StringPair("(val == ", ")"),
+            new StringPair("(val & ", ")") // Extract bits
+        );
+
+        List<StringPair> intCmp = List.of(
+            new StringPair("(val < ", ")"),
+            new StringPair("(val > ", ")"),
+            new StringPair("(val >= ", ")"),
+            new StringPair("(val <= ", ")"),
+            new StringPair("(val != ", ")"),
+            new StringPair("(val == ", ")"),
+            new StringPair("(val & ", ")"), // Extract bits
+            new StringPair("(Integer.compareUnsigned(val, ", ") > 0)"),
+            new StringPair("(Integer.compareUnsigned(val, ", ") < 0)"),
+            new StringPair("(Integer.compareUnsigned(val, ", ") >= 0)"),
+            new StringPair("(Integer.compareUnsigned(val, ", ") <= 0)")
+        );
+
+        List<StringPair> longCmp = List.of(
+            new StringPair("(val < ", ")"),
+            new StringPair("(val > ", ")"),
+            new StringPair("(val >= ", ")"),
+            new StringPair("(val <= ", ")"),
+            new StringPair("(val != ", ")"),
+            new StringPair("(val == ", ")"),
+            new StringPair("(val & ", ")"), // Extract bits
+            new StringPair("(Long.compareUnsigned(val, ", ") > 0)"),
+            new StringPair("(Long.compareUnsigned(val, ", ") < 0)"),
+            new StringPair("(Long.compareUnsigned(val, ", ") >= 0)"),
+            new StringPair("(Long.compareUnsigned(val, ", ") <= 0)")
+        );
+
+        var integralCmpTemplate = Template.make("type", (CodeGenerationDataNameType type) -> {
+            List<StringPair> cmps = switch(type.name()) {
+                case "char" -> unsignedCmp;
+                case "byte", "short", "int" -> intCmp;
+                case "long" -> longCmp;
+                default -> throw new RuntimeException("not handled: " + type.name());
+            };
+            StringPair cmp = cmps.get(RANDOM.nextInt(cmps.size()));
+            return body(
+                ", ", cmp.s0(), type.con(), cmp.s1()
+            );
+        });
+
         // Checksum method: returns not just the value, but also does some range / bit checks.
         //                  This gives us enhanced verification on the range / bits of the result type.
         var checksumTemplate = Template.make("expression", "checksum", (Expression expression, String checksum) -> body(
@@ -112,14 +165,7 @@ public class ExpressionFuzzer {
                 // Return val, but also some range and bits tests to see if those
                 // ranges and bits are correct.
                 case "byte", "short", "char", "int", "long" ->
-                    List.of("val",
-                            IntStream.range(0, 20).mapToObj(i ->
-                                // Generate a test like:
-                                // val < 5
-                                // val & 16
-                                List.of(", val", List.of("<", ">", "<=", ">=", "&").get(i % 5), expression.returnType.con())
-                                // TODO: unsigned!
-                            ).toList());
+                    List.of("val", Collections.nCopies(20, integralCmpTemplate.asToken(expression.returnType)));
                 // Float/Double have no range, just return the value:
                 case "float", "double" -> "val";
                 // Check if the boolean constant folded:
