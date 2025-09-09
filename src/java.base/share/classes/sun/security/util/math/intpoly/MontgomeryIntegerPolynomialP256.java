@@ -397,7 +397,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         c0 = c5 - modulus[0];
         c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB);
         c0 &= LIMB_MASK;
-        c2 = c7 - modulus[2] + (c1 >> BITS_PER_LIMB);
+        c2 = c7 + (c1 >> BITS_PER_LIMB);
         c1 &= LIMB_MASK;
         c3 = c8 - modulus[3] + (c2 >> BITS_PER_LIMB);
         c2 &= LIMB_MASK;
