@@ -1450,7 +1450,6 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                                     identityAlg, checkClientTrusted);
             }
 
-            // try the best to check the algorithm constraints
             AlgorithmConstraints constraints = SSLAlgorithmConstraints.forSocket(
                     sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, true);
 
@@ -1462,6 +1461,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             String authType, SSLEngine engine,
             boolean checkClientTrusted) throws CertificateException {
         if (engine != null) {
+
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
@@ -1475,7 +1475,6 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                                     identityAlg, checkClientTrusted);
             }
 
-            // try the best to check the algorithm constraints
             AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
                     engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, true);
 

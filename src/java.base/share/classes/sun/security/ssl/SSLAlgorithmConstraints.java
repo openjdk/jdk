@@ -394,7 +394,6 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return permits(primitives, algorithm, parameters);
         }
 
-
         // Additional check for RSASSA-PSS algorithm parameters.
         private boolean checkRsaSsaPssParams(
                 String algorithm, AlgorithmParameters parameters) {

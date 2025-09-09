@@ -1388,7 +1388,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Gets an array of supported signature schemes that the local side is
+     * Gets a collection of supported signature schemes that the local side is
      * willing to verify.
      */
     Collection<SignatureScheme> getLocalSupportedSignatureSchemes() {
@@ -1405,8 +1405,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Gets an array of supported signature schemes that the peer is
-     * willing to verify. Those are sent with "signature_algorithms_cert"
+     * Gets a collection of supported signature schemes that the peer is
+     * willing to verify. Those are sent with the "signature_algorithms_cert"
      * TLS extension.
      */
     Collection<SignatureScheme> getPeerSupportedSignatureSchemes() {

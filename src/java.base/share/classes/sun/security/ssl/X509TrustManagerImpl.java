@@ -206,7 +206,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
             AlgorithmConstraints constraints = SSLAlgorithmConstraints.forSocket(
                     sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
@@ -244,12 +243,12 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         X509Certificate[] trustedChain;
         if (engine != null) {
+
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
             AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
                     engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
