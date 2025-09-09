@@ -91,6 +91,13 @@ class WindowsLinkSupport {
     }
 
     /**
+     * Returns the target of a symbolic link
+     */
+    static String readLink(WindowsPath path, long handle) throws IOException {
+        return readLinkImpl(path, handle);
+    }
+
+    /**
      * Returns the final path (all symbolic links resolved) or null if this
      * operation is not supported.
      */

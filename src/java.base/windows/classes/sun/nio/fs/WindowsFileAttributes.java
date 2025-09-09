@@ -463,17 +463,4 @@ class WindowsFileAttributes
     public boolean isSystem() {
         return (fileAttrs & FILE_ATTRIBUTE_SYSTEM) != 0;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
-        return obj instanceof WindowsFileAttributes other
-            && isSameFile(this, other);
-    }
-
-    @Override
-    public int hashCode() {
-        return volSerialNumber + fileIndexHigh + fileIndexLow;
-    }
 }
