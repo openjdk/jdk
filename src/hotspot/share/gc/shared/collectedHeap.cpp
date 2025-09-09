@@ -614,7 +614,6 @@ void CollectedHeap::stall_for_vm_shutdown() {
   // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
   // To avoid returning nullptr (which could cause premature OOME), we stall
   // allocation requests here until the VM shutdown is complete.
-  log_info(gc) ("Stalling until shutdown");
   MonitorLocker ml(VMExit_lock);
   while (true) {
     ml.wait();
