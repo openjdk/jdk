@@ -348,6 +348,7 @@ struct ShenandoahDirectAllocationRegion {
 };
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
+  friend class DirectAllocatableRegionRefillClosure;
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
