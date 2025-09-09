@@ -97,6 +97,8 @@ public class TestCountBitsRange {
                          ctzDiv8Long(randLong));
     }
 
+    // Test CLZ with constant integer inputs.
+    // All CLZs in this test are expected to be optimized away.
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_I)
     public int[] clzConstInts() {
@@ -137,6 +139,9 @@ public class TestCountBitsRange {
         };
     }
 
+    // Test the range of CLZ with random integer input.
+    // The result of CLZ should be in range [0, 32], so CLZs in this test are
+    // expected to be optimized away, and the test should always return false.
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_I)
     public boolean clzCompareInt(int randInt) {
@@ -144,6 +149,9 @@ public class TestCountBitsRange {
                || Integer.numberOfLeadingZeros(randInt) > 32;
     }
 
+    // Test the combination of CLZ and division by 8.
+    // The result of CLZ should be positive, so the division by 8 should be
+    // optimized to a simple right shift without rounding.
     @Test
     @IR(counts = {IRNode.COUNT_LEADING_ZEROS_I, "1",
                   IRNode.RSHIFT_I, "1",
@@ -153,6 +161,8 @@ public class TestCountBitsRange {
         return Integer.numberOfLeadingZeros(randInt) / 8;
     }
 
+    // Test CLZ with constant long inputs.
+    // All CLZs in this test are expected to be optimized away.
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_L)
     public int[] clzConstLongs() {
@@ -225,6 +235,9 @@ public class TestCountBitsRange {
         };
     }
 
+    // Test the range of CLZ with random long input.
+    // The result of CLZ should be in range [0, 64], so CLZs in this test are
+    // expected to be optimized away, and the test should always return false.
     @Test
     @IR(failOn = IRNode.COUNT_LEADING_ZEROS_L)
     public boolean clzCompareLong(long randLong) {
@@ -232,6 +245,9 @@ public class TestCountBitsRange {
                || Long.numberOfLeadingZeros(randLong) > 64;
     }
 
+    // Test the combination of CLZ and division by 8.
+    // The result of CLZ should be positive, so the division by 8 should be
+    // optimized to a simple right shift without rounding.
     @Test
     @IR(counts = {IRNode.COUNT_LEADING_ZEROS_L, "1",
                   IRNode.RSHIFT_I, "1",
@@ -241,6 +257,8 @@ public class TestCountBitsRange {
         return Long.numberOfLeadingZeros(randLong) / 8;
     }
 
+    // Test CTZ with constant integer inputs.
+    // All CTZs in this test are expected to be optimized away.
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_I)
     public int[] ctzConstInts() {
@@ -281,6 +299,9 @@ public class TestCountBitsRange {
         };
     }
 
+    // Test the range of CTZ with random integer input.
+    // The result of CTZ should be in range [0, 32], so CTZs in this test are
+    // expected to be optimized away, and the test should always return false.
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_I)
     public boolean ctzCompareInt(int randInt) {
@@ -288,6 +309,9 @@ public class TestCountBitsRange {
                || Integer.numberOfTrailingZeros(randInt) > 32;
     }
 
+    // Test the combination of CTZ and division by 8.
+    // The result of CTZ should be positive, so the division by 8 should be
+    // optimized to a simple right shift without rounding.
     @Test
     @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_I, "1",
                   IRNode.RSHIFT_I, "1",
@@ -297,6 +321,8 @@ public class TestCountBitsRange {
         return Integer.numberOfTrailingZeros(randInt) / 8;
     }
 
+    // Test CTZ with constant long inputs.
+    // All CTZs in this test are expected to be optimized away.
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_L)
     public int[] ctzConstLongs() {
@@ -369,6 +395,9 @@ public class TestCountBitsRange {
         };
     }
 
+    // Test the range of CTZ with random long input.
+    // The result of CTZ should be in range [0, 64], so CTZs in this test are
+    // expected to be optimized away, and the test should always return false.
     @Test
     @IR(failOn = IRNode.COUNT_TRAILING_ZEROS_L)
     public boolean ctzCompareLong(long randLong) {
@@ -376,6 +405,9 @@ public class TestCountBitsRange {
                || Long.numberOfTrailingZeros(randLong) > 64;
     }
 
+    // Test the combination of CTZ and division by 8.
+    // The result of CTZ should be positive, so the division by 8 should be
+    // optimized to a simple right shift without rounding.
     @Test
     @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_L, "1",
                   IRNode.RSHIFT_I, "1",
