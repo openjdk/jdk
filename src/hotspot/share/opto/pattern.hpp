@@ -53,6 +53,8 @@ struct PathInGraph {
   void add_input_step(uint input_index, Node* input);
   void add_output_step(Node* output);
 
+  void clear();
+
   const Node_List& nodes() const { return _nodes; }
   const GrowableArray<int>& relation_to_previous_node() const { return _relation_to_previous_node; }
 
@@ -68,8 +70,20 @@ private:
  */
 struct Pattern : ResourceObj {
   typedef bool (Node::*TypeCheckMethod)() const;
+
   /* Check whether the graph and the pattern matches. Returns false in case
-   * of failure.
+   * of failure. This version is quiet and can be used for non-debug purpose.
+   * Since no reporting must be generated, this version is cheaper as it can
+   * return as soon as possible.
+   *
+   * center: where to around which node to check whether the pattern matches
+   */
+  virtual bool match(const Node* center) const = 0;
+
+  /* Check whether the graph and the pattern matches. Returns false in case
+   * of failure. This version reports nicely on failure and is useful for
+   * graph verification.
+   *
    * center: where to around which node to check whether the pattern matches
    * path: in case of failure, path to the place where the failure happened.
    *   Must be filled from the offending node to the original center, which allows
@@ -78,7 +92,9 @@ struct Pattern : ResourceObj {
    *
    * In case of success, path and ss must not be changed.
    */
+#ifndef PRODUCT
   virtual bool match(const Node* center, PathInGraph& path, stringStream& ss) const = 0;
+#endif
 };
 
 /* This pattern just accepts any node. This is convenient mostly as leaf in a pattern tree.
@@ -86,9 +102,14 @@ struct Pattern : ResourceObj {
  * indeed a single output of the given type, but won't enforce anything on the said output.
  */
 struct TruePattern : Pattern {
+  bool match(const Node*) const override {
+    return true;
+  }
+#ifndef PRODUCT
   bool match(const Node*, PathInGraph&, stringStream&) const override {
     return true;
   }
+#endif
 };
 
 /* This is semantically equivalent to `TruePattern` but will set the given reference to the node
@@ -109,7 +130,8 @@ struct TruePattern : Pattern {
  */
 struct Bind : Pattern {
   explicit Bind(const Node*& binding) : _binding(binding) {}
-  bool match(const Node* center, PathInGraph&, stringStream&) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph&, stringStream&) const override);
 
 private:
   const Node*& _binding;
@@ -120,10 +142,15 @@ private:
 template <typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
 struct TypedBind : Pattern {
   explicit TypedBind(const N*& binding) : _binding(binding) {}
-  bool match(const Node* center, PathInGraph&, stringStream&) const override {
+  bool match(const Node* center) const override {
     _binding = static_cast<const N*>(center);
     return true;
   }
+#ifndef PRODUCT
+  bool match(const Node* center, PathInGraph&, stringStream&) const override {
+    return match(center);
+  }
+#endif
 
 private:
   const N*& _binding;
@@ -134,7 +161,8 @@ private:
  */
 struct NodeClass : Pattern {
   explicit NodeClass(const TypeCheckMethod type_check) : _type_check(type_check) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const TypeCheckMethod _type_check;
@@ -194,12 +222,14 @@ public:
     return andd;
   }
 
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 };
 
 struct HasExactlyNInputs : Pattern {
   explicit HasExactlyNInputs(uint expect_req) : _expect_req(expect_req) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const uint _expect_req;
@@ -207,7 +237,8 @@ private:
 
 struct HasAtLeastNInputs : Pattern {
   explicit HasAtLeastNInputs(uint expect_req) : _expect_req(expect_req) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const uint _expect_req;
@@ -220,7 +251,8 @@ private:
  */
 struct AtInput : Pattern {
   AtInput(uint which_input, const Pattern* pattern) : _which_input(which_input), _pattern(pattern) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const uint _which_input;
@@ -229,7 +261,8 @@ private:
 
 struct HasNOutputs : Pattern {
   explicit HasNOutputs(uint expect_outcnt) : _expect_outcnt(expect_outcnt) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const uint _expect_outcnt;
@@ -243,7 +276,8 @@ private:
  */
 struct AtSingleOutputOfType : Pattern {
   AtSingleOutputOfType(const TypeCheckMethod type_check, const Pattern* pattern) : _type_check(type_check), _pattern(pattern) {}
-  bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;
+  bool match(const Node* center) const override;
+  NOT_PRODUCT(bool match(const Node* center, PathInGraph& path, stringStream& ss) const override;)
 
 private:
   const TypeCheckMethod _type_check;

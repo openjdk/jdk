@@ -99,6 +99,8 @@ struct CheckHelper {
         if (_reachable_cfg_nodes == nullptr) {
           _result = CheckHelperResult::FAILED;
         } else if (_reachable_cfg_nodes->is_node_dead(_center)) {
+          _ss.reset();
+          _path.clear();
           _result = CheckHelperResult::VALID;
         } else {
           _result = CheckHelperResult::FAILED;
@@ -143,7 +145,7 @@ private:
 
   const PatternBasedCheck& _check;
   const Node* _center;
-  LocalGraphInvariant::LazyReachableCFGNodes* _reachable_cfg_nodes;
+  LocalGraphInvariant::LazyReachableCFGNodes* _reachable_cfg_nodes;  // Non nullptr iff the check applies only to reachable nodes.
   PathInGraph& _path;
   stringStream& _ss;
 

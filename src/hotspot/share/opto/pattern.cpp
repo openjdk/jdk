@@ -40,11 +40,32 @@ void PathInGraph::add_output_step(Node* output) {
   _relation_to_previous_node.push(static_cast<int>(OutputStep));
 }
 
-bool Bind::match(const Node* center, PathInGraph&, stringStream&) const {
+void PathInGraph::clear() {
+  _nodes.clear();
+  _relation_to_previous_node.clear();
+}
+
+bool Bind::match(const Node* center) const {
   _binding = center;
   return true;
 }
 
+#ifndef PRODUCT
+bool Bind::match(const Node* center, PathInGraph&, stringStream&) const {
+  return match(center);
+}
+#endif
+
+bool And::match(const Node* center) const {
+  for (int i = 0; i < _checks.length(); ++i) {
+    if (!_checks.at(i)->match(center)) {
+      // We stay on the same center, so no need to update path.
+      return false;
+    }
+  }
+  return true;
+}
+#ifndef PRODUCT
 bool And::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   for (int i = 0; i < _checks.length(); ++i) {
     if (!_checks.at(i)->match(center, path, ss)) {
@@ -53,6 +74,15 @@ bool And::match(const Node* center, PathInGraph& path, stringStream& ss) const {
     }
   }
   return true;
+}
+#endif
+
+bool HasExactlyNInputs::match(const Node* center) const {
+  return center->req() == _expect_req;
+}
+
+bool HasAtLeastNInputs::match(const Node* center) const {
+  return center->req() >= _expect_req;
 }
 
 #ifndef PRODUCT
@@ -67,14 +97,11 @@ void print_list_of_inputs(const Node* center, stringStream& ss) {
     }
   }
 }
-#endif
 
 bool HasExactlyNInputs::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   if (center->req() != _expect_req) {
     ss.print_cr("Unexpected number of inputs. Expected exactly: %d. Found: %d", _expect_req, center->req());
-#ifndef PRODUCT
     print_list_of_inputs(center, ss);
-#endif
     return false;
   }
   return true;
@@ -83,14 +110,19 @@ bool HasExactlyNInputs::match(const Node* center, PathInGraph& path, stringStrea
 bool HasAtLeastNInputs::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   if (center->req() < _expect_req) {
     ss.print_cr("Too few inputs. Expected at least: %d. Found: %d", _expect_req, center->req());
-#ifndef PRODUCT
     print_list_of_inputs(center, ss);
-#endif
     return false;
   }
   return true;
 }
+#endif
 
+bool AtInput::match(const Node* center) const {
+  assert(_which_input < center->req(), "Input number is out of range");
+  Node* input = center->in(_which_input);
+  return input != nullptr && _pattern->match(input);
+}
+#ifndef PRODUCT
 bool AtInput::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   assert(_which_input < center->req(), "Input number is out of range");
   Node* input = center->in(_which_input);
@@ -104,34 +136,59 @@ bool AtInput::match(const Node* center, PathInGraph& path, stringStream& ss) con
   }
   return result;
 }
+#endif
 
+bool NodeClass::match(const Node* center) const {
+  return (center->*_type_check)();
+}
+#ifndef PRODUCT
 bool NodeClass::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   if (!(center->*_type_check)()) {
-#ifdef PRODUCT
-    ss.print_cr("Unexpected type.");
-#else
     ss.print_cr("Unexpected type: %s.", center->Name());
-#endif
     return false;
   }
   return true;
 }
+#endif
 
+bool HasNOutputs::match(const Node* center) const {
+  return center->outcnt() == _expect_outcnt;
+}
+#ifndef PRODUCT
 bool HasNOutputs::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   if (center->outcnt() != _expect_outcnt) {
     ss.print_cr("Unexpected number of outputs. Expected: %d, found: %d.", _expect_outcnt, center->outcnt());
-#ifndef PRODUCT
     for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
       Node* out = center->fast_out(i);
       ss.print("  ");
       out->dump("\n", false, &ss);
     }
-#endif
     return false;
   }
   return true;
 }
+#endif
 
+bool AtSingleOutputOfType::match(const Node* center) const {
+  Node* single_output_of_right_type = nullptr;
+
+  for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
+    Node* out = center->fast_out(i);
+    if ((out->*_type_check)()) {
+      if (single_output_of_right_type != nullptr) {
+        return false;
+      }
+      single_output_of_right_type = out;
+    }
+  }
+
+  if (single_output_of_right_type == nullptr) {
+    return false;
+  }
+
+  return _pattern->match(single_output_of_right_type);
+}
+#ifndef PRODUCT
 bool AtSingleOutputOfType::match(const Node* center, PathInGraph& path, stringStream& ss) const {
   Node* single_output_of_right_type = nullptr;
   bool too_many_outputs_of_right_type = false;
@@ -143,6 +200,7 @@ bool AtSingleOutputOfType::match(const Node* center, PathInGraph& path, stringSt
         single_output_of_right_type = out;
       } else {
         too_many_outputs_of_right_type = true;
+        break;
       }
     }
   }
@@ -161,11 +219,9 @@ bool AtSingleOutputOfType::match(const Node* center, PathInGraph& path, stringSt
       }
     }
     ss.print_cr("Non-unique output of expected type. Found: %d.", outputs_of_correct_type.size());
-#ifndef PRODUCT
     for (uint i = 0; i < outputs_of_correct_type.size(); ++i) {
       outputs_of_correct_type.at(i)->dump("\n", false, &ss);
     }
-#endif
     return false;
   }
 
@@ -175,3 +231,4 @@ bool AtSingleOutputOfType::match(const Node* center, PathInGraph& path, stringSt
   }
   return result;
 }
+#endif
