@@ -4181,7 +4181,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             radix = 10;
 
         if (fitsIntoLong()) {
-            // fits into long
             return Long.toString(longValue(), radix);
         }
 
