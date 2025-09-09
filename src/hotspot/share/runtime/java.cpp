@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -34,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -70,15 +72,14 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -332,6 +333,13 @@ void print_statistics() {
 
   print_bytecode_count();
 
+  if (PrintVMInfoAtExit) {
+    // Use an intermediate stream to prevent deadlocking on tty_lock
+    stringStream ss;
+    VMError::print_vm_info(&ss);
+    tty->print_raw(ss.base());
+  }
+
   if (PrintSystemDictionaryAtExit) {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
@@ -426,10 +434,9 @@ void before_exit(JavaThread* thread, bool halt) {
 #if INCLUDE_CDS
   // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
-  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  DynamicArchive::dump_at_exit(thread);
   assert(!thread->has_pending_exception(), "must be");
 #endif
-
 
   // Actual shutdown logic begins here.
 
@@ -443,7 +450,7 @@ void before_exit(JavaThread* thread, bool halt) {
   ClassListWriter::write_resolved_constants();
 
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    MetaspaceShared::preload_and_dump(thread);
+    AOTMetaspace::preload_and_dump(thread);
   }
 #endif
 
@@ -458,32 +465,19 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
+  // 2nd argument (emit_event_shutdown) should be set to false
+  // because EventShutdown would be emitted at Threads::destroy_vm().
+  // (one of the callers of before_exit())
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
   WatcherThread::stop();
 
-  // shut down the StatSampler task
-  StatSampler::disengage();
-  StatSampler::destroy();
-
   NativeHeapTrimmer::cleanup();
 
-  // Stop concurrent GC threads
-  Universe::heap()->stop();
-
-  // Print GC/heap related information.
-  Log(gc, heap, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
-  }
+  // Run before exit and then stop concurrent GC threads
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
@@ -511,8 +505,13 @@ void before_exit(JavaThread* thread, bool halt) {
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
 
+  #if INCLUDE_CDS
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
+  }
+  #endif
+
   print_statistics();
-  Universe::heap()->print_tracing_info();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

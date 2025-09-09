@@ -31,15 +31,14 @@
 
 class JavaThread;
 class JfrChunkWriter;
-
-template <typename>
-class GrowableArray;
+class JfrStackTrace;
 
 class JfrStackTraceRepository : public JfrCHeapObj {
   friend class JfrDeprecatedEdge;
   friend class JfrRecorder;
   friend class JfrRecorderService;
   friend class JfrThreadSampleClosure;
+  friend class JfrThreadSampler;
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class RecordStackTrace;
@@ -54,6 +53,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
   JfrStackTraceRepository();
   static JfrStackTraceRepository& instance();
+  static JfrStackTraceRepository& leak_profiler_instance();
   static JfrStackTraceRepository* create();
   static void destroy();
   bool initialize();
@@ -64,17 +64,17 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
-  static void write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t);
   static void clear_leak_profiler();
 
-  static traceid next_id();
+  template <typename Callback>
+  static void iterate_leakprofiler(Callback& cb);
 
-  traceid add_trace(const JfrStackTrace& stacktrace);
+  static traceid next_id();
   static traceid add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace);
-  static traceid add(const JfrStackTrace& stacktrace);
-  traceid record(JavaThread* current_thread, int skip, int64_t stack_filter_id, JfrStackFrame* frames, u4 max_frames);
+  traceid add_trace(const JfrStackTrace& stacktrace);
 
  public:
+  static traceid add(const JfrStackTrace& stacktrace);
   static traceid record(Thread* current_thread, int skip = 0, int64_t stack_filter_id = -1);
 };
 

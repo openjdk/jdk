@@ -76,7 +76,7 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<ResolvedMethodEntry>* _resolved_method_entries;
 
   // Sizing
-  debug_only(friend class ClassVerifier;)
+  DEBUG_ONLY(friend class ClassVerifier;)
 
   public:
     // specific but defiinitions for ldc
@@ -111,6 +111,7 @@ class ConstantPoolCache: public MetaspaceObj {
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
+  CDS_JAVA_HEAP_ONLY(int archived_references_index() { return _archived_references_index; })
 
   inline objArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }

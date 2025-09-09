@@ -30,18 +30,18 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -67,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitThruPhiWins wins(region);
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -120,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -135,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -143,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -166,12 +166,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
@@ -227,6 +227,13 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         new_loop->_body.push(x);  // Collect body info
     }
   }
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print_cr("Split %d %s through %d Phi in %d %s",
+                  n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
+  }
+#endif // !PRODUCT
 
   return phi;
 }
@@ -1089,25 +1096,6 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
   }
 }
 
-// Split some nodes that take a counted loop phi as input at a counted
-// loop can cause vectorization of some expressions to fail
-bool PhaseIdealLoop::split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk) {
-  if (!n_blk->is_CountedLoop()) {
-    return false;
-  }
-
-  int opcode = n->Opcode();
-
-  if (opcode != Op_AndI &&
-      opcode != Op_MulI &&
-      opcode != Op_RotateRight &&
-      opcode != Op_RShiftI) {
-    return false;
-  }
-
-  return n->in(1) == n_blk->as_BaseCountedLoop()->phi();
-}
-
 //------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
@@ -1191,10 +1179,6 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
   if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
       n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
-    return n;
-  }
-
-  if (split_thru_phi_could_prevent_vectorization(n, n_blk)) {
     return n;
   }
 
@@ -1699,6 +1683,10 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
+
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
@@ -1708,7 +1696,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
-      !n->is_Type()) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      (KillPathsReachableByDeadTypeNode || !n->is_Type())
+      ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
@@ -3414,7 +3404,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
     if ( not_peel.test(use->_idx) &&
-         (use->is_If() || use->is_CMove() || use->is_Bool()) &&
+         (use->is_If() || use->is_CMove() || use->is_Bool() || use->is_OpaqueInitializedAssertionPredicate()) &&
          use->in(1) == n)  {
       worklist.push(use);
     }
@@ -4294,13 +4284,13 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
       assert(in->Opcode() == Op_AddI, "wrong increment code");
       Node* xphi = nullptr;
-      Node* stride = loop_iv_stride(in, loop, xphi);
+      Node* stride = loop_iv_stride(in, xphi);
 
       if (stride == nullptr) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(xphi, nullptr, head, loop);
+      PhiNode* phi = loop_iv_phi(xphi, nullptr, head);
       if (phi == nullptr ||
           (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
           (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {
@@ -4356,6 +4346,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
     }
   }
+  C->print_method(PHASE_BEFORE_DUPLICATE_LOOP_BACKEDGE, 4, head);
 
   // Collect data nodes that need to be clones as well
   int dd = dom_depth(head);
@@ -4445,6 +4436,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   }
 
   C->set_major_progress();
+
+  C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, outer_head);
 
   return true;
 }

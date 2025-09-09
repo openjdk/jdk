@@ -24,9 +24,9 @@
 
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
@@ -249,7 +249,7 @@ HeapWord* G1Allocator::survivor_attempt_allocation(uint node_index,
                                                                               desired_word_size,
                                                                               actual_word_size);
   if (result == nullptr && !survivor_is_full()) {
-    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1FreeList_lock, Mutex::_no_safepoint_check_flag);
     // Multiple threads may have queued at the FreeList_lock above after checking whether there
     // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
     // the memory may have been used up as the threads waited to acquire the lock.
@@ -278,7 +278,7 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                                                desired_word_size,
                                                                actual_word_size);
   if (result == nullptr && !old_is_full()) {
-    MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1FreeList_lock, Mutex::_no_safepoint_check_flag);
     // Multiple threads may have queued at the FreeList_lock above after checking whether there
     // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
     // the memory may have been used up as the threads waited to acquire the lock.

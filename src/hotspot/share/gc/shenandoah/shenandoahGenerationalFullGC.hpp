@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALFULLGC_HPP
 
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -61,7 +62,7 @@ public:
   // a layer built above it to represent how much young/old memory was available. This layer is
   // redundant and adds complexity. We would like to one day remove it. Until then, we must keep it
   // synchronized with the free set's view of things.
-  static void balance_generations_after_rebuilding_free_set();
+  static ShenandoahGenerationalHeap::TransferResult balance_generations_after_rebuilding_free_set();
 
   // Logs the number of live bytes marked in the old generation. This is _not_ the same
   // value used as the baseline for the old generation _after_ the full gc is complete.

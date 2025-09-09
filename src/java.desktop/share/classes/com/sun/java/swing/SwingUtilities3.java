@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package com.sun.java.swing;
 
-import java.applet.Applet;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.Window;
 import java.awt.geom.AffineTransform;
@@ -37,11 +39,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
 import javax.swing.RepaintManager;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.swing.MenuItemLayoutHelper;
+import sun.swing.SwingUtilities2;
 
 import static sun.java2d.pipe.Region.clipRound;
 
@@ -53,9 +60,7 @@ import static sun.java2d.pipe.Region.clipRound;
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
- * This is a second part of sun.swing.SwingUtilities2. It is required
- * to provide services for JavaFX applets.
- *
+ * This is a second part of sun.swing.SwingUtilities2.
  */
 public class SwingUtilities3 {
     /**
@@ -91,14 +96,12 @@ public class SwingUtilities3 {
      * depends on current RepaintManager's RepaintManager.PaintManager
      * and on the capabilities of the graphics hardware/software and what not.
      *
-     * @param rootContainer topmost container. Should be either {@code Window}
-     *  or {@code Applet}
+     * @param rootContainer topmost container. Should be {@code Window}
      * @param isRequested the value to set vsyncRequested state to
      */
-    @SuppressWarnings("removal")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         if (isRequested) {
             vsyncedMap.put(rootContainer, Boolean.TRUE);
         } else {
@@ -109,12 +112,11 @@ public class SwingUtilities3 {
     /**
      * Checks if vsync painting is requested for {@code rootContainer}
      *
-     * @param rootContainer topmost container. Should be either Window or Applet
+     * @param rootContainer topmost container. Should be Window
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
-    @SuppressWarnings("removal")
     public static boolean isVsyncRequested(Container rootContainer) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);
     }
 
@@ -141,6 +143,119 @@ public class SwingUtilities3 {
             }
         }
         return delegate;
+    }
+
+    public static void applyInsets(Rectangle rect, Insets insets) {
+        if (insets != null) {
+            rect.x += insets.left;
+            rect.y += insets.top;
+            rect.width -= (insets.right + rect.x);
+            rect.height -= (insets.bottom + rect.y);
+        }
+    }
+
+    public static void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
+                               MenuItemLayoutHelper.LayoutResult lr,
+                               Color holdc, Color foreground) {
+        if (lh.getCheckIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                    && model.isSelected())) {
+                g.setColor(foreground);
+            } else {
+                g.setColor(holdc);
+            }
+            if (lh.useCheckAndArrow()) {
+                lh.getCheckIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getCheckRect().x, lr.getCheckRect().y);
+            }
+            g.setColor(holdc);
+        }
+    }
+
+    public static void paintIcon(Graphics g, MenuItemLayoutHelper lh,
+                          MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
+        if (lh.getIcon() != null) {
+            Icon icon;
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (!model.isEnabled()) {
+                icon = lh.getMenuItem().getDisabledIcon();
+            } else if (model.isPressed() && model.isArmed()) {
+                icon = lh.getMenuItem().getPressedIcon();
+                if (icon == null) {
+                    // Use default icon
+                    icon = lh.getMenuItem().getIcon();
+                }
+            } else {
+                icon = lh.getMenuItem().getIcon();
+            }
+
+            if (icon != null) {
+                icon.paintIcon(lh.getMenuItem(), g, lr.getIconRect().x,
+                        lr.getIconRect().y);
+                g.setColor(holdc);
+            }
+        }
+    }
+
+
+    public static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
+                             MenuItemLayoutHelper.LayoutResult lr,
+                             Color disabledForeground,
+                             Color acceleratorSelectionForeground,
+                             Color acceleratorForeground) {
+        if (!lh.getAccText().isEmpty()) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            g.setFont(lh.getAccFontMetrics().getFont());
+            if (!model.isEnabled()) {
+
+                // paint the accText disabled
+                if (disabledForeground != null) {
+                    g.setColor(disabledForeground);
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x,
+                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
+                } else {
+                    g.setColor(lh.getMenuItem().getBackground().brighter());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x,
+                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
+                    g.setColor(lh.getMenuItem().getBackground().darker());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x - 1,
+                            lr.getAccRect().y + lh.getFontMetrics().getAscent() - 1);
+                }
+            } else {
+
+                // paint the accText normally
+                if (model.isArmed()
+                        || (lh.getMenuItem() instanceof JMenu
+                        && model.isSelected())) {
+                    g.setColor(acceleratorSelectionForeground);
+                } else {
+                    g.setColor(acceleratorForeground);
+                }
+                SwingUtilities2.drawString(lh.getMenuItem(), g, lh.getAccText(),
+                        lr.getAccRect().x, lr.getAccRect().y +
+                                lh.getAccFontMetrics().getAscent());
+            }
+        }
+    }
+
+    public static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
+                               MenuItemLayoutHelper.LayoutResult lr,
+                               Color foreground) {
+        if (lh.getArrowIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                    && model.isSelected())) {
+                g.setColor(foreground);
+            }
+            if (lh.useCheckAndArrow()) {
+                lh.getArrowIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getArrowRect().x, lr.getArrowRect().y);
+            }
+        }
     }
 
     /**

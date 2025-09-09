@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -32,12 +32,13 @@
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
 #include "memory/metaspace/metaspaceDCmd.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
@@ -54,8 +55,8 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -68,9 +69,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "os_posix.hpp"
 #include "trimCHeapDCmd.hpp"
+
 #include <errno.h>
 #endif
 
@@ -126,7 +128,9 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+#if INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -411,7 +415,7 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
   MutexLocker hl(THREAD, Heap_lock);
-  Universe::heap()->print_on(output());
+  Universe::heap()->print_heap_on(output());
 }
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {

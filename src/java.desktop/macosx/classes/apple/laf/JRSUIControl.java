@@ -27,6 +27,8 @@ package apple.laf;
 
 import java.nio.*;
 import java.util.*;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 import apple.laf.JRSUIConstants.*;
 
@@ -68,7 +70,7 @@ public final class JRSUIControl {
     }
 
     private static final int NIO_BUFFER_SIZE = 128;
-    private static class ThreadLocalByteBuffer {
+    private static final class ThreadLocalByteBuffer {
         final ByteBuffer buffer;
         final long ptr;
 
@@ -91,7 +93,8 @@ public final class JRSUIControl {
 
     private final HashMap<Key, DoubleValue> nativeMap;
     private final HashMap<Key, DoubleValue> changes;
-    private long cfDictionaryPtr;
+    private final long cfDictionaryPtr;
+    private final Object disposerReferent = new Object();
 
     private long priorEncodedProperties;
     private long currentEncodedProperties;
@@ -101,6 +104,7 @@ public final class JRSUIControl {
         this.flipped = flipped;
         cfDictionaryPtr = getCFDictionary(flipped);
         if (cfDictionaryPtr == 0) throw new RuntimeException("Unable to create native representation");
+        Disposer.addRecord(disposerReferent, new JRSUIControlDisposerRecord(cfDictionaryPtr));
         nativeMap = new HashMap<Key, DoubleValue>();
         changes = new HashMap<Key, DoubleValue>();
     }
@@ -109,16 +113,25 @@ public final class JRSUIControl {
         flipped = other.flipped;
         cfDictionaryPtr = getCFDictionary(flipped);
         if (cfDictionaryPtr == 0) throw new RuntimeException("Unable to create native representation");
+        Disposer.addRecord(disposerReferent, new JRSUIControlDisposerRecord(cfDictionaryPtr));
         nativeMap = new HashMap<Key, DoubleValue>();
         changes = new HashMap<Key, DoubleValue>(other.nativeMap);
         changes.putAll(other.changes);
     }
 
-    @SuppressWarnings("removal")
-    protected synchronized void finalize() throws Throwable {
-        if (cfDictionaryPtr == 0) return;
-        disposeCFDictionary(cfDictionaryPtr);
-        cfDictionaryPtr = 0;
+    private static class JRSUIControlDisposerRecord implements DisposerRecord {
+
+        private final long cfDictionaryPtr;
+        JRSUIControlDisposerRecord(long ptr) {
+            cfDictionaryPtr = ptr;
+        }
+
+        public void dispose() {
+            try {
+                disposeCFDictionary(cfDictionaryPtr);
+            } catch (Throwable t) {
+            }
+        }
     }
 
 
@@ -324,7 +337,7 @@ public final class JRSUIControl {
 
     @Override
     public int hashCode() {
-        int bits = (int)(currentEncodedProperties ^ (currentEncodedProperties >>> 32));
+        int bits = Long.hashCode(currentEncodedProperties);
         bits ^= nativeMap.hashCode();
         bits ^= changes.hashCode();
         return bits;

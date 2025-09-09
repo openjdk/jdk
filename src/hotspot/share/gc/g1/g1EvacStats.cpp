@@ -23,8 +23,8 @@
  */
 
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/shared/gcId.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcId.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/globals.hpp"

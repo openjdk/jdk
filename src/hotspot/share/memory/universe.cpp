@@ -22,13 +22,14 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -60,6 +61,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -79,11 +81,13 @@
 #include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
@@ -165,8 +169,8 @@ uintx Universe::_the_array_interfaces_bitmap = 0;
 uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
-debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
-debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
+DEBUG_ONLY(OopHandle Universe::_fullgc_alot_dummy_array;)
+DEBUG_ONLY(int Universe::_fullgc_alot_dummy_next = 0;)
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -436,6 +440,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -443,7 +450,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
@@ -872,7 +878,7 @@ jint universe_init() {
   ObjLayout::initialize();
 
 #ifdef _LP64
-  MetaspaceShared::adjust_heap_sizes_for_dumping();
+  AOTMetaspace::adjust_heap_sizes_for_dumping();
 #endif // _LP64
 
   GCConfig::arguments()->initialize_heap_sizes();
@@ -894,17 +900,24 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
-
 #if INCLUDE_CDS
-  DynamicArchive::check_for_dynamic_dump();
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
-    MetaspaceShared::initialize_shared_spaces();
+    AOTMetaspace::initialize_shared_spaces();
   }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
-    MetaspaceShared::prepare_for_dumping();
+    CDSConfig::prepare_for_dumping();
   }
 #endif
 
@@ -941,8 +954,9 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
+  assert(is_aligned(heap_size, alignment), "precondition");
 
-  size_t total_reserved = align_up(heap_size, alignment);
+  size_t total_reserved = heap_size;
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
@@ -1147,7 +1161,7 @@ bool universe_post_init() {
 
   MemoryService::set_universe_heap(Universe::heap());
 #if INCLUDE_CDS
-  MetaspaceShared::post_initialize(CHECK_false);
+  AOTMetaspace::post_initialize(CHECK_false);
 #endif
   return true;
 }
@@ -1160,7 +1174,10 @@ void Universe::compute_base_vtable_size() {
 void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
-  heap()->print_on(st);
+
+  StreamIndentor si(st, 1);
+  heap()->print_heap_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void Universe::print_heap_at_SIGBREAK() {
@@ -1285,6 +1302,63 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
 }
 
+static void log_cpu_time() {
+  LogTarget(Info, cpu) cpuLog;
+  if (!cpuLog.is_enabled()) {
+    return;
+  }
+
+  const double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
+
+  const double elasped_time = os::elapsedTime();
+  const bool has_error = CPUTimeUsage::Error::has_error();
+
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    if (has_error) {
+      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
+    }
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
+
+    if (UseStringDeduplication) {
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
+    }
+    cpuLog.print("=====================================================================================");
+  }
+}
+
+void Universe::before_exit() {
+  log_cpu_time();
+  heap()->before_exit();
+
+  // Print GC/heap related information.
+  Log(gc, exit) log;
+  if (log.is_info()) {
+    LogStream ls_info(log.info());
+    Universe::print_on(&ls_info);
+    if (log.is_trace()) {
+      LogStream ls_trace(log.trace());
+      MutexLocker mcld(ClassLoaderDataGraph_lock);
+      ClassLoaderDataGraph::print_on(&ls_trace);
+    }
+  }
+}
 
 #ifndef PRODUCT
 void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) {

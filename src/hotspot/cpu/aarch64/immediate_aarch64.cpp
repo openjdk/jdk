@@ -23,8 +23,8 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <stdlib.h> // do not reorder
+#include <stdint.h> // do not reorder
 
 #include "immediate_aarch64.hpp"
 #include "metaprogramming/primitiveConversions.hpp"

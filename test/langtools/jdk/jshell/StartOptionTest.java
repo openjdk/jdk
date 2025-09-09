@@ -22,15 +22,17 @@
  */
 
  /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631
+ * @test
+ * @bug 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631 8341833 8344706
  * @summary Testing startExCe-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng StartOptionTest
+ * @run junit/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch StartOptionTest
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,24 +40,27 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import jdk.jshell.JShell;
 
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import jdk.jshell.tool.JavaShellToolBuilder;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class StartOptionTest {
 
     protected ByteArrayOutputStream cmdout;
@@ -64,6 +69,7 @@ public class StartOptionTest {
     protected ByteArrayOutputStream userout;
     protected ByteArrayOutputStream usererr;
     protected InputStream cmdInStream;
+    private Map<String, String> testPersistence;
 
     private JavaShellToolBuilder builder() {
         // turn on logging of launch failures
@@ -73,12 +79,23 @@ public class StartOptionTest {
                 .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
                 .err(new PrintStream(cmderr), new PrintStream(usererr))
                 .in(cmdInStream, null)
-                .persistence(new HashMap<>())
+                .persistence(getThisTestPersistence())
                 .env(new HashMap<>())
                 .locale(Locale.ROOT);
     }
 
+    protected Map<String, String> getThisTestPersistence() {
+        return testPersistence != null ? testPersistence
+                                       : new HashMap<>();
+    }
+
     protected int runShell(String... args) {
+        cmdout.reset();
+        cmderr.reset();
+        console.reset();
+        userout.reset();
+        usererr.reset();
+
         try {
             return builder()
                     .start(Presets.addExecutionIfMissing(args));
@@ -98,7 +115,7 @@ public class StartOptionTest {
             if (checkOut != null) {
                 checkOut.accept(out);
             } else {
-                assertEquals(out, "", label + ": Expected empty -- ");
+                assertEquals("", out, label + ": Expected empty -- ");
             }
         } catch (Throwable t) {
             logOutput("cmdout", cmdout);
@@ -121,7 +138,7 @@ public class StartOptionTest {
         if (checkCode != null) {
             checkCode.accept(ec);
         } else {
-            assertEquals(ec, 0, "Expected standard exit code (0), but found: " + ec);
+            assertEquals(0, ec, "Expected standard exit code (0), but found: " + ec);
         }
     }
 
@@ -146,13 +163,31 @@ public class StartOptionTest {
             String... args) {
         runShell(args);
         check(userout, checkUserOutput, "userout");
+        check(cmderr, null, "cmderr");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCommandOutput, "cmdout");
+        check(userout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckError(Consumer<String> checkError,
+            String... args) {
+        runShell(args);
+        check(cmderr, checkError, "userout");
+        check(userout, null, "userout");
         check(usererr, null, "usererr");
     }
 
     // Start with an exit code and command error check
     protected void startExCe(int eec, Consumer<String> checkError, String... args) {
-        StartOptionTest.this.startExCoUoCeCn(
-                (Integer ec) -> assertEquals((int) ec, eec,
+        StartOptionTest.this.startExCoUoCeCn((Integer ec) -> assertEquals(eec, (int) ec,
                         "Expected error exit code (" + eec + "), but found: " + ec),
                 null, null, checkError, null, args);
     }
@@ -165,7 +200,7 @@ public class StartOptionTest {
     private Consumer<String> assertOrNull(String expected, String label) {
         return expected == null
                 ? null
-                : s -> assertEquals(s.replaceAll("\\r\\n?", "\n").trim(), expected.trim(), label);
+                : s -> assertEquals(expected.trim(), s.replaceAll("\\r\\n?", "\n").trim(), label);
     }
 
     // Start and check the resultant: exit code (Ex), command output (Co),
@@ -176,10 +211,9 @@ public class StartOptionTest {
             String expectedError,
             String expectedConsole,
             String... args) {
-        startExCoUoCeCn(
-                expectedExitCode == 0
+        startExCoUoCeCn(expectedExitCode == 0
                         ? null
-                        : (Integer i) -> assertEquals((int) i, expectedExitCode,
+                        : (Integer i) -> assertEquals(expectedExitCode, (int) i,
                         "Expected exit code (" + expectedExitCode + "), but found: " + i),
                 assertOrNull(expectedCmdOutput, "cmdout: "),
                 assertOrNull(expectedUserOutput, "userout: "),
@@ -203,7 +237,7 @@ public class StartOptionTest {
         startExCoUoCeCn(0, null, expectedUserOutput, null, null, args);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         cmdout = new ByteArrayOutputStream();
         cmderr = new ByteArrayOutputStream();
@@ -214,8 +248,12 @@ public class StartOptionTest {
     }
 
     protected String writeToFile(String stuff) {
+        return writeToFile("doit.repl", stuff);
+    }
+
+    protected String writeToFile(String fileName, String stuff) {
         Compiler compiler = new Compiler();
-        Path p = compiler.getPath("doit.repl");
+        Path p = compiler.getPath(fileName);
         compiler.writeToFile(p, stuff);
         return p.toString();
     }
@@ -226,6 +264,7 @@ public class StartOptionTest {
     }
 
     // Test load files
+    @Test
     public void testCommandFile() {
         String fn = writeToFile("String str = \"Hello \"\n" +
                 "/list\n" +
@@ -240,6 +279,7 @@ public class StartOptionTest {
     }
 
     // Test that the usage message is printed
+    @Test
     public void testUsage() {
         for (String opt : new String[]{"-?", "-h", "--help"}) {
             startCo(s -> {
@@ -252,6 +292,7 @@ public class StartOptionTest {
     }
 
     // Test the --help-extra message
+    @Test
     public void testHelpExtra() {
         for (String opt : new String[]{"-X", "--help-extra"}) {
             startCo(s -> {
@@ -264,12 +305,14 @@ public class StartOptionTest {
     }
 
     // Test handling of bogus options
+    @Test
     public void testUnknown() {
         startExCe(1, "Unknown option: u", "-unknown");
         startExCe(1, "Unknown option: unknown", "--unknown");
     }
 
     // Test that input is read with "-" and there is no extra output.
+    @Test
     public void testHypenFile() {
         setIn("System.out.print(\"Hello\");\n");
         startUo("Hello", "-");
@@ -286,6 +329,7 @@ public class StartOptionTest {
     }
 
     // Test that user specified exit codes are propagated
+    @Test
     public void testExitCode() {
         setIn("/exit 57\n");
         startExCoUoCeCn(57, null, null, null, "-> /exit 57", "-s");
@@ -300,11 +344,13 @@ public class StartOptionTest {
     }
 
     // Test that non-existent load file sends output to stderr and does not startExCe (no welcome).
+    @Test
     public void testUnknownLoadFile() {
         startExCe(1, "File 'UNKNOWN' for 'jshell' is not found.", "UNKNOWN");
     }
 
     // Test bad usage of the --startup option
+    @Test
     public void testStartup() {
         String fn = writeToFile("");
         startExCe(1, "Argument to startup missing.", "--startup");
@@ -314,18 +360,21 @@ public class StartOptionTest {
     }
 
     // Test an option that causes the back-end to fail is propagated
+    @Test
     public void testStartupFailedOption() {
         startExCe(1, s -> assertTrue(s.contains("Unrecognized option: -hoge-foo-bar"), "cmderr: " + s),
                 "-R-hoge-foo-bar");
     }
 
     // Test the use of non-existant files with the --startup option
+    @Test
     public void testStartupUnknown() {
         startExCe(1, "File 'UNKNOWN' for '--startup' is not found.", "--startup", "UNKNOWN");
         startExCe(1, "File 'UNKNOWN' for '--startup' is not found.", "--startup", "DEFAULT", "--startup", "UNKNOWN");
     }
 
     // Test bad usage of --class-path option
+    @Test
     public void testClasspath() {
         for (String cp : new String[]{"--class-path"}) {
             startExCe(1, "Only one --class-path option may be used.", cp, ".", "--class-path", ".");
@@ -334,12 +383,14 @@ public class StartOptionTest {
     }
 
     // Test bogus module on --add-modules option
+    @Test
     public void testUnknownModule() {
         startExCe(1, s -> assertTrue(s.contains("rror") && s.contains("unKnown"), "cmderr: " + s),
                 "--add-modules", "unKnown");
     }
 
     // Test that muliple feedback options fail
+    @Test
     public void testFeedbackOptionConflict() {
         startExCe(1, "Only one feedback option (--feedback, -q, -s, or -v) may be used.",
                 "--feedback", "concise", "--feedback", "verbose");
@@ -354,12 +405,14 @@ public class StartOptionTest {
     }
 
     // Test bogus arguments to the --feedback option
+    @Test
     public void testNegFeedbackOption() {
         startExCe(1, "Argument to feedback missing.", "--feedback");
         startExCe(1, "Does not match any current feedback mode: blorp -- --feedback blorp", "--feedback", "blorp");
     }
 
     // Test --version
+    @Test
     public void testVersion() {
         startCo(s -> {
             assertTrue(s.startsWith("jshell"), "unexpected version: " + s);
@@ -369,6 +422,7 @@ public class StartOptionTest {
     }
 
     // Test --show-version
+    @Test
     public void testShowVersion() {
         startExCoUoCeCn(null,
                 s -> {
@@ -381,6 +435,7 @@ public class StartOptionTest {
                 "--show-version");
     }
 
+    @Test
     public void testPreviewEnabled() {
         String fn = writeToFile(
                 """
@@ -389,10 +444,19 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+        startCheckUserOutput(s -> assertEquals("prefix\njava.lang.invoke.MethodHandle\nsuffix\n", s),
                              fn);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
-                             "--enable-preview", fn);
+        String fn24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals("test\n", s),
+                             "-C--release", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals("test\n", s),
+                             "-C--source", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals("test\n", s),
+                             "-C-source", "-C24", fn24);
         //JDK-8341631:
         String fn2 = writeToFile(
                 """
@@ -401,11 +465,88 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+        startCheckUserOutput(s -> assertEquals("prefix\ntest\nsuffix\n", s),
                              fn2);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
-                             "--enable-preview", fn2);
+        //verify the correct resource is selected when --enable-preview, relies on
+        //--patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch
+        String fn2Preview = writeToFile(
+                """
+                System.out.println(\"prefix\");
+                sayHello();
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals("prefix\nHello!\nsuffix\n", s),
+                             "--enable-preview", fn2Preview,
+                             "-");
+
+        testPersistence = new HashMap<>();
+
+        String newStartupScript = writeToFile("test-startup.repl",
+                """
+                System.out.println("Custom start script");
+                """);
+        String setStartup = writeToFile(
+                """
+                /set start -retain {file}
+                /exit
+                """.replace("{file}", newStartupScript));
+        startCheckUserOutput(s -> {}, setStartup);
+        String exit = writeToFile(
+                """
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals("Custom start script\n", s),
+                             exit);
+        String clearStartup = writeToFile(
+                """
+                /set start -retain -default
+                /exit
+                """);
+        startCheckUserOutput(s -> {}, clearStartup);
+        String retainTest = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals("/set start -retain -default\n", s),
+                                    s -> assertEquals("prefix\njava.lang.invoke.MethodHandle\nsuffix\n", s),
+                                    s -> assertEquals("/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n", s),
+                                    retainTest);
+        String retainTest24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals("test\n", s),
+                             "-C--release", "-C24", retainTest24);
+
+        String set24DefaultTest = writeToFile(
+                """
+                /set start -default -retain
+                /exit
+                """);
+        startCheckUserOutput(s -> {},
+                             "-C--release", "-C24", set24DefaultTest);
+
+        String checkDefaultAfterSet24Test = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals("/set start -retain -default\n", s),
+                                    s -> assertEquals("prefix\njava.lang.invoke.MethodHandle\nsuffix\n", s),
+                                    s -> assertEquals("/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n", s),
+                                    checkDefaultAfterSet24Test);
     }
+
+    @Test
     public void testInput() {
         //readLine(String):
         String readLinePrompt = writeToFile(
@@ -414,7 +555,7 @@ public class StartOptionTest {
                 System.out.println(v);
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+        startCheckUserOutput(s -> assertEquals("prompt: null\n", s),
                              readLinePrompt);
         //readPassword(String):
         String readPasswordPrompt = writeToFile(
@@ -423,11 +564,31 @@ public class StartOptionTest {
                 System.out.println(java.util.Arrays.toString(v));
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+        startCheckUserOutput(s -> assertEquals("prompt: null\n", s),
                              readPasswordPrompt);
     }
 
-    @AfterMethod
+    @Test
+    public void testErroneousFile() {
+        String code = """
+                      var v = (
+                      System.console().readLine("prompt: ");
+                      /exit
+                      """;
+        String readLinePrompt = writeToFile(code);
+        String expectedErrorFormat =
+                ResourceBundle.getBundle("jdk.internal.jshell.tool.resources.l10n",
+                                         Locale.getDefault(),
+                                         JShell.class.getModule())
+                              .getString("jshell.err.incomplete.input");
+        String expectedError =
+                new MessageFormat(expectedErrorFormat).format(new Object[] {code});
+        startCheckError(s -> assertEquals(expectedError, s),
+                        readLinePrompt);
+    }
+
+
+    @AfterEach
     public void tearDown() {
         cmdout = null;
         cmderr = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,11 +102,6 @@ private:
   // old-gen.
   bool _is_heap_almost_full;
 
-  // Helper functions for allocation
-  HeapWord* attempt_allocation(size_t size,
-                               bool   is_tlab,
-                               bool   first_only);
-
   void do_full_collection(bool clear_all_soft_refs) override;
 
   // Does the "cause" of GC indicate that
@@ -117,6 +112,9 @@ private:
 
   void gc_prologue();
   void gc_epilogue(bool full);
+
+  void print_tracing_info() const override;
+  void stop() override {};
 
 public:
   // Returns JNI_OK on success
@@ -135,7 +133,7 @@ public:
 
   size_t max_capacity() const override;
 
-  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
 
   // Callback from VM_SerialCollectForAllocation operation.
   // This function does everything necessary/possible to satisfy an
@@ -206,51 +204,26 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
-  void print_on(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  virtual bool is_maximal_no_gc() const override;
-
   // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
 
-  // The ScanningOption determines which of the roots
-  // the closure is applied to:
-  // "SO_None" does none;
-  enum ScanningOption {
-    SO_None                =  0x0,
-    SO_AllCodeCache        =  0x8,
-    SO_ScavengeCodeCache   = 0x10
-  };
-
  public:
-  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
-  void process_roots(ScanningOption so,
-                     OopClosure* strong_roots,
-                     CLDClosure* strong_cld_closure,
-                     CLDClosure* weak_cld_closure,
-                     NMethodToOopClosure* code_roots);
-
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 

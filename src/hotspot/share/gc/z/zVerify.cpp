@@ -32,8 +32,8 @@
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
-#include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
@@ -51,8 +51,8 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef ASSERT
@@ -61,7 +61,7 @@
 // with callers to this function. Typically used to verify that object oops
 // and headers are safe to access.
 void z_verify_safepoints_are_blocked() {
-  if (VMError::is_error_reported_in_current_thread()) {
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
     // The current thread has crashed and is creating an error report.
     // This may occur from any thread state, skip the safepoint_are_blocked
     // verification.
@@ -516,7 +516,7 @@ void ZVerify::after_weak_processing() {
 // Remembered set verification
 //
 
-typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
+typedef HashTable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
 static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 

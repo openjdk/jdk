@@ -25,9 +25,9 @@
 #include "c1/c1_Optimizer.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "compiler/compileLog.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "compiler/compileLog.hpp"
 
 typedef GrowableArray<ValueSet*> ValueSetList;
 

@@ -55,10 +55,10 @@ import javax.tools.StandardLocation;
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.comp.CompileStates.CompileState;
@@ -84,10 +84,6 @@ import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
@@ -238,10 +234,6 @@ public class JavaCompiler {
      */
     public Log log;
 
-    /** Whether or not the options lint category was initially disabled
-     */
-    boolean optionsCheckingInitiallyDisabled;
-
     /** Factory for creating diagnostic objects
      */
     JCDiagnostic.Factory diagFactory;
@@ -266,6 +258,10 @@ public class JavaCompiler {
      */
     protected JNIWriter jniWriter;
 
+    /** The Lint mapper.
+     */
+    protected LintMapper lintMapper;
+
     /** The module for the symbol table entry phases.
      */
     protected Enter enter;
@@ -277,10 +273,6 @@ public class JavaCompiler {
     /** The language version.
      */
     protected Source source;
-
-    /** The preview language version.
-     */
-    protected Preview preview;
 
     /** The module for code generation.
      */
@@ -396,6 +388,7 @@ public class JavaCompiler {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        lintMapper = LintMapper.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
@@ -417,7 +410,6 @@ public class JavaCompiler {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
         }
         source = Source.instance(context);
-        preview = Preview.instance(context);
         attr = Attr.instance(context);
         analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
@@ -439,12 +431,6 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
-        // See if lint options checking was explicitly disabled by the
-        // user; this is distinct from the options check being
-        // enabled/disabled.
-        optionsCheckingInitiallyDisabled =
-            options.isSet(Option.XLINT_CUSTOM, "-options") ||
-            options.isSet(Option.XLINT_CUSTOM, "none");
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -594,6 +580,7 @@ public class JavaCompiler {
     /** The number of errors reported so far.
      */
     public int errorCount() {
+        log.reportOutstandingWarnings();
         if (werror && log.nerrors == 0 && log.nwarnings > 0) {
             log.error(Errors.WarningsAndWerror);
         }
@@ -644,6 +631,7 @@ public class JavaCompiler {
     private JCCompilationUnit parse(JavaFileObject filename, CharSequence content, boolean silent) {
         long msec = now();
         JCCompilationUnit tree = make.TopLevel(List.nil());
+        lintMapper.startParsingFile(filename);
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
@@ -663,6 +651,7 @@ public class JavaCompiler {
         }
 
         tree.sourcefile = filename;
+        lintMapper.finishParsingFile(tree);
 
         if (content != null && !taskListener.isEmpty() && !silent) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, tree);
@@ -928,11 +917,6 @@ public class JavaCompiler {
             checkReusable();
         hasBeenUsed = true;
 
-        // forcibly set the equivalent of -Xlint:-options, so that no further
-        // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
-
         start_msec = now();
 
         try {
@@ -1166,7 +1150,7 @@ public class JavaCompiler {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             }
         } else { // free resources
@@ -1867,10 +1851,10 @@ public class JavaCompiler {
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
-        chk.reportDeferredDiagnostics();
-        preview.reportDeferredDiagnostics();
+        log.reportOutstandingWarnings();
+        log.reportOutstandingNotes();
         if (log.compressedOutput) {
-            log.mandatoryNote(null, Notes.CompressedDiags);
+            log.note(Notes.CompressedDiags);
         }
     }
 
@@ -1898,7 +1882,7 @@ public class JavaCompiler {
 
     private Name parseAndGetName(JavaFileObject fo,
                                  Function<JCTree.JCCompilationUnit, Name> tree2Name) {
-        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        DiagnosticHandler dh = log.new DiscardDiagnosticHandler();
         JavaFileObject prevSource = log.useSource(fo);
         try {
             JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);
@@ -1941,6 +1925,7 @@ public class JavaCompiler {
         attr = null;
         chk = null;
         gen = null;
+        lintMapper = null;
         flow = null;
         transTypes = null;
         lower = null;

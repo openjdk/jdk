@@ -422,6 +422,18 @@ source_hpp %{
 
 #include "peephole_x86_64.hpp"
 
+bool castLL_is_imm32(const Node* n);
+
+%}
+
+source %{
+
+bool castLL_is_imm32(const Node* n) {
+  assert(n->is_CastLL(), "must be a CastLL");
+  const TypeLong* t = n->bottom_type()->is_long();
+  return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
+}
+
 %}
 
 // Register masks
@@ -845,7 +857,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     Register klass = rscratch1;
 
     __ mov_metadata(klass, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -943,7 +955,7 @@ void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1584,14 +1596,11 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 bool Matcher::supports_vector_calling_convention(void) {
-  if (EnableVectorSupport && UseVectorStubs) {
-    return true;
-  }
-  return false;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = XMM0_num;
   int hi = XMM0b_num;
   if (ideal_reg == Op_VecX) hi = XMM0d_num;
@@ -1838,20 +1847,19 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
       __ vzeroupper();
     }
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 
   enc_class Java_To_Runtime(method meth) %{
-    // No relocation needed
-    __ mov64(r10, (int64_t) $meth$$method);
+    __ lea(r10, RuntimeAddress((address)$meth$$method));
     __ call(r10);
     __ post_call_nop();
   %}
@@ -2046,6 +2054,10 @@ ins_attrib ins_alignment(1);    // Required alignment attribute (must
                                 // start) requires.  If > 1, a
                                 // compute_padding() function must be
                                 // provided for the instruction
+
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
 
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct parsing
@@ -4439,8 +4451,19 @@ instruct loadD(regD dst, memory mem)
 %}
 
 // max = java.lang.Math.max(float a, float b)
+instruct maxF_avx10_reg(regF dst, regF a, regF b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxF a b));
+  format %{ "maxF $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "maxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4451,7 +4474,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4464,8 +4487,19 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.max(double a, double b)
+instruct maxD_avx10_reg(regD dst, regD a, regD b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxD a b));
+  format %{ "maxD $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{ "maxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4476,7 +4510,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4488,9 +4522,20 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
+// max = java.lang.Math.min(float a, float b)
+instruct minF_avx10_reg(regF dst, regF a, regF b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinF a b));
+  format %{ "minF $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "minF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4501,7 +4546,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4513,9 +4558,20 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
+// max = java.lang.Math.min(double a, double b)
+instruct minD_avx10_reg(regD dst, regD a, regD b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinD a b));
+  format %{ "minD $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
     format %{ "minD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4526,7 +4582,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -6258,13 +6314,14 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6274,6 +6331,7 @@ instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
+  effect(TEMP dst);
 
   ins_cost(200); // XXX
   format %{ "cmovpl  $dst, $src\n\t"
@@ -6289,14 +6347,15 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 // and parity flag bit is set if any of the operand is a NaN.
 instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveI (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6364,7 +6423,7 @@ instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI sr
   ins_pipe(pipe_cmov_mem);
 %}
 
-instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, memory src2) 
+instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, memory src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
@@ -6539,6 +6598,7 @@ instruct cmovP_regU_ndd(rRegP dst, cmpOpU cop, rFlagsRegU cr, rRegP src1, rRegP 
 %}
 
 instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -6547,6 +6607,7 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
 %}
 
 instruct cmovP_regUCF_ndd(rRegP dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegP src1, rRegP src2) %{
+  predicate(UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
   ins_cost(200);
   format %{ "ecmovq$cop $dst, $src1, $src2\t# unsigned, ptr ndd" %}
@@ -6573,13 +6634,14 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6602,14 +6664,15 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 
 instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveP (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6743,7 +6806,7 @@ instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
   %}
 %}
 
-instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, rRegL src2) 
+instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, rRegL src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
@@ -6772,13 +6835,14 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6801,14 +6865,15 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 
 instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveL (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6848,7 +6913,7 @@ instruct cmovL_rReg_rReg_memU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL sr
   ins_pipe(pipe_cmov_mem);
 %}
 
-instruct cmovL_rReg_rReg_memUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, memory src2) 
+instruct cmovL_rReg_rReg_memUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, memory src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
@@ -7031,21 +7096,6 @@ instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   format %{ "addl    $dst, $src\t# int" %}
   ins_encode %{
     __ addl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct addI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (AddI (LoadI src1) src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
-
-  ins_cost(150);
-  format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -7353,21 +7403,6 @@ instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct addL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (AddL (LoadL src1) src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
-
-  ins_cost(150);
-  format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Address, $src2$$Register, false);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
 instruct addL_mem_rReg(memory dst, rRegL src, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (AddL (LoadL dst) src)));
@@ -7396,7 +7431,7 @@ instruct addL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
+instruct incL_rReg(rRegL dst, immL1 src, rFlagsReg cr)
 %{
   predicate(!UseAPX && UseIncDec);
   match(Set dst (AddL dst src));
@@ -7409,7 +7444,7 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_ndd(rRegL dst, rRegI src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
@@ -7422,7 +7457,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_mem_ndd(rRegL dst, memory src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
@@ -7605,6 +7640,7 @@ instruct castPP(rRegP dst)
 
 instruct castII(rRegI dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastII dst));
 
   size(0);
@@ -7614,8 +7650,22 @@ instruct castII(rRegI dst)
   ins_pipe(empty);
 %}
 
+instruct castII_checked(rRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+
+  effect(KILL cr);
+  format %{ "# cast_checked_II $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL(rRegL dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastLL dst));
 
   size(0);
@@ -7623,6 +7673,32 @@ instruct castLL(rRegL dst)
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(empty);
+%}
+
+instruct castLL_checked_L32(rRegL dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0 && castLL_is_imm32(n));
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr);
+  format %{ "# cast_checked_LL $dst" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, noreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0 && !castLL_is_imm32(n));
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr, TEMP tmp);
+  format %{ "# cast_checked_LL $dst\tusing $tmp as TEMP" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct castFF(regF dst)
@@ -8538,7 +8614,6 @@ instruct mulI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 
 instruct mulI_rReg_imm(rRegI dst, rRegI src, immI imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulI src imm));
   effect(KILL cr);
 
@@ -8546,20 +8621,6 @@ instruct mulI_rReg_imm(rRegI dst, rRegI src, immI imm, rFlagsReg cr)
   format %{ "imull   $dst, $src, $imm\t# int" %}
   ins_encode %{
     __ imull($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulI src1 src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ eimull($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8594,7 +8655,6 @@ instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
 
 instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulI (LoadI src) imm));
   effect(KILL cr);
 
@@ -8602,20 +8662,6 @@ instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
   format %{ "imull   $dst, $src, $imm\t# int" %}
   ins_encode %{
     __ imull($dst$$Register, $src$$Address, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
-instruct mulI_rReg_mem_imm(rRegI dst, memory src1, immI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulI (LoadI src1) src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ eimull($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8660,7 +8706,6 @@ instruct mulL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 
 instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulL src imm));
   effect(KILL cr);
 
@@ -8668,20 +8713,6 @@ instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
   format %{ "imulq   $dst, $src, $imm\t# long" %}
   ins_encode %{
     __ imulq($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulL src1 src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8716,7 +8747,6 @@ instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
 
 instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulL (LoadL src) imm));
   effect(KILL cr);
 
@@ -8724,20 +8754,6 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
   format %{ "imulq   $dst, $src, $imm\t# long" %}
   ins_encode %{
     __ imulq($dst$$Register, $src$$Address, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
-instruct mulL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulL (LoadL src1) src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -10559,7 +10575,8 @@ instruct xorI_rReg_im1_ndd(rRegI dst, rRegI src, immI_M1 imm)
 // Xor Register with Immediate
 instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
+  // Strict predicate check to make selection of xorI_rReg_im1 cost agnostic if immI src is -1.
+  predicate(!UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10573,7 +10590,8 @@ instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 
 instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
-  predicate(UseAPX);
+  // Strict predicate check to make selection of xorI_rReg_im1_ndd cost agnostic if immI src2 is -1.
+  predicate(UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI src1 src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10591,6 +10609,7 @@ instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (XorI (LoadI src1) src2));
   effect(KILL cr);
+  ins_cost(150);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
@@ -10627,21 +10646,6 @@ instruct xorI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
     __ exorl($dst$$Register, $src1$$Register, $src2$$Address, false);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct xorI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (XorI (LoadI src1) src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
-
-  ins_cost(150);
-  format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ exorl($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10821,21 +10825,6 @@ instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ eandq($dst$$Register, $src1$$Register, $src2$$Address, false);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct andL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (AndL (LoadL src1) src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
-
-  ins_cost(150);
-  format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eandq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -11263,7 +11252,8 @@ instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
 // Xor Register with Immediate
 instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
+  // Strict predicate check to make selection of xorL_rReg_im1 cost agnostic if immL32 src is -1.
+  predicate(!UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
   match(Set dst (XorL dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -11277,7 +11267,8 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 
 instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
-  predicate(UseAPX);
+  // Strict predicate check to make selection of xorL_rReg_im1_ndd cost agnostic if immL32 src2 is -1.
+  predicate(UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
   match(Set dst (XorL src1 src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -11296,6 +11287,7 @@ instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
   match(Set dst (XorL (LoadL src1) src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  ins_cost(150);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -11331,21 +11323,6 @@ instruct xorL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ exorq($dst$$Register, $src1$$Register, $src2$$Address, false);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (XorL (LoadL src1) src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
-
-  ins_cost(150);
-  format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -14096,33 +14073,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, USE_KILL box);
-  ins_cost(300);
-  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, r15_thread, nullptr);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, USE_KILL box);
-  ins_cost(300);
-  format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
   ins_cost(300);
@@ -14134,7 +14085,6 @@ instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_Re
 %}
 
 instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object rax_reg));
   effect(TEMP tmp, USE_KILL rax_reg);
   ins_cost(300);
@@ -14658,6 +14608,24 @@ peephole
   peepmatch (salL_rReg_immI2);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immI2_peep());
+%}
+
+peephole
+%{
+  peepmatch (leaPCompressedOopOffset);
+  peepprocedure (lea_remove_redundant);
+%}
+
+peephole
+%{
+  peepmatch (leaP8Narrow);
+  peepprocedure (lea_remove_redundant);
+%}
+
+peephole
+%{
+  peepmatch (leaP32Narrow);
+  peepprocedure (lea_remove_redundant);
 %}
 
 // These peephole rules matches instructions which set flags and are followed by a testI/L_reg

@@ -88,13 +88,9 @@ static volatile bool   _has_items_to_clean = false;
 
 static volatile bool _alt_hash = false;
 
-#ifdef USE_LIBRARY_BASED_TLS_ONLY
-static volatile bool _lookup_shared_first = false;
-#else
 // "_lookup_shared_first" can get highly contended with many cores if multiple threads
-// are updating "lookup success history" in a global shared variable. If built-in TLS is available, use it.
+// are updating "lookup success history" in a global shared variable, so use built-in TLS
 static THREAD_LOCAL bool _lookup_shared_first = false;
-#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = nullptr;
@@ -150,7 +146,7 @@ public:
            "refcount %d", value.refcount());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
-      // We have allocated with MetaspaceShared::symbol_space_alloc(). No deallocation is needed.
+      // We have allocated with AOTMetaspace::symbol_space_alloc(). No deallocation is needed.
       // Unreferenced Symbols will not be copied into the archive.
       return;
     }
@@ -189,7 +185,7 @@ private:
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
       DEBUG_ONLY(static void* last = nullptr);
-      void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
+      void* p = (void*)AOTMetaspace::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
       return p;

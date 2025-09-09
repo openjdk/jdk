@@ -25,10 +25,10 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -37,8 +37,8 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -82,22 +82,22 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/threadSMR.inline.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
@@ -425,6 +425,19 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
   }
 }
 
+// One-shot PeriodicTask subclass for reading the release file
+class ReadReleaseFileTask : public PeriodicTask {
+ public:
+  ReadReleaseFileTask() : PeriodicTask(100) {}
+
+  virtual void task() {
+    os::read_image_release_file();
+
+    // Reclaim our storage and disenroll ourself.
+    delete this;
+  }
+};
+
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
@@ -445,6 +458,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize memory pools
+  Arena::initialize_chunk_pool();
 
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
@@ -579,6 +595,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
+
+  // Have the WatcherThread read the release file in the background.
+  ReadReleaseFileTask* read_task = new ReadReleaseFileTask();
+  read_task->enroll();
 
   // Create WatcherThread as soon as we can since we need it in case
   // of hangs during error reporting.
@@ -751,8 +771,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
     SystemDictionary::restore_archived_method_handle_intrinsics();
+    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
   }
 
   // Start string deduplication thread if requested.
@@ -792,6 +812,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
+  // Initiate replay training processing once preloading is over.
+  CompileBroker::init_training_replay();
+
+  AOTLinkedClassBulkLoader::replay_training_at_init_for_preloaded_classes(CHECK_JNI_ERR);
+
   if (Continuations::enabled()) {
     // Initialize Continuation class now so that failure to create enterSpecial/doYield
     // special nmethods due to limited CodeCache size can be treated as a fatal error at
@@ -815,24 +840,33 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler(CHECK_JNI_ERR);
+    JVMCI::initialize_compiler_in_create_vm(CHECK_JNI_ERR);
   }
 #endif
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
 #if INCLUDE_MANAGEMENT
-  Management::initialize(THREAD);
+  bool start_agent = true;
+#if INCLUDE_CDS
+  start_agent = !CDSConfig::is_dumping_final_static_archive();
+  if (!start_agent) {
+    log_info(aot)("Not starting management agent during creation of AOT cache.");
+  }
+#endif // INCLUDE_CDS
+  if (start_agent) {
+    Management::initialize(THREAD);
 
-  if (HAS_PENDING_EXCEPTION) {
-    // management agent fails to start possibly due to
-    // configuration problem and is responsible for printing
-    // stack trace if appropriate. Simply exit VM.
-    vm_exit(1);
+    if (HAS_PENDING_EXCEPTION) {
+      // management agent fails to start possibly due to
+      // configuration problem and is responsible for printing
+      // stack trace if appropriate. Simply exit VM.
+      vm_exit(1);
+    }
   }
 #endif // INCLUDE_MANAGEMENT
 
-  StatSampler::engage();
+  if (UsePerfData)         PerfDataManager::create_misc_perfdata();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   call_postVMInitHook(THREAD);
@@ -855,10 +889,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {
@@ -886,7 +920,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
-//      > stop StatSampler, watcher thread,
+//      > stop watcher thread,
 //        post thread end and vm death events to JVMTI,
 //        stop signal thread
 //   + Call JavaThread::exit(), it will:
@@ -1031,6 +1065,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
 void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
   assert(Threads_lock->owned_by_self(), "must have threads lock");
+  assert(p->monitor_owner_id() != 0, "should be set");
 
   BarrierSet::barrier_set()->on_thread_attach(p);
 
@@ -1259,21 +1294,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 }
 #endif // INCLUDE_JVMTI
 
-JavaThread *Threads::owning_thread_from_stacklock(ThreadsList * t_list, address basicLock) {
-  assert(LockingMode == LM_LEGACY, "Not with new lightweight locking");
-
-  JavaThread* the_owner = nullptr;
-  for (JavaThread* q : *t_list) {
-    if (q->is_lock_owned(basicLock)) {
-      the_owner = q;
-      break;
-    }
-  }
-  return the_owner;
-}
-
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
   for (JavaThread* q : *t_list) {
     // Need to start processing before accessing oops in the thread.
     StackWatermark* watermark = StackWatermarkSet::get(q, StackWatermarkKind::gc);
@@ -1290,12 +1311,7 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
   if (monitor->has_anonymous_owner()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return owning_thread_from_object(t_list, monitor->object());
-    } else {
-      assert(LockingMode == LM_LEGACY, "invariant");
-      return owning_thread_from_stacklock(t_list, (address)monitor->stack_locker());
-    }
+    return owning_thread_from_object(t_list, monitor->object());
   } else {
     JavaThread* the_owner = nullptr;
     for (JavaThread* q : *t_list) {
@@ -1331,10 +1347,24 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   char buf[32];
   st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
-  st->print_cr("Full thread dump %s (%s %s):",
+  st->print_cr("Full thread dump %s (%s %s)",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
                VM_Version::vm_info_string());
+  JDK_Version::current().to_string(buf, sizeof(buf));
+  const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
+                             JDK_Version::runtime_name() : "";
+  const char* runtime_version = JDK_Version::runtime_version() != nullptr ?
+                                JDK_Version::runtime_version() : "";
+  const char* vendor_version = JDK_Version::runtime_vendor_version() != nullptr ?
+                               JDK_Version::runtime_vendor_version() : "";
+  const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
+                                VM_Version::printable_jdk_debug_level() : "";
+
+  st->print_cr("                 JDK version: %s%s%s (%s) (%sbuild %s)", runtime_name,
+                (*vendor_version != '\0') ? " " : "", vendor_version,
+                buf, jdk_debug_level, runtime_version);
+
   st->cr();
 
 #if INCLUDE_SERVICES

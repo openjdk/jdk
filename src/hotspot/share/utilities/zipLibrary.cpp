@@ -35,6 +35,7 @@ typedef void**(*ZIP_Open_t)(const char* name, char** pmsg);
 typedef void(*ZIP_Close_t)(jzfile* zip);
 typedef jzentry* (*ZIP_FindEntry_t)(jzfile* zip, const char* name, jint* sizeP, jint* nameLen);
 typedef jboolean(*ZIP_ReadEntry_t)(jzfile* zip, jzentry* entry, unsigned char* buf, char* namebuf);
+typedef void(*ZIP_FreeEntry_t)(jzfile *zip, jzentry *entry);
 typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
@@ -43,6 +44,7 @@ static ZIP_Open_t ZIP_Open = nullptr;
 static ZIP_Close_t ZIP_Close = nullptr;
 static ZIP_FindEntry_t ZIP_FindEntry = nullptr;
 static ZIP_ReadEntry_t ZIP_ReadEntry = nullptr;
+static ZIP_FreeEntry_t ZIP_FreeEntry = nullptr;
 static ZIP_CRC32_t ZIP_CRC32 = nullptr;
 static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
@@ -79,6 +81,7 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path, vm_exit_on_failure));
   ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
   ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
+  ZIP_FreeEntry = CAST_TO_FN_PTR(ZIP_FreeEntry_t, dll_lookup("ZIP_FreeEntry", path, vm_exit_on_failure));
   ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
   // The following entry points are most likely optional from a zip library implementation perspective.
   // Hence no vm_exit on a resolution failure. Further refactorings should investigate this,
@@ -174,6 +177,12 @@ jboolean ZipLibrary::read_entry(jzfile* zip, jzentry* entry, unsigned char* buf,
   initialize();
   assert(ZIP_ReadEntry != nullptr, "invariant");
   return ZIP_ReadEntry(zip, entry, buf, namebuf);
+}
+
+void ZipLibrary::free_entry(jzfile* zip, jzentry* entry) {
+  initialize();
+  assert(ZIP_FreeEntry != nullptr, "invariant");
+  ZIP_FreeEntry(zip, entry);
 }
 
 jint ZipLibrary::crc32(jint crc, const jbyte* buf, jint len) {

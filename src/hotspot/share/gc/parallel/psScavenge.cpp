@@ -44,8 +44,8 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -57,18 +57,17 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -230,9 +229,9 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingNMethodClosure roots_in_nmethods(&roots_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
-    thread->oops_do(&roots_closure, &roots_in_nmethods);
+    // No need to visit nmethods, because they are handled by ScavengableNMethods.
+    thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
     pm->drain_stacks(false);
@@ -295,7 +294,7 @@ public:
     }
 
     PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
 
     // Scavenge OopStorages
     {
@@ -323,6 +322,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
   // Check for potential problems.
   if (!should_attempt_scavenge()) {
+    log_info(gc, ergo)("Young-gc might fail so skipping");
     return false;
   }
 
@@ -348,12 +348,10 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
   heap->increment_total_collections();
 
-  if (AdaptiveSizePolicy::should_update_eden_stats(gc_cause)) {
-    // Gather the feedback data for eden occupancy.
-    young_gen->eden_space()->accumulate_statistics();
-  }
+  // Gather the feedback data for eden occupancy.
+  young_gen->eden_space()->accumulate_statistics();
 
-  heap->print_heap_before_gc();
+  heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
   assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
@@ -411,12 +409,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
 
       ParallelScavengeRefProcProxyTask task(reference_processor()->max_num_queues());
-      stats = reference_processor()->process_discovered_references(task, pt);
+      stats = reference_processor()->process_discovered_references(task, &ParallelScavengeHeap::heap()->workers(), pt);
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();
@@ -425,7 +422,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     {
       GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
       PSAdjustWeakRootsClosure root_closure;
-      WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(), &_is_alive_closure, &root_closure, 1);
+      WeakProcessor::weak_oops_do(&heap->workers(), &_is_alive_closure, &root_closure, 1);
     }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
@@ -437,10 +434,9 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
     _gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
-    // Let the size policy know we're done.  Note that we count promotion
-    // failure cleanup time as part of the collection (otherwise, we're
-    // implicitly saying it's mutator time).
-    size_policy->minor_collection_end(gc_cause);
+    // This is an underestimate, since it excludes time on auto-resizing. The
+    // most expensive part in auto-resizing is commit/uncommit OS API calls.
+    size_policy->minor_collection_end(young_gen->eden_space()->capacity_in_bytes());
 
     if (!promotion_failure_occurred) {
       // Swap the survivor spaces.
@@ -449,111 +445,35 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
       young_gen->swap_spaces();
 
       size_t survived = young_gen->from_space()->used_in_bytes();
+      assert(old_gen->used_in_bytes() >= pre_gc_values.old_gen_used(), "inv");
       size_t promoted = old_gen->used_in_bytes() - pre_gc_values.old_gen_used();
       size_policy->update_averages(_survivor_overflow, survived, promoted);
+      size_policy->sample_old_gen_used_bytes(old_gen->used_in_bytes());
 
-      // A successful scavenge should restart the GC time limit count which is
-      // for full GC's.
-      size_policy->reset_gc_overhead_limit_count();
       if (UseAdaptiveSizePolicy) {
-        // Calculate the new survivor size and tenuring threshold
+        _tenuring_threshold = size_policy->compute_tenuring_threshold(_survivor_overflow,
+                                                                      _tenuring_threshold);
 
-        log_debug(gc, ergo)("AdaptiveSizeStart:  collection: %d ", heap->total_collections());
-        log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
-                            old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
+        log_debug(gc, age)("New threshold %u (max threshold %u)", _tenuring_threshold, MaxTenuringThreshold);
+
+        if (young_gen->is_from_to_layout()) {
+          size_policy->print_stats(_survivor_overflow);
+          heap->resize_after_young_gc(_survivor_overflow);
+        }
 
         if (UsePerfData) {
-          PSGCAdaptivePolicyCounters* counters = heap->gc_policy_counters();
-          counters->update_old_eden_size(
-            size_policy->calculated_eden_size_in_bytes());
-          counters->update_old_promo_size(
-            size_policy->calculated_promo_size_in_bytes());
-          counters->update_old_capacity(old_gen->capacity_in_bytes());
-          counters->update_young_capacity(young_gen->capacity_in_bytes());
-          counters->update_survived(survived);
-          counters->update_promoted(promoted);
-          counters->update_survivor_overflowed(_survivor_overflow);
+          GCPolicyCounters* counters = ParallelScavengeHeap::gc_policy_counters();
+          counters->tenuring_threshold()->set_value(_tenuring_threshold);
+          counters->desired_survivor_size()->set_value(young_gen->from_space()->capacity_in_bytes());
         }
 
-        size_t max_young_size = young_gen->max_gen_size();
-
-        // Deciding a free ratio in the young generation is tricky, so if
-        // MinHeapFreeRatio or MaxHeapFreeRatio are in use (implicating
-        // that the old generation size may have been limited because of them) we
-        // should then limit our young generation size using NewRatio to have it
-        // follow the old generation size.
-        if (MinHeapFreeRatio != 0 || MaxHeapFreeRatio != 100) {
-          max_young_size = MIN2(old_gen->capacity_in_bytes() / NewRatio,
-                                young_gen->max_gen_size());
+        {
+          // In case the counter overflows
+          uint num_minor_gcs = heap->total_collections() > heap->total_full_collections()
+                                 ? heap->total_collections() - heap->total_full_collections()
+                                 : 1;
+          size_policy->decay_supplemental_growth(num_minor_gcs);
         }
-
-        size_t survivor_limit =
-          size_policy->max_survivor_size(max_young_size);
-        _tenuring_threshold =
-          size_policy->compute_survivor_space_size_and_threshold(_survivor_overflow,
-                                                                 _tenuring_threshold,
-                                                                 survivor_limit);
-
-        log_debug(gc, age)("Desired survivor size %zu bytes, new threshold %u (max threshold %u)",
-                           size_policy->calculated_survivor_size_in_bytes(),
-                           _tenuring_threshold, MaxTenuringThreshold);
-
-        if (UsePerfData) {
-          PSGCAdaptivePolicyCounters* counters = heap->gc_policy_counters();
-          counters->update_tenuring_threshold(_tenuring_threshold);
-          counters->update_survivor_size_counters();
-        }
-
-        // Do call at minor collections?
-        // Don't check if the size_policy is ready at this
-        // level.  Let the size_policy check that internally.
-        if (UseAdaptiveGenerationSizePolicyAtMinorCollection &&
-            AdaptiveSizePolicy::should_update_eden_stats(gc_cause)) {
-          // Calculate optimal free space amounts
-          assert(young_gen->max_gen_size() >
-                 young_gen->from_space()->capacity_in_bytes() +
-                 young_gen->to_space()->capacity_in_bytes(),
-                 "Sizes of space in young gen are out-of-bounds");
-
-          size_t young_live = young_gen->used_in_bytes();
-          size_t eden_live = young_gen->eden_space()->used_in_bytes();
-          size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
-          size_t max_old_gen_size = old_gen->max_gen_size();
-          size_t max_eden_size = max_young_size -
-                                 young_gen->from_space()->capacity_in_bytes() -
-                                 young_gen->to_space()->capacity_in_bytes();
-
-          // Used for diagnostics
-          size_policy->clear_generation_free_space_flags();
-
-          size_policy->compute_eden_space_size(young_live,
-                                               eden_live,
-                                               cur_eden,
-                                               max_eden_size,
-                                               false /* not full gc*/);
-
-          size_policy->check_gc_overhead_limit(eden_live,
-                                               max_old_gen_size,
-                                               max_eden_size,
-                                               false /* not full gc*/,
-                                               gc_cause,
-                                               heap->soft_ref_policy());
-
-          size_policy->decay_supplemental_growth(false /* not full gc*/);
-        }
-        // Resize the young generation at every collection
-        // even if new sizes have not been calculated.  This is
-        // to allow resizes that may have been inhibited by the
-        // relative location of the "to" and "from" spaces.
-
-        // Resizing the old gen at young collections can cause increases
-        // that don't feed back to the generation sizing policy until
-        // a full collection.  Don't resize the old gen here.
-
-        heap->resize_young_gen(size_policy->calculated_eden_size_in_bytes(),
-                               size_policy->calculated_survivor_size_in_bytes());
-
-        log_debug(gc, ergo)("AdaptiveSizeStop: collection: %d ", heap->total_collections());
       }
 
       // Update the structure of the eden. With NUMA-eden CPU hotplugging or offlining can
@@ -562,16 +482,18 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
       assert(young_gen->eden_space()->is_empty(), "eden space should be empty now");
       young_gen->eden_space()->update();
 
-      heap->gc_policy_counters()->update_counters();
-
       heap->resize_all_tlabs();
 
       assert(young_gen->to_space()->is_empty(), "to space should be empty now");
+
+      heap->gc_epilogue(false);
     }
 
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
+
+    size_policy->record_gc_pause_end_instant();
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();
@@ -588,10 +510,8 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     Universe::verify("After GC");
   }
 
-  heap->print_heap_after_gc();
+  heap->print_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
-
-  AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();
 
@@ -614,7 +534,7 @@ bool PSScavenge::should_attempt_scavenge() {
   PSOldGen* old_gen = heap->old_gen();
 
   if (!young_gen->to_space()->is_empty()) {
-    // To-space is not empty; should run full-gc instead.
+    log_debug(gc, ergo)("To-space is not empty; should run full-gc instead.");
     return false;
   }
 
@@ -627,7 +547,7 @@ bool PSScavenge::should_attempt_scavenge() {
   size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
   bool result = promotion_estimate < free_in_old_gen;
 
-  log_trace(ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
+  log_trace(gc, ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
                 result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
                 (size_t) policy->padded_average_promoted_in_bytes(),
                 free_in_old_gen);
@@ -661,9 +581,9 @@ void PSScavenge::initialize() {
   PSOldGen* old_gen = heap->old_gen();
 
   // Set boundary between young_gen and old_gen
-  assert(old_gen->reserved().end() <= young_gen->eden_space()->bottom(),
+  assert(old_gen->reserved().end() == young_gen->reserved().start(),
          "old above young");
-  set_young_generation_boundary(young_gen->eden_space()->bottom());
+  set_young_generation_boundary(young_gen->reserved().start());
 
   // Initialize ref handling object for scavenging.
   _span_based_discoverer.set_span(young_gen->reserved());

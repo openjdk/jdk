@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * running application up to the failure or crash.
  * <p>
  * To define a Flight Recorder event, extend {@link jdk.jfr.Event} and add
- * fields that matches the data types of the payload. Metadata about fields,
+ * fields that match the data types of the payload. Metadata about fields,
  * such as labels, descriptions and units, can be added by using the annotations
  * available in the {@code jdk.jfr} package, or by using a user-defined
  * annotation that has the {@link jdk.jfr.MetadataDefinition} annotation.
@@ -176,6 +176,53 @@
  * <td>{@code "true"},<br>
  * {@code "false"}</td>
  * </tr>
+ * <tr>
+ *   <th scope="row">{@code throttle}</th>
+ *   <td>Specifies the maximum rate of events per time unit.</td>
+ *   <td>{@code "off"} (no throttling)</td>
+ *   <td>
+ *     "off", if events should not be throttled, otherwise a string representation of a positive {@code Long} value followed by forward slash ("/") and one of the following units:
+ *     <ul style="list-style-type:none">
+ *       <li>{@code "ns"} (nanoseconds)
+ *       <li>{@code "us"} (microseconds)
+ *       <li>{@code "ms"} (milliseconds)</li>
+ *       <li>{@code "s"} (seconds)</li>
+ *       <li>{@code "m"} (minutes)</li>
+ *       <li>{@code "h"} (hours)</li>
+ *       <li>{@code "d"} (days)</li>
+ *     </ul>
+ *   </td>
+ *    <td>
+ *     {@code "off"}<br>
+ *     {@code "100/s"}<br>
+ *     {@code "1000/m"}
+ *   </td>
+ * </tr>
+ * <tr>
+ * <th scope="row">{@code filter}</th>
+ * <td>Specifies the filter for the event</td>
+ * <td>{@code ""} (empty string)</td>
+ * <td>An empty string if no filter is used. Otherwise, a
+ * filter that can be used with the jdk.MethodTrace or
+ * jdk.MethodTiming events and follows this grammar:<br>
+ * {@snippet :
+ * filter ::= target (";" target)*
+ * target ::= class | class-method | method | annotation
+ * class ::= identifier ("." identifier)*
+ * class-method ::= class method
+ * method ::= "::" method-name
+ * method-name ::= identifier | "<clinit>" | "<init>"
+ * annotation ::= "@" class
+ * identifier ::= see JLS 3.8
+ * }
+ * </td>
+ * <td>{@code "java.lang.String"}<br>
+ * {@code "::<clinit>"}<br>
+ * {@code "java.util.HashMap::resize"}<br>
+ * {@code "java.io.FileDescriptor::<init>;java.io.FileDescriptor::close"}<br>
+ * {@code  "@jakarta.ws.rs.GET"}<br>
+ * </td>
+ * </tr>
  * </tbody>
  * </table>
  * <p>
@@ -185,7 +232,7 @@
  * Typically this is expressed as {@code "not null"}. If a {@code null}
  * parameter is used where it is not allowed, a
  * {@code java.lang.NullPointerException} is thrown. If a {@code null}
- * parameters is passed to a method that throws other exceptions, such as
+ * parameters are passed to a method that throws other exceptions, such as
  * {@code java.io.IOException}, the {@code java.lang.NullPointerException} takes
  * precedence, unless the Javadoc for the method explicitly states how
  * {@code null} is handled, i.e. by throwing

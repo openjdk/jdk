@@ -30,11 +30,15 @@
 size_t ZPointerLoadShift;
 
 size_t ZPlatformAddressOffsetBits() {
+#ifdef ADDRESS_SANITIZER
+  return 44;
+#else
   const size_t min_address_offset_bits = 42; // 4TB
   const size_t max_address_offset_bits = 44; // 16TB
-  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
+#endif
 }
 
 size_t ZPlatformAddressHeapBaseShift() {

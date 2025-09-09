@@ -258,7 +258,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
 
-  unsigned int abs_con = uabs(con);
+  unsigned int abs_con = g_uabs(con);
   if (abs_con != (unsigned int)con) {
     sign_flip = true;
   }
@@ -493,7 +493,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
-  julong abs_con = uabs(con);
+  julong abs_con = g_uabs(con);
   if (abs_con != (julong)con) {
     sign_flip = true;
   }
@@ -924,13 +924,15 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t12 && t12->is_con() ) { // Shift is by a constant
       int shift = t12->get_con();
       shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-      const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
-      // If the AND'ing of the 2 masks has no bits, then only original shifted
-      // bits survive.  NO sign-extension bits survive the maskings.
-      if( (sign_bits_mask & mask) == 0 ) {
-        // Use zero-fill shift instead
-        Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
-        return new AndLNode(zshift, in(2));
+      if (shift != 0) {
+        const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
+        // If the AND'ing of the 2 masks has no bits, then only original shifted
+        // bits survive.  NO sign-extension bits survive the maskings.
+        if( (sign_bits_mask & mask) == 0 ) {
+          // Use zero-fill shift instead
+          Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
+          return new AndLNode(zshift, in(2));
+        }
       }
     }
   }
@@ -950,10 +952,9 @@ LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-//=============================================================================
-
-static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
-  const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
+// Returns whether the shift amount is constant. If so, sets count.
+static bool const_shift_count(PhaseGVN* phase, const Node* shift_node, int* count) {
+  const TypeInt* tcount = phase->type(shift_node->in(2))->isa_int();
   if (tcount != nullptr && tcount->is_con()) {
     *count = tcount->get_con();
     return true;
@@ -961,52 +962,76 @@ static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   return false;
 }
 
-static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, uint nBits) {
-  int count = 0;
-  if (const_shift_count(phase, shiftNode, &count)) {
-    int maskedShift = count & (nBits - 1);
-    if (maskedShift == 0) {
+// Returns whether the shift amount is constant. If so, sets real_shift and masked_shift.
+static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBits, int& real_shift, int& masked_shift) {
+  if (const_shift_count(phase, shift_node, &real_shift)) {
+    masked_shift = real_shift & (nBits - 1);
+    return true;
+  }
+  return false;
+}
+
+// Convenience for when we don't care about the real amount
+static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBits, int& masked_shift) {
+  int real_shift;
+  return mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift);
+}
+
+// Use this in ::Ideal only with shiftNode == this!
+// Returns the masked shift amount if constant or 0 if not constant.
+static int mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits) {
+  int real_shift;
+  int masked_shift;
+  if (mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift)) {
+    if (masked_shift == 0) {
       // Let Identity() handle 0 shift count.
       return 0;
     }
 
-    if (count != maskedShift) {
-      shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
+    if (real_shift != masked_shift) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->rehash_node_delayed(shiftNode);
+      if (igvn != nullptr) {
+        igvn->_worklist.push(shift_node);
       }
+      shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
     }
-    return maskedShift;
+    return masked_shift;
   }
+  // Not a shift by a constant.
   return 0;
 }
 
 // Called with
-//    outer_shift = (_ << con0)
+//   outer_shift = (_ << rhs_outer)
 // We are looking for the pattern:
-//   outer_shift = ((X << con1) << con0)
-//   we denote inner_shift the nested expression (X << con1)
-//
-// con0 and con1 are both in [0..nbits), as they are computed by maskShiftAmount.
+//   outer_shift = ((X << rhs_inner) << rhs_outer)
+//   where rhs_outer and rhs_inner are constant
+//   we denote inner_shift the nested expression (X << rhs_inner)
+//   con_inner = rhs_inner % nbits and con_outer = rhs_outer % nbits
+//   where nbits is the number of bits of the shifts
 //
 // There are 2 cases:
-// if con0 + con1 >= nbits => 0
-// if con0 + con1 < nbits => X << (con1 + con0)
-static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int con0, BasicType bt) {
+// if con_outer + con_inner >= nbits => 0
+// if con_outer + con_inner < nbits => X << (con_outer + con_inner)
+static Node* collapse_nested_shift_left(PhaseGVN* phase, const Node* outer_shift, int con_outer, BasicType bt) {
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
-  int nbits = static_cast<int>(bits_per_java_integer(bt));
-  Node* inner_shift = outer_shift->in(1);
+  const Node* inner_shift = outer_shift->in(1);
   if (inner_shift->Opcode() != Op_LShift(bt)) {
     return nullptr;
   }
 
-  int con1 = maskShiftAmount(phase, inner_shift, nbits);
-  if (con1 == 0) { // Either non-const, or actually 0 (up to mask) and then delegated to Identity()
+  int nbits = static_cast<int>(bits_per_java_integer(bt));
+  int con_inner;
+  if (!mask_shift_amount(phase, inner_shift, nbits, con_inner)) {
     return nullptr;
   }
 
-  if (con0 + con1 >= nbits) {
+  if (con_inner == 0) {
+    // We let the Identity() of the inner shift do its job.
+    return nullptr;
+  }
+
+  if (con_outer + con_inner >= nbits) {
     // While it might be tempting to use
     // phase->zerocon(bt);
     // it would be incorrect: zerocon caches nodes, while Ideal is only allowed
@@ -1015,7 +1040,7 @@ static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int 
   }
 
   // con0 + con1 < nbits ==> actual shift happens now
-  Node* con0_plus_con1 = phase->intcon(con0 + con1);
+  Node* con0_plus_con1 = phase->intcon(con_outer + con_inner);
   return LShiftNode::make(inner_shift->in(1), con0_plus_con1, bt);
 }
 
@@ -1036,7 +1061,7 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 // Also collapse nested left-shifts with constant rhs:
 // (X << con1) << con2 ==> X << (con1 + con2)
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
+  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
     return nullptr;
   }
@@ -1222,7 +1247,7 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 // Also collapse nested left-shifts with constant rhs:
 // (X << con1) << con2 ==> X << (con1 + con2)
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  int con = maskShiftAmount(phase, this, BitsPerJavaLong);
+  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong);
   if (con == 0) {
     return nullptr;
   }
@@ -1443,7 +1468,7 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   if (t1 == nullptr) {
     return NodeSentinel;        // Left input is an integer
   }
-  int shift = maskShiftAmount(phase, this, bits_per_java_integer(bt));
+  int shift = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
   if (shift == 0) {
     return NodeSentinel;
   }
@@ -1473,7 +1498,7 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
+  int shift = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
   assert(shift != 0, "handled by IdealIL");
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
@@ -1660,7 +1685,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
+  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
     return nullptr;
   }
@@ -1824,7 +1849,7 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  int con = maskShiftAmount(phase, this, BitsPerJavaLong);
+  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong);
   if (con == 0) {
     return nullptr;
   }
@@ -2178,8 +2203,13 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 
 // Returns a lower bound on the number of trailing zeros in expr.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
-  expr = expr->uncast();
   const TypeInteger* type = phase->type(expr)->isa_integer(bt);
+  if (type == nullptr) {
+    return 0;
+  }
+
+  expr = expr->uncast();
+  type = phase->type(expr)->isa_integer(bt);
   if (type == nullptr) {
     return 0;
   }

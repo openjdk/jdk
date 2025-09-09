@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,12 +683,15 @@ public:
   // Convenient access to type names.
   typedef ParallelCompactData::RegionData RegionData;
 
+  // By the end of full-gc, all live objs are compacted into the first three spaces, old, eden, and from.
   typedef enum {
-    old_space_id, eden_space_id,
-    from_space_id, to_space_id, last_space_id
+    old_space_id,
+    eden_space_id,
+    from_space_id,
+    to_space_id,
+    last_space_id
   } SpaceId;
 
-public:
   // Inline closure decls
   //
   class IsAliveClosure: public BoolObjectClosure {
@@ -724,7 +727,8 @@ private:
   static void pre_compact();
   static void post_compact();
 
-  static bool check_maximum_compaction(size_t total_live_words,
+  static bool check_maximum_compaction(bool should_do_max_compaction,
+                                       size_t total_live_words,
                                        MutableSpace* const old_space,
                                        HeapWord* full_region_prefix_end);
 
@@ -739,7 +743,7 @@ private:
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summary_phase();
+  static void summary_phase(bool should_do_max_compaction);
 
   static void adjust_pointers();
   static void forward_to_new_addr();
@@ -758,8 +762,10 @@ private:
 public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
-  static bool invoke(bool maximum_heap_compaction);
-  static bool invoke_no_policy(bool maximum_heap_compaction);
+  // This method invokes a full collection.
+  // clear_all_soft_refs controls whether soft-refs should be cleared or not.
+  // should_do_max_compaction controls whether all spaces for dead objs should be reclaimed.
+  static bool invoke(bool clear_all_soft_refs, bool should_do_max_compaction);
 
   template<typename Func>
   static void adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe);
@@ -846,7 +852,7 @@ public:
   // Return the SpaceId for the given address.
   static SpaceId space_id(HeapWord* addr);
 
-  static void print_on_error(outputStream* st);
+  static void print_on(outputStream* st);
 
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.

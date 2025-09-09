@@ -26,8 +26,8 @@
 #define SHARE_C1_C1_LINEARSCAN_HPP
 
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "compiler/oopMap.hpp"
@@ -948,11 +948,7 @@ class LinearScanTimers : public StackObj {
 
  public:
   LinearScanTimers();
-
-  void begin_method();                     // called for each method when register allocation starts
-  void end_method(LinearScan* allocator);  // called for each method when register allocation completed
   void print(double total_time);           // called before termination of VM to print global summary
-
   elapsedTimer* timer(int idx) { return &(_timers[idx]); }
 };
 

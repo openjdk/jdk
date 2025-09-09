@@ -45,9 +45,7 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Launcher as service packaging test
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @build jdk.jpackage.test.*
- * @build jtreg.SkippedException
  * @key jpackagePlatformPackage
  * @compile -Xlint:all -Werror ServiceTest.java
  * @run main/othervm/timeout=360 -Xmx512m

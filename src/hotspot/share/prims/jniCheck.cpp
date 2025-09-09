@@ -350,24 +350,33 @@ check_is_obj_array(JavaThread* thr, jarray jArray) {
   }
 }
 
+// Arbitrary (but well-known) tag for GetStringChars
+const void* STRING_TAG = (void*)0x47114711;
+
+// Arbitrary (but well-known) tag for GetStringUTFChars
+const void* STRING_UTF_TAG = (void*) 0x48124812;
+
+// Arbitrary (but well-known) tag for GetPrimitiveArrayCritical
+const void* CRITICAL_TAG = (void*)0x49134913;
+
 /*
  * Copy and wrap array elements for bounds checking.
  * Remember the original elements (GuardedMemory::get_tag())
  */
 static void* check_jni_wrap_copy_array(JavaThread* thr, jarray array,
-    void* orig_elements) {
+                                       void* orig_elements, jboolean is_critical = JNI_FALSE) {
   void* result;
   IN_VM(
     oop a = JNIHandles::resolve_non_null(array);
     size_t len = arrayOop(a)->length() <<
         TypeArrayKlass::cast(a->klass())->log2_element_size();
-    result = GuardedMemory::wrap_copy(orig_elements, len, orig_elements);
+    result = GuardedMemory::wrap_copy(orig_elements, len, orig_elements, is_critical ? CRITICAL_TAG : nullptr);
   )
   return result;
 }
 
 static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
-    void* obj, void* carray, size_t* rsz) {
+                                 void* obj, void* carray, size_t* rsz, jboolean is_critical) {
   if (carray == nullptr) {
     tty->print_cr("%s: elements vector null" PTR_FORMAT, fn_name, p2i(obj));
     NativeReportJNIFatalError(thr, "Elements vector null");
@@ -386,6 +395,29 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
     DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
     NativeReportJNIFatalError(thr, err_msg("%s: unrecognized elements", fn_name));
   }
+  if (orig_result == STRING_TAG || orig_result == STRING_UTF_TAG) {
+    bool was_utf = orig_result == STRING_UTF_TAG;
+    tty->print_cr("%s: called on something allocated by %s",
+                  fn_name, was_utf ? "GetStringUTFChars" : "GetStringChars");
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
+    NativeReportJNIFatalError(thr, err_msg("%s called on something allocated by %s",
+                                           fn_name, was_utf ? "GetStringUTFChars" : "GetStringChars"));
+  }
+
+  if (is_critical && (guarded.get_tag2() != CRITICAL_TAG)) {
+    tty->print_cr("%s: called on something not allocated by GetPrimitiveArrayCritical", fn_name);
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
+    NativeReportJNIFatalError(thr, err_msg("%s called on something not allocated by GetPrimitiveArrayCritical",
+                                           fn_name));
+  }
+
+  if (!is_critical && (guarded.get_tag2() == CRITICAL_TAG)) {
+    tty->print_cr("%s: called on something allocated by GetPrimitiveArrayCritical", fn_name);
+    DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
+    NativeReportJNIFatalError(thr, err_msg("%s called on something allocated by GetPrimitiveArrayCritical",
+                                           fn_name));
+  }
+
   if (rsz != nullptr) {
     *rsz = guarded.get_user_size();
   }
@@ -395,7 +427,7 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
 static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
                                          void* obj, void* carray, jint mode, jboolean is_critical) {
   size_t sz;
-  void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz);
+  void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz, is_critical);
   switch (mode) {
   case 0:
     memcpy(orig_result, carray, sz);
@@ -439,7 +471,7 @@ Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
   }
   // jmethodIDs are handles in the class loader data,
   // but that can be expensive so check it last
-  else if (!Method::is_method_id(method_id)) {
+  else if (!Method::validate_jmethod_id(method_id)) {
     ReportJNIFatalError(thr, fatal_non_weak_method);
   }
   return m;
@@ -1430,9 +1462,6 @@ JNI_ENTRY_CHECKED(jsize,
     return result;
 JNI_END
 
-// Arbitrary (but well-known) tag
-const void* STRING_TAG = (void*)0x47114711;
-
 JNI_ENTRY_CHECKED(const jchar *,
   checked_jni_GetStringChars(JNIEnv *env,
                              jstring str,
@@ -1534,9 +1563,6 @@ JNI_ENTRY_CHECKED(jlong,
     functionExit(thr);
     return result;
 JNI_END
-
-// Arbitrary (but well-known) tag - different than GetStringChars
-const void* STRING_UTF_TAG = (void*) 0x48124812;
 
 JNI_ENTRY_CHECKED(const char *,
   checked_jni_GetStringUTFChars(JNIEnv *env,
@@ -1859,7 +1885,7 @@ JNI_ENTRY_CHECKED(void *,
     )
     void *result = UNCHECKED()->GetPrimitiveArrayCritical(env, array, isCopy);
     if (result != nullptr) {
-      result = check_jni_wrap_copy_array(thr, array, result);
+      result = check_jni_wrap_copy_array(thr, array, result, JNI_TRUE);
     }
     functionExit(thr);
     return result;
@@ -2320,7 +2346,7 @@ struct JNINativeInterface_* jni_functions_check() {
   // make sure the last pointer in the checked table is not null, indicating
   // an addition to the JNINativeInterface_ structure without initializing
   // it in the checked table.
-  debug_only(intptr_t *lastPtr = (intptr_t *)((char *)&checked_jni_NativeInterface + \
+  DEBUG_ONLY(intptr_t *lastPtr = (intptr_t *)((char *)&checked_jni_NativeInterface + \
              sizeof(*unchecked_jni_NativeInterface) - sizeof(char *));)
   assert(*lastPtr != 0,
          "Mismatched JNINativeInterface tables, check for new entries");

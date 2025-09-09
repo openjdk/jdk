@@ -23,8 +23,8 @@
  */
 
 #include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/javaThread.inline.hpp"
 
 // Create a CompilerThread
@@ -40,6 +40,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = nullptr;
+  _timeout = nullptr;
 
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;
@@ -49,6 +50,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
+  delete _timeout;
   // arenastat should have been deleted at the end of the compilation
   assert(_arena_stat == nullptr, "Should be null");
 }

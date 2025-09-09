@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,7 +37,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
@@ -164,8 +164,8 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
-  static void debug_trace();
 public:
+  static void debug_trace();
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -202,14 +202,14 @@ public:
 private:
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
-  typedef ResizeableResourceHashtable<oop, CachedOopInfo,
+  typedef ResizeableHashTable<oop, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   class DumpTimeKlassSubGraphInfoTable
-    : public ResourceHashtable<Klass*, KlassSubGraphInfo,
+    : public HashTable<Klass*, KlassSubGraphInfo,
                                137, // prime number
                                AnyObj::C_HEAP,
                                mtClassShared,
@@ -264,7 +264,7 @@ private:
   // !UseCompressedOops only: used to relocate pointers to the archived objects
   static ptrdiff_t _runtime_delta;
 
-  typedef ResizeableResourceHashtable<oop, bool,
+  typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
@@ -357,7 +357,7 @@ private:
     int level()    const { return _level; }
   };
 
-  class ReferentPusher;
+  class OopFieldPusher;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;
@@ -432,7 +432,7 @@ private:
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
+    CDS_JAVA_HEAP_ONLY(return (idx == AOTMetaspace::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
@@ -468,14 +468,14 @@ private:
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
-  public ResizeableResourceHashtable<oop, bool,
+  public ResizeableHashTable<oop, bool,
                            AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
 {
 public:
   DumpedInternedStrings(unsigned size, unsigned max_size) :
-    ResizeableResourceHashtable<oop, bool,
+    ResizeableHashTable<oop, bool,
                                 AnyObj::C_HEAP,
                                 mtClassShared,
                                 HeapShared::string_oop_hash>(size, max_size) {}

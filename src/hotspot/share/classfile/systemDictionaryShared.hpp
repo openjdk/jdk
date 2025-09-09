@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "cds/cds_globals.hpp"
-#include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
+#include "cds/filemap.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
@@ -115,6 +115,8 @@ class DumpTimeSharedClassTable;
 class RunTimeClassInfo;
 class RunTimeSharedDictionary;
 
+template <typename E> class GrowableArray;
+
 class SharedClassLoadingMark {
  private:
   Thread* THREAD;
@@ -125,7 +127,7 @@ class SharedClassLoadingMark {
     assert(THREAD != nullptr, "Current thread is nullptr");
     assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
-      if (_klass->is_shared()) {
+      if (_klass->in_aot_cache()) {
         _klass->set_shared_loading_failed();
       }
     }
@@ -233,9 +235,10 @@ public:
   // ensures that you cannot load a shared class if its super type(s) are changed. However,
   // we need an additional check to ensure that the verification_constraints did not change
   // between dump time and runtime.
-  static bool add_verification_constraint(InstanceKlass* k, Symbol* name,
+  static void add_verification_constraint(InstanceKlass* k, Symbol* name,
                   Symbol* from_name, bool from_field_is_protected,
-                  bool from_is_array, bool from_is_object) NOT_CDS_RETURN_(false);
+                  bool from_is_array, bool from_is_object,
+                  bool* skip_assignability_check);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
   static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);
@@ -244,10 +247,12 @@ public:
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
-  static bool is_builtin(InstanceKlass* k) {
+  static bool is_builtin(const InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static InstanceKlass* get_unregistered_class(Symbol* name);
+  static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
 
   static void finish_exclusion_checks();
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }
@@ -258,6 +263,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
+  static void set_from_class_file_load_hook(InstanceKlass* k) NOT_CDS_RETURN;
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive(bool is_static_archive = true);
@@ -265,6 +271,7 @@ public:
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);
   static const char* loader_type_for_shared_class(Klass* k);
+  static void get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
@@ -290,7 +297,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
+    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);

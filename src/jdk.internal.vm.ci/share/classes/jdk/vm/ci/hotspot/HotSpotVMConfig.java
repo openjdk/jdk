@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useDeferredInitBarriers = getFlag("ReduceInitialCardMarks", Boolean.class);
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
+
+    final boolean useClassMetaspaceForAllClasses = getFlag("UseClassMetaspaceForAllClasses", Boolean.class);
 
     final int objectAlignment = getFlag("ObjectAlignmentInBytes", Integer.class);
 
@@ -196,6 +198,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodFlagsCallerSensitive = getConstant("ConstMethodFlags::_misc_caller_sensitive", Integer.class);
     final int constMethodFlagsIntrinsicCandidate = getConstant("ConstMethodFlags::_misc_intrinsic_candidate", Integer.class);
     final int constMethodFlagsIsScoped = getConstant("ConstMethodFlags::_misc_is_scoped", Integer.class);
+    final int constMethodFlagsIsOverpass = getConstant("ConstMethodFlags::_misc_is_overpass", Integer.class);
     final int constMethodHasLineNumberTable = getConstant("ConstMethodFlags::_misc_has_linenumber_table", Integer.class);
     final int constMethodHasLocalVariableTable = getConstant("ConstMethodFlags::_misc_has_localvariable_table", Integer.class);
     final int constMethodHasMethodAnnotations = getConstant("ConstMethodFlags::_misc_has_method_annotations", Integer.class);
