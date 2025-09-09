@@ -74,7 +74,7 @@ public class InputRead1xxTest {
 
     @Test
     public void testContinue() throws Exception {
-        System.out.println("testCloseOutputStream()");
+        System.out.println("testContinue()");
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
