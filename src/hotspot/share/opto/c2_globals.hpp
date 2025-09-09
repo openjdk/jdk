@@ -83,7 +83,7 @@
           "Preserve reachability fences on constants")                      \
                                                                             \
   product(bool, StressReachabilityFences, false, DIAGNOSTIC,                \
-          "Randomly insert ReachabilityFence nodes")                        \
+          "Aggressively insert reachability fences for all oop arguments")  \
                                                                             \
   develop(uint, StressBailoutMean, 100000,                                  \
           "The expected number of failing() checks made until "             \
