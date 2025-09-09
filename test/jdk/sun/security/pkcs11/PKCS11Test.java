@@ -781,7 +781,7 @@ public abstract class PKCS11Test {
 
     private void premain(Provider p) throws Exception {
         if (skipTest(p)) {
-            throw new SkippedException("Test is skipped due to skipTest() result, please see the log");
+            throw new SkippedException("See logs for details");
         }
 
         long start = System.currentTimeMillis();

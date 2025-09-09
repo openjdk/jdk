@@ -48,7 +48,7 @@ public class ReadConfInUTF16Env {
         public static void main(String[] args) throws Exception {
             Provider p = Security.getProvider("SunPKCS11");
             if (p == null) {
-                throw new SkippedException("Skipping test - no PKCS11 provider available");
+                throw new SkippedException("No PKCS11 provider available");
             }
             System.out.println(p.getName());
         }

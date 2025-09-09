@@ -79,7 +79,7 @@ public class ReadCertificates extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Signature", "SHA1withECDSA") == null) {
-            throw new SkippedException("Provider does not support ECDSA, skipping...");
+            throw new SkippedException("Provider does not support ECDSA");
         }
 
         /*
