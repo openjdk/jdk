@@ -296,8 +296,7 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _contentions(0),
   _wait_set(nullptr),
   _waiters(0),
-  _wait_set_lock(0),
-  _stack_locker(nullptr)
+  _wait_set_lock(0)
 { }
 
 ObjectMonitor::~ObjectMonitor() {
