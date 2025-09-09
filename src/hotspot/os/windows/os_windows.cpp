@@ -3794,7 +3794,6 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
 
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
-bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
