@@ -3402,14 +3402,9 @@ class StubGenerator: public StubCodeGenerator {
   // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
-    address ghash_polynomial = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
+    Label ghash_polynomial; // local data generated after code
 
-    __ align(CodeEntryAlignment);
+   __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
@@ -3514,7 +3509,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
-     return start;
+
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(ghash_polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    return start;
   }
 
   class Cached64Bytes {
@@ -4559,16 +4564,6 @@ class StubGenerator: public StubCodeGenerator {
   // by the second lane from all vectors and so on.
   address generate_chacha20Block_blockpar() {
     Label L_twoRounds, L_cc20_const;
-    // The constant data is broken into two 128-bit segments to be loaded
-    // onto FloatRegisters.  The first 128 bits are a counter add overlay
-    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
-    // The second 128-bits is a table constant used for 8-bit left rotations.
-    __ BIND(L_cc20_const);
-    __ emit_int64(0x0000000100000000UL);
-    __ emit_int64(0x0000000300000002UL);
-    __ emit_int64(0x0605040702010003UL);
-    __ emit_int64(0x0E0D0C0F0A09080BUL);
-
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_chacha20Block_id;
     StubCodeMark mark(this, stub_id);
@@ -4715,6 +4710,17 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
     __ ret(lr);
+
+    // bind label and generate local constant data used by this stub
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+    __ BIND(L_cc20_const);
+    __ emit_int64(0x0000000100000000UL);
+    __ emit_int64(0x0000000300000002UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
 
     return start;
   }
@@ -6036,10 +6042,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_kyber12To16() {
     Label L_F00, L_loop, L_end;
 
-    __ BIND(L_F00);
-    __ emit_int64(0x0f000f000f000f00);
-    __ emit_int64(0x0f000f000f000f00);
-
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyber12To16_id;
     StubCodeMark mark(this, stub_id);
@@ -6232,6 +6234,11 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // bind label and generate constant data used by this stub
+    __ BIND(L_F00);
+    __ emit_int64(0x0f000f000f000f00);
+    __ emit_int64(0x0f000f000f000f00);
 
     return start;
   }
@@ -9642,14 +9649,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
     StubCodeMark mark(this, stub_id);
-    __ align(wordSize * 2);
-    address p = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
-
+    Label polynomial; // local data generated at end of stub
     __ align(CodeEntryAlignment);
     address start = __ pc();
 
@@ -9661,7 +9661,8 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vzr = v30;
     __ eor(vzr, __ T16B, vzr, vzr); // zero register
 
-    __ ldrq(v24, p);    // The field polynomial
+    __ adr(rscratch1, polynomial);
+    __ ldrq(v24, rscratch1);    // The field polynomial
 
     __ ldrq(v0, Address(state));
     __ ldrq(v1, Address(subkeyH));
@@ -9701,6 +9702,15 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v0, __ T16B, state);
     __ ret(lr);
 
+    // bind label and generate local polynomial data
+    __ align(wordSize * 2);
+    __ bind(polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
     return start;
   }
 
@@ -9709,14 +9719,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubId stub_id = StubId::stubgen_ghash_processBlocks_wide_id;
     StubCodeMark mark(this, stub_id);
-    __ align(wordSize * 2);
-    address p = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
-
+    Label polynomial;           // local data generated after stub
     __ align(CodeEntryAlignment);
     address start = __ pc();
 
@@ -9738,7 +9741,7 @@ class StubGenerator: public StubCodeGenerator {
       __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
     }
 
-    __ ghash_processBlocks_wide(p, state, subkeyH, data, blocks, unroll);
+    __ ghash_processBlocks_wide(polynomial, state, subkeyH, data, blocks, unroll);
 
     if (unroll > 1) {
       // And restore state
@@ -9751,7 +9754,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
     return start;
+
   }
 
   void generate_base64_encode_simdround(Register src, Register dst,
