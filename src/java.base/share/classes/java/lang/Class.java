@@ -4159,7 +4159,9 @@ public final class Class<T> implements java.io.Serializable,
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
         if (!ModifiedUtf.isValidLengthInConstantPool(name)) {
             throw new ClassNotFoundException(
-                    "Class name length exceeds limit of " + ModifiedUtf.CONSTANT_POOL_UTF8_MAX_BYTES);
+                    "Class name length exceeds limit of "
+                    + ModifiedUtf.CONSTANT_POOL_UTF8_MAX_BYTES
+                    + ": " + name.substring(0,256) + "...");
         }
     }
 }
