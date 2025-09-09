@@ -470,13 +470,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
     }
 
     if (is_shutting_down()) {
-      // If the VM is shutting down, we may have skipped allocation-triggered GCs.
-      // To avoid returning nullptr (which could cause premature OOME), we stall
-      // allocation requests here until the VM shutdown is complete.
-      MonitorLocker ml(BeforeExit_lock);
-      while (is_shutting_down()) {
-        ml.wait();
-      }
+      stall_for_vm_shutdown();
     }
   }
 
@@ -1817,7 +1811,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
 
     // If VMOp skipped initiating concurrent marking cycle because
     // we're terminating, then we're done.
-    if (op.terminating()) {
+    if (is_shutting_down()) {
       LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
       return false;
     }

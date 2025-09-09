@@ -83,6 +83,7 @@ Mutex*   DirectivesStack_lock         = nullptr;
 Monitor* Terminator_lock              = nullptr;
 Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
+Monitor* VMExit_lock                  = nullptr;
 Monitor* Notify_lock                  = nullptr;
 Mutex*   ExceptionCache_lock          = nullptr;
 Mutex*   TrainingData_lock            = nullptr;
@@ -250,6 +251,7 @@ void mutex_init() {
   MUTEX_DEFN(FullGCALot_lock                 , PaddedMutex  , safepoint); // a lock to make FullGCALot MT safe
 #endif
   MUTEX_DEFN(BeforeExit_lock                 , PaddedMonitor, safepoint);
+  MUTEX_DEFN(VMExit_lock                     , PaddedMonitor, safepoint);
 
   MUTEX_DEFN(NonJavaThreadsList_lock         , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(NonJavaThreadsListSync_lock     , PaddedMutex  , nosafepoint);

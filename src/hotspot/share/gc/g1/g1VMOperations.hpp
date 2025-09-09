@@ -48,7 +48,6 @@ class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _mark_in_progress;
   bool _cycle_already_in_progress;
   bool _whitebox_attached;
-  bool _terminating;
   // The concurrent start pause may be cancelled for some reasons. Keep track of
   // this.
   bool _gc_succeeded;
@@ -63,7 +62,6 @@ public:
   bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
   bool whitebox_attached() const { return _whitebox_attached; }
-  bool terminating() const { return _terminating; }
   bool gc_succeeded() const { return _gc_succeeded && VM_GC_Operation::gc_succeeded(); }
 };
 

@@ -318,6 +318,10 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
         assert(is_in_or_null(op.result()), "result not in heap");
         return op.result();
       }
+
+      if (is_shutting_down()) {
+        stall_for_vm_shutdown();
+      }
     }
 
     // Was the gc-overhead reached inside the safepoint? If so, this mutator

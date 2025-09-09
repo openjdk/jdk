@@ -254,7 +254,11 @@ protected:
 
   bool is_shutting_down() const;
 
+  // Stall allocation requests until the VM shutdown is complete.
+  void stall_for_vm_shutdown();
+
   void before_exit();
+
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}

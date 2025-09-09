@@ -85,7 +85,7 @@ bool VM_GC_Operation::skip_operation() const {
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
   }
-  return skip || Universe::heap()->is_shutting_down();
+  return skip;
 }
 
 static bool should_use_gclocker() {
@@ -112,7 +112,9 @@ bool VM_GC_Operation::doit_prologue() {
   VM_Heap_Sync_Operation::doit_prologue();
 
   // Check invocations
-  if (skip_operation()) {
+  if (skip_operation() || Universe::heap()->is_shutting_down()) {
+    if (Universe::heap()->is_shutting_down())
+    log_info(gc) ("Skipping GC after shut down has started");
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {

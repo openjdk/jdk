@@ -85,6 +85,7 @@ extern Mutex*   DirectivesStack_lock;            // a lock held when mutating th
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
+extern Monitor* VMExit_lock;                     // a lock used to stall threads until VM shuts down
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 
