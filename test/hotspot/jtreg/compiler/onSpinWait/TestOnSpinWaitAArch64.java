@@ -35,10 +35,14 @@
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 10000
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 10000
  */
 
 package compiler.onSpinWait;
@@ -56,6 +60,7 @@ public class TestOnSpinWaitAArch64 {
         String compiler = args[0];
         String spinWaitInst = args[1];
         String spinWaitInstCount = args[2];
+        String spinWaitDelay = (args.length >= 4 ? args[3] : "");
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
@@ -72,6 +77,9 @@ public class TestOnSpinWaitAArch64 {
         command.add("-Xbatch");
         command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
         command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
+        if (spinWaitDelay != "") {
+          command.add("-XX:OnSpinWaitDelay=" + spinWaitDelay);
+        }
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add("-XX:CompileCommand=print," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
@@ -82,6 +90,14 @@ public class TestOnSpinWaitAArch64 {
 
         if ("sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
             System.out.println("Skipping the test. The current CPU does not support SB instruction.");
+            return;
+        }
+
+        if ("wfet".equals(spinWaitInst) &&
+            (analyzer.contains("CPU does not support SB") ||
+             analyzer.contains("CPU does not support FEAT_ECV") ||
+             analyzer.contains("CPU does not support WFET"))) {
+            System.out.println("Skipping the test. The current CPU does not support SB, WFET instructions or FEAT_ECV.");
             return;
         }
 
@@ -101,6 +117,9 @@ public class TestOnSpinWaitAArch64 {
           return "3f2003d5";
       } else if ("sb".equals(spinWaitInst)) {
           return "ff3003d5";
+      } else if ("wfet".equals(spinWaitInst)) {
+          // This assumes rscratch1 is r8.
+          return "081003d5";
       } else {
           throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }

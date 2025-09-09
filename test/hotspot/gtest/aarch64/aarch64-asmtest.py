@@ -391,6 +391,11 @@ class SystemRegOp(Instruction):
             self.CRn = 0b0100
             self.CRm = 0b0010
             self.op2 = 0b000
+        elif self.system_reg == 'cntvctss_el0':
+            self.op1 = 0b011
+            self.CRn = 0b1110
+            self.CRm = 0b0000
+            self.op2 = 0b110
 
     def generate(self):
         self.reg = [GeneralRegister().generate()]
@@ -1607,6 +1612,10 @@ generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
                "eret", "drps", "isb", "sb",])
 
+# Requires -march=armv9.2-a
+# generate (OneRegOp, ["wfet x26"])
+generate (SpecialCases, [["wfet x26", "__ wfet(r26);", ".inst 0xd503101a"]])
+
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
@@ -1625,6 +1634,10 @@ for system_reg in ["fpsr", "nzcv"]:
 
 for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
+
+# Requires -march=armv9.1-a
+# generate (OneRegSystemOp, [ ["mrs", "cntvctss_el0"] ])
+generate (SpecialCases, [["mrs x26, cntvctss_el0", "__ mrs(3, 14, 0, 6, r26);", ".inst 0xd53be0c6"]])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])
