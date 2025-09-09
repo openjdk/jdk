@@ -203,6 +203,25 @@ import javax.tools.StandardLocation;
  * </tbody>
  * </table>
  *
+ * All of the non-{@code docllint:} strings listed above may also be used with the {@code -Xlint} command line flag.
+ * The {@code -Xlint} flag also supports these strings not supported by {@code @SuppressWarnings}:
+ *
+ * <table class="striped">
+ *     <caption>Strings supported by {@code -Xlint} but not {@code SuppressWarnings}</caption>
+ * <thead>
+ * <tr><th>String<th>Warnings Related To ...
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
+ * <tr><th scope="row">{@code options}              <td>issues relating to use of command line options
+ * <tr><th scope="row">{@code output-file-clash}    <td>output files being overwritten due to filename clashes
+ * <tr><th scope="row">{@code path}                 <td>invalid path elements on the command line
+ * <tr><th scope="row">{@code processing}           <td>issues regarding annotation processing
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
+ * </tbody>
+ * </table>
+ *
  * @toolGuide javac
  *
  * @provides java.util.spi.ToolProvider

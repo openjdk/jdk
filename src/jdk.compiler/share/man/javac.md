@@ -564,7 +564,7 @@ file system locations may be directories, JAR files or JMOD files.
 :   Enables and/or disables lint warning categories using the one or more of the keys described
     below separated by commas. The keys `all` and `none` enable or disable all categories
     (respectively); other keys enable the corresponding category, or disable it if preceded
-    by a hyphen (`-`). Categories marked with * are enabled by default.
+    by a hyphen (`-`).
 
     Supported values for *key* are:
 
@@ -582,7 +582,7 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `deprecation`: Warns about the use of deprecated items.
 
-    -   *`dep-ann`: Warns about the items marked as deprecated in `javadoc` but
+    -   `dep-ann`: Warns about the items marked as deprecated in `javadoc` but
         without the `@Deprecated` annotation.
 
     -   `divzero`: Warns about the division by the constant integer 0.
@@ -596,10 +596,10 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `finally`: Warns about `finally` clauses that do not terminate normally.
 
-    -   *`identity`: Warns about use of a value-based class where an identity
+    -   `identity`: Warns about use of a value-based class where an identity
         class is expected
 
-    -   *`incubating`: Warns about the use of incubating modules.
+    -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions
         in compound assignment.
@@ -607,9 +607,9 @@ file system locations may be directories, JAR files or JMOD files.
     -   `missing-explicit-ctor`: Warns about missing explicit constructors in
          public and protected classes in exported packages.
 
-    -   *`module`: Warns about the module system-related issues.
+    -   `module`: Warns about the module system-related issues.
 
-    -   *`opens`: Warns about the issues related to module opens.
+    -   `opens`: Warns about the issues related to module opens.
 
     -   `options`: Warns about the issues relating to use of command line
         options.
@@ -623,13 +623,13 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `path`: Warns about the invalid path elements on the command line.
 
-    -   *`preview`: Warns about the use of preview language features.
+    -   `preview`: Warns about the use of preview language features.
 
     -   `processing`: Warns about the issues related to annotation processing.
 
     -   `rawtypes`: Warns about the use of raw types.
 
-    -   *`removal`: Warns about the use of an API that has been marked for
+    -   `removal`: Warns about the use of an API that has been marked for
         removal.
 
     -   `restricted`: Warns about the use of restricted methods.
@@ -637,7 +637,7 @@ file system locations may be directories, JAR files or JMOD files.
     -   `requires-automatic`: Warns developers about the use of automatic
         modules in requires clauses.
 
-    -   *`requires-transitive-automatic`: Warns about automatic modules in
+    -   `requires-transitive-automatic`: Warns about automatic modules in
         requires transitive.
 
     -   `serial`: Warns about the serializable classes that do not provide a
@@ -646,9 +646,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `static`: Warns about the accessing a static member using an instance.
 
-    -   *`strictfp`: Warns about unnecessary use of the `strictfp` modifier.
+    -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
-    -   *`synchronization`: Deprecated alias for `identity` with an identical
+    -   `synchronization`: Deprecated alias for `identity` with an identical
         effect. Users are encouraged to use `identity` instead of `synchronization`
         for all current and future uses.
 
@@ -667,9 +667,12 @@ file system locations may be directories, JAR files or JMOD files.
     -   `none`: Disables all warning categories.
 
     The keys listed above may be used in `@SuppressWarnings` annotations to suppress
-    warnings within the annotated declaration, with the exception of these keys:
-    `all`, `none`, `classfile`, `incubating`, `options`, `output-file-clash`,
-    `processing`, and `path`.
+    warnings within the annotated declaration, with the exception of: `all`, `none`,
+    `classfile`, `incubating`, `options`, `output-file-clash`, `processing`, and `path`.
+
+    By default, the following lint warning categories are enabled: `dep-ann`, `identity`,
+    `incubating`, `module`, `opens`, `preview`, `removal`, `requires-transitive-automatic`,
+    and `strictfp`.
 
     See [Examples of Using -Xlint keys].
 
