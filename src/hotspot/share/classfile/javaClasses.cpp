@@ -22,12 +22,12 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -939,7 +939,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
 
   // If the offset was read from the shared archive, it was fixed up already
-  if (!k->is_shared()) {
+  if (!k->in_aot_cache()) {
     if (k->is_instance_klass()) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
@@ -977,7 +977,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     }
   }
 
-  if (k->is_shared() && k->has_archived_mirror_index()) {
+  if (k->in_aot_cache() && k->has_archived_mirror_index()) {
     if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());

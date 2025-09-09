@@ -25,8 +25,8 @@
 #ifndef CGROUP_UTIL_LINUX_HPP
 #define CGROUP_UTIL_LINUX_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class CgroupUtil: AllStatic {
 
