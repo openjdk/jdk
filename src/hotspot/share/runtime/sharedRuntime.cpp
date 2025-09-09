@@ -1208,8 +1208,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
       Bytecodes::Code code = caller->java_code_at(bci);
       // TODO for Valhalla: If the bytecode is if_acmpeq or if_acmpne and the attached method performs a substitutability check, skip this logic.
       // Valhalla adds handling for substitutability checks in this method.
-      bool is_substitutability_check = (code == Bytecodes::_if_acmpeq || code == Bytecodes::_if_acmpne) && false;
-      if (cVFrame->should_reexecute() && !is_substitutability_check) {
+      if (cVFrame->should_reexecute()) {
         // For invoke bytecodes, the reexecute bit is not set (see Interpreter::bytecode_should_reexecute).
         // Since the reexecute bit is set for this call, no corresponding invoke bytecode exists.
         Method* callee = attached_method();
