@@ -297,27 +297,32 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         }
     }
 
+    // Return the decrypted encryptedData in this instance.
+    private byte[] decryptData(Key decryptKey, Provider provider)
+        throws GeneralSecurityException {
+        Cipher c;
+        if (provider == null) {
+            // use the most preferred one
+            c = Cipher.getInstance(getAlgName());
+        } else {
+            c = Cipher.getInstance(getAlgName(), provider);
+        }
+        c.init(Cipher.DECRYPT_MODE, decryptKey, getAlgParameters());
+        return c.doFinal(encryptedData);
+    }
+
+    // Wrap the decrypted encryptedData in a P8EKS for getKeySpec methods.
     private PKCS8EncodedKeySpec getKeySpecImpl(Key decryptKey,
         Provider provider) throws NoSuchAlgorithmException,
         InvalidKeyException {
-        byte[] encoded;
-        Cipher c;
         try {
-            if (provider == null) {
-                // use the most preferred one
-                c = Cipher.getInstance(getAlgName());
-            } else {
-                c = Cipher.getInstance(getAlgName(), provider);
-            }
-            c.init(Cipher.DECRYPT_MODE, decryptKey, getAlgParameters());
-            encoded = c.doFinal(encryptedData);
-            return pkcs8EncodingToSpec(encoded);
+            return pkcs8EncodingToSpec(decryptData(decryptKey, provider));
         } catch (NoSuchAlgorithmException nsae) {
             // rethrow
             throw nsae;
         } catch (GeneralSecurityException | IOException ex) {
             throw new InvalidKeyException(
-                    "Cannot retrieve the PKCS8EncodedKeySpec", ex);
+                "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
     }
 
@@ -540,9 +545,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     public PrivateKey getKey(Key decryptKey, Provider provider)
         throws GeneralSecurityException {
         Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
-        PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
-
-        return PKCS8Key.parseKey(p.getEncoded(), null);
+        return PKCS8Key.parseKey(decryptData(decryptKey, provider), null);
     }
 
     /**
@@ -593,8 +596,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         throws GeneralSecurityException {
         Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
 
-        PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
-        DEREncodable d = Pem.toDEREncodable(p.getEncoded(),true, provider);
+        DEREncodable d = Pem.toDEREncodable(
+            decryptData(decryptKey, provider),true, provider);
         return switch (d) {
             case KeyPair kp -> kp;
             case PrivateKey ignored -> throw new InvalidKeyException(
@@ -760,6 +763,4 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
             throw new IllegalArgumentException(e);
         }
     }
-
-
 }
