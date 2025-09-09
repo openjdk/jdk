@@ -61,7 +61,7 @@ final class ContainerInjectionTest {
 
     @Test
     void SettableComponents() {
-        SettableContainer container = SettableContainer.of(Set.of(Foo.class, Bar.class));
+        SettableContainer container = SettableScratchContainer.of(Set.of(Foo.class, Bar.class));
         container.set(Foo.class, new FooImpl());
         container.set(Bar.class, new BarImpl());
         assertContainerPopulated(container);
@@ -94,6 +94,10 @@ final class ContainerInjectionTest {
         <T> T get(Class<T> type);
     }
 
+    interface SettableContainer extends Container {
+        <T> void set(Class<T> type, T implementation);
+    }
+
     record ComputedContainer(Map<Class<?>, ?> components) implements Container {
 
         @Override
@@ -107,8 +111,9 @@ final class ContainerInjectionTest {
 
     }
 
-    record SettableContainer(Map<Class<?>, Object> scratch, Map<Class<?>, ?> components) implements Container {
+    record SettableScratchContainer(Map<Class<?>, Object> scratch, Map<Class<?>, ?> components) implements SettableContainer {
 
+        @Override
         public <T> void set(Class<T> type, T implementation) {
             if (scratch.putIfAbsent(type, type.cast(implementation)) != null) {
                 throw new IllegalStateException("Can only set once for " + type);
@@ -122,7 +127,7 @@ final class ContainerInjectionTest {
 
         static SettableContainer of(Set<Class<?>> components) {
             Map<Class<?>, Object> scratch = new ConcurrentHashMap<>();
-            return new SettableContainer(scratch, Map.ofComputed(components, scratch::get));
+            return new SettableScratchContainer(scratch, Map.ofComputed(components, scratch::get));
         }
 
     }
@@ -145,5 +150,29 @@ final class ContainerInjectionTest {
                 return ProviderContainer.of(providers.stream()
                                 .collect(Collectors.toMap(Provider::type, Provider::supplier)));
     }
+
+
+    record ImperativeContainer(Map<Class<?>, StableValue<Object>> components) implements SettableContainer {
+
+        @Override
+        public <T> void set(Class<T> type, T implementation) {
+            if (!components.get(type).trySet(implementation)) {
+                throw new IllegalStateException("Can only set once for " + type);
+            }
+        }
+
+        @Override
+        public <T> T get(Class<T> type) {
+            return type.cast(components.get(type));
+        }
+
+        static SettableContainer of(Set<Class<?>> components) {
+            var map = components.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
+            return new ImperativeContainer(map);
+        }
+
+    }
+
 
 }
