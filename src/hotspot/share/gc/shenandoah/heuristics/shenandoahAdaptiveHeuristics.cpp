@@ -248,34 +248,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
-
-#undef KELVIN_DIAGNOSTIC
-#ifdef KELVIN_DIAGNOSTIC
-  log_info(gc)("Alloc rate sample updated based on bytes_allocated_since_gc_start(): %zu", allocated);
-#endif
-
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
-#ifdef KELVIN_DIAGNOSTIC
-    size_t allocation_headroom = available;
-    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-    size_t penalties      = capacity / 100 * _gc_time_penalties;
-    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-    allocation_headroom -= MIN2(allocation_headroom, penalties);
-    double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-    double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
-    log_info(gc)("Why didn't we trigger otherwise?");
-    log_info(gc)("average GC time: %.2f ms, allocation rate: %.0f %s/s",
-                 avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-    log_info(gc)("We would have triggered if avg_cycle_time (%.2f) * avg_alloc_rate (%.3f) (equals %.3f) > headroom (%zu)",
-                 avg_cycle_time, avg_alloc_rate, avg_cycle_time * avg_alloc_rate, allocation_headroom);
-    bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-    log_info(gc)(" ... or if is_spiking: %s and avg_cycle_time (%.2f) * instantaneous rate (%.3f) (equals %.3f) > headroom (%zu)",
-                 is_spiking? "true": "false", avg_cycle_time, rate, avg_cycle_time * rate, allocation_headroom);
-#endif
     accept_trigger_with_type(OTHER);
     return true;
   }
@@ -321,10 +298,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-#ifdef KELVIN_DIAGNOSTIC
-    log_info(gc)("We have triggered because avg_cycle_time (%.2f) * average rate (%.3f) (equals %.3f) > headroom (%zu)",
-                 avg_cycle_time, avg_alloc_rate, avg_cycle_time * avg_alloc_rate, allocation_headroom);
-#endif
     accept_trigger_with_type(RATE);
     return true;
   }
@@ -336,10 +309,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);
-#ifdef KELVIN_DIAGNOSTIC
-    log_info(gc)("We have triggered because avg_cycle_time (%.2f) * instantaneous rate (%.3f) (equals %.3f) > headroom (%zu)",
-                 avg_cycle_time, rate, avg_cycle_time * rate, allocation_headroom);
-#endif
     accept_trigger_with_type(SPIKE);
     return true;
   }
@@ -396,16 +365,11 @@ double ShenandoahAllocationRate::sample(size_t allocated) {
   if (now - _last_sample_time > _interval_sec) {
     if (allocated >= _last_sample_value) {
       rate = instantaneous_rate(now, allocated);
-#ifdef KELVIN_DIAGNOSTIC
-      log_info(gc)("Updating average based on instantaneous rate: %.3f MB/s, sample interval: %.6fs, _interval_sec: %.6fs",
-                   rate / (1024 * 1024), now - _last_sample_time, _interval_sec);
-#endif
       _rate.add(rate);
       _rate_avg.add(_rate.avg());
+      _last_sample_time = now;
+      _last_sample_value = allocated;
     }
-
-    _last_sample_time = now;
-    _last_sample_value = allocated;
   }
   return rate;
 }

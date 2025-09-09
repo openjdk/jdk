@@ -115,9 +115,6 @@ private:
   //  used_regions is affilaited_regions * region_size_bytes
   //  _available[p] is _capacity[p] - _used[p]
   size_t _region_counts[UIntNumPartitions];
-#ifdef KELVIN_DEPRECATE
-  size_t _total_region_counts[UIntNumPartitions];
-#endif
   size_t _empty_region_counts[UIntNumPartitions];
 
   // Humongous waste, in bytes, can exist in Mutator partition for recently allocated humongous objects
@@ -282,15 +279,6 @@ public:
   index_type rightmost_empty(ShenandoahFreeSetPartitionId which_partition);
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
-
-#ifdef KELVIN_DEPRECATE
-  inline void increase_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
-  inline void decrease_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
-  inline size_t get_total_region_counts(ShenandoahFreeSetPartitionId which_partition) {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    return _total_region_counts[int(which_partition)];
-  }
-#endif
 
   inline void increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
   inline void decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);

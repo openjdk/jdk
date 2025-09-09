@@ -146,10 +146,6 @@ private:
       result = _free_set->global_used();
       break;
     }
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-    log_info(gc)("used(_type: %d) returning %zu", _type, result);
-#endif
     return result;
   }
 
@@ -158,9 +154,6 @@ private:
   size_t used_including_humongous_waste() const {
     // In the current implementation, used() includes humongous waste
     size_t result = used();
-#ifdef KELVIN_DEBUG
-    log_info(gc)("used_including_humongous_waste(_type: %d) returning %zu", _type, result);
-#endif
     return result;
   }
 
@@ -173,22 +166,13 @@ private:
   size_t bytes_allocated_since_gc_start() const override {
     if (_type == ShenandoahGenerationType::YOUNG) {
       size_t result = _free_set->get_bytes_allocated_since_gc_start();
-#ifdef KELVIN_DEBUG
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
       return result;
     } else if (_type == ShenandoahGenerationType::NON_GEN) {
       assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
       size_t result = _free_set->get_bytes_allocated_since_gc_start();
-#ifdef KELVIN_DEBUG
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
       return result;
     } else {
       size_t result = 0;
-#ifdef KELVIN_DEBUG
-      log_info(gc)("bytes_allocated_since_gc_start(_type: %d) returning %zu", _type, result);
-#endif
       return result;
     }
   }
@@ -267,34 +251,8 @@ private:
       result = _free_set->global_affiliated_regions();
       break;
     }
-#ifdef KELVIN_DEBUG
-    log_info(gc)("get_affiliated_region_count(_type: %d) returning %zu", _type, result);
-#endif
     return result;
   }
-
-#ifdef KELVIN_DEPRECATE
-  size_t get_total_region_count() const {
-    size_t result;
-    switch (_type) {
-    case ShenandoahGenerationType::OLD:
-      result = _free_set->total_old_regions();
-      break;
-    case ShenandoahGenerationType::YOUNG:
-      result = _free_set->total_young_regions();
-      break;
-    case ShenandoahGenerationType::GLOBAL:
-    case ShenandoahGenerationType::NON_GEN:
-    default:
-      result = _free_set->total_global_regions();
-      break;
-    }
-#ifdef KELVIN_DEBUG
-    log_info(gc)("get_total_region_count(_type: %d) returning %zu", _type, result);
-#endif
-    return result;
-  }
-#endif
 
   size_t get_humongous_waste() const {
     size_t result;
@@ -311,9 +269,6 @@ private:
       result = _free_set->total_humongous_waste();
       break;
     }
-#ifdef KELVIN_DEBUG
-    log_info(gc)("get_humongous_waste()(_type: %d) returning %zu", _type, result);
-#endif
     return result;
   }
 
