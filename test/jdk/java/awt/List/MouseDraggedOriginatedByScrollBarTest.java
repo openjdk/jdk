@@ -44,13 +44,13 @@ import java.awt.event.MouseMotionAdapter;
 public class MouseDraggedOriginatedByScrollBarTest {
     private static Frame frame;
     private static volatile Point loc;
-    private static volatile List list;
+    private static List list;
     private static final int XOFFSET = 10;
     private static final int YOFFSET = 20;
 
     public static void main(String[] args) throws Exception {
         try {
-            createUI();
+            EventQueue.invokeAndWait(() -> createUI());
             test();
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -82,7 +82,7 @@ public class MouseDraggedOriginatedByScrollBarTest {
             new MouseMotionAdapter(){
                 @Override
                 public void mouseDragged(MouseEvent me){
-                    System.out.println(me.toString());
+                    System.out.println(me);
                     throw new RuntimeException("Mouse dragged event detected.");
                 }
             });
@@ -90,17 +90,17 @@ public class MouseDraggedOriginatedByScrollBarTest {
         list.addMouseListener(
             new MouseAdapter() {
                 public void mousePressed(MouseEvent me) {
-                    System.out.println(me.toString());
+                    System.out.println(me);
                     throw new RuntimeException("Mouse pressed event detected.");
                 }
 
                 public void mouseReleased(MouseEvent me) {
-                    System.out.println(me.toString());
+                    System.out.println(me);
                     throw new RuntimeException("Mouse released event detected.");
                 }
 
                 public void mouseClicked(MouseEvent me){
-                    System.out.println(me.toString());
+                    System.out.println(me);
                     throw new RuntimeException("Mouse clicked event detected.");
                 }
             });
