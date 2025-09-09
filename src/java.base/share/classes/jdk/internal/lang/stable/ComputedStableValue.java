@@ -30,41 +30,46 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.function.Supplier;
 
 /**
- * The implementation of {@linkplain ComputedConstant}.
+ * The implementation of a supplied {@linkplain StableValue}.
  * <p>
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T> the type of the constant
+ * @param <T> the type of the contents
  */
-public record ComputedConstantImpl<T>(StandardStableValue<T> delegate,
-                                      FunctionHolder<Supplier<? extends T>> mapperHolder) implements ComputedConstant<T> {
+// Todo: Consider implement this directly and not via an underlying SV
+public record SuppliedStableValue<T>(UnSuppliedStableValue<T> delegate,
+                                     FunctionHolder<Supplier<? extends T>> mapperHolder) implements InternalStableValue<T> {
 
     @ForceInline
-    @Override public T get() { return delegate.orElseSet(null, mapperHolder); }
+    @Override public T       get() { return delegate.orElseSet(null, mapperHolder); }
     @Override public boolean isSet() { return delegate.isSet(); }
+    @Override public T       orElse(T other) { return delegate.orElse(other); }
 
-    T orElseSet(Supplier<? extends T> supplier) {
-        if (mapperHolder != null) {
-            throw new UnsupportedOperationException();
-        }
-        return delegate.orElseSet(supplier);
-    }
+    @Override public boolean trySet(T contents) { throw uoe(); }
+    @Override public T       orElseSet(int input, FunctionHolder<?> functionHolder) { throw uoe(); }
+    @Override public T       orElseSet(Object key, FunctionHolder<?> functionHolder) { throw uoe(); }
+    @Override public T       orElseSet(Supplier<? extends T> supplier) { throw uoe(); }
+    @Override public Object  contentsPlain() { throw uoe(); }
+    @Override public Object  contentsAcquire() { throw uoe(); }
+    @Override public boolean set(T newValue) { throw uoe(); }
+
 
     // Object methods
     @Override public int     hashCode() { return System.identityHashCode(this); }
     @Override public boolean equals(Object obj) { return obj == this; }
     @Override public String  toString() {
                    final Object t = delegate.contentsAcquire();
-                   return t == this ? "(this ComputedConstant)" : StandardStableValue.render(t);
+                   return t == this ? "(this ComputedConstant)" : UnSuppliedStableValue.render(t);
               }
 
-    public static <T> ComputedConstantImpl<T> ofPreset(T constant) {
-        return new ComputedConstantImpl<>(StandardStableValue.ofPreset(constant), null);
+
+    public static <T> SuppliedStableValue<T> of(Supplier<? extends T> original) {
+        return new SuppliedStableValue<>(UnSuppliedStableValue.of(), new FunctionHolder<>(original, 1));
     }
 
-    public static <T> ComputedConstantImpl<T> of(Supplier<? extends T> original) {
-        return new ComputedConstantImpl<>(StandardStableValue.of(), new FunctionHolder<>(original, 1));
+    private static UnsupportedOperationException uoe() {
+        return new UnsupportedOperationException("A supplied StableValue does not support this operation");
     }
 
 }

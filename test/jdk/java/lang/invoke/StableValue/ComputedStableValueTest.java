@@ -22,11 +22,11 @@
  */
 
 /* @test
- * @summary Basic tests for ComputedConstant methods
+ * @summary Basic tests for supplied stable value methods
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
  * @compile StableTestUtil.java
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstantTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED SuppliedStableValueTest
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -38,13 +38,13 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ComputedConstantTest {
+final class SuppliedStableValueTest {
 
     private static final Supplier<Integer> SUPPLIER = () -> 42;
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> ComputedConstant.of(null));
+        assertThrows(NullPointerException.class, () -> StableValue.ofComputed(null));
     }
 
     @Test
@@ -54,7 +54,7 @@ final class ComputedConstantTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = ComputedConstant.of(cs);
+        var cached = StableValue.ofComputed(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -68,7 +68,7 @@ final class ComputedConstantTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = ComputedConstant.of(cs);
+        var cached = StableValue.ofComputed(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -78,8 +78,8 @@ final class ComputedConstantTest {
 
     @Test
     void circular() {
-        final AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
-        ComputedConstant<ComputedConstant<?>> cached = ComputedConstant.of(ref::get);
+        final AtomicReference<StableValue<?>> ref = new AtomicReference<>();
+        StableValue<StableValue<?>> cached = StableValue.ofComputed(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -89,15 +89,15 @@ final class ComputedConstantTest {
 
     @Test
     void equality() {
-        ComputedConstant<Integer> f0 = ComputedConstant.of(SUPPLIER);
-        ComputedConstant<Integer> f1 = ComputedConstant.of(SUPPLIER);
+        var f0 = StableValue.ofComputed(SUPPLIER);
+        var f1 = StableValue.ofComputed(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        ComputedConstant<Integer> f0 = ComputedConstant.of(SUPPLIER);
+        var f0 = StableValue.ofComputed(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());
@@ -106,7 +106,7 @@ final class ComputedConstantTest {
     @Test
     void functionHolder() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
-        var f1 = ComputedConstant.of(cs);
+        var f1 = StableValue.ofComputed(cs);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
         assertEquals(1, holder.counter());
@@ -122,7 +122,7 @@ final class ComputedConstantTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var f1 = ComputedConstant.of(cs);
+        var f1 = StableValue.ofComputed(cs);
 
         FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
         assertEquals(1, holder.counter());

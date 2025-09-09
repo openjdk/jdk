@@ -29,7 +29,7 @@ import jdk.internal.ValueBased;
 import jdk.internal.lang.stable.FunctionHolder;
 import jdk.internal.lang.stable.InternalStableValue;
 import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.lang.stable.UnSuppliedStableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -79,7 +79,7 @@ final class ComputedCollections {
         @Override
         public StableValue<E> get(int index) {
             final E element = elements[index];
-            return StandardStableValue.ofPreset(element);
+            return UnSuppliedStableValue.ofPreset(element);
         }
 
         @Override
@@ -298,7 +298,7 @@ final class ComputedCollections {
                 final T t = contentsAcquire();
                 return t == this
                         ? "(this StableValue)"
-                        : StandardStableValue.render(t);
+                        : UnSuppliedStableValue.render(t);
             }
 
             @SuppressWarnings("unchecked")
@@ -1000,7 +1000,7 @@ final class ComputedCollections {
             if (e == self) {
                 sj.add("(this ComputedCollection)");
             } else {
-                sj.add(StandardStableValue.render(e));
+                sj.add(UnSuppliedStableValue.render(e));
             }
         }
         return sj.toString();
