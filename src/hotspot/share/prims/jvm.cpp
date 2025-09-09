@@ -120,19 +120,6 @@
 
 #include <errno.h>
 
-inline Klass* get_klass_considering_redefinition(jclass cls, JavaThread *thread) {
-  Klass* k = java_lang_Class::as_Klass(cls);
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  return k;
-}
-
-inline InstanceKlass* get_instance_klass_considering_redefinition(jclass cls, JavaThread *thread) {
-  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(cls);
-  ik = JvmtiThreadState::class_to_verify_considering_redefinition(ik, thread);
-  return ik;
-}
-
-
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
   such ctors and calls MUST NOT come between an oop declaration/init and its
@@ -1569,7 +1556,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     return (jobjectArray) JNIHandles::make_local(THREAD, res);
   }
 
-  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(ofMirror));
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(ofMirror);
   constantPoolHandle cp(THREAD, k->constants());
 
   // Ensure class is linked
@@ -2264,6 +2251,18 @@ JVM_END
 // was invoked in the middle of the class redefinition.
 // Otherwise it returns its argument value which is the _the_class Klass*.
 // Please, refer to the description in the jvmtiThreadState.hpp.
+
+inline Klass* get_klass_considering_redefinition(jclass cls, JavaThread *thread) {
+  Klass* k = java_lang_Class::as_Klass(cls);
+  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  return k;
+}
+
+inline InstanceKlass* get_instance_klass_considering_redefinition(jclass cls, JavaThread *thread) {
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(cls);
+  ik = JvmtiThreadState::class_to_verify_considering_redefinition(ik, thread);
+  return ik;
+}
 
 JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
   oop mirror = JNIHandles::resolve_non_null(cls);

@@ -1277,10 +1277,10 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = result.get_oop();
 
-    // Primitive classes return null since forName() can not be
+    // Primitive classes return null since forName() cannot be
     // used to obtain any of the Class objects representing primitives or void
     if ((obj != nullptr) && !(java_lang_Class::is_primitive(obj))) {
-      InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+      InstanceKlass* k = java_lang_Class::as_InstanceKlass(obj);
       // For user defined Java class loaders, check that the name returned is
       // the same as that requested.  This check is done for the bootstrap
       // loader when parsing the class file.

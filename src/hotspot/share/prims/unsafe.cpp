@@ -489,7 +489,7 @@ static jlong find_known_instance_field_offset(jclass clazz, jstring name, TRAPS)
   ResourceMark rm(THREAD);
   char *utf_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
 
-  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(clazz);
 
   jint offset = -1; // Not found
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {

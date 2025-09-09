@@ -437,6 +437,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   Klass* class_to_verify_considering_redefinition(Klass* klass,
                                                   JavaThread *thread) {
     if (!klass->is_instance_klass()) {
+      // set_class_being_redefined() records ONLY InstanceKlass* that are being redefined, so
+      // other Klasses will never match.
       return klass;
     } else {
       return class_to_verify_considering_redefinition(InstanceKlass::cast(klass),

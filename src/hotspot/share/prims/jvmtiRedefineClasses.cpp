@@ -99,7 +99,7 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
 
 static inline InstanceKlass* get_ik(jclass def) {
   oop mirror = JNIHandles::resolve_non_null(def);
-  return InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  return java_lang_Class::as_InstanceKlass(mirror);
 }
 
 // If any of the classes are being redefined, wait
