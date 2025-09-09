@@ -40,15 +40,14 @@
 #include "os_linux.hpp"
 #endif
 
-// put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
 # include <errno.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/stat.h>
-# include <signal.h>
 # include <pwd.h>
+# include <signal.h>
+# include <stdio.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/types.h>
+# include <unistd.h>
 
 #if defined(LINUX)
 # include <sys/file.h>
