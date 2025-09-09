@@ -1,5 +1,5 @@
 # GraphemeBreakProperty-17.0.0.txt
-# Date: 2025-05-08, 22:20:13 GMT
+# Date: 2025-06-30, 06:20:23 GMT
 # © 2025 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -144,7 +144,7 @@ E01F0..E0FFF  ; Control # Cn [3600] <reserved-E01F0>..<reserved-E0FFF>
 0B3F          ; Extend # Mn       ORIYA VOWEL SIGN I
 0B41..0B44    ; Extend # Mn   [4] ORIYA VOWEL SIGN U..ORIYA VOWEL SIGN VOCALIC RR
 0B4D          ; Extend # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; Extend # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; Extend # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; Extend # Mc       ORIYA AU LENGTH MARK
 0B62..0B63    ; Extend # Mn   [2] ORIYA VOWEL SIGN VOCALIC L..ORIYA VOWEL SIGN VOCALIC LL
 0B82          ; Extend # Mn       TAMIL SIGN ANUSVARA
@@ -461,8 +461,6 @@ FF9E..FF9F    ; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDT
 1612D..1612F  ; Extend # Mn   [3] GURUNG KHEMA SIGN ANUSVARA..GURUNG KHEMA SIGN THOLHOMA
 16AF0..16AF4  ; Extend # Mn   [5] BASSA VAH COMBINING HIGH TONE..BASSA VAH COMBINING HIGH-LOW TONE
 16B30..16B36  ; Extend # Mn   [7] PAHAWH HMONG MARK CIM TUB..PAHAWH HMONG MARK CIM TAUM
-16D98         ; Extend # Mn       CHISOI SIGN ANUSVARA
-16D9D         ; Extend # Mn       CHISOI SIGN SISO
 16F4F         ; Extend # Mn       MIAO SIGN CONSONANT MODIFIER BAR
 16F8F..16F92  ; Extend # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16FE4         ; Extend # Mn       KHITAN SMALL SCRIPT FILLER
@@ -504,7 +502,7 @@ FF9E..FF9F    ; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDT
 E0020..E007F  ; Extend # Cf  [96] TAG SPACE..CANCEL TAG
 E0100..E01EF  ; Extend # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 2241
+# Total code points: 2237
 
 # ================================================
 

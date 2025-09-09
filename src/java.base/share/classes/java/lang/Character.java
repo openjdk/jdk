@@ -747,7 +747,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
-        private static final int NUM_ENTITIES = 805;
+        private static final int NUM_ENTITIES = 804;
         private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
@@ -3723,7 +3723,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock SIDETIC =
-                new UnicodeBlock("SIDETIC");
+            new UnicodeBlock("SIDETIC");
 
         /**
          * Constant for the "Sharada Supplement" Unicode
@@ -3731,9 +3731,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock SHARADA_SUPPLEMENT =
-                new UnicodeBlock("SHARADA_SUPPLEMENT",
-                        "SHARADA SUPPLEMENT",
-                        "SHARADASUPPLEMENT");
+            new UnicodeBlock("SHARADA_SUPPLEMENT",
+                "SHARADA SUPPLEMENT",
+                "SHARADASUPPLEMENT");
 
         /**
          * Constant for the "Tolong Siki" Unicode
@@ -3741,17 +3741,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock TOLONG_SIKI =
-                new UnicodeBlock("TOLONG_SIKI",
-                        "TOLONG SIKI",
-                        "TOLONGSIKI");
-
-        /**
-         * Constant for the "Chisoi" Unicode
-         * character block.
-         * @since 26
-         */
-        public static final UnicodeBlock CHISOI =
-                new UnicodeBlock("CHISOI");
+            new UnicodeBlock("TOLONG_SIKI",
+                "TOLONG SIKI",
+                "TOLONGSIKI");
 
         /**
          * Constant for the "Beria Erfe" Unicode
@@ -3759,9 +3751,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock BERIA_ERFE =
-                new UnicodeBlock("BERIA_ERFE",
-                        "BERIA ERFE",
-                        "BERIAERFE");
+            new UnicodeBlock("BERIA_ERFE",
+                "BERIA ERFE",
+                "BERIAERFE");
 
         /**
          * Constant for the "Tangut Components Supplement" Unicode
@@ -3769,9 +3761,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock TANGUT_COMPONENTS_SUPPLEMENT =
-                new UnicodeBlock("TANGUT_COMPONENTS_SUPPLEMENT",
-                        "TANGUT COMPONENTS SUPPLEMENT",
-                        "TANGUTCOMPONENTSSUPPLEMENT");
+            new UnicodeBlock("TANGUT_COMPONENTS_SUPPLEMENT",
+                "TANGUT COMPONENTS SUPPLEMENT",
+                "TANGUTCOMPONENTSSUPPLEMENT");
 
         /**
          * Constant for the "Miscellaneous Symbols Supplement" Unicode
@@ -3779,9 +3771,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock MISCELLANEOUS_SYMBOLS_SUPPLEMENT =
-                new UnicodeBlock("MISCELLANEOUS_SYMBOLS_SUPPLEMENT",
-                        "MISCELLANEOUS SYMBOLS SUPPLEMENT",
-                        "MISCELLANEOUSSYMBOLSSUPPLEMENT");
+            new UnicodeBlock("MISCELLANEOUS_SYMBOLS_SUPPLEMENT",
+                "MISCELLANEOUS SYMBOLS SUPPLEMENT",
+                "MISCELLANEOUSSYMBOLSSUPPLEMENT");
 
         /**
          * Constant for the "Tai Yo" Unicode
@@ -3789,9 +3781,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock TAI_YO =
-                new UnicodeBlock("TAI_YO",
-                        "TAI YO",
-                        "TAIYO");
+            new UnicodeBlock("TAI_YO",
+                "TAI YO",
+                "TAIYO");
 
         /**
          * Constant for the "CJK Unified Ideographs Extension J" Unicode
@@ -3799,9 +3791,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * @since 26
          */
         public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_J =
-                new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_J",
-                        "CJK UNIFIED IDEOGRAPHS EXTENSION J",
-                        "CJKUNIFIEDIDEOGRAPHSEXTENSIONJ");
+            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_J",
+                "CJK UNIFIED IDEOGRAPHS EXTENSION J",
+                "CJKUNIFIEDIDEOGRAPHSEXTENSIONJ");
+
 
         private static final int[] blockStarts = {
             0x0000,   // 0000..007F; Basic Latin
@@ -4100,8 +4093,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x16B00,  // 16B00..16B8F; Pahawh Hmong
             0x16B90,  //               unassigned
             0x16D40,  // 16D40..16D7F; Kirat Rai
-            0x16D80,  // 16D80..16DAF; Chisoi
-            0x16DB0,  //               unassigned
+            0x16D80,  //               unassigned
             0x16E40,  // 16E40..16E9F; Medefaidrin
             0x16EA0,  // 16EA0..16EDF; Beria Erfe
             0x16EE0,  //               unassigned
@@ -4501,7 +4493,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             PAHAWH_HMONG,
             null,
             KIRAT_RAI,
-            CHISOI,
             null,
             MEDEFAIDRIN,
             BERIA_ERFE,
@@ -5666,12 +5657,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         TOLONG_SIKI,
 
         /**
-         * Unicode script "Chisoi".
-         * @since 26
-         */
-        CHISOI,
-
-        /**
          * Unicode script "Beria Erfe".
          * @since 26
          */
@@ -5820,8 +5805,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x09DE,   // 09DE      ; UNKNOWN
             0x09DF,   // 09DF..09E3; BENGALI
             0x09E4,   // 09E4..09E5; UNKNOWN
-            0x09E6,   // 09E6..09FF; BENGALI
-            0x0A00,   // 0A00      ; UNKNOWN
+            0x09E6,   // 09E6..09FE; BENGALI
+            0x09FF,   // 09FF..0A00; UNKNOWN
             0x0A01,   // 0A01..0A03; GURMUKHI
             0x0A04,   // 0A04      ; UNKNOWN
             0x0A05,   // 0A05..0A0A; GURMUKHI
@@ -5901,8 +5886,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x0B47,   // 0B47..0B48; ORIYA
             0x0B49,   // 0B49..0B4A; UNKNOWN
             0x0B4B,   // 0B4B..0B4D; ORIYA
-            0x0B4E,   // 0B4E..0B52; UNKNOWN
-            0x0B53,   // 0B53..0B57; ORIYA
+            0x0B4E,   // 0B4E..0B54; UNKNOWN
+            0x0B55,   // 0B55..0B57; ORIYA
             0x0B58,   // 0B58..0B5B; UNKNOWN
             0x0B5C,   // 0B5C..0B5D; ORIYA
             0x0B5E,   // 0B5E      ; UNKNOWN
@@ -7030,11 +7015,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x16B7D,  // 16B7D..16B8F; PAHAWH_HMONG
             0x16B90,  // 16B90..16D3F; UNKNOWN
             0x16D40,  // 16D40..16D79; KIRAT_RAI
-            0x16D7A,  // 16D7A..16D7F; UNKNOWN
-            0x16D80,  // 16D80..16D9D; CHISOI
-            0x16D9E,  // 16D9E..16D9F; UNKNOWN
-            0x16DA0,  // 16DA0..16DA9; CHISOI
-            0x16DAA,  // 16DAA..16E3F; UNKNOWN
+            0x16D7A,  // 16D7A..16E3F; UNKNOWN
             0x16E40,  // 16E40..16E9A; MEDEFAIDRIN
             0x16E9B,  // 16E9B..16E9F; UNKNOWN
             0x16EA0,  // 16EA0..16EB8; BERIA_ERFE
@@ -7378,8 +7359,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x1FAC7,  // 1FAC7       ; UNKNOWN
             0x1FAC8,  // 1FAC8       ; COMMON
             0x1FAC9,  // 1FAC9..1FACC; UNKNOWN
-            0x1FACD,  // 1FACD..1FADD; COMMON
-            0x1FADE,  // 1FADE       ; UNKNOWN
+            0x1FACD,  // 1FACD..1FADC; COMMON
+            0x1FADD,  // 1FADD..1FADE; UNKNOWN
             0x1FADF,  // 1FADF..1FAEA; COMMON
             0x1FAEB,  // 1FAEB..1FAEE; UNKNOWN
             0x1FAEF,  // 1FAEF..1FAF8; COMMON
@@ -7544,8 +7525,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 09DE
             BENGALI,                  // 09DF..09E3
             UNKNOWN,                  // 09E4..09E5
-            BENGALI,                  // 09E6..09FF
-            UNKNOWN,                  // 0A00
+            BENGALI,                  // 09E6..09FE
+            UNKNOWN,                  // 09FF..0A00
             GURMUKHI,                 // 0A01..0A03
             UNKNOWN,                  // 0A04
             GURMUKHI,                 // 0A05..0A0A
@@ -7625,8 +7606,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             ORIYA,                    // 0B47..0B48
             UNKNOWN,                  // 0B49..0B4A
             ORIYA,                    // 0B4B..0B4D
-            UNKNOWN,                  // 0B4E..0B52
-            ORIYA,                    // 0B53..0B57
+            UNKNOWN,                  // 0B4E..0B54
+            ORIYA,                    // 0B55..0B57
             UNKNOWN,                  // 0B58..0B5B
             ORIYA,                    // 0B5C..0B5D
             UNKNOWN,                  // 0B5E
@@ -8754,11 +8735,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             PAHAWH_HMONG,             // 16B7D..16B8F
             UNKNOWN,                  // 16B90..16D3F
             KIRAT_RAI,                // 16D40..16D79
-            UNKNOWN,                  // 16D7A..16D7F
-            CHISOI,                   // 16D80..16D9D
-            UNKNOWN,                  // 16D9E..16D9F
-            CHISOI,                   // 16DA0..16DA9
-            UNKNOWN,                  // 16DAA..16E3F
+            UNKNOWN,                  // 16D7A..16E3F
             MEDEFAIDRIN,              // 16E40..16E9A
             UNKNOWN,                  // 16E9B..16E9F
             BERIA_ERFE,               // 16EA0..16EB8
@@ -9102,8 +9079,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 1FAC7
             COMMON,                   // 1FAC8
             UNKNOWN,                  // 1FAC9..1FACC
-            COMMON,                   // 1FACD..1FADD
-            UNKNOWN,                  // 1FADE
+            COMMON,                   // 1FACD..1FADC
+            UNKNOWN,                  // 1FADD..1FADE
             COMMON,                   // 1FADF..1FAEA
             UNKNOWN,                  // 1FAEB..1FAEE
             COMMON,                   // 1FAEF..1FAF8
@@ -9163,7 +9140,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             aliases.put("CARI", CARIAN);
             aliases.put("CHAM", CHAM);
             aliases.put("CHER", CHEROKEE);
-            aliases.put("CHIS", CHISOI);
             aliases.put("CHRS", CHORASMIAN);
             aliases.put("COPT", COPTIC);
             aliases.put("CPMN", CYPRO_MINOAN);
