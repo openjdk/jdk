@@ -29,6 +29,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.InternalStableValue;
+import jdk.internal.lang.stable.ComputedStableValue;
 import jdk.internal.lang.stable.StandardStableValue;
 
 import java.io.Serializable;
@@ -122,20 +123,20 @@ import java.util.function.Supplier;
  * as evaluation of the supplier may have side effects, for example, the call above to
  * {@code Logger.create()} may result in storage resources being prepared.
  *
- * <h2 id="computed-constant">Computed Constant</h2>
+ * <h2 id="supplied-computed-constants">Supplied Stable Values</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
- * <em>computed constant</em> is a supplier that computes a value and then caches it into
- * a backing stable value storage for subsequent use. A computed constant is created via
- * the {@linkplain ComputedConstant#of(Supplier) ComputedConstant.of()} factory, by
+ * <em>supplied stable value</em> is a stable value that computes a value and then caches
+ * it into a backing stable value storage for subsequent use. A supplied stable value is
+ * created via the {@linkplain #ofComputed(Supplier) StableValue.ofSupplied()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the
- * computed constant is first accessed:
+ * stable value is first accessed:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *     private final ComputedConstant<Logger> logger =
- *             // @link substring="of" target="ComputedConstant#of(Supplier)" :
- *             ComputedConstant.of( () -> Logger.getLogger(Component.class) );
+ *     private final StableValue<Logger> logger =
+ *             // @link substring="ofSupplied" target="StableValue#ofSupplied(Supplier)" :
+ *             StableValue.ofComputed( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -143,22 +144,23 @@ import java.util.function.Supplier;
  *     }
  * }
  *}
- * A computed constant encapsulates access to its backing stable value storage. This means
- * that code inside {@code Component} can obtain the logger object directly from the
- * stable supplier, without having to go through an accessor method like {@code getLogger()}.
+ * A supplied stable value encapsulates access to its backing stable value storage. This
+ * means that code inside {@code Component} can obtain the logger object directly from the
+ * supplied stable value, without having to go through an accessor method like {@code getLogger()}.
  *<p>
- * Here is an example of how a rudimentary implementation of the {@code ComputedConstant}
- * interface might look like if {@code ComputedConstant} was not a sealed interface:
+ * Here is an example of how a rudimentary implementation of the supplied stable value
+ * interface might look like if {@code StableValue} was not a sealed interface:
  *
  *{@snippet lang = java:
- * public record ComputedConstantImpl<T>(StableValue<T> delegate,
- *                                       Supplier<? extends T> mapper) implements ComputedConstant<T> {
+ * public record SuppliedStableValue<T>(StableValue<T> delegate,
+ *                                      Supplier<? extends T> mapper) implements StableValue<T> {
  *
  *         @Override public T get() { return delegate.orElseSet(mapper); }
  *         @Override public boolean isSet() { return delegate.isSet(); }
+ *         // ... throwing optional operations not shown
  * }
  *
- * ComputedConstant<Integer> cc = new ComputedConstantImpl<>(StableValue.of(), () -> 42);
+ * StableValue<Integer> cc = new SuppliedStableValue<>(StableValue.of(), () -> 42);
  * cc.get(); // 42
  *}
  *
@@ -325,6 +327,15 @@ import java.util.function.Supplier;
  * of the same principles as {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they
  * too are thread safe and guarantee at-most-once-per-input invocation.
  *
+ * <h2 id="optional-operations">Optional Operations</h2>
+ * The following stable value operations are optional:
+ * <ul>
+ *     <li>{@linkplain #trySet(Object)}</li>
+ *     <li>{@linkplain #orElseSet(Supplier)}</li>
+ * </ul>
+ * An {@linkplain UnsupportedOperationException} will be thrown if an unsupported optional
+ * operation is called.
+ *
  * <h2 id="performance">Performance</h2>
  * As the contents of a stable value can never change after it has been set, a JVM
  * implementation may, for a set stable value, elide all future reads of that
@@ -377,13 +388,13 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the contents
  *
- * @see ComputedConstant
  * @see List#ofComputed(int, IntFunction)
  * @see Map#ofComputed(Set, Function)
  * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
+        extends Supplier<T>
         permits InternalStableValue {
 
     /**
@@ -474,6 +485,9 @@ public sealed interface StableValue<T>
      * {@return a new unset stable value}
      * <p>
      * An unset stable value has no contents.
+     * <p>
+     * The returned stable value supports all
+     * {@linkplain ##optional-operation optional operations}.
      *
      * @param <T> type of the contents
      */
@@ -483,6 +497,9 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new pre-set stable value with the provided {@code contents}}
+     * <p>
+     * The returned stable value supports all
+     * {@linkplain ##optional-operation optional operations}.
      *
      * @param contents to set
      * @param <T>     type of the contents
@@ -491,6 +508,29 @@ public sealed interface StableValue<T>
     static <T> StableValue<T> of(T contents) {
         Objects.requireNonNull(contents);
         return StandardStableValue.ofPreset(contents);
+    }
+
+    /**
+     * {@return a new computed stable value which is to be computed using the provided
+     *          {@code underlying} supplier}
+     *
+     * The returned computed stable value will record the value of the provided {@code underlying}
+     * supplier upon being first accessed via the returned stable value's
+     * {@linkplain #get() get()} method as being fed to an underlying StableValue's
+     * {@linkplain #orElseSet(Supplier)} method.
+     * <p>
+     * The returned StableValue does not support any of the
+     * {@linkplain ##optional-operation optional operations}.
+     *
+     * @param underlying supplier used to compute the constant
+     * @param <T>        type of the constant
+     *
+     * @see StableValue
+     * @since 26
+     */
+    static <T> StableValue<T> ofComputed(Supplier<? extends T> underlying) {
+        Objects.requireNonNull(underlying);
+        return ComputedStableValue.of(underlying);
     }
 
     /**

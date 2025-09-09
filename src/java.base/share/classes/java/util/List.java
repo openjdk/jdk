@@ -1236,7 +1236,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @param <E>    the type of elements in the returned list
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      *
-     * @see ComputedConstant
+     * @see StableValue
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
@@ -1245,7 +1245,7 @@ public interface List<E> extends SequencedCollection<E> {
         Utils.checkNonNegativeArgument(size, "size");
         Objects.requireNonNull(mapper);
         // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return ComputedCollections.ofComputedList(size, mapper);
+        return StableCollections.ofComputedList(size, mapper);
     }
 
 }

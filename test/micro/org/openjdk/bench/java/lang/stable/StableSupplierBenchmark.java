@@ -37,7 +37,6 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 import java.lang.StableValue;
-import java.util.function.Supplier;
 
 /**
  * Benchmark measuring StableValue performance
@@ -59,13 +58,13 @@ public class StableSupplierBenchmark {
 
     private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
     private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final ComputedConstant<Integer> SUPPLIER = ComputedConstant.of(() -> VALUE);
-    private static final ComputedConstant<Integer> SUPPLIER2 = ComputedConstant.of(() -> VALUE);
+    private static final StableValue<Integer> SUPPLIER = StableValue.ofComputed(() -> VALUE);
+    private static final StableValue<Integer> SUPPLIER2 = StableValue.ofComputed(() -> VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final ComputedConstant<Integer> supplier = ComputedConstant.of(() -> VALUE);
-    private final ComputedConstant<Integer> supplier2 = ComputedConstant.of(() -> VALUE2);
+    private final StableValue<Integer> supplier = StableValue.ofComputed(() -> VALUE);
+    private final StableValue<Integer> supplier2 = StableValue.ofComputed(() -> VALUE2);
 
     @Benchmark
     public int stable() {

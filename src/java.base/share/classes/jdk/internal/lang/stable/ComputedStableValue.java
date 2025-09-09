@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * @param <T> the type of the contents
  */
 // Todo: Consider implement this directly and not via an underlying SV
-public record SuppliedStableValue<T>(UnSuppliedStableValue<T> delegate,
+public record ComputedStableValue<T>(StandardStableValue<T> delegate,
                                      FunctionHolder<Supplier<? extends T>> mapperHolder) implements InternalStableValue<T> {
 
     @ForceInline
@@ -60,12 +60,12 @@ public record SuppliedStableValue<T>(UnSuppliedStableValue<T> delegate,
     @Override public boolean equals(Object obj) { return obj == this; }
     @Override public String  toString() {
                    final Object t = delegate.contentsAcquire();
-                   return t == this ? "(this ComputedConstant)" : UnSuppliedStableValue.render(t);
+                   return t == this ? "(this ComputedConstant)" : StandardStableValue.render(t);
               }
 
 
-    public static <T> SuppliedStableValue<T> of(Supplier<? extends T> original) {
-        return new SuppliedStableValue<>(UnSuppliedStableValue.of(), new FunctionHolder<>(original, 1));
+    public static <T> ComputedStableValue<T> of(Supplier<? extends T> original) {
+        return new ComputedStableValue<>(StandardStableValue.of(), new FunctionHolder<>(original, 1));
     }
 
     private static UnsupportedOperationException uoe() {

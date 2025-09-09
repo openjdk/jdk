@@ -74,8 +74,8 @@ public class VarHandleHolderBenchmark {
     private static final VarHandle VH_X = VAR_HANDLE_FUNCTION.apply("x");
     private static final VarHandle VH_Y = VAR_HANDLE_FUNCTION.apply("y");
 
-    private static final ComputedConstant<VarHandle> SV_X = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("x"));
-    private static final ComputedConstant<VarHandle> SV_Y = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("y"));
+    private static final StableValue<VarHandle> SV_X = StableValue.ofComputed(() -> VAR_HANDLE_FUNCTION.apply("x"));
+    private static final StableValue<VarHandle> SV_Y = StableValue.ofComputed(() -> VAR_HANDLE_FUNCTION.apply("y"));
 
     private static final Map<String, VarHandle> U_MAP = Map.of(
             "x", VH_X,

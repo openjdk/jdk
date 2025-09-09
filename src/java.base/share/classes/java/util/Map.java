@@ -1790,7 +1790,7 @@ public interface Map<K, V> {
      * @throws NullPointerException if the provided set of {@code inputs} contains a
      *                              {@code null} element.
      *
-     * @see ComputedConstant
+     * @see StableValue
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
@@ -1802,11 +1802,11 @@ public interface Map<K, V> {
         Objects.requireNonNull(mapper);
         if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
             @SuppressWarnings("unchecked")
-            var enumMap = (Map<K, V>) ComputedCollections.ofComputedMapWithEnumKeys(keyCopies, mapper);
+            var enumMap = (Map<K, V>) StableCollections.ofComputedMapWithEnumKeys(keyCopies, mapper);
             return enumMap;
         } else {
             // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-            return ComputedCollections.ofComputedMap(keyCopies, mapper);
+            return StableCollections.ofComputedMap(keyCopies, mapper);
         }
     }
 

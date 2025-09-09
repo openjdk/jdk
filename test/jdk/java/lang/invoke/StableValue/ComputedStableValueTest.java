@@ -26,7 +26,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
  * @compile StableTestUtil.java
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED SuppliedStableValueTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedStableValueTest
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class SuppliedStableValueTest {
+final class ComputedStableValueTest {
 
     private static final Supplier<Integer> SUPPLIER = () -> 42;
 

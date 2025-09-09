@@ -488,7 +488,7 @@ public abstract class ResourceBundle {
     /**
      * A Set of the keys contained only in this ResourceBundle.
      */
-    private final ComputedConstant<Set<String>> keySet = ComputedConstant.of(
+    private final StableValue<Set<String>> keySet = StableValue.ofComputed(
             new Supplier<>() { public Set<String> get() { return keySet0(); }});
 
     private Set<String> keySet0() {

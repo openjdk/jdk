@@ -29,7 +29,7 @@ import jdk.internal.ValueBased;
 import jdk.internal.lang.stable.FunctionHolder;
 import jdk.internal.lang.stable.InternalStableValue;
 import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.UnSuppliedStableValue;
+import jdk.internal.lang.stable.StandardStableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -46,15 +46,15 @@ import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
 /**
- * Container class for computed collections and dense {@code List<StableValue<T>}
+ * Container class for stable collections and dense {@code List<StableValue<T>}
  * implementations. Not part of the public API.
  */
-final class ComputedCollections {
+final class StableCollections {
 
     /**
      * No instances.
      */
-    private ComputedCollections() { }
+    private StableCollections() { }
 
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -79,7 +79,7 @@ final class ComputedCollections {
         @Override
         public StableValue<E> get(int index) {
             final E element = elements[index];
-            return UnSuppliedStableValue.ofPreset(element);
+            return StandardStableValue.ofPreset(element);
         }
 
         @Override
@@ -89,12 +89,12 @@ final class ComputedCollections {
 
         @Override
         public int indexOf(Object o) {
-            return ComputedCollections.indexOf(this, o);
+            return StableCollections.indexOf(this, o);
         }
 
         @Override
         public int lastIndexOf(Object o) {
-            return ComputedCollections.lastIndexOf(this, o);
+            return StableCollections.lastIndexOf(this, o);
         }
 
         @SafeVarargs
@@ -151,12 +151,12 @@ final class ComputedCollections {
 
         @Override
         public int indexOf(Object o) {
-            return ComputedCollections.indexOf(this, o);
+            return StableCollections.indexOf(this, o);
         }
 
         @Override
         public int lastIndexOf(Object o) {
-            return ComputedCollections.lastIndexOf(this, o);
+            return StableCollections.lastIndexOf(this, o);
         }
 
         @ForceInline
@@ -298,7 +298,7 @@ final class ComputedCollections {
                 final T t = contentsAcquire();
                 return t == this
                         ? "(this StableValue)"
-                        : UnSuppliedStableValue.render(t);
+                        : StandardStableValue.render(t);
             }
 
             @SuppressWarnings("unchecked")
@@ -1000,7 +1000,7 @@ final class ComputedCollections {
             if (e == self) {
                 sj.add("(this ComputedCollection)");
             } else {
-                sj.add(UnSuppliedStableValue.render(e));
+                sj.add(StandardStableValue.render(e));
             }
         }
         return sj.toString();

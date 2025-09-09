@@ -131,10 +131,10 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 public <E> List<StableValue<E>> denseStableList(int size) {
-                    return ComputedCollections.DenseStableList.ofList(size);
+                    return StableCollections.DenseStableList.ofList(size);
                 }
                 public <E> List<StableValue<E>> presetStableList(E[] array) {
-                    return ComputedCollections.PresetStableList.ofList(array);
+                    return StableCollections.PresetStableList.ofList(array);
                 }
             });
         }
@@ -445,7 +445,7 @@ class ImmutableCollections {
 
     static sealed class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess
-            permits ComputedCollections.ComputedList.StableSubList {
+            permits StableCollections.ComputedList.StableSubList {
 
         @Stable
         final AbstractImmutableList<E> root;
@@ -459,8 +459,8 @@ class ImmutableCollections {
         SubList(AbstractImmutableList<E> root, int offset, int size) {
             assert root instanceof List12
                     || root instanceof ListN
-                    || root instanceof ComputedCollections.ComputedList
-                    || root instanceof ComputedCollections.DenseStableList;
+                    || root instanceof StableCollections.ComputedList
+                    || root instanceof StableCollections.DenseStableList;
             this.root = root;
             this.offset = offset;
             this.size = size;
