@@ -167,6 +167,7 @@ public class Check {
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
+        allowPrimitivePatterns = preview.isEnabled() && Feature.PRIMITIVE_PATTERNS.allowedInSource(source);
     }
 
     /** Character for synthetic names
@@ -189,6 +190,10 @@ public class Check {
     /** Are sealed classes allowed
      */
     private final boolean allowSealed;
+
+    /** Are primitive patterns allowed
+     */
+    private final boolean allowPrimitivePatterns;
 
     /** Whether to force suppression of deprecation and preview warnings.
      *  This happens when attributing import statements for JDK 9+.
@@ -4734,20 +4739,30 @@ public class Check {
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
                     boolean dominated = false;
-                    if (types.isUnconditionallyExact(currentType, testType) &&
-                        !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+
+                    if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
+                    boolean dominatedCandidate = false;
+                    if (!currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+                        if (types.isUnconditionallyExact(currentType, testType)) {
+                            dominatedCandidate = true;
+                        } else if (currentType.constValue() instanceof Number) {
+                            dominatedCandidate = types.isUnconditionallyExactConstantPrimitives(currentType, testType);
+                        }
                         //the current label is potentially dominated by the existing (test) label, check:
                         if (label instanceof JCConstantCaseLabel) {
-                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
+                            dominated = dominatedCandidate &&
+                                         !(testCaseLabel instanceof JCConstantCaseLabel) &&
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
                                    (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
-                            dominated = patternDominated(testPatternCaseLabel.pat,
-                                                         patternCL.pat);
+                            dominated = dominatedCandidate &&
+                                        patternDominated(testPatternCaseLabel.pat, patternCL.pat);
                         }
                     }
-
+                    if (allowPrimitivePatterns && unconditionalFound && unconditionalCaseLabel != label) {
+                        dominated = true;
+                    }
                     if (dominated) {
                         log.error(label.pos(), Errors.PatternDominated);
                     }
