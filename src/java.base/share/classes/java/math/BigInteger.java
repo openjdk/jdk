@@ -4180,7 +4180,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
-        if (mag.length <= 2 && bitLength() < Long.SIZE) {
+        if (fitsIntoLong()) {
             // fits into long
             return Long.toString(longValue(), radix);
         }
@@ -5126,10 +5126,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public long longValueExact() {
-        if (mag.length <= 2 && bitLength() < Long.SIZE)
+        if (fitsIntoLong())
             return longValue();
 
         throw new ArithmeticException("BigInteger out of long range");
+    }
+
+    private boolean fitsIntoLong() {
+        return mag.length <= 2 && bitLength() < Long.SIZE;
     }
 
     /**

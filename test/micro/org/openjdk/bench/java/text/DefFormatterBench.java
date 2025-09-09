@@ -81,10 +81,11 @@ public class DefFormatterBench {
     @OperationsPerInvocation(13)
     public void testSmallBigDecDefNumberFormatter(final Blackhole blackhole) {
         for (double value : values) {
-            // bd is recreated each time to avoid the effect of internal caching of the
-            // toString value if the BigDecimal instance was reused
-            BigDecimal bd = BigDecimal.valueOf(value);  // This will create "small" BigDecimals where unscaled
-                                                        // value fits in a long
+            // bd is recreated each time to avoid the effect of internal caching
+            // of the toString value if the BigDecimal instance was reused.
+
+            // This will create "small" BigDecimals where unscaled value fits in a long.
+            BigDecimal bd = BigDecimal.valueOf(value);
             blackhole.consume(this.dnf.format(bd));
         }
     }
@@ -93,8 +94,9 @@ public class DefFormatterBench {
     @OperationsPerInvocation(13)
     public void testLargeBigDecDefNumberFormatter(final Blackhole blackhole) {
         for (BigDecimal value : bdValues) {
-            // bd is recreated each time to avoid the effect of internal caching of the
-            // toString value if the BigDecimal instance was reused
+            // bd is recreated each time to avoid the effect of internal caching
+            // of the toString value if the BigDecimal instance was reused.
+
             BigDecimal bd = new BigDecimal(value.unscaledValue(), value.scale());
 
             blackhole.consume(this.dnf.format(bd));
@@ -121,8 +123,8 @@ public class DefFormatterBench {
             return this.n.format(d);
         }
 
-        public String format(final BigDecimal d) {
-            return this.n.format(d);
+        public String format(final BigDecimal bd) {
+            return this.n.format(bd);
         }
     }
 }
