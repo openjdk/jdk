@@ -2201,7 +2201,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (signum < 0 && (n & 1) == 0)
             throw new ArithmeticException("Negative radicand with even root degree");
 
-        final int preferredScale = (int) Math.min((long) this.scale / n, Integer.MAX_VALUE);
+        final int preferredScale = saturateLong((long) this.scale / n);
         if (signum == 0) {
             if (n < 0)
                 throw new ArithmeticException("Zero radicand with negative root degree");
