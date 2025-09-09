@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
 inline bool ShenandoahGenerationalHeap::is_tenurable(const ShenandoahHeapRegion* r) const {
