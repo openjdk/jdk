@@ -5276,8 +5276,10 @@ void os::current_stack_base_and_size(address* base, size_t* size) {
 
     pthread_attr_destroy(&attr);
   }
-  assert(os::current_stack_pointer() >= bottom &&
-         os::current_stack_pointer() < *base, "just checking");
+  if (StubRoutines::initial_stubs_code() != nullptr) {
+    assert(os::current_stack_pointer() >= bottom &&
+           os::current_stack_pointer() < *base, "just checking");
+  }
 }
 
 #endif
