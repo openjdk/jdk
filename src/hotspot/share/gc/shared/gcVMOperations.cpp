@@ -113,7 +113,6 @@ bool VM_GC_Operation::doit_prologue() {
 
   // Check invocations
   if (skip_operation() || Universe::heap()->is_shutting_down()) {
-    if (Universe::heap()->is_shutting_down())
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {
