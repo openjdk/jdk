@@ -977,18 +977,6 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   }
   fprintf(fp_cpp, "}\n\n");
 
-  // Output the list of nop nodes
-  fprintf(fp_cpp, "// Descriptions for emitting different functional unit nops\n");
-  const char *nop;
-  int nopcnt = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; nopcnt++ );
-
-  fprintf(fp_cpp, "void Bundle::initialize_nops(MachNode * nop_list[%d]) {\n", nopcnt);
-  int i = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; i++ ) {
-    fprintf(fp_cpp, "  nop_list[%d] = (MachNode *) new %sNode();\n", i, nop);
-  }
-  fprintf(fp_cpp, "};\n\n");
   fprintf(fp_cpp, "#ifndef PRODUCT\n");
   fprintf(fp_cpp, "void Bundle::dump(outputStream *st) const {\n");
   fprintf(fp_cpp, "  static const char * bundle_flags[] = {\n");
@@ -1004,7 +992,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
   // Don't add compound resources to the list of resource names
   const char* resource;
-  i = 0;
+  int i = 0;
   for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != nullptr;) {
     if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
