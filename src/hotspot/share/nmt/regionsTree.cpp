@@ -22,8 +22,6 @@
  *
  */
 #include "nmt/regionsTree.hpp"
-#include "nmt/regionsTree.inline.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 
 VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
   return commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), /*use tag inplace*/ true);
@@ -57,12 +55,3 @@ void RegionsTree::print_on(outputStream* st) {
   });
 }
 #endif
-
-size_t RegionsTree::committed_size(ReservedMemoryRegion& rgn) {
-  size_t result = 0;
-  visit_committed_regions(rgn, [&](CommittedMemoryRegion& crgn) {
-    result += crgn.size();
-    return true;
-  });
-  return result;
-}
