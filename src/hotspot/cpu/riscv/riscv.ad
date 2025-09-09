@@ -3845,9 +3845,6 @@ attributes %{
 
   // ...in one line.
   instruction_fetch_units = 1;
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources
