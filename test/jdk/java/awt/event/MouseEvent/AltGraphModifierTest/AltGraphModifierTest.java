@@ -43,14 +43,13 @@ public class AltGraphModifierTest {
                 This test is for verifying Alt-Gr modifier of an event.
                 Please check if Alt-Gr key is present on keyboard.
                 If not present, press Pass.
-                Window :-
+                On Windows:
                     Press Alt-Gr or Right Alt key and simulataneously
                         perform mouse click on the "TestWindow".
-                Linux :-
+                On Linux:
                     Navigate to
-                      System Settings-> Keyboard-> Shortcuts->Typing.
-                    Select an option for the Alternative Characters Key
-                        For example. Right Alt
+                      System Settings-> Keyboard-> Special Character Entry
+                    Select "Right Alt" option for the "Alternative Characters Key"
                     Close the settings and navigate to test
                     Press Right Alt Key & simultaneously
                         perform mouse click on the "TestWindow".
@@ -71,7 +70,7 @@ public class AltGraphModifierTest {
         mainFrame.setTitle("TestWindow");
         mainFrame.setBounds(700, 10, 300, 300);
         mainFrame.addMouseListener(new MouseAdapter() {
-           @Override
+            @Override
             public void mousePressed(MouseEvent e) {
                 int ex = e.getModifiersEx();
                 if ((ex & InputEvent.ALT_GRAPH_DOWN_MASK) == 0) {
