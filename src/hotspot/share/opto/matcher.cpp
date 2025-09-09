@@ -173,7 +173,8 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
       continue;
     }
     assert(C->node_arena()->contains(n), "dead node");
-    assert(!n->is_Initialize() || n->as_Initialize()->number_of_projs(TypeFunc::Memory) == 1, "");
+    assert(!n->is_Initialize() || n->as_Initialize()->number_of_projs(TypeFunc::Memory) == 1,
+           "after matching, Initialize should have a single memory projection");
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
       if (in != nullptr) {
@@ -1166,12 +1167,14 @@ Node *Matcher::xform( Node *n, int max_stack ) {
           } else {                  // Nothing the matcher cares about
             if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
               if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
+                // Initialize may have multiple NarrowMem projections. They would all match to identical raw mem MachProjs.
+                // We don't need multiple MachProjs. Create one if none already exist, otherwise use existing one.
                 m = n->in(0)->as_Initialize()->mem_mach_proj();
                 if (m == nullptr && has_new_node(n->in(0))) {
                   InitializeNode* new_init = new_node(n->in(0))->as_Initialize();
                   m = new_init->mem_mach_proj();
                 }
-                assert(m == nullptr || m->is_MachProj(), "");
+                assert(m == nullptr || m->is_MachProj(), "no mem projection yet or a MachProj created during matching");
               }
               if (m == nullptr) {
                 // Convert to machine-dependent projection
