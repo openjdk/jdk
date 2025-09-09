@@ -372,8 +372,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 return false;
             }
 
-            return supportedAlgorithms.contains(algorithm)
-                    && checkRsaSsaPssParams(algorithm, parameters);
+            return supportedAlgorithms.contains(algorithm);
         }
 
         @Override
@@ -390,27 +389,29 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No algorithm name specified");
             }
 
-            return permits(primitives, algorithm, parameters);
+            return permits(primitives, algorithm, parameters)
+                    && checkRsaSsaPssParams(algorithm, key, parameters);
         }
 
-        // Additional check for RSASSA-PSS algorithm parameters.
+        // Additional check for RSASSA-PSS signature algorithm parameters.
         private boolean checkRsaSsaPssParams(
-                String algorithm, AlgorithmParameters parameters) {
+                String algorithm, Key key, AlgorithmParameters parameters) {
 
             if (supportedSignatureSchemes == null
+                    || key == null
                     || parameters == null
                     || !algorithm.equalsIgnoreCase("RSASSA-PSS")) {
                 return true;
             }
 
             try {
-                String paramKeyAlg = parameters.getAlgorithm();
+                String keyAlg = key.getAlgorithm();
                 String paramDigestAlg = parameters.getParameterSpec(
                         PSSParameterSpec.class).getDigestAlgorithm();
 
                 return supportedSignatureSchemes.stream().anyMatch(ss ->
                         ss.algorithm.equalsIgnoreCase(algorithm)
-                                && ss.keyAlgorithm.equalsIgnoreCase(paramKeyAlg)
+                                && ss.keyAlgorithm.equalsIgnoreCase(keyAlg)
                                 && ((PSSParameterSpec) ss.signAlgParams.parameterSpec)
                                 .getDigestAlgorithm()
                                 .equalsIgnoreCase(paramDigestAlg));
