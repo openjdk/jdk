@@ -115,7 +115,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
     DEBUG_ONLY(_last_base = nullptr);
   }
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
+  bool do_allocation_site(const VirtualMemoryRegion* rgn)  {
     assert(rgn->base() >= _last_base, "region unordered?");
     DEBUG_ONLY(_last_base = rgn->base());
     if (rgn->size() > 0) {
@@ -130,7 +130,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
     }
   }
 
-  LinkedList<ReservedMemoryRegion>* virtual_memory_allocations() {
+  LinkedList<VirtualMemoryRegion>* virtual_memory_allocations() {
     return &_virtual_memory_regions;
   }
 };

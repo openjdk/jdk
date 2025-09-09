@@ -97,7 +97,7 @@ class RegionsTree : public VMATree {
     return _ncs_storage.get(si);
   }
 
-  size_t committed_size(ReservedMemoryRegion& rgn);
+  size_t committed_size(VirtualMemoryRegion& rgn);
 };
 
 #endif // NMT_REGIONSTREE_HPP
