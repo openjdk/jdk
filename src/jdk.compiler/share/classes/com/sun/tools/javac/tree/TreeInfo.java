@@ -610,17 +610,14 @@ public class TreeInfo {
             }
             case VARDEF: {
                 JCVariableDecl node = (JCVariableDecl)tree;
-                if (node.startPos != Position.NOPOS) {
-                    return node.startPos;
-                } else if (node.mods.pos != Position.NOPOS) {
+                if (node.mods.pos != Position.NOPOS) {
                     return node.mods.pos;
-                } else if (node.vartype == null || node.vartype.pos == Position.NOPOS) {
-                    //if there's no type (partially typed lambda parameter)
-                    //simply return node position
-                    return node.pos;
-                } else {
+                } else if (node.vartype != null) {
                     return getStartPos(node.vartype);
+                } else if (node.typePos != Position.NOPOS) {
+                    return node.typePos;
                 }
+                break;
             }
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;
