@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
@@ -1078,7 +1078,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
-  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread());
     st->print_cr("Lock stack of current Java thread (top to bottom):");
     JavaThread::cast(_thread)->lock_stack().print_on(st);
     st->cr();
@@ -1199,7 +1199,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1414,7 +1414,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();

@@ -85,6 +85,9 @@ class oopDesc;
 // they cannot be defined and potential callers will fail to compile.
 #define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
 
+// offset_of was a workaround for UB with offsetof uses that are no longer an
+// issue.  This can be removed once all uses have been converted.
+#define offset_of(klass, field) offsetof(klass, field)
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
@@ -641,19 +644,11 @@ inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low (jlong* value, jint low )    { *value &= (jlong)0xffffffff << 32;
-                                                   *value |= (jlong)(julong)(juint)low; }
-
-inline void set_high(jlong* value, jint high)    { *value &= (jlong)(julong)(juint)0xffffffff;
-                                                   *value |= (jlong)high       << 32; }
-
 inline jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
+  // First cast jint values to juint, so cast to julong will zero-extend.
+  julong high = (julong)(juint)h << 32;
+  julong low = (julong)(juint)l;
+  return (jlong)(high | low);
 }
 
 union jlong_accessor {
@@ -1008,17 +1003,6 @@ enum JavaThreadState {
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
-
-enum LockingMode {
-  // Use only heavy monitors for locking
-  LM_MONITOR     = 0,
-  // Legacy stack-locking, with monitors as 2nd tier
-  LM_LEGACY      = 1,
-  // New lightweight locking, with monitors as 2nd tier
-  LM_LIGHTWEIGHT = 2
-};
-
-extern const int LockingMode;
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging

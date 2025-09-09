@@ -40,15 +40,14 @@
 #include "os_linux.hpp"
 #endif
 
-// put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
 # include <errno.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/stat.h>
-# include <signal.h>
 # include <pwd.h>
+# include <signal.h>
+# include <stdio.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/types.h>
+# include <unistd.h>
 
 #if defined(LINUX)
 # include <sys/file.h>
@@ -150,7 +149,7 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   // construct the path name to user specific tmp directory
-  snprintf(dirname, nbytes, "%s/%s_%s", tmpdir, perfdir, user);
+  os::snprintf_checked(dirname, nbytes, "%s/%s_%s", tmpdir, perfdir, user);
 
   return dirname;
 }
@@ -661,7 +660,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  snprintf(name, nbytes, "%s/%d", dirname, pid);
+  os::snprintf_checked(name, nbytes, "%s/%d", dirname, pid);
 
   return name;
 }
