@@ -63,7 +63,7 @@ public:
   CountKlassClosure() : _num_classes(0), _num_classes_shared(0) {}
   void do_klass(Klass* k) {
     _num_classes++;
-    if (k->is_shared()) {
+    if (k->in_aot_cache()) {
       _num_classes_shared++;
     }
   }
