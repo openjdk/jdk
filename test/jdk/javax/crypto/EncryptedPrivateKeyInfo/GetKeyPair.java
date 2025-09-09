@@ -40,15 +40,15 @@ public class GetKeyPair {
 
     private static final String encEdECKey =
         """
-            -----BEGIN ENCRYPTED PRIVATE KEY-----
-            MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDhqUj1Oadj1GZXUMXT
-            b3QEAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBAgQQitxCfcZcMtoNu+X+
-            PQk+/wSBkFL1NddKkUL2tRv6pNf1TR7eI7qJReGRgJexU/6pDN+UQS5e5qSySa7E
-            k1m2pUHgZlySUblXZj9nOzCsNFfq/jxlL15ZpAviAM2fRINnNEJcvoB+qZTS5cRb
-            Xs3wC7wymHW3EdIZ9sxfSHq9t7j9SnC1jGHjno0v1rKcdIvJtYloxsRYjsG/Sxhz
-            uNYnx8AMuQ==
-            -----END ENCRYPTED PRIVATE KEY-----
-            """;
+        -----BEGIN ENCRYPTED PRIVATE KEY-----
+        MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDhqUj1Oadj1GZXUMXT
+        b3QEAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBAgQQitxCfcZcMtoNu+X+
+        PQk+/wSBkFL1NddKkUL2tRv6pNf1TR7eI7qJReGRgJexU/6pDN+UQS5e5qSySa7E
+        k1m2pUHgZlySUblXZj9nOzCsNFfq/jxlL15ZpAviAM2fRINnNEJcvoB+qZTS5cRb
+        Xs3wC7wymHW3EdIZ9sxfSHq9t7j9SnC1jGHjno0v1rKcdIvJtYloxsRYjsG/Sxhz
+        uNYnx8AMuQ==
+        -----END ENCRYPTED PRIVATE KEY-----
+        """;
 
     private static final String passwdText = "fish";
     private static final char[] password = passwdText.toCharArray();
@@ -56,7 +56,8 @@ public class GetKeyPair {
         passwdText.getBytes(), "PBE");
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
+        Provider p = Security.getProvider(
+            System.getProperty("test.provider.name", "SunJCE"));
 
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(encEdECKey,
             EncryptedPrivateKeyInfo.class);
@@ -65,37 +66,20 @@ public class GetKeyPair {
 
         // Test getKey(password)
         System.out.println("Testing getKeyPair(char[]) ");
-        DEREncodable derEncodable = ekpi.getKeyPair(password);
-        switch (derEncodable) {
-            case PrivateKey ignored ->
-                throw new AssertionError("PrivateKey returned.");
-            case KeyPair kp -> {
-                if (!Arrays.equals(priKey.getEncoded(),
-                    kp.getPrivate().getEncoded())) {
-                    throw new AssertionError("didn't match with expected.");
-                }
-                System.out.println("Got KeyPair:  Pass");
-            }
-            default ->
-                throw new AssertionError(derEncodable.getClass().getName() +
-                    " returned.");
+        KeyPair kp = ekpi.getKeyPair(password);
+        if (!Arrays.equals(priKey.getEncoded(),
+            kp.getPrivate().getEncoded())) {
+            throw new AssertionError("didn't match with expected.");
         }
+        System.out.println("Got KeyPair:  Pass");
+
         // Test getKey(key, provider) provider null
         System.out.println("Testing getKeyPair(key, provider)");
-        derEncodable = ekpi.getKeyPair(key, null);
-        switch (derEncodable) {
-            case PrivateKey ignored ->
-                throw new AssertionError("PrivateKey returned.");
-            case KeyPair kp -> {
-                if (!Arrays.equals(priKey.getEncoded(),
-                    kp.getPrivate().getEncoded())) {
-                    throw new AssertionError("didn't match with expected.");
-                }
-                System.out.println("Got KeyPair:  Pass");
-            }
-            default ->
-                throw new AssertionError(derEncodable.getClass().getName() +
-                    " returned.");
+        kp = ekpi.getKeyPair(key, p);
+        if (!Arrays.equals(priKey.getEncoded(),
+            kp.getPrivate().getEncoded())) {
+            throw new AssertionError("didn't match with expected.");
         }
+        System.out.println("Got KeyPair:  Pass");
     }
 }

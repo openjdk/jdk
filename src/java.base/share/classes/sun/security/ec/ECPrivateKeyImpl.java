@@ -234,7 +234,6 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {

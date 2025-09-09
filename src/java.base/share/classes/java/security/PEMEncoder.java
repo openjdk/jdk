@@ -283,7 +283,7 @@ public final class PEMEncoder {
      * privateKeyEncoding will be zeroed when the method returns
      */
     private String buildKey(byte[] publicEncoding, byte[] privateEncoding) {
-        if (privateEncoding == null && publicEncoding == null) {
+        if (publicEncoding == null && privateEncoding == null) {
             throw new IllegalArgumentException("No encoded data given by the " +
                 "DEREncodable.");
         }
@@ -330,15 +330,15 @@ public final class PEMEncoder {
                 if (publicEncoding == null) {
                     encoding = privateEncoding;
                 } else {
-                    encoding = new PKCS8Key(publicEncoding, privateEncoding).
-                        generateEncoding();
+                    encoding = PKCS8Key.getEncoded(publicEncoding,
+                        privateEncoding);
                     // The public key is part of the private encoding.
                     publicEncoding = null;
                 }
                 privateEncoding = EncryptedPrivateKeyInfo.encryptKey(
                     new PKCS8EncodedKeySpec(encoding), key, null, null, null,
                     null).getEncoded();
-            } catch (IOException | InvalidKeyException e) {
+            } catch (IOException e) {
                 throw new IllegalArgumentException("Error while encoding", e);
             } finally {
                 if (encoding != null) {

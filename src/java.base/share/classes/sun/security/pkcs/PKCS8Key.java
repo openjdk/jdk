@@ -330,7 +330,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         return encodedKey;
     }
 
-    public byte[] generateEncoding() throws IOException {
+    private byte[] generateEncoding() throws IOException {
         DerOutputStream out = new DerOutputStream();
         out.putInteger(version);
         algid.encode(out);
