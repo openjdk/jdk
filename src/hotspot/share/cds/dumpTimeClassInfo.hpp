@@ -25,10 +25,10 @@
 #ifndef SHARE_CDS_DUMPTIMECLASSINFO_HPP
 #define SHARE_CDS_DUMPTIMECLASSINFO_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
@@ -231,7 +231,7 @@ template <typename T>
 inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   if (CDSConfig::is_dumping_static_archive()) {
     // Deterministic archive contents
-    uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
+    uintx delta = k->name() - AOTMetaspace::symbol_rs_base();
     return primitive_hash<uintx>(delta);
   } else {
     // Deterministic archive is not possible because classes can be loaded
