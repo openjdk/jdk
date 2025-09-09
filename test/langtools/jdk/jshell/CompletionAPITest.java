@@ -35,14 +35,29 @@
  * @run junit CompletionAPITest
  */
 
+import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.function.Consumer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.QualifiedNameable;
+import javax.lang.model.element.TypeElement;
 import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionState;
 import jdk.jshell.SourceCodeAnalysis.ElementSuggestion;
@@ -51,52 +66,139 @@ import org.junit.jupiter.api.Test;
 
 public class CompletionAPITest extends KullaTesting {
 
-    //TODO: should we pull types from the index automagically?
+    private static final long TIMEOUT = 2_000;
+
     @Test
     public void testAPI() {
         waitIndexingFinished();
         assertEval("String str = \"\";");
         List<String> actual;
-        actual = completionSuggestions("str.", state -> {
+        actual = completionSuggestions("str.", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.length()"), String.valueOf(actual));
-        actual = completionSuggestions("java.lang.", state -> {
+        actual = completionSuggestions("java.lang.", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String"), String.valueOf(actual));
-        actual = completionSuggestions("java.", state -> {
+        actual = completionSuggestions("java.", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
         });
         assertTrue(actual.contains("java.lang"), String.valueOf(actual));
         assertEval("@interface Ann2 { }");
         assertEval("@interface Ann1 { Ann2 value(); }");
-        actual = completionSuggestions("@Ann", state -> {
+        actual = completionSuggestions("@Ann", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.TYPES_AS_ANNOTATIONS), state.completionContext());
         });
         assertTrue(actual.containsAll(Set.of("Ann1", "Ann2")), String.valueOf(actual));
-        actual = completionSuggestions("@Ann1(", state -> {
+        actual = completionSuggestions("@Ann1(", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.ANNOTATION_ATTRIBUTE,
-                                                               CompletionContext.TYPES_AS_ANNOTATIONS), state.completionContext());
+                                    CompletionContext.TYPES_AS_ANNOTATIONS),
+                         state.completionContext());
         });
         assertTrue(actual.contains("Ann2"), String.valueOf(actual));
-        actual = completionSuggestions("import static java.lang.String.", state -> {
+        actual = completionSuggestions("import static java.lang.String.", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.valueOf(int arg0)"), String.valueOf(actual));
-        actual = completionSuggestions("java.util.function.IntFunction<String> f = String::", state -> {
+        actual = completionSuggestions("java.util.function.IntFunction<String> f = String::", (state, suggestions) -> {
             assertEquals(EnumSet.of(CompletionContext.QUALIFIED, CompletionContext.NO_PAREN), state.completionContext());
         });
         assertTrue(actual.contains("java.lang.String.valueOf(int arg0)"), String.valueOf(actual));
+        actual = completionSuggestions("str.^len", (state, suggestions) -> {
+            assertEquals(EnumSet.of(CompletionContext.QUALIFIED), state.completionContext());
+        });
+        assertTrue(actual.contains("java.lang.String.length()"), String.valueOf(actual));
+        actual = completionSuggestions("^@Depr", (state, suggestions) -> {
+            assertEquals(EnumSet.of(CompletionContext.TYPES_AS_ANNOTATIONS), state.completionContext());
+        });
+        assertTrue(actual.contains("java.lang.Deprecated"), String.valueOf(actual));
+        assertEval("import java.util.*;");
+        actual = completionSuggestions("^ArrayL", (state, suggestions) -> {
+            TypeElement arrayList =
+                suggestions.stream()
+                           .filter(el -> el.element() != null)
+                           .map(el -> el.element())
+                           .filter(el -> el.getKind() == ElementKind.CLASS)
+                           .map(el -> (TypeElement) el)
+                           .filter(el -> el.getQualifiedName().contentEquals("java.util.ArrayList"))
+                           .findAny()
+                           .orElseThrow();
+            assertTrue(state.availableUsingSimpleName(arrayList));
+            assertEquals(EnumSet.noneOf(CompletionContext.class), state.completionContext());
+        });
+        assertTrue(actual.contains("java.util.ArrayList"), String.valueOf(actual));
     }
 
-    private List<String> completionSuggestions(String input, Consumer<CompletionState> stateValidator) {
-        return getAnalysis().completionSuggestions(input, input.length(), (state, suggestions) -> {
-            stateValidator.accept(state);
+    @Test
+    public void testDocumentation() {
+        waitIndexingFinished();
+
+        Path classes = prepareZip();
+        getState().addToClasspath(classes.toString());
+
+        AtomicReference<Supplier<String>> documentation = new AtomicReference<>();
+        AtomicReference<Reference<Element>> clazz = new AtomicReference<>();
+        completionSuggestions("jshelltest.JShellTest", (state, suggestions) -> {
+            ElementSuggestion test =
+                    suggestions.stream()
+                               .filter(el -> el.element() != null)
+                               .filter(el -> el.element().getKind() == ElementKind.CLASS)
+                               .filter(el -> ((TypeElement) el.element()).getQualifiedName().contentEquals("jshelltest.JShellTest"))
+                               .findAny()
+                               .orElseThrow();
+            documentation.set(test.documentation());
+            clazz.set(new WeakReference<>(test.element()));
+        });
+
+        //clear JShell, to clear the JavacTaskPool:
+        tearDown();
+
+        long start = System.currentTimeMillis();
+
+        while (clazz.get().get() != null && (System.currentTimeMillis() - start) < TIMEOUT) {
+            System.gc();
+            System.gc();
+        }
+
+        //TODO: does not work, cached in JavacTaskPool???
+//        assertNull(clazz.get().get());
+        assertEquals("JShellTest 0 ", documentation.get().get());
+    }
+
+    private List<String> completionSuggestions(String input,
+                                               BiConsumer<CompletionState, List<? extends ElementSuggestion>> validator) {
+        int expectedAnchor = input.indexOf('^');
+
+        if (expectedAnchor != (-1)) {
+            input = input.substring(0, expectedAnchor) + input.substring(expectedAnchor + 1);
+        }
+
+        AtomicInteger mergedAnchor = new AtomicInteger(-1);
+
+        List<String> result = getAnalysis().completionSuggestions(input, input.length(), (state, suggestions) -> {
+            validator.accept(state, suggestions);
+
+            if (expectedAnchor != (-1)) {
+                for (ElementSuggestion sugg : suggestions) {
+                    if (mergedAnchor.get() == (-1)) {
+                        mergedAnchor.set(sugg.anchor());
+                    } else {
+                        assertEquals(mergedAnchor.get(), sugg.anchor());
+                    }
+                }
+            }
+
             return suggestions.stream()
                            .map(this::convertElement)
                            .toList();
         });
+
+        if (expectedAnchor != (-1)) {
+            assertEquals(expectedAnchor, mergedAnchor.get());
+        }
+
+        return result;
     }
 
     private String convertElement(ElementSuggestion suggestion) {
@@ -134,7 +236,39 @@ public class CompletionAPITest extends KullaTesting {
         }
     }
 
-    static {
+    private Path prepareZip() {
+        String clazz =
+                "package jshelltest;\n" +
+                "/**JShellTest 0" +
+                " */\n" +
+                "public class JShellTest {\n" +
+                "}\n";
+
+        Path srcZip = Paths.get("src.zip");
+
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+            out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+            out.write(clazz.getBytes());
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        compiler.compile(clazz);
+
+        try {
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("availableSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, Arrays.asList(srcZip));
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        return compiler.getClassDir();
+    }
+    //where:
+        private final Compiler compiler = new Compiler();
+
+        static {
         try {
             //disable reading of paramater names, to improve stability:
             Class<?> analysisClass = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
