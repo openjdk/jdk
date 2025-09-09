@@ -22,298 +22,139 @@
  *
  */
 
-#include "metaprogramming/enableIf.hpp"
 #include "opto/graphInvariants.hpp"
 #include "opto/rootnode.hpp"
 
 #ifndef PRODUCT
-constexpr int LocalGraphInvariant::OutputStep;
 
-void LocalGraphInvariant::LazyReachableCFGNodes::fill() {
-  precond(_live_nodes.size() == 0);
+void LocalGraphInvariant::LazyReachableCFGNodes::compute() {
+  precond(_reachable_nodes.size() == 0);
 
   // We should have at least root, so we are sure it's not filled yet.
-  _live_nodes.push(Compile::current()->root());
-  for (uint i = 0; i < _live_nodes.size(); ++i) {
-    Node* n = _live_nodes.at(i);
+  _reachable_nodes.push(Compile::current()->root());
+  for (uint i = 0; i < _reachable_nodes.size(); ++i) {
+    Node* n = _reachable_nodes.at(i);
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* out = n->fast_out(j);
       if (out->is_CFG()) {
-        _live_nodes.push(out);
+        _reachable_nodes.push(out);
       }
     }
   }
 
-  postcond(_live_nodes.size() > 0);
+  postcond(_reachable_nodes.size() > 0);
 }
 
 bool LocalGraphInvariant::LazyReachableCFGNodes::is_node_dead(const Node* n) {
-  if (_live_nodes.size() == 0) {
-    fill();
+  if (_reachable_nodes.size() == 0) {
+    compute();
   }
-  assert(_live_nodes.size() > 0, "filling failed");
-  return !_live_nodes.member(n);
+  assert(_reachable_nodes.size() > 0, "filling failed");
+  return !_reachable_nodes.member(n);
 }
 
-/* A base class for checks expressed as data. Patterns are supposed to be local, centered around one node
- * and compositional to express complex structures from simple properties.
- * For instance, we have a pattern for saying "the first input of the center match P" where P is another
- * Pattern. We end up with trees of patterns matching the graph.
- */
-struct Pattern : ResourceObj {
-  virtual bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream&) const = 0;
-};
-
-/* This pattern just accepts any node. This is convenient mostly as leaves in a pattern tree.
- * For instance `AtSingleOutputOfType(..., new TruePattern())` will make sure there is
- * indeed a single output of the given type, but won't enforce anything on the said output.
- */
-struct TruePattern : Pattern {
-  bool check(const Node*, Node_List&, GrowableArray<int>&, stringStream&) const override {
-    return true;
-  }
-};
-
-/* This is semantically equivalent to `TruePattern` but will set the given reference to the node
- * the pattern is matched against. This is useful to perform additional checks that would
- * otherwise be hard or impossible to express as local patterns.
- *
- * For instance, one could write
- * Node* first, second;
- * And::make(
- *   new AtInput(0, new Bind(first)),
- *   new AtInput(1, new Bind(second))
- * );
- * [...] // run the pattern
- * if (first == second) { // checking whether they are the same node
- *
- * Bindings are only honored if the overall pattern succeeds. Otherwise, don't assume anything reasonable
- * has been set. Anyway, you don't need it: you already know it doesn't have the right shape.
- */
-struct Bind : Pattern {
-  explicit Bind(const Node*& binding) : _binding(binding) {}
-  bool check(const Node* center, Node_List&, GrowableArray<int>&, stringStream&) const override {
-    _binding = center;
-    return true;
-  }
-
-private:
-  const Node*& _binding;
-};
-
-/* A more type-safe version of `Bind` mostly to use with NodeClassIsAndBind macro defined later
- */
-template <typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
-struct TypedBind : Pattern {
-  explicit TypedBind(const N*& binding) : _binding(binding) {}
-  bool check(const Node* center, Node_List&, GrowableArray<int>&, stringStream&) const override {
-    _binding = static_cast<const N*>(center);
-    return true;
-  }
-
-private:
-  const N*& _binding;
-};
-
-/* Matches multiple patterns at the same node.
- *
- * Evaluation order is guaranteed to be left-to-right. In particular, check a node has enough
- * inputs before checking a property of a given input. This allows better reporting. E.g. if
- * you know a node has 3 inputs and want patterns to be applied to each input, it would look like
- * And::make(
- *    new HasExactlyNInputs(3),
- *    new AtInput(0, P0),
- *    new AtInput(1, P1),
- *    new AtInput(2, P2),
- * )
- * If we relied on `AtInput` to report too few inputs, it would give confusing error messages as
- * the first `AtInput` can only know it expects at least one input, and seeing the message
- * "Found 0 inputs, expected at least 1" is not very helpful, potentially confusing as it doesn't
- * state what is actually expected: 3 inputs.
- * It also is not able to express that a node has exactly a given number of inputs, and it is a
- * significant difference whether we expect AT LEAST 3 inputs, or EXACTLY 3 inputs. Let's make
- * things precise.
- */
-struct And : Pattern {
-private:
-  GrowableArray<Pattern*> _checks;
-  template <typename... PP>
-  static void make_helper(And* a, Pattern* pattern, PP... others) {
-    a->_checks.push(pattern);
-    make_helper(a, others...);
-  }
-  static void make_helper(And*) {}
-
-public:
-  template <typename... PP>
-  static And* make(PP... patterns) {
-    And* andd = new And();
-    make_helper(andd, patterns...);
-    return andd;
-  }
-
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    for (int i = 0; i < _checks.length(); ++i) {
-      if (!_checks.at(i)->check(center, steps, path, ss)) {
-        return false;
-      }
-    }
-    return true;
-  }
-};
-
-void make_pretty_list_of_inputs(const Node* center, stringStream& ss) {
-  for (uint i = 0; i < center->req(); ++i) {
-    Node* in = center->in(i);
-    ss.print("  %d: ", i);
-    if (in == nullptr) {
-      ss.print_cr("nullptr");
-    } else {
-      in->dump("\n", false, &ss);
-    }
-  }
-}
-
-struct HasExactlyNInputs : Pattern {
-  explicit HasExactlyNInputs(uint expect_req) : _expect_req(expect_req) {}
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (center->req() != _expect_req) {
-      ss.print_cr("Unexpected number of input. Expected: %d. Found: %d", _expect_req, center->req());
-      make_pretty_list_of_inputs(center, ss);
-      return false;
-    }
-    return true;
-  }
-  const uint _expect_req;
-};
-
-struct HasAtLeastNInputs : Pattern {
-  explicit HasAtLeastNInputs(uint expect_req) : _expect_req(expect_req) {}
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (center->req() < _expect_req) {
-      ss.print_cr("Too small number of input. Expected: %d. Found: %d", _expect_req, center->req());
-      make_pretty_list_of_inputs(center, ss);
-      return false;
-    }
-    return true;
-  }
-  const uint _expect_req;
-};
-
-/* Check that a given pattern applies at the given input of the center.
- *
- * As explained above, it doesn't check (nicely) that inputs are in sufficient numbers.
- * Use HasExactlyNInputs or HasAtLeastNInputs for that.
- */
-struct AtInput : Pattern {
-  AtInput(uint which_input, const Pattern* pattern) : _which_input(which_input), _pattern(pattern) {}
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    assert(_which_input < center->req(), "Input number is out of range");
-    if (center->in(_which_input) == nullptr) {
-      ss.print_cr("Input at index %d is nullptr.", _which_input);
-      return false;
-    }
-    bool result = _pattern->check(center->in(_which_input), steps, path, ss);
-    if (!result) {
-      steps.push(center->in(_which_input));
-      path.push(static_cast<int>(_which_input));
-    }
-    return result;
-  }
-  const uint _which_input;
-  const Pattern* const _pattern;
-};
-
-/* Check a node has the right type (as which C++ class, not as abstract value). Typically used with
- * is_XXXNode methods.
- */
-struct NodeClass : Pattern {
-  explicit NodeClass(bool (Node::*type_check)() const) : _type_check(type_check) {}
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (!(center->*_type_check)()) {
-      ss.print_cr("Unexpected type: %s.", center->Name());
-      return false;
-    }
-    return true;
-  }
-  bool (Node::*_type_check)() const;
-};
-
-
-/* To check the kind of a node and bind it to a variable of the right type.
- * For instance:
- *   const RegionNode* r;
- *   NodeClassIsAndBind(Region, r)
- */
-#define NodeClassIsAndBind(node_type, binding)  \
-  And::make(                                    \
-      new NodeClass(&Node::is_ ## node_type),   \
-      new TypedBind<node_type ## Node>(binding) \
-  )
-
-struct HasNOutputs : Pattern {
-  explicit HasNOutputs(uint expect_outcnt) : _expect_outcnt(expect_outcnt) {}
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (center->outcnt() != _expect_outcnt) {
-      ss.print_cr("Unexpected number of outputs. Expected: %d, found: %d.", _expect_outcnt, center->outcnt());
-      for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
-        Node* out = center->fast_out(i);
-        ss.print("  ");
-        out->dump("\n", false, &ss);
-      }
-      return false;
-    }
-    return true;
-  }
-  const uint _expect_outcnt;
-};
-
-/* Given a is_XXXNode method pointer and a pattern P, this pattern checks that
- * - only one output has the given type XXX
- * - this one output matches P.
- *
- * Since outputs are not numbered, this is a convenient way to walk on the graph in the Def-Use direction.
- */
-struct AtSingleOutputOfType : Pattern {
-  AtSingleOutputOfType(bool (Node::*type_check)() const, const Pattern* pattern) : _type_check(type_check), _pattern(pattern) {
-  }
-
-  bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    Node_List outputs_of_correct_type;
-    for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
-      Node* out = center->fast_out(i);
-      if ((out->*_type_check)()) {
-        outputs_of_correct_type.push(out);
-      }
-    }
-    if (outputs_of_correct_type.size() != 1) {
-      ss.print_cr("Non-unique output of expected type. Found: %d.", outputs_of_correct_type.size());
-      for (uint i = 0; i < outputs_of_correct_type.size(); ++i) {
-        outputs_of_correct_type.at(i)->dump("\n", false, &ss);
-      }
-      return false;
-    }
-    bool result = _pattern->check(outputs_of_correct_type.at(0), steps, path, ss);
-    if (!result) {
-      steps.push(outputs_of_correct_type.at(0));
-      path.push(LocalGraphInvariant::OutputStep);
-    }
-    return result;
-  }
-  bool (Node::*_type_check)() const;
-  const Pattern* const _pattern;
-};
-
-/* A LocalGraphInvariant that mostly use a Pattern for checking.
- *
- * Can still override `check` to do more.
+/* A base for local invariants that mostly work using a pattern.
  */
 struct PatternBasedCheck : LocalGraphInvariant {
-  const Pattern* const _pattern;
-  explicit PatternBasedCheck(const Pattern* pattern) : _pattern(pattern) {}
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    return _pattern->check(center, steps, path, ss) ? CheckResult::VALID : CheckResult::FAILED;
+  explicit PatternBasedCheck(const char* name, const Pattern* pattern) : _name(name), _pattern(pattern) {}
+
+  const char* name() const override {
+    return _name;
   }
+
+  bool run_pattern(const Node* center, PathInGraph& path, stringStream& ss) const {
+    return _pattern->match(center, path, ss);
+  }
+
+private:
+  const char* _name;
+  const Pattern* const _pattern;
+};
+
+struct CheckHelper {
+  static CheckHelper for_reachable_center(const PatternBasedCheck* check, const Node* center, LocalGraphInvariant::LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) {
+    return CheckHelper(check, center, &reachable_cfg_nodes, path, ss);
+  }
+  static CheckHelper for_any_center(const PatternBasedCheck* check, const Node* center, PathInGraph& path, stringStream& ss) {
+    return CheckHelper(check, center, nullptr, path, ss);
+  }
+  CheckHelper& applies_if_center(bool (Node::*type_check)() const) {
+    if (!(_center->*type_check)()) {
+      _result = CheckHelperResult::NOT_APPLICABLE;
+    }
+    return *this;
+  }
+  template <typename F>
+  CheckHelper& applies_if_center(F f) {
+    if (!f(*_center)) {
+      _result = CheckHelperResult::NOT_APPLICABLE;
+    }
+    return *this;
+  }
+  CheckHelper& run_pattern() {
+    if (_result == CheckHelperResult::UNKNOWN) {
+      if (_check.run_pattern(_center, _path, _ss)) {
+        _result = CheckHelperResult::VALID;
+      } else {
+        if (_reachable_cfg_nodes == nullptr) {
+          _result = CheckHelperResult::FAILED;
+        } else if (_reachable_cfg_nodes->is_node_dead(_center)) {
+          _result = CheckHelperResult::VALID;
+        } else {
+          _result = CheckHelperResult::FAILED;
+        }
+      }
+    }
+    return *this;
+  }
+  template <typename Fun>
+  CheckHelper& on_success_require(Fun fun) {
+    if (_result == CheckHelperResult::VALID) {
+      if (!fun()) {
+        _result = CheckHelperResult::FAILED;
+      }
+    }
+    return *this;
+  }
+  LocalGraphInvariant::CheckResult to_result() const {
+    switch (_result) {
+    case CheckHelperResult::VALID:
+      return LocalGraphInvariant::CheckResult::VALID;
+    case CheckHelperResult::FAILED:
+      return LocalGraphInvariant::CheckResult::FAILED;
+    case CheckHelperResult::NOT_APPLICABLE:
+      return LocalGraphInvariant::CheckResult::NOT_APPLICABLE;
+    case CheckHelperResult::UNKNOWN:
+      assert(false, "Should have decided before!");
+      return LocalGraphInvariant::CheckResult::FAILED;
+    default:
+      ShouldNotReachHere();
+      return LocalGraphInvariant::CheckResult::FAILED;
+    }
+  }
+
+private:
+  CheckHelper(const PatternBasedCheck* check, const Node* center, LocalGraphInvariant::LazyReachableCFGNodes* reachable_cfg_nodes, PathInGraph& path, stringStream& ss)
+      : _check(*check),
+        _center(center),
+        _reachable_cfg_nodes(reachable_cfg_nodes),
+        _path(path),
+        _ss(ss) {}
+
+  const PatternBasedCheck& _check;
+  const Node* _center;
+  LocalGraphInvariant::LazyReachableCFGNodes* _reachable_cfg_nodes;
+  PathInGraph& _path;
+  stringStream& _ss;
+
+  enum class CheckHelperResult {
+    VALID,
+    FAILED,
+    NOT_APPLICABLE,
+    UNKNOWN,
+  };
+
+  CheckHelperResult _result = CheckHelperResult::UNKNOWN;
 };
 
 /* Checks that If Nodes have exactly 2 outputs: IfTrue and IfFalse
@@ -321,59 +162,49 @@ struct PatternBasedCheck : LocalGraphInvariant {
 struct IfProjections : PatternBasedCheck {
   IfProjections()
       : PatternBasedCheck(
+            "IfProjections",
             And::make(
                 new HasNOutputs(2),
                 new AtSingleOutputOfType(&Node::is_IfTrue, new TruePattern()),
                 new AtSingleOutputOfType(&Node::is_IfFalse, new TruePattern()))) {
   }
-  const char* name() const override {
-    return "IfProjections";
-  }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (!center->is_If()) {
-      return CheckResult::NOT_APPLICABLE;
-    }
-    CheckResult r = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
-    if (r == CheckResult::FAILED) {
-      if (reachable_cfg_nodes.is_node_dead(center)) {
-        // That's ok for dead nodes right now. It might be too expensive to collect for IGVN, but it will be removed in loop opts.
-        ss.reset();
-        return CheckResult::VALID;
-      }
-    }
-    return r;
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
+    return CheckHelper::for_reachable_center(this, center, reachable_cfg_nodes, path, ss)
+        .applies_if_center(&Node::is_If)
+        .run_pattern()
+        .to_result();
   }
 };
 
 /* Check that Phi has a Region as first input, and consistent arity
  */
 struct PhiArity : PatternBasedCheck {
-  const RegionNode* region_node = nullptr;
+private:
+  const RegionNode* _region_node = nullptr;
+
+public:
   PhiArity()
       : PatternBasedCheck(
+            "PhiArity",
             And::make(
-                new HasAtLeastNInputs(1),
+                new HasAtLeastNInputs(2),
                 new AtInput(
                     0,
-                    NodeClassIsAndBind(Region, region_node)))) {
+                    NodeClassIsAndBind(Region, _region_node)))) {
   }
-  const char* name() const override {
-    return "PhiArity";
-  }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (!center->is_Phi()) {
-      return CheckResult::NOT_APPLICABLE;
-    }
-    CheckResult result = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
-    if (result != CheckResult::VALID) {
-      return result;
-    }
-    assert(region_node != nullptr, "sanity");
-    if (region_node->req() != center->req()) {
-      ss.print_cr("Phi nodes must have the same arity as their Region node. Phi arity: %d; Region arity: %d.", center->req(), region_node->req());
-      return CheckResult::FAILED;
-    }
-    return CheckResult::VALID;
+  CheckResult check(const Node* center, LazyReachableCFGNodes&, PathInGraph& path, stringStream& ss) const override {
+    return CheckHelper::for_any_center(this, center, path, ss)
+        .applies_if_center(&Node::is_Phi)
+        .run_pattern()
+        .on_success_require([&]() -> bool {
+          assert(_region_node != nullptr, "sanity");
+          if (_region_node->req() != center->req()) {
+            ss.print_cr("Phi nodes must have the same arity as their Region node. Phi arity: %d; Region arity: %d.", center->req(), _region_node->req());
+            return false;
+          }
+          return true;
+        })
+        .to_result();
   }
 };
 
@@ -383,7 +214,7 @@ struct ControlSuccessor : LocalGraphInvariant {
   const char* name() const override {
     return "ControlSuccessor";
   }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
     if (!center->is_CFG()) {
       return CheckResult::NOT_APPLICABLE;
     }
@@ -397,7 +228,7 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     }
 
-    uint cfg_out = ctrl_succ.size();
+    const uint cfg_out = ctrl_succ.size();
 
     if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region() || center->is_NeverBranch()) {
       if (cfg_out != 2) {
@@ -406,32 +237,23 @@ struct ControlSuccessor : LocalGraphInvariant {
           return CheckResult::VALID;
         }
         ss.print_cr("%s node must have exactly two control successors. Found %d.", center->Name(), cfg_out);
-        for (uint i = 0; i < ctrl_succ.size(); ++i) {
-          ss.print("  ");
-          ctrl_succ.at(i)->dump("\n", false, &ss);
-        }
+        print_node_list(ctrl_succ, ss);
         return CheckResult::FAILED;
       }
     } else if (center->Opcode() == Op_SafePoint) {
       if (cfg_out < 1 || cfg_out > 2) {
         ss.print_cr("%s node must have one or two control successors. Found %d.", center->Name(), cfg_out);
-        for (uint i = 0; i < ctrl_succ.size(); ++i) {
-          ss.print("  ");
-          ctrl_succ.at(i)->dump("\n", false, &ss);
-        }
+        print_node_list(ctrl_succ, ss);
         return CheckResult::FAILED;
       }
       if (cfg_out == 2) {
         if (!ctrl_succ.at(0)->is_Root() && !ctrl_succ.at(1)->is_Root()) {
           ss.print_cr("One of the two control outputs of a %s node must be Root.", center->Name());
-          for (uint i = 0; i < ctrl_succ.size(); ++i) {
-            ss.print("  ");
-            ctrl_succ.at(i)->dump("\n", false, &ss);
-          }
+          print_node_list(ctrl_succ, ss);
           return CheckResult::FAILED;
         }
       }
-    } else if (center->is_Catch() || center->is_Jump()) {
+    } else if (center->is_PCTable()) {
       if (cfg_out < 1) {
         ss.print_cr("%s node must have at least one control successors. Found %d.", center->Name(), cfg_out);
         return CheckResult::FAILED;
@@ -439,25 +261,30 @@ struct ControlSuccessor : LocalGraphInvariant {
     } else {
       if (cfg_out != 1) {
         ss.print_cr("Ordinary CFG nodes must have exactly one successor. Found %d.", cfg_out);
-        for (uint i = 0; i < ctrl_succ.size(); ++i) {
-          ss.print("  ");
-          ctrl_succ.at(i)->dump("\n", false, &ss);
-        }
+        print_node_list(ctrl_succ, ss);
         return CheckResult::FAILED;
       }
     }
 
     return CheckResult::VALID;
   }
+
+private:
+  static void print_node_list(const Node_List& ctrl_succ, stringStream& ss) {
+    for (uint i = 0; i < ctrl_succ.size(); ++i) {
+      ss.print("  ");
+      ctrl_succ.at(i)->dump("\n", false, &ss);
+    }
+  }
 };
 
-/* Checks that Region Start and Root nodes' first input is a self loop, except for copy regions, which then must have only one non null input.
+/* Checks that Region, Start and Root nodes' first input is a self loop, except for copy regions, which then must have only one non null input.
  */
 struct SelfLoopInvariant : LocalGraphInvariant {
   const char* name() const override {
     return "RegionSelfLoop";
   }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
     if (!center->is_Region() && !center->is_Start() && !center->is_Root()) {
       return CheckResult::NOT_APPLICABLE;
     }
@@ -484,6 +311,7 @@ struct SelfLoopInvariant : LocalGraphInvariant {
       }
       if (non_null_inputs_count != 1) {
         // Should be a rare case, hence the second (but more expensive) traversal.
+        ResourceMark rm;
         Node_List non_null_inputs;
         for (uint i = 0; i < center->req(); i++) {
           if (center->in(i) != nullptr) {
@@ -504,11 +332,15 @@ struct SelfLoopInvariant : LocalGraphInvariant {
   }
 };
 
-// CountedLoopEnd -> IfTrue -> CountedLoop
+// CountedLoopEnd -> IfTrue -> CountedLoop[center]
 struct CountedLoopInvariants : PatternBasedCheck {
-  const BaseCountedLoopEndNode* counted_loop_end = nullptr;
+private:
+  const BaseCountedLoopEndNode* _counted_loop_end = nullptr;
+
+public:
   CountedLoopInvariants()
       : PatternBasedCheck(
+            "CountedLoopInvariants",
             And::make(
                 new HasExactlyNInputs(3),
                 new AtInput(
@@ -518,41 +350,43 @@ struct CountedLoopInvariants : PatternBasedCheck {
                         new HasExactlyNInputs(1),
                         new AtInput(
                             0,
-                            NodeClassIsAndBind(BaseCountedLoopEnd, counted_loop_end)))))) {}
-  const char* name() const override {
-    return "CountedLoopInvariants";
-  }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (!center->is_CountedLoop() && !center->is_LongCountedLoop()) {
-      return CheckResult::NOT_APPLICABLE;
-    }
-
-    CheckResult result = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
-    if (result != CheckResult::VALID) {
-      return result;
-    }
-    assert(counted_loop_end != nullptr, "sanity");
-    if (center->is_LongCountedLoop()) {
-      if (!counted_loop_end->is_LongCountedLoopEnd()) {
-        assert(counted_loop_end->is_CountedLoopEnd(), "Update the error message or add cases");
-        ss.print_cr("A CountedLoopEnd is the backedge of a LongCountedLoop.");
-        return CheckResult::FAILED;
-      }
-    } else {
-      if (!counted_loop_end->is_CountedLoopEnd()) {
-        assert(counted_loop_end->is_LongCountedLoopEnd(), "Update the error message or add cases");
-        ss.print_cr("A LongCountedLoopEnd is the backedge of a CountedLoop.");
-        return CheckResult::FAILED;
-      }
-    }
-    return CheckResult::VALID;
+                            NodeClassIsAndBind(BaseCountedLoopEnd, _counted_loop_end)))))) {}
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
+    return CheckHelper::for_any_center(this, center, path, ss)
+        .applies_if_center(&Node::is_BaseCountedLoop)
+        .run_pattern()
+        .on_success_require([&]() {
+          assert(_counted_loop_end != nullptr, "sanity");
+          if (center->is_LongCountedLoop()) {
+            if (!_counted_loop_end->is_LongCountedLoopEnd()) {
+              assert(_counted_loop_end->is_CountedLoopEnd(), "Update the error message or add cases");
+              ss.print_cr("A CountedLoopEnd is the backedge of a LongCountedLoop.");
+              return false;
+            }
+          } else {
+            if (!_counted_loop_end->is_CountedLoopEnd()) {
+              assert(_counted_loop_end->is_LongCountedLoopEnd(), "Update the error message or add cases");
+              ss.print_cr("A LongCountedLoopEnd is the backedge of a CountedLoop.");
+              return false;
+            }
+          }
+          return true;
+        })
+        .to_result();
   }
 };
 
 // CountedLoopEnd -> IfFalse -> SafePoint -> OuterStripMinedLoopEnd[center] -> IfTrue -> OuterStripMinedLoop -> CountedLoop
+//               \-> IfTrue  ->                                                                              /
 struct OuterStripMinedLoopInvariants : PatternBasedCheck {
+private:
+  const CountedLoopNode* _counted_loop_from_outer_strip_mined_loop;
+  const CountedLoopNode* _counted_loop_from_backedge;
+
+public:
   OuterStripMinedLoopInvariants()
       : PatternBasedCheck(
+            "OuterStripMinedLoopInvariants",
             And::make(
                 new HasExactlyNInputs(2),
                 new AtInput(
@@ -567,23 +401,38 @@ struct OuterStripMinedLoopInvariants : PatternBasedCheck {
                                 new HasAtLeastNInputs(1),
                                 new AtInput(
                                     0,
-                                    new NodeClass(&Node::is_CountedLoopEnd)))))),
+                                    And::make(
+                                        new NodeClass(&Node::is_CountedLoopEnd),
+                                        new AtSingleOutputOfType(
+                                            &Node::is_IfTrue,
+                                            new AtSingleOutputOfType(
+                                                &Node::is_CountedLoop,
+                                                new TypedBind<CountedLoopNode>(_counted_loop_from_backedge))))))))),
                 new AtSingleOutputOfType(
                     &Node::is_IfTrue,
                     new AtSingleOutputOfType(
                         &Node::is_OuterStripMinedLoop,
                         new AtSingleOutputOfType(
                             &Node::is_CountedLoop,
-                            new TruePattern()))))) {}
-  const char* name() const override {
-    return "OuterStripMinedLoopInvariants";
-  }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
-    if (!center->is_OuterStripMinedLoopEnd()) {
-      return CheckResult::NOT_APPLICABLE;
-    }
-
-    return PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
+                            new TypedBind<CountedLoopNode>(_counted_loop_from_outer_strip_mined_loop)))))) {}
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
+    return CheckHelper::for_any_center(this, center, path, ss)
+        .applies_if_center(&Node::is_OuterStripMinedLoopEnd)
+        .run_pattern()
+        .on_success_require([&]() {
+          assert(_counted_loop_from_backedge != nullptr, "sanity");
+          assert(_counted_loop_from_outer_strip_mined_loop != nullptr, "sanity");
+          bool same_counted_loop = _counted_loop_from_backedge == _counted_loop_from_outer_strip_mined_loop;
+          if (!same_counted_loop) {
+            ss.print_cr("Found different counted loop from backedge and from output of OuterStripMinedLoop.");
+            ss.print_cr("From backedge:");
+            _counted_loop_from_backedge->dump("\n", false, &ss);
+            ss.print_cr("From OuterStripMinedLoop:");
+            _counted_loop_from_outer_strip_mined_loop->dump("\n", false, &ss);
+          }
+          return same_counted_loop;
+        })
+        .to_result();
   }
 };
 
@@ -591,7 +440,7 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
   const char* name() const override {
     return "MultiBranchNodeOut";
   }
-  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
     if (!center->is_MultiBranch()) {
       return CheckResult::NOT_APPLICABLE;
     }
@@ -620,35 +469,37 @@ GraphInvariantChecker* GraphInvariantChecker::make_default() {
   return checker;
 }
 
-void GraphInvariantChecker::print_path(const Node_List& steps, const GrowableArray<int>& path, stringStream& ss) {
-  const int path_len = path.length();
-  precond(steps.size() == static_cast<uint>(path_len) + 1);
-  if (path.is_empty()) {
+void GraphInvariantChecker::print_path(const PathInGraph& path, stringStream& ss) {
+  const GrowableArray<int>& relation_to_previous_node = path.relation_to_previous_node();
+  const int path_len = relation_to_previous_node.length();
+  const Node_List& nodes = path.nodes();
+  precond(nodes.size() == static_cast<uint>(path_len) + 1);
+  if (path_len == 0) {
     ss.print_cr("At center node");
-    steps.at(0)->dump("\n", false, &ss);
+    nodes.at(0)->dump("\n", false, &ss);
     return;
   }
   ss.print("At node\n   ");
-  steps.at(0)->dump("\n", false, &ss);
+  nodes.at(0)->dump("\n", false, &ss);
   ss.print_cr("  From path:");
   ss.print("    [center]");
-  steps.at(path_len)->dump("\n", false, &ss);
+  nodes.at(path_len)->dump("\n", false, &ss);
   for (int i = 0; i < path_len; ++i) {
-    if (path.at(path_len - i - 1) >= 0) {
+    if (relation_to_previous_node.at(path_len - i - 1) >= 0) {
       // It's an input
-      int input_nb = path.at(path_len - i - 1);
+      int input_nb = relation_to_previous_node.at(path_len - i - 1);
       if (input_nb <= 9) {
         ss.print(" ");
       }
       ss.print("     <-(%d)-", input_nb);
 
-    } else if (path.at(path_len - i - 1) == LocalGraphInvariant::OutputStep) {
+    } else if (relation_to_previous_node.at(path_len - i - 1) == PathInGraph::OutputStep) {
       // It's an output
       ss.print("         -->");
     } else {
       ss.print("         ???");
     }
-    steps.at(path_len - i - 1)->dump("\n", false, &ss);
+    nodes.at(path_len - i - 1)->dump("\n", false, &ss);
   }
 }
 
@@ -660,8 +511,6 @@ bool GraphInvariantChecker::run() const {
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(Compile::current()->root());
-  Node_List steps;
-  GrowableArray<int> path;
   stringStream ss;
   stringStream ss2;
   // Sometimes, we get weird structures in dead code that will be cleaned up later. It typically happens
@@ -684,15 +533,14 @@ bool GraphInvariantChecker::run() const {
     }
     uint failures = 0;
     for (int j = 0; j < _checks.length(); ++j) {
-      switch (_checks.at(j)->check(center, reachable_cfg_nodes, steps, path, ss2)) {
+      PathInGraph path;
+      switch (_checks.at(j)->check(center, reachable_cfg_nodes, path, ss2)) {
       case LocalGraphInvariant::CheckResult::FAILED:
         failures++;
-        steps.push(center);
-        print_path(steps, path, ss);
+        path.finalize(center);
+        print_path(path, ss);
         ss.print_cr("# %s:", _checks.at(j)->name());
         ss.print_cr("%s", ss2.base());
-        path.clear();
-        steps.clear();
         ss2.reset();
         break;
       case LocalGraphInvariant::CheckResult::NOT_APPLICABLE:
