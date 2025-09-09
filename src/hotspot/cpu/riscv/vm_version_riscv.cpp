@@ -58,6 +58,8 @@ void VM_Version::useRVA23U64Profile() {
 }
 
 void VM_Version::initialize() {
+  ResourceMark rm;
+
   common_initialize();
 #ifdef COMPILER2
   c2_initialize();
