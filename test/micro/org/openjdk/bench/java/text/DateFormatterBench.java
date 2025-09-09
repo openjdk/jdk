@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +39,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -51,25 +53,49 @@ import java.util.concurrent.TimeUnit;
 public class DateFormatterBench {
 
     private Date date;
-
     private Object objDate;
+    private String dateStr;
+    private String timeStr;
+
+    private DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
+    private DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.FULL, Locale.ENGLISH);
 
     @Setup
     public void setup() {
         date = new Date();
         objDate = new Date();
+        timeStr = timeFormat.format(date);
+        dateStr = dateFormat.format(date);
     }
 
-    private DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
+    @Benchmark
+    public String testTimeFormat() {
+        return timeFormat.format(date);
+    }
 
     @Benchmark
-    public String testFormatDate() {
+    public String testTimeFormatObject() {
+        return timeFormat.format(objDate);
+    }
+
+    @Benchmark
+    public String testDateFormat() {
         return dateFormat.format(date);
     }
 
     @Benchmark
-    public String testFormatObject() {
+    public String testDateFormatObject() {
         return dateFormat.format(objDate);
+    }
+
+    @Benchmark
+    public Date testDateParse() throws ParseException {
+        return dateFormat.parse(dateStr);
+    }
+
+    @Benchmark
+    public Date testTimeParse() throws ParseException {
+        return timeFormat.parse(timeStr);
     }
 
     public static void main(String... args) throws Exception {
