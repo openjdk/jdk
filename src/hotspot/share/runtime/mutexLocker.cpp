@@ -36,7 +36,6 @@
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
 Mutex*   NMethodState_lock            = nullptr;
-Mutex*   NMethodEntryBarrier_lock     = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
@@ -206,8 +205,6 @@ void assert_lock_strong(const Mutex* lock) {
 // Using Padded subclasses to prevent false sharing of these global monitors and mutexes.
 void mutex_init() {
   MUTEX_DEFN(tty_lock                        , PaddedMutex  , tty);      // allow to lock in VM
-
-  MUTEX_DEFN(NMethodEntryBarrier_lock        , PaddedMutex  , service-1);
 
   MUTEX_DEFN(STS_lock                        , PaddedMonitor, nosafepoint);
 
