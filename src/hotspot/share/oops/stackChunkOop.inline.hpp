@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,6 @@ void stackChunkOopDesc::do_barriers(const StackChunkFrameStream<frame_kind>& f, 
 
 template <typename OopT, class StackChunkLockStackClosureType>
 inline void stackChunkOopDesc::iterate_lockstack(StackChunkLockStackClosureType* closure) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "");
   int cnt = lockstack_size();
   intptr_t* lockstart_addr = start_address();
   for (int i = 0; i < cnt; i++) {

@@ -115,7 +115,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
-  assert(!hr->rem_set()->is_added_to_cset_group(), "Should have already uninstalled group remset");
+  assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
@@ -323,7 +323,10 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, _g1h->young_regions_cardset()->occupied());
+  size_t num_young_cards = _g1h->young_regions_cardset()->occupied();
+  _policy->record_card_rs_length(num_young_cards);
+
+  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, num_young_cards);
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
   double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
