@@ -117,8 +117,8 @@ Handle CDSProtectionDomain::get_package_name(Symbol* class_name, TRAPS) {
 
 PackageEntry* CDSProtectionDomain::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
   PackageEntry* pkg_entry = ik->package();
-  if (CDSConfig::is_using_full_module_graph() && ik->is_shared() && pkg_entry != nullptr) {
-    assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
+  if (CDSConfig::is_using_full_module_graph() && ik->in_aot_cache() && pkg_entry != nullptr) {
+    assert(AOTMetaspace::in_aot_cache(pkg_entry), "must be");
     assert(!ik->defined_by_other_loaders(), "unexpected archived package entry for an unregistered class");
     return pkg_entry;
   }
