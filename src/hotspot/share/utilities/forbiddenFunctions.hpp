@@ -38,6 +38,15 @@
 #include <stdlib.h>
 #endif
 
+// Workaround for noexcept functions in glibc when using clang.
+// clang errors if declaration without exception specification preceeds
+// noexcept declaration, but not the other way around.
+#ifdef __clang__
+#include <stdio.h>
+#include <string.h>
+#include <wchar.h>
+#endif
+
 #ifdef _WINDOWS
 #include "forbiddenFunctions_windows.hpp"
 #else
