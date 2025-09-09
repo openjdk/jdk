@@ -43,6 +43,9 @@ LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
 MACOSX_PLIST_DIR := $(TOPDIR)/src/java.base/macosx/native/launcher
 JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
+INCLUDED_LAUNCHERS_FILE := $(SUPPORT_OUTPUTDIR)/modules_static-launchers/$(MODULE)/module-included-launchers.txt
+INCLUDED_LAUNCHERS :=
+
 ################################################################################
 # Build standard launcher.
 
@@ -73,11 +76,6 @@ define SetupBuildLauncherBody
   endif
 
   $1_MAIN_MODULE := $(MODULE)
-
-  # Record the fact that this launcher is part of the current module. This
-  # variable stores information about all created launchers, and is read by
-  # ModuleWrapper.
-  $$(MODULE)_INCLUDED_LAUNCHERS += $1
 
   $1_RELAUNCHER_ARGUMENTS :=
 
@@ -209,6 +207,12 @@ define SetupBuildLauncherBody
 
   TARGETS += $$($1)
 
+  # Record the fact that this launcher is part of the current module.
+  INCLUDED_LAUNCHERS += $1
+
+  # Add a dependency from this launcher to the launcher list
+  $$(INCLUDED_LAUNCHERS_FILE): $$($1)
+
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
 
   ifeq ($(call isTargetOs, macosx), true)
@@ -276,6 +280,15 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
 endif
 
 ################################################################################
+
+# We need to keep track of which launchers are created by this module. This
+# information is required for static builds, to know which relaunchers to
+# create. The file module-included-launchers.txt is then read in StaticLibs.gmk.
+$(INCLUDED_LAUNCHERS_FILE):
+	$(call MakeDir, $(@D))
+	$(ECHO) $(INCLUDED_LAUNCHERS) > $@
+
+TARGETS += $(INCLUDED_LAUNCHERS_FILE)
 
 endif # include guard
 include MakeIncludeEnd.gmk
