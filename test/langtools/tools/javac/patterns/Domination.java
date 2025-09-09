@@ -26,8 +26,8 @@
  * @bug 8262891 8290709
  * @summary Check the pattern domination error are reported correctly.
  * @compile/fail/ref=Domination.out -XDrawDiagnostics Domination.java
+ * @compile/fail/ref=DominationWithPP.out --enable-preview --source ${jdk.version} -XDrawDiagnostics Domination.java
  */
-
 public class Domination {
     int testDominatesError1(Object o) {
         switch (o) {
@@ -216,6 +216,16 @@ public class Domination {
         switch (x) {
             case Integer i: return i;
             case null : return -1;
+        }
+    }
+
+    int testCasePatternDominatedbyPreceedingUnconditionalCasePattern () {
+        interface A {}
+        interface B {}
+        A aa = new A() {};
+        switch (aa) {
+            case A a : return 1;
+            case B b : return -1;
         }
     }
 }
