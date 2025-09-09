@@ -134,7 +134,9 @@ public final class JdkConsoleImpl implements JdkConsole {
         });
     }
 
-    // Dedicated entry for sun.security.util.Password.
+    // Dedicated entry for sun.security.util.Password when stdout is redirected.
+    // This method strictly avoids producing any output by using noNewLine = true
+    // and an empty format string.
     public char[] readPasswordNoNewLine() {
         return readPassword0(true, Locale.getDefault(Locale.Category.FORMAT), "");
     }
