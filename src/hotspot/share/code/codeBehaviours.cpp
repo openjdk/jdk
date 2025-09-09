@@ -42,5 +42,5 @@ void DefaultICProtectionBehaviour::unlock(nmethod* nm) {
 }
 
 bool DefaultICProtectionBehaviour::is_safe(nmethod* nm) {
-  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self() || nm->is_not_installed();
+  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self() || (NMethodState_lock->owned_by_self() && nm->is_not_installed());
 }

@@ -762,7 +762,7 @@ Method* nmethod::attached_method_before_pc(address pc) {
 }
 
 void nmethod::clear_inline_caches() {
-  assert(SafepointSynchronize::is_at_safepoint() || is_not_installed(), "clearing of IC's only allowed at safepoint or when not installed");
+  assert(SafepointSynchronize::is_at_safepoint() || (NMethodState_lock->owned_by_self() && is_not_installed()), "clearing of IC's only allowed at safepoint or when not installed");
   RelocIterator iter(this);
   while (iter.next()) {
     iter.reloc()->clear_inline_cache();
@@ -1555,8 +1555,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
     iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
-  nm_copy->clear_inline_caches();
-
   // To make dependency checking during class loading fast, record
   // the nmethod dependencies in the classes it is dependent on.
   // This allows the dependency checking code to simply walk the
@@ -1585,6 +1583,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   // Verify the nm we copied from is still valid
   if (!is_marked_for_deoptimization() && is_in_use()) {
     assert(method() != nullptr && method()->code() == this, "should be if is in use");
+
+    nm_copy->clear_inline_caches();
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
