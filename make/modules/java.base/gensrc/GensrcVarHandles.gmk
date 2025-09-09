@@ -157,7 +157,7 @@ $(foreach t, $(PRIMITIVE_TYPES), \
 
 ################################################################################
 
-GENSRC_VARHANDLEGUARDS := $(VARHANDLES_GENSRC_DIR)/VarHandleGuards.java
+GENSRC_VARHANDLEGUARDS := $(VARHANDLES_OUTPUT_DIR)/VarHandleGuards.java
 
 $(GENSRC_VARHANDLEGUARDS): $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating $@)
