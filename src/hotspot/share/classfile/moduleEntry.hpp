@@ -31,9 +31,9 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -233,7 +233,7 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 
 public:

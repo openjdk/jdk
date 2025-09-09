@@ -90,6 +90,8 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component field descriptor string
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RecordComponentInfo of(Utf8Entry name,
                                   Utf8Entry descriptor,
@@ -103,6 +105,8 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component field descriptor sting
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RecordComponentInfo of(Utf8Entry name,
                                   Utf8Entry descriptor,
@@ -116,6 +120,8 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RecordComponentInfo of(String name,
                                   ClassDesc descriptor,
@@ -131,6 +137,8 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static RecordComponentInfo of(String name,
                                   ClassDesc descriptor,

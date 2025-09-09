@@ -195,9 +195,9 @@ public class ImageReaderBenchmark {
     static long countAllNodes(ImageReader reader, Node node) {
         long count = 1;
         if (node.isDirectory()) {
-            count += node.getChildren().stream().mapToLong(n -> {
+            count += node.getChildNames().mapToLong(n -> {
                 try {
-                    return countAllNodes(reader, reader.findNode(n.getName()));
+                    return countAllNodes(reader, reader.findNode(n));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

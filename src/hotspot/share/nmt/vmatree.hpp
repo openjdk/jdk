@@ -27,11 +27,12 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "nmt/memTag.hpp"
-#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
-#include "nmt/nmtTreap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
+#include "utilities/rbTree.inline.hpp"
+
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -39,7 +40,7 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree {
+class VMATree : public CHeapObjBase {
   friend class NMTVMATreeTest;
   friend class VMTWithVMATreeTest;
   // A position in memory.
@@ -50,11 +51,10 @@ public:
 
   class PositionComparator {
   public:
-    static int cmp(position a, position b) {
-      if (a < b) return -1;
-      if (a == b) return 0;
-      if (a > b) return 1;
-      ShouldNotReachHere();
+    static RBTreeOrdering cmp(position a, position b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 
@@ -66,7 +66,6 @@ private:
   static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
-  NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
     assert(type < StateType::st_number_of_states, "must be");
@@ -193,17 +192,21 @@ private:
   };
 
 public:
-  using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
-  using TreapNode = VMATreap::TreapNode;
+  using VMARBTree = RBTreeCHeap<position, IntervalChange, PositionComparator, mtNMT>;
+  using TNode = RBNode<position, IntervalChange>;
 
 private:
-  VMATreap _tree;
+  VMARBTree _tree;
 
-  static IntervalState& in_state(TreapNode* node) {
+  static IntervalState& in_state(TNode* node) {
     return node->val().in;
   }
 
-  static IntervalState& out_state(TreapNode* node) {
+  static IntervalState& out_state(TNode* node) {
+    return node->val().out;
+  }
+
+  static const IntervalState& out_state(const TNode* node) {
     return node->val().out;
   }
 
@@ -223,6 +226,10 @@ private:
 
 public:
   VMATree() : _tree() {}
+  VMATree(const VMATree& other) : _tree() {
+    assert(other._tree.copy_into(_tree), "VMATree dies on OOM");
+  }
+  VMATree& operator=(VMATree const&) = delete;
 
   struct SingleDiff {
     using delta = int64_t;
@@ -281,7 +288,7 @@ public:
   SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   SIndex get_new_commit_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   void compute_summary_diff(const SingleDiff::delta region_size, const MemTag t1, const StateType& ex, const RequestInfo& req, const MemTag new_tag, SummaryDiff& diff) const;
-  void update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff);
+  void update_region(TNode* n1, TNode* n2, const RequestInfo& req, SummaryDiff& diff);
   int state_to_index(const StateType st) const {
     return
       st == StateType::Released ? 0 :
@@ -325,6 +332,9 @@ public:
   void visit_range_in_order(const position& from, const position& to, F f) {
     _tree.visit_range_in_order(from, to, f);
   }
-  VMATreap& tree() { return _tree; }
+  VMARBTree& tree() { return _tree; }
+
+  void clear();
+  bool is_empty();
 };
 #endif

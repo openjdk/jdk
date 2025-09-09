@@ -26,11 +26,10 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
-#include "nmt/memTag.hpp"
-#include "nmt/memReporter.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
-#include "nmt/regionsTree.hpp"
+#include "nmt/memReporter.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/regionsTree.inline.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -395,13 +394,11 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
 
 void MemDetailReporter::report_virtual_memory_map() {
   // Virtual memory map always in base address order
-  VirtualMemoryAllocationIterator itr = _baseline.virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
-
   output()->print_cr("Virtual memory map:");
-  while ((rgn = itr.next()) != nullptr) {
-    report_virtual_memory_region(rgn);
-  }
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+    report_virtual_memory_region(&rgn);
+    return true;
+  });
 }
 
 void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
