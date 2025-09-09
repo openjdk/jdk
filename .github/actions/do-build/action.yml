@@ -60,7 +60,6 @@ runs:
               $build_dir/configure.log \
               $build_dir/make-support/failure-summary.log \
               $build_dir/make-support/failure-logs/* \
-              make/hs_err_pid*.log \
               failure-logs/ 2> /dev/null || true
           echo 'failure=true' >> $GITHUB_OUTPUT
         fi
