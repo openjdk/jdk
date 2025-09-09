@@ -192,7 +192,7 @@ public class Encoder {
 
     public void header(EncodingContext context, CharSequence name, CharSequence value,
                        boolean sensitive) throws IllegalStateException {
-        header(context, name, value, sensitive, knownReceiveCount());
+        header(context, name, value, sensitive, knownReceivedCount());
     }
 
     /**
@@ -338,9 +338,9 @@ public class Encoder {
             // Put field line section prefix as the first byte buffer
             generateFieldLineSectionPrefix(encodingContext, buffers);
 
-            // Register field line section as non-acked if it uses references to the
+            // Register field line section as unacked if it uses references to the
             // dynamic table entries
-            registerNonAckFieldLineSection(streamId, SectionReference.of(encodingContext));
+            registerUnackedFieldLineSection(streamId, SectionReference.of(encodingContext));
         }
         return buffers;
     }
@@ -363,7 +363,7 @@ public class Encoder {
         buffers.addFirst(fspBuffer);
     }
 
-    public void registerNonAckFieldLineSection(long streamId, SectionReference sectionReference) {
+    public void registerUnackedFieldLineSection(long streamId, SectionReference sectionReference) {
         if (sectionReference.referencesEntries()) {
             unacknowledgedSections
                     .computeIfAbsent(streamId, k -> new ConcurrentLinkedQueue<>())
@@ -372,12 +372,12 @@ public class Encoder {
     }
 
     // This one is for tracking evict-ability of dynamic table entries
-    public SectionReference globalUnacknowledgedRange(EncodingContext context) {
+    public SectionReference unackedFieldLineSectionsRange(EncodingContext context) {
         SectionReference referenceNotRegisteredYet = SectionReference.of(context);
-        return globalUnacknowledgedRange(referenceNotRegisteredYet);
+        return unackedFieldLineSectionsRange(referenceNotRegisteredYet);
     }
 
-    private SectionReference globalUnacknowledgedRange(SectionReference initial) {
+    private SectionReference unackedFieldLineSectionsRange(SectionReference initial) {
         return unacknowledgedSections.values().stream()
                 .flatMap(Queue::stream)
                 .reduce(initial, SectionReference::reduce);
@@ -385,7 +385,7 @@ public class Encoder {
 
     long blockedStreamsCount() {
         long blockedStreams = 0;
-        long krc = knownReceiveCount();
+        long krc = knownReceivedCount();
         for (var streamSections : unacknowledgedSections.values()) {
             boolean hasBlockedSection = streamSections.stream()
                     .anyMatch(sectionReference -> !sectionReference.fullyAcked(krc));
@@ -395,7 +395,7 @@ public class Encoder {
     }
 
 
-    public long knownReceiveCount() {
+    public long knownReceivedCount() {
         krcLock.readLock().lock();
         try {
             return knownReceivedCount;
@@ -435,12 +435,12 @@ public class Encoder {
     }
 
     private void updateKrcInsertCountIncrement(long increment) {
+        long insertCount = dynamicTable.insertCount();
         krcLock.writeLock().lock();
         try {
             // An encoder that receives an Increment field equal to zero, or one that increases
             // the Known Received Count beyond what the encoder has sent, MUST treat this as
             // a connection error of type QPACK_DECODER_STREAM_ERROR.
-            long insertCount = dynamicTable.insertCount();
             if (increment == 0 || knownReceivedCount > insertCount - increment) {
                 var qpackException = QPackException.decoderStreamError(
                         new IllegalStateException("Invalid increment field value: " + increment));
@@ -532,21 +532,22 @@ public class Encoder {
 
         public SectionReference evictionLimit() {
             // In-flight references - a set with entry ids referenced from all
-            // active encoding sessions.
-            SectionReference inFlight = SectionReference.singleReference(
+            // active header encoding sessions not fully encoded yet
+            SectionReference inFlightReferences = SectionReference.singleReference(
                     liveContextReferences.values().stream()
                             .filter(Predicate.not(ConcurrentSkipListSet::isEmpty))
                             .map(ConcurrentSkipListSet::first)
                             .min(Long::compare)
                             .orElse(-1L));
 
-            // Global non-acknowledged range - is a range of unacknowledged sections
-            // which already fully encoded and sent as part of other request/response
-            // streams.
-            SectionReference unacked = globalUnacknowledgedRange(this);
-
-            // Result is a combination of both sections above
-            return unacked.reduce(inFlight);
+            // Calculate the eviction limit with respect to:
+            //   - in-flight references
+            //   - acknowledged dynamic table insertions
+            //   - range of unacknowledged sections which already fully encoded
+            //     and sent as part of other request/response streams
+            return inFlightReferences
+                    .reduce(knownReceivedCount())
+                    .reduce(unackedFieldLineSectionsRange(this));
         }
 
         public TableEntry tryInsertEntry(TableEntry entry) {

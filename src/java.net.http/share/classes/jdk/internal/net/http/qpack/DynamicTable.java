@@ -514,17 +514,14 @@ public final class DynamicTable implements HeadersTable {
                 }
                 return absIndex;
             }
-            SectionReference evictionLimitSR;
+            SectionReference evictionLimitSR = encodingContext.evictionLimit();
             if (nameOnlyDynamicEntry) {
                 long nameIndex = entry.index();
                 if (!canReferenceEntry(nameIndex)) {
                     return ENTRY_NOT_INSERTED;
                 }
-                evictionLimitSR = encodingContext.evictionLimit()
-                        .reduce(nameIndex);
+                evictionLimitSR = evictionLimitSR.reduce(nameIndex);
                 encodingContext.registerSessionReference(nameIndex);
-            } else {
-                evictionLimitSR = encodingContext.evictionLimit();
             }
             // Relative index calculation should precede the insertion
             // due to dependency on insert count value
@@ -539,14 +536,10 @@ public final class DynamicTable implements HeadersTable {
                 // sections therefore entry is not added
                 return ENTRY_NOT_INSERTED;
             }
-
-            // Absolute index only needs to be replaced with the relative one
-            // when it references a name in the dynamic table.
+            // Entry was successfully inserted
             if (nameOnlyDynamicEntry) {
-                // Entry was successfully inserted.
-                // The instruction writer will reference a dynamic table element
-                // index if the entry type is NAME. It needs to be kept alive
-                // until the end of encoding session.
+                // Absolute index only needs to be replaced with the relative one
+                // when it references a name in the dynamic table.
                 entry = entry.relativizeDynamicTableEntry(relativeNameIndex);
             }
             int instructionSize = writer.configureForEntryInsertion(entry);

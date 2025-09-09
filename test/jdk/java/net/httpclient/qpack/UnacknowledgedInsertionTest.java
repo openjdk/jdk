@@ -91,7 +91,7 @@ public class UnacknowledgedInsertionTest {
         String value = "value";
 
         for (int i = 0; i < 3; i++) {
-            long krcToUse = knownReceiveCount == -1L ? encoder.knownReceiveCount() : knownReceiveCount;
+            long krcToUse = knownReceiveCount == -1L ? encoder.knownReceivedCount() : knownReceiveCount;
             if (i == 1) {
                 encoder.header(context, name, "nameMatchOnly", false, krcToUse);
             } else {
