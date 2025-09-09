@@ -91,6 +91,7 @@ public class ChoiceMouseWheelTest extends Frame {
             Robot robot = new Robot();
             robot.setAutoDelay(20);
             Util.waitForIdle(robot);
+            robot.delay(500);
 
             Point pt = choice.getLocationOnScreen();
             Dimension size = choice.getSize();
@@ -99,10 +100,11 @@ public class ChoiceMouseWheelTest extends Frame {
 
             // Test mouse wheel over the choice
             String name = Toolkit.getDefaultToolkit().getClass().getName();
+            boolean isXtoolkit = name.equals("sun.awt.X11.XToolkit");
+            boolean isLWCToolkit = name.equals("sun.lwawt.macosx.LWCToolkit");
 
             // mouse wheel doesn't work for the choice on X11 and Mac, so skip it
-            if(!name.equals("sun.awt.X11.XToolkit")
-               && !name.equals("sun.lwawt.macosx.LWCToolkit")) {
+            if(!isXtoolkit&& !isLWCToolkit) {
                 robot.mouseWheel(1);
                 Util.waitForIdle(robot);
 
@@ -116,6 +118,8 @@ public class ChoiceMouseWheelTest extends Frame {
             Util.waitForIdle(robot);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             Util.waitForIdle(robot);
+
+            frameExited = false;
 
             int y = getLocationOnScreen().y + getSize().height;
             while(!frameExited && y >= 0) { // move to the bottom of drop-down list
@@ -131,7 +135,9 @@ public class ChoiceMouseWheelTest extends Frame {
             robot.mouseMove(x, y); // move to the last visible item in the drop-down list
             Util.waitForIdle(robot);
 
-            robot.mouseWheel(choice.getItemCount()); // wheel to the last item
+            int scrollDirection = isLWCToolkit ? -1 : 1;
+            // wheel to the last item
+            robot.mouseWheel(scrollDirection * choice.getItemCount());
             Util.waitForIdle(robot);
 
             // click the last item
