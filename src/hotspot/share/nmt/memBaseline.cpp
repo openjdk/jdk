@@ -27,7 +27,8 @@
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/regionsTree.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
 
 /*
  * Sizes are sorted in descenting order for reporting
@@ -157,15 +158,14 @@ bool MemBaseline::baseline_allocation_sites() {
   // The malloc sites are collected in size order
   _malloc_sites_order = by_size;
 
-  assert(_vma_allocations == nullptr, "must");
-
-  {
-    MemTracker::NmtVirtualMemoryLocker locker;
-    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
-    if (_vma_allocations == nullptr)  {
-      return false;
-    }
+  // Virtual memory allocation sites
+  VirtualMemoryAllocationWalker virtual_memory_walker;
+  if (!VirtualMemoryTracker::Instance::walk_virtual_memory(&virtual_memory_walker)) {
+    return false;
   }
+
+  // Virtual memory allocations are collected in call stack order
+  _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());
 
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
@@ -202,6 +202,8 @@ int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
 
+  VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
+  const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
   _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
@@ -210,20 +212,11 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =
         allocation_sites.add(tmp);
-      if (node == nullptr) {
-        failed_oom = true;
-        return false;
-      }
+      if (node == nullptr) return false;
       site = node->data();
     }
-    site->reserve_memory(rgn.size());
-
-    site->commit_memory(_vma_allocations->committed_size(rgn));
-    return true;
-  });
-
-  if (failed_oom) {
-    return false;
+    site->reserve_memory(rgn->size());
+    site->commit_memory(VirtualMemoryTracker::Instance::committed_size(rgn));
   }
 
   _virtual_memory_sites.move(&allocation_sites);
