@@ -42,8 +42,8 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 
 // ------------- compiledVFrame --------------
 
