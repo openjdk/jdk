@@ -27,8 +27,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/safepoint.hpp"
+#include "nmt/regionsTree.inline.hpp"
 
 /*
  * Sizes are sorted in descenting order for reporting
@@ -104,38 +103,6 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 };
 
-// Walk all virtual memory regions for baselining
-class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
- private:
-  typedef LinkedListImpl<VirtualMemoryRegion, AnyObj::C_HEAP, mtNMT,
-                         AllocFailStrategy::RETURN_NULL> EntryList;
-  EntryList _virtual_memory_regions;
-  DEBUG_ONLY(address _last_base;)
- public:
-  VirtualMemoryAllocationWalker() {
-    DEBUG_ONLY(_last_base = nullptr);
-  }
-
-  bool do_allocation_site(const VirtualMemoryRegion* rgn)  {
-    assert(rgn->base() >= _last_base, "region unordered?");
-    DEBUG_ONLY(_last_base = rgn->base());
-    if (rgn->size() > 0) {
-      if (_virtual_memory_regions.add(*rgn) != nullptr) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      // Ignore empty sites.
-      return true;
-    }
-  }
-
-  LinkedList<VirtualMemoryRegion>* virtual_memory_allocations() {
-    return &_virtual_memory_regions;
-  }
-};
-
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
@@ -159,13 +126,15 @@ bool MemBaseline::baseline_allocation_sites() {
   _malloc_sites_order = by_size;
 
   // Virtual memory allocation sites
-  VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!VirtualMemoryTracker::Instance::walk_virtual_memory(&virtual_memory_walker)) {
-    return false;
-  }
+ assert(_vma_allocations == nullptr, "must");
 
-  // Virtual memory allocations are collected in call stack order
-  _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());
+  {
+    MemTracker::NmtVirtualMemoryLocker locker;
+    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
+    if (_vma_allocations == nullptr)  {
+      return false;
+    }
+  }
 
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
@@ -200,10 +169,9 @@ int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
+
   SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
 
-  VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
   _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
@@ -212,11 +180,19 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =
         allocation_sites.add(tmp);
-      if (node == nullptr) return false;
+      if (node == nullptr) {
+        failed_oom = true;
+        return false;
+      }
       site = node->data();
     }
-    site->reserve_memory(rgn->size());
-    site->commit_memory(VirtualMemoryTracker::Instance::committed_size(rgn));
+    site->reserve_memory(rgn.size());
+    site->commit_memory(VirtualMemoryTracker::Instance::committed_size(&rgn));
+    return true;
+  });
+
+  if (failed_oom) {
+    return false;
   }
 
   _virtual_memory_sites.move(&allocation_sites);
