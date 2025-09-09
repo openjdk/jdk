@@ -425,8 +425,12 @@ class WindowsFileSystemProvider
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (obj instanceof LinkAttributes other)
-                return WindowsFileAttributes.isSameFile(attrs, other.attrs());
+            if (obj instanceof LinkAttributes other) {
+                WindowsFileAttributes oattrs = other.attrs();
+                return oattrs.volSerialNumber() == attrs.volSerialNumber() && 
+                       oattrs.fileIndexHigh()   == attrs.fileIndexHigh() &&
+                       oattrs.fileIndexLow()    == attrs.fileIndexLow();
+            }
             return false;
         }
 
@@ -461,14 +465,14 @@ class WindowsFileSystemProvider
 
                 LinkAttributes linkAttr = new LinkAttributes(attrs, h);
                 if (!fileAttrs.add(linkAttr))
-                    throw new FileSystemLoopException("Looping symbolic link");
+                    throw new FileSystemLoopException(path.toString());
 
                 lastFileAttrs = linkAttr;
 
                 String target = WindowsLinkSupport.readLink(path, h);
                 path = WindowsPath.parse(path.getFileSystem(), target);
             }
-        } catch (Exception e) {
+        } catch (IOException|WindowsException e) {
             if (lastFileAttrs != null) {
                 CloseHandle(lastFileAttrs.handle());
                 throw e;
