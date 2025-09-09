@@ -439,8 +439,6 @@ extern "C" DEBUGEXPORT void pp(void* p) {
 }
 
 
-extern "C" DEBUGEXPORT void findpc(intptr_t x);
-
 extern "C" DEBUGEXPORT void ps() { // print stack
   // Prints the stack of the current Java thread
   Command c("ps");
@@ -517,7 +515,6 @@ extern "C" DEBUGEXPORT void threads() {
 extern "C" DEBUGEXPORT void psd() {
   Command c("psd");
   if (!c.onThread()) return;
-
   SystemDictionary::print();
 }
 
