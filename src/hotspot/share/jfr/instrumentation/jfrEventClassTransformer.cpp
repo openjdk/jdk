@@ -214,7 +214,7 @@ static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_t
   if (has_annotation(ik, annotation_type, default_value, value)) {
     return true;
   }
-  InstanceKlass* const super = ik->java_super();
+  InstanceKlass* const super = ik->super();
   return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, default_value, value) : false;
 }
 

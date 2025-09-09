@@ -85,6 +85,9 @@ class oopDesc;
 // they cannot be defined and potential callers will fail to compile.
 #define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
 
+// offset_of was a workaround for UB with offsetof uses that are no longer an
+// issue.  This can be removed once all uses have been converted.
+#define offset_of(klass, field) offsetof(klass, field)
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
@@ -1000,17 +1003,6 @@ enum JavaThreadState {
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
-
-enum LockingMode {
-  // Use only heavy monitors for locking
-  LM_MONITOR     = 0,
-  // Legacy stack-locking, with monitors as 2nd tier
-  LM_LEGACY      = 1,
-  // New lightweight locking, with monitors as 2nd tier
-  LM_LIGHTWEIGHT = 2
-};
-
-extern const int LockingMode;
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
