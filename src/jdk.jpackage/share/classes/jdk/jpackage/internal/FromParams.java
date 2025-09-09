@@ -53,6 +53,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LINUX_LAUNCHER_SHORTCUT;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_DESKTOP_SHORTCUT;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_MENU_SHORTCUT;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
@@ -60,7 +63,9 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.model.Application;
@@ -229,7 +234,11 @@ final class FromParams {
             // of "launcher-as-service" from the app image file (.jpackage.xml).
             launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
         }
-        launcherParams.putAll(launcherInfo.extra());
+        for (var optionValue : List.of(LINUX_LAUNCHER_SHORTCUT, WIN_LAUNCHER_DESKTOP_SHORTCUT, WIN_LAUNCHER_MENU_SHORTCUT)) {
+            launcherInfo.extra().find(optionValue.id()).map(LauncherShortcut.class::cast).ifPresent(v -> {
+                store(v, optionValue.getName(), launcherParams::put);
+            });
+        }
         return launcherParams;
     }
 
@@ -245,6 +254,19 @@ final class FromParams {
         return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(),
                 ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID(), WIN_MENU_HINT.getId(),
                 WIN_SHORTCUT_HINT.getId(), LINUX_SHORTCUT_HINT.getId());
+    }
+
+    // Copied from LauncherShortcut.store()
+    private static void store(LauncherShortcut shortcut, String propertyName, BiConsumer<String, String> sink) {
+        Objects.requireNonNull(propertyName);
+        Objects.requireNonNull(sink);
+        if (shortcut.startupDirectory().isEmpty()) {
+            sink.accept(propertyName, Boolean.FALSE.toString());
+        } else {
+            shortcut.startupDirectory().ifPresent(v -> {
+                sink.accept(propertyName, v.asStringValue());
+            });
+        }
     }
 
     static final BundlerParamInfo<Application> APPLICATION = createApplicationBundlerParam(null);
