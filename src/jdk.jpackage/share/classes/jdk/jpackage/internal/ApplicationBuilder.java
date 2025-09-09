@@ -101,7 +101,7 @@ final class ApplicationBuilder {
         }
         runtimeBuilder = null;
 
-        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false, Map.of());
+        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false);
 
         launchers = new ApplicationLaunchers(
                 mapper.apply(mainLauncherInfo),
