@@ -1,5 +1,5 @@
 # Scripts-17.0.0.txt
-# Date: 2025-04-25, 16:57:37 GMT
+# Date: 2025-07-24, 13:28:55 GMT
 # © 2025 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -628,7 +628,7 @@ FFFC..FFFD    ; Common # So   [2] OBJECT REPLACEMENT CHARACTER..REPLACEMENT CHAR
 1FA80..1FA8A  ; Common # So  [11] YO-YO..TROMBONE
 1FA8E..1FAC6  ; Common # So  [57] TREASURE CHEST..FINGERPRINT
 1FAC8         ; Common # So       HAIRY CREATURE
-1FACD..1FADD  ; Common # So  [17] ORCA..APPLE CORE
+1FACD..1FADC  ; Common # So  [16] ORCA..ROOT VEGETABLE
 1FADF..1FAEA  ; Common # So  [12] SPLATTER..DISTORTED FACE
 1FAEF..1FAF8  ; Common # So  [10] FIGHT CLOUD..RIGHTWARDS PUSHING HAND
 1FB00..1FB92  ; Common # So [147] BLOCK SEXTANT-1..UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
@@ -638,7 +638,7 @@ FFFC..FFFD    ; Common # So   [2] OBJECT REPLACEMENT CHARACTER..REPLACEMENT CHAR
 E0001         ; Common # Cf       LANGUAGE TAG
 E0020..E007F  ; Common # Cf  [96] TAG SPACE..CANCEL TAG
 
-# Total code points: 9124
+# Total code points: 9123
 
 # ================================================
 
@@ -1022,9 +1022,8 @@ A8FF          ; Devanagari # Mn       DEVANAGARI VOWEL SIGN AY
 09FC          ; Bengali # Lo       BENGALI LETTER VEDIC ANUSVARA
 09FD          ; Bengali # Po       BENGALI ABBREVIATION SIGN
 09FE          ; Bengali # Mn       BENGALI SANDHI MARK
-09FF          ; Bengali # Lo       BENGALI LETTER SANSKRIT BA
 
-# Total code points: 97
+# Total code points: 96
 
 # ================================================
 
@@ -1101,7 +1100,7 @@ A8FF          ; Devanagari # Mn       DEVANAGARI VOWEL SIGN AY
 0B47..0B48    ; Oriya # Mc   [2] ORIYA VOWEL SIGN E..ORIYA VOWEL SIGN AI
 0B4B..0B4C    ; Oriya # Mc   [2] ORIYA VOWEL SIGN O..ORIYA VOWEL SIGN AU
 0B4D          ; Oriya # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; Oriya # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; Oriya # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; Oriya # Mc       ORIYA AU LENGTH MARK
 0B5C..0B5D    ; Oriya # Lo   [2] ORIYA LETTER RRA..ORIYA LETTER RHA
 0B5F..0B61    ; Oriya # Lo   [3] ORIYA LETTER YYA..ORIYA LETTER VOCALIC LL
@@ -1111,7 +1110,7 @@ A8FF          ; Devanagari # Mn       DEVANAGARI VOWEL SIGN AY
 0B71          ; Oriya # Lo       ORIYA LETTER WA
 0B72..0B77    ; Oriya # No   [6] ORIYA FRACTION ONE QUARTER..ORIYA FRACTION THREE SIXTEENTHS
 
-# Total code points: 93
+# Total code points: 91
 
 # ================================================
 
@@ -3141,16 +3140,6 @@ ABF0..ABF9    ; Meetei_Mayek # Nd  [10] MEETEI MAYEK DIGIT ZERO..MEETEI MAYEK DI
 113E1..113E2  ; Tulu_Tigalari # Mn   [2] TULU-TIGALARI VEDIC TONE SVARITA..TULU-TIGALARI VEDIC TONE ANUDATTA
 
 # Total code points: 80
-
-# ================================================
-
-16D80..16D97  ; Chisoi # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D98         ; Chisoi # Mn       CHISOI SIGN ANUSVARA
-16D99..16D9C  ; Chisoi # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
-16D9D         ; Chisoi # Mn       CHISOI SIGN SISO
-16DA0..16DA9  ; Chisoi # Nd  [10] CHISOI DIGIT ZERO..CHISOI DIGIT NINE
-
-# Total code points: 40
 
 # ================================================
 

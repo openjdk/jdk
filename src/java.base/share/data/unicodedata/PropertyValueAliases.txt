@@ -1,5 +1,5 @@
 # PropertyValueAliases-17.0.0.txt
-# Date: 2025-04-25, 13:37:02 GMT
+# Date: 2025-06-30, 06:16:21 GMT
 # © 2025 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -198,7 +198,6 @@ blk; Cham                             ; Cham
 blk; Cherokee                         ; Cherokee
 blk; Cherokee_Sup                     ; Cherokee_Supplement
 blk; Chess_Symbols                    ; Chess_Symbols
-blk; Chisoi                           ; Chisoi
 blk; Chorasmian                       ; Chorasmian
 blk; CJK                              ; CJK_Unified_Ideographs
 blk; CJK_Compat                       ; CJK_Compatibility
@@ -888,7 +887,7 @@ InPC; Bottom_And_Left                 ; Bottom_And_Left
 InPC; Bottom_And_Right                ; Bottom_And_Right
 InPC; Left                            ; Left
 InPC; Left_And_Right                  ; Left_And_Right
-InPC; NA                              ; NA
+InPC; NA                              ; Not_Applicable
 InPC; Overstruck                      ; Overstruck
 InPC; Right                           ; Right
 InPC; Top                             ; Top
@@ -1343,7 +1342,6 @@ sc ; Cans                             ; Canadian_Aboriginal
 sc ; Cari                             ; Carian
 sc ; Cham                             ; Cham
 sc ; Cher                             ; Cherokee
-sc ; Chis                             ; Chisoi
 sc ; Chrs                             ; Chorasmian
 sc ; Copt                             ; Coptic                           ; Qaac
 sc ; Cpmn                             ; Cypro_Minoan

@@ -1,5 +1,5 @@
 # DerivedCoreProperties-17.0.0.txt
-# Date: 2025-04-25, 16:57:07 GMT
+# Date: 2025-07-30, 23:55:08 GMT
 # © 2025 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -388,7 +388,6 @@ FFE9..FFEC    ; Math # Sm   [4] HALFWIDTH LEFTWARDS ARROW..HALFWIDTH DOWNWARDS A
 09E2..09E3    ; Alphabetic # Mn   [2] BENGALI VOWEL SIGN VOCALIC L..BENGALI VOWEL SIGN VOCALIC LL
 09F0..09F1    ; Alphabetic # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
 09FC          ; Alphabetic # Lo       BENGALI LETTER VEDIC ANUSVARA
-09FF          ; Alphabetic # Lo       BENGALI LETTER SANSKRIT BA
 0A01..0A02    ; Alphabetic # Mn   [2] GURMUKHI SIGN ADAK BINDI..GURMUKHI SIGN BINDI
 0A03          ; Alphabetic # Mc       GURMUKHI SIGN VISARGA
 0A05..0A0A    ; Alphabetic # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
@@ -1322,9 +1321,6 @@ FFDA..FFDC    ; Alphabetic # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANG
 16D40..16D42  ; Alphabetic # Lm   [3] KIRAT RAI SIGN ANUSVARA..KIRAT RAI SIGN VISARGA
 16D43..16D6A  ; Alphabetic # Lo  [40] KIRAT RAI LETTER A..KIRAT RAI VOWEL SIGN AU
 16D6B..16D6C  ; Alphabetic # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
-16D80..16D97  ; Alphabetic # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D98         ; Alphabetic # Mn       CHISOI SIGN ANUSVARA
-16D99..16D9C  ; Alphabetic # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
 16E40..16E7F  ; Alphabetic # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16EA0..16EB8  ; Alphabetic # L&  [25] BERIA ERFE CAPITAL LETTER ARKAB..BERIA ERFE CAPITAL LETTER AY
 16EBB..16ED3  ; Alphabetic # L&  [25] BERIA ERFE SMALL LETTER ARKAB..BERIA ERFE SMALL LETTER AY
@@ -1470,7 +1466,7 @@ FFDA..FFDC    ; Alphabetic # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANG
 30000..3134A  ; Alphabetic # Lo [4939] CJK UNIFIED IDEOGRAPH-30000..CJK UNIFIED IDEOGRAPH-3134A
 31350..33479  ; Alphabetic # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 
-# Total code points: 147451
+# Total code points: 147421
 
 # ================================================
 
@@ -3137,7 +3133,7 @@ FF41..FF5A    ; Cased # L&  [26] FULLWIDTH LATIN SMALL LETTER A..FULLWIDTH LATIN
 0B3F          ; Case_Ignorable # Mn       ORIYA VOWEL SIGN I
 0B41..0B44    ; Case_Ignorable # Mn   [4] ORIYA VOWEL SIGN U..ORIYA VOWEL SIGN VOCALIC RR
 0B4D          ; Case_Ignorable # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; Case_Ignorable # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; Case_Ignorable # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B62..0B63    ; Case_Ignorable # Mn   [2] ORIYA VOWEL SIGN VOCALIC L..ORIYA VOWEL SIGN VOCALIC LL
 0B82          ; Case_Ignorable # Mn       TAMIL SIGN ANUSVARA
 0BC0          ; Case_Ignorable # Mn       TAMIL VOWEL SIGN II
@@ -3498,8 +3494,6 @@ FFF9..FFFB    ; Case_Ignorable # Cf   [3] INTERLINEAR ANNOTATION ANCHOR..INTERLI
 16B40..16B43  ; Case_Ignorable # Lm   [4] PAHAWH HMONG SIGN VOS SEEV..PAHAWH HMONG SIGN IB YAM
 16D40..16D42  ; Case_Ignorable # Lm   [3] KIRAT RAI SIGN ANUSVARA..KIRAT RAI SIGN VISARGA
 16D6B..16D6C  ; Case_Ignorable # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
-16D98         ; Case_Ignorable # Mn       CHISOI SIGN ANUSVARA
-16D9D         ; Case_Ignorable # Mn       CHISOI SIGN SISO
 16F4F         ; Case_Ignorable # Mn       MIAO SIGN CONSONANT MODIFIER BAR
 16F8F..16F92  ; Case_Ignorable # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16F93..16F9F  ; Case_Ignorable # Lm  [13] MIAO LETTER TONE-2..MIAO LETTER REFORMED TONE-8
@@ -3553,13 +3547,14 @@ E0001         ; Case_Ignorable # Cf       LANGUAGE TAG
 E0020..E007F  ; Case_Ignorable # Cf  [96] TAG SPACE..CANCEL TAG
 E0100..E01EF  ; Case_Ignorable # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 2798
+# Total code points: 2794
 
 # ================================================
 
 # Derived Property:   Changes_When_Lowercased (CWL)
 #  Characters whose normalized forms are not stable under a toLowercase mapping.
-#  For more information, see D139 in Section 3.13, "Default Case Algorithms".
+#  For more information, see the definition of "isLowercase(X)"
+#  in the "Conformance" / "Default Case Algorithms" section of the core specification.
 #  Changes_When_Lowercased(X) is true when toLowercase(toNFD(X)) != toNFD(X)
 
 0041..005A    ; Changes_When_Lowercased # L&  [26] LATIN CAPITAL LETTER A..LATIN CAPITAL LETTER Z
@@ -4187,7 +4182,8 @@ FF21..FF3A    ; Changes_When_Lowercased # L&  [26] FULLWIDTH LATIN CAPITAL LETTE
 
 # Derived Property:   Changes_When_Uppercased (CWU)
 #  Characters whose normalized forms are not stable under a toUppercase mapping.
-#  For more information, see D140 in Section 3.13, "Default Case Algorithms".
+#  For more information, see the definition of "isUppercase(X)"
+#  in the "Conformance" / "Default Case Algorithms" section of the core specification.
 #  Changes_When_Uppercased(X) is true when toUppercase(toNFD(X)) != toNFD(X)
 
 0061..007A    ; Changes_When_Uppercased # L&  [26] LATIN SMALL LETTER A..LATIN SMALL LETTER Z
@@ -4831,7 +4827,8 @@ FF41..FF5A    ; Changes_When_Uppercased # L&  [26] FULLWIDTH LATIN SMALL LETTER 
 
 # Derived Property:   Changes_When_Titlecased (CWT)
 #  Characters whose normalized forms are not stable under a toTitlecase mapping.
-#  For more information, see D141 in Section 3.13, "Default Case Algorithms".
+#  For more information, see the definition of "isTitlecase(X)"
+#  in the "Conformance" / "Default Case Algorithms" section of the core specification.
 #  Changes_When_Titlecased(X) is true when toTitlecase(toNFD(X)) != toNFD(X)
 
 0061..007A    ; Changes_When_Titlecased # L&  [26] LATIN SMALL LETTER A..LATIN SMALL LETTER Z
@@ -5474,7 +5471,8 @@ FF41..FF5A    ; Changes_When_Titlecased # L&  [26] FULLWIDTH LATIN SMALL LETTER 
 
 # Derived Property:   Changes_When_Casefolded (CWCF)
 #  Characters whose normalized forms are not stable under case folding.
-#  For more information, see D142 in Section 3.13, "Default Case Algorithms".
+#  For more information, see the definition of "isCasefolded(X)"
+#  in the "Conformance" / "Default Case Algorithms" section of the core specification.
 #  Changes_When_Casefolded(X) is true when toCasefold(toNFD(X)) != toNFD(X)
 
 0041..005A    ; Changes_When_Casefolded # L&  [26] LATIN CAPITAL LETTER A..LATIN CAPITAL LETTER Z
@@ -6114,7 +6112,8 @@ FF21..FF3A    ; Changes_When_Casefolded # L&  [26] FULLWIDTH LATIN CAPITAL LETTE
 
 # Derived Property:   Changes_When_Casemapped (CWCM)
 #  Characters whose normalized forms are not stable under case mapping.
-#  For more information, see D143 in Section 3.13, "Default Case Algorithms".
+#  For more information, see the definition of "isCased(X)"
+#  in the "Conformance" / "Default Case Algorithms" section of the core specification.
 #  Changes_When_Casemapped(X) is true when CWL(X), or CWT(X), or CWU(X)
 
 0041..005A    ; Changes_When_Casemapped # L&  [26] LATIN CAPITAL LETTER A..LATIN CAPITAL LETTER Z
@@ -6344,7 +6343,6 @@ FF41..FF5A    ; Changes_When_Casemapped # L&  [26] FULLWIDTH LATIN SMALL LETTER 
 09DF..09E1    ; ID_Start # Lo   [3] BENGALI LETTER YYA..BENGALI LETTER VOCALIC LL
 09F0..09F1    ; ID_Start # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
 09FC          ; ID_Start # Lo       BENGALI LETTER VEDIC ANUSVARA
-09FF          ; ID_Start # Lo       BENGALI LETTER SANSKRIT BA
 0A05..0A0A    ; ID_Start # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
 0A0F..0A10    ; ID_Start # Lo   [2] GURMUKHI LETTER EE..GURMUKHI LETTER AI
 0A13..0A28    ; ID_Start # Lo  [22] GURMUKHI LETTER OO..GURMUKHI LETTER NA
@@ -6914,8 +6912,6 @@ FFDA..FFDC    ; ID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGUL
 16D40..16D42  ; ID_Start # Lm   [3] KIRAT RAI SIGN ANUSVARA..KIRAT RAI SIGN VISARGA
 16D43..16D6A  ; ID_Start # Lo  [40] KIRAT RAI LETTER A..KIRAT RAI VOWEL SIGN AU
 16D6B..16D6C  ; ID_Start # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
-16D80..16D97  ; ID_Start # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D99..16D9C  ; ID_Start # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
 16E40..16E7F  ; ID_Start # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16EA0..16EB8  ; ID_Start # L&  [25] BERIA ERFE CAPITAL LETTER ARKAB..BERIA ERFE CAPITAL LETTER AY
 16EBB..16ED3  ; ID_Start # L&  [25] BERIA ERFE SMALL LETTER ARKAB..BERIA ERFE SMALL LETTER AY
@@ -7042,7 +7038,7 @@ FFDA..FFDC    ; ID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGUL
 30000..3134A  ; ID_Start # Lo [4939] CJK UNIFIED IDEOGRAPH-30000..CJK UNIFIED IDEOGRAPH-3134A
 31350..33479  ; ID_Start # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 
-# Total code points: 145945
+# Total code points: 145916
 
 # ================================================
 
@@ -7196,7 +7192,6 @@ FFDA..FFDC    ; ID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGUL
 09F0..09F1    ; ID_Continue # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
 09FC          ; ID_Continue # Lo       BENGALI LETTER VEDIC ANUSVARA
 09FE          ; ID_Continue # Mn       BENGALI SANDHI MARK
-09FF          ; ID_Continue # Lo       BENGALI LETTER SANSKRIT BA
 0A01..0A02    ; ID_Continue # Mn   [2] GURMUKHI SIGN ADAK BINDI..GURMUKHI SIGN BINDI
 0A03          ; ID_Continue # Mc       GURMUKHI SIGN VISARGA
 0A05..0A0A    ; ID_Continue # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
@@ -7257,7 +7252,7 @@ FFDA..FFDC    ; ID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGUL
 0B47..0B48    ; ID_Continue # Mc   [2] ORIYA VOWEL SIGN E..ORIYA VOWEL SIGN AI
 0B4B..0B4C    ; ID_Continue # Mc   [2] ORIYA VOWEL SIGN O..ORIYA VOWEL SIGN AU
 0B4D          ; ID_Continue # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; ID_Continue # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; ID_Continue # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; ID_Continue # Mc       ORIYA AU LENGTH MARK
 0B5C..0B5D    ; ID_Continue # Lo   [2] ORIYA LETTER RRA..ORIYA LETTER RHA
 0B5F..0B61    ; ID_Continue # Lo   [3] ORIYA LETTER YYA..ORIYA LETTER VOCALIC LL
@@ -8303,11 +8298,6 @@ FFDA..FFDC    ; ID_Continue # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HAN
 16D43..16D6A  ; ID_Continue # Lo  [40] KIRAT RAI LETTER A..KIRAT RAI VOWEL SIGN AU
 16D6B..16D6C  ; ID_Continue # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
 16D70..16D79  ; ID_Continue # Nd  [10] KIRAT RAI DIGIT ZERO..KIRAT RAI DIGIT NINE
-16D80..16D97  ; ID_Continue # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D98         ; ID_Continue # Mn       CHISOI SIGN ANUSVARA
-16D99..16D9C  ; ID_Continue # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
-16D9D         ; ID_Continue # Mn       CHISOI SIGN SISO
-16DA0..16DA9  ; ID_Continue # Nd  [10] CHISOI DIGIT ZERO..CHISOI DIGIT NINE
 16E40..16E7F  ; ID_Continue # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16EA0..16EB8  ; ID_Continue # L&  [25] BERIA ERFE CAPITAL LETTER ARKAB..BERIA ERFE CAPITAL LETTER AY
 16EBB..16ED3  ; ID_Continue # L&  [25] BERIA ERFE SMALL LETTER ARKAB..BERIA ERFE SMALL LETTER AY
@@ -8481,7 +8471,7 @@ FFDA..FFDC    ; ID_Continue # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HAN
 31350..33479  ; ID_Continue # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 E0100..E01EF  ; ID_Continue # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 149283
+# Total code points: 149240
 
 # ================================================
 
@@ -8573,7 +8563,6 @@ E0100..E01EF  ; ID_Continue # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR
 09DF..09E1    ; XID_Start # Lo   [3] BENGALI LETTER YYA..BENGALI LETTER VOCALIC LL
 09F0..09F1    ; XID_Start # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
 09FC          ; XID_Start # Lo       BENGALI LETTER VEDIC ANUSVARA
-09FF          ; XID_Start # Lo       BENGALI LETTER SANSKRIT BA
 0A05..0A0A    ; XID_Start # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
 0A0F..0A10    ; XID_Start # Lo   [2] GURMUKHI LETTER EE..GURMUKHI LETTER AI
 0A13..0A28    ; XID_Start # Lo  [22] GURMUKHI LETTER OO..GURMUKHI LETTER NA
@@ -9147,8 +9136,6 @@ FFDA..FFDC    ; XID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGU
 16D40..16D42  ; XID_Start # Lm   [3] KIRAT RAI SIGN ANUSVARA..KIRAT RAI SIGN VISARGA
 16D43..16D6A  ; XID_Start # Lo  [40] KIRAT RAI LETTER A..KIRAT RAI VOWEL SIGN AU
 16D6B..16D6C  ; XID_Start # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
-16D80..16D97  ; XID_Start # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D99..16D9C  ; XID_Start # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
 16E40..16E7F  ; XID_Start # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16EA0..16EB8  ; XID_Start # L&  [25] BERIA ERFE CAPITAL LETTER ARKAB..BERIA ERFE CAPITAL LETTER AY
 16EBB..16ED3  ; XID_Start # L&  [25] BERIA ERFE SMALL LETTER ARKAB..BERIA ERFE SMALL LETTER AY
@@ -9275,7 +9262,7 @@ FFDA..FFDC    ; XID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGU
 30000..3134A  ; XID_Start # Lo [4939] CJK UNIFIED IDEOGRAPH-30000..CJK UNIFIED IDEOGRAPH-3134A
 31350..33479  ; XID_Start # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 
-# Total code points: 145922
+# Total code points: 145893
 
 # ================================================
 
@@ -9425,7 +9412,6 @@ FFDA..FFDC    ; XID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGU
 09F0..09F1    ; XID_Continue # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
 09FC          ; XID_Continue # Lo       BENGALI LETTER VEDIC ANUSVARA
 09FE          ; XID_Continue # Mn       BENGALI SANDHI MARK
-09FF          ; XID_Continue # Lo       BENGALI LETTER SANSKRIT BA
 0A01..0A02    ; XID_Continue # Mn   [2] GURMUKHI SIGN ADAK BINDI..GURMUKHI SIGN BINDI
 0A03          ; XID_Continue # Mc       GURMUKHI SIGN VISARGA
 0A05..0A0A    ; XID_Continue # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
@@ -9486,7 +9472,7 @@ FFDA..FFDC    ; XID_Start # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HANGU
 0B47..0B48    ; XID_Continue # Mc   [2] ORIYA VOWEL SIGN E..ORIYA VOWEL SIGN AI
 0B4B..0B4C    ; XID_Continue # Mc   [2] ORIYA VOWEL SIGN O..ORIYA VOWEL SIGN AU
 0B4D          ; XID_Continue # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; XID_Continue # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; XID_Continue # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; XID_Continue # Mc       ORIYA AU LENGTH MARK
 0B5C..0B5D    ; XID_Continue # Lo   [2] ORIYA LETTER RRA..ORIYA LETTER RHA
 0B5F..0B61    ; XID_Continue # Lo   [3] ORIYA LETTER YYA..ORIYA LETTER VOCALIC LL
@@ -10537,11 +10523,6 @@ FFDA..FFDC    ; XID_Continue # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HA
 16D43..16D6A  ; XID_Continue # Lo  [40] KIRAT RAI LETTER A..KIRAT RAI VOWEL SIGN AU
 16D6B..16D6C  ; XID_Continue # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
 16D70..16D79  ; XID_Continue # Nd  [10] KIRAT RAI DIGIT ZERO..KIRAT RAI DIGIT NINE
-16D80..16D97  ; XID_Continue # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D98         ; XID_Continue # Mn       CHISOI SIGN ANUSVARA
-16D99..16D9C  ; XID_Continue # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
-16D9D         ; XID_Continue # Mn       CHISOI SIGN SISO
-16DA0..16DA9  ; XID_Continue # Nd  [10] CHISOI DIGIT ZERO..CHISOI DIGIT NINE
 16E40..16E7F  ; XID_Continue # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16EA0..16EB8  ; XID_Continue # L&  [25] BERIA ERFE CAPITAL LETTER ARKAB..BERIA ERFE CAPITAL LETTER AY
 16EBB..16ED3  ; XID_Continue # L&  [25] BERIA ERFE SMALL LETTER ARKAB..BERIA ERFE SMALL LETTER AY
@@ -10715,7 +10696,7 @@ FFDA..FFDC    ; XID_Continue # Lo   [3] HALFWIDTH HANGUL LETTER EU..HALFWIDTH HA
 31350..33479  ; XID_Continue # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 E0100..E01EF  ; XID_Continue # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 149264
+# Total code points: 149221
 
 # ================================================
 
@@ -10838,7 +10819,7 @@ E01F0..E0FFF  ; Default_Ignorable_Code_Point # Cn [3600] <reserved-E01F0>..<rese
 0B3F          ; Grapheme_Extend # Mn       ORIYA VOWEL SIGN I
 0B41..0B44    ; Grapheme_Extend # Mn   [4] ORIYA VOWEL SIGN U..ORIYA VOWEL SIGN VOCALIC RR
 0B4D          ; Grapheme_Extend # Mn       ORIYA SIGN VIRAMA
-0B53..0B56    ; Grapheme_Extend # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; Grapheme_Extend # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; Grapheme_Extend # Mc       ORIYA AU LENGTH MARK
 0B62..0B63    ; Grapheme_Extend # Mn   [2] ORIYA VOWEL SIGN VOCALIC L..ORIYA VOWEL SIGN VOCALIC LL
 0B82          ; Grapheme_Extend # Mn       TAMIL SIGN ANUSVARA
@@ -11155,8 +11136,6 @@ FF9E..FF9F    ; Grapheme_Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK.
 1612D..1612F  ; Grapheme_Extend # Mn   [3] GURUNG KHEMA SIGN ANUSVARA..GURUNG KHEMA SIGN THOLHOMA
 16AF0..16AF4  ; Grapheme_Extend # Mn   [5] BASSA VAH COMBINING HIGH TONE..BASSA VAH COMBINING HIGH-LOW TONE
 16B30..16B36  ; Grapheme_Extend # Mn   [7] PAHAWH HMONG MARK CIM TUB..PAHAWH HMONG MARK CIM TAUM
-16D98         ; Grapheme_Extend # Mn       CHISOI SIGN ANUSVARA
-16D9D         ; Grapheme_Extend # Mn       CHISOI SIGN SISO
 16F4F         ; Grapheme_Extend # Mn       MIAO SIGN CONSONANT MODIFIER BAR
 16F8F..16F92  ; Grapheme_Extend # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16FE4         ; Grapheme_Extend # Mn       KHITAN SMALL SCRIPT FILLER
@@ -11197,7 +11176,7 @@ FF9E..FF9F    ; Grapheme_Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK.
 E0020..E007F  ; Grapheme_Extend # Cf  [96] TAG SPACE..CANCEL TAG
 E0100..E01EF  ; Grapheme_Extend # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 2236
+# Total code points: 2232
 
 # ================================================
 
@@ -11397,7 +11376,6 @@ E0100..E01EF  ; Grapheme_Extend # Mn [240] VARIATION SELECTOR-17..VARIATION SELE
 09FB          ; Grapheme_Base # Sc       BENGALI GANDA MARK
 09FC          ; Grapheme_Base # Lo       BENGALI LETTER VEDIC ANUSVARA
 09FD          ; Grapheme_Base # Po       BENGALI ABBREVIATION SIGN
-09FF          ; Grapheme_Base # Lo       BENGALI LETTER SANSKRIT BA
 0A03          ; Grapheme_Base # Mc       GURMUKHI SIGN VISARGA
 0A05..0A0A    ; Grapheme_Base # Lo   [6] GURMUKHI LETTER A..GURMUKHI LETTER UU
 0A0F..0A10    ; Grapheme_Base # Lo   [2] GURMUKHI LETTER EE..GURMUKHI LETTER AI
@@ -12776,9 +12754,6 @@ FFFC..FFFD    ; Grapheme_Base # So   [2] OBJECT REPLACEMENT CHARACTER..REPLACEME
 16D6B..16D6C  ; Grapheme_Base # Lm   [2] KIRAT RAI SIGN VIRAMA..KIRAT RAI SIGN SAAT
 16D6D..16D6F  ; Grapheme_Base # Po   [3] KIRAT RAI SIGN YUPI..KIRAT RAI DOUBLE DANDA
 16D70..16D79  ; Grapheme_Base # Nd  [10] KIRAT RAI DIGIT ZERO..KIRAT RAI DIGIT NINE
-16D80..16D97  ; Grapheme_Base # Lo  [24] CHISOI LETTER A..CHISOI LETTER PA
-16D99..16D9C  ; Grapheme_Base # Lo   [4] CHISOI LETTER YA..CHISOI LETTER JARAHA
-16DA0..16DA9  ; Grapheme_Base # Nd  [10] CHISOI DIGIT ZERO..CHISOI DIGIT NINE
 16E40..16E7F  ; Grapheme_Base # L&  [64] MEDEFAIDRIN CAPITAL LETTER M..MEDEFAIDRIN SMALL LETTER Y
 16E80..16E96  ; Grapheme_Base # No  [23] MEDEFAIDRIN DIGIT ZERO..MEDEFAIDRIN DIGIT THREE ALTERNATE FORM
 16E97..16E9A  ; Grapheme_Base # Po   [4] MEDEFAIDRIN COMMA..MEDEFAIDRIN EXCLAMATION OH
@@ -12994,7 +12969,7 @@ FFFC..FFFD    ; Grapheme_Base # So   [2] OBJECT REPLACEMENT CHARACTER..REPLACEME
 1FA80..1FA8A  ; Grapheme_Base # So  [11] YO-YO..TROMBONE
 1FA8E..1FAC6  ; Grapheme_Base # So  [57] TREASURE CHEST..FINGERPRINT
 1FAC8         ; Grapheme_Base # So       HAIRY CREATURE
-1FACD..1FADD  ; Grapheme_Base # So  [17] ORCA..APPLE CORE
+1FACD..1FADC  ; Grapheme_Base # So  [16] ORCA..ROOT VEGETABLE
 1FADF..1FAEA  ; Grapheme_Base # So  [12] SPLATTER..DISTORTED FACE
 1FAEF..1FAF8  ; Grapheme_Base # So  [10] FIGHT CLOUD..RIGHTWARDS PUSHING HAND
 1FB00..1FB92  ; Grapheme_Base # So [147] BLOCK SEXTANT-1..UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
@@ -13010,7 +12985,7 @@ FFFC..FFFD    ; Grapheme_Base # So   [2] OBJECT REPLACEMENT CHARACTER..REPLACEME
 30000..3134A  ; Grapheme_Base # Lo [4939] CJK UNIFIED IDEOGRAPH-30000..CJK UNIFIED IDEOGRAPH-3134A
 31350..33479  ; Grapheme_Base # Lo [8490] CJK UNIFIED IDEOGRAPH-31350..CJK UNIFIED IDEOGRAPH-33479
 
-# Total code points: 157534
+# Total code points: 157494
 
 # ================================================
 
@@ -13082,9 +13057,8 @@ ABED          ; Grapheme_Link # Mn       MEETEI MAYEK APUN IYEK
 11F41         ; Grapheme_Link # Mc       KAWI SIGN KILLER
 11F42         ; Grapheme_Link # Mn       KAWI CONJOINER
 1612F         ; Grapheme_Link # Mn       GURUNG KHEMA SIGN THOLHOMA
-16D9D         ; Grapheme_Link # Mn       CHISOI SIGN SISO
 
-# Total code points: 70
+# Total code points: 69
 
 # ================================================
 
@@ -13139,7 +13113,6 @@ AAF6          ; InCB; Linker # Mn       MEETEI MAYEK VIRAMA
 09DC..09DD    ; InCB; Consonant # Lo   [2] BENGALI LETTER RRA..BENGALI LETTER RHA
 09DF          ; InCB; Consonant # Lo       BENGALI LETTER YYA
 09F0..09F1    ; InCB; Consonant # Lo   [2] BENGALI LETTER RA WITH MIDDLE DIAGONAL..BENGALI LETTER RA WITH LOWER DIAGONAL
-09FF          ; InCB; Consonant # Lo       BENGALI LETTER SANSKRIT BA
 0A95..0AA8    ; InCB; Consonant # Lo  [20] GUJARATI LETTER KA..GUJARATI LETTER NA
 0AAA..0AB0    ; InCB; Consonant # Lo   [7] GUJARATI LETTER PA..GUJARATI LETTER RA
 0AB2..0AB3    ; InCB; Consonant # Lo   [2] GUJARATI LETTER LA..GUJARATI LETTER LLA
@@ -13207,7 +13180,7 @@ ABC0..ABDA    ; InCB; Consonant # Lo  [27] MEETEI MAYEK LETTER KOK..MEETEI MAYEK
 11F04..11F10  ; InCB; Consonant # Lo  [13] KAWI LETTER A..KAWI LETTER O
 11F12..11F33  ; InCB; Consonant # Lo  [34] KAWI LETTER KA..KAWI LETTER JNYA
 
-# Total code points: 912
+# Total code points: 911
 
 # ================================================
 
@@ -13272,7 +13245,7 @@ ABC0..ABDA    ; InCB; Consonant # Lo  [27] MEETEI MAYEK LETTER KOK..MEETEI MAYEK
 0B3E          ; InCB; Extend # Mc       ORIYA VOWEL SIGN AA
 0B3F          ; InCB; Extend # Mn       ORIYA VOWEL SIGN I
 0B41..0B44    ; InCB; Extend # Mn   [4] ORIYA VOWEL SIGN U..ORIYA VOWEL SIGN VOCALIC RR
-0B53..0B56    ; InCB; Extend # Mn   [4] ORIYA SIGN DOT ABOVE..ORIYA AI LENGTH MARK
+0B55..0B56    ; InCB; Extend # Mn   [2] ORIYA SIGN OVERLINE..ORIYA AI LENGTH MARK
 0B57          ; InCB; Extend # Mc       ORIYA AU LENGTH MARK
 0B62..0B63    ; InCB; Extend # Mn   [2] ORIYA VOWEL SIGN VOCALIC L..ORIYA VOWEL SIGN VOCALIC LL
 0B82          ; InCB; Extend # Mn       TAMIL SIGN ANUSVARA
@@ -13582,8 +13555,6 @@ FF9E..FF9F    ; InCB; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HA
 1612D..1612F  ; InCB; Extend # Mn   [3] GURUNG KHEMA SIGN ANUSVARA..GURUNG KHEMA SIGN THOLHOMA
 16AF0..16AF4  ; InCB; Extend # Mn   [5] BASSA VAH COMBINING HIGH TONE..BASSA VAH COMBINING HIGH-LOW TONE
 16B30..16B36  ; InCB; Extend # Mn   [7] PAHAWH HMONG MARK CIM TUB..PAHAWH HMONG MARK CIM TAUM
-16D98         ; InCB; Extend # Mn       CHISOI SIGN ANUSVARA
-16D9D         ; InCB; Extend # Mn       CHISOI SIGN SISO
 16F4F         ; InCB; Extend # Mn       MIAO SIGN CONSONANT MODIFIER BAR
 16F8F..16F92  ; InCB; Extend # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16FE4         ; InCB; Extend # Mn       KHITAN SMALL SCRIPT FILLER
@@ -13625,6 +13596,6 @@ FF9E..FF9F    ; InCB; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HA
 E0020..E007F  ; InCB; Extend # Cf  [96] TAG SPACE..CANCEL TAG
 E0100..E01EF  ; InCB; Extend # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 2221
+# Total code points: 2217
 
 # EOF
