@@ -478,14 +478,6 @@ public:
   RBTree() : BaseType(), _allocator() {}
   NONCOPYABLE(RBTree);
   ~RBTree() { remove_all(); }
-  RBTree(const RBTree& other) : BaseType(), _allocator() {
-    assert(std::is_copy_constructible<V>(), "Value type must be copy-constructible");
-    other.visit_in_order([&](auto node) {
-      this->upsert(node->key(), node->val());
-      return true;
-    });
-  }
-  RBTree& operator=(const RBTree& other) = delete;
 
   bool copy_into(RBTree& other) const;
 
