@@ -183,7 +183,7 @@ void VM_Version::common_initialize() {
 
   if (UseZicboz) {
     if (zicboz_block_size.enabled()) {
-      assert(UseZic64b ? zicboz_block_size.value()== 64 : true, "Zicboz block size should be 64 when UseZic64b is true");
+      assert(UseZic64b ? zicboz_block_size.value() == 64 : true, "Zicboz block size should be 64 when UseZic64b is true");
       assert(is_power_of_2(zicboz_block_size.value()), "CacheLineSize must be a power of 2");
       FLAG_SET_DEFAULT(CacheLineSize, zicboz_block_size.value());
     }
