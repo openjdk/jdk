@@ -160,9 +160,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
-  // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
-  // Contains the _object's hashCode.
-  // * LM_LEGACY, LM_MONITOR, LM_LIGHTWEIGHT without UseObjectMonitorTable:
+  // * Lightweight locking with UseObjectMonitorTable:
+  //   Contains the _object's hashCode.
+  // * * Lightweight locking without UseObjectMonitorTable:
   // Contains the displaced object header word - mark
   volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
@@ -203,9 +203,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
   volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
-
-  // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
-  BasicLock* volatile _stack_locker;
 
  public:
 
@@ -317,10 +314,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void set_owner_from_anonymous(JavaThread* owner) {
     set_owner_from(ANONYMOUS_OWNER, owner);
   }
-
-  // Get and set _stack_locker.
-  BasicLock* stack_locker() const;
-  void set_stack_locker(BasicLock* locker);
 
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;

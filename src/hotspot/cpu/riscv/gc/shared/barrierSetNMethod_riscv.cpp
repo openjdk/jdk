@@ -50,8 +50,6 @@ static int entry_barrier_offset(nmethod* nm) {
   switch (bs_asm->nmethod_patching_type()) {
     case NMethodPatchingType::stw_instruction_and_data_patch:
       return -4 * (4 + slow_path_size(nm));
-    case NMethodPatchingType::conc_data_patch:
-      return -4 * (5 + slow_path_size(nm));
     case NMethodPatchingType::conc_instruction_and_data_patch:
       return -4 * (15 + slow_path_size(nm));
   }

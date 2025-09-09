@@ -1146,7 +1146,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
     DEBUG_ONLY(check_klass_after_loading(record->klass());)
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
-    if (record->klass()->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
+    if (record->klass()->is_aot_generated_class() && JvmtiExport::should_post_class_file_load_hook()) {
        return nullptr;
     }
     return record->klass();
