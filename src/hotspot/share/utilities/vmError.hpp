@@ -251,4 +251,41 @@ public:
   ~VMErrorCallbackMark();
 };
 
+// Ergonomic construction for creating ad-hoc VMErrorCallback which automatically
+// calls the provided invocable f if a VM crash occurs within its lifetime.
+// Can be used to instrument a build for more detailed contextual information
+// gathering. Especially useful when hunting down intermittent bugs, or issues
+// only reproducible in environments where access to a debugger is not readily
+// available. Example use:
+/*
+  {
+    // Note the lambda is invoked after an error occurs within this thread,
+    // and during on_error's lifetime. If state prior to the crash is required,
+    // capture a copy of it first.
+    auto important_value = get_the_value();
+
+    OnVMError on_error([&](outputStream* st) {
+      // Dump the important bits.
+      st->print("Prior value: ");
+      important_value.print_on(st);
+      st->print("During crash: ")
+      get_the_value().print_on(st);
+      // Dump whole the whole state.
+      this->print_on(st);
+    });
+
+    // Sometimes doing a thing will crash the VM.
+    do_a_thing();
+  }
+*/
+template <typename F>
+class OnVMError : F, public VMErrorCallback, public VMErrorCallbackMark {
+  void call(outputStream* st) final { this->operator()(st); }
+
+public:
+  OnVMError(F&& f) : F(static_cast<F&&>(f)), VMErrorCallbackMark(this) {}
+};
+
+template <typename F> OnVMError(F) -> OnVMError<F>;
+
 #endif // SHARE_UTILITIES_VMERROR_HPP
