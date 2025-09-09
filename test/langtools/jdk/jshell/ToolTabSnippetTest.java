@@ -345,6 +345,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
+    @Test
     public void testAnnotation() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("@interface Ann1 { public java.lang.annotation.Retention[] value(); }\n");
