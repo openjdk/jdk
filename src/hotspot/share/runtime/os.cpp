@@ -459,7 +459,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             char klass_name[256];
             char tmp_sig_name[16];
             const char* sig_name = "UNKNOWN";
-            InstanceKlass::cast(PENDING_EXCEPTION->klass())->
+            PENDING_EXCEPTION->klass()->
               name()->as_klass_external_name(klass_name, 256);
             if (os::exception_name(sig, tmp_sig_name, 16) != nullptr)
               sig_name = tmp_sig_name;
