@@ -77,52 +77,52 @@ public:
 typedef PSRootsClosure</*promote_immediately=*/false> PSScavengeRootsClosure;
 typedef PSRootsClosure</*promote_immediately=*/true> PSPromoteRootsClosure;
 
-
 // Scavenges the oop in a ClassLoaderData.
 class PSScavengeCLDClosure: public CLDClosure {
-  // Scavenges a single oop in a ClassLoaderData.
-  class PSScavengeFromCLDClosure: public OopClosure {
-  private:
-    PSPromotionManager* _pm;
-  public:
-    // Records whether this CLD contains oops pointing into young-gen after scavenging.
-    bool _has_oop_into_young_gen;
+  PSPromotionManager* _pm;
+public:
+  PSScavengeCLDClosure(PSPromotionManager* pm) : _pm(pm) { }
 
-    PSScavengeFromCLDClosure(PSPromotionManager* pm) : _pm(pm), _has_oop_into_young_gen(false) { }
-    void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-    void do_oop(oop* p)       {
-      ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
-      assert(!psh->is_in_reserved(p), "GC barrier needed");
-      if (PSScavenge::should_scavenge(p)) {
-        assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
+  void do_cld(ClassLoaderData* cld) {
+    // If the cld has not been dirtied we know that there are
+    // no references into the young gen, so we can skip it.
+    if (!cld->has_modified_oops()) {
+      return;
+    }
 
-        oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
-        oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
-        RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    // Scavenges a single oop in a ClassLoaderData.
+    class CLDOopClosure : public OopClosure {
+      PSPromotionManager* _pm;
 
-        if (PSScavenge::is_obj_in_young(new_obj) && !_has_oop_into_young_gen) {
-          _has_oop_into_young_gen = true;
+    public:
+      // Records whether this CLD contains oops pointing into young-gen after scavenging.
+      bool _has_oop_into_young_gen;
+
+      CLDOopClosure(PSPromotionManager* pm) : _pm(pm), _has_oop_into_young_gen(false) {}
+
+      void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+      void do_oop(oop* p) {
+        ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
+        assert(!psh->is_in_reserved(p), "GC barrier needed");
+        if (PSScavenge::should_scavenge(p)) {
+          assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
+
+          oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+          oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
+          RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+
+          if (PSScavenge::is_obj_in_young(new_obj) && !_has_oop_into_young_gen) {
+            _has_oop_into_young_gen = true;
+          }
         }
       }
-    }
-  };
+    } oop_closure{_pm};
 
-  PSScavengeFromCLDClosure _oop_closure;
-public:
-  PSScavengeCLDClosure(PSPromotionManager* pm) : _oop_closure(pm) { }
-  void do_cld(ClassLoaderData* cld) {
-    // If the cld has not been dirtied we know that there's
-    // no references into the young gen and we can skip it.
-    if (cld->has_modified_oops()) {
-      // Reset before iterating oops.
-      _oop_closure._has_oop_into_young_gen = false;
+    // Clean the cld since we're going to scavenge all the metadata.
+    cld->oops_do(&oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
 
-      // Clean the cld since we're going to scavenge all the metadata.
-      cld->oops_do(&_oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
-
-      if (_oop_closure._has_oop_into_young_gen) {
-        cld->record_modified_oops();
-      }
+    if (oop_closure._has_oop_into_young_gen) {
+      cld->record_modified_oops();
     }
   }
 };
