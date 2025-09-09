@@ -127,7 +127,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
 
-        if (socket == null) {
+        if (socket == null || SIGNATURE_CONSTRAINTS_MODE.NONE.equals(mode)) {
             return wrap(null, withDefaultCertPathConstraints);
         }
 
@@ -152,7 +152,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
 
-        if (engine == null) {
+        if (engine == null || SIGNATURE_CONSTRAINTS_MODE.NONE.equals(mode)) {
             return wrap(null, withDefaultCertPathConstraints);
         }
 
@@ -417,8 +417,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                                 .equalsIgnoreCase(paramDigestAlg));
 
             } catch (InvalidParameterSpecException e) {
-                throw new IllegalArgumentException(
-                        "Invalid AlgorithmParameters", e);
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("Invalid AlgorithmParameters: "
+                            + parameters + "; Error: " + e.getMessage());
+                }
+
+                return true;
             }
         }
     }
