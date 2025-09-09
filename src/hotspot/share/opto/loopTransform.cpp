@@ -1757,6 +1757,22 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       _igvn.hash_delete(cur_phi);
       cur_phi->set_req(LoopNode::EntryControl, fallnew);
     }
+    if (main_phi->is_CountedLoopEnd() && main_phi->in(0) == main_head) {
+      for (DUIterator j = main_phi->outs(); main_phi->has_out(j); j++) {
+        Node* if_false = main_phi->out(j);
+        // TODO is the store always attached to the if_false? probably, because it depends on the computation and thus cannot be
+        // attached to OuterStripMinedLoop directly. But what if the store has no computation? unclear, should test
+        if (if_false->is_IfFalse()) {
+          for (DUIterator k = if_false->outs(); if_false->has_out(k); k++) {
+            Node* store = if_false->out(k);
+            if (store->is_Store()) {
+              Node* store_new = old_new[store->_idx];
+              store_new->set_req(MemNode::Memory, store);
+            }
+          }
+        }
+      }
+    }
   }
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(post_head->in(LoopNode::EntryControl), false);)
