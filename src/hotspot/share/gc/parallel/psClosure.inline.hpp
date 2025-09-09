@@ -77,7 +77,6 @@ public:
 typedef PSRootsClosure</*promote_immediately=*/false> PSScavengeRootsClosure;
 typedef PSRootsClosure</*promote_immediately=*/true> PSPromoteRootsClosure;
 
-
 // Scavenges a single oop in a ClassLoaderData.
 class PSScavengeCLDOopClosure : public OopClosure {
   PSPromotionManager* _pm;
@@ -109,6 +108,7 @@ public:
 // Scavenges the oop in a ClassLoaderData.
 class PSScavengeCLDClosure: public CLDClosure {
   PSPromotionManager* _pm;
+
 public:
   PSScavengeCLDClosure(PSPromotionManager* pm) : _pm(pm) { }
 
