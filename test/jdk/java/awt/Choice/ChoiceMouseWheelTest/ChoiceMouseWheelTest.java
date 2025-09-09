@@ -138,12 +138,12 @@ public class ChoiceMouseWheelTest extends Frame {
         Rectangle frameBounds = Util.invokeOnEDT(this::getBounds);
 
         int y = frameBounds.y + frameBounds.height;
-        while (!frameExited && y >= 0) { // move to the bottom of drop-down list
+        while (!frameExited && y >= frameBounds.y) { // move to the bottom of drop-down list
             robot.mouseMove(x, --y);
             robot.waitForIdle();
         }
 
-        if (x < 0) {
+        if (y < frameBounds.y) {
             throw new RuntimeException("Could not enter drop-down list!");
         }
 
