@@ -65,9 +65,11 @@ class oopDesc {
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
+  inline void* base_addr();
+  inline const void* base_addr() const;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
-  inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);
@@ -259,8 +261,8 @@ class oopDesc {
   inline bool is_unlocked() const;
 
   // asserts and guarantees
-  static bool is_oop(oop obj, bool ignore_mark_word = false);
-  static bool is_oop_or_null(oop obj, bool ignore_mark_word = false);
+  static bool is_oop(oop obj);
+  static bool is_oop_or_null(oop obj);
 
   // garbage collection
   inline bool is_gc_marked() const;

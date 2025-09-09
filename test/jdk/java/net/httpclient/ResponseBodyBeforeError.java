@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules java.net.http/jdk.internal.net.http.common
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm ResponseBodyBeforeError
+ * @run testng/othervm/timeout=480 ResponseBodyBeforeError
  */
 
 import java.io.Closeable;

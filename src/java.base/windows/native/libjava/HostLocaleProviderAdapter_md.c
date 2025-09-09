@@ -965,34 +965,28 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
 void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BOOL prefix, WCHAR * ret) {
     DWORD pattern = 0;
     int style = numberStyle;
- // int got = 0;
 
     if (positive) {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-         // got =
-                  getLocaleInfoWrapper(langtag,
+            getLocaleInfoWrapper(langtag,
                 LOCALE_ICURRENCY | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-         // got =
-                  getLocaleInfoWrapper(langtag,
+            getLocaleInfoWrapper(langtag,
                 LOCALE_IPOSITIVEPERCENT | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         }
     } else {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-         // got =
-                  getLocaleInfoWrapper(langtag,
+            getLocaleInfoWrapper(langtag,
                 LOCALE_INEGCURR | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-         // got =
-                  getLocaleInfoWrapper(langtag,
+            getLocaleInfoWrapper(langtag,
                 LOCALE_INEGATIVEPERCENT | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         } else {
-         // got =
-                  getLocaleInfoWrapper(langtag,
+            getLocaleInfoWrapper(langtag,
                 LOCALE_INEGNUMBER | LOCALE_RETURN_NUMBER,
                 (LPWSTR)&pattern, sizeof(pattern));
         }

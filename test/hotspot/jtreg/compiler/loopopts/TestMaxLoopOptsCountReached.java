@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
  * @bug 8284944
  * @requires vm.compiler2.enabled
  * @summary triggers the loop optimization phase `LoopOptsCount` many times
- * @run main/othervm -Xcomp -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,TestMaxLoopOptsCountReached::test TestMaxLoopOptsCountReached
+ * @run main/othervm/timeout=480 -Xcomp -XX:-PartialPeelLoop
+ *                               -XX:CompileCommand=compileonly,TestMaxLoopOptsCountReached::test
+ *                               -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=0
+ *                               TestMaxLoopOptsCountReached
  */
 
 import java.lang.System.Logger.Level;
