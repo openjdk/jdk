@@ -1836,25 +1836,20 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     return;
   }
 
-  // return a flag when a method terminates by throwing an exception
-  // i.e. if an exception is thrown and it's not caught by the current method
-  bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
   Handle result;
   jvalue value;
   value.j = 0L;
 
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-    // if the method hasn't been popped because of an exception then we populate
-    // the return_value parameter for the callback. At this point we only have
-    // the address of a "raw result" and we just call into the interpreter to
-    // convert this into a jvalue.
-    if (!exception_exit) {
-      oop oop_result;
-      BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-      if (is_reference_type(type)) {
-        result = Handle(thread, oop_result);
-        value.l = JNIHandles::make_local(thread, result());
-      }
+    // At this point we only have the address of a "raw result" and
+    // we just call into the interpreter to convert this into a jvalue.
+    oop oop_result;
+    BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+    assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+           "Stack shouldn't be empty");
+    if (is_reference_type(type)) {
+      result = Handle(thread, oop_result);
+      value.l = JNIHandles::make_local(thread, result());
     }
   }
 
@@ -1862,12 +1857,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // depth 0 as it is already late in the method exiting dance.
   state->set_top_frame_is_exiting();
 
-  // Deferred transition to VM, so we can stash away the return oop before GC
-  // Note that this transition is not needed when throwing an exception, because
-  // there is no oop to retain.
+  // Deferred transition to VM, so we can stash away the return oop before GC.
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
-    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
+    post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
   JRT_BLOCK_END
 
   // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
