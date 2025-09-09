@@ -67,7 +67,7 @@ public class AltGraphModifierTest {
     }
 
     public static Frame initTestWindow() {
-        Frame mainFrame = new Frame(");
+        Frame mainFrame = new Frame();
         mainFrame.setTitle("TestWindow");
         mainFrame.setBounds(700, 10, 300, 300);
         mainFrame.addMouseListener(new MouseAdapter() {
