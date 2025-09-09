@@ -635,7 +635,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, LockingMode != LM_MONITOR, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, true, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -2865,6 +2865,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dsqrt:          // fall through
   case vmIntrinsics::_dsqrt_strict:   // fall through
   case vmIntrinsics::_dtan:           // fall through
+  case vmIntrinsics::_dsinh:          // fall through
   case vmIntrinsics::_dtanh:          // fall through
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through

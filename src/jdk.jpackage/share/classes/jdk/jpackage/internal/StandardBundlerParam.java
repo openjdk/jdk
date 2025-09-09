@@ -94,10 +94,17 @@ final class StandardBundlerParam {
                     null
             );
 
+    static final BundlerParamInfo<Path> PREDEFINED_APP_IMAGE =
+            new BundlerParamInfo<>(
+            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
+            Path.class,
+            params -> null,
+            (s, p) -> Path.of(s));
+
     static final BundlerParamInfo<ExternalApplication> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
             ExternalApplication.class, params -> {
                 if (hasPredefinedAppImage(params)) {
-                    var appImage = getPredefinedAppImage(params);
+                    var appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
                     return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
                 } else {
                     return null;
@@ -126,13 +133,6 @@ final class StandardBundlerParam {
                     params -> null,
                     (s, p) -> Path.of(s)
             );
-
-    static final BundlerParamInfo<Path> PREDEFINED_APP_IMAGE =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId(),
-            Path.class,
-            params -> null,
-            (s, p) -> Path.of(s));
 
     // this is the raw --app-name arg - used in APP_NAME and INSTALLER_NAME
     static final BundlerParamInfo<String> NAME =
@@ -303,24 +303,6 @@ final class StandardBundlerParam {
                     Boolean.class,
                     params -> false,
                     // valueOf(null) is false, and we actually do want null
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                            true : Boolean.valueOf(s)
-            );
-
-    static final BundlerParamInfo<Boolean> SHORTCUT_HINT  =
-            new BundlerParamInfo<>(
-                    "shortcut-hint", // not directly related to a CLI option
-                    Boolean.class,
-                    params -> true,  // defaults to true
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                            true : Boolean.valueOf(s)
-            );
-
-    static final BundlerParamInfo<Boolean> MENU_HINT  =
-            new BundlerParamInfo<>(
-                    "menu-hint", // not directly related to a CLI option
-                    Boolean.class,
-                    params -> true,  // defaults to true
                     (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
                             true : Boolean.valueOf(s)
             );
@@ -531,18 +513,6 @@ final class StandardBundlerParam {
 
     static boolean hasPredefinedAppImage(Map<String, ? super Object> params) {
         return params.containsKey(PREDEFINED_APP_IMAGE.getID());
-    }
-
-    static Path getPredefinedAppImage(Map<String, ? super Object> params) {
-        Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-        if (applicationImage != null && !IOUtils.exists(applicationImage)) {
-            throw new RuntimeException(
-                    MessageFormat.format(I18N.getString(
-                            "message.app-image-dir-does-not-exist"),
-                            PREDEFINED_APP_IMAGE.getID(),
-                            applicationImage.toString()));
-        }
-        return applicationImage;
     }
 
     private static String getDefaultAppVersion(Map<String, ? super Object> params) {

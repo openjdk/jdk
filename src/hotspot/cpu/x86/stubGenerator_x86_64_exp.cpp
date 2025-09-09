@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
-* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+* Copyright (C) 2021, Tencent. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

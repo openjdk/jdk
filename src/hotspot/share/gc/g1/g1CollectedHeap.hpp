@@ -274,6 +274,14 @@ private:
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
+  // Wait until a full mark (either currently in progress or one that completed
+  // after the current request) has finished. Returns whether that full mark started
+  // after this request. If so, we typically do not need another one.
+  bool wait_full_mark_finished(GCCause::Cause cause,
+                               uint old_marking_started_before,
+                               uint old_marking_started_after,
+                               uint old_marking_completed_after);
+
   // Attempt to start a concurrent cycle with the indicated cause.
   // precondition: should_do_concurrent_full_gc(cause)
   bool try_collect_concurrently(GCCause::Cause cause,
@@ -434,8 +442,7 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  HeapWord* mem_allocate(size_t word_size,
-                         bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t word_size) override;
 
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
@@ -796,7 +803,7 @@ public:
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
-  void abandon_collection_set(G1CollectionSet* collection_set);
+  void abandon_collection_set();
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
@@ -1206,7 +1213,6 @@ public:
     return named_heap<G1CollectedHeap>(CollectedHeap::G1);
   }
 
-  void set_region_short_lived_locked(G1HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
   G1SurvivorRegions* survivor() { return &_survivor; }

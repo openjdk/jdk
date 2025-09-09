@@ -176,3 +176,19 @@ ULIMIT := ulimit
 ifeq ($(OPENJDK_BUILD_OS), windows)
   PATHTOOL := cygpath
 endif
+
+# These settings are needed to run testing with jvmti agent
+ifeq ($(OPENJDK_BUILD_OS), linux)
+  LIBRARY_PREFIX := lib
+  SHARED_LIBRARY_SUFFIX := .so
+endif
+
+ifeq ($(OPENJDK_BUILD_OS), windows)
+  LIBRARY_PREFIX :=
+  SHARED_LIBRARY_SUFFIX := .dll
+endif
+
+ifeq ($(OPENJDK_BUILD_OS), macosx)
+  LIBRARY_PREFIX := lib
+  SHARED_LIBRARY_SUFFIX := .dylib
+endif

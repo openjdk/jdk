@@ -146,7 +146,7 @@ More information about IR matching can be found in the Javadocs of [IR](./IR.jav
 ### 2.3 Test VM Flags and Scenarios
 The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
 
-If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the Javadocs of [Scenario](./Scenario.java).
+If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the Javadocs of [Scenario](./Scenario.java). If a user wants to test all combinations of multiple sets of flags, they can use `TestFramework.addCrossProductScenarios()`.
 
 ### 2.4 Compiler Controls
 The framework allows the use of additional compiler control annotations for helper method and classes in the same fashion as JMH does. The following annotations are supported and described in the referenced Javadocs for the annotation class:

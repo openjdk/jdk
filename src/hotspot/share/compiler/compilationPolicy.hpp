@@ -74,32 +74,28 @@ class Queue {
   }
 public:
   Queue() : _head(nullptr), _tail(nullptr) { }
-  void push(T* value, Monitor* lock, TRAPS) {
-    MonitorLocker locker(THREAD, lock);
+  void push(T* value, Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
     push_unlocked(value);
     locker.notify_all();
   }
 
   bool is_empty_unlocked() const { return _head == nullptr; }
 
-  T* pop(Monitor* lock, TRAPS) {
-    MonitorLocker locker(THREAD, lock);
-    while(is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
+  T* pop(Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
+    while (is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
       locker.wait();
     }
     T* value = pop_unlocked();
     return value;
   }
 
-  T* try_pop(Monitor* lock, TRAPS) {
-    MonitorLocker locker(THREAD, lock);
-    T* value = nullptr;
-    if (!is_empty_unlocked()) {
-      value = pop_unlocked();
-    }
+  T* try_pop(Monitor* lock, JavaThread* current) {
+    MonitorLocker locker(current, lock);
+    T* value = pop_unlocked();
     return value;
   }
-
   void print_on(outputStream* st);
 };
 } // namespace CompilationPolicyUtils
@@ -287,8 +283,8 @@ class CompilationPolicy : AllStatic {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
-  static void print_counters(const char* prefix, Method* m);
-  static void print_training_data(const char* prefix, Method* method);
+  static void print_counters_on(outputStream* st, const char* prefix, Method* m);
+  static void print_training_data_on(outputStream* st, const char* prefix, Method* method);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
@@ -318,6 +314,7 @@ class CompilationPolicy : AllStatic {
   static void set_c2_count(int x) { _c2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, FORCE_COMPILE, FORCE_RECOMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
+  static void print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level);
   static void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   static void compile(const methodHandle& mh, int bci, CompLevel level, TRAPS);
@@ -341,7 +338,7 @@ class CompilationPolicy : AllStatic {
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static void maybe_compile_early(const methodHandle& m, TRAPS);
-  static void replay_training_at_init_impl(InstanceKlass* klass, TRAPS);
+  static void replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current);
  public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
@@ -351,8 +348,8 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
-  static void replay_training_at_init(InstanceKlass* klass, TRAPS);
-  static void replay_training_at_init_loop(TRAPS);
+  static void replay_training_at_init(InstanceKlass* klass, JavaThread* current);
+  static void replay_training_at_init_loop(JavaThread* current);
 
   // m is allowed to be compiled
   static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);

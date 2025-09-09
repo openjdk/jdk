@@ -26,8 +26,8 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapFrame.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -140,7 +140,7 @@ static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verif
     // Shared classes shouldn't have stackmaps either.
     // However, bytecodes for shared old classes can be verified because
     // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
+    !(klass->in_aot_cache() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
