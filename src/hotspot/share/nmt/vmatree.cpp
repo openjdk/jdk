@@ -744,10 +744,3 @@ void VMATree::SummaryDiff::print_on(outputStream* out) {
   }
 }
 #endif
-
-void VMATree::clear() {
-  _tree.remove_all();
-};
-bool VMATree::is_empty() {
-  return _tree.size() == 0;
-};
