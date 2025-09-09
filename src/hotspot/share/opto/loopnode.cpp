@@ -1745,7 +1745,7 @@ bool CountedLoopConverter::should_stress_long_counted_loop() const {
   return StressLongCountedLoop > 0 &&
       _iv_bt == T_INT &&
       !_head->as_Loop()->is_loop_nest_inner_loop() &&
-      _structure.trunc_type == TypeInt::INT; // Only stress an int loop (i.e., not char, byte or short)
+      _structure._trunc_type == TypeInt::INT; // Only stress an int loop (i.e., not char, byte or short)
 }
 
 // Convert an int counted loop to a long counted to stress handling of long counted loops. Returns true upon success.
@@ -1755,7 +1755,7 @@ bool CountedLoopConverter::stress_long_counted_loop() const {
   PhaseIterGVN* igvn = &_phase->igvn();
   Unique_Node_List iv_nodes;
   Node_List old_new;
-  iv_nodes.push(_structure.cmp);
+  iv_nodes.push(_structure._cmp);
   bool failed = false;
 
   for (uint i = 0; i < iv_nodes.size() && !failed; i++) {
@@ -1832,7 +1832,7 @@ bool CountedLoopConverter::stress_long_counted_loop() const {
     }
     igvn->register_new_node_with_optimizer(clone);
   }
-  _phase->set_ctrl(old_new[_structure.phi->_idx], _structure.phi->in(0));
+  _phase->set_ctrl(old_new[_structure._phi->_idx], _structure._phi->in(0));
 
   for (uint i = 0; i < iv_nodes.size(); i++) {
     Node* n = iv_nodes.at(i);
@@ -1878,7 +1878,7 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loo
 bool CountedLoopConverter::is_counted_loop() {
   PhaseIterGVN* igvn = &_phase->igvn();
 
-  LoopStructure structure{};
+  LoopStructure structure;
   if (!build_loop_structure(structure)) {
     return false;
   }
@@ -1887,26 +1887,26 @@ bool CountedLoopConverter::is_counted_loop() {
   // ---- Is the loop trip counted? ----
 
   // Check trip counter will end up higher than the limit
-  const TypeInteger* limit_t = igvn->type(structure.limit)->is_integer(_iv_bt);
-  if (is_infinite_loop(structure.trunc1, limit_t, structure.iv_incr)) {
+  const TypeInteger* limit_t = igvn->type(structure._limit)->is_integer(_iv_bt);
+  if (is_infinite_loop(structure._trunc1, limit_t, structure._iv_incr)) {
     return false;
   }
 
   // Stride must be constant
-  jlong stride_con = structure.stride->get_integer_as_long(_iv_bt);
+  jlong stride_con = structure._stride->get_integer_as_long(_iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
-  if (!condition_stride_ok(structure.mask, stride_con)) {
+  if (!condition_stride_ok(structure._mask, stride_con)) {
     return false;
   }
 
   // Check iv type can be promoted to int for short/char/byte loops
-  if (has_truncation_wrap(structure.trunc1, structure.trunc2, structure.trunc_type, structure.phi, stride_con)) {
+  if (has_truncation_wrap(structure._trunc1, structure._trunc2, structure._trunc_type, structure._phi, stride_con)) {
     return false;
   }
 
-  Node* init_trip = structure.phi->in(LoopNode::EntryControl);
+  Node* init_trip = structure._phi->in(LoopNode::EntryControl);
   const TypeInteger* init_t = igvn->type(init_trip)->is_integer(_iv_bt);
-  if (is_iv_overflowing(init_t, stride_con, structure.phi_incr, structure.mask)) {
+  if (is_iv_overflowing(init_t, stride_con, structure._phi_incr, structure._mask)) {
     return false;
   }
 
@@ -2123,10 +2123,10 @@ bool CountedLoopConverter::is_counted_loop() {
   }
 
   // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
-  const jlong limit_correction_for_pre_iv_exit_check = (structure.phi_incr != nullptr) ? stride_con : 0;
+  const jlong limit_correction_for_pre_iv_exit_check = (structure._phi_incr != nullptr) ? stride_con : 0;
 
   // Accounting for (LE2) and (LE4) where we use <= or >= in the loop exit check.
-  const bool includes_limit = (structure.mask == BoolTest::le || structure.mask == BoolTest::ge);
+  const bool includes_limit = (structure._mask == BoolTest::le || structure._mask == BoolTest::ge);
   const jlong limit_correction_for_le_ge_exit_check = (includes_limit ? (stride_con > 0 ? 1 : -1) : 0);
 
   const jlong limit_correction = limit_correction_for_pre_iv_exit_check + limit_correction_for_le_ge_exit_check;
@@ -2164,7 +2164,7 @@ bool CountedLoopConverter::is_counted_loop() {
     }
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-    if (!_phase->is_dominator(_phase->get_ctrl(structure.limit), loop_limit_check_parse_predicate->in(0))) {
+    if (!_phase->is_dominator(_phase->get_ctrl(structure._limit), loop_limit_check_parse_predicate->in(0))) {
       return false;
     }
 
@@ -2183,9 +2183,9 @@ bool CountedLoopConverter::is_counted_loop() {
 
   bool insert_init_trip_limit_check = false;
   if (init_gte_limit && // (2.1)
-      ((structure.mask == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
+      ((structure._mask == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
           !has_dominating_loop_limit_check(init_trip,
-                                           structure.limit,
+                                           structure._limit,
                                            stride_con,
                                            _iv_bt,
                                            init_control))) { // (2.2)
@@ -2212,7 +2212,7 @@ bool CountedLoopConverter::is_counted_loop() {
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
     Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
-    if (!_phase->is_dominator(_phase->get_ctrl(structure.limit), parse_predicate_entry) ||
+    if (!_phase->is_dominator(_phase->get_ctrl(structure._limit), parse_predicate_entry) ||
         !_phase->is_dominator(_phase->get_ctrl(init_trip), parse_predicate_entry)) {
       return false;
     }
@@ -2220,20 +2220,20 @@ bool CountedLoopConverter::is_counted_loop() {
     insert_init_trip_limit_check = true;
   }
 
-  if (structure.mask == BoolTest::ne) {
+  if (structure._mask == BoolTest::ne) {
     // Now we need to canonicalize the loop condition if it is 'ne'.
     assert(stride_con == 1 || stride_con == -1, "simple increment only - checked before");
     if (stride_con > 0) {
       // 'ne' can be replaced with 'lt' only when init < limit. This is ensured by the inserted predicate above.
-      structure.mask = BoolTest::lt;
+      structure._mask = BoolTest::lt;
     } else {
       assert(stride_con < 0, "must be");
       // 'ne' can be replaced with 'gt' only when init > limit. This is ensured by the inserted predicate above.
-      structure.mask = BoolTest::gt;
+      structure._mask = BoolTest::gt;
     }
   }
 
-  if (is_safepoint_invalid(structure.sfpt, structure.back_control)) {
+  if (is_safepoint_invalid(structure._sfpt, structure._back_control)) {
     return false;
   }
 
@@ -2255,9 +2255,7 @@ bool CountedLoopConverter::is_counted_loop() {
   return true;
 }
 
-bool CountedLoopConverter::build_loop_structure(CountedLoopConverter::LoopStructure& structure) {
-  PhaseIterGVN* igvn = &_phase->igvn();
-
+bool CountedLoopConverter::build_loop_structure(LoopStructure& structure) {
   Node* back_control = _phase->loop_exit_control(_head, _loop);
   if (back_control == nullptr) {
     return false;
@@ -2306,27 +2304,27 @@ bool CountedLoopConverter::build_loop_structure(CountedLoopConverter::LoopStruct
 
   SafePointNode* sfpt = find_safepoint(back_control);
 
-  structure.back_control = back_control;
+  structure._back_control = back_control;
 
-  structure.cmp = exit_test.cmp;
-  structure.incr = incr;
-  structure.limit = exit_test.limit;
-  structure.mask = exit_test.mask;
-  structure.cl_prob = exit_test.cl_prob;
+  structure._cmp = exit_test.cmp;
+  structure._incr = incr;
+  structure._limit = exit_test.limit;
+  structure._mask = exit_test.mask;
+  structure._cl_prob = exit_test.cl_prob;
 
-  structure.iv_incr = iv_incr.incr;
-  structure.phi_incr = iv_incr.phi_incr;
+  structure._iv_incr = iv_incr.incr;
+  structure._phi_incr = iv_incr.phi_incr;
 
-  structure.trunc_incr = increment.incr;
-  structure.trunc1 = increment.trunc1;
-  structure.trunc2 = increment.trunc2;
-  structure.trunc_type = increment.trunc_type;
+  structure._trunc_incr = increment.incr;
+  structure._trunc1 = increment.trunc1;
+  structure._trunc2 = increment.trunc2;
+  structure._trunc_type = increment.trunc_type;
 
-  structure.stride = stride.stride;
+  structure._stride = stride.stride;
 
-  structure.phi = phi;
+  structure._phi = phi;
 
-  structure.sfpt = sfpt;
+  structure._sfpt = sfpt;
 
   return true;
 }
@@ -2476,7 +2474,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   Node* init_control = _head->in(LoopNode::EntryControl);
 
   if (_insert_stride_overflow_limit_check) {
-    Node* cmp_limit = CmpNode::make(_structure.limit, igvn->integercon((_stride_con > 0
+    Node* cmp_limit = CmpNode::make(_structure._limit, igvn->integercon((_stride_con > 0
                                                               ? max_signed_integer(_iv_bt)
                                                               : min_signed_integer(_iv_bt))
                                                                  - _final_correction, _iv_bt), _iv_bt);
@@ -2484,9 +2482,9 @@ IdealLoopTree* CountedLoopConverter::convert() {
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
-  Node* init_trip = _structure.phi->in(LoopNode::EntryControl);
+  Node* init_trip = _structure._phi->in(LoopNode::EntryControl);
   if (_insert_init_trip_limit_check) {
-    Node* cmp_limit = CmpNode::make(init_trip, _structure.limit, _iv_bt);
+    Node* cmp_limit = CmpNode::make(init_trip, _structure._limit, _iv_bt);
     Node* bol = new BoolNode(cmp_limit, _stride_con > 0 ? BoolTest::lt : BoolTest::gt);
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
@@ -2503,8 +2501,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
     }
   }
 
-  Node* adjusted_limit = _structure.limit;
-  if (_structure.phi_incr != nullptr) {
+  Node* adjusted_limit = _structure._limit;
+  if (_structure._phi_incr != nullptr) {
     // If compare points directly to the phi we need to adjust
     // the compare so that it points to the incr. Limit have
     // to be adjusted to keep trip count the same and we
@@ -2514,10 +2512,10 @@ IdealLoopTree* CountedLoopConverter::convert() {
     // is converted to
     //   i = init; do {} while(++i < limit+1);
     //
-    adjusted_limit = igvn->transform(AddNode::make(_structure.limit, _structure.stride, _iv_bt));
+    adjusted_limit = igvn->transform(AddNode::make(_structure._limit, _structure._stride, _iv_bt));
   }
 
-  BoolTest::mask mask = _structure.mask;
+  BoolTest::mask mask = _structure._mask;
   if (_includes_limit) {
     // The limit check guaranties that 'limit <= (max_jint - stride)' so
     // we can convert 'i <= limit' to 'i < limit+1' since stride != 0.
@@ -2536,32 +2534,32 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
-  Node* incr = _structure.trunc_incr->clone();
-  incr->set_req(1, _structure.phi);
-  incr->set_req(2, _structure.stride);
+  Node* incr = _structure._trunc_incr->clone();
+  incr->set_req(1, _structure._phi);
+  incr->set_req(2, _structure._stride);
   incr = igvn->register_new_node_with_optimizer(incr);
   _phase->set_early_ctrl(incr, false);
-  igvn->rehash_node_delayed(_structure.phi);
-  _structure.phi->set_req_X(LoopNode::LoopBackControl, incr, igvn);
+  igvn->rehash_node_delayed(_structure._phi);
+  _structure._phi->set_req_X(LoopNode::LoopBackControl, incr, igvn);
 
   // If phi type is more restrictive than Int, raise to
   // Int to prevent (almost) infinite recursion in igvn
   // which can only handle integer types for constants or minint..maxint.
-  Node* phi = _structure.phi;
-  if (!TypeInteger::bottom(_iv_bt)->higher_equal(_structure.phi->bottom_type())) {
+  Node* phi = _structure._phi;
+  if (!TypeInteger::bottom(_iv_bt)->higher_equal(_structure._phi->bottom_type())) {
     Node* nphi =
-        PhiNode::make(_structure.phi->in(0), _structure.phi->in(LoopNode::EntryControl), TypeInteger::bottom(_iv_bt));
-    nphi->set_req(LoopNode::LoopBackControl, _structure.phi->in(LoopNode::LoopBackControl));
+        PhiNode::make(_structure._phi->in(0), _structure._phi->in(LoopNode::EntryControl), TypeInteger::bottom(_iv_bt));
+    nphi->set_req(LoopNode::LoopBackControl, _structure._phi->in(LoopNode::LoopBackControl));
     nphi = igvn->register_new_node_with_optimizer(nphi);
     _phase->set_ctrl(nphi, _phase->get_ctrl(phi));
-    igvn->replace_node(_structure.phi, nphi);
+    igvn->replace_node(_structure._phi, nphi);
     phi = nphi->as_Phi();
   }
 
   Node* iftrue = back_control;
   const uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
-  Node* cmp = _structure.cmp->clone();
+  Node* cmp = _structure._cmp->clone();
 
   cmp->set_req(1, incr);
   cmp->set_req(2, adjusted_limit);
@@ -2577,7 +2575,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   // Replace the old IfNode with a new LoopEndNode
   Node* lex = igvn->register_new_node_with_optimizer(BaseCountedLoopEndNode::make(iff->in(0),
                                                                                   test,
-                                                                                  _structure.cl_prob,
+                                                                                  _structure._cl_prob,
                                                                                   iff->as_If()->_fcnt,
                                                                                   _iv_bt));
   IfNode* le = lex->as_If();
@@ -2619,14 +2617,14 @@ IdealLoopTree* CountedLoopConverter::convert() {
   Node* entry_control = init_control;
   bool strip_mine_loop = _iv_bt == T_INT &&
       _loop->_child == nullptr &&
-      _structure.sfpt != nullptr &&
+      _structure._sfpt != nullptr &&
       !_loop->_has_call &&
-      _phase->is_deleteable_safept(_structure.sfpt);
+      _phase->is_deleteable_safept(_structure._sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
     outer_ilt = _phase->create_outer_strip_mined_loop(init_control,
                                                       _loop,
-                                                      _structure.cl_prob,
+                                                      _structure._cl_prob,
                                                       le->_fcnt,
                                                       entry_control,
                                                       iffalse);
@@ -2649,10 +2647,10 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
   if (_iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
     // Check for immediately preceding SafePoint and remove
-    if (_structure.sfpt != nullptr && (strip_mine_loop || _phase->is_deleteable_safept(_structure.sfpt))) {
+    if (_structure._sfpt != nullptr && (strip_mine_loop || _phase->is_deleteable_safept(_structure._sfpt))) {
       if (strip_mine_loop) {
         Node* outer_le = outer_ilt->_tail->in(0);
-        Node* sfpt_clone = _structure.sfpt->clone();
+        Node* sfpt_clone = _structure._sfpt->clone();
         sfpt_clone->set_req(0, iffalse);
         outer_le->set_req(0, sfpt_clone);
 
@@ -2670,9 +2668,9 @@ IdealLoopTree* CountedLoopConverter::convert() {
         _phase->register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
         _phase->set_idom(outer_le, sfpt_clone, _phase->dom_depth(sfpt_clone));
       }
-      _phase->lazy_replace(_structure.sfpt, _structure.sfpt->in(TypeFunc::Control));
+      _phase->lazy_replace(_structure._sfpt, _structure._sfpt->in(TypeFunc::Control));
       if (_loop->_safepts != nullptr) {
-        _loop->_safepts->yank(_structure.sfpt);
+        _loop->_safepts->yank(_structure._sfpt);
       }
     }
   }

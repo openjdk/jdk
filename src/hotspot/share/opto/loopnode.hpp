@@ -1324,7 +1324,7 @@ public:
 
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head);
 
-  bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
+  bool try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
@@ -1941,30 +1941,40 @@ class CountedLoopConverter {
   static volatile int _long_loop_counted_loops;
 
   struct LoopStructure {
-    Node* back_control;
+    bool _is_valid = false;
 
-    CmpNode* cmp;
-    Node* incr;
-    Node* limit;
-    BoolTest::mask mask;
-    float cl_prob;
+    Node* _back_control;
 
-    Node* iv_incr;
-    Node* phi_incr;
+    CmpNode* _cmp;
+    Node* _incr;
+    Node* _limit;
+    BoolTest::mask _mask;
+    float _cl_prob;
 
-    Node* trunc_incr;
-    Node* trunc1;
-    Node* trunc2;
-    const TypeInteger* trunc_type;
+    Node* _iv_incr;
+    Node* _phi_incr;
 
-    Node* stride;
+    Node* _trunc_incr;
+    Node* _trunc1;
+    Node* _trunc2;
+    const TypeInteger* _trunc_type;
 
-    PhiNode* phi;
+    Node* _stride;
 
-    SafePointNode* sfpt;
+    PhiNode* _phi;
+
+    SafePointNode* _sfpt;
+
+    bool build() {
+
+    }
+
+    bool is_invalid() const {
+      return !_is_valid;
+    }
   };
 
-  LoopStructure _structure{};
+  LoopStructure _structure;
 
   bool _includes_limit = false;
   jlong _stride_con = 0;
