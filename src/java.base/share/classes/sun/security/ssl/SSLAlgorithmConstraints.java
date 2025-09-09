@@ -49,7 +49,6 @@ import static sun.security.util.DisabledAlgorithmConstraints.*;
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     public enum SIGNATURE_CONSTRAINTS_MODE {
-        NONE,  // Don't check against any supported signatures
         PEER,  // Check against peer supported signatures
         LOCAL  // Check against local supported signatures
     }
@@ -127,7 +126,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
 
-        if (socket == null || SIGNATURE_CONSTRAINTS_MODE.NONE.equals(mode)) {
+        if (socket == null) {
             return wrap(null, withDefaultCertPathConstraints);
         }
 
@@ -152,7 +151,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
 
-        if (engine == null || SIGNATURE_CONSTRAINTS_MODE.NONE.equals(mode)) {
+        if (engine == null) {
             return wrap(null, withDefaultCertPathConstraints);
         }
 
@@ -310,7 +309,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             supportedSignatureSchemes = null;
             checksDisabled = false;
 
-            if (SIGNATURE_CONSTRAINTS_MODE.NONE.equals(mode)
+            if (mode == null
                     || !(session instanceof ExtendedSSLSession extSession
                     // "signature_algorithms_cert" TLS extension is only
                     // available starting with TLSv1.2.
