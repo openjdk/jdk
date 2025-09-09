@@ -27,6 +27,7 @@ import java.util.List;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -50,7 +51,8 @@ public class TestCPUInformation {
         for (RecordedEvent event : events) {
             System.out.println("Event: " + event);
             Events.assertField(event, "hwThreads").atLeast(1);
-            Events.assertField(event, "cores").atLeast(1);
+            long cores = Events.assertField(event, "cores").getValue();
+            Asserts.assertTrue(cores > 0 || cores == Long.MIN_VALUE);
             Events.assertField(event, "sockets").atLeast(1);
             Events.assertField(event, "cpu").containsAny("Intel", "AMD", "Unknown x86", "ARM", "PPC", "PowerPC", "AArch64", "RISCV64", "s390");
             Events.assertField(event, "description").containsAny("Intel", "AMD", "Unknown x86", "ARM", "PPC", "PowerPC", "AArch64", "RISCV64", "s390");

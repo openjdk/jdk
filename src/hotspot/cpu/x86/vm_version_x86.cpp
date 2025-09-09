@@ -2591,8 +2591,8 @@ void VM_Version::resolve_cpu_information_details(void) {
   }
 
   // estimate the number of cores.
-  // 0 if hybrid CPU because it is difficult to derive number of cores.
-  _no_of_cores = supports_hybrid() ? 0 : (cores_per_cpu() * _no_of_sockets);
+  // -1 if hybrid CPU because it is difficult to derive number of cores.
+  _no_of_cores = supports_hybrid() ? -1 : (cores_per_cpu() * _no_of_sockets);
 }
 
 
