@@ -88,7 +88,7 @@
 #define   RISCV_HWPROBE_MISALIGNED_FAST         (3 << 0)
 #define   RISCV_HWPROBE_MISALIGNED_UNSUPPORTED  (4 << 0)
 #define   RISCV_HWPROBE_MISALIGNED_MASK         (7 << 0)
-#define RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE	6
+#define RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE 6
 
 #ifndef NR_riscv_hwprobe
 #ifndef NR_arch_specific_syscall
