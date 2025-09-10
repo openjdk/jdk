@@ -3766,7 +3766,7 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
 int reflect_ConstantPool::_oop_offset;
 
 #define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "constantPoolOop", object_signature, false)
+  macro(_oop_offset, k, "vmholder", object_signature, false)
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
@@ -3929,13 +3929,14 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+  assert(_oop_offset != 0, "Uninitialized oop_offset");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
   reflect->obj_field_put(_oop_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-
+  assert(_oop_offset != 0, "Uninitialized oop_offset");
   oop mirror = reflect->obj_field(_oop_offset);
   Klass* k = java_lang_Class::as_Klass(mirror);
   assert(k->is_instance_klass(), "Must be");

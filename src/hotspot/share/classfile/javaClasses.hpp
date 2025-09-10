@@ -934,6 +934,9 @@ class java_lang_Module {
   friend class JavaClasses;
 };
 
+#define CONSTANTPOOL_INJECTED_FIELDS(macro)                             \
+  macro(reflect_ConstantPool, vmholder, object_signature, false)
+
 // Interface to jdk.internal.reflect.ConstantPool objects
 class reflect_ConstantPool {
  private:
