@@ -656,7 +656,7 @@ JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
 }
 
 void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
-  cpu_time_jfr_queue().resize(0);
+  cpu_time_jfr_queue().set_capacity(0);
 }
 
 void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {

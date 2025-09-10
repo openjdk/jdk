@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,10 +511,7 @@ PipelineForm::PipelineForm()
   ,  _stagecnt              (0)
   ,  _classlist             ()
   ,  _classcnt              (0)
-  ,  _noplist               ()
-  ,  _nopcnt                (0)
   ,  _variableSizeInstrs    (false)
-  ,  _branchHasDelaySlot    (false)
   ,  _maxInstrsPerBundle    (0)
   ,  _maxBundlesPerCycle    (1)
   ,  _instrUnitSize         (0)
@@ -533,7 +530,6 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
   const char *res;
   const char *stage;
   const char *cls;
-  const char *nop;
   int count = 0;
 
   fprintf(fp,"\nPipeline:");
@@ -549,8 +545,6 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
       fprintf(fp," fixed-sized bundles of %d bytes", _bundleUnitSize);
     else
       fprintf(fp," fixed-sized instructions");
-  if (_branchHasDelaySlot)
-    fprintf(fp,", branch has delay slot");
   if (_maxInstrsPerBundle > 0)
     fprintf(fp,", max of %d instruction%s in parallel",
       _maxInstrsPerBundle, _maxInstrsPerBundle > 1 ? "s" : "");
@@ -574,9 +568,6 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
   for ( _classlist.reset(); (cls = _classlist.iter()) != nullptr; )
     _classdict[cls]->is_pipeclass()->output(fp);
 
-  fprintf(fp,"\nNop Instructions:");
-  for ( _noplist.reset(); (nop = _noplist.iter()) != nullptr; )
-    fprintf(fp, " \"%s\"", nop);
   fprintf(fp,"\n");
 }
 
@@ -643,7 +634,6 @@ PipeClassForm::PipeClassForm(const char *id, int num)
   , _fixed_latency(0)
   , _instruction_count(0)
   , _has_multiple_bundles(false)
-  , _has_branch_delay_slot(false)
   , _force_serialization(false)
   , _may_have_no_code(false) {
 }
