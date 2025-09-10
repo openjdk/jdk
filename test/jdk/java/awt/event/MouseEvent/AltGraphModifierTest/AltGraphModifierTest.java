@@ -44,23 +44,25 @@ public class AltGraphModifierTest {
                 Please check if Alt-Gr key is present on keyboard.
                 If not present, press Pass.
                 On Windows:
-                    Press Alt-Gr or Right Alt key and simulataneously
+                    Press Alt-Gr or Right Alt key and simultaneously
                         perform mouse click on the "TestWindow".
                 On Linux:
                     Navigate to
                       System Settings-> Keyboard-> Special Character Entry
-                    Select "Right Alt" option for the "Alternative Characters Key"
+                    Select "Right Alt" option for the "Alternate Characters Key"
                     Close the settings and navigate to test
                     Press Right Alt Key & simultaneously
                         perform mouse click on the "TestWindow".
 
-                Test will exit by itself with appropriate result.""";
-
+                If "Alt-Gr Modifier bit is set" message is displayed in logArea,
+                press Pass else press Fail.
+                """;
 
          PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(AltGraphModifierTest::initTestWindow)
+                .logArea()
                 .build()
                 .awaitAndCheck();
     }
@@ -74,9 +76,9 @@ public class AltGraphModifierTest {
             public void mousePressed(MouseEvent e) {
                 int ex = e.getModifiersEx();
                 if ((ex & InputEvent.ALT_GRAPH_DOWN_MASK) == 0) {
-                    PassFailJFrame.forceFail("Alt-Gr Modifier bit is not set.");
+                    PassFailJFrame.log("Alt-Gr Modifier bit is not set.");
                 } else {
-                    PassFailJFrame.forcePass();
+                    PassFailJFrame.log("Alt-Gr Modifier bit is set");
                 }
             }
         });
