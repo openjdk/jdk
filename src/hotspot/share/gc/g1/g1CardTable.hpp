@@ -64,7 +64,6 @@ public:
     // This means that the LSB determines whether the card is clean or non-clean
     // (LSB is 1 -> clean, LSB is 0 -> non-clean) given the following possible values:
     //
-    // 11111111 - clean, do not scan
     // xxxxxxx1 - clean, already scanned, do not scan again (during GC only).
     // 00000100 - dirty, needs to be scanned, dirty from remembered set (during GC only)
     // 00000010 - dirty, needs to be scanned, contains reference to collection set.
