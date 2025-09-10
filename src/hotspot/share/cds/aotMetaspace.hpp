@@ -135,6 +135,7 @@ public:
   }
 
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
+  static void link_all_loaded_classes(JavaThread* current);
   static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 

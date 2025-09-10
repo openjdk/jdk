@@ -303,11 +303,11 @@ void mutex_init() {
 #endif
   MUTEX_DEFN(DumpTimeTable_lock              , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(CDSLambda_lock                  , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(DumpRegion_lock                 , PaddedMutex  , nosafepoint);
+  MUTEX_DEFL(DumpRegion_lock                 , PaddedMutex  , DumpTimeTable_lock);
   MUTEX_DEFN(ClassListFile_lock              , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
-  MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFL(ScratchObjects_lock             , PaddedMutex  , DumpTimeTable_lock);
   MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
