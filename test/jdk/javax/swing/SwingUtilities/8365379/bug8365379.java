@@ -36,7 +36,7 @@ import com.sun.java.swing.SwingUtilities3;
 
 public class bug8365379 {
     public static void main(String[] args) {
-        Rectangle rect = new Rectangle(10,20,60,60);
+        Rectangle rect = new Rectangle(10, 20, 60, 60);
         Insets insets = new Insets(5, 10, 15, 20);
         Rectangle expected = new Rectangle(rect.x + insets.left,
                                            rect.y + insets.top,
@@ -44,7 +44,7 @@ public class bug8365379 {
                                            rect.height - (insets.top + insets.bottom));
 
         SwingUtilities3.applyInsets(rect, insets);
-        if(!rect.equals(expected)) {
+        if (!rect.equals(expected)) {
             throw new RuntimeException(("Test failed: expected " + expected + " but got " + rect));
         }
         System.out.println("Test passed.");
