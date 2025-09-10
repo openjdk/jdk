@@ -202,15 +202,50 @@ public class ExpressionFuzzer {
             ";\n"
         ));
 
+        // At the beginning of the compiled and reference test methods we receive the arguments,
+        // which have their full bottom_type (e.g. TypeInt: int). We now constrain the ranges and
+        // bits, for the types that allow it.
+        //
+        // To ensure that both the compiled and reference method use the same constraint, we put
+        // the computation in a ForceInline method.
+        var constrainValueMethodTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
+            """
+            @ForceInline
+            public static #type constrain_#name(#type v) {
+            """,
+            switch(type.name()) {
+                // These currently have no type ranges / bits.
+                // Booleans do have an int-range, but restricting it would just make it constant, which
+                // is not very useful: we would like to keep it variable here. We already mix in variable
+                // arguments and constants in the testTemplate.
+                case "boolean", "float", "double" -> "return v;\n";
+                case "byte", "short", "char", "int", "long" -> "return v;\n";
+                    // TODO: constraintIntegralValueTemplate.asToken(name, type)));
+                default -> throw new RuntimeException("should only be primitive types");
+            },
+            """
+            }
+            """
+        ));
+
+        var constrainValueTemplate = Template.make("name", (String name) -> body(
+            """
+            #name = constrain_#name(#name);
+            """
+        ));
+
         // The template that generates the whole test machinery needed for testing a given expression.
         // Generates:
         // - @Test method: generate arguments and call compiled and reference test with it.
         //                 result verification (only if the result is known to be deterministic).
         //
         // - instantiate compiled and reference test methods.
-        // - instantiate checksum method.
+        // - instantiate value constraint methods (constrains test method arguments types).
+        // - instantiate checksum method (summarizes value and bounds/bit checks).
         var testTemplate = Template.make("expression", (Expression expression) -> {
             // Fix the arguments for both the compiled and reference method.
+            // We have a mix of variable and constant inputs to the expression.
+            // The variable inputs are passed as method arguments to the test methods.
             List<MethodArgument> methodArguments = new ArrayList<>();
             List<Object> expressionArguments = new ArrayList<>();
             for (CodeGenerationDataNameType type : expression.argumentTypes) {
@@ -255,6 +290,7 @@ public class ExpressionFuzzer {
                 @DontInline
                 public static Object ${primitiveConTest}_compiled(#methodArgumentsWithTypes) {
                 """,
+                methodArguments.stream().map(ma -> constrainValueTemplate.asToken(ma.name)).toList(),
                 bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
                 """
                 }
@@ -262,11 +298,13 @@ public class ExpressionFuzzer {
                 @DontCompile
                 public static Object ${primitiveConTest}_reference(#methodArgumentsWithTypes) {
                 """,
+                methodArguments.stream().map(ma -> constrainValueTemplate.asToken(ma.name)).toList(),
                 bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
                 """
                 }
 
                 """,
+                methodArguments.stream().map(ma -> constrainValueMethodTemplate.asToken(ma.name, ma.type)).toList(),
                 checksumTemplate.asToken(expression, $("checksum"))
             );
         });
