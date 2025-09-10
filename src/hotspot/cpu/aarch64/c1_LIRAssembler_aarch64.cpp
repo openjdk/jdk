@@ -2585,11 +2585,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 }
 
 
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
-
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ lea(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
@@ -2813,7 +2808,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
     return;
   }
 
-  __ lea(dest->as_register_lo(), as_Address(addr->as_address_ptr()));
+  __ lea(dest->as_pointer_register(), as_Address(addr->as_address_ptr()));
 }
 
 
@@ -3123,7 +3118,9 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   default:
     ShouldNotReachHere();
   }
-  __ membar(__ AnyAny);
+  if(!UseLSE) {
+    __ membar(__ AnyAny);
+  }
 }
 
 #undef __

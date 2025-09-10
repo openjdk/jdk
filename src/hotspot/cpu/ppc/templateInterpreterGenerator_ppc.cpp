@@ -1362,7 +1362,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // convenient and the slow signature handler can use this same frame
   // anchor.
 
-  bool support_vthread_preemption = Continuations::enabled() && LockingMode != LM_LEGACY;
+  bool support_vthread_preemption = Continuations::enabled();
 
   // We have a TOP_IJAVA_FRAME here, which belongs to us.
   Label last_java_pc;

@@ -30,8 +30,7 @@
 #include "oops/symbol.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
-
+#include "utilities/hashTable.hpp"
 
 /**
  * Bytecode Assembler
@@ -125,7 +124,7 @@ class BytecodeCPEntry {
 
 class BytecodeConstantPool : public ResourceObj {
  private:
-  typedef ResourceHashtable<BytecodeCPEntry, u2,
+  typedef HashTable<BytecodeCPEntry, u2,
       256, AnyObj::RESOURCE_AREA, mtInternal,
       &BytecodeCPEntry::hash, &BytecodeCPEntry::equals> IndexHash;
 

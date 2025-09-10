@@ -92,7 +92,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         options = Options.instance(context);
 
         // Initialize locations
-        locations.update(log, lint, FSInfo.instance(context));
+        locations.update(log, FSInfo.instance(context));
 
         // Apply options
         options.whenReady(this::applyOptions);

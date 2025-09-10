@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zValue.hpp"
 
 class ZForwarding;
 class ZGeneration;
@@ -74,15 +75,34 @@ public:
   void desynchronize();
 };
 
+class ZRelocationTargets {
+private:
+  using TargetArray = ZPage*[ZNumRelocationAges];
+
+  ZPerNUMA<TargetArray> _targets;
+
+public:
+  ZRelocationTargets();
+
+  ZPage* get(uint32_t partition_id, ZPageAge age);
+  void set(uint32_t partition_id, ZPageAge age, ZPage* page);
+
+  template <typename Function>
+  void apply_and_clear_targets(Function function);
+};
+
 class ZRelocate {
   friend class ZRelocateTask;
 
 private:
-  ZGeneration* const _generation;
-  ZRelocateQueue     _queue;
+  ZGeneration* const                       _generation;
+  ZRelocateQueue                           _queue;
+  ZPerNUMA<ZRelocationSetParallelIterator> _iters;
+  ZPerWorker<ZRelocationTargets>           _small_targets;
+  ZPerWorker<ZRelocationTargets>           _medium_targets;
+  ZRelocationTargets                       _shared_medium_targets;
 
   ZWorkers* workers() const;
-  void work(ZRelocationSetParallelIterator* iter);
 
 public:
   ZRelocate(ZGeneration* generation);
