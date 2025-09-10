@@ -151,18 +151,16 @@ public class CompletionAPITest extends KullaTesting {
             clazz.set(new WeakReference<>(test.element()));
         });
 
-        //clear JShell, to clear the JavacTaskPool:
-        tearDown();
+        //throw away the JavacTaskPool, so that the cached javac instances are dropped:
+        getState().addToClasspath("undefined");
 
         long start = System.currentTimeMillis();
 
         while (clazz.get().get() != null && (System.currentTimeMillis() - start) < TIMEOUT) {
             System.gc();
-            System.gc();
         }
 
-        //TODO: does not work, cached in JavacTaskPool???
-//        assertNull(clazz.get().get());
+        assertNull(clazz.get().get());
         assertEquals("JShellTest 0 ", documentation.get().get());
     }
 
