@@ -5912,25 +5912,32 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
 
         subptr(count, 16 << shift);
         jcc(Assembler::less, L_check_fill_32_bytes);
-        align(16);
 
         // align data for 64-byte chunks
-        Label L_fill_64_bytes_loop, L_align_64_bytes;
+        Label L_fill_64_bytes_loop, L_align_64_bytes_loop;
         if (EnableX86ECoreOpts) {
-            // align 'big' arrays to 64 bytes (cache line size) to minimize split_stores
-            cmpptr(count, 256<<shift);
+            // align 'big' arrays to cache lines to minimize split_stores
+            cmpptr(count, 256 << shift);
             jcc(Assembler::below, L_fill_64_bytes_loop);
-            align(16);
 
-            BIND(L_align_64_bytes);
-            testptr(to, 0x3f); // low 7 bits shoud be zero
-            jccb(Assembler::zero, L_fill_64_bytes_loop);
-            movl(Address(to, 0), value);
+            // Find the bytes needed for alignment
+            movptr(rtmp, to);
+            andptr(rtmp, 0x1c);
+            jcc(Assembler::zero, L_fill_64_bytes_loop);
+            negptr(rtmp);           // number of bytes to fill 32-rtmp. it filled by 2 mov by 32
+            addptr(rtmp, 32);
+            shrptr(rtmp, 2 - shift);// get number of elements from bytes
+            subptr(count, rtmp);    // adjust count by number of elements
+
+            align(16);
+            BIND(L_align_64_bytes_loop);
+            movdl(Address(to, 0), xtmp);
             addptr(to, 4);
-            subptr(count, 1<<shift);
-            jmpb(L_align_64_bytes);
+            subptr(rtmp, 1 << shift);
+            jcc(Assembler::greater, L_align_64_bytes_loop);
         }
 
+        align(16);
         BIND(L_fill_64_bytes_loop);
         vmovdqu(Address(to, 0), xtmp);
         vmovdqu(Address(to, 32), xtmp);
@@ -5938,6 +5945,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         subptr(count, 16 << shift);
         jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
 
+        align(16);
         BIND(L_check_fill_32_bytes);
         addptr(count, 8 << shift);
         jccb(Assembler::less, L_check_fill_8_bytes);
@@ -5982,6 +5990,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       //
       // length is too short, just fill qwords
       //
+      align(16);
       BIND(L_fill_8_bytes_loop);
       movq(Address(to, 0), xtmp);
       addptr(to, 8);
