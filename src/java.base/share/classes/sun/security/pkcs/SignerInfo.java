@@ -521,7 +521,7 @@ public class SignerInfo implements DerEncoder {
                         throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                     }
                 } else {
-                    if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.shake256$512)) {
+                    if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.shake256lenWith512)) {
                         throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                     }
                 }

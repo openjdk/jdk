@@ -192,14 +192,14 @@ public class SignatureUtil {
 
     public static class DigestAlgHolder {
         public static final AlgorithmId sha512;
-        public static final AlgorithmId shake256;
-        public static final AlgorithmId shake256$512;
+        public static final AlgorithmId shake256_512;
+        public static final AlgorithmId shake256lenWith512;
 
         static {
             try {
                 sha512 = new AlgorithmId(AlgorithmId.SHA512_oid);
-                shake256 = new AlgorithmId(AlgorithmId.SHAKE256_512_oid);
-                shake256$512 = new AlgorithmId(
+                shake256_512 = new AlgorithmId(AlgorithmId.SHAKE256_512_oid);
+                shake256lenWith512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
                         new DerValue((byte) 2, new byte[]{2, 0})); // int 512
             } catch (IOException e) {
@@ -237,9 +237,9 @@ public class SignatureUtil {
                     break;
                 case "ED448":
                     if (directsign) {
-                        digAlgID = DigestAlgHolder.shake256;
+                        digAlgID = DigestAlgHolder.shake256_512;
                     } else {
-                        digAlgID = DigestAlgHolder.shake256$512;
+                        digAlgID = DigestAlgHolder.shake256lenWith512;
                     }
                     break;
                 default:
