@@ -667,8 +667,10 @@ class ConstantPool : public Metadata {
   // Return -1 if not found.
   int find_matching_bsm_entry(int bsms_attribute_index, const constantPoolHandle& search_cp,
                             int offset_limit);
-  // Extend the operands array with the length and size of the ext_cp operands
-  BSMAttributeEntries::InsertionIterator extend_operands(const constantPoolHandle& ext_cp, TRAPS);
+  // Extend the BSM attribute storage to fit both the current data and the BSM data in ext_cp.
+  // Use the returned InsertionIterator to fill out the newly allocated space.
+  BSMAttributeEntries::InsertionIterator extend_to_fit(const constantPoolHandle& ext_cp, TRAPS);
+  // Shrink the 
   void shrink_operands(BSMAttributeEntries::InsertionIterator iter, TRAPS);
 
   u2 bootstrap_method_ref_index_at(int cp_index) {

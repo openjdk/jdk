@@ -1609,7 +1609,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Extend the operands array with the length and size of the ext_cp operands.
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
-ConstantPool::extend_operands(const constantPoolHandle& ext_cp, TRAPS) {
+ConstantPool::extend_to_fit(const constantPoolHandle& ext_cp, TRAPS) {
   return bsm_entries().extend_to_fit(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
                                      CHECK_(BSMAttributeEntries::InsertionIterator()));
 }
@@ -2380,7 +2380,7 @@ BSMAttributeEntries::extend_to_fit(int number_of_entries, int array_length,
   int new_array_length = this->array_length() + array_length;
   int invalid_index = new_array_length;
   assert(new_number_of_entries > this->number_of_entries() && new_array_length > this->array_length(),
-         "must be larger");
+         "must be larger, was: %d,%d %d,%d", new_number_of_entries, this->number_of_entries(), new_array_length, this->array_length());
   Array<u4>* new_offsets =
     MetadataFactory::new_array<u4>(loader_data, new_number_of_entries, invalid_index, CHECK_(InsertionIterator()));
   Array<u2>* new_array = MetadataFactory::new_array<u2>(loader_data, new_array_length, CHECK_(InsertionIterator()));
