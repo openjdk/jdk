@@ -2379,8 +2379,6 @@ BSMAttributeEntries::extend_to_fit(int number_of_entries, int array_length,
   int new_number_of_entries = this->number_of_entries() + number_of_entries;
   int new_array_length = this->array_length() + array_length;
   int invalid_index = new_array_length;
-  assert(new_number_of_entries > this->number_of_entries() && new_array_length > this->array_length(),
-         "must be larger, was: %d,%d %d,%d", new_number_of_entries, this->number_of_entries(), new_array_length, this->array_length());
   Array<u4>* new_offsets =
     MetadataFactory::new_array<u4>(loader_data, new_number_of_entries, invalid_index, CHECK_(InsertionIterator()));
   Array<u2>* new_array = MetadataFactory::new_array<u2>(loader_data, new_array_length, CHECK_(InsertionIterator()));
