@@ -38,12 +38,10 @@
 
 class G1CardSet;
 class G1CardSetConfiguration;
-class G1CardTable;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1CSetCandidateGroup;
 class G1Predictions;
-class G1HeapRegion;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
 class nmethod;
