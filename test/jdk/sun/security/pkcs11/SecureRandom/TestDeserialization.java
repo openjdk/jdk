@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * @modules jdk.crypto.cryptoki
  */
 
+import jtreg.SkippedException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -43,18 +45,16 @@ public class TestDeserialization extends PKCS11Test {
     public void main(Provider p) throws Exception {
         // Skip this test for providers not found by java.security.Security
         if (Security.getProvider(p.getName()) != p) {
-            System.out.println("Skip test for provider " + p.getName());
-            return;
+            throw new SkippedException("Skip test for provider " + p.getName());
         }
         SecureRandom r;
         try {
             r = SecureRandom.getInstance("PKCS11", p);
             System.out.println("SecureRandom instance " + r);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Provider " + p +
-                               " does not support SecureRandom, skipping");
             e.printStackTrace();
-            return;
+            throw new SkippedException("Provider " + p +
+                               " does not support SecureRandom, skipping");
         }
         r.setSeed(System.currentTimeMillis());
         byte[] buf = new byte[16];

@@ -37,7 +37,7 @@
 
 inline void G1BarrierSet::enqueue_preloaded(oop pre_val) {
   // Nulls should have been already filtered.
-  assert(oopDesc::is_oop(pre_val, true), "Error");
+  assert(oopDesc::is_oop(pre_val), "Error");
 
   G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
   if (!queue_set.is_active()) return;

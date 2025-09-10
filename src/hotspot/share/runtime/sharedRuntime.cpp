@@ -3348,18 +3348,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      if (LockingMode == LM_LEGACY) {
-        // Inflate so the object's header no longer refers to the BasicLock.
-        if (lock->displaced_header().is_unlocked()) {
-          // The object is locked and the resulting ObjectMonitor* will also be
-          // locked so it can't be async deflated until ownership is dropped.
-          // See the big comment in basicLock.cpp: BasicLock::move_to().
-          ObjectSynchronizer::inflate_helper(kptr2->obj());
-        }
-        // Now the displaced header is free to move because the
-        // object's header no longer refers to it.
-        buf[i] = (intptr_t)lock->displaced_header().value();
-      } else if (UseObjectMonitorTable) {
+      if (UseObjectMonitorTable) {
         buf[i] = (intptr_t)lock->object_monitor_cache();
       }
 #ifdef ASSERT
@@ -3513,8 +3502,6 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
       if (cb != nullptr && cb->is_nmethod()) {
         nm = cb->as_nmethod();
         method = nm->method();
-        // scope_desc_near() must be used, instead of scope_desc_at() because on
-        // SPARC, the pcDesc can be on the delay slot after the call instruction.
         for (ScopeDesc *sd = nm->scope_desc_near(fr.pc()); sd != nullptr; sd = sd->sender()) {
           method = sd->method();
           if (method != nullptr && method->has_reserved_stack_access()) {
