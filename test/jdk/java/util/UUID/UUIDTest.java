@@ -47,9 +47,9 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
-        unixEpochTimeMillisTest();
-        unixEpochTimeMillisTest_Multi();
-        unixEpochTimeMillis_userInputTest();
+        epochMillisTest();
+        epochMillisTest_Multi();
+        epochMillis_userInputTest();
         stringTest();
         versionTest();
         variantTest();
@@ -149,12 +149,12 @@ public class UUIDTest {
         }
     }
 
-    private static void unixEpochTimeMillisTest() throws Exception {
+    private static void epochMillisTest() throws Exception {
         List<UUID> collisions = new ArrayList<>();
 
         Set<UUID> set = new HashSet<>();
         for (int i = 0; i < COUNT; i++) {
-            UUID u = UUID.unixEpochTimeMillis();
+            UUID u = UUID.epochMillis();
             if (u.version() != 7) {
                 throw new Exception("Bad version: " + u);
             }
@@ -174,9 +174,9 @@ public class UUIDTest {
         }
     }
 
-    private static void unixEpochTimeMillisTest_Multi() throws Exception {
+    private static void epochMillisTest_Multi() throws Exception {
         List<UUID> uuids = IntStream.range(0, COUNT).parallel()
-                .mapToObj(i -> UUID.unixEpochTimeMillis())
+                .mapToObj(i -> UUID.epochMillis())
                 .toList();
 
         List<UUID> collisions = new ArrayList<>();
@@ -202,24 +202,24 @@ public class UUIDTest {
         }
     }
 
-    private static void unixEpochTimeMillis_userInputTest() {
+    private static void epochMillis_userInputTest() {
         // Should not throw for valid timestamp
         try {
             long now = System.currentTimeMillis();
-            UUID u = UUID.unixEpochTimeMillis(now);
+            UUID u = UUID.epochMillis(now);
         } catch (Exception e) {
             throw new AssertionError("Unexpected exception with valid timestamp: " + e);
         }
 
         // Should throw for negative timestamp
         try {
-            UUID.unixEpochTimeMillis(-1);
+            UUID.epochMillis(-1);
             throw new AssertionError("Expected IllegalArgumentException with negative timestamp");
         } catch (IllegalArgumentException expected) {}
 
         // Should throw for timestamp > 48 bits
         try {
-            UUID.unixEpochTimeMillis(1L << 48);
+            UUID.epochMillis(1L << 48);
             throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits");
         } catch (IllegalArgumentException expected) {}
     }
@@ -265,7 +265,7 @@ public class UUIDTest {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
         }
 
-        test = UUID.unixEpochTimeMillis();
+        test = UUID.epochMillis();
         if (test.version() != 7) {
             throw new Exception("timestampUUID not type 7: " + test);
         }
@@ -324,7 +324,7 @@ public class UUIDTest {
             throw new Exception("nameUUIDFromBytes not variant 2");
         }
 
-        test = UUID.unixEpochTimeMillis();
+        test = UUID.epochMillis();
         if (test.variant() != 2) {
             throw new Exception("timestampUUID not variant 2");
         }
