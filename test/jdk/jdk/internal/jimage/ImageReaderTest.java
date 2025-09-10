@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -119,6 +120,44 @@ public class ImageReaderTest {
             assertEquals("Class: com.foo.Beta", loader.loadAndGetToString("modfoo", "com.foo.Beta"));
             assertEquals("Class: com.foo.bar.Gamma", loader.loadAndGetToString("modfoo", "com.foo.bar.Gamma"));
             assertEquals("Class: com.bar.One", loader.loadAndGetToString("modbar", "com.bar.One"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "modfoo:com/foo/Alpha.class",
+            "modbar:com/bar/One.class",
+    })
+    public void testResourceNodes_present(String modAndPath) throws IOException {
+        try (ImageReader reader = ImageReader.open(image)) {
+            String[] parts = modAndPath.split(":");
+            assertNotNull(reader.findResourceNode(parts[0], parts[1]));
+            assertTrue(reader.containsResource(parts[0], parts[1]));
+        }
+    }
+
+    // Important to ensure we cannot be fooled.
+    @ParameterizedTest
+    @ValueSource(strings = {
+            // Absolute resource names are not allowed.
+            "modfoo:/com/bar/One.class",
+            // Resource in wrong module.
+            "modfoo:com/bar/One.class",
+            "modbar:com/foo/Alpha.class",
+            // JImage entries exist for these, but they are not resources.
+            "modules:modfoo/com/foo/Alpha.class",
+            "packages:com.foo/modfoo",
+            // Don't permit module names to contain paths.
+            "modfoo/com/bar:One.class",
+            "modfoo/com:bar/One.class",
+            "modules/modfoo/com:foo/Alpha.class",
+            // Or module name to be empty.
+            ":modfoo/com/foo/Alpha.class"})
+    public void testFindResourceNode_absent(String modAndPath) throws IOException {
+        try (ImageReader reader = ImageReader.open(image)) {
+            String[] parts = modAndPath.split(":");
+            assertNull(reader.findResourceNode(parts[0], parts[1]));
+            assertFalse(reader.containsResource(parts[0], parts[1]));
         }
     }
 

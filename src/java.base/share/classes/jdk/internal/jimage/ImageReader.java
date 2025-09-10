@@ -138,6 +138,45 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
+     * Returns a resource node in the given module, or null if no resource of
+     * that name exists.
+     *
+     * <p>This is equivalent to:
+     * <pre>{@code
+     * findNode("/modules/" + moduleName + "/" + resourcePath)
+     * }</pre>
+     * but more performant, and returns {@code null} for directories.
+     *
+     * @param moduleName The module name of the requested resource.
+     * @param resourcePath Trailing module-relative resource path, not starting
+     *     with {@code '/'}.
+     */
+    public Node findResourceNode(String moduleName, String resourcePath)
+            throws IOException {
+        ensureOpen();
+        return reader.findResourceNode(moduleName, resourcePath);
+    }
+
+    /**
+     * Returns whether a resource exists in the given module.
+     *
+     * <p>This is equivalent to:
+     * <pre>{@code
+     * findResourceNode(moduleName, resourcePath) != null
+     * }</pre>
+     * but more performant, and will not create or cache new nodes.
+     *
+     * @param moduleName The module name of the resource being tested for.
+     * @param resourcePath Trailing module-relative resource path, not starting
+     *     with {@code '/'}.
+     */
+    public boolean containsResource(String moduleName, String resourcePath)
+            throws IOException {
+        ensureOpen();
+        return reader.containsResource(moduleName, resourcePath);
+    }
+
+    /**
      * Returns a copy of the content of a resource node. The buffer returned by
      * this method is not cached by the node, and each call returns a new array
      * instance.
@@ -305,6 +344,46 @@ public final class ImageReader implements AutoCloseable {
             }
             assert node == null || node.isCompleted() : "Incomplete node: " + node;
             return node;
+        }
+
+        /**
+         * Returns a resource node in the given module, or null if no resource of
+         * that name exists.
+         */
+        synchronized Node findResourceNode(String moduleName, String resourcePath) {
+            // Unlike findNode(), this method makes only one lookup in the
+            // underlying jimage, but can only reliably return resource nodes.
+            if (moduleName.contains("/") || resourcePath.startsWith("/")) {
+                return null;
+            }
+            String jimageName = "/" + moduleName + "/" + resourcePath;
+            String nodeName = MODULES_ROOT + jimageName;
+            Node node = nodes.get(nodeName);
+            if (node == null) {
+                ImageLocation loc = findLocation(jimageName);
+                if (loc != null && isResource(loc)) {
+                    node = newResource(nodeName, loc);
+                    nodes.put(node.getName(), node);
+                }
+                return node;
+            } else {
+                return node.isResource() ? node : null;
+            }
+        }
+
+        /** Returns whether a resource exists in the given module. */
+        synchronized boolean containsResource(String moduleName, String resourcePath) {
+            // This method is tuned for cases where resources are likely to NOT
+            // exist, so it skips checking the nodes cache and only checks for
+            // an ImageLocation.
+            if (moduleName.contains("/") || resourcePath.startsWith("/")) {
+                return false;
+            }
+            // No leading "/modules" (and if the given module name is 'modules'
+            // then 'isResource()' returns false to prevent false positives).
+            String jimageName = "/" + moduleName + "/" + resourcePath;
+            ImageLocation loc = findLocation(jimageName);
+            return loc != null && isResource(loc);
         }
 
         /**
