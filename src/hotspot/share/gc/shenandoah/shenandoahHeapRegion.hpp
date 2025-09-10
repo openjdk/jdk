@@ -269,7 +269,19 @@ private:
   bool _needs_bitmap_reset;
 
   ShenandoahSharedFlag _direct_alloc_reserved; // Flag to indicate that whether the region is reserved for lock-free direct allocation
+  volatile int _direct_alloc_mutators = 0;
 
+  class DirectAllocMutatorCounter {
+  private:
+    int volatile* _counter;
+  public:
+    DirectAllocMutatorCounter(int volatile* counter): _counter(counter) {
+      Atomic::inc(_counter);
+    }
+    ~DirectAllocMutatorCounter() {
+      Atomic::dec(_counter);
+    }
+  };
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -526,6 +538,10 @@ public:
 
   inline bool reserved_for_direct_allocation() const {
     return _direct_alloc_reserved.is_set();
+  }
+
+  inline int direct_alloc_mutators() const {
+    return Atomic::load(&_direct_alloc_mutators);
   }
 
 private:

@@ -459,7 +459,7 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
           _used[int(orig_partition)], used, idx);
 
   if (orig_partition == ShenandoahFreeSetPartitionId::Mutator && r->reserved_for_direct_allocation()) {
-    ShenandoahHeap::heap()->free_set()->release_directly_allocatable_region(r);
+    ShenandoahHeap::heap()->free_set()->release_directly_allocatable_region<false/*IS_MUTATOR*/>(r);
   }
 
   _membership[int(orig_partition)].clear_bit(idx);
@@ -2327,7 +2327,7 @@ public:
       }
       if (r->free() < PLAB::min_size_bytes()) {
         assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
-        _free_set->release_directly_allocatable_region(r);
+        _free_set->release_directly_allocatable_region<true/*IS_MUTATOR*/>(r);
         return idx;
       }
 
@@ -2428,10 +2428,12 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
   }
 }
 
+template<bool IS_MUTATOR>
 void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
-  region->release_from_direct_allocation();
-  OrderAccess::fence();
+  if (!IS_MUTATOR) {
+    assert_at_safepoint();
+  }
   for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
     ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[i];
     if (Atomic::load(&shared_region._address) == region) {
@@ -2439,6 +2441,13 @@ void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion
       break;
     }
   }
+  if (IS_MUTATOR) {
+    OrderAccess::fence();
+    while (region->direct_alloc_mutators() > 0) {
+      os::naked_yield();
+    }
+  }
+  region->release_from_direct_allocation();
   if (region->free() >= PLAB::min_size_bytes()) {
     partitions()->raw_assign_membership(region->index(), ShenandoahFreeSetPartitionId::Mutator);
     partitions()->expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId::Mutator, region->index(), region->free());

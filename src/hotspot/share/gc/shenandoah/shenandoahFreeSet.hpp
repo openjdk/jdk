@@ -550,6 +550,7 @@ public:
 
   void release_all_directly_allocatable_regions();
 
+  template<bool IS_MUTATOR>
   void release_directly_allocatable_region(ShenandoahHeapRegion *region);
 
   template<bool IS_TLAB>

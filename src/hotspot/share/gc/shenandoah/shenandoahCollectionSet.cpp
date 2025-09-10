@@ -103,7 +103,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
       _young_bytes_to_promote += live;
     }
     if (r->reserved_for_direct_allocation()) {
-      _heap->free_set()->release_directly_allocatable_region(r);
+      _heap->free_set()->release_directly_allocatable_region<false/*IS_MUTATOR*/>(r);
     }
   } else if (r->is_old()) {
     _old_bytes_to_evacuate += live;
