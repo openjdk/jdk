@@ -96,8 +96,14 @@ class CLDScanClosure: public CLDClosure {
   class CLDOopClosure : public OffHeapScanClosure {
     DefNewGeneration* _g;
 
-    template <typename T>
-    void do_oop_work(T* p) {
+  public:
+    // Records whether this CLD contains oops pointing into young-gen after scavenging.
+    bool _has_oops_into_young_gen;
+
+    CLDOopClosure(DefNewGeneration* g) : OffHeapScanClosure(g),
+      _has_oops_into_young_gen(false) {}
+
+    void do_oop(oop* p) {
       assert(!SerialHeap::heap()->is_in_reserved(p), "outside the heap");
 
       try_scavenge(p, [&] (oop new_obj) {
@@ -107,14 +113,6 @@ class CLDScanClosure: public CLDClosure {
       });
     }
 
-  public:
-    // Records whether this CLD contains oops pointing into young-gen after scavenging.
-    bool _has_oops_into_young_gen;
-
-    CLDOopClosure(DefNewGeneration* g) : OffHeapScanClosure(g),
-      _has_oops_into_young_gen(false) {}
-
-    void do_oop(oop* p)       { do_oop_work(p); }
     void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   };
 
