@@ -1658,7 +1658,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
       break;
     }
   }
-  copy_bsm(from_cp, to_cp, CHECK);
+  copy_bsm_entries(from_cp, to_cp, CHECK);
 
 } // end copy_cp_to_impl()
 
