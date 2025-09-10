@@ -39,9 +39,9 @@ public class bug8365379 {
         Rectangle rect = new Rectangle(10, 20, 60, 60);
         Insets insets = new Insets(5, 10, 15, 20);
         Rectangle expected = new Rectangle(rect.x + insets.left,
-                rect.y + insets.top,
-                rect.width - (insets.left + insets.right),
-                rect.height - (insets.top + insets.bottom));
+                                           rect.y + insets.top,
+                                           rect.width - (insets.left + insets.right),
+                                           rect.height - (insets.top + insets.bottom));
 
         SwingUtilities3.applyInsets(rect, insets);
         if (!rect.equals(expected)) {
