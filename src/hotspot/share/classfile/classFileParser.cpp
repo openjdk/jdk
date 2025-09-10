@@ -3018,7 +3018,8 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
       flags |= JVM_ACC_ABSTRACT;
     }
 
-    verify_legal_class_modifiers(flags, cp->symbol_at(inner_name_index), CHECK_0);
+    Symbol* inner_name_symbol = inner_name_index == 0 ? vmSymbols::unnamed_name() : cp->symbol_at(inner_name_index);
+    verify_legal_class_modifiers(flags, inner_name_symbol, CHECK_0);
     AccessFlags inner_access_flags(flags);
 
     inner_classes->at_put(index++, inner_class_info_index);
