@@ -24,8 +24,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
@@ -721,7 +721,7 @@ void Metaspace::global_initialize() {
   metaspace::ChunkHeaderPool::initialize();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    MetaspaceShared::initialize_for_static_dump();
+    AOTMetaspace::initialize_for_static_dump();
   }
 
   // If UseCompressedClassPointers=1, we have two cases:
@@ -740,7 +740,7 @@ void Metaspace::global_initialize() {
     if (!FLAG_IS_DEFAULT(CompressedClassSpaceBaseAddress)) {
       log_warning(metaspace)("CDS active - ignoring CompressedClassSpaceBaseAddress.");
     }
-    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
+    AOTMetaspace::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
@@ -853,7 +853,7 @@ void Metaspace::global_initialize() {
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
-      CDS_ONLY(MetaspaceShared::print_on(&ls);)
+      CDS_ONLY(AOTMetaspace::print_on(&ls);)
       Metaspace::print_compressed_class_space(&ls);
       CompressedKlassPointers::print_mode(&ls);
     }
@@ -1036,8 +1036,8 @@ void Metaspace::purge(bool classes_unloaded) {
 
 // Returns true if pointer points into one of the metaspace regions, or
 // into the class space.
-bool Metaspace::is_in_shared_metaspace(const void* ptr) {
-  return MetaspaceShared::is_in_shared_metaspace(ptr);
+bool Metaspace::in_aot_cache(const void* ptr) {
+  return AOTMetaspace::in_aot_cache(ptr);
 }
 
 // Returns true if pointer points into one of the non-class-space metaspace regions.

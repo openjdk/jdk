@@ -25,7 +25,6 @@
  * @test id=aot
  * @bug 8362566
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
- * @requires vm.flagless
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build AOTMapTest
@@ -37,7 +36,6 @@
  * @test id=dynamic
  * @bug 8362566
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
- * @requires vm.flagless
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build jdk.test.whitebox.WhiteBox
@@ -58,16 +56,11 @@ public class AOTMapTest {
     static final String mainClass = "AOTMapTestApp";
 
     public static void main(String[] args) throws Exception {
-        doTest(args, false);
-
-        if (Platform.is64bit()) {
-            // There's no oop/klass compression on 32-bit.
-            doTest(args, true);
-        }
+        doTest(args);
     }
 
-    public static void doTest(String[] args, boolean compressed) throws Exception {
-        Tester tester = new Tester(compressed);
+    public static void doTest(String[] args) throws Exception {
+        Tester tester = new Tester();
         tester.run(args);
 
         validate(tester.dumpMapFile);
@@ -80,16 +73,14 @@ public class AOTMapTest {
     }
 
     static class Tester extends CDSAppTester {
-        boolean compressed;
         String dumpMapFile;
         String runMapFile;
 
-        public Tester(boolean compressed) {
+        public Tester() {
             super(mainClass);
-            this.compressed = compressed;
 
-            dumpMapFile = "test" + (compressed ? "0" : "1") + ".dump.aotmap";
-            runMapFile  = "test" + (compressed ? "0" : "1") + ".run.aotmap";
+            dumpMapFile = "test" + "0" + ".dump.aotmap";
+            runMapFile  = "test" + "0" + ".run.aotmap";
         }
 
         @Override
@@ -103,12 +94,6 @@ public class AOTMapTest {
 
             vmArgs.add("-Xmx128M");
             vmArgs.add("-Xlog:aot=debug");
-
-            if (Platform.is64bit()) {
-                // These options are available only on 64-bit.
-                String sign = (compressed) ?  "+" : "-";
-                vmArgs.add("-XX:" + sign + "UseCompressedOops");
-            }
 
             // filesize=0 ensures that a large map file not broken up in multiple files.
             String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";

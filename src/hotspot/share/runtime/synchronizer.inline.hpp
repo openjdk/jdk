@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,7 @@ inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj,
 inline void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
   assert(current == Thread::current(), "must be");
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
     LightweightSynchronizer::enter(obj, lock, current);
-  } else {
-    enter_legacy(obj, lock, current);
-  }
 }
 
 inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {
@@ -61,21 +57,13 @@ inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread
     return false;
   }
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
-  } else {
-    return quick_enter_legacy(obj, lock, current);
-  }
+  return LightweightSynchronizer::quick_enter(obj, lock, current);
 }
 
 inline void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
   current->dec_held_monitor_count();
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    LightweightSynchronizer::exit(object, lock, current);
-  } else {
-    exit_legacy(object, lock, current);
-  }
+  LightweightSynchronizer::exit(object, lock, current);
 }
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_INLINE_HPP

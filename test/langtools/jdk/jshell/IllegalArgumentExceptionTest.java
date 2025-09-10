@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Testing IllegalArgumentException.
  * @build KullaTesting TestingInputStream IllegalArgumentExceptionTest
- * @run testng IllegalArgumentExceptionTest
+ * @run junit IllegalArgumentExceptionTest
  */
 
 import java.util.function.Consumer;
@@ -33,12 +33,10 @@ import java.util.function.Consumer;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 import static jdk.jshell.Snippet.Status.VALID;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class IllegalArgumentExceptionTest extends KullaTesting {
 
     private void testIllegalArgumentException(Consumer<Snippet> action) {
@@ -54,22 +52,27 @@ public class IllegalArgumentExceptionTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testVarValue() {
         testIllegalArgumentException((key) -> getState().varValue((VarSnippet) key));
     }
 
+    @Test
     public void testStatus() {
         testIllegalArgumentException((key) -> getState().status(key));
     }
 
+    @Test
     public void testDrop() {
         testIllegalArgumentException((key) -> getState().drop(key));
     }
 
+    @Test
     public void testUnresolved() {
         testIllegalArgumentException((key) -> getState().unresolvedDependencies((DeclarationSnippet) key));
     }
 
+    @Test
     public void testDiagnostics() {
         testIllegalArgumentException((key) -> getState().diagnostics(key));
     }

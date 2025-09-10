@@ -29,16 +29,6 @@
 
 #include "runtime/objectMonitor.inline.hpp"
 
-inline markWord BasicLock::displaced_header() const {
-  assert(LockingMode == LM_LEGACY, "must be");
-  return markWord(get_metadata());
-}
-
-inline void BasicLock::set_displaced_header(markWord header) {
-  assert(LockingMode == LM_LEGACY, "must be");
-  Atomic::store(&_metadata, header.value());
-}
-
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");
 #if !defined(ZERO) && (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390))
