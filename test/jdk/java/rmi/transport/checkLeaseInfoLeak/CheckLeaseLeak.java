@@ -113,8 +113,8 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
                     jvm.destroy();
                 }
             }
-            numLeft = getDGCLeaseTableSize();
             Thread.sleep(3000);
+            numLeft = getDGCLeaseTableSize();
 
         } catch(Exception e) {
             TestLibrary.bomb("CheckLeaseLeak Error: ", e);
@@ -125,8 +125,8 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
             }
         }
 
-        /* numLeft should be 6 - if 11 there is a problem. */
-        if (numLeft > 6) {
+        /* numLeft should not be greater than 2 - if 11 there is a problem. */
+        if (numLeft > 2) {
             TestLibrary.bomb("Too many objects in DGCImpl.leaseTable: "+
                             numLeft);
         } else {
@@ -204,8 +204,9 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
              * objects if the LeaseInfo memory leak is not fixed.
              */
             leaseTable = (Map) f.get(dgcImpl[0]);
-
-            numLeaseInfosLeft = leaseTable.size();
+            synchronized (leaseTable) {
+                numLeaseInfosLeft = leaseTable.size();
+            }
 
         } catch(Exception e) {
             TestLibrary.bomb(e);
