@@ -49,9 +49,12 @@ oop AOTOopChecker::get_oop_field(oop obj, const char* name, const char* sig) {
 // Make sure we are not caching objects with assumptions that can be violated in
 // the production run.
 void AOTOopChecker::check(oop obj) {
-  precond(vmClasses::URL_klass()->is_final());
+  // Currently we only check URL objects, but more rules may be added in the future.
 
   if (obj->klass()->is_subclass_of(vmClasses::URL_klass())) {
+    // If URL could be subclassed, obj may have new fields that we don't know about.
+    precond(vmClasses::URL_klass()->is_final());
+
     // URLs are referenced by the CodeSources/ProtectDomains that are cached
     // for AOT-linked classes loaded by the platform/app loaders.
     //

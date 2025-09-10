@@ -1062,6 +1062,8 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   if (!CDSConfig::is_using_preloaded_classes()) {
+    // fixup_mirror_list() is not used when we have preloaded classes. See
+    // Universe::fixup_mirrors().
     GrowableArray<Klass*>* mirror_list =
       new (mtClass) GrowableArray<Klass*>(40, mtClass);
     set_fixup_mirror_list(mirror_list);

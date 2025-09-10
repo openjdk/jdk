@@ -584,6 +584,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 
 void Universe::fixup_mirrors(TRAPS) {
   if (CDSConfig::is_using_preloaded_classes()) {
+    // All mirrors preloaded classes are already restored.
     return;
   }
 
