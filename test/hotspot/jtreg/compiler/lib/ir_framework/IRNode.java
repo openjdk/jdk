@@ -491,6 +491,26 @@ public class IRNode {
         callOfNodes(STATIC_CALL_OF_METHOD, "CallStaticJava");
     }
 
+    public static final String CAST_F2X = PREFIX + "CAST_F2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(CAST_F2X, "castF2X_reg_(av|eve)x");
+    }
+
+    public static final String CAST_D2X = PREFIX + "CAST_D2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(CAST_D2X, "castD2X_reg_(av|eve)x");
+    }
+
+    public static final String CAST2_F2X = PREFIX + "CAST2_F2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(CAST2_F2X, "cast2F2X_(reg|mem)_evex");
+    }
+
+    public static final String CAST2_D2X = PREFIX + "CAST2_D2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(CAST2_D2X, "cast2D2X_(reg|mem)_evex");
+    }
+
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
     static {
         beforeMatchingNameRegex(CAST_II, "CastII");
@@ -603,6 +623,46 @@ public class IRNode {
     public static final String COMPRESS_BITS = PREFIX + "COMPRESS_BITS" + POSTFIX;
     static {
         beforeMatchingNameRegex(COMPRESS_BITS, "CompressBits");
+    }
+
+    public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV_D2I, "convD2I_reg_reg");
+    }
+
+    public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV_D2L, "convD2L_reg_reg");
+    }
+
+    public static final String CONV_F2I = PREFIX + "CONV_F2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV_F2I, "convF2I_reg_reg");
+    }
+
+    public static final String CONV_F2L = PREFIX + "CONV_F2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV_F2L, "convF2L_reg_reg");
+    }
+
+    public static final String CONV2_D2I = PREFIX + "CONV2_D2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV2_D2I, "conv2D2I_(reg_reg|reg_mem)");
+    }
+
+    public static final String CONV2_D2L = PREFIX + "CONV2_D2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV2_D2L, "conv2D2L_(reg_reg|reg_mem)");
+    }
+
+    public static final String CONV2_F2I = PREFIX + "CONV2_F2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV2_F2I, "conv2F2I_(reg_reg|reg_mem)");
+    }
+
+    public static final String CONV2_F2L = PREFIX + "CONV2_F2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(CONV2_F2L, "conv2F2L_(reg_reg|reg_mem)");
     }
 
     public static final String CONV = PREFIX + "CONV" + POSTFIX;
