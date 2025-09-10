@@ -28,8 +28,8 @@
 
 #include <sys/stat.h>
 
-#include "jni.h"
 #include "jvm_md.h"
+#include "jni.h"
 
 #ifdef __cplusplus
 extern "C" {

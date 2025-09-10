@@ -40,10 +40,10 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 MallocMemorySnapshot MallocMemorySummary::_snapshot;
 

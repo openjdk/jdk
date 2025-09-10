@@ -34,6 +34,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
+
 #include <type_traits>
 
 // The metadata hierarchy is separate from the oop hierarchy
