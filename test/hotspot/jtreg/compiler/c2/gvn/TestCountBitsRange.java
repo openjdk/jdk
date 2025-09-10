@@ -25,7 +25,6 @@ package compiler.c2.gvn;
 
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
-import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.*;
 import java.util.function.Function;
 import jdk.test.lib.Asserts;
