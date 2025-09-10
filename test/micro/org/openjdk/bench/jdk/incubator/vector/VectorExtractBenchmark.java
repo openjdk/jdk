@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,9 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorExtractBenchmark {
     private int idx = 0;
     private boolean[] res = new boolean[8];

@@ -1417,6 +1417,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_TO_LONG, "VectorMaskToLong");
     }
 
+    public static final String VECTOR_MASK_LANE_IS_SET = PREFIX + "VECTOR_MASK_LANE_IS_SET" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_LANE_IS_SET, "ExtractUB");
+    }
+
     // Can only be used if avx512_vnni is available.
     public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
     static {
