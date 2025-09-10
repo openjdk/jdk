@@ -274,8 +274,8 @@ public:
       this->print_on(st);
     });
 
-    // Sometimes doing a thing will crash the VM.
-    do_a_thing();
+    // When VM crashes, the above lambda will be invoked and print relevant info.
+    might_cause_vm_crash();
   }
 */
 template <typename F>
