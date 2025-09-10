@@ -947,6 +947,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       CFLAGS="$CFLAGS -march=armv8-a+sve"
       # check the compiler and binutils support sve or not
       AC_MSG_CHECKING([if Arm SVE ACLE is supported])
+      saved_cflags="$CFLAGS"
+      saved_cc="$CC"
+      CFLAGS="$CFLAGS $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
+      CC="$ARG_PREFIX[CC]"
+      AC_LANG_PUSH([C])
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
           [
             #include <arm_sve.h>
@@ -959,6 +964,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
           [sve_supported=no]
       )
       AC_MSG_RESULT([$sve_supported])
+      AC_LANG_POP([C])
+      CC="$saved_cc"
+      CFLAGS="$saved_cflags"
       $2SVE_CFLAGS=""
       if test "x$AARCH64_SVE_ENABLED" = "xtrue"; then
         if test "x$sve_supported" = "xyes"; then
