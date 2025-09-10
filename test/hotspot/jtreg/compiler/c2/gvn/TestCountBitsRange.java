@@ -23,7 +23,11 @@
 
 package compiler.c2.gvn;
 
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.*;
+import java.util.function.Function;
 import jdk.test.lib.Asserts;
 
 /*
@@ -34,67 +38,81 @@ import jdk.test.lib.Asserts;
  * @run driver compiler.c2.gvn.TestCountBitsRange
  */
 public class TestCountBitsRange {
+    private static final Generator<Integer> INTS = Generators.G.ints();
+    private static final Generator<Long> LONGS = Generators.G.longs();
+
+    private static final int[] LIMITS_32 = new int[8];
+    private static final int[] LIMITS_64 = new int[8];
+
+    private static final Range<Integer> RANGE_INT = Range.generate(INTS);
+    private static final Range<Long> RANGE_LONG = Range.generate(LONGS);
+
+    static {
+        var INTS_32 = Generators.G.ints().restricted(0, 32);
+        var INTS_64 = Generators.G.ints().restricted(0, 64);
+        for (int i = 0; i < 8; ++i) {
+            LIMITS_32[i] = INTS_32.next();
+            LIMITS_64[i] = INTS_64.next();
+        }
+    }
+
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {
-        "clzConstInts", "clzCompareInt", "clzDiv8Int",
-        "clzConstLongs", "clzCompareLong", "clzDiv8Long",
-        "ctzConstInts", "ctzCompareInt", "ctzDiv8Int",
-        "ctzConstLongs", "ctzCompareLong", "ctzDiv8Long",
+        "clzConstInts", "clzCompareInt", "clzDiv8Int", "clzRandLimitInt",
+        "clzConstLongs", "clzCompareLong", "clzDiv8Long", "clzRandLimitLong",
+        "ctzConstInts", "ctzCompareInt", "ctzDiv8Int", "ctzRandLimitInt",
+        "ctzConstLongs", "ctzCompareLong", "ctzDiv8Long", "ctzRandLimitLong",
     })
     public void runTest() {
-        int randInt = RunInfo.getRandom().nextInt();
-        long randLong = RunInfo.getRandom().nextLong();
+        int randInt = INTS.next();
+        long randLong = LONGS.next();
         assertResult(randInt, randLong);
     }
 
     @DontCompile
     public void assertResult(int randInt, long randLong) {
-        int[] results = clzConstInts();
-        Asserts.assertEQ(Integer.numberOfLeadingZeros(0), results[0]);
-        for (int i = 0; i < 32; ++i) {
-            Asserts.assertEQ(Integer.numberOfLeadingZeros(1 << i), results[i + 1]);
-        }
+        checkConstResults(clzConstInts(), x -> Integer.numberOfLeadingZeros(x.intValue()));
         Asserts.assertEQ(Integer.numberOfLeadingZeros(randInt) < 0
                          || Integer.numberOfLeadingZeros(randInt) > 32,
                          clzCompareInt(randInt));
         Asserts.assertEQ(Integer.numberOfLeadingZeros(randInt) / 8,
                          clzDiv8Int(randInt));
+        Asserts.assertEQ(clzRandLimitInterpretedInt(randInt), clzRandLimitInt(randInt));
 
-        results = clzConstLongs();
-        Asserts.assertEQ(Long.numberOfLeadingZeros(0), results[0]);
-        for (int i = 0; i < 64; ++i) {
-            Asserts.assertEQ(Long.numberOfLeadingZeros(1l << i), results[i + 1]);
-        }
+        checkConstResults(clzConstLongs(), x -> Long.numberOfLeadingZeros(x.longValue()));
         Asserts.assertEQ(Long.numberOfLeadingZeros(randLong) < 0
                          || Long.numberOfLeadingZeros(randLong) > 64,
                          clzCompareLong(randLong));
         Asserts.assertEQ(Long.numberOfLeadingZeros(randLong) / 8,
                          clzDiv8Long(randLong));
+        Asserts.assertEQ(clzRandLimitInterpretedLong(randLong), clzRandLimitLong(randLong));
 
-        results = ctzConstInts();
-        Asserts.assertEQ(Integer.numberOfTrailingZeros(0), results[0]);
-        for (int i = 0; i < 32; ++i) {
-            Asserts.assertEQ(Integer.numberOfTrailingZeros(1 << i), results[i + 1]);
-        }
+        checkConstResults(ctzConstInts(), x -> Integer.numberOfTrailingZeros(x.intValue()));
         Asserts.assertEQ(Integer.numberOfTrailingZeros(randInt) < 0
                          || Integer.numberOfTrailingZeros(randInt) > 32,
                          ctzCompareInt(randInt));
         Asserts.assertEQ(Integer.numberOfTrailingZeros(randInt) / 8,
                          ctzDiv8Int(randInt));
+        Asserts.assertEQ(ctzRandLimitInterpretedInt(randInt), ctzRandLimitInt(randInt));
 
-        results = ctzConstLongs();
-        Asserts.assertEQ(Long.numberOfTrailingZeros(0), results[0]);
-        for (int i = 0; i < 64; ++i) {
-            Asserts.assertEQ(Long.numberOfTrailingZeros(1l << i), results[i + 1]);
-        }
+        checkConstResults(ctzConstLongs(), x -> Long.numberOfTrailingZeros(x.longValue()));
         Asserts.assertEQ(Long.numberOfTrailingZeros(randLong) < 0
                          || Long.numberOfTrailingZeros(randLong) > 64,
                          ctzCompareLong(randLong));
         Asserts.assertEQ(Long.numberOfTrailingZeros(randLong) / 8,
                          ctzDiv8Long(randLong));
+        Asserts.assertEQ(ctzRandLimitInterpretedLong(randLong), ctzRandLimitLong(randLong));
+    }
+
+    @DontCompile
+    public void checkConstResults(int[] results, Function<Long, Integer> op) {
+        Asserts.assertEQ(op.apply(Long.valueOf(0)), results[0]);
+        for (int i = 0; i < results.length - 1; ++i) {
+            Asserts.assertEQ(op.apply(Long.valueOf(1l << i)), results[i + 1]);
+        }
     }
 
     // Test CLZ with constant integer inputs.
@@ -159,6 +177,21 @@ public class TestCountBitsRange {
                   IRNode.ADD_I, "0"})
     public int clzDiv8Int(int randInt) {
         return Integer.numberOfLeadingZeros(randInt) / 8;
+    }
+
+    // Test the output range of CLZ with random input range.
+    @Test
+    public int clzRandLimitInt(int randInt) {
+        randInt = RANGE_INT.clamp(randInt);
+        int result = Integer.numberOfLeadingZeros(randInt);
+        return getResultChecksum(result, LIMITS_32);
+    }
+
+    @DontCompile
+    public int clzRandLimitInterpretedInt(int randInt) {
+        randInt = RANGE_INT.clamp(randInt);
+        int result = Integer.numberOfLeadingZeros(randInt);
+        return getResultChecksum(result, LIMITS_32);
     }
 
     // Test CLZ with constant long inputs.
@@ -257,6 +290,21 @@ public class TestCountBitsRange {
         return Long.numberOfLeadingZeros(randLong) / 8;
     }
 
+    // Test the output range of CLZ with random input range.
+    @Test
+    public int clzRandLimitLong(long randLong) {
+        randLong = RANGE_LONG.clamp(randLong);
+        int result = Long.numberOfLeadingZeros(randLong);
+        return getResultChecksum(result, LIMITS_64);
+    }
+
+    @DontCompile
+    public int clzRandLimitInterpretedLong(long randLong) {
+        randLong = RANGE_LONG.clamp(randLong);
+        int result = Long.numberOfLeadingZeros(randLong);
+        return getResultChecksum(result, LIMITS_64);
+    }
+
     // Test CTZ with constant integer inputs.
     // All CTZs in this test are expected to be optimized away.
     @Test
@@ -319,6 +367,21 @@ public class TestCountBitsRange {
                   IRNode.ADD_I, "0"})
     public int ctzDiv8Int(int randInt) {
         return Integer.numberOfTrailingZeros(randInt) / 8;
+    }
+
+    // Test the output range of CTZ with random input range.
+    @Test
+    public int ctzRandLimitInt(int randInt) {
+        randInt = RANGE_INT.clamp(randInt);
+        int result = Integer.numberOfTrailingZeros(randInt);
+        return getResultChecksum(result, LIMITS_32);
+    }
+
+    @DontCompile
+    public int ctzRandLimitInterpretedInt(int randInt) {
+        randInt = RANGE_INT.clamp(randInt);
+        int result = Integer.numberOfTrailingZeros(randInt);
+        return getResultChecksum(result, LIMITS_32);
     }
 
     // Test CTZ with constant long inputs.
@@ -415,5 +478,48 @@ public class TestCountBitsRange {
                   IRNode.ADD_I, "0"})
     public int ctzDiv8Long(long randLong) {
         return Long.numberOfTrailingZeros(randLong) / 8;
+    }
+
+    // Test the output range of CTZ with random input range.
+    @Test
+    public int ctzRandLimitLong(long randLong) {
+        randLong = RANGE_LONG.clamp(randLong);
+        int result = Long.numberOfLeadingZeros(randLong);
+        return getResultChecksum(result, LIMITS_64);
+    }
+
+    @DontCompile
+    public int ctzRandLimitInterpretedLong(long randLong) {
+        randLong = RANGE_LONG.clamp(randLong);
+        int result = Long.numberOfLeadingZeros(randLong);
+        return getResultChecksum(result, LIMITS_64);
+    }
+
+    record Range<T extends Comparable<T>>(T lo, T hi) {
+        Range {
+            if (lo.compareTo(hi) > 0) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        @ForceInline
+        T clamp(T v) {
+            return v.compareTo(lo) < 0 ? lo :
+                   v.compareTo(hi) > 0 ? hi : v;
+        }
+
+        static <T extends Comparable<T>> Range generate(Generator<T> g) {
+            T a = g.next(), b = g.next();
+            return a.compareTo(b) < 0 ? new Range(a, b) : new Range(b, a);
+        }
+    }
+
+    int getResultChecksum(int result, int[] LIMITS) {
+        int sum = 0;
+        for (int i = 0; i < LIMITS.length; i += 2) {
+            if (result < LIMITS[i]) sum += 1 << i;
+            if (result > LIMITS[i + 1]) sum += 1 << (i + 1);
+        }
+        return sum;
     }
 }
