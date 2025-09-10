@@ -347,7 +347,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   result = find_class_from_class_loader(env, class_name, true, loader, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
-    trace_class_resolution(java_lang_Class::as_Klass(result));
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
 
   return result;
@@ -526,7 +526,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   jint ret = JNI_OK;
   DT_RETURN_MARK(ThrowNew, jint, (const jint&)ret);
 
-  InstanceKlass* k = java_lang_Class::as_InstanceKlass(clazz);
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(clazz));
   Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
   THROW_MSG_LOADER_(name, (char *)message, class_loader, JNI_OK);
@@ -1041,7 +1041,8 @@ JNI_ENTRY_NO_PRESERVE(jboolean, jni_IsInstanceOf(JNIEnv *env, jobject obj, jclas
   jboolean ret = JNI_TRUE;
   if (obj != nullptr) {
     ret = JNI_FALSE;
-    Klass* k = java_lang_Class::as_Klass(clazz);
+    Klass* k = java_lang_Class::as_Klass(
+      JNIHandles::resolve_non_null(clazz));
     if (k != nullptr) {
       ret = JNIHandles::resolve_non_null(obj)->is_a(k) ? JNI_TRUE : JNI_FALSE;
     }
@@ -1600,7 +1601,7 @@ JNI_ENTRY(ResultType, \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
   /* Make sure class is initialized before trying to invoke its method */ \
-  Klass* k = java_lang_Class::as_Klass(cls); \
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)); \
   k->initialize(CHECK_(ResultType{})); \
   jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_(ResultType{})); \
   va_end(args); \
@@ -1745,7 +1746,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   jfieldID ret = nullptr;
   DT_RETURN_MARK(GetFieldID, jfieldID, (const jfieldID&)ret);
 
-  Klass* k = java_lang_Class::as_Klass(clazz);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
   // The class should have been loaded (we have an instance of the class
   // passed in) so the field and signature should already be in the symbol
@@ -1939,7 +1940,7 @@ JNI_ENTRY(jobject, jni_ToReflectedField(JNIEnv *env, jclass cls, jfieldID fieldI
 
   fieldDescriptor fd;
   bool found = false;
-  Klass* k = java_lang_Class::as_Klass(cls);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
 
   assert(jfieldIDWorkaround::is_static_jfieldID(fieldID) == (isStatic != 0), "invalid fieldID");
 
@@ -1980,7 +1981,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   if (fieldname == nullptr || signame == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
-  Klass* k = java_lang_Class::as_Klass(clazz);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   // Make sure class is initialized before handing id's out to static fields
   k->initialize(CHECK_NULL);
 
@@ -2281,7 +2282,7 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
  HOTSPOT_JNI_NEWOBJECTARRAY_ENTRY(env, length, elementClass, initialElement);
   jobjectArray ret = nullptr;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
-  Klass* ek = java_lang_Class::as_Klass(elementClass);
+  Klass* ek = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass));
 
   // Make sure bottom_klass is initialized.
   ek->initialize(CHECK_NULL);
@@ -2626,7 +2627,7 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
   jint ret = 0;
   DT_RETURN_MARK(RegisterNatives, jint, (const jint&)ret);
 
-  Klass* k = java_lang_Class::as_Klass(clazz);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
   // There are no restrictions on native code registering native methods,
   // which allows agents to redefine the bindings to native methods, however
@@ -2689,7 +2690,7 @@ JNI_END
 
 JNI_ENTRY(jint, jni_UnregisterNatives(JNIEnv *env, jclass clazz))
  HOTSPOT_JNI_UNREGISTERNATIVES_ENTRY(env, clazz);
-  Klass* k   = java_lang_Class::as_Klass(clazz);
+  Klass* k   = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   //%note jni_2
   if (k->is_instance_klass()) {
     for (int index = 0; index < InstanceKlass::cast(k)->methods()->length(); index++) {
@@ -2925,7 +2926,7 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   jclass result =  find_class_from_class_loader(env, sym, true, loader, true, CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
-    trace_class_resolution(java_lang_Class::as_Klass(result));
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
 }

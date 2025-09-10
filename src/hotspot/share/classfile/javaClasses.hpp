@@ -295,9 +295,7 @@ class java_lang_Class : AllStatic {
 
   // Conversion -- java_class must not be null. The return value is null only if java_class is a primitive type.
   static Klass* as_Klass(oop java_class);
-  static Klass* as_Klass(jobject java_class);
   static InstanceKlass* as_InstanceKlass(oop java_class);
-  static InstanceKlass* as_InstanceKlass(jobject java_class);
 
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
@@ -1899,11 +1897,11 @@ class InjectedField {
   const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
-  const bool           may_be_java;
+  const bool may_be_java;
 
 
   InstanceKlass* klass() const { return vmClasses::klass_at(klass_id); }
-  Symbol* name() const      { return lookup_symbol(name_index); }
+  Symbol* name() const { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 
   int compute_offset();

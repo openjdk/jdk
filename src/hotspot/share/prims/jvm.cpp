@@ -815,7 +815,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
                                                false, THREAD);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
-    trace_class_resolution(java_lang_Class::as_Klass(result));
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
 JVM_END
@@ -840,8 +840,8 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
     // this function is generally only used for class loading during verification.
     ResourceMark rm;
-    const char * from_name = java_lang_Class::as_Klass(from)->external_name();
-    const char * to_name = java_lang_Class::as_Klass(result)->external_name();
+    const char* from_name = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(from))->external_name();
+    const char* to_name = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result))->external_name();
     log_debug(class, resolve)("%s %s (verification)", from_name, to_name);
   }
 
@@ -906,10 +906,11 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                       jboolean init, int flags, jobject classData, TRAPS) {
   ResourceMark rm(THREAD);
 
-  InstanceKlass* lookup_k = java_lang_Class::as_InstanceKlass(lookup);
-  // Lookup class must not be a primitive class (whose mirror null Klass*)
+  InstanceKlass* lookup_k = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(lookup));
+  // Lookup class must not be a primitive class (whose mirror has a null Klass*)
   if (lookup_k == nullptr) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class is primitive");
+    // The error message is wrong. We come here only if lookup is a primitive class
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class is null");
   }
 
   Handle class_loader (THREAD, lookup_k->class_loader());
@@ -1444,7 +1445,7 @@ JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
   ResourceMark rm(THREAD);
   // Return null for arrays and primitives
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
-    Klass* k = java_lang_Class::as_Klass(cls);
+    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
     if (k->is_instance_klass()) {
       AnnotationArray* type_annotations = InstanceKlass::cast(k)->class_type_annotations();
       if (type_annotations != nullptr) {
@@ -1596,7 +1597,7 @@ JVM_END
 // java.lang.Record and has a Record attribute; otherwise, it is not a record.
 JVM_ENTRY(jboolean, JVM_IsRecord(JNIEnv *env, jclass cls))
 {
-  Klass* k = java_lang_Class::as_Klass(cls);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   if (k != nullptr && k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
     return ik->is_record();
@@ -1613,7 +1614,7 @@ JVM_END
 // even if the class is not a record.
 JVM_ENTRY(jobjectArray, JVM_GetRecordComponents(JNIEnv* env, jclass ofClass))
 {
-  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(ofClass);
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(ofClass));
 
   Array<RecordComponent*>* components = ik->record_components();
   if (components != nullptr) {
@@ -1734,8 +1735,8 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_AreNestMates(JNIEnv *env, jclass current, jclass member))
 {
-  InstanceKlass* c = java_lang_Class::as_InstanceKlass(current);
-  InstanceKlass* m = java_lang_Class::as_InstanceKlass(member);
+  InstanceKlass* c = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(current));
+  InstanceKlass* m = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(member));
   return c->has_nestmate_access_to(m, THREAD);
 }
 JVM_END
@@ -1743,7 +1744,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_GetNestHost(JNIEnv* env, jclass current))
 {
   // current is not a primitive or array class
-  InstanceKlass* c = java_lang_Class::as_InstanceKlass(current);
+  InstanceKlass* c = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(current));
   InstanceKlass* host = c->nest_host(THREAD);
   return (jclass) (host == nullptr ? nullptr :
                    JNIHandles::make_local(THREAD, host->java_mirror()));
@@ -1754,7 +1755,7 @@ JVM_ENTRY(jobjectArray, JVM_GetNestMembers(JNIEnv* env, jclass current))
 {
   // current is not a primitive or array class
   ResourceMark rm(THREAD);
-  InstanceKlass* c = java_lang_Class::as_InstanceKlass(current);
+  InstanceKlass* c = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(current));
   InstanceKlass* host = c->nest_host(THREAD);
 
   log_trace(class, nestmates)("Calling GetNestMembers for type %s with nest-host %s",
@@ -3337,7 +3338,7 @@ JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjec
 JVM_END
 
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(cls);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   HeapShared::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
@@ -3354,7 +3355,6 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
     return;
   }
 
-  Klass* caller_k = java_lang_Class::as_Klass(caller);
   InstanceKlass* caller_ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(caller));
   if (caller_ik->is_hidden()) {
     // Hidden classes not of type lambda proxy classes are currently not being archived.
@@ -3362,7 +3362,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
     // registered for archiving.
     return;
   }
-  InstanceKlass* lambda_ik = java_lang_Class::as_InstanceKlass(lambdaProxyClass);
+  InstanceKlass* lambda_ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(lambdaProxyClass));
   assert(lambda_ik->is_hidden(), "must be a hidden class");
   assert(!lambda_ik->is_non_strong_hidden(), "expected a strong hidden class");
 
@@ -3402,7 +3402,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
     THROW_(vmSymbols::java_lang_NullPointerException(), nullptr);
   }
 
-  InstanceKlass* caller_ik = java_lang_Class::as_InstanceKlass(caller);
+  InstanceKlass* caller_ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(caller));
   if (!caller_ik->in_aot_cache()) {
     // there won't be a shared lambda class if the caller_ik is not in the shared archive.
     return nullptr;
@@ -3499,7 +3499,7 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls))
 #if INCLUDE_CDS
-  Klass* k = java_lang_Class::as_Klass(cls);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   if (!k->is_instance_klass()) {
     return false;
   } else {
