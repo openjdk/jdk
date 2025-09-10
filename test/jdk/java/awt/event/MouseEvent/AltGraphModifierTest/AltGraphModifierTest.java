@@ -54,6 +54,10 @@ public class AltGraphModifierTest {
                     Press Right Alt Key & simultaneously
                         perform mouse click on the "TestWindow".
 
+                    If the system does not have such setting, press Pass.
+                    After the test, change the Setting of "Alternate Characters Key"
+                    back to "Layout default".
+
                 If "Alt-Gr Modifier bit is set" message is displayed in logArea,
                 press Pass else press Fail.
                 """;
