@@ -278,14 +278,18 @@ public:
     might_cause_vm_crash();
   }
 */
-template <typename F>
-class OnVMError : F, public VMErrorCallback, public VMErrorCallbackMark {
-  void call(outputStream* st) final { this->operator()(st); }
+template <typename CallableType>
+class OnVMError : public VMErrorCallback {
+  CallableType _callable;
+  VMErrorCallbackMark _mark;
+
+  void call(outputStream* st) final { _callable(st); }
 
 public:
-  OnVMError(F&& f) : F(static_cast<F&&>(f)), VMErrorCallbackMark(this) {}
+  template <typename Callable>
+  OnVMError(Callable&& callable) : VMErrorCallback(), _callable(static_cast<Callable&&>(callable)), _mark(this) {}
 };
 
-template <typename F> OnVMError(F) -> OnVMError<F>;
+template <typename CallableType> OnVMError(CallableType) -> OnVMError<CallableType>;
 
 #endif // SHARE_UTILITIES_VMERROR_HPP
