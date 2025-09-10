@@ -109,11 +109,11 @@ void JfrCPUTimeTraceQueue::set_size(u4 size) {
 }
 
 u4 JfrCPUTimeTraceQueue::capacity() const {
-  return Atomic::load_acquire(&_capacity);
+  return AtomicAccess::load_acquire(&_capacity);
 }
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
-  if (capacity == Atomic::load(&_capacity)) {
+  if (capacity == AtomicAccess::load(&_capacity)) {
     return;
   }
   _head = 0;
@@ -126,7 +126,7 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   } else {
     _data = nullptr;
   }
-  Atomic::release_store(&_capacity, capacity);
+  AtomicAccess::release_store(&_capacity, capacity);
 }
 
 bool JfrCPUTimeTraceQueue::is_empty() const {
@@ -143,7 +143,7 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples_due_to_queue_full() {
-  Atomic::inc(&_lost_samples_due_to_queue_full);
+  AtomicAccess::inc(&_lost_samples_due_to_queue_full);
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
@@ -151,7 +151,7 @@ u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples_due_to_queue_full() {
-  return Atomic::xchg(&_lost_samples_due_to_queue_full, (u4)0);
+  return AtomicAccess::xchg(&_lost_samples_due_to_queue_full, (u4)0);
 }
 
 void JfrCPUTimeTraceQueue::init() {
@@ -167,7 +167,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
   if (lost_samples_due_to_queue_full == 0) {
     return;
   }
-  u4 capacity = Atomic::load(&_capacity);
+  u4 capacity = AtomicAccess::load(&_capacity);
   if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
     float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
     int factor = 1;
@@ -280,11 +280,11 @@ public:
 
   #ifdef ASSERT
   void set_out_of_stack_walking_enabled(bool runnable) {
-    Atomic::release_store(&_out_of_stack_walking_enabled, runnable);
+    AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
   }
 
   u8 out_of_stack_walking_iterations() const {
-    return Atomic::load(&_out_of_stack_walking_iterations);
+    return AtomicAccess::load(&_out_of_stack_walking_iterations);
   }
   #endif
 };

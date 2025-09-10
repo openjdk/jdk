@@ -64,12 +64,12 @@ class NativeMethodBarrier: public NativeInstruction {
       assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
       value &= bit_mask;
       int32_t* data_addr = (int32_t*)get_patchable_data_address();
-      int old_value = Atomic::load(data_addr);
+      int old_value = AtomicAccess::load(data_addr);
       while (true) {
         // Only bits in the mask are changed
         int new_value = value | (old_value & ~bit_mask);
         if (new_value == old_value) break;
-        int v = Atomic::cmpxchg(data_addr, old_value, new_value, memory_order_release);
+        int v = AtomicAccess::cmpxchg(data_addr, old_value, new_value, memory_order_release);
         if (v == old_value) break;
         old_value = v;
       }
