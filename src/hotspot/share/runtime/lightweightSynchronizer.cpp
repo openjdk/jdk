@@ -333,8 +333,6 @@ size_t ObjectMonitorTable::_table_size = 0;
 volatile bool ObjectMonitorTable::_resize = false;
 
 ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-
   ObjectMonitor* monitor = get_monitor_from_table(current, object);
   if (monitor != nullptr) {
     *inserted = false;
@@ -628,7 +626,6 @@ bool LightweightSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stac
 }
 
 void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert(!UseObjectMonitorTable || lock->object_monitor_cache() == nullptr, "must be cleared");
   JavaThread* current = JavaThread::current();
   VerifyThreadState vts(locking_thread, current);
@@ -657,7 +654,6 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
 }
 
 void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert(current == JavaThread::current(), "must be");
 
   if (obj->klass()->is_value_based()) {
@@ -718,7 +714,6 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
 }
 
 void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert(current == Thread::current(), "must be");
 
   markWord mark = object->mark();
@@ -770,18 +765,14 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
   monitor->exit(current);
 }
 
-// LightweightSynchronizer::inflate_locked_or_imse is used to to get an inflated
-// ObjectMonitor* with LM_LIGHTWEIGHT. It is used from contexts which require
-// an inflated ObjectMonitor* for a monitor, and expects to throw a
-// java.lang.IllegalMonitorStateException if it is not held by the current
-// thread. Such as notify/wait and jni_exit. LM_LIGHTWEIGHT keeps it invariant
-// that it only inflates if it is already locked by the current thread or the
-// current thread is in the process of entering. To maintain this invariant we
-// need to throw a java.lang.IllegalMonitorStateException before inflating if
-// the current thread is not the owner.
-// LightweightSynchronizer::inflate_locked_or_imse facilitates this.
+// LightweightSynchronizer::inflate_locked_or_imse is used to get an
+// inflated ObjectMonitor* from contexts which require that, such as
+// notify/wait and jni_exit. Lightweight locking keeps the invariant that it
+// only inflates if it is already locked by the current thread or the current
+// thread is in the process of entering. To maintain this invariant we need to
+// throw a java.lang.IllegalMonitorStateException before inflating if the
+// current thread is not the owner.
 ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchronizer::InflateCause cause, TRAPS) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   JavaThread* current = THREAD;
 
   for (;;) {
@@ -826,12 +817,11 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
 
 ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current) {
 
-  // The JavaThread* locking_thread parameter is only used by LM_LIGHTWEIGHT and requires
-  // that the locking_thread == Thread::current() or is suspended throughout the call by
-  // some other mechanism.
-  // Even with LM_LIGHTWEIGHT the thread might be nullptr when called from a non
+  // The JavaThread* locking parameter requires that the locking_thread == JavaThread::current,
+  // or is suspended throughout the call by some other mechanism.
+  // Even with lightweight locking the thread might be nullptr when called from a non
   // JavaThread. (As may still be the case from FastHashCode). However it is only
-  // important for the correctness of the LM_LIGHTWEIGHT algorithm that the thread
+  // important for the correctness of the lightweight locking algorithm that the thread
   // is set when called from ObjectSynchronizer::enter from the owning thread,
   // ObjectSynchronizer::enter_for from any thread, or ObjectSynchronizer::exit.
   EventJavaMonitorInflate event;
@@ -943,7 +933,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
 }
 
 ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used for lightweight");
   VerifyThreadState vts(locking_thread, current);
   assert(locking_thread->lock_stack().contains(object), "locking_thread must have object on its lock stack");
 
@@ -1000,7 +989,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, O
 }
 
 ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used for lightweight");
   VerifyThreadState vts(locking_thread, current);
 
   // Note: In some paths (deoptimization) the 'current' thread inflates and

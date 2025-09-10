@@ -3833,16 +3833,18 @@ opclass immIorL(immI, immL);
 pipeline %{
 
 attributes %{
-  // RISC-V instructions are of fixed length
-  fixed_size_instructions;           // Fixed size instructions TODO does
-  max_instructions_per_bundle = 2;   // Generic RISC-V 1, Sifive Series 7 2
-  // RISC-V instructions come in 32-bit word units
-  instruction_unit_size = 4;         // An instruction is 4 bytes long
-  instruction_fetch_unit_size = 64;  // The processor fetches one line
-  instruction_fetch_units = 1;       // of 64 bytes
+  // RISC-V instructions are of length 2 or 4 bytes.
+  variable_size_instructions;
+  instruction_unit_size = 2;
 
-  // List of nop instructions
-  nops( MachNop );
+  // Up to 4 instructions per bundle
+  max_instructions_per_bundle = 4;
+
+  // The RISC-V processor fetches 64 bytes...
+  instruction_fetch_unit_size = 64;
+
+  // ...in one line.
+  instruction_fetch_units = 1;
 %}
 
 // We don't use an actual pipeline model so don't care about resources

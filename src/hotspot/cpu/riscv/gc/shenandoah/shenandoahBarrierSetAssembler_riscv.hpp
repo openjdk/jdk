@@ -69,7 +69,7 @@ private:
 
 public:
 
-  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_instruction_and_data_patch; }
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
