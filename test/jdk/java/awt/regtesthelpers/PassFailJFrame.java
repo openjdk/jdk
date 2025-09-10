@@ -99,7 +99,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * tester. The instructions can be either plain text or HTML. If the
  * text of the instructions starts with {@code "<html>"}, the
  * instructions are displayed as HTML, as supported by Swing, which
- * provides richer formatting options. {@link Builder#addHyperlinkListener}
+ * provides richer formatting options. {@link Builder#hyperlinkListener}
  * can be called to add a listener to hyperlinks inside the HTML.
  * <p>
  * The instructions are displayed in a text component with word-wrapping
@@ -1406,7 +1406,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
-        HyperlinkListener hyperlinkListener;
+        private HyperlinkListener hyperlinkListener;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1488,12 +1488,12 @@ public final class PassFailJFrame {
         }
 
         /**
-         * Set the HyperlinkListener of links inside the instructions pane.
+         * Sets a {@link HyperlinkListener} for navigating links inside the instructions pane.
          *
          * @param hyperlinkListener the listener
          * @return this builder
          */
-        public Builder addHyperlinkListener(HyperlinkListener hyperlinkListener) {
+        public Builder hyperlinkListener(HyperlinkListener hyperlinkListener) {
             this.hyperlinkListener = hyperlinkListener;
             return this;
         }
