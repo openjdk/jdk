@@ -117,37 +117,25 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
   }
   return TypeInt::INT;
 }
-
-/*
-Lemma 1: For a given known bits information, _lo and _hi bounds of the corresponding value
-        range is computed using the following formulas:-
-        - _hi = ~ZEROS
-        - _lo = ONES
-Proof:-
-  - KnownBits.ZEROS and KnownBits.ONES are inferred out of the common prefix of the value range
-    delimiting bounds.
-
-  - Thus, ~KnownBits.ZEROS not only includes set bits in the common prefix but also optimistically assumes
-    that all other bits not included in the common prefix are also set.
-
-  - Consider the following illustration, which performs round-trip translation
-    of a value range via knowbits information, e.g.
-    A) Initial value range bounds to infer knownbits.
-      _lo = 0b11000100
-      _hi = 0b11000110
-      _common_prefix      = 0b11000100
-      _common_prefix_mask = 0b11111100
-      _known_bits.ones    = _lo & _common_prefix_mask  = 0b11000100
-      _known_bits.zeros   = ~_lo & _common_prefix_mask = 0b00111000
-
-    B) Now, transform the computed knownbits back to the value range.
-      _new_lo = _known_bits.ones  = 0b11000100
-      _new_hi = ~known_bits.zeros = 0b11000111
-
-  - We now know that ~KnownBits.ZEROS >= UB >= LB >= KnownBits.ONES
-  - Therefore, popcount(ONES) and popcount(~ZEROS) can safely be assumed as the upper and lower
-    bounds of the result value range.
-*/
+// We use the KnownBits information from the integer types to derive how many one bits
+// we have at least and at most.
+// From the definition of KnownBits, we know:
+//   zeros: Indicates which bits must be 0: ones[i] =1 -> t[i]=0
+//   ones:  Indicates which bits must be 1: zeros[i]=1 -> t[i]=1
+//
+// From this, we derive:
+//   numer_of_zeros_in_t >= pop_count(zeros)
+//   -> number_of_ones_in_t <= bits_per_type - pop_count(zeros) = pop_count(~zeros)
+//   number_of_ones_in_t >= pop_count(ones)
+//
+// By definition:
+//   pop_count(t) = number_of_ones_in_t
+//
+// It follows:
+//   pop_count(ones) <= pop_count(t) <= pop_count(~zeros)
+//
+// Note: signed _lo and _hi, as well as unsigned _ulo and _uhi bounds of the integer types
+//       are already reflected in the KnownBits information, see TypeInt / TypeLong definitions.
 const Type* PopCountINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) {
