@@ -24,7 +24,6 @@ package jdk.vm.ci.hotspot;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -82,24 +81,11 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
     @Override
     public ResolvedJavaField lookupJavaField(Field reflectionField) {
         Class<?> fieldHolder = reflectionField.getDeclaringClass();
-
-        HotSpotResolvedJavaType holder = runtime.fromClass(fieldHolder);
-        assert holder != null : fieldHolder;
-        ResolvedJavaField[] fields;
-        if (Modifier.isStatic(reflectionField.getModifiers())) {
-            fields = holder.getStaticFields();
-        } else {
-            fields = holder.getInstanceFields(false);
-        }
-        ResolvedJavaType fieldType = lookupJavaType(reflectionField.getType());
-        for (ResolvedJavaField field : fields) {
-            if (reflectionField.getName().equals(field.getName()) && field.getType().equals(fieldType)) {
-                assert Modifier.isStatic(reflectionField.getModifiers()) == field.isStatic();
-                return field;
-            }
-        }
-
-        throw new JVMCIError("unresolved field %s", reflectionField);
+        HotSpotResolvedObjectTypeImpl holder = (HotSpotResolvedObjectTypeImpl) runtime.fromClass(fieldHolder);
+        HotSpotResolvedObjectTypeImpl.FieldInfo[] fieldInfo = holder.getFieldInfo();
+        int index = runtime.getCompilerToVM().getReflectionFieldSlot(reflectionField);
+        HotSpotResolvedObjectTypeImpl.FieldInfo field = fieldInfo[index];
+        return holder.createField(field.getType(holder), field.getOffset(), field.getClassfileFlags(), field.getInternalFlags(), index);
     }
 
     private static int intMaskRight(int n) {

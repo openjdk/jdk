@@ -645,7 +645,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return null;
     }
 
-    private FieldInfo[] getFieldInfo() {
+    FieldInfo[] getFieldInfo() {
         if (fieldInfo == null) {
             fieldInfo = runtime().compilerToVm.getDeclaredFieldsInfo(this);
         }
@@ -714,24 +714,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             this.initializerIndex = initializerIndex;
         }
 
-        private int getClassfileFlags() {
+        int getClassfileFlags() {
             return classfileFlags;
         }
 
-        private int getInternalFlags() {
+        int getInternalFlags() {
             return internalFlags;
-        }
-
-        private int getNameIndex() {
-            return nameIndex;
-        }
-
-        private int getSignatureIndex() {
-            return signatureIndex;
-        }
-
-        private int getConstantValueIndex() {
-            return initializerIndex;
         }
 
         public int getOffset() {

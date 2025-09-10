@@ -741,6 +741,11 @@ final class CompilerToVM {
     native HotSpotResolvedJavaMethodImpl asResolvedJavaMethod(Executable executable);
 
     /**
+     * Gets the value of {@code Field.slot}.
+     */
+    native int getReflectionFieldSlot(Field field);
+
+    /**
      * Gets the maximum absolute offset of a PC relative call to {@code address} from any position
      * in the code cache.
      *

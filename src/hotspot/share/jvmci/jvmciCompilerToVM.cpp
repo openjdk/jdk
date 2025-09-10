@@ -3028,6 +3028,12 @@ static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
   return iklass;
 }
 
+C2V_VMENTRY_0(jint, getReflectionFieldSlot, (JNIEnv* env, jobject, jobject field_handle))
+  requireInHotSpot("getReflectionFieldSlot", JVMCI_CHECK_0);
+  oop field_oop = JNIHandles::resolve(field_handle);
+  return java_lang_reflect_Field::slot(field_oop);
+C2V_END
+
 C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
   requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
   Klass* klass = UNPACK_PAIR(Klass, klass);
@@ -3416,6 +3422,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
   {CC "getRawAnnotationBytes",                        CC "(C" OBJECT "JII)[B",                                                              FN_PTR(getRawAnnotationBytes)},
   {CC "getRecordComponents",                          CC "(" HS_KLASS2 ")[" RESOLVED_RECORD_COMPONENT,                                      FN_PTR(getRecordComponents)},
+  {CC "getReflectionFieldSlot",                       CC "(" FIELD ")I",                                                                    FN_PTR(getReflectionFieldSlot)},
   {CC "getResolvedJavaMethod",                        CC "(" OBJECTCONSTANT "J)" HS_METHOD,                                                 FN_PTR(getResolvedJavaMethod)},
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "getSignatureName",                             CC "(J)" STRING,                                                                      FN_PTR(getSignatureName)},
