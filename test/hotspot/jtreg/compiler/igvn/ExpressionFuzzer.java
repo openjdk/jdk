@@ -63,6 +63,11 @@ import static compiler.lib.template_framework.library.CodeGenerationDataNameType
 // Should this test fail and make a lot of noise in the CI, you have two choices:
 // - Problem-list this test: but other tests may also use the same broken operators.
 // - Temporarily remove the operator from {@code Operations.PRIMITIVE_OPERATIONS}.
+//
+// Future Work [FUTURE]:
+// - Constrain also the unsigned bounds
+// - Some basic IR tests to ensure that the constraints / checksum mechanics work.
+//   We may even have to add some IGVN optimizations to be able to better observe things right.
 public class ExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -208,7 +213,7 @@ public class ExpressionFuzzer {
         //
         // To ensure that both the compiled and reference method use the same constraint, we put
         // the computation in a ForceInline method.
-        var constrainValueMethodTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
+        var constrainArgumentMethodTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
             """
             @ForceInline
             public static #type constrain_#name(#type v) {
@@ -219,8 +224,22 @@ public class ExpressionFuzzer {
                 // is not very useful: we would like to keep it variable here. We already mix in variable
                 // arguments and constants in the testTemplate.
                 case "boolean", "float", "double" -> "return v;\n";
-                case "byte", "short", "char", "int", "long" -> "return v;\n";
-                    // TODO: constraintIntegralValueTemplate.asToken(name, type)));
+                case "byte", "short", "char", "int", "long" -> List.of(
+                    // Sometimes constrain the signed range
+                    //   v = min(max(v, CON1), CON2)
+                    (RANDOM.nextInt(2) == 0)
+                    ? List.of("v = (#type)Math.min(Math.max(v, ", type.con(),"), ", type.con() ,");\n")
+                    : List.of(),
+                    // Sometimes constrain the bits:
+                    //   v = (v & CON1) | CON2
+                    // Note:
+                    //   and (&): forces some bits to zero
+                    //   or  (|): forces some bits to one
+                    (RANDOM.nextInt(2) == 0)
+                    ? List.of("v = (#type)((v & ", type.con(),") | ", type.con() ,");\n")
+                    : List.of(),
+                    // FUTURE: we could also constrain the unsigned bounds.
+                    "return v;\n");
                 default -> throw new RuntimeException("should only be primitive types");
             },
             """
@@ -228,7 +247,7 @@ public class ExpressionFuzzer {
             """
         ));
 
-        var constrainValueTemplate = Template.make("name", (String name) -> body(
+        var constrainArgumentTemplate = Template.make("name", (String name) -> body(
             """
             #name = constrain_#name(#name);
             """
@@ -240,7 +259,7 @@ public class ExpressionFuzzer {
         //                 result verification (only if the result is known to be deterministic).
         //
         // - instantiate compiled and reference test methods.
-        // - instantiate value constraint methods (constrains test method arguments types).
+        // - instantiate argument constraint methods (constrains test method arguments types).
         // - instantiate checksum method (summarizes value and bounds/bit checks).
         var testTemplate = Template.make("expression", (Expression expression) -> {
             // Fix the arguments for both the compiled and reference method.
@@ -260,14 +279,6 @@ public class ExpressionFuzzer {
                     }
                 }
             }
-            // TODO: fix with Values
-            // We need to have a way to get values with type constraints
-            // And we need to "load" them once in compiled and once in reference
-            // Could do mix of method args, fields and constants.
-            // And even computations in the method? Not sure
-            // Args and fields can then be "constrained" in the method before use.
-            // And the result should be returned, but also some "checksum" to
-            // detect range and bits.
             return body(
                 let("methodArguments",
                     methodArguments.stream().map(ma -> ma.name).collect(Collectors.joining(", "))),
@@ -290,7 +301,9 @@ public class ExpressionFuzzer {
                 @DontInline
                 public static Object ${primitiveConTest}_compiled(#methodArgumentsWithTypes) {
                 """,
-                methodArguments.stream().map(ma -> constrainValueTemplate.asToken(ma.name)).toList(),
+                // The arguments now have the bottom_type. Constrain the ranges and bits.
+                methodArguments.stream().map(ma -> constrainArgumentTemplate.asToken(ma.name)).toList(),
+                // Generate the body with the expression, and calling the checksum.
                 bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
                 """
                 }
@@ -298,13 +311,13 @@ public class ExpressionFuzzer {
                 @DontCompile
                 public static Object ${primitiveConTest}_reference(#methodArgumentsWithTypes) {
                 """,
-                methodArguments.stream().map(ma -> constrainValueTemplate.asToken(ma.name)).toList(),
+                methodArguments.stream().map(ma -> constrainArgumentTemplate.asToken(ma.name)).toList(),
                 bodyTemplate.asToken(expression, expressionArguments, $("checksum")),
                 """
                 }
 
                 """,
-                methodArguments.stream().map(ma -> constrainValueMethodTemplate.asToken(ma.name, ma.type)).toList(),
+                methodArguments.stream().map(ma -> constrainArgumentMethodTemplate.asToken(ma.name, ma.type)).toList(),
                 checksumTemplate.asToken(expression, $("checksum"))
             );
         });
