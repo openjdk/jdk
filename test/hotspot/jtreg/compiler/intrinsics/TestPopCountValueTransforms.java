@@ -53,7 +53,6 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Warmup(10000)
     @Run(test = {"testPopCountElisionLong1"})
     public void runPopCountElisionLong1() {
         long res = 1;
@@ -74,7 +73,6 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Warmup(10000)
     @Run(test = {"testPopCountElisionLong2"})
     public void runPopCountElisionLong2() {
         long res = 0;
