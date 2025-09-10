@@ -71,7 +71,7 @@ public class TestOptionalRegionGC {
     Asserts.assertTrue(matcher.find());
     String selectedNum = matcher.group(1);
     String totalNum = matcher.group(2);
-    Asserts.assertTrue(Objects.equals(selectedNum,totalNum),"Error info: "+selectedNum+","+totalNum);
+    Asserts.assertTrue(Objects.equals(selectedNum, totalNum), "Error info: " + selectedNum + ", " + totalNum);
   }
 
   public static class Action {
