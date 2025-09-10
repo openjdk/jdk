@@ -3517,12 +3517,13 @@ public class DecimalFormat extends NumberFormat {
         var alen = affix.length();
         var tlen = text.length();
 
+        // Verify position can fit length wise before checking char by char
+        if (position + alen > tlen || position < 0) {
+            return false;
+        }
         if (alen == 0) {
             // always match with an empty affix, as affix is optional
             return true;
-        }
-        if (position >= tlen) {
-            return false;
         }
         if (parseStrict) {
             return text.regionMatches(position, affix, 0, alen);

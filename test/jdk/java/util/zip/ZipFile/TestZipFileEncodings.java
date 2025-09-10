@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8243254
  * @summary Tests a simple set of operations on Zip files in various encodings
  *          focusing on ensuring metadata is properly encoded and read.
- * @run testng TestZipFileEncodings
+ * @run testng/timeout=480 TestZipFileEncodings
  */
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;

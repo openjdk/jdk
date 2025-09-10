@@ -38,6 +38,15 @@
 #include <stdlib.h>
 #endif
 
+// Workaround for noexcept functions in glibc when using clang.
+// clang errors if declaration without exception specification preceeds
+// noexcept declaration, but not the other way around.
+#ifdef __clang__
+#include <stdio.h>
+#include <string.h>
+#include <wchar.h>
+#endif
+
 #ifdef _WINDOWS
 #include "forbiddenFunctions_windows.hpp"
 #else
@@ -59,6 +68,7 @@ FORBID_IMPORTED_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_IMPORTED_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
 
 FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
+FORBID_C_FUNCTION(int snprintf(char*, size_t, const char*, ...), "use os::snprintf");
 
 PRAGMA_DIAG_PUSH
 FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
