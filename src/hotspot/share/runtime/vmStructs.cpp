@@ -171,6 +171,9 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
+  nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
+  nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _bsmaentries,                                  BSMAttributeEntries)                   \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
@@ -962,6 +965,7 @@
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
   declare_toplevel_type(DataLayout)                                       \
+  declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \

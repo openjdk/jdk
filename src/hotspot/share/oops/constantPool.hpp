@@ -80,6 +80,7 @@ public:
 class BSMAttributeEntry {
   friend class ConstantPool;
   friend class BSMAttributeEntries;
+
   u2 _bootstrap_method_index;
   u2 _argument_count;
 
@@ -125,6 +126,9 @@ public:
 
 // The BSMAttributeEntries stores the state of the BootstrapMethods attribute.
 class BSMAttributeEntries {
+  friend class VMStructs;
+  friend class JVMCIVMStructs;
+
   // Each bootstrap method has a variable-sized array associated with it.
   // We want constant-time lookup of the Nth BSM. Therefore, we use an offset table,
   // such that the Nth BSM is located at _bootstrap_methods[_offsets[N]].

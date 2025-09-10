@@ -89,6 +89,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
     Type type   = db.lookupType("ConstantPool");
     tags        = type.getAddressField("_tags");
     cache       = type.getAddressField("_cache");
+    bsmaentries = type.getAddressField("_bsmaentries");
+    Type bsmaetype = db.lookupType("BSMAttributeEntries");
+    bsmaentries_offsets = bsmaetype.getAddressField("_offsets");
+    bsmaentries_bootstrap_methods = bsmaetype.getAddressField("_bootstrap_methods");
     poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
     resolved_klasses = type.getAddressField("_resolved_klasses");
@@ -113,6 +117,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField tags;
   private static AddressField cache;
   private static AddressField resolved_klasses;
+  private static AddressField bsmaentries;
+  private static AddressField bsmaentries_offsets;
+  private static AddressField bsmaentries_bootstrap_methods;
   private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
   private static CIntField majorVersion;
@@ -429,22 +436,47 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
+  private U4Array getOffsets() {
+    Address a = bsmaentries.getValue(getAddress());
+    return new U4Array(bsmaentries_offsets.getValue(a));
+  }
+  private U2Array getBootstrapMethods() {
+      Address a = bsmaentries.getValue(getAddress());
+      return new U2Array(bsmaentries_bootstrap_methods.getValue(a));
+  }
+
   public int getBootstrapMethodsCount() {
-    return 0;
+    U4Array offsets = getOffsets();
+    return offsets.length();
   }
 
   public int getBootstrapMethodArgsCount(int bsmIndex) {
-    return 0;
+    U4Array offs = getOffsets();
+    U2Array bsms = getBootstrapMethods();
+    return bsms.at(offs.at(bsmIndex) + INDY_ARGC_OFFSET);
   }
 
   public short[] getBootstrapMethodAt(int bsmIndex) {
-    short[] values = new short[0];
+    U4Array offs = getOffsets();
+    U2Array bsms = getBootstrapMethods();
+    int basePos = offs.at(bsmIndex);
+    int argv = basePos + INDY_ARGV_OFFSET;
+    int argc = getBootstrapMethodArgsCount(bsmIndex);
+    int endPos = argv + argc;
+    short[] values = new short[endPos - basePos];
+    for (int j = 0; j < values.length; j++) {
+      values[j] = bsms.at(basePos+j);
+    }
     return values;
   }
 
   /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
   public short[] getBootstrapSpecifierAt(int i) {
-      return new short[1];
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
+    }
+    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    return getBootstrapMethodAt(bsmSpec);
   }
 
   private static final String[] nameForTag = new String[] {
