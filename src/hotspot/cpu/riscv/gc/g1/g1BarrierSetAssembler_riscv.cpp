@@ -100,7 +100,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());
-  __ sub(count, end, start);                            // Number of bytes to mark
+  __ sub(count, end, start);                            // Number of bytes to mark - 1
 
   Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
   __ ld(tmp, card_table_address);
