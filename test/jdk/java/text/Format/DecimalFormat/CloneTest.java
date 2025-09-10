@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8354522 8358880
+ * @bug 8354522 8358880 8367324
  * @summary Check for cloning interference
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.text=ALL-UNNAMED CloneTest

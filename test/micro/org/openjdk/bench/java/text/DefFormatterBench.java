@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.stream.DoubleStream;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
@@ -53,18 +54,22 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 public class DefFormatterBench {
 
     public double[] values;
-    public BigDecimal[] bdValues;
+    public BigDecimal[] bdLargeValues;
+    public BigDecimal[] bdSmallValues;
 
-    @Setup
+    @Setup(Level.Iteration)
     public void setup() {
         values = new double[] {
             1.23, 1.49, 1.80, 1.7, 0.0, -1.49, -1.50, 9999.9123, 1.494, 1.495, 1.03, 25.996, -25.996
         };
 
-        bdValues = DoubleStream.of(values)
+        bdLargeValues = DoubleStream.of(values)
                 .mapToObj(BigDecimal::new)
                 .toArray(BigDecimal[]::new);
 
+        bdSmallValues = DoubleStream.of(values)
+                .mapToObj(BigDecimal::valueOf)
+                .toArray(BigDecimal[]::new);
     }
 
     private DefNumberFormat dnf = new DefNumberFormat();
@@ -80,26 +85,16 @@ public class DefFormatterBench {
     @Benchmark
     @OperationsPerInvocation(13)
     public void testSmallBigDecDefNumberFormatter(final Blackhole blackhole) {
-        for (double value : values) {
-            // bd is recreated each time to avoid the effect of internal caching
-            // of the toString value if the BigDecimal instance was reused.
-
-            // This will create "small" BigDecimals where unscaled value fits in a long.
-            BigDecimal bd = BigDecimal.valueOf(value);
-            blackhole.consume(this.dnf.format(bd));
+        for (BigDecimal value : bdSmallValues) {
+            blackhole.consume(this.dnf.format(value));
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(13)
     public void testLargeBigDecDefNumberFormatter(final Blackhole blackhole) {
-        for (BigDecimal value : bdValues) {
-            // bd is recreated each time to avoid the effect of internal caching
-            // of the toString value if the BigDecimal instance was reused.
-
-            BigDecimal bd = new BigDecimal(value.unscaledValue(), value.scale());
-
-            blackhole.consume(this.dnf.format(bd));
+        for (BigDecimal value : bdLargeValues) {
+            blackhole.consume(this.dnf.format(value));
         }
     }
 
