@@ -171,6 +171,13 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
   return r_index;
 }
 
+#ifdef KELVIN_THINKING_OUT_LOUND
+// Make cleaer that we find that last_bit in the range [l_index, r_index), returning r_index if none found
+
+// kelvin thinks the implementation is currently wrong, returning l_index for failure to find one.
+
+// kelvin also prefers to use all caps for template parameters.
+#endif
 template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_left>
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t l_index, idx_t r_index) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);

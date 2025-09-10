@@ -69,8 +69,8 @@ public:
 
   // get the first marked address in the range [addr,linit), or limit if none found
   inline HeapWord* get_next_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
-  // get the last marked address in the range (limit, addr), or limit if none found
-  inline HeapWord* get_last_marked_addr(const HeapWord* limit, const HeapWord* addr) const;
+  // get the last marked address in the range [limit, addr), or addr if none found
+  inline HeapWord* get_prev_marked_addr(const HeapWord* limit, const HeapWord* addr) const;
 
   inline bool allocated_after_mark_start(const oop obj) const;
   inline bool allocated_after_mark_start(const HeapWord* addr) const;

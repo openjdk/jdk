@@ -72,7 +72,7 @@ inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(const HeapWord* 
   return _mark_bit_map.get_next_marked_addr(start, limit);
 }
 
-inline HeapWord* ShenandoahMarkingContext::get_last_marked_addr(const HeapWord* limit, const HeapWord* start) const {
+inline HeapWord* ShenandoahMarkingContext::get_prev_marked_addr(const HeapWord* limit, const HeapWord* start) const {
   return _mark_bit_map.get_last_marked_addr(limit, start);
 }
 

@@ -112,6 +112,18 @@ private:
     return raw_to_words_align_down(bit);
   }
 
+#ifdef KELVIN_THINKING_OUT_LOUD
+  // kelvin wants to redefine the flip parameter in the following, after he understands the code
+  // better.  the current comments are a bit cryptic.
+
+  // naming should be get_first_matching_bit() and get_last_matching_bit()
+  // comments should clarify the ranges examined to find the bit, and what value is returned
+  // in case searched bit is not found
+  //   rename flip template parameter as match_one_bit (false means match_zero bit)
+  
+
+#endif
+
   // Helper for get_next_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
@@ -126,8 +138,17 @@ private:
   template<bm_word_t flip, bool aligned_left>
   inline idx_t get_last_bit_impl(idx_t l_index, idx_t r_index) const;
 
+#ifdef KELVIN_THINKING_OUT_LOUD
+  // kelvin wants to rename get_next_one_offset() as get_first_one_offset
+  // would like search space to be specified as (l_index, r_index].  Return l_index if not found.
+
+  // does this require changes to implementation and invocations?  TBD
+#endif
+
 
   inline idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
+
+  // Search for last one in the range [l_index, r_index).  Return r_index if not found.
   inline idx_t get_last_one_offset (idx_t l_index, idx_t r_index) const;
 
   void clear_large_range (idx_t beg, idx_t end);
@@ -176,8 +197,17 @@ public:
   HeapWord* get_next_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
 
-  // Return the last marked address in the range (limit, addr], or limit
-  // if none found. 
+#ifdef KELVIN_THINKING_OUT_LOAD
+  // I haven't changed this code yet, but I'm thinking the following change would also be appropriate:
+  //    get_next_marked_addr() should be renamed get_first_marked_addr
+  //       The search domain for get_first_marked_addr should be (addr, limit) and not-found sentinel is limit
+  //          (looking for first marked object that comes after addr)
+
+  // Might have to adjust the invocations of these two functions, or maybe they already behave
+  // this way and the commentaries are wrong.
+#endif
+
+  // Return the last marked address in the range [limit, addr), or addr if none found.
   HeapWord* get_last_marked_addr(const HeapWord* limit,
                                  const HeapWord* addr) const;
 
