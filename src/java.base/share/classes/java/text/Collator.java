@@ -111,8 +111,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <br>
  * @apiNote {@code CollationKey}s from different
  * {@code Collator}s can not be compared. See the class description
- * for {@link CollationKey}
- * for an example using {@code CollationKey}s.
+ * for {@link CollationKey} for an example using {@code CollationKey}s.
+ *
+ * @implNote While instances of {@code Collator} returned by {@link #getInstance()}
+ * and {@link #getInstance(Locale)} in the JDK reference implementation are
+ * thread safe, using a separate instance for each thread generally produces
+ * better performance.
  *
  * @see         RuleBasedCollator
  * @see         CollationKey

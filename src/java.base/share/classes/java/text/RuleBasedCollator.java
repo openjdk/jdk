@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@
  */
 
 package java.text;
-
-import java.text.Normalizer;
-import java.util.Vector;
-import java.util.Locale;
 
 /**
  * The {@code RuleBasedCollator} class is a concrete subclass of
@@ -238,6 +234,9 @@ import java.util.Locale;
  * RuleBasedCollator myCollator = new RuleBasedCollator(oldRules + addOn);
  * </pre>
  * </blockquote>
+ *
+ * @implNote While this class is thread safe, using a separate instance for each
+ * thread generally produces better performance.
  *
  * @see        Collator
  * @see        CollationElementIterator
