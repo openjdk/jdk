@@ -82,6 +82,8 @@ ifeq ($(INCLUDE), true)
 #   INFO        : Message to display at LOG=info level when running command (optional)
 #   WARN        : Message to display at LOG=warn level when running command (optional)
 #   DEPS        : Dependencies for the execution to take place
+#   DRYRUN      : Set to true to perform everything but executing the command \
+#                 (defaults to false, primarily intended for debugging)
 #
 
 # Setup make rules for copying files, with an option to do more complex
@@ -161,8 +163,13 @@ define SetupExecuteBody
 	$$(TOUCH) $$@
 
     $$($1_EXEC_RESULT): $$($1_PRE_MARKER)
-	$$(call ExecuteWithLog, $$($1_BASE)_exec, \
-	    cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        ifneq ($$($1_DRYRUN), true)
+	  $$(call ExecuteWithLog, $$($1_BASE)_exec, \
+	      cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        else
+	  $$(call LogWarn, DRYRUN enabled for $1, not actually running command)
+	  $$(TOUCH) $$@
+        endif
         ifeq ($$($1_EXEC_RESULT), $$($1_EXEC_MARKER))
 	  $$(TOUCH) $$@
         endif
@@ -177,8 +184,13 @@ define SetupExecuteBody
 	  $$(call LogInfo, $$($1_INFO))
         endif
 	$$(call MakeDir, $$(call EncodeSpace, $$($1_WORKING_DIR)) $$(call EncodeSpace, $$($1_SUPPORT_DIR)) $$(call EncodeSpace, $$($1_OUTPUT_DIR)))
-	$$(call ExecuteWithLog, $$($1_BASE)_exec, \
-	    cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        ifneq ($$($1_DRYRUN), true)
+	  $$(call ExecuteWithLog, $$($1_BASE)_exec, \
+	      cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        else
+	  $$(call LogWarn, DRYRUN enabled for $1, not actually running command)
+	  $$(TOUCH) $$@
+        endif
         ifeq ($$($1_EXEC_RESULT), $$($1_EXEC_MARKER))
 	  $$(TOUCH) $$@
         endif

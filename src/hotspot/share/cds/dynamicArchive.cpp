@@ -110,6 +110,12 @@ public:
   }
 
   void doit() {
+    CDSConfig::set_is_at_aot_safepoint(true);
+    doit_inner();
+    CDSConfig::set_is_at_aot_safepoint(false);
+  }
+
+  void doit_inner() {
     verify_universe("Before CDS dynamic dump");
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
