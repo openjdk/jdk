@@ -1622,7 +1622,7 @@ void ConstantPool::shrink_operands(BSMAttributeEntries::InsertionIterator iter, 
 }
 
 
-void ConstantPool::copy_operands(const constantPoolHandle& from_cp,
+void ConstantPool::copy_bsm_entries(const constantPoolHandle& from_cp,
                                  const constantPoolHandle& to_cp,
                                  TRAPS) {
   to_cp->bsm_entries().append(from_cp->bsm_entries(),
@@ -1658,7 +1658,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
       break;
     }
   }
-  copy_operands(from_cp, to_cp, CHECK);
+  copy_bsm(from_cp, to_cp, CHECK);
 
 } // end copy_cp_to_impl()
 
@@ -1857,9 +1857,9 @@ bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle
 // Search constant pool search_cp for a bootstrap specifier that matches
 // this constant pool's bootstrap specifier data at pattern_i index.
 // Return the index of a matching bootstrap attribute record or (-1) if there is no match.
-int ConstantPool::find_matching_operand(int pattern_i,
-                    const constantPoolHandle& search_cp, int search_len) {
-  for (int i = 0; i < search_len; i++) {
+int ConstantPool::find_matching_bsm_entry(int pattern_i,
+                    const constantPoolHandle& search_cp, int offset_limit) {
+  for (int i = 0; i < offset_limit; i++) {
     bool found = compare_bootstrap_entry_to(pattern_i, search_cp, i);
     if (found) {
       return i;

@@ -661,12 +661,12 @@ class ConstantPool : public Metadata {
     return _bsmaentries.entry(bsms_attribute_index);
   }
 
-  // Compare a bootstrap specifier data in the operands arrays
   bool compare_bootstrap_entry_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
                                   int bsms_attribute_index2);
-  // Find a bootstrap specifier data in the operands array
-  int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len);
+  // Find a BSM entry in search_cp that matches the BSM at bsm_attribute_index
+  // Return -1 if not found.
+  int find_matching_bsm_entry(int bsms_attribute_index, const constantPoolHandle& search_cp,
+                            int offset_limit);
   // Extend the operands array with the length and size of the ext_cp operands
   BSMAttributeEntries::InsertionIterator extend_operands(const constantPoolHandle& ext_cp, TRAPS);
   void shrink_operands(BSMAttributeEntries::InsertionIterator iter, TRAPS);
@@ -892,7 +892,7 @@ private:
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_cpi, int end_cpi, const constantPoolHandle& to_cp, int to_cpi, TRAPS);
   static void copy_entry_to(const constantPoolHandle& from_cp, int from_cpi, const constantPoolHandle& to_cp, int to_cpi);
-  static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
+  static void copy_bsm_entries(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }

@@ -709,7 +709,7 @@ int VM_RedefineClasses::find_or_append_operand(const constantPoolHandle& scratch
 
   if (!match) {
     // forward reference in *merge_cp_p or not a direct match
-    int found_i = scratch_cp->find_matching_operand(old_bs_i, *merge_cp_p,
+    int found_i = scratch_cp->find_matching_bsm_entry(old_bs_i, *merge_cp_p,
                                                     max_offset_in_merge);
     if (found_i != -1) {
       guarantee(found_i != old_bs_i, "compare_bootstrap_entry_to() and find_matching_operand() disagree");
@@ -1620,7 +1620,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
     } // end for each old_cp entry
 
-    ConstantPool::copy_operands(old_cp, merge_cp_p, CHECK_false);
+    ConstantPool::copy_bsm_entries(old_cp, merge_cp_p, CHECK_false);
     _bsmae_iter = merge_cp_p->extend_operands(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
