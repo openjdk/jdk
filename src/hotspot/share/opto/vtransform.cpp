@@ -784,17 +784,16 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  const TypeVect* vt = TypeVect::make(element_basic_type(), vector_length());
-
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
+  const TypeVect* vt = TypeVect::make(element_basic_type(), vector_length());
   Node* in1 =                apply_state.transformed_node(in_req(1));
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in_req(2)) : nullptr;
-  Node* in3 = (req() >= 4) ? apply_state.transformed_node(in_req(3)) : nullptr;
 
   VectorNode* vn = nullptr;
   if (req() <= 3) {
     vn = VectorNode::make(_vector_opcode, in1, in2, vt); // unary and binary
   } else {
+    Node* in3 = apply_state.transformed_node(in_req(3));
     vn = VectorNode::make(_vector_opcode, in1, in2, in3, vt); // ternary
   }
 
