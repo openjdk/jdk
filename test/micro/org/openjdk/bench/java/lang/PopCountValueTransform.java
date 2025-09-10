@@ -33,16 +33,6 @@ public class PopCountValueTransform {
     public int upper_bound = 10000;
 
     @Benchmark
-    public int StockKernelInt() {
-        int res = 0;
-        for (int i = lower_bound; i < upper_bound; i++) {
-            int constrained_i = i & 0xFFFF;
-            res += constrained_i;
-        }
-        return res;
-    }
-
-    @Benchmark
     public int LogicFoldingKerenlInt() {
         int res = 0;
         for (int i = lower_bound; i < upper_bound; i++) {
@@ -50,16 +40,6 @@ public class PopCountValueTransform {
             if (Integer.bitCount(constrained_i) > 16) {
                 throw new AssertionError("Uncommon trap");
             }
-            res += constrained_i;
-        }
-        return res;
-    }
-
-    @Benchmark
-    public long StockKernelLong() {
-        long res = 0;
-        for (int i = lower_bound; i < upper_bound; i++) {
-            long constrained_i = i & 0xFFFFFFL;
             res += constrained_i;
         }
         return res;

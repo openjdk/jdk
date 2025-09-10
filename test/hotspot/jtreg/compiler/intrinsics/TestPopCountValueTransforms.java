@@ -53,7 +53,8 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Run(test = {"testPopCountElisionLong1"}, mode = RunMode.STANDALONE)
+    @Warmup(10000)
+    @Run(test = {"testPopCountElisionLong1"})
     public void runPopCountElisionLong1() {
         long res = 1;
         for (int i = 0; i < inL1.length; i++) {
@@ -63,7 +64,7 @@ public class TestPopCountValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.POPCOUNT_L, " >0 "})
+    @IR(counts = {IRNode.POPCOUNT_L, " 1 "})
     public long testPopCountElisionLong2(long num) {
         num = Math.clamp(num, 0x3L, 0xFFFFL);
         // PopCount ValueRange = {lo:0, hi:16}
@@ -73,7 +74,8 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Run(test = {"testPopCountElisionLong2"}, mode = RunMode.STANDALONE)
+    @Warmup(10000)
+    @Run(test = {"testPopCountElisionLong2"})
     public void runPopCountElisionLong2() {
         long res = 0;
         for (int i = 0; i < inL2.length; i++) {
@@ -93,7 +95,7 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Run(test = {"testPopCountElisionInt1"}, mode = RunMode.STANDALONE)
+    @Run(test = {"testPopCountElisionInt1"})
     public void runPopCountElisionInt1() {
         int res = 1;
         for (int i = 0; i < inI1.length; i++) {
@@ -103,7 +105,7 @@ public class TestPopCountValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.POPCOUNT_I, " >0 "})
+    @IR(counts = {IRNode.POPCOUNT_I, " 1 "})
     public int testPopCountElisionInt2(int num) {
         // PopCount ValueRange = {lo:0, hi:8}
         num = Math.clamp(num, 0x3, 0xFF);
@@ -113,7 +115,7 @@ public class TestPopCountValueTransforms {
         return 1;
     }
 
-    @Run(test = {"testPopCountElisionInt2"}, mode = RunMode.STANDALONE)
+    @Run(test = {"testPopCountElisionInt2"})
     public void runPopCountElisionInt2() {
         int res = 0;
         for (int i = 0; i < inI2.length; i++) {
@@ -145,6 +147,6 @@ public class TestPopCountValueTransforms {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.2");
+        TestFramework.run();
     }
 }
