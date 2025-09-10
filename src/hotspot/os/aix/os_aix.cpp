@@ -169,7 +169,7 @@ static void vmembk_print_on(outputStream* os);
 ////////////////////////////////////////////////////////////////////////////////
 // global variables (for a description see os_aix.hpp)
 
-julong    os::Aix::_physical_memory = 0;
+size_t    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
@@ -254,40 +254,43 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-julong os::free_memory() {
-  return Aix::available_memory();
+bool os::free_memory(size_t& value) {
+  return Aix::available_memory(value);
 }
 
-julong os::available_memory() {
-  return Aix::available_memory();
+bool os::available_memory(size_t& value) {
+  return Aix::available_memory(value);
 }
 
-julong os::Aix::available_memory() {
+bool os::Aix::available_memory(size_t& value) {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    return mi.real_free;
+    value = static_cast<size_t>(mi.real_free);
+    return true;
   } else {
-    return ULONG_MAX;
+    return false;
   }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return -1;
+    return false;
   }
-  return (jlong)(memory_info.pgsp_total * 4 * K);
+  value = static_cast<size_t>(memory_info.pgsp_total * 4 * K);
+  return true;
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return -1;
+    return false;
   }
-  return (jlong)(memory_info.pgsp_free * 4 * K);
+  value = static_cast<size_t>(memory_info.pgsp_free * 4 * K);
+  return true;
 }
 
-julong os::physical_memory() {
+size_t os::physical_memory() {
   return Aix::physical_memory();
 }
 
@@ -326,7 +329,7 @@ void os::Aix::initialize_system_info() {
   if (!os::Aix::get_meminfo(&mi)) {
     assert(false, "os::Aix::get_meminfo failed.");
   }
-  _physical_memory = (julong) mi.real_total;
+  _physical_memory = static_cast<size_t>(mi.real_total);
 }
 
 // Helper function for tracing page sizes.
@@ -1051,8 +1054,8 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
-               filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
+                           filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
@@ -1077,7 +1080,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
       STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
       char* tmp_path = os::strdup(filename);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
-      os::snprintf(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
+      os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);
       os::free(tmp_path);
     }
@@ -1094,7 +1097,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   // There might be something more readable than uname results for AIX.
   struct utsname name;
   uname(&name);
-  snprintf(buf, buflen, "%s %s", name.release, name.version);
+  os::snprintf_checked(buf, buflen, "%s %s", name.release, name.version);
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
@@ -2193,7 +2196,7 @@ jint os::init_2(void) {
   os::Posix::init_2();
 
   trcVerbose("processor count: %d", os::_processor_count);
-  trcVerbose("physical memory: %lu", Aix::_physical_memory);
+  trcVerbose("physical memory: %zu", Aix::_physical_memory);
 
   // Initially build up the loaded dll map.
   LoadedLibraries::reload();
@@ -2343,8 +2346,7 @@ int os::open(const char *path, int oflag, int mode) {
   // specifically destined for a subprocess should have the
   // close-on-exec flag set. If we don't set it, then careless 3rd
   // party native code might fork and exec without closing all
-  // appropriate file descriptors (e.g. as we do in closeDescriptors in
-  // UNIXProcess.c), and this in turn might:
+  // appropriate file descriptors, and this in turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or

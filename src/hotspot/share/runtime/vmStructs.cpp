@@ -46,7 +46,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "logging/logAsyncWriter.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/padded.hpp"
@@ -56,8 +55,8 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -99,8 +98,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframeArray.hpp"
-#include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmStructs.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -321,7 +320,7 @@
   /* JNI IDs */                                                                                                                      \
   /***********/                                                                                                                      \
                                                                                                                                      \
-  nonstatic_field(JNIid,                       _holder,                                       Klass*)                                \
+  nonstatic_field(JNIid,                       _holder,                                       InstanceKlass*)                        \
   nonstatic_field(JNIid,                       _next,                                         JNIid*)                                \
   nonstatic_field(JNIid,                       _offset,                                       int)                                   \
                                                                                                                                      \
@@ -348,8 +347,8 @@
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \
                                                                                                                                      \
-     static_field(MetaspaceObj,                _shared_metaspace_base,                        void*)                                 \
-     static_field(MetaspaceObj,                _shared_metaspace_top,                         void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_base,                           void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_top,                            void*)                                 \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
@@ -674,7 +673,6 @@
   volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
-  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _metadata,                                     uintptr_t)                             \
   nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
@@ -1566,6 +1564,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
@@ -1573,7 +1572,6 @@
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
@@ -1640,14 +1638,6 @@
   declare_constant(T_NARROWOOP_size)                                      \
   declare_constant(T_NARROWKLASS_size)                                    \
   declare_constant(T_VOID_size)                                           \
-                                                                          \
-  /**********************************************/                        \
-  /* LockingMode enum (globalDefinitions.hpp) */                          \
-  /**********************************************/                        \
-                                                                          \
-  declare_constant(LM_MONITOR)                                            \
-  declare_constant(LM_LEGACY)                                             \
-  declare_constant(LM_LIGHTWEIGHT)                                        \
                                                                           \
   /*********************************************/                         \
   /* MethodCompilation (globalDefinitions.hpp) */                         \

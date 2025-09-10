@@ -97,52 +97,52 @@ bool MacroAssembler::is_pc_relative_at(address instr) {
   // auipc + load
   // auipc + fload_load
   return (is_auipc_at(instr)) &&
-         (is_addi_at(instr + instruction_size) ||
-          is_jalr_at(instr + instruction_size) ||
-          is_load_at(instr + instruction_size) ||
-          is_float_load_at(instr + instruction_size)) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size) ||
+          is_load_at(instr + MacroAssembler::instruction_size) ||
+          is_float_load_at(instr + MacroAssembler::instruction_size)) &&
          check_pc_relative_data_dependency(instr);
 }
 
 // ie:ld(Rd, Label)
 bool MacroAssembler::is_load_pc_relative_at(address instr) {
   return is_auipc_at(instr) && // auipc
-         is_ld_at(instr + instruction_size) && // ld
+         is_ld_at(instr + MacroAssembler::instruction_size) && // ld
          check_load_pc_relative_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr1_at(address instr) {
   return is_lui_at(instr) && // Lui
-         is_addi_at(instr + instruction_size) && // Addi
-         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
-         is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
-         (is_addi_at(instr + instruction_size * 5) ||
-          is_jalr_at(instr + instruction_size * 5) ||
-          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
+         is_addi_at(instr + MacroAssembler::instruction_size) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 11) && // Slli Rd, Rs, 11
+         is_addi_at(instr + MacroAssembler::instruction_size * 3) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 4, 6) && // Slli Rd, Rs, 6
+         (is_addi_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 5)) && // Addi/Jalr/Load
          check_movptr1_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr2_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_lui_at(instr + instruction_size) && // lui
-         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
-         is_add_at(instr + instruction_size * 3) &&
-         (is_addi_at(instr + instruction_size * 4) ||
-          is_jalr_at(instr + instruction_size * 4) ||
-          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         is_lui_at(instr + MacroAssembler::instruction_size) && // lui
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + MacroAssembler::instruction_size * 3) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 4)) && // Addi/Jalr/Load
          check_movptr2_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li16u_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_srli_at(instr + instruction_size) && // srli
+         is_srli_at(instr + MacroAssembler::instruction_size) && // srli
          check_li16u_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li32_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_addiw_at(instr + instruction_size) && // addiw
+         is_addiw_at(instr + MacroAssembler::instruction_size) && // addiw
          check_li32_data_dependency(instr);
 }
 
@@ -2679,7 +2679,7 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);
   }
 #endif
@@ -5110,7 +5110,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
 
 int MacroAssembler::max_reloc_call_address_stub_size() {
   // Max stub size: alignment nop, target address.
-  return 1 * instruction_size + wordSize;
+  return 1 * MacroAssembler::instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {
@@ -5954,6 +5954,62 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   bind(done);
 }
 
+// Helper routine processing the slow path of NaN when converting float to float16
+void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
+                                          Register tmp1, Register tmp2) {
+  fmv_x_w(dst, src);
+
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
+  const int fp_sign_bits = 1;
+  const int fp32_bits = 32;
+  const int fp32_exponent_bits = 8;
+  const int fp32_mantissa_1st_part_bits = 10;
+  const int fp32_mantissa_2nd_part_bits = 9;
+  const int fp32_mantissa_3rd_part_bits = 4;
+  const int fp16_exponent_bits = 5;
+  const int fp16_mantissa_bits = 10;
+
+  // preserve the sign bit and exponent, clear mantissa.
+  srai(tmp2, dst, fp32_bits - fp_sign_bits - fp16_exponent_bits);
+  slli(tmp2, tmp2, fp16_mantissa_bits);
+
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //   | (doppel & 0x007f_e000) >> 13 // 10 bits
+  //   | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+  //   | (doppel & 0x0000_000f));     //  4 bits
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  int left_shift = fp_sign_bits + fp32_exponent_bits + 32;
+  int right_shift = left_shift + fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 9 bits
+  left_shift += fp32_mantissa_1st_part_bits;
+  right_shift = left_shift + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 4 bits
+  andi(tmp1, dst, 0xf);
+  orr(dst, tmp2, tmp1);
+}
+
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
 void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
   Label done;                                                                             \
@@ -6421,7 +6477,6 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails
 void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, tmp1, tmp2, tmp3, t0);
 
   Label push;
@@ -6481,7 +6536,6 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - tmp1, tmp2, tmp3: temporary registers
 // - slow: branched to if unlocking fails
 void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT

@@ -35,8 +35,6 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -4149,11 +4147,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
             buf[highIntSize] = '.';
             DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
-            try {
-                return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException cce) {
-                throw new AssertionError(cce);
-            }
+            return JLA.uncheckedNewStringWithLatin1Bytes(buf);
         }
 
         char[] coeff;

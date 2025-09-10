@@ -363,6 +363,9 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
+            if (Modifier.isStatic(modifiers))
+                throw new IllegalArgumentException("Must not be a static field");
+
             // Access to protected field members is restricted to receivers only
             // of the accessing class, or one of its subclasses, and the
             // accessing class must in turn be a subclass (or package sibling)

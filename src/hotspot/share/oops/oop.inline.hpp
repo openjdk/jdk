@@ -47,16 +47,15 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
+void* oopDesc::base_addr() { return this; }
+const void* oopDesc::base_addr() const { return this; }
+
 markWord oopDesc::mark() const {
   return Atomic::load(&_mark);
 }
 
 markWord oopDesc::mark_acquire() const {
   return Atomic::load_acquire(&_mark);
-}
-
-markWord* oopDesc::mark_addr() const {
-  return (markWord*) &_mark;
 }
 
 void oopDesc::set_mark(markWord m) {
@@ -138,6 +137,17 @@ Klass* oopDesc::klass_without_asserts() const {
       return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
     default:
       return _metadata._klass;
+  }
+}
+
+narrowKlass oopDesc::narrow_klass() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark().narrow_klass();
+    case ObjLayout::Compressed:
+      return _metadata._compressed_klass;
+    default:
+      ShouldNotReachHere();
   }
 }
 

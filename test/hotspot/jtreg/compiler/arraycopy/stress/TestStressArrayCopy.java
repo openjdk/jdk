@@ -51,7 +51,7 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  *        jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=7200
+ * @run main/othervm/timeout=28800
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.arraycopy.stress.TestStressArrayCopy
  */
