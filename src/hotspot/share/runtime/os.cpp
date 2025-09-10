@@ -65,8 +65,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/threadService.hpp"
@@ -89,8 +89,8 @@
 # include <poll.h>
 #endif
 
-# include <signal.h>
 # include <errno.h>
+# include <signal.h>
 
 OSThread*         os::_starting_thread    = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
@@ -459,7 +459,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             char klass_name[256];
             char tmp_sig_name[16];
             const char* sig_name = "UNKNOWN";
-            InstanceKlass::cast(PENDING_EXCEPTION->klass())->
+            PENDING_EXCEPTION->klass()->
               name()->as_klass_external_name(klass_name, 256);
             if (os::exception_name(sig, tmp_sig_name, 16) != nullptr)
               sig_name = tmp_sig_name;

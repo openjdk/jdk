@@ -4700,13 +4700,13 @@ static bool is_symbolic_link(const wchar_t* wide_path) {
   if (f != INVALID_HANDLE_VALUE) {
     const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
     if (::FindClose(f) == 0) {
-      errno = ::GetLastError();
-      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%ld.", errno);
+      DWORD errcode = ::GetLastError();
+      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%lu.", errcode);
     }
     return result;
   } else {
-    errno = ::GetLastError();
-    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%lu.", errcode);
     return false;
   }
 }
@@ -4716,8 +4716,8 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   HANDLE hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (hFile == INVALID_HANDLE_VALUE) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4725,8 +4725,8 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
                                                               FILE_NAME_NORMALIZED);
   if (target_path_size == 0) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4736,14 +4736,14 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   const size_t res = ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size),
                                                  FILE_NAME_NORMALIZED);
   if (res != target_path_size - 1) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
   if (::CloseHandle(hFile) == 0) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4824,9 +4824,8 @@ int os::stat(const char *path, struct stat *sbuf) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
@@ -4837,8 +4836,13 @@ int os::stat(const char *path, struct stat *sbuf) {
 
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
-    errno = ::GetLastError();
-    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
+      errno = ENOENT;
+    } else {
+      errno = 0;
+    }
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
     os::free(wide_path);
     os::free(path_to_target);
     return -1;
@@ -5038,9 +5042,8 @@ int os::open(const char *path, int oflag, int mode) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
@@ -5048,10 +5051,9 @@ int os::open(const char *path, int oflag, int mode) {
 
   int fd = ::_wopen(is_symlink ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
 
-  // if opening files failed, GetLastError should be called immediately after that
+  // if opening files failed, errno has been set to indicate the problem
   if (fd == -1) {
-    errno = ::GetLastError();
-    log_debug(os)("os::open() failed to _wopen: GetLastError->%ld.", errno);
+    log_debug(os)("os::open() failed to _wopen: errno->%s.", strerror(errno));
   }
   os::free(wide_path);
   os::free(path_to_target);
@@ -5119,7 +5121,8 @@ bool os::dir_is_empty(const char* path) {
     }
     FindClose(f);
   } else {
-    errno = ::GetLastError();
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("os::dir_is_empty() failed to FindFirstFileW: GetLastError->%lu.", errcode);
   }
 
   return is_empty;

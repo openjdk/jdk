@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_METASPACESHARED_HPP
-#define SHARE_CDS_METASPACESHARED_HPP
+#ifndef SHARE_CDS_AOTMETASPACE_HPP
+#define SHARE_CDS_AOTMETASPACE_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -49,12 +49,12 @@ enum MapArchiveResult {
 };
 
 // Class Data Sharing Support
-class MetaspaceShared : AllStatic {
+class AOTMetaspace : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
-  static void* _shared_metaspace_static_top;
+  static void* _aot_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
@@ -63,8 +63,8 @@ class MetaspaceShared : AllStatic {
  public:
   enum {
     // core archive spaces
-    rw = 0,  // read-write shared space
-    ro = 1,  // read-only shared space
+    rw = 0,  // read-write
+    ro = 1,  // read-only
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     hp = 3,  // heap region
     ac = 4,  // aot code
@@ -101,14 +101,17 @@ public:
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding the
   // mapped heap region.)
-  static bool is_in_shared_metaspace(const void* p) {
-    return MetaspaceObj::is_shared((const MetaspaceObj*)p);
+  static bool in_aot_cache(const void* p) {
+    return MetaspaceObj::in_aot_cache((const MetaspaceObj*)p);
   }
 
-  static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
+  static void set_aot_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
 
-  static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
-  static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
+  // inside the metaspace of the AOT cache, or the static CDS archive
+  static bool in_aot_cache_static_region(void* p) NOT_CDS_RETURN_(false);
+
+  // inside the metaspace of the dynamic static CDS archive
+  static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
 
   static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
@@ -199,4 +202,4 @@ private:
   static void unmap_archive(FileMapInfo* mapinfo);
   static void get_default_classlist(char* default_classlist, const size_t buf_size);
 };
-#endif // SHARE_CDS_METASPACESHARED_HPP
+#endif // SHARE_CDS_AOTMETASPACE_HPP

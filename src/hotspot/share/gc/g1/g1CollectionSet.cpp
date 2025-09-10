@@ -115,7 +115,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
-  assert(!hr->rem_set()->is_added_to_cset_group(), "Should have already uninstalled group remset");
+  assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);

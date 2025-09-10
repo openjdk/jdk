@@ -142,7 +142,7 @@ bool DumpTimeClassInfo::is_builtin() {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
   bool created;
   DumpTimeClassInfo* p = put_if_absent(k, &created);
   assert(created, "must not exist in table");
@@ -151,7 +151,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");

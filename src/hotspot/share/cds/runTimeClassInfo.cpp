@@ -75,7 +75,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 }
 
 InstanceKlass* RunTimeClassInfo::klass() const {
-  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+  if (AOTMetaspace::in_aot_cache(this)) {
     // <this> is inside a mmaped CDS archive.
     return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
   } else {

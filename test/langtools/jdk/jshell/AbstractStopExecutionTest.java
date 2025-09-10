@@ -26,7 +26,7 @@ import java.io.StringWriter;
 
 import jdk.jshell.JShell;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class AbstractStopExecutionTest extends KullaTesting {
 

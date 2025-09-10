@@ -27,6 +27,7 @@
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
@@ -35,7 +36,6 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -330,12 +330,12 @@ address ArchiveBuilder::reserve_buffer() {
   // AOTCodeCache::max_aot_code_size() accounts for aot code region.
   size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M) + AOTCodeCache::max_aot_code_size();
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
-                                             MetaspaceShared::core_region_alignment(),
+                                             AOTMetaspace::core_region_alignment(),
                                              os::vm_page_size(),
                                              mtNone);
   if (!rs.is_reserved()) {
     aot_log_error(aot)("Failed to reserve %zu bytes of output buffer.", buffer_size);
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -357,7 +357,7 @@ address ArchiveBuilder::reserve_buffer() {
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
 
   // The bottom of the static archive should be mapped at this address by default.
-  _requested_static_archive_bottom = (address)MetaspaceShared::requested_base_address();
+  _requested_static_archive_bottom = (address)AOTMetaspace::requested_base_address();
 
   // The bottom of the archive (that I am writing now) should be mapped at this address by default.
   address my_archive_requested_bottom;
@@ -365,14 +365,14 @@ address ArchiveBuilder::reserve_buffer() {
   if (CDSConfig::is_dumping_static_archive()) {
     my_archive_requested_bottom = _requested_static_archive_bottom;
   } else {
-    _mapped_static_archive_bottom = (address)MetaspaceObj::shared_metaspace_base();
-    _mapped_static_archive_top  = (address)MetaspaceObj::shared_metaspace_top();
+    _mapped_static_archive_bottom = (address)MetaspaceObj::aot_metaspace_base();
+    _mapped_static_archive_top  = (address)MetaspaceObj::aot_metaspace_top();
     assert(_mapped_static_archive_top >= _mapped_static_archive_bottom, "must be");
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
     _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
-    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::core_region_alignment());
+    my_archive_requested_bottom = align_up(_requested_static_archive_top, AOTMetaspace::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
   }
@@ -387,13 +387,13 @@ address ArchiveBuilder::reserve_buffer() {
     aot_log_error(aot)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     aot_log_error(aot)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   if (CDSConfig::is_dumping_static_archive()) {
     // We don't want any valid object to be at the very bottom of the archive.
     // See ArchivePtrMarker::mark_pointer().
-    _pz_region.allocate(MetaspaceShared::protection_zone_size());
+    _pz_region.allocate(AOTMetaspace::protection_zone_size());
     start_dump_region(&_rw_region);
   }
 
@@ -540,7 +540,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_shared_static(bottom)) {
+    if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
     } else if (bottom->is_instance_klass()) {
@@ -553,7 +553,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
 
 ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref *ref) {
   address obj = ref->obj();
-  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(obj)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
@@ -563,12 +563,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
     return (TrainingData::need_data() || TrainingData::assembling_data()) ? make_a_copy : set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
-    if (CDSConfig::is_dumping_adapters()) {
-      AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
-      return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
-    } else {
-      return set_to_null;
-    }
+    return CDSConfig::is_dumping_adapters() ? make_a_copy : set_to_null;
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
       Klass* klass = (Klass*)ref->obj();
@@ -947,7 +942,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         old = " old";
       }
 
-      if (ik->is_generated_shared_class()) {
+      if (ik->is_aot_generated_class()) {
         generated = " generated";
       }
       if (aotlinked) {
@@ -961,7 +956,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         }
       }
 
-      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
+      AOTMetaspace::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
@@ -1193,12 +1188,12 @@ void ArchiveBuilder::print_stats() {
 
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
-  // MetaspaceShared::n_regions (internal to hotspot).
-  assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
+  // AOTMetaspace::n_regions (internal to hotspot).
+  assert(NUM_CDS_REGIONS == AOTMetaspace::n_regions, "sanity");
 
-  write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
-  write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
-  write_region(mapinfo, MetaspaceShared::ac, &_ac_region, /*read_only=*/false,/*allow_exec=*/false);
+  write_region(mapinfo, AOTMetaspace::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
+  write_region(mapinfo, AOTMetaspace::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
+  write_region(mapinfo, AOTMetaspace::ac, &_ac_region, /*read_only=*/false,/*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
   ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
@@ -1213,7 +1208,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 
   print_region_stats(mapinfo, heap_info);
 
-  mapinfo->set_requested_base((char*)MetaspaceShared::requested_base_address());
+  mapinfo->set_requested_base((char*)AOTMetaspace::requested_base_address());
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
   // After this point, we should not write any data into mapinfo->header() since this
   // would corrupt its checksum we have calculated before.
@@ -1244,8 +1239,8 @@ void ArchiveBuilder::count_relocated_pointer(bool tagged, bool nulled) {
 
 void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {
   // Print statistics of all the regions
-  const size_t bitmap_used = mapinfo->region_at(MetaspaceShared::bm)->used();
-  const size_t bitmap_reserved = mapinfo->region_at(MetaspaceShared::bm)->used_aligned();
+  const size_t bitmap_used = mapinfo->region_at(AOTMetaspace::bm)->used();
+  const size_t bitmap_reserved = mapinfo->region_at(AOTMetaspace::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 bitmap_reserved +
                                 _total_heap_region_size;
@@ -1289,5 +1284,5 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
   log_error(aot)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
-  MetaspaceShared::unrecoverable_writing_error();
+  AOTMetaspace::unrecoverable_writing_error();
 }

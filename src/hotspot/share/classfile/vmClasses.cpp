@@ -138,7 +138,7 @@ void vmClasses::resolve_all(TRAPS) {
     ArchiveHeapLoader::fixup_region();
 
     // Initialize the constant pool for the Object_class
-    assert(Object_klass()->is_shared(), "must be");
+    assert(Object_klass()->in_aot_cache(), "must be");
     Object_klass()->constants()->restore_unshareable_info(CHECK);
     resolve_through(VM_CLASS_ID(Class_klass), scan, CHECK);
   } else
@@ -204,7 +204,7 @@ void vmClasses::resolve_all(TRAPS) {
                       "All well known classes must be resolved in JVMTI early phase"));
     for (auto id : EnumRange<vmClassID>{}) {
       InstanceKlass* k = _klasses[as_int(id)];
-      assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
+      assert(k->in_aot_cache(), "must not be replaced by JVMTI class file load hook");
     }
   }
 #endif
@@ -219,13 +219,13 @@ void vmClasses::resolve_all(TRAPS) {
 
 void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
-  assert(klass->is_shared(), "Must be shared class");
+  assert(klass->in_aot_cache(), "Must be shared class");
   if (klass->class_loader_data() != nullptr) {
     return;
   }
 
   // add super and interfaces first
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
     resolve_shared_class(super, loader_data, domain, CHECK);

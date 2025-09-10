@@ -118,20 +118,20 @@ static ZMappedCacheEntry* create_entry(const ZVirtualMemory& vmem) {
   return entry;
 }
 
-bool ZMappedCache::EntryCompare::cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
+bool ZMappedCache::EntryCompare::less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
   const ZVirtualMemory vmem_a = ZMappedCacheEntry::cast_to_entry(a)->vmem();
   const ZVirtualMemory vmem_b = ZMappedCacheEntry::cast_to_entry(b)->vmem();
 
   return vmem_a.end() < vmem_b.start();
 }
 
-int ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
+RBTreeOrdering ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
   const ZVirtualMemory vmem = ZMappedCacheEntry::cast_to_entry(node)->vmem();
 
-  if (key < vmem.start()) { return -1; }
-  if (key > vmem.end()) { return 1; }
+  if (key < vmem.start()) { return RBTreeOrdering::LT; }
+  if (key > vmem.end()) { return RBTreeOrdering::GT; }
 
-  return 0; // Containing
+  return RBTreeOrdering::EQ; // Containing
 }
 
 void ZMappedCache::Tree::verify() const {
@@ -168,12 +168,12 @@ void ZMappedCache::Tree::insert(TreeNode* node, const TreeCursor& cursor) {
   // Insert in tree
   TreeImpl::insert_at_cursor(node, cursor);
 
-  if (_left_most == nullptr || EntryCompare::cmp(node, _left_most)) {
+  if (_left_most == nullptr || EntryCompare::less_than(node, _left_most)) {
     // Keep track of left most node
     _left_most = node;
   }
 
-  if (_right_most == nullptr || EntryCompare::cmp(_right_most, node)) {
+  if (_right_most == nullptr || EntryCompare::less_than(_right_most, node)) {
     // Keep track of right most node
     _right_most = node;
   }
