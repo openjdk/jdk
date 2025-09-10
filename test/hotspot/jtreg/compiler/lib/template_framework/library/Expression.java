@@ -36,15 +36,38 @@ import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
 
 /**
- * TODO: desc
+ * {@link Expression}s model Java expressions, that have a list of arguments with specified
+ * argument types, and an result with a specified result type. Once can {@link #make} a new
+ * {@link Expression} or use existing ones from {@link Operations}.
+ *
+ * <p>
+ * The {@link Expression}s are composable, they can be explicitly {@link nest}ed, or randomly
+ * combined using {@link #nestRandomly}.
+ *
+ * <p>
+ * Finally, they can be used in a {@link Template} as a {@link TemplateToken} by calling
+ * {@link #asToken} with the required arguments.
  */
 public class Expression {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    public CodeGenerationDataNameType returnType;
-    public List<CodeGenerationDataNameType> argumentTypes;
-    List<String> strings;
-    public Info info;
+    /**
+     * Specifies the return type of the {@link Expression}.
+     */
+    public final CodeGenerationDataNameType returnType;
+
+
+    /**
+     * Specifies the types of the arguments.
+     */
+    public final List<CodeGenerationDataNameType> argumentTypes;
+
+    final List<String> strings;
+
+    /**
+     * Provides additional information about the {@link Expression}.
+     */
+    public final Info info;
 
     private Expression(CodeGenerationDataNameType returnType,
                       List<CodeGenerationDataNameType> argumentTypes,
@@ -54,40 +77,66 @@ public class Expression {
             throw new RuntimeException("Must have one more string than argument.");
         }
         this.returnType = returnType;
-        this.argumentTypes = argumentTypes;
-        this.strings = strings;
+        this.argumentTypes = List.copyOf(argumentTypes);
+        this.strings = List.copyOf(strings);
         this.info = info;
     }
 
 
     /**
-     * TODO: desc: used for all sorts of optional info.
+     * Specifies additional information for an {@link Expression}.
      */
     public static class Info {
-        public Set<String> exceptions = Set.of();
-        public boolean isResultDeterministic = true;
+        /**
+         * Set of exceptions the {@link Exception} could throw when executed.
+         * By default, we assume that an {@link Expression} throws no exceptions.
+         */
+        public final Set<String> exceptions;
 
-        public Info() {}
+        /**
+         * Specifies if the result of the {@link Expression} is guaranteed to
+         * be deterministic. This allows exact result verification, for example
+         * by comparing compiler and interpreter results. However, there are some
+         * operations that do not always return the same exact result, which can
+         * for example happen with {@code Float.floatToRawIntBits} in combination
+         * with more than one {@code NaN} bit representations.
+         * By default, we assume that an {@link Expression} is deterministic.
+         */
+        public final boolean isResultDeterministic;
 
-        private Info(Info info) {
-            this.exceptions = Set.copyOf(info.exceptions);
-            this.isResultDeterministic = info.isResultDeterministic;
+        /**
+         * Create a default {@link Info}.
+         */
+        public Info() {
+            this.exceptions = Set.of();
+            this.isResultDeterministic = false;
+        }
+
+        private Info(Set<String> exceptions, boolean isResultDeterministic) {
+            this.exceptions = Set.copyOf(exceptions);
+            this.isResultDeterministic = isResultDeterministic;
         }
 
         /**
-         * TODO: desc union of exceptions
+         * Creates a new {@link Info} with additional exceptions that the {@link Expression} could throw.
+         *
+         * @param exceptions the exceptions to be added.
+         * @return a new {@link Info} instance with the added exceptions.
          */
         public Info withExceptions(Set<String> exceptions) {
-            Info info = new Info(this);
-            info.exceptions = Stream.concat(this.exceptions.stream(), exceptions.stream())
-                                    .collect(Collectors.toSet());
-            return info;
+            exceptions = Stream.concat(this.exceptions.stream(), exceptions.stream())
+                               .collect(Collectors.toSet());
+            return new Info(exceptions, this.isResultDeterministic);
         }
 
+        /**
+         * Creates a new {@link Info} that specifies that the {@link Exception} may return
+         * indeterministic results, which prevents exact result verification.
+         *
+         * @return a new {@link Info} instance that specifies indeterministic results.
+         */
         public Info withNondeterministicResult() {
-            Info info = new Info(this);
-            info.isResultDeterministic = false;
-            return info;
+            return new Info(this.exceptions, false);
         }
 
         Info combineWith(Info other) {
@@ -102,10 +151,11 @@ public class Expression {
     /**
      * Creates a new Espression with 1 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
-     * @param s1 The last string, finishing the expression.
+     * @param s1 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -117,11 +167,12 @@ public class Expression {
     /**
      * Creates a new Espression with 1 argument.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
-     * @param s1 The last string, finishing the expression.
-     * @param info Additional information about the Expression.
+     * @param s1 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -134,12 +185,13 @@ public class Expression {
     /**
      * Creates a new Espression with 2 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
      * @param t1 The type of the second argument.
-     * @param s2 The last string, finishing the expression.
+     * @param s2 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -153,13 +205,14 @@ public class Expression {
     /**
      * Creates a new Espression with 2 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
      * @param t1 The type of the second argument.
-     * @param s2 The last string, finishing the expression.
-     * @param info Additional information about the Expression.
+     * @param s2 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -174,14 +227,15 @@ public class Expression {
     /**
      * Creates a new Espression with 3 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
      * @param t1 The type of the second argument.
      * @param s2 The third string, to be placed before {@code t2}.
      * @param t2 The type of the third argument.
-     * @param s3 The last string, finishing the expression.
+     * @param s3 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -197,15 +251,16 @@ public class Expression {
     /**
      * Creates a new Espression with 3 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
      * @param t1 The type of the second argument.
      * @param s2 The third string, to be placed before {@code t2}.
      * @param t2 The type of the third argument.
-     * @param s3 The last string, finishing the expression.
-     * @param info Additional information about the Expression.
+     * @param s3 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -222,7 +277,7 @@ public class Expression {
     /**
      * Creates a new Espression with 4 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
@@ -231,7 +286,8 @@ public class Expression {
      * @param t2 The type of the third argument.
      * @param s3 The fourth string, to be placed before {@code t3}.
      * @param t3 The type of the fourth argument.
-     * @param s4 The last string, finishing the expression.
+     * @param s4 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -249,7 +305,7 @@ public class Expression {
     /**
      * Creates a new Espression with 4 arguments.
      *
-     * @param returnType The return type of the expression.
+     * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
      * @param t0 The type of the first argument.
      * @param s1 The second string, to be placed before {@code t1}.
@@ -258,8 +314,9 @@ public class Expression {
      * @param t2 The type of the third argument.
      * @param s3 The fourth string, to be placed before {@code t3}.
      * @param t3 The type of the fourth argument.
-     * @param s4 The last string, finishing the expression.
-     * @param info Additional information about the Expression.
+     * @param s4 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
      */
     public static Expression make(CodeGenerationDataNameType returnType,
                                   String s0,
@@ -276,7 +333,13 @@ public class Expression {
     }
 
     /**
-     * TODO: desc
+     * Creates a {@link TemplateToken} for the use in a {@link Template} by applying the
+     * {@code arguments} to the {@link Expression}. It is the users responsibility to
+     * ensure that the argument tokens match the required {@link #argumentTypes}.
+     *
+     * @param arguments the tokens to be passed as arguments into the {@link Expression}.
+     * @return a {@link TemplateToken} representing the {@link Expression} with applied arguments,
+     *         for the use in a {@link Template}.
      */
     public TemplateToken asToken(List<Object> arguments) {
         if (arguments.size() != argumentTypes.size()) {
@@ -320,12 +383,19 @@ public class Expression {
     }
 
     /**
-     * Create a nested expression with a specified {@code returnType} from a
+     * Create a nested {@link Expression} with a specified {@code returnType} from a
      * set of {@code expressions}.
+     *
+     * @param returnType the type of the return value.
+     * @param expressions the list of {@link Expression}s from which we sample to create
+     *                    the nested {@link Expression}.
+     * @param maxNumberOfUsedExpressions the maximal number of {@link Expression}s from the
+     *                                   {@code expressions} are nested.
+     * @return a new randomly nested {@link Expression}.
      */
     public static Expression nestRandomly(CodeGenerationDataNameType returnType,
                                           List<Expression> expressions,
-                                          int maxNumberOfUsedExpression) {
+                                          int maxNumberOfUsedExpressions) {
         List<Expression> filtered = expressions.stream().filter(e -> e.returnType.isSubtypeOf(returnType)).toList();
 
         if (filtered.size() == 0) {
@@ -335,20 +405,23 @@ public class Expression {
         int r = RANDOM.nextInt(filtered.size());
         Expression expression = filtered.get(r);
 
-        for (int i = 1; i < maxNumberOfUsedExpression; i++) {
+        for (int i = 1; i < maxNumberOfUsedExpressions; i++) {
             expression = expression.nestRandomly(expressions);
         }
         return expression;
     }
 
     /**
-     * Nests a random expression from {@code nestingExpressions} into a random argument of
-     * {@code this} expression, ensuring compatibility of argument and return type.
+     * Nests a random {@link Expression} from {@code nestingExpressions} into a random argument of
+     * {@code this} {@link Expression}, ensuring compatibility of argument and return type.
+     *
+     * @param nestingExpressions list of expressions we sample from for the inner {@link Expression}.
+     * @return a new nested {@link Expression}.
      */
     public Expression nestRandomly(List<Expression> nestingExpressions) {
-        int slot = RANDOM.nextInt(this.argumentTypes.size());
-        CodeGenerationDataNameType slotType = this.argumentTypes.get(slot);
-        List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(slotType)).toList();
+        int argumentIndex = RANDOM.nextInt(this.argumentTypes.size());
+        CodeGenerationDataNameType argumentType = this.argumentTypes.get(argumentIndex);
+        List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(argumentType)).toList();
 
         if (filtered.size() == 0) {
             // Found no expression that has a matching returnType.
@@ -358,26 +431,31 @@ public class Expression {
         int r = RANDOM.nextInt(filtered.size());
         Expression expression = filtered.get(r);
 
-        return this.nest(slot, expression);
+        return this.nest(argumentIndex, expression);
     }
 
     /**
-     * Nests the {@code nestingExpression} into the specified {@code slot} of
-     * {@code this} expression.
+     * Nests the {@code nestingExpression} into the specified {@code argumentIndex} of
+     * {@code this} {@link Expression}.
+     *
+     * @param argumentIndex the index specifying at which argument of {@code this}
+     *                      {@link Expression} we inser the {@code nestingExpression}.
+     * @param nestingExpression the inner {@link Expression}.
+     * @return a new nested {@link Expression}.
      */
-    public Expression nest(int slot, Expression nestingExpression) {
-        if (!nestingExpression.returnType.isSubtypeOf(this.argumentTypes.get(slot))) {
+    public Expression nest(int argumentIndex, Expression nestingExpression) {
+        if (!nestingExpression.returnType.isSubtypeOf(this.argumentTypes.get(argumentIndex))) {
             throw new IllegalArgumentException("Cannot nest expressions because of mismatched types.");
         }
 
         List<CodeGenerationDataNameType> newArgumentTypes = new ArrayList<>();
         List<String> newStrings = new ArrayList<>();
         // s0 t0 s1 [S0 T0 S1 T1 S2] s2 t2 s3
-        for (int i = 0; i < slot; i++) {
+        for (int i = 0; i < argumentIndex; i++) {
             newStrings.add(this.strings.get(i));
             newArgumentTypes.add(this.argumentTypes.get(i));
         }
-        newStrings.add(this.strings.get(slot) +
+        newStrings.add(this.strings.get(argumentIndex) +
                        nestingExpression.strings.get(0)); // concat s1 and S0
         newArgumentTypes.add(nestingExpression.argumentTypes.get(0));
         for (int i = 1; i < nestingExpression.argumentTypes.size(); i++) {
@@ -385,8 +463,8 @@ public class Expression {
             newArgumentTypes.add(nestingExpression.argumentTypes.get(i));
         }
         newStrings.add(nestingExpression.strings.get(nestingExpression.strings.size() - 1) +
-                       this.strings.get(slot + 1)); // concat S2 and s2
-        for (int i = slot+1; i < this.argumentTypes.size(); i++) {
+                       this.strings.get(argumentIndex + 1)); // concat S2 and s2
+        for (int i = argumentIndex+1; i < this.argumentTypes.size(); i++) {
             newArgumentTypes.add(this.argumentTypes.get(i));
             newStrings.add(this.strings.get(i+1));
         }

@@ -37,10 +37,18 @@ import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 
 /**
- * TODO: desc
+ * This class provides various lists of {@link Expression}s, that represent Java operators or library
+ * methods. For example, we represent arithmetic operations on primitive types.
  */
 public final class Operations {
 
+    // private constructor to avoid instantiation.
+    private Operations() {}
+
+    /**
+     * Provides a lits of operations on {@link PrimitiveType}s, such as arithmetic, logical,
+     * and cast operations.
+     */
     public static final List<Expression> PRIMITIVE_OPERATIONS = generatePrimitiveOperations();
 
     private static List<Expression> generatePrimitiveOperations() {
