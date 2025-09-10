@@ -25,8 +25,8 @@
 #define SHARE_OPTO_VTRANSFORM_HPP
 
 #include "opto/node.hpp"
-#include "opto/vectornode.hpp"
 #include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
 
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:
