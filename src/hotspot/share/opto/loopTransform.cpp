@@ -1668,6 +1668,29 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
+Node* PhaseIdealLoop::find_mem_out_outer_strip_mined(Node* store, IdealLoopTree* outer_loop) {
+  Node* out = store;
+  // Follow the memory uses until we get out of the loop
+  while (true) {
+    Node* unique_next = nullptr;
+    for (DUIterator_Fast imax, l = out->fast_outs(imax); l < imax; l++) {
+      Node* next = out->fast_out(l);
+      if (next->is_Mem() && next->in(MemNode::Memory) == out) {
+        IdealLoopTree* output_loop = get_loop(get_ctrl(next));
+        if (outer_loop->is_member(output_loop)) {
+          assert(unique_next == nullptr, "memory node should only have one usage in the loop body");
+          unique_next = next;
+        }
+      }
+    }
+    if (unique_next == nullptr) {
+      break;
+    }
+    out = unique_next;
+  }
+  return out;
+}
+
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
@@ -1757,20 +1780,21 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       _igvn.hash_delete(cur_phi);
       cur_phi->set_req(LoopNode::EntryControl, fallnew);
     }
-    if (main_phi->is_CountedLoopEnd() && main_phi->in(0) == main_head) {
-      for (DUIterator j = main_phi->outs(); main_phi->has_out(j); j++) {
-        Node* if_false = main_phi->out(j);
-        // TODO is the store always attached to the if_false? probably, because it depends on the computation and thus cannot be
-        // attached to OuterStripMinedLoop directly. But what if the store has no computation? unclear, should test
-        if (if_false->is_IfFalse()) {
-          for (DUIterator k = if_false->outs(); if_false->has_out(k); k++) {
-            Node* store = if_false->out(k);
-            if (store->is_Store()) {
-              Node* store_new = old_new[store->_idx];
-              store_new->set_req(MemNode::Memory, store);
-            }
-          }
-        }
+  }
+  // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
+  // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
+  // right after the execution of the inner CountedLoop.
+  // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
+  if (loop->tail()->in(0)->is_BaseCountedLoopEnd()) {
+    // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+    const Node* if_false = loop->tail()->in(0)->as_BaseCountedLoopEnd()->proj_out(false);
+    for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+      Node* store = if_false->out(j)->isa_Store();
+      // We don't make changes if the memory input is in the loop body as well
+      if (store && !outer_loop->is_member(get_loop(get_ctrl(store->in(MemNode::Memory))))) {
+        Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
+        Node* store_new = old_new[store->_idx];
+        store_new->set_req(MemNode::Memory, mem_out);
       }
     }
   }
