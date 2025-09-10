@@ -48,11 +48,11 @@ public class TestReduceAllocationNotReducibleAnymore {
             try {
                 objects[x] = object;
                 object = new byte[10];
-            } catch (Exception e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
             }
             try {
                 a.foo();
-            } catch (Exception e) {
+            } catch (NullPointerException e) {
             }
         }
     }

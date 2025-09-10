@@ -3075,7 +3075,20 @@ void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_
   for (uint i = 0; i < reducible_merges_cnt; i++) {
     Node* phi = reducible_merges.at(i);
 
-    if (!can_reduce_phi(phi->as_Phi())) {
+    // This 'Phi' will be a 'good' if it still points to
+    // at least one scalar replaceable object. Note that 'obj'
+    // was/should be marked as NSR before calling this function.
+    bool good_phi = false;
+
+    for (uint j = 1; j < phi->req(); j++) {
+      JavaObjectNode* phi_in_obj = unique_java_object(phi->in(j));
+      if (phi_in_obj != nullptr && phi_in_obj->scalar_replaceable()) {
+        good_phi = true;
+        break;
+      }
+    }
+
+    if (!good_phi) {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Phi %d became non-reducible after node %d became NSR.", phi->_idx, jobj->ideal_node()->_idx);)
       reducible_merges.remove(i);
 
