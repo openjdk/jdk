@@ -171,7 +171,7 @@ public class SortIncludes {
                 Files.walk(path).forEach(p -> {
                     if (Files.isRegularFile(p)) {
                         String name = p.getFileName().toString();
-                        if (name.endsWith(".cpp") || name.endsWith(".hpp")) {
+                        if (name.endsWith(".cpp") || name.endsWith(".hpp") || name.endsWith(".ad")) {
                             files.add(p);
                         }
                     }

@@ -28,7 +28,6 @@
 #include "code/codeBlob.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/frame.inline.hpp"
 
 inline void patch_callee_link(const frame& f, intptr_t* fp) {
   *ContinuationHelper::Frame::callee_link_address(f) = fp;

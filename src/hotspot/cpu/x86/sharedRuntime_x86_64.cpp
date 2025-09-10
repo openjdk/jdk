@@ -25,7 +25,6 @@
 #ifndef _WINDOWS
 #include "alloca.h"
 #endif
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -33,10 +32,10 @@
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"

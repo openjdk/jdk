@@ -40,8 +40,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
-#include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"
+#include "opto/runtime.hpp"
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"

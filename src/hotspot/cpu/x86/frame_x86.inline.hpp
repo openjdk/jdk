@@ -30,8 +30,8 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Inline functions for Intel frames:
 
