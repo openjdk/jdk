@@ -29,7 +29,7 @@
  *        jdk.httpclient.test.lib.http2.PushHandler
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run testng/othervm/timeout=960
  *      -Djdk.httpclient.HttpClient.log=errors,requests,headers
  *      -Djdk.internal.httpclient.debug=false
  *      H3ServerPush

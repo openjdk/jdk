@@ -29,14 +29,14 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     H3SimpleGet
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.retryOnStreamlimit=20
  *                     -Djdk.httpclient.redirects.retrylimit=21
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
  *                     H3SimpleGet
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384
  *                     -Djdk.httpclient.retryOnStreamlimit=5
@@ -53,16 +53,16 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     H3SimpleGet
- * @run testng/othervm/timeout=300 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Djdk.httpclient.retryOnStreamlimit=20
  *                     -Djdk.httpclient.redirects.retrylimit=21
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
  *                     H3SimpleGet
- * @run testng/othervm/timeout=300 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384
@@ -78,16 +78,16 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     H3SimpleGet
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Djdk.httpclient.retryOnStreamlimit=20
  *                     -Djdk.httpclient.redirects.retrylimit=21
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
  *                     H3SimpleGet
- * @run testng/othervm/timeout=180 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384

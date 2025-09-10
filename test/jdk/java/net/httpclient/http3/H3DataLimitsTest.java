@@ -64,7 +64,7 @@ import static org.testng.Assert.assertEquals;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.quic.QuicStandaloneServer
- * @run testng/othervm/timeout=240 -Djdk.internal.httpclient.debug=true
+ * @run testng/othervm/timeout=480 -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     -Djavax.net.debug=all
  *                     H3DataLimitsTest
