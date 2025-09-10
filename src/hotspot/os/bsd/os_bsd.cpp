@@ -2544,3 +2544,9 @@ void os::print_open_file_descriptors(outputStream* st) {
   st->print_cr("OpenFileDescriptorCount = %d", nfiles);
 }
 #endif // __APPLE__
+
+#if defined(_ALLBSD_SOURCE) && !defined(__APPLE__)
+long os::get_open_file_descriptor_count() {
+    st->print_cr("OpenFileDescriptorCount = unknown");
+}
+#endif
