@@ -101,7 +101,6 @@ class CLDScanClosure: public CLDClosure {
       assert(!SerialHeap::heap()->is_in_reserved(p), "outside the heap");
 
       try_scavenge(p, [&] (oop new_obj) {
-        assert(_scanned_cld != nullptr, "inv");
         if (is_in_young_gen(new_obj) && !_has_oops_into_young_gen) {
           _has_oops_into_young_gen = true;
         }
