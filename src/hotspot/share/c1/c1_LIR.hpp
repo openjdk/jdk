@@ -879,7 +879,6 @@ class      LIR_OpConvert;
 class      LIR_OpAllocObj;
 class      LIR_OpReturn;
 class    LIR_Op2;
-class    LIR_OpDelay;
 class    LIR_Op3;
 class      LIR_OpAllocArray;
 class    LIR_Op4;
@@ -985,9 +984,6 @@ enum LIR_Code {
     , lir_lock
     , lir_unlock
   , end_opLock
-  , begin_delay_slot
-    , lir_delay_slot
-  , end_delay_slot
   , begin_opTypeCheck
     , lir_instanceof
     , lir_checkcast
@@ -1124,7 +1120,6 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpCall* as_OpCall() { return nullptr; }
   virtual LIR_OpJavaCall* as_OpJavaCall() { return nullptr; }
   virtual LIR_OpLabel* as_OpLabel() { return nullptr; }
-  virtual LIR_OpDelay* as_OpDelay() { return nullptr; }
   virtual LIR_OpLock* as_OpLock() { return nullptr; }
   virtual LIR_OpAllocArray* as_OpAllocArray() { return nullptr; }
   virtual LIR_OpAllocObj* as_OpAllocObj() { return nullptr; }
@@ -1884,25 +1879,6 @@ class LIR_OpLoadKlass: public LIR_Op {
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return this; }
   virtual void emit_code(LIR_Assembler* masm);
   void print_instr(outputStream* out) const PRODUCT_RETURN;
-};
-
-class LIR_OpDelay: public LIR_Op {
- friend class LIR_OpVisitState;
-
- private:
-  LIR_Op* _op;
-
- public:
-  LIR_OpDelay(LIR_Op* op, CodeEmitInfo* info):
-    LIR_Op(lir_delay_slot, LIR_OprFact::illegalOpr, info),
-    _op(op) {
-    assert(op->code() == lir_nop, "should be filling with nops");
-  }
-  virtual void emit_code(LIR_Assembler* masm);
-  virtual LIR_OpDelay* as_OpDelay() { return this; }
-  void print_instr(outputStream* out) const PRODUCT_RETURN;
-  LIR_Op* delay_op() const { return _op; }
-  CodeEmitInfo* call_info() const { return info(); }
 };
 
 #ifdef ASSERT
