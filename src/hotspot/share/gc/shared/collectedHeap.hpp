@@ -259,7 +259,6 @@ protected:
 
   void before_exit();
 
-
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
