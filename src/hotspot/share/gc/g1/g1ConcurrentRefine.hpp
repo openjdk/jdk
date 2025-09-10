@@ -151,7 +151,7 @@ class G1ConcurrentRefineSweepState {
 
   void assert_state(State expected);
 
-  static void snapshot_heap_into(G1CardTableClaimTable* sweep_table);
+  void snapshot_heap_inner();
 
 public:
   G1ConcurrentRefineSweepState(uint max_reserved_regions);
@@ -235,8 +235,8 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
     return _pending_cards_target != PendingCardsTargetUninitialized;
   }
 
-  void update_pending_cards_target(double logged_cards_scan_time_ms,
-                                   size_t processed_logged_cards,
+  void update_pending_cards_target(double pending_cards_scan_time_ms,
+                                   size_t processed_pending_cards,
                                    double goal_ms);
 
   uint64_t adjust_threads_period_ms() const;
@@ -268,8 +268,8 @@ public:
   // cards.  Updates the mutator refinement threshold.  Ensures the refinement
   // control thread (if it exists) is active, so it will adjust the number
   // of running threads.
-  void adjust_after_gc(double logged_cards_scan_time_ms,
-                       size_t processed_logged_cards,
+  void adjust_after_gc(double pending_cards_scan_time_ms,
+                       size_t processed_pending_cards,
                        double goal_ms);
 
   // Target number of pending dirty cards at the start of the next GC.
@@ -298,7 +298,7 @@ public:
 
   // Indicate that last refinement adjustment had been deferred due to not
   // obtaining the heap lock.
-  bool wait_for_heap_lock() const { return _heap_was_locked; }
+  bool heap_was_locked() const { return _heap_was_locked; }
 
   uint num_threads_wanted() const { return _num_threads_wanted; }
   uint max_num_threads() const { return _thread_control.max_num_threads(); }

@@ -768,27 +768,27 @@ bool G1Policy::concurrent_operation_is_full_mark(const char* msg) {
     ((_g1h->gc_cause() != GCCause::_g1_humongous_allocation) || need_to_start_conc_mark(msg));
 }
 
-double G1Policy::logged_cards_processing_time() const {
+double G1Policy::pending_cards_processing_time() const {
   double all_cards_processing_time = average_time_ms(G1GCPhaseTimes::ScanHR) + average_time_ms(G1GCPhaseTimes::OptScanHR);
-  size_t logged_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRPendingCards) +
-                              phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRPendingCards);
+  size_t pending_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRPendingCards) +
+                         phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRPendingCards);
   size_t scan_heap_roots_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                  phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
 
-  double merge_logged_cards_time = phase_times()->cur_merge_refinement_table_time();
+  double merge_pending_cards_time = phase_times()->cur_merge_refinement_table_time();
 
-  // Approximate the time spent processing cards from log buffers by scaling
-  // the total processing time by the ratio of logged cards to total cards
+  // Approximate the time spent processing cards from pending cards by scaling
+  // the total processing time by the ratio of pending cards to total cards
   // processed.  There might be duplicate cards in different log buffers,
   // leading to an overestimate.  That effect should be relatively small
   // unless there are few cards to process, because cards in buffers are
   // dirtied to limit duplication.  Also need to avoid scaling when both
   // counts are zero, which happens especially during early GCs.  So ascribe
-  // all of the time to the logged cards unless there are more total cards.
-  if (logged_dirty_cards >= scan_heap_roots_cards) {
-    return all_cards_processing_time + merge_logged_cards_time;
+  // all of the time to the pending cards unless there are more total cards.
+  if (pending_cards >= scan_heap_roots_cards) {
+    return all_cards_processing_time + merge_pending_cards_time;
   }
-  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + merge_logged_cards_time;
+  return (all_cards_processing_time * pending_cards / scan_heap_roots_cards) + merge_pending_cards_time;
 }
 
 // Anything below that is considered to be zero
@@ -1002,26 +1002,26 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
+  double pending_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  double const logged_cards_time_ms = logged_cards_processing_time();
-  size_t logged_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRPendingCards) +
-                        phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRPendingCards);
+  double const pending_cards_time_ms = pending_cards_processing_time();
+  size_t pending_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRPendingCards) +
+                         phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRPendingCards);
 
-  bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
+  bool exceeded_goal = pending_cards_time_goal_ms < pending_cards_time_ms;
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
   log_debug(gc, ergo, refine)
            ("GC refinement: goal: %zu / %1.2fms, actual: %zu / %1.2fms, %s",
             cr->pending_cards_target(),
-            logged_cards_time_goal_ms,
-            logged_cards,
-            logged_cards_time_ms,
+            pending_cards_time_goal_ms,
+            pending_cards,
+            pending_cards_time_ms,
             (exceeded_goal ? " (exceeded goal)" : ""));
 
-  cr->adjust_after_gc(logged_cards_time_ms,
-                      logged_cards,
-                      logged_cards_time_goal_ms);
+  cr->adjust_after_gc(pending_cards_time_ms,
+                      pending_cards,
+                      pending_cards_time_goal_ms);
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,

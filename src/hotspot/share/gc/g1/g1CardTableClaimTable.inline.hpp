@@ -92,7 +92,7 @@ G1CardTable::CardValue* G1ChunkScanner::find_first_dirty_card(CardValue* i_card)
         }
         i_card++;
       }
-      assert(false, "should have early-returned");
+      ShouldNotReachHere();
     }
   }
 
@@ -118,7 +118,7 @@ G1CardTable::CardValue* G1ChunkScanner::find_first_non_dirty_card(CardValue* i_c
         }
         i_card++;
       }
-      assert(false, "should have early-returned");
+      ShouldNotReachHere();
     }
   }
 

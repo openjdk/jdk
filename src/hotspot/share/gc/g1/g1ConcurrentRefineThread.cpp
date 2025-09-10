@@ -76,7 +76,7 @@ void G1ConcurrentRefineThread::run_service() {
         log_debug(gc, refine)("Concurrent Refine Adjust Only (#threads wanted: %u adjustment_needed: %s wait_for_heap_lock: %s) %.2fms",
                               cr()->num_threads_wanted(),
                               BOOL_TO_STR(cr()->is_thread_adjustment_needed()),
-                              BOOL_TO_STR(cr()->wait_for_heap_lock()),
+                              BOOL_TO_STR(cr()->heap_was_locked()),
                               (Ticks::now() - adjust_start).seconds() * MILLIUNITS);
 
         deactivate();

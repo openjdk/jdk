@@ -213,7 +213,7 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
 
     class G1SwapThreadCardTableClosure : public HandshakeClosure {
     public:
-      G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
+      G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Java Thread CT swap") { }
 
       virtual void do_thread(Thread* thread) {
         G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
@@ -277,14 +277,14 @@ void G1ConcurrentRefineSweepState::snapshot_heap(bool concurrent) {
 
     set_state_start_time();
 
-    snapshot_heap_into(_sweep_table);
+    snapshot_heap_inner();
 
     advance_state(State::SweepRT);
   } else {
     assert_state(State::Idle);
     assert_at_safepoint();
 
-    snapshot_heap_into(_sweep_table);
+    snapshot_heap_inner();
   }
 }
 
@@ -352,13 +352,13 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
   return has_sweep_rt_work;
 }
 
-void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
+void G1ConcurrentRefineSweepState::snapshot_heap_inner() {
   // G1CollectedHeap::heap_region_iterate() below will only visit currently committed
   // regions. Initialize all entries in the state table here and later in this method
   // selectively enable regions that we are interested. This way regions committed
   // later will be automatically excluded from iteration.
   // Their refinement table must be completely empty anyway.
-  sweep_table->reset_all_to_claimed();
+  _sweep_table->reset_all_to_claimed();
 
   class SnapshotRegionsClosure : public G1HeapRegionClosure {
     G1CardTableClaimTable* _sweep_table;
@@ -377,7 +377,7 @@ void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* swe
       }
       return false;
     }
-  } cl(sweep_table);
+  } cl(_sweep_table);
   G1CollectedHeap::heap()->heap_region_iterate(&cl);
 }
 
@@ -477,18 +477,18 @@ void G1ConcurrentRefine::control_thread_do(ThreadClosure *tc) {
   _thread_control.control_thread_do(tc);
 }
 
-void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,
-                                                     size_t processed_logged_cards,
+void G1ConcurrentRefine::update_pending_cards_target(double pending_cards_time_ms,
+                                                     size_t processed_pending_cards,
                                                      double goal_ms) {
   size_t minimum = minimum_pending_cards_target();
-  if ((processed_logged_cards < minimum) || (logged_cards_time_ms == 0.0)) {
+  if ((processed_pending_cards < minimum) || (pending_cards_time_ms == 0.0)) {
     log_debug(gc, ergo, refine)("Unchanged pending cards target: %zu (processed %zu minimum %zu time %1.2f)",
-                                _pending_cards_target, processed_logged_cards, minimum, logged_cards_time_ms);
+                                _pending_cards_target, processed_pending_cards, minimum, pending_cards_time_ms);
     return;
   }
 
   // Base the pending cards budget on the measured rate.
-  double rate = processed_logged_cards / logged_cards_time_ms;
+  double rate = processed_pending_cards / pending_cards_time_ms;
   size_t new_target = static_cast<size_t>(goal_ms * rate);
   // Add some hysteresis with previous values.
   if (is_pending_cards_target_initialized()) {
@@ -500,15 +500,15 @@ void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms
   log_debug(gc, ergo, refine)("New pending cards target: %zu", new_target);
 }
 
-void G1ConcurrentRefine::adjust_after_gc(double logged_cards_time_ms,
-                                         size_t processed_logged_cards,
+void G1ConcurrentRefine::adjust_after_gc(double pending_cards_time_ms,
+                                         size_t processed_pending_cards,
                                          double goal_ms) {
   if (!G1UseConcRefinement) {
     return;
   }
 
-  update_pending_cards_target(logged_cards_time_ms,
-                              processed_logged_cards,
+  update_pending_cards_target(pending_cards_time_ms,
+                              processed_pending_cards,
                               goal_ms);
   if (_thread_control.is_refinement_enabled()) {
     _needs_adjust = true;
@@ -564,7 +564,7 @@ bool G1ConcurrentRefine::adjust_num_threads_periodically() {
     _needs_adjust = true;
   }
 
-  return (_num_threads_wanted > 0) && !wait_for_heap_lock();
+  return (_num_threads_wanted > 0) && !heap_was_locked();
 }
 
 void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {

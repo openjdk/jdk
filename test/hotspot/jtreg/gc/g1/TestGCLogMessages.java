@@ -177,7 +177,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("To-Young-Gen Cards:", Level.DEBUG),
         new LogMessageWithLevel("Evac-Fail Cards:", Level.DEBUG),
         new LogMessageWithLevel("Marked Cards:", Level.DEBUG),
-        new LogMessageWithLevel("Clear Logged Cards \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Clear Pending Cards \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
 
         // Post Evacuate Cleanup 2

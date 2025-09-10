@@ -247,9 +247,8 @@ void G1Arguments::initialize() {
 
   // Verify that the maximum parallelism isn't too high to eventually overflow
   // the refcount in G1CardSetContainer.
-  uint max_parallel_refinement_threads = G1ConcRefinementThreads;
   uint const divisor = 3;  // Safe divisor; we increment by 2 for each claim, but there is a small initial value.
-  if (max_parallel_refinement_threads > UINT_MAX / divisor) {
+  if (G1ConcRefinementThreads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
 

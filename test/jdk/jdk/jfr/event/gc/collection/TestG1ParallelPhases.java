@@ -108,7 +108,7 @@ public class TestG1ParallelPhases {
             "UpdateDerivedPointers",
             "EagerlyReclaimHumongousObjects",
             "ResetPartialArrayStateManager",
-            "ClearLoggedCards",
+            "ClearPendingCards",
             "MergePSS",
             "NonYoungFreeCSet",
             "YoungFreeCSet",

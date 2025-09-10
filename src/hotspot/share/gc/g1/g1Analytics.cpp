@@ -37,7 +37,7 @@
 // They were chosen by running GCOld and SPECjbb on debris with different
 //   numbers of GC threads and choosing them based on the results
 
-static double cost_per_logged_card_ms_defaults[] = {
+static double cost_per_pending_card_ms_defaults[] = {
   0.01, 0.005, 0.005, 0.003, 0.003, 0.002, 0.002, 0.0015
 };
 
@@ -101,8 +101,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   uint index = MIN2(ParallelGCThreads - 1, 7u);
 
   // Start with inverse of maximum STW cost.
-  _concurrent_refine_rate_ms_seq.add(1/cost_per_logged_card_ms_defaults[0]);
-  // Some applications have very low rates for logging cards.
+  _concurrent_refine_rate_ms_seq.add(1/cost_per_pending_card_ms_defaults[0]);
+  // Some applications have very low rates for dirtying cards.
   _dirtied_cards_rate_ms_seq.add(0.0);
 
   _card_merge_to_scan_ratio_seq.set_initial(young_card_merge_to_scan_ratio_defaults[index]);
