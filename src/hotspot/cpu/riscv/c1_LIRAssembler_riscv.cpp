@@ -1590,8 +1590,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   }
 }
 
-void LIR_Assembler::emit_delay(LIR_OpDelay*) { Unimplemented(); }
-
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
