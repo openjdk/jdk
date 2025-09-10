@@ -23,8 +23,7 @@
 
 /* @test
  * @bug 8352969
- * @summary Verify that the G1EvacuateAllOptionalRegions flag forces G1
- *          to evacuate all of optional regions, improving testability.
+ * @summary Tests optional evacuation.
  * @requires vm.gc.G1
  * @requires vm.debug
  * @library /test/lib
@@ -35,12 +34,17 @@
 
 package gc.g1;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
-import java.util.Random;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class TestOptionalRegionGC {
 
@@ -54,13 +58,20 @@ public class TestOptionalRegionGC {
       "-XX:+UseG1GC",
       "-XX:MaxTenuringThreshold=1",
       "-Xlog:gc+ergo+cset=trace",
-      "-XX:+G1EvacuateAllOptionalRegions",
+      "-XX:+G1ForceOptionalEvacuation",
+      "-XX:+VerifyAfterGC",
       TestOptionalRegionGC.Action.class.getName());
   }
 
   public static void main(String args[]) throws Exception {
     OutputAnalyzer out = run();
-    out.shouldContain("All optional regions are scheduled to be evacuated");
+    out.shouldHaveExitValue(0);
+    Pattern pattern = Pattern.compile("Prepared (\\d+) regions out of (\\d+) for optional evacuation");
+    Matcher matcher = pattern.matcher(out.getOutput());
+	  Asserts.assertTrue(matcher.find());
+    String selectedNum = matcher.group(1);
+    String totalNum = matcher.group(2);
+    Asserts.assertTrue(Objects.equals(selectedNum,totalNum),"Error info: "+selectedNum+","+totalNum);
   }
 
   public static class Action {
@@ -82,7 +93,7 @@ public class TestOptionalRegionGC {
       // Young GC promotes some objects to the old generation.
       wb.youngGC();
       // Clear certain references for mixed GC.
-      for (int i = 0; i < NUM_OBJECTS; i=i+2) {
+      for (int i = 0; i < NUM_OBJECTS; i+=2) {
         objectList.set(i, null);
       }
       wb.g1RunConcurrentGC();
