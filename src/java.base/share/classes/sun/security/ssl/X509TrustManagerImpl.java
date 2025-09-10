@@ -31,6 +31,7 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
+import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
@@ -225,6 +226,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session,
                         trustedChain, identityAlg, checkClientTrusted);
             }
+
+            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -268,6 +271,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session, trustedChain,
                         identityAlg, checkClientTrusted);
             }
+
+            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -449,6 +454,29 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             } else {
                 throw new CertificateException(
                         "Unknown identification algorithm: " + algorithm);
+            }
+        }
+    }
+
+    // Additional certificate chain check to verify the signature
+    // algorithms with the corresponding signing keys.
+    private void constraintsCertChainCheck(
+            AlgorithmConstraints constraints, X509Certificate[] chain)
+            throws CertificateException {
+
+        // Omit checks if EE cert is also a trust anchor
+        if (chain.length > 1) {
+            AlgorithmChecker checker = new AlgorithmChecker(
+                    new TrustAnchor(chain[chain.length - 1], null),
+                    constraints, null, null);
+            try {
+                checker.init(false);
+
+                for (int i = chain.length - 2; i >= 0; i--) {
+                    checker.check(chain[i], Collections.emptySet());
+                }
+            } catch (CertPathValidatorException e) {
+                throw new CertificateException(e);
             }
         }
     }

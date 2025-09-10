@@ -136,6 +136,27 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
                 test.run();
             }
         }
+
+        // Disable KeyManager's algorithm constraints checking and
+        // check against TrustManager's local supported signature
+        // algorithms on the client side.
+        System.setProperty(
+                "jdk.tls.SunX509KeyManager.certChecking", "false");
+
+        for (String protocol : new String[]{"TLSv1.3", "TLSv1.2"}) {
+            var test = new RsaSsaPssConstraints(protocol, keyAlg, certSigAlg);
+
+            if (fail) {
+                runAndCheckException(test::run,
+                        serverEx -> {
+                            Throwable clientEx = serverEx.getSuppressed()[0];
+                            assertTrue(
+                                    clientEx instanceof SSLHandshakeException);
+                        });
+            } else {
+                test.run();
+            }
+        }
     }
 
     @Override
@@ -216,7 +237,7 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
         KeyIdentifier kid = new KeyIdentifier(caKeys.getPublic());
         GeneralNames gns = new GeneralNames();
         GeneralName name = new GeneralName(new X500Name(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US"));
+                "O=Trusted-Org, L=Some-City, ST=Some-State, C=US"));
         gns.add(name);
         BigInteger serialNumber = BigInteger.valueOf(
                 random.nextLong(1000000) + 1);
