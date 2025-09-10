@@ -148,14 +148,8 @@ public class Password {
                 c2 = null;
                 charset = c1.charset();
             } else {
-                var opt = JdkConsoleImpl.passwordConsole();
-                if (opt.isPresent()) {
-                    c2 = opt.get();
-                    charset = c2.charset();
-                } else {
-                    c2 = null;
-                    charset = null;
-                }
+                c2 = JdkConsoleImpl.passwordConsole().orElse(null);
+                charset = (c2 != null) ? c2.charset() : null;
             }
             enc = charset == null ? null : charset.newEncoder()
                     .onMalformedInput(CodingErrorAction.REPLACE)

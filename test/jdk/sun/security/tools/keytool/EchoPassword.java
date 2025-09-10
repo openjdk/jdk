@@ -161,7 +161,7 @@ public class EchoPassword {
         PassFailJFrame.builder()
                 .instructions(message)
                 .rows(40).columns(100)
-                .addHyperlinkListener(e -> {
+                .hyperlinkListener(e -> {
                     if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                         int pos = Integer.parseInt(e.getDescription().substring(1));
                         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
