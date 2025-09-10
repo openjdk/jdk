@@ -23,8 +23,8 @@
  *
  */
 
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 
 const char* CPUTimeGroups::to_string(CPUTimeType val) {
   switch (val) {
@@ -75,15 +75,9 @@ void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
 
 void CPUTimeCounters::publish_gc_total_cpu_time() {
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-  // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
-  // to set the value to zero after we obtain the new CPU time difference.
-  jlong old_value;
-  jlong fetched_value = Atomic::load(&(instance->_gc_total_cpu_time_diff));
+  // Atomically fetch the current _gc_total_cpu_time_diff and reset it to zero.
   jlong new_value = 0;
-  do {
-    old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&(instance->_gc_total_cpu_time_diff), old_value, new_value);
-  } while (old_value != fetched_value);
+  jlong fetched_value = Atomic::xchg(&(instance->_gc_total_cpu_time_diff), new_value);
   get_counter(CPUTimeGroups::CPUTimeType::gc_total)->inc(fetched_value);
 }
 

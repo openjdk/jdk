@@ -281,7 +281,7 @@ void ShenandoahAgeCensus::update_tenuring_threshold() {
     _tenuring_threshold[_epoch] = tt;
   }
   print();
-  log_trace(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
+  log_info(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
     (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge);
 }
 
@@ -371,6 +371,14 @@ double ShenandoahAgeCensus::mortality_rate(size_t prev_pop, size_t cur_pop) {
 }
 
 void ShenandoahAgeCensus::print() {
+
+  const LogTarget(Debug, gc, age) lt;
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  LogStream ls(lt);
+
   // Print the population vector for the current epoch, and
   // for the previous epoch, as well as the computed mortality
   // ratio for each extant cohort.
@@ -391,15 +399,15 @@ void ShenandoahAgeCensus::print() {
 
     // Suppress printing when everything is zero
     if (prev_pop + cur_pop > 0) {
-      log_info(gc, age) (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ", i, prev_pop*oopSize, cur_pop*oopSize, mr);
+      ls.print_cr(" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
+         i, prev_pop * oopSize, cur_pop * oopSize, mr);
     }
 
-    if (i == tt) {
-      // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
-      log_info(gc, age)("----------------------------------------------------------------------------");
-    }
-
-    if ( i > tt) {
+    if (i >= tt) {
+      if (i == tt) {
+        // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
+        ls.print_cr("----------------------------------------------------------------------------");
+      }
       total_tenurable += cur_pop;
     }
 
@@ -409,20 +417,20 @@ void ShenandoahAgeCensus::print() {
   log_info(gc, age)("%.3f of population meets tenuring threshold (%u). Total: (%zu), Tenurable: (%zu)",
     double(total_tenurable) / double(MAX2(total, 1UL)), tt, total, total_tenurable);
 
-  CENSUS_NOISE(_global_noise[cur_epoch].print(total);)
+  CENSUS_NOISE(_global_noise[cur_epoch].print(ls, total);)
 }
 
 #ifdef SHENANDOAH_CENSUS_NOISE
-void ShenandoahNoiseStats::print(size_t total) {
+void ShenandoahNoiseStats::print(LogStream& ls, const size_t total) {
   if (total > 0) {
-    float f_skipped = (float)skipped/(float)total;
-    float f_aged    = (float)aged/(float)total;
-    float f_clamped = (float)clamped/(float)total;
-    float f_young   = (float)young/(float)total;
-    log_info(gc, age)("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
-                      "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
-                      skipped*oopSize, f_skipped, aged*oopSize, f_aged,
-                      clamped*oopSize, f_clamped, young*oopSize, f_young);
+    const float f_skipped = (float)skipped/(float)total;
+    const float f_aged    = (float)aged/(float)total;
+    const float f_clamped = (float)clamped/(float)total;
+    const float f_young   = (float)young/(float)total;
+    ls.print_cr("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
+                "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
+                skipped*oopSize, f_skipped, aged*oopSize, f_aged,
+                clamped*oopSize, f_clamped, young*oopSize, f_young);
   }
 }
 #endif // SHENANDOAH_CENSUS_NOISE

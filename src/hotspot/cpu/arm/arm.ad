@@ -2638,9 +2638,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 16;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 16 bytes
-
-  // List of nop instructions
-  nops( Nop_A0, Nop_A1, Nop_MS, Nop_FA, Nop_BR );
 %}
 
 //----------RESOURCES----------------------------------------------------------
@@ -3284,18 +3281,18 @@ pipe_class loadPollP(iRegP poll) %{
 %}
 
 pipe_class br(Universe br, label labl) %{
-    single_instruction_with_delay_slot;
+    single_instruction;
     BR  : R;
 %}
 
 pipe_class br_cc(Universe br, cmpOp cmp, flagsReg cr, label labl) %{
-    single_instruction_with_delay_slot;
+    single_instruction;
     cr    : E(read);
     BR    : R;
 %}
 
 pipe_class br_reg(Universe br, cmpOp cmp, iRegI op1, label labl) %{
-    single_instruction_with_delay_slot;
+    single_instruction;
     op1 : E(read);
     BR  : R;
     MS  : R;
@@ -3326,14 +3323,14 @@ pipe_class call(method meth) %{
 %}
 
 pipe_class tail_call(Universe ignore, label labl) %{
-    single_instruction; has_delay_slot;
+    single_instruction;
     fixed_latency(100);
     BR  : R(1);
     MS  : R(1);
 %}
 
 pipe_class ret(Universe ignore) %{
-    single_instruction; has_delay_slot;
+    single_instruction;
     BR  : R(1);
     MS  : R(1);
 %}
@@ -3374,14 +3371,6 @@ pipe_class cadd_cmpltmask( iRegI p, iRegI q, iRegI y ) %{
     q     : E(read);
     y     : E(read);
     IALU  : R(3)
-%}
-
-// Perform a compare, then move conditionally in a branch delay slot.
-pipe_class min_max( iRegI src2, iRegI srcdst ) %{
-    src2   : E(read);
-    srcdst : E(read);
-    IALU   : R;
-    BR     : R;
 %}
 
 // Define the class for the Nop node
@@ -9056,7 +9045,7 @@ instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, Universe dum
   format %{ "MOV    $zero,0\n"
       "        MOV    $temp,$cnt\n"
       "loop:   SUBS   $temp,$temp,4\t! Count down a dword of bytes\n"
-      "        STR.ge $zero,[$base+$temp]\t! delay slot"
+      "        STR.ge $zero,[$base+$temp]\n"
       "        B.gt   loop\t\t! Clearing loop\n" %}
   ins_encode %{
     __ mov($zero$$Register, 0);

@@ -70,14 +70,13 @@
 #include <grp.h>
 #include <locale.h>
 #include <netdb.h>
-#include <pwd.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
+#include <spawn.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <spawn.h>
-#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -323,7 +322,7 @@ int os::create_file_for_heap(const char* dir) {
       vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
       return -1;
     }
-    int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+    int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
     assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
     os::native_path(fullname);

@@ -165,12 +165,14 @@ class G1CollectionSet {
   // groups. Regions are reachable via this list as well.
   G1CSetCandidateGroupList _optional_groups;
 
+#ifdef ASSERT
   enum class CSetBuildType {
     Active,             // We are actively building the collection set
     Inactive            // We are not actively building the collection set
   };
 
   CSetBuildType _inc_build_state;
+#endif
   // Index into the _regions indicating the start of the current collection set increment.
   size_t _regions_inc_part_start;
   // Index into the _groups indicating the start of the current collection set increment.
@@ -230,9 +232,6 @@ public:
 
   G1CollectionSetCandidates* candidates() { return &_candidates; }
   const G1CollectionSetCandidates* candidates() const { return &_candidates; }
-
-  G1CSetCandidateGroupList* groups() { return &_groups; }
-  const G1CSetCandidateGroupList* groups() const { return &_groups; }
 
   void prepare_for_scan();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,16 +73,15 @@ class ObjectSynchronizer : AllStatic {
   friend class ObjectMonitorDeflationLogging;
   friend class WhiteBox;
 
- public:
+public:
   typedef enum {
     inflate_cause_vm_internal = 0,
     inflate_cause_monitor_enter = 1,
     inflate_cause_wait = 2,
     inflate_cause_notify = 3,
-    inflate_cause_hash_code = 4,
-    inflate_cause_jni_enter = 5,
-    inflate_cause_jni_exit = 6,
-    inflate_cause_nof = 7 // Number of causes
+    inflate_cause_jni_enter = 4,
+    inflate_cause_jni_exit = 5,
+    inflate_cause_nof = 6 // Number of causes
   } InflateCause;
 
   typedef enum {
@@ -104,15 +103,7 @@ class ObjectSynchronizer : AllStatic {
   // locked on is either already locked by the locking_thread or cannot
   // escape the locking_thread.
   static void enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread);
-private:
-  // Shared implementation for enter and enter_for. Performs all but
-  // inflated monitor enter.
-  static bool enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 
-  static bool quick_enter_legacy(oop obj, BasicLock* Lock, JavaThread* current);
-  static void enter_legacy(Handle obj, BasicLock* Lock, JavaThread* current);
-  static void exit_legacy(oop obj, BasicLock* lock, JavaThread* current);
-public:
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
   static void jni_enter(Handle obj, JavaThread* current);
@@ -131,18 +122,7 @@ public:
   // throwing unexpected InterruptedExecutionExceptions.
   static void waitUninterruptibly(Handle obj, jlong Millis, TRAPS);
 
-  // Inflate light weight monitor to heavy weight monitor
-  static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
-  // Used to inflate a monitor as if it was done from the thread JavaThread.
-  static ObjectMonitor* inflate_for(JavaThread* thread, oop obj, const InflateCause cause);
-
-private:
-  // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(JavaThread* locking_thread, oop obj, const InflateCause cause);
-
 public:
-  // This version is only for internal use
-  static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
 
   inline static ObjectMonitor* read_monitor(markWord mark);

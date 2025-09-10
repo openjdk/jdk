@@ -59,7 +59,7 @@ protected:
   size_t get_total_population_older_than(const size_t min_cohort_age) const {
     size_t total = 0;
     for (size_t i = 0; i < _cohorts_count; i++) {
-      if (i > min_cohort_age) {
+      if (i >= min_cohort_age) {
         total += _cohort_populations[i];
       }
     }

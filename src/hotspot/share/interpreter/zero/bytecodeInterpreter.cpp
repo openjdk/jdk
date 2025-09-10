@@ -624,26 +624,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
         // The initial monitor is ours for the taking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-
-        bool success = false;
-        if (LockingMode == LM_LEGACY) {
-           // Traditional fast locking.
-          markWord displaced = rcvr->mark().set_unlocked();
-          mon->lock()->set_displaced_header(displaced);
-          success = true;
-          if (rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              mon->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-            } else {
-              success = false;
-            }
-          }
-        }
-        if (!success) {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-        }
-
+        CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
       }
       THREAD->set_do_not_unlock_if_synchronized(false);
 
@@ -725,26 +706,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == nullptr, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-
-      bool success = false;
-      if (LockingMode == LM_LEGACY) {
-        // Traditional fast locking.
-        markWord displaced = lockee->mark().set_unlocked();
-        entry->lock()->set_displaced_header(displaced);
-        success = true;
-        if (lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-          } else {
-            success = false;
-          }
-        }
-      }
-      if (!success) {
-        CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-      }
-
+      CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
       UPDATE_PC_AND_TOS(1, -1);
       goto run;
     }
@@ -1657,26 +1619,7 @@ run:
         }
         if (entry != nullptr) {
           entry->set_obj(lockee);
-
-          bool success = false;
-          if (LockingMode == LM_LEGACY) {
-            // Traditional fast locking.
-            markWord displaced = lockee->mark().set_unlocked();
-            entry->lock()->set_displaced_header(displaced);
-            success = true;
-            if (lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-              // Is it simple recursive case?
-              if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-                entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-              } else {
-                success = false;
-              }
-            }
-          }
-          if (!success) {
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-          }
-
+          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
         } else {
           istate->set_msg(more_monitors);
@@ -1694,25 +1637,7 @@ run:
         while (most_recent != limit ) {
           if ((most_recent)->obj() == lockee) {
             BasicLock* lock = most_recent->lock();
-
-            bool success = false;
-            if (LockingMode == LM_LEGACY) {
-              // If it isn't recursive we either must swap old header or call the runtime
-              most_recent->set_obj(nullptr);
-              success = true;
-              markWord header = lock->displaced_header();
-              if (header.to_pointer() != nullptr) {
-                markWord old_header = markWord::encode(lock);
-                if (lockee->cas_set_mark(header, old_header) != old_header) {
-                  // restore object for the slow case
-                  most_recent->set_obj(lockee);
-                  success = false;
-                }
-              }
-            }
-            if (!success) {
-              InterpreterRuntime::monitorexit(most_recent);
-            }
+            InterpreterRuntime::monitorexit(most_recent);
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
           }
           most_recent++;
@@ -3137,27 +3062,7 @@ run:
       while (end < base) {
         oop lockee = end->obj();
         if (lockee != nullptr) {
-          BasicLock* lock = end->lock();
-
-          bool success = false;
-          if (LockingMode == LM_LEGACY) {
-            markWord header = lock->displaced_header();
-            end->set_obj(nullptr);
-
-            // If it isn't recursive we either must swap old header or call the runtime
-            success = true;
-            if (header.to_pointer() != nullptr) {
-              markWord old_header = markWord::encode(lock);
-              if (lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                end->set_obj(lockee);
-                success = false;
-              }
-            }
-          }
-          if (!success) {
-            InterpreterRuntime::monitorexit(end);
-          }
+          InterpreterRuntime::monitorexit(end);
 
           // One error is plenty
           if (illegal_state_oop() == nullptr && !suppress_error) {
@@ -3204,31 +3109,11 @@ run:
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
-          } else if (LockingMode != LM_LEGACY) {
+          } else {
             InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
-            }
-          } else {
-            BasicLock* lock = base->lock();
-            markWord header = lock->displaced_header();
-            base->set_obj(nullptr);
-
-            // If it isn't recursive we either must swap old header or call the runtime
-            bool dec_monitor_count = true;
-            if (header.to_pointer() != nullptr) {
-              markWord old_header = markWord::encode(lock);
-              if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                base->set_obj(rcvr);
-                dec_monitor_count = false;
-                InterpreterRuntime::monitorexit(base);
-                if (THREAD->has_pending_exception()) {
-                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                  THREAD->clear_pending_exception();
-                }
-              }
             }
           }
         }

@@ -37,6 +37,8 @@
 #define CENSUS_NOISE(x) x
 #define NO_CENSUS_NOISE(x)
 
+class LogStream;
+
 struct ShenandoahNoiseStats {
   size_t skipped;   // Volume of objects skipped
   size_t aged;      // Volume of objects from aged regions
@@ -67,7 +69,7 @@ struct ShenandoahNoiseStats {
     young   += other.young;
   }
 
-  void print(size_t total);
+  void print(LogStream& ls, size_t total);
 };
 #else  // SHENANDOAH_CENSUS_NOISE
 #define CENSUS_NOISE(x)
@@ -111,8 +113,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   size_t _total;                     // net size of objects encountered (counted or skipped) in census
 #endif
 
-  uint _epoch;                       // Current epoch (modulo max age)
-  uint *_tenuring_threshold;         // An array of the last N tenuring threshold values we
+  uint  _epoch;                      // Current epoch (modulo max age)
+  uint* _tenuring_threshold;         // An array of the last N tenuring threshold values we
                                      // computed.
 
   uint _max_workers;                 // Maximum number of workers for parallel tasks
@@ -176,9 +178,13 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _local_age_table[worker_id];
   }
 
-  // Return true if this age is above the tenuring threshold.
+  // Return the most recently computed tenuring threshold.
+  // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
+  uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
+
+  // Return true if this age is at or above the tenuring threshold.
   bool is_tenurable(uint age) const {
-    return age > tenuring_threshold();
+    return age >= tenuring_threshold();
   }
 
   // Update the local age table for worker_id by size for
@@ -208,9 +214,6 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // ShenandoahGenerationalCensusAtEvac. In this case, the age0_pop
   // is 0, because the evacuated objects have all had their ages incremented.
   void update_census(size_t age0_pop, AgeTable* pv1 = nullptr, AgeTable* pv2 = nullptr);
-
-  // Return the most recently computed tenuring threshold
-  uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
   // Return the total size of the population above the given threshold for the current epoch
   size_t get_tenurable_bytes(uint tenuring_threshold) const;
