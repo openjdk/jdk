@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shared/barrierSetNMethod.hpp"
-#include "utilities/debug.hpp"
+package pkg1;
 
-void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
-  ShouldNotReachHere();
-}
-
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
-  ShouldNotReachHere();
-}
-
-int BarrierSetNMethod::guard_value(nmethod* nm) {
-  ShouldNotReachHere();
-  return -1;
+public class B extends C {
 }

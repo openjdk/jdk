@@ -319,7 +319,7 @@ public abstract class AbstractMemberWriter {
                 inheritedHeader.add(links);
 
                 if (utils.isIncluded(inheritedClass)) {
-                    var pHelper = writer.getPropertyHelper();
+                    var pHelper = configuration.propertyUtils.getPropertyHelper(inheritedClass);
                     Table<Element> table = createInheritedSummaryTable(inheritedClass);
 
                     for (Element member : inheritedMembers) {
