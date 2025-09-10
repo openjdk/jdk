@@ -960,17 +960,16 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       )
       AC_MSG_RESULT([$sve_supported])
       $2SVE_CFLAGS=""
-      if test "x$enable_aarch64_sve" = "xyes"; then
-        # enable sve explicitly
+      if test "x$AARCH64_SVE_ENABLED" = "xtrue"; then
         if test "x$sve_supported" = "xyes"; then
           $2SVE_CFLAGS="-march=armv8-a+sve"
         else
-          AC_MSG_ERROR([--enable-aarch64-sve=yes but compiler does not support SVE])
+          AC_MSG_ERROR([--enable-aarch64-sve but compiler or binutils does not support SVE])
         fi
-      elif test "x$enable_aarch64_sve" = "x"; then
-        # enable sve automaticly
+      elif test "x$AARCH64_SVE_ENABLED" = "xfalse"; then
+        # disable sve explicitly
         if test "x$sve_supported" = "xyes"; then
-          $2SVE_CFLAGS="-march=armv8-a+sve"
+          $2SVE_CFLAGS=""
         fi
       fi
       # Switching the initialization mode with gcc from 'pattern' to 'zero'
@@ -989,14 +988,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     fi
   fi
   AC_SUBST($2SVE_CFLAGS)
-])
-
-AC_DEFUN([BPERF_SETUP_SVE],
-[
-  UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
-      RESULT: enable_aarch64_sve,
-      DESC: [Use SVE when compile libsleef])
-  AC_SUBST(enable_aarch64_sve)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
