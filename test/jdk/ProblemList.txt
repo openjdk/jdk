@@ -789,7 +789,6 @@ java/foreign/TestBufferStackStress.java                         8350455 macosx-a
 ############################################################################
 # Client manual tests
 
-javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 javax/swing/JTabbedPane/bug4499556.java 8267500 macosx-all
 javax/swing/JTabbedPane/bug4666224.java 8144124  macosx-all

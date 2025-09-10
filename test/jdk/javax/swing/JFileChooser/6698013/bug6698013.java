@@ -29,6 +29,7 @@ import javax.swing.filechooser.FileSystemView;
 /*
  * @test
  * @bug 6698013
+ * @requires (os.family != "mac")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary JFileChooser can no longer navigate non-local file systems.
