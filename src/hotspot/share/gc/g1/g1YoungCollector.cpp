@@ -816,8 +816,8 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
   double target_pause_time_ms = MaxGCPauseMillis;
-#ifndef PRODUCT
-  if (G1EvacuateAllOptionalRegions) {
+#ifdef ASSERT
+  if (G1ForceOptionalEvacuation) {
     target_pause_time_ms = DBL_MAX;
   }
 #endif
