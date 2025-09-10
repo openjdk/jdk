@@ -290,6 +290,13 @@ public:
   OnVMError(Callable&& callable) : VMErrorCallback(), _callable(static_cast<Callable&&>(callable)), _mark(this) {}
 };
 
+// This deduction rule enables creating a type with out using auto, decltype
+// and/or helping construction functions. It enables the generic template type
+// to be deduced in the following code:
+//   OnVMError on_error([&](outputStream* st) { ... })
+// Rather than having to something along the lines of:
+//   auto f = [&](outputStream* st) { ... };
+//   OnVMError<decltype(f)> on_error(f);
 template <typename CallableType> OnVMError(CallableType) -> OnVMError<CallableType>;
 
 #endif // SHARE_UTILITIES_VMERROR_HPP
