@@ -43,8 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TestOptionalRegionGC {
 
@@ -68,7 +68,7 @@ public class TestOptionalRegionGC {
     out.shouldHaveExitValue(0);
     Pattern pattern = Pattern.compile("Prepared (\\d+) regions out of (\\d+) for optional evacuation");
     Matcher matcher = pattern.matcher(out.getOutput());
-	  Asserts.assertTrue(matcher.find());
+    Asserts.assertTrue(matcher.find());
     String selectedNum = matcher.group(1);
     String totalNum = matcher.group(2);
     Asserts.assertTrue(Objects.equals(selectedNum,totalNum),"Error info: "+selectedNum+","+totalNum);
