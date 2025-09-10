@@ -102,8 +102,8 @@ public class bug8314731 {
 
     private static boolean containsAlt(Container container) {
         for (Component c : container.getComponents()) {
-            if (c instanceof JButton butt) {
-                return "Logo".equals(butt.getText());
+            if (c instanceof JButton button) {
+                return "Logo".equals(button.getText());
             } else if (c instanceof Container cont) {
                 return containsAlt(cont);
             }
