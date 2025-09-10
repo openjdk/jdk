@@ -109,7 +109,7 @@ public class Expression {
          */
         public Info() {
             this.exceptions = Set.of();
-            this.isResultDeterministic = false;
+            this.isResultDeterministic = true;
         }
 
         private Info(Set<String> exceptions, boolean isResultDeterministic) {
