@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 import java.awt.Insets;
 import java.awt.Rectangle;
 
