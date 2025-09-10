@@ -50,28 +50,28 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 @State(Scope.Benchmark)
-public class DateFormatterBench {
+public class SimpleDateFormatterBench {
 
     private Date date;
     private Object objDate;
     private String dateStr;
     private String timeStr;
 
-    private final String datePattern = "EEEE, MMMM d, y";
-    private final String timePattern = "h:mm:ss a zzzz";
+    private static final String DATE_PATTERN = "EEEE, MMMM d, y";
+    private static final String TIME_PATTERN = "h:mm:ss a zzzz";
 
     // Use non-factory methods w/ pattern to ensure test data can be round
     // tripped and guarantee no re-use of the same instance
-    private DateFormat dateFormat = new SimpleDateFormat(datePattern);
-    private DateFormat timeFormat = new SimpleDateFormat(timePattern);
+    private DateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
+    private DateFormat timeFormat = new SimpleDateFormat(TIME_PATTERN);
 
     @Setup
     public void setup() {
         date = new Date();
         objDate = new Date();
         // Generate the strings for parsing using dedicated separate instances
-        dateStr = new SimpleDateFormat(datePattern).format(date);
-        timeStr = new SimpleDateFormat(timePattern).format(date);
+        dateStr = new SimpleDateFormat(DATE_PATTERN).format(date);
+        timeStr = new SimpleDateFormat(TIME_PATTERN).format(date);
     }
 
     @Benchmark
@@ -105,7 +105,7 @@ public class DateFormatterBench {
     }
 
     public static void main(String... args) throws Exception {
-        Options opts = new OptionsBuilder().include(DateFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
+        Options opts = new OptionsBuilder().include(org.openjdk.bench.java.text.SimpleDateFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
         new Runner(opts).run();
     }
 }
