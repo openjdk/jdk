@@ -40,8 +40,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -57,15 +57,21 @@ public class DateFormatterBench {
     private String dateStr;
     private String timeStr;
 
-    private DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
-    private DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.FULL, Locale.ENGLISH);
+    private final String datePattern = "EEEE, MMMM d, y";
+    private final String timePattern = "h:mm:ss a zzzz";
+
+    // Use non-factory methods w/ pattern to ensure test data can be round
+    // tripped and guarantee no re-use of the same instance
+    private DateFormat dateFormat = new SimpleDateFormat(datePattern);
+    private DateFormat timeFormat = new SimpleDateFormat(timePattern);
 
     @Setup
     public void setup() {
         date = new Date();
         objDate = new Date();
-        timeStr = timeFormat.format(date);
-        dateStr = dateFormat.format(date);
+        // Generate the strings for parsing using dedicated separate instances
+        dateStr = new SimpleDateFormat(datePattern).format(date);
+        timeStr = new SimpleDateFormat(timePattern).format(date);
     }
 
     @Benchmark
