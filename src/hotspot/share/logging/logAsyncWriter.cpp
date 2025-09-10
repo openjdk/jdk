@@ -320,7 +320,7 @@ void AsyncLogWriter::initialize() {
   if (self->_initialized) {
     // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
     // After that, we publish the initalized _instance to readers.
-    // Then, start the AsyncLog Thread; It exclusively takes over all logging I/O.
+    // Then we start the AsyncLog Thread and it exclusively takes over all logging I/O.
     for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       ts->wait_until_no_readers();
     }
