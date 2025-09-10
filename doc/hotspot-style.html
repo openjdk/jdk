@@ -75,6 +75,9 @@ Standard Library</a></li>
 Deduction</a></li>
 <li><a href="#expression-sfinae" id="toc-expression-sfinae">Expression
 SFINAE</a></li>
+<li><a href="#trailing-return-type-syntax-for-functions"
+id="toc-trailing-return-type-syntax-for-functions">Trailing return type
+syntax for functions</a></li>
 <li><a href="#non-type-template-parameter-values"
 id="toc-non-type-template-parameter-values">Non-type template parameter
 values</a></li>
@@ -719,11 +722,14 @@ href="http://wg21.link/p0127r2">p0127r2</a>)<br> <code>auto</code> may
 be used as a placeholder for the type of a non-type template parameter.
 The type is deduced from the value provided in a template
 instantiation.</p></li>
-<li><p>Function return type deduction (<a
+</ul>
+<p><a name="function-return-type-deduction"></a> * Function return type
+deduction (<a
 href="https://isocpp.org/files/papers/N3638.html">n3638</a>)<br> Only
 use if the function body has a very small number of <code>return</code>
-statements, and generally relatively little other code.</p></li>
-<li><p>Class template argument deduction (<a
+statements, and generally relatively little other code.</p>
+<ul>
+<li>Class template argument deduction (<a
 href="http://wg21.link/n3602">n3602</a>, <a
 href="http://wg21.link/p0091r3">p0091r3</a>)<br> The template arguments
 of a class template may be deduced from the arguments to a constructor.
@@ -736,7 +742,7 @@ harder to understand, because explicit type information is lacking. But
 it can also remove the need to be explicit about types that are either
 obvious, or that are very hard to write. For example, these allow the
 addition of a scope-guard mechanism with nice syntax; something like
-this</p></li>
+this</li>
 </ul>
 <pre><code>  ScopeGuard guard{[&amp;]{ ... cleanup code ... }};</code></pre>
 <ul>
@@ -771,6 +777,44 @@ class="uri">https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95468</a><br>
 <a
 href="https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html"
 class="uri">https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html</a></p>
+<h3 id="trailing-return-type-syntax-for-functions">Trailing return type
+syntax for functions</h3>
+<p>A function's return type may be specified after the parameters and
+qualifiers (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">n2541</a>).
+In such a declaration the normal return type is <code>auto</code> and
+the return type is indicated by <code>-&gt;</code> followed by the type.
+Although both use <code>auto</code> in the "normal" leading return type
+position, this differs from <a
+href="#function-return-type-deduction">function return type
+deduction</a>, in that the return type is explicit rather than deduced,
+but specified in a trailing position.</p>
+<p>Use of trailing return types is permitted. However, the normal,
+leading position for the return type is preferred. A trailing return
+type should only be used where it provides some benefit. Such benefits
+usually arise because a trailing return type is in a different scope
+than a leading return type.</p>
+<ul>
+<li><p>If the function identifier is a nested name specifier, then the
+trailing return type occurs in the nested scope. This may permit simpler
+naming in the return type because of the different name lookup
+context.</p></li>
+<li><p>The trailing return type is in the scope of the parameters,
+making their types accessible via <code>decltype</code>. For
+example</p></li>
+</ul>
+<pre><code>template&lt;typename T, typename U&gt; auto add(T t, U u) -&gt; decltype(t + u);</code></pre>
+<p>rather than</p>
+<pre><code>template&lt;typename T, typename U&gt; decltype((*(T*)0) + (*(U*)0)) add(T t, U u);</code></pre>
+<ul>
+<li>Complex calculated leading return types may obscure the normal
+syntactic boundaries, making it more difficult for a reader to find the
+function name and parameters. This is particularly common in cases where
+the return type is being used for <a
+href="https://en.cppreference.com/w/cpp/language/sfinae"
+title="Substitution Failure Is Not An Error">SFINAE</a>. A trailing
+return type may be preferable in such situations.</li>
+</ul>
 <h3 id="non-type-template-parameter-values">Non-type template parameter
 values</h3>
 <p>C++17 extended the arguments permitted for non-type template
