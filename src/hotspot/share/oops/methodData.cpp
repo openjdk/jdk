@@ -323,9 +323,8 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
 
 static bool is_excluded(Klass* k) {
 #if INCLUDE_CDS
-  if (SafepointSynchronize::is_at_safepoint() &&
-      CDSConfig::is_dumping_archive() &&
-      CDSConfig::current_thread_is_vm_or_dumper()) {
+  if (CDSConfig::is_at_aot_safepoint()) {
+    // Check for CDS exclusion only at CDS safe point.
     if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
@@ -1860,7 +1859,7 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  Mutex* lock = Atomic::load(&_extra_data_lock);
+  Mutex* lock = Atomic::load_acquire(&_extra_data_lock);
   if (lock == nullptr) {
     // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
     lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");

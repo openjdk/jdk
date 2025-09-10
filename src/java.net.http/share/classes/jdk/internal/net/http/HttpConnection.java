@@ -100,7 +100,11 @@ abstract class HttpConnection implements Closeable {
      */
     private final String label;
 
-    HttpConnection(InetSocketAddress address, HttpClientImpl client, String label) {
+    private final Origin originServer;
+
+    HttpConnection(Origin originServer, InetSocketAddress address, HttpClientImpl client,
+                   String label) {
+        this.originServer = originServer;
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
@@ -244,6 +248,14 @@ abstract class HttpConnection implements Closeable {
         return false;
     }
 
+    /**
+     * {@return the {@link Origin} server against which this connection communicates.
+     * Returns {@code null} if the connection is a plain connection to a proxy}
+     */
+    final Origin getOriginServer() {
+        return this.originServer;
+    }
+
     interface HttpPublisher extends FlowTube.TubePublisher {
         void enqueue(List<ByteBuffer> buffers) throws IOException;
         void enqueueUnordered(List<ByteBuffer> buffers) throws IOException;
@@ -334,13 +346,20 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
-        String label = nextLabel();
+        final String label = nextLabel();
+        final Origin originServer;
+        try {
+            originServer = Origin.from(request.uri());
+        } catch (IllegalArgumentException iae) {
+            // should never happen
+            throw new AssertionError("failed to determine origin server from request URI", iae);
+        }
         if (proxy != null)
-            return new AsyncSSLTunnelConnection(addr, client, alpn, proxy,
+            return new AsyncSSLTunnelConnection(originServer, addr, client, alpn, proxy,
                                                 proxyTunnelHeaders(request),
                                                 label);
         else
-            return new AsyncSSLConnection(addr, client, alpn, label);
+            return new AsyncSSLConnection(originServer, addr, client, alpn, label);
     }
 
     /**
@@ -414,14 +433,21 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
-        String label = nextLabel();
+        final String label = nextLabel();
+        final Origin originServer;
+        try {
+            originServer = Origin.from(request.uri());
+        } catch (IllegalArgumentException iae) {
+            // should never happen
+            throw new AssertionError("failed to determine origin server from request URI", iae);
+        }
         if (request.isWebSocket() && proxy != null)
-            return new PlainTunnelingConnection(addr, proxy, client,
+            return new PlainTunnelingConnection(originServer, addr, proxy, client,
                                                 proxyTunnelHeaders(request),
                                                 label);
 
         if (proxy == null)
-            return new PlainHttpConnection(addr, client, label);
+            return new PlainHttpConnection(originServer, addr, client, label);
         else
             return new PlainProxyConnection(proxy, client, label);
     }

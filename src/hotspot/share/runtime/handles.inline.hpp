@@ -27,9 +27,9 @@
 
 #include "runtime/handles.hpp"
 
-#include "runtime/javaThread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
+#include "runtime/javaThread.hpp"
 
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle

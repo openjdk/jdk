@@ -30,9 +30,9 @@
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
 
-#include <unistd.h>
-#include <sys/socket.h>
 #include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 // Aix does not have NUMA support but need these for compilation.
 inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }

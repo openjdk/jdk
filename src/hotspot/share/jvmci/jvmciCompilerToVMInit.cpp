@@ -51,7 +51,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -144,12 +144,15 @@ int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dsinh;
 address CompilerToVM::Data::dtanh;
 address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
 address CompilerToVM::Data::dpow;
+
+address CompilerToVM::Data::crc_table_addr;
 
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
@@ -287,8 +290,10 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     name = nullptr;                                             \
   }
 
+  SET_TRIGFUNC_OR_NULL(dsinh);
   SET_TRIGFUNC_OR_NULL(dtanh);
   SET_TRIGFUNC_OR_NULL(dcbrt);
+  SET_TRIGFUNC_OR_NULL(crc_table_addr);
 
 #undef SET_TRIGFUNC_OR_NULL
 
@@ -343,7 +348,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   return vmIntrinsics;
 }
 
-#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
+#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
   do_int_flag(AllocateInstancePrefetchLines)                               \
   do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
@@ -354,7 +359,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
-  do_uintx_flag(CodeCacheSegmentSize)                                      \
+  do_size_t_flag(CodeCacheSegmentSize)                                     \
   do_intx_flag(CodeEntryAlignment)                                         \
   do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
@@ -432,8 +437,8 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 
 jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
-  ResourceHashtable<jlong, JVMCIObject> longs;
-  ResourceHashtable<const char*, JVMCIObject,
+  HashTable<jlong, JVMCIObject> longs;
+  HashTable<const char*, JVMCIObject,
                     256, AnyObj::RESOURCE_AREA, mtInternal,
                     &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 
@@ -541,16 +546,17 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIObject vmFlagObj = JVMCIENV->new_VMFlag(fname, ftype, value, JVMCI_CHECK_NULL); \
   JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
-#define ADD_BOOL_FLAG(name)  ADD_FLAG(bool, name, BOXED_BOOLEAN)
-#define ADD_INT_FLAG(name)   ADD_FLAG(int, name, BOXED_LONG)
-#define ADD_INTX_FLAG(name)  ADD_FLAG(intx, name, BOXED_LONG)
-#define ADD_UINTX_FLAG(name) ADD_FLAG(uintx, name, BOXED_LONG)
+#define ADD_BOOL_FLAG(name)   ADD_FLAG(bool, name, BOXED_BOOLEAN)
+#define ADD_INT_FLAG(name)    ADD_FLAG(int, name, BOXED_LONG)
+#define ADD_SIZE_T_FLAG(name) ADD_FLAG(size_t, name, BOXED_LONG)
+#define ADD_INTX_FLAG(name)   ADD_FLAG(intx, name, BOXED_LONG)
+#define ADD_UINTX_FLAG(name)  ADD_FLAG(uintx, name, BOXED_LONG)
 
-  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
+  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
   JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
   JVMCIObject value;
-  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
+  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
   JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 

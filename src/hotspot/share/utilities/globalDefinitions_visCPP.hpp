@@ -31,23 +31,24 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
-# include <ctype.h>
-# include <string.h>
-# include <stdarg.h>
-# include <stdlib.h>
-# include <stdint.h>
-# include <stddef.h>// for offsetof
-# include <sys/stat.h>
-# include <io.h>    // for stream.cpp
-# include <float.h> // for _isnan
-# include <stdio.h> // for va_list
-# include <time.h>
-# include <fcntl.h>
-# include <limits.h>
-# include <inttypes.h>
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
+
+# include <ctype.h>
+# include <fcntl.h>
+# include <float.h> // for _isnan
+# include <inttypes.h>
+# include <io.h>    // for stream.cpp
+# include <limits.h>
 # include <math.h>
+# include <stdarg.h>
+# include <stddef.h>// for offsetof
+# include <stdint.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <sys/stat.h>
+# include <time.h>
 
 // Only 64-bit Windows is supported
 #ifndef _LP64
@@ -83,8 +84,6 @@ inline int g_isnan(jdouble f)                    { return _isnan(f); }
 
 inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
-
-#define offset_of(klass,field) offsetof(klass,field)
 
 #define THREAD_LOCAL __declspec(thread)
 

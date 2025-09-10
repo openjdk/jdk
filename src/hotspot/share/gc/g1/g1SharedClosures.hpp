@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_GC_G1_G1SHAREDCLOSURES_HPP
+#define SHARE_GC_G1_G1SHAREDCLOSURES_HPP
 
 #include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1OopClosures.hpp"
@@ -54,3 +57,5 @@ public:
     _clds(&_oops_in_cld, process_only_dirty),
     _nmethods(pss->worker_id(), &_oops_in_nmethod, should_mark) {}
 };
+
+#endif // SHARE_GC_G1_G1SHAREDCLOSURES_HPP

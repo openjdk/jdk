@@ -91,7 +91,7 @@ abstract class AquaPainter <T extends JRSUIState> {
         state = nextState;
     }
 
-    private static class AquaNineSlicingImagePainter<T extends JRSUIState>
+    private static final class AquaNineSlicingImagePainter<T extends JRSUIState>
             extends AquaPainter<T> {
 
         private final HashMap<T, RecyclableJRSUISlicedImageControl> slicedControlImages;
@@ -205,7 +205,7 @@ abstract class AquaPainter <T extends JRSUIState> {
         }
     }
 
-    private static class AquaPixelsKey implements ImageCache.PixelsKey {
+    private static final class AquaPixelsKey implements ImageCache.PixelsKey {
 
         private final int pixelCount;
         private final int hash;
@@ -259,7 +259,7 @@ abstract class AquaPainter <T extends JRSUIState> {
         }
     }
 
-    private static class RecyclableJRSUISlicedImageControl
+    private static final class RecyclableJRSUISlicedImageControl
             extends RecyclableSlicedImageControl {
 
         private final JRSUIControl control;

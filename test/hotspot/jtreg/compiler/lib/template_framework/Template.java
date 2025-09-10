@@ -615,7 +615,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static TemplateBody body(Object... tokens) {
-        return new TemplateBody(Token.parse(tokens));
+        return new TemplateBody(TokenParser.parse(tokens));
     }
 
     /**

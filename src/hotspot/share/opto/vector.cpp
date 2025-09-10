@@ -71,7 +71,7 @@ void PhaseVector::do_cleanup() {
   }
   {
     Compile::TracePhase tp(_t_vector_igvn);
-    _igvn.reset_from_gvn(C->initial_gvn());
+    _igvn.reset();
     _igvn.optimize();
     if (C->failing())  return;
   }

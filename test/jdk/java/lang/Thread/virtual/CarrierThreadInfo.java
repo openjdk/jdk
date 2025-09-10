@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,6 @@
  * @modules java.base/java.lang:+open
  * @library /test/lib
  * @run junit CarrierThreadInfo
- */
-
-/**
- * @test id=LM_LIGHTWEIGHT
- * @requires vm.continuations
- * @modules java.base/java.lang:+open
- * @library /test/lib
- * @run junit/othervm -XX:LockingMode=2 CarrierThreadInfo
- */
-
-/**
- * @test id=LM_LEGACY
- * @requires vm.continuations
- * @modules java.base/java.lang:+open
- * @library /test/lib
- * @run junit/othervm -XX:LockingMode=1 CarrierThreadInfo
- */
-
-/**
- * @test id=LM_MONITOR
- * @requires vm.continuations
- * @modules java.base/java.lang:+open
- * @library /test/lib
- * @run junit/othervm -XX:LockingMode=0 CarrierThreadInfo
  */
 
 import java.lang.management.LockInfo;

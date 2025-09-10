@@ -27,10 +27,11 @@
 #define SHARE_MEMORY_METASPACE_METABLOCK_INLINE_HPP
 
 #include "memory/metaspace/metablock.hpp"
-#include "utilities/globalDefinitions.hpp"
+
 #include "utilities/align.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class outputStream;
 

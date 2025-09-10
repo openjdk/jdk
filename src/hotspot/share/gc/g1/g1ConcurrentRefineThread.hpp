@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;
 
-  double _vtime_start;  // Initial virtual time.
-  double _vtime_accum;  // Accumulated virtual time.
-
   Monitor _notifier;
   bool _requested_active;
 
@@ -71,15 +68,8 @@ protected:
   // precondition: this is the current thread.
   virtual void do_refinement_step() = 0;
 
-  // Update concurrent refine threads stats.
-  // If we are in Primary thread, we additionally update CPU time tracking.
-  virtual void track_usage() {
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - _vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
-  };
+  // Update concurrent refine threads cpu time stats.
+  virtual void update_perf_counter_cpu_time() = 0;
 
   // Helper for do_refinement_step implementations.  Try to perform some
   // refinement work, limited by stop_at.  Returns true if any refinement work
@@ -113,8 +103,8 @@ public:
     return &_refinement_stats;
   }
 
-  // Total virtual time so far.
-  double vtime_accum() { return _vtime_accum; }
+  // Total cpu time spent in this thread so far.
+  jlong cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP

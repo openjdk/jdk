@@ -110,7 +110,6 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   ciMethod *_current_method;
   int _depth;
   char buffer[2048];
-  bool _should_send_method;
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
   Compile *C;

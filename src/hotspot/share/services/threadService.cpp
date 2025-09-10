@@ -53,8 +53,8 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 
 // TODO: we need to define a naming convention for perf counters
@@ -1124,7 +1124,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 // jdk.internal.vm.ThreadSnapshot support
 #if INCLUDE_JVMTI
 
-class GetThreadSnapshotClosure: public HandshakeClosure {
+class GetThreadSnapshotHandshakeClosure: public HandshakeClosure {
 private:
   static OopStorage* oop_storage() {
     assert(_thread_service_storage != nullptr, "sanity");
@@ -1180,14 +1180,14 @@ public:
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
 
-  GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
-    HandshakeClosure("GetThreadSnapshotClosure"),
+  GetThreadSnapshotHandshakeClosure(Handle thread_h, JavaThread* java_thread):
+    HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(java_thread),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
     _thread_status(), _thread_name(nullptr),
     _locks(nullptr), _blocker() {
   }
-  virtual ~GetThreadSnapshotClosure() {
+  virtual ~GetThreadSnapshotHandshakeClosure() {
     delete _methods;
     delete _bcis;
     _thread_name.release(oop_storage());
@@ -1278,6 +1278,7 @@ public:
       if (is_virtual) {
         // mounted vthread, use carrier thread state
         oop carrier_thread = java_lang_VirtualThread::carrier_thread(_thread_h());
+        assert(carrier_thread != nullptr, "should only get here for a mounted vthread");
         _thread_status = java_lang_Thread::get_thread_status(carrier_thread);
       } else {
         _thread_status = java_lang_Thread::get_thread_status(_thread_h());
@@ -1439,7 +1440,17 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  Handle thread_h(THREAD, JNIHandles::resolve(jthread));
+
+  JavaThread* java_thread = nullptr;
+  oop thread_oop;
+  bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
+  Handle thread_h(THREAD, thread_oop);
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());  // Deals with null
+
+  if (!has_javathread && !is_virtual) {
+    return nullptr; // thread terminated so not of interest
+  }
 
   // wrapper to auto delete JvmtiVTMSTransitionDisabler
   class TransitionDisabler {
@@ -1460,8 +1471,6 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     }
   } transition_disabler;
 
-  JavaThread* java_thread = nullptr;
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
   Handle carrier_thread;
   if (is_virtual) {
     // 1st need to disable mount/unmount transitions
@@ -1469,14 +1478,24 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 
     carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(thread_h()));
     if (carrier_thread != nullptr) {
+      // Note: The java_thread associated with this carrier_thread may not be
+      // protected by the ThreadsListHandle above. There could have been an
+      // unmount and remount after the ThreadsListHandle above was created
+      // and before the JvmtiVTMSTransitionDisabler was created. However, as
+      // we have disabled transitions, if we are mounted on it, then it cannot
+      // terminate and so is safe to handshake with.
       java_thread = java_lang_Thread::thread(carrier_thread());
+    } else {
+      // We may have previously found a carrier but the virtual thread has unmounted
+      // after that, so clear that previous reference.
+      java_thread = nullptr;
     }
   } else {
     java_thread = java_lang_Thread::thread(thread_h());
   }
 
   // Handshake with target
-  GetThreadSnapshotClosure cl(thread_h, java_thread);
+  GetThreadSnapshotHandshakeClosure cl(thread_h, java_thread);
   if (java_thread == nullptr) {
     // unmounted vthread, execute on the current thread
     cl.do_thread(nullptr);
@@ -1508,7 +1527,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   if (cl._locks != nullptr && cl._locks->length() > 0) {
     locks = oopFactory::new_objArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
     for (int n = 0; n < cl._locks->length(); n++) {
-      GetThreadSnapshotClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
+      GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 
       Handle lock = jdk_internal_vm_ThreadLock::create(lock_klass,
         lock_info->_frame_depth, lock_info->_type, lock_info->_obj, CHECK_NULL);
@@ -1546,4 +1565,3 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 }
 
 #endif // INCLUDE_JVMTI
-

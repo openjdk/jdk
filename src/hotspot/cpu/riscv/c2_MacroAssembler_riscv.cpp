@@ -43,240 +43,11 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
-                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg, Register tmp4Reg) {
-  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
-  Register flag = t1;
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmp1Reg;
-  Register tmp = tmp2Reg;
-  Label object_has_monitor;
-  // Finish fast lock successfully. MUST branch to with flag == 0
-  Label locked;
-  // Finish fast lock unsuccessfully. slow_path MUST branch to with flag != 0
-  Label slow_path;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr, flag, tmp3Reg, t0);
-
-  mv(flag, 1);
-
-  // Load markWord from object into displaced_header.
-  ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, oop);
-    lbu(tmp, Address(tmp, Klass::misc_flags_offset()));
-    test_bit(tmp, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bnez(tmp, slow_path);
-  }
-
-  // Check for existing monitor
-  test_bit(tmp, disp_hdr, exact_log2(markWord::monitor_value));
-  bnez(tmp, object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    j(slow_path);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    ori(tmp, disp_hdr, markWord::unlocked_value);
-
-    // Initialize the box. (Must happen before we update the object mark!)
-    sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64,
-            Assembler::aq, Assembler::rl, /*result*/disp_hdr);
-    beq(disp_hdr, tmp, locked);
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label locked
-    // We did not see an unlocked object so try the fast recursive case.
-
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    sub(disp_hdr, disp_hdr, sp);
-    mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-    // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto label
-    // locked, hence we can store 0 as the displaced header in the box, which indicates that it
-    // is a recursive lock.
-    andr(tmp/*==0?*/, disp_hdr, tmp);
-    sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    beqz(tmp, locked);
-    j(slow_path);
-  }
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-
-  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-  add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
-  Register tid = tmp4Reg;
-  ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
-  cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/tid, Assembler::int64,
-          Assembler::aq, Assembler::rl, /*result*/tmp3Reg); // cas succeeds if tmp3Reg == zr(expected)
-
-  // Store a non-null value into the box to avoid looking like a re-entrant
-  // lock. The fast-path monitor unlock code checks for
-  // markWord::monitor_value so use markWord::unused_mark which has the
-  // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-  mv(tmp, (address)markWord::unused_mark().value());
-  sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-  beqz(tmp3Reg, locked); // CAS success means locking succeeded
-
-  bne(tmp3Reg, tid, slow_path); // Check for recursive locking
-
-  // Recursive lock case
-  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, tmp2Reg, tmp3Reg);
-
-  bind(locked);
-  mv(flag, zr);
-  if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count(t0);
-  }
-
-#ifdef ASSERT
-  // Check that locked label is reached with flag == 0.
-  Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
-#endif
-
-  bind(slow_path);
-#ifdef ASSERT
-  // Check that slow_path label is reached with flag != 0.
-  bnez(flag, flag_correct);
-  stop("Fast Lock Flag == 0");
-  bind(flag_correct);
-#endif
-  // C2 uses the value of flag (0 vs !0) to determine the continuation.
-}
-
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
-                                    Register tmp1Reg, Register tmp2Reg) {
-  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
-  Register flag = t1;
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmp1Reg;
-  Register owner_addr = tmp1Reg;
-  Register tmp = tmp2Reg;
-  Label object_has_monitor;
-  // Finish fast lock successfully. MUST branch to with flag == 0
-  Label unlocked;
-  // Finish fast lock unsuccessfully. slow_path MUST branch to with flag != 0
-  Label slow_path;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr, flag, t0);
-
-  mv(flag, 1);
-
-  if (LockingMode == LM_LEGACY) {
-    // Find the lock address and load the displaced header from the stack.
-    ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // If the displaced header is 0, we have a recursive unlock.
-    beqz(disp_hdr, unlocked);
-  }
-
-  // Handle existing monitor.
-  ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-  test_bit(t0, tmp, exact_log2(markWord::monitor_value));
-  bnez(t0, object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    j(slow_path);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Check if it is still a light weight lock, this is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
-
-    cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64,
-            Assembler::relaxed, Assembler::rl, /*result*/tmp);
-    beq(box, tmp, unlocked); // box == tmp if cas succeeds
-    j(slow_path);
-  }
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-  subi(tmp, tmp, (int)markWord::monitor_value); // monitor
-  ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-
-  Label notRecursive;
-  beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
-
-  // Recursive lock
-  subi(disp_hdr, disp_hdr, 1);
-  sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-  j(unlocked);
-
-  bind(notRecursive);
-  // Compute owner address.
-  la(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
-
-  // Set owner to null.
-  // Release to satisfy the JMM
-  membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  sd(zr, Address(owner_addr));
-  // We need a full fence after clearing owner to avoid stranding.
-  // StoreLoad achieves this.
-  membar(StoreLoad);
-
-  // Check if the entry_list is empty.
-  ld(t0, Address(tmp, ObjectMonitor::entry_list_offset()));
-  beqz(t0, unlocked); // If so we are done.
-
-  // Check if there is a successor.
-  ld(t0, Address(tmp, ObjectMonitor::succ_offset()));
-  bnez(t0, unlocked); // If so we are done.
-
-  // Save the monitor pointer in the current thread, so we can try to
-  // reacquire the lock in SharedRuntime::monitor_exit_helper().
-  sd(tmp, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
-
-  mv(flag, 1);
-  j(slow_path);
-
-  bind(unlocked);
-  mv(flag, zr);
-  if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count(t0);
-  }
-
-#ifdef ASSERT
-  // Check that unlocked label is reached with flag == 0.
-  Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
-#endif
-
-  bind(slow_path);
-#ifdef ASSERT
-  // Check that slow_path label is reached with flag != 0.
-  bnez(flag, flag_correct);
-  stop("Fast Lock Flag == 0");
-  bind(flag_correct);
-#endif
-  // C2 uses the value of flag (0 vs !0) to determine the continuation.
-}
-
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
                                               Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert_different_registers(obj, box, tmp1, tmp2, tmp3, tmp4, flag, t0);
 
   mv(flag, 1);
@@ -439,7 +210,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert_different_registers(obj, box, tmp1, tmp2, tmp3, flag, t0);
 
   mv(flag, 1);
@@ -1952,16 +1722,15 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   mv(pow31_3,  29791);           // [31^^3]
   mv(pow31_2,    961);           // [31^^2]
 
-  slli(chunks_end, chunks, chunks_end_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, chunks, ary, t0, chunks_end_shift);
   andi(cnt, cnt, stride - 1);    // don't forget about tail!
 
   bind(WIDE_LOOP);
-  mulw(result, result, pow31_4); // 31^^4 * h
   arrays_hashcode_elload(t0,   Address(ary, 0 * elsize), eltype);
   arrays_hashcode_elload(t1,   Address(ary, 1 * elsize), eltype);
   arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize), eltype);
   arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize), eltype);
+  mulw(result, result, pow31_4); // 31^^4 * h
   mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
   addw(result, result, t0);
   mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
@@ -1976,8 +1745,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   beqz(cnt, DONE);
 
   bind(TAIL);
-  slli(chunks_end, cnt, chunks_end_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, cnt, ary, t0, chunks_end_shift);
 
   bind(TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
@@ -2170,15 +1938,13 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      assert(false, "Should go to BoolTest::le case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      assert(false, "Should go to BoolTest::lt case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
       break;
     default:
       assert(false, "unsupported compare condition");
@@ -2395,18 +2161,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
   Register tmp = stub.data<2>();
   __ bind(stub.entry());
 
-  __ fmv_x_w(dst, src);
-
-  // preserve the payloads of non-canonical NaNs.
-  __ srai(dst, dst, 13);
-  // preserve the sign bit.
-  __ srai(tmp, dst, 13);
-  __ slli(tmp, tmp, 10);
-  __ mv(t0, 0x3ff);
-  __ orr(tmp, tmp, t0);
-
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-  __ andr(dst, dst, tmp);
+  __ float_to_float16_NaN(dst, src, t0, tmp);
 
   __ j(stub.continuation());
 #undef __
@@ -2414,7 +2169,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
 
 // j.l.Float.floatToFloat16
 void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
-  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
+  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 64, float_to_float16_slow_path);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
 
@@ -2493,41 +2248,80 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
 #define __ masm.
   VectorRegister dst = stub.data<0>();
   VectorRegister src = stub.data<1>();
-  VectorRegister tmp = stub.data<2>();
+  VectorRegister vtmp = stub.data<2>();
+  assert_different_registers(dst, src, vtmp);
+
   __ bind(stub.entry());
 
+  // Active elements (NaNs) are marked in v0 mask register.
   // mul is already set to mf2 in float_to_float16_v.
 
-  // preserve the payloads of non-canonical NaNs.
-  __ vnsra_wi(dst, src, 13, Assembler::v0_t);
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
+  const int fp_sign_bits = 1;
+  const int fp32_bits = 32;
+  const int fp32_mantissa_2nd_part_bits = 9;
+  const int fp32_mantissa_3rd_part_bits = 4;
+  const int fp16_exponent_bits = 5;
+  const int fp16_mantissa_bits = 10;
 
-  // preserve the sign bit.
-  __ vnsra_wi(tmp, src, 26, Assembler::v0_t);
-  __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
-  __ mv(t0, 0x3ff);
-  __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
+  // preserve the sign bit and exponent, clear mantissa.
+  __ vnsra_wi(dst, src, fp32_bits - fp_sign_bits - fp16_exponent_bits, Assembler::v0_t);
+  __ vsll_vi(dst, dst, fp16_mantissa_bits, Assembler::v0_t);
 
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-  __ vand_vv(dst, dst, tmp, Assembler::v0_t);
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //   | (doppel & 0x007f_e000) >> 13 // 10 bits
+  //   | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+  //   | (doppel & 0x0000_000f));     //  4 bits
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ mv(t0, 0x3ff); // retain first part of mantissa in a float 32
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
+  // 9 bits
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ mv(t0, 0x1ff); // retain second part of mantissa in a float 32
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
+  // 4 bits
+  // Narrow shift is necessary to move data from 32 bits element to 16 bits element in vector register.
+  __ vnsrl_wi(vtmp, src, 0, Assembler::v0_t);
+  __ vand_vi(vtmp, vtmp, 0xf, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
 
   __ j(stub.continuation());
 #undef __
 }
 
 // j.l.Float.float16ToFloat
-void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp,
-                                           Register tmp, uint vector_length) {
+void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src,
+                                           VectorRegister vtmp, Register tmp, uint vector_length) {
   assert_different_registers(dst, src, vtmp);
 
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister>
-              (dst, src, vtmp, 28, float_to_float16_v_slow_path);
+              (dst, src, vtmp, 56, float_to_float16_v_slow_path);
 
   // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
 
   vsetvli_helper(BasicType::T_FLOAT, vector_length, Assembler::m1);
 
   // check whether there is a NaN.
-  // replace v_fclass with vmseq_vv as performance optimization.
+  // replace v_fclass with vmfne_vv as performance optimization.
   vmfne_vv(v0, src, src);
   vcpop_m(t0, v0);
 
@@ -2827,10 +2621,14 @@ void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Regist
 
 // Intrinsic for
 //
-// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
-//     return the number of characters copied.
-// - java/lang/StringUTF16.compress
-//     return index of non-latin1 character if copy fails, otherwise 'len'.
+// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ASCII
 //
 // This version always returns the number of characters copied. A successful
 // copy will complete with the post-condition: 'res' == 'len', while an

@@ -261,8 +261,9 @@ public class DigestEchoClient {
         }
         try {
             for (DigestEchoServer.HttpAuthType authType : types) {
-                // The test server does not support PROXY305 properly
-                if (authType == DigestEchoServer.HttpAuthType.PROXY305) continue;
+                // The test server does not support PROXY305 or SERVER307 properly
+                if (authType == DigestEchoServer.HttpAuthType.PROXY305 ||
+                    authType == DigestEchoServer.HttpAuthType.SERVER307) continue;
                 EnumSet<DigestEchoServer.HttpAuthSchemeType> basics =
                         EnumSet.of(DigestEchoServer.HttpAuthSchemeType.BASICSERVER,
                                 DigestEchoServer.HttpAuthSchemeType.BASIC);

@@ -28,9 +28,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -183,7 +182,7 @@ void ShenandoahGeneration::log_status(const char *msg) const {
   // byte size in proper unit and proper unit for byte size are consistent.
   const size_t v_used = used();
   const size_t v_used_regions = used_regions_size();
-  const size_t v_soft_max_capacity = soft_max_capacity();
+  const size_t v_soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t v_max_capacity = max_capacity();
   const size_t v_available = available();
   const size_t v_humongous_waste = get_humongous_waste();
@@ -534,7 +533,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
 
   size_t old_consumed = 0;
@@ -558,7 +556,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // skip over regions that aren't regular young with some live data
       continue;
     }
-    if (r->age() >= tenuring_threshold) {
+    if (heap->is_tenurable(r)) {
       if ((r->garbage() < old_garbage_threshold)) {
         // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
         // reclaim the garbage; instead this region may be eligible for promotion-in-place to the
@@ -613,7 +611,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
+      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
         if (r->garbage() >= old_garbage_threshold) {
           promo_potential += r->get_live_data_bytes();
         }
@@ -799,14 +797,13 @@ void ShenandoahGeneration::cancel_marking() {
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
                                            uint max_workers,
-                                           size_t max_capacity,
-                                           size_t soft_max_capacity) :
+                                           size_t max_capacity) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
   _used(0), _bytes_allocated_since_gc_start(0),
-  _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
+  _max_capacity(max_capacity),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
@@ -952,7 +949,7 @@ size_t ShenandoahGeneration::available_with_reserve() const {
 }
 
 size_t ShenandoahGeneration::soft_available() const {
-  return available(soft_max_capacity());
+  return available(ShenandoahHeap::heap()->soft_max_capacity());
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {

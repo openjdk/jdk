@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ enum SSLExtension implements SSLStringizer {
                                 SupportedGroupsExtension.chOnLoadConsumer,
                                 null,
                                 null,
-                                SupportedGroupsExtension.chOnTradAbsence,
+                                SupportedGroupsExtension.chOnTradeAbsence,
                                 SupportedGroupsExtension.sgsStringizer),
     EE_SUPPORTED_GROUPS     (0x000A, "supported_groups",
                                 SSLHandshake.ENCRYPTED_EXTENSIONS,
@@ -433,7 +433,7 @@ enum SSLExtension implements SSLStringizer {
                                 KeyShareExtension.chOnLoadConsumer,
                                 null,
                                 null,
-                                KeyShareExtension.chOnTradAbsence,
+                                KeyShareExtension.chOnTradeAbsence,
                                 KeyShareExtension.chStringizer),
     SH_KEY_SHARE            (0x0033, "key_share",
                                 SSLHandshake.SERVER_HELLO,
@@ -486,7 +486,7 @@ enum SSLExtension implements SSLStringizer {
                                 PreSharedKeyExtension.chOnLoadConsumer,
                                 PreSharedKeyExtension.chOnLoadAbsence,
                                 PreSharedKeyExtension.chOnTradeConsumer,
-                                PreSharedKeyExtension.chOnTradAbsence,
+                                PreSharedKeyExtension.chOnTradeAbsence,
                                 PreSharedKeyExtension.chStringizer),
     SH_PRE_SHARED_KEY       (0x0029, "pre_shared_key",
                                 SSLHandshake.SERVER_HELLO,

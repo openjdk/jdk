@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,6 +308,8 @@ public class CtwRunner {
                 // Do not pay extra stack trace generation cost for normally thrown exceptions
                 "-XX:-StackTraceInThrowable",
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra for verifying inline caches during nmethod cleanups
+                "-XX:-VerifyInlineCaches",
                 // Do not pay extra zapping cost for explicit GC invocations
                 "-XX:-ZapUnusedHeapArea",
                 // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
@@ -316,6 +318,7 @@ public class CtwRunner {
                 "-XX:+StressIGVN",
                 "-XX:+StressCCP",
                 "-XX:+StressMacroExpansion",
+                "-XX:+StressMacroElimination",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),

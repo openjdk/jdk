@@ -26,6 +26,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -35,9 +36,8 @@
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/cdsHeapVerifier.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
@@ -183,7 +183,7 @@ static void reset_states(oop obj, TRAPS) {
       JavaCalls::call_special(&result, h_obj, klass,
                               method_name, method_sig, CHECK);
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
 }
 
@@ -337,6 +337,9 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
       } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
         Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
         if (m != nullptr) {
+          if (RegeneratedClasses::has_been_regenerated(m)) {
+            m = RegeneratedClasses::get_regenerated_object(m);
+          }
           InstanceKlass* method_holder = m->method_holder();
           AOTArtifactFinder::add_cached_class(method_holder);
         }
@@ -364,7 +367,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
   }
 }
 
-class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopHandle,
+class MetaspaceObjToOopHandleTable: public HashTable<MetaspaceObj*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared> {
@@ -502,14 +505,18 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
 
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
-  if (AOTClassInitializer::is_runtime_setup_required(ik)) {
-    ik->set_is_runtime_setup_required();
+
+  oop orig_mirror;
+  if (RegeneratedClasses::is_regenerated_object(ik)) {
+    InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
+    precond(orig_ik->is_initialized());
+    orig_mirror = orig_ik->java_mirror();
+  } else {
+    precond(ik->is_initialized());
+    orig_mirror = ik->java_mirror();
   }
 
-  oop orig_mirror = ik->java_mirror();
   oop m = scratch_java_mirror(ik);
-  assert(ik->is_initialized(), "must be");
-
   int nfields = 0;
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
@@ -866,7 +873,7 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   ResourceMark rm;
   log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
                        ik->external_name(), lambda_msg, testcls_msg);
-  MetaspaceShared::unrecoverable_writing_error();
+  AOTMetaspace::unrecoverable_writing_error();
 }
 
 bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
@@ -1213,7 +1220,7 @@ const ArchivedKlassSubGraphInfoRecord*
 HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
   assert(!CDSConfig::is_dumping_heap(), "Should not be called when dumping heap");
 
-  if (!k->is_shared()) {
+  if (!k->in_aot_cache()) {
     return nullptr;
   }
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
@@ -1267,7 +1274,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     if (klasses != nullptr) {
       for (int i = 0; i < klasses->length(); i++) {
         Klass* klass = klasses->at(i);
-        if (!klass->is_shared()) {
+        if (!klass->in_aot_cache()) {
           return nullptr;
         }
         resolve_or_init(klass, do_init, CHECK_NULL);
@@ -1502,7 +1509,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     ResourceMark rm;
     log_error(aot, heap)("Cannot archive object " PTR_FORMAT " of class %s", p2i(orig_obj), orig_obj->klass()->external_name());
     debug_trace();
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   if (log_is_enabled(Debug, aot, heap) && java_lang_Class::is_instance(orig_obj)) {
@@ -1518,6 +1525,13 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     }
     out.print_cr("; scratch mirror = "  PTR_FORMAT,
                  p2i(scratch_java_mirror(orig_obj)));
+  }
+
+  if (java_lang_Class::is_instance(orig_obj)) {
+    Klass* k = java_lang_Class::as_Klass(orig_obj);
+    if (RegeneratedClasses::has_been_regenerated(k)) {
+      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+    }
   }
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {
@@ -1548,7 +1562,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
       // defined at the top of this file.
       log_error(aot, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
       debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
   }
 
@@ -1578,7 +1592,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        MetaspaceShared::unrecoverable_writing_error();
+        AOTMetaspace::unrecoverable_writing_error();
       }
     }
   }

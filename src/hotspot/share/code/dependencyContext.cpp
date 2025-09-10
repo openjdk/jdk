@@ -22,9 +22,9 @@
  *
  */
 
-#include "code/nmethod.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
+#include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"

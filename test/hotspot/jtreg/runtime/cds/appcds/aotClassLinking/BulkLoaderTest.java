@@ -72,6 +72,7 @@ import java.io.File;
 import java.lang.StackWalker.StackFrame;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,7 +147,7 @@ public class BulkLoaderTest {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
-                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+                out.shouldContain("Skipping BadOldClassA: Failed verification");
                 out.shouldContain("Skipping SimpleCusty: Duplicated unregistered class");
             }
 
@@ -312,12 +313,15 @@ class BulkLoaderTestApp {
         }
     }
 
+    static ArrayList<ClassLoader> savedLoaders = new ArrayList<>();
+
     static Object initFromCustomLoader() throws Exception {
         String path = "cust.jar";
         URL url = new File(path).toURI().toURL();
         URL[] urls = new URL[] {url};
         URLClassLoader urlClassLoader =
             new URLClassLoader("MyLoader", urls, null);
+        savedLoaders.add(urlClassLoader);
         Class c = Class.forName("SimpleCusty", true, urlClassLoader);
         return c.newInstance();
     }

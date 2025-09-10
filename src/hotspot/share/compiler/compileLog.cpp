@@ -28,10 +28,11 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-CompileLog* CompileLog::_first = nullptr;
+CompileLog* volatile CompileLog::_list_head = nullptr;
 
 // ------------------------------------------------------------------
 // CompileLog::CompileLog
@@ -49,9 +50,12 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
    strcpy((char*)_file, file_name);
 
   // link into the global list
-  { MutexLocker locker(CompileTaskAlloc_lock);
-    _next = _first;
-    _first = this;
+  while (true) {
+    CompileLog* head = Atomic::load_acquire(&_list_head);
+    _next = head;
+    if (Atomic::cmpxchg(&_list_head, head, this) == head) {
+      break;
+    }
   }
 }
 
@@ -202,7 +206,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
   if (called_exit)  return;
   called_exit = true;
 
-  CompileLog* log = _first;
+  CompileLog* log = Atomic::load_acquire(&_list_head);
   while (log != nullptr) {
     log->flush();
     const char* partial_file = log->file();
@@ -290,7 +294,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
     delete log; // Removes partial file
     log = next_log;
   }
-  _first = nullptr;
+  Atomic::store(&_list_head, (CompileLog*)nullptr);
 }
 
 // ------------------------------------------------------------------

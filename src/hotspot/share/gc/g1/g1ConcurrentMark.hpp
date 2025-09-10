@@ -42,6 +42,8 @@
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;
+class G1CSetCandidateGroup;
+class G1CSetCandidateGroupList;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1CMOopClosure;
@@ -446,8 +448,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
 
-  double*   _accum_task_vtime;   // Accumulated task vtime
-
   WorkerThreads* _concurrent_workers;
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
@@ -612,16 +612,8 @@ public:
   // running.
   void abort_marking_threads();
 
-  void update_accum_task_vtime(uint i, double vtime) {
-    _accum_task_vtime[i] += vtime;
-  }
-
-  double all_task_accum_vtime() {
-    double ret = 0.0;
-    for (uint i = 0; i < _max_num_tasks; ++i)
-      ret += _accum_task_vtime[i];
-    return ret;
-  }
+  // Total cpu time spent in mark worker threads in seconds.
+  double worker_threads_cpu_time_s();
 
   // Attempts to steal an object from the task queues of other tasks
   bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
@@ -753,8 +745,8 @@ private:
 
   // When the virtual timer reaches this time, the marking step should exit
   double                      _time_target_ms;
-  // Start time of the current marking step
-  double                      _start_time_ms;
+  // Start cpu time of the current marking step
+  jlong                       _start_cpu_time_ns;
 
   // Oop closure used for iterations over oops
   G1CMOopClosure*             _cm_oop_closure;
@@ -984,7 +976,9 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
-  void do_cset_groups();
+  void log_cset_candidate_group_add_total(G1CSetCandidateGroup* gr, const char* type);
+  void log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type);
+  void log_cset_candidate_groups();
 
 public:
   // The header and footer are printed in the constructor and

@@ -72,14 +72,12 @@ public class PLABUtils {
         if (options == null) {
             throw new IllegalArgumentException("Options cannot be null");
         }
-        List<String> executionOtions = new ArrayList<>(
-                Arrays.asList(Utils.getTestJavaOpts())
-        );
-        Collections.addAll(executionOtions, WB_DIAGNOSTIC_OPTIONS);
-        Collections.addAll(executionOtions, G1_PLAB_LOGGING_OPTIONS);
-        Collections.addAll(executionOtions, GC_TUNE_OPTIONS);
-        executionOtions.addAll(options);
-        return executionOtions;
+        List<String> executionOptions = new ArrayList<>();
+        Collections.addAll(executionOptions, WB_DIAGNOSTIC_OPTIONS);
+        Collections.addAll(executionOptions, G1_PLAB_LOGGING_OPTIONS);
+        Collections.addAll(executionOptions, GC_TUNE_OPTIONS);
+        executionOptions.addAll(options);
+        return executionOptions;
     }
 
     /**

@@ -30,7 +30,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -61,8 +60,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.hpp"
-#include "oops/oopHandle.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -114,10 +111,10 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+using InvokeMethodIntrinsicTable = HashTable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
 static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
-using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+using InvokeMethodTypeTable = HashTable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
 static InvokeMethodTypeTable* _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
@@ -434,7 +431,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
       // (a) RedefineClasses -- the class is already loaded
       // (b) Rarely, the class might have been loaded by a parallel thread
       // We can do a quick check against the already assigned superclass's name and loader.
-      InstanceKlass* superk = klassk->java_super();
+      InstanceKlass* superk = klassk->super();
       if (superk != nullptr &&
           superk->name() == next_name &&
           superk->class_loader() == class_loader()) {
@@ -1017,7 +1014,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
 
 bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super_type,
                                                      Handle class_loader, bool is_superclass, TRAPS) {
-  assert(super_type->is_shared(), "must be");
+  assert(super_type->in_aot_cache(), "must be");
 
   // Quick check if the super type has been already loaded.
   // + Don't do it for unregistered classes -- they can be unloaded so
@@ -1052,7 +1049,7 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   // load <ik> from the shared archive.
 
   if (ik->super() != nullptr) {
-    bool check_super = check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
+    bool check_super = check_shared_class_super_type(ik, ik->super(),
                                                      class_loader, true,
                                                      CHECK_false);
     if (!check_super) {
@@ -1080,7 +1077,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(ik->is_shared(), "sanity");
+  assert(ik->in_aot_cache(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
   assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
@@ -1748,7 +1745,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
                                                    klass2, loader_data2);
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
-        !klass_being_linked->is_shared()) {
+        !klass_being_linked->in_aot_cache()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
                                      class_loader1, class_loader2);
@@ -2004,7 +2001,7 @@ void SystemDictionary::restore_archived_method_handle_intrinsics() {
 }
 
 void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
-  Array<Method*>* list = MetaspaceShared::archived_method_handle_intrinsics();
+  Array<Method*>* list = AOTMetaspace::archived_method_handle_intrinsics();
   for (int i = 0; i < list->length(); i++) {
     methodHandle m(THREAD, list->at(i));
     Method::restore_archived_method_handle_intrinsic(m, CHECK);

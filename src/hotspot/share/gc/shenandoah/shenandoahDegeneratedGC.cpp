@@ -136,9 +136,15 @@ void ShenandoahDegenGC::op_degenerated() {
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
                                 (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() && _generation->is_young()) {
-        // Swap remembered sets for young
-        _generation->swap_card_tables();
+      if (heap->mode()->is_generational()) {
+        // Clean the read table before swapping it. The end goal here is to have a clean
+        // write table, and to have the read table updated with the previous write table.
+        heap->old_generation()->card_scan()->mark_read_table_as_clean();
+
+        if (_generation->is_young()) {
+          // Swap remembered sets for young
+          _generation->swap_card_tables();
+        }
       }
 
     case _degenerated_roots:
@@ -476,7 +482,9 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 
 void ShenandoahDegenGC::upgrade_to_full() {
   log_info(gc)("Degenerated GC upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->increment_total_collections(true);
+  heap->shenandoah_policy()->record_degenerated_upgrade_to_full();
   ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
