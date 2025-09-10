@@ -45,10 +45,6 @@ struct JfrCPUTimeSampleRequest {
 // Designed to be only used under lock and read linearly
 class JfrCPUTimeTraceQueue {
 
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
-
   JfrCPUTimeSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
