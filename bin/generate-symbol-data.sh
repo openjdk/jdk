@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,38 @@
 #   include the SCM state that was used to build it, which can be found in ${JDK_N_INSTALL}/release,
 #   in property "SOURCE".
 
+source_path="$(dirname ${0})"
+this_script_dir="$(cd -- "${source_path}" > /dev/null && pwd)"
+if test -z "${this_script_dir}"; then
+  echo "Error: Could not determine location of this script"
+  exit 1
+fi
+
+symbols_dir="$(dirname $this_script_dir)/src/jdk.compiler/share/data/symbols"
+if [ ! -d $symbols_dir ] ; then
+    echo "Cannot locate symbols directory: $symbols_dir" >&2
+    exit 1
+fi
+
+generator_dir="$(dirname $this_script_dir)/make/langtools/src/classes/build/tools/symbolgenerator"
+
 if [ "$1x" = "x" ] ; then
     echo "Must provide the target JDK as a parameter:" >&2
     echo "$0 <target-jdk>" >&2
     exit 1
 fi;
+
+if [ ! -d $1 ] ; then
+    echo "Target JDK argument is not a directory:" $1 >&2
+    exit 1
+fi;
+
+if [ ! -x $1/bin/java ] ; then
+    echo "Target JDK argument is not a valid JDK: $1" >&2
+    exit 1
+fi;
+
+cd $symbols_dir
 
 if [ ! -f symbols ] ; then
     echo "Must run inside the src/jdk.compiler/share/data/symbols directory" >&2
@@ -72,5 +99,5 @@ $1/bin/java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
             --add-modules jdk.jdeps \
-            ../../../../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java \
+            $generator_dir/CreateSymbols.java \
             build-description-incremental symbols include.list
