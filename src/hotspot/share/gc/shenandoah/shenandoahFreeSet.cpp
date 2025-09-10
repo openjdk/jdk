@@ -2444,7 +2444,8 @@ void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion
   if (IS_MUTATOR) {
     OrderAccess::fence();
     while (region->direct_alloc_mutators() > 0) {
-      os::naked_yield();
+      if (os::is_MP()) SpinPause();
+      else os::naked_yield();
     }
   }
   region->release_from_direct_allocation();
