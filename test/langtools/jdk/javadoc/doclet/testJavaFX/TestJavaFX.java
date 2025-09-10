@@ -25,7 +25,7 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205 8249633 8261976 8350920
+ *      8203791 8184205 8249633 8261976 8350920 8367007
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -54,10 +54,17 @@ public class TestJavaFX extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-javafx",
                 "--disable-javafx-strict-checks",
-                "-Xdoclint:all,-missing",
                 "-package",
                 "pkg1");
         checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "C.java:78: warning: no comment");
+        checkOutput(Output.OUT, false,
+                "C.java:59: warning: no comment",
+                "C.java:61: warning: no comment",
+                "C.java:63: warning: no comment",
+                "C.java:67: warning: no comment");
 
         checkOutput("pkg1/C.html", true,
                 """
@@ -266,6 +273,31 @@ public class TestJavaFX extends JavadocTester {
                     </section>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");
+
+        // Test for inherited properties and property methods.
+        checkOrder("pkg1/B.html",
+                """
+                    Properties inherited from class&nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a>""",
+                """
+                    <div class="block">Defines if paused.</div>""",
+                """
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>""",
+                """
+                    Methods inherited from class&nbsp;<a href="C.html#method-summary" title="class in pkg1">C</a>""",
+                """
+                    <div class="block">Gets the value of the <code>rate</code> property.</div>""",
+                """
+                    <div class="block">Gets the value of the <code>paused</code> property.</div>""",
+                """
+                    <div class="block">Defines if paused.</div>""",
+                """
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>""",
+                """
+                    <div class="block">Sets the value of the <code>paused</code> property.</div>""",
+                """
+                    <div class="block">Sets the value of the <code>rate</code> property.</div>""");
     }
 
     /*
