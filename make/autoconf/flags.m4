@@ -320,12 +320,16 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 [
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
+    if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+      AS_NON_ASM_EXTENSION_OPTION=-Ta
+    fi
   else
     # The option used to specify the target .o,.a or .so file.
     # When compiling, how to specify the to be created object file.
     CC_OUT_OPTION='-o$(SPACE)'
   fi
   AC_SUBST(CC_OUT_OPTION)
+  AC_SUBST(AS_NON_ASM_EXTENSION_OPTION)
 
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then

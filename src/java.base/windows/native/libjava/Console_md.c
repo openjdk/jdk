@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,21 +31,28 @@
 #include <stdlib.h>
 #include <Wincon.h>
 
-JNIEXPORT jboolean JNICALL
-Java_java_io_Console_istty(JNIEnv *env, jclass cls)
+JNIEXPORT jint JNICALL
+Java_java_io_Console_ttyStatus(JNIEnv *env, jclass cls)
 {
+    jint ret = 0;
     HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
 
-    if (hStdIn == INVALID_HANDLE_VALUE ||
-        hStdOut == INVALID_HANDLE_VALUE) {
-        return JNI_FALSE;
+    if (hStdIn != INVALID_HANDLE_VALUE &&
+        GetFileType(hStdIn) == FILE_TYPE_CHAR) {
+        ret |= java_io_Console_TTY_STDIN_MASK;
     }
 
-    if (GetFileType(hStdIn) != FILE_TYPE_CHAR ||
-        GetFileType(hStdOut) != FILE_TYPE_CHAR) {
-        return JNI_FALSE;
+    if (hStdOut != INVALID_HANDLE_VALUE &&
+        GetFileType(hStdOut) == FILE_TYPE_CHAR) {
+        ret |= java_io_Console_TTY_STDOUT_MASK;
     }
 
-    return JNI_TRUE;
+    if (hStdErr != INVALID_HANDLE_VALUE &&
+        GetFileType(hStdErr) == FILE_TYPE_CHAR) {
+        ret |= java_io_Console_TTY_STDERR_MASK;
+    }
+
+    return ret;
 }

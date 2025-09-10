@@ -22,12 +22,11 @@
  *
  */
 
-
+#include "cds/aotMetaspace.hpp"
 #include "cds/aotOopChecker.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -68,7 +67,7 @@ void AOTOopChecker::check(oop obj) {
       log_error(aot)("Must cache only URLs with jrt/file protocols but got: %s",
                      java_lang_String::as_quoted_ascii(protocol));
       HeapShared::debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
   }
 }

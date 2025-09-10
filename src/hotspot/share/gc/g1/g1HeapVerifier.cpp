@@ -235,6 +235,8 @@ private:
   VerifyOption     _vo;
   bool             _failures;
 
+  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->in_full_gc(); }
+
 public:
   VerifyRegionClosure(VerifyOption vo)
     : _vo(vo),
@@ -246,7 +248,7 @@ public:
 
   bool do_heap_region(G1HeapRegion* r) {
     guarantee(!r->has_index_in_opt_cset(), "Region %u still has opt collection set index %u", r->hrm_index(), r->index_in_opt_cset());
-    guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
+    guarantee(is_in_full_gc() || !r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete outside full gc, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
     guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
 
