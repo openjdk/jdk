@@ -55,6 +55,14 @@ import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
 
+// We generate random Expressions from primitive type operators.
+//
+// The goal is to generate random inputs with constrained TypeInt / TypeLong ranges / KnownBits,
+// and then verify the output value, ranges and bits.
+//
+// Should this test fail and make a lot of noise in the CI, you have two choices:
+// - Problem-list this test: but other tests may also use the same broken operators.
+// - Temporarily remove the operator from {@code Operations.PRIMITIVE_OPERATIONS}.
 public class ExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -84,6 +92,7 @@ public class ExpressionFuzzer {
         tests.add(PrimitiveType.generateLibraryRNG());
 
         // Create the body for the test. We use it twice: compiled and reference.
+        // Execute the expression and catch expected Exceptions.
         var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
             """
             try {
@@ -100,6 +109,12 @@ public class ExpressionFuzzer {
             """
         ));
 
+        // Machinery for the "checksum" method.
+        //
+        // We want to do output verification. We don't just want to check if the output value is correct,
+        // but also if the signed/unsigned/KnownBits are correct of the TypeInt and TypeLong. For this,
+        // we add some comparisons. If we get the ranges/bits wrong (too tight), then the comparisons
+        // can wrongly constant fold, and we can detect that in the output array.
         List<StringPair> unsignedCmp = List.of(
             new StringPair("(val < ", ")"),
             new StringPair("(val > ", ")"),
@@ -178,6 +193,8 @@ public class ExpressionFuzzer {
             """
         ));
 
+        // We need to prepare some random values to pass into the test method. We generate the values
+        // once, and pass the same values into both the compiled and reference method.
         var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
             //"#type #name = ", type.con(), ";\n"
             "#type #name = ",
@@ -185,6 +202,13 @@ public class ExpressionFuzzer {
             ";\n"
         ));
 
+        // The template that generates the whole test machinery needed for testing a given expression.
+        // Generates:
+        // - @Test method: generate arguments and call compiled and reference test with it.
+        //                 result verification (only if the result is known to be deterministic).
+        //
+        // - instantiate compiled and reference test methods.
+        // - instantiate checksum method.
         var testTemplate = Template.make("expression", (Expression expression) -> {
             // Fix the arguments for both the compiled and reference method.
             List<MethodArgument> methodArguments = new ArrayList<>();
@@ -247,8 +271,10 @@ public class ExpressionFuzzer {
             );
         });
 
+        // Generate expressions with the primitive types.
         for (PrimitiveType type : PRIMITIVE_TYPES) {
             for (int i = 0; i < 10; i++) {
+                // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
                 Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth);
                 tests.add(testTemplate.asToken(expression));
