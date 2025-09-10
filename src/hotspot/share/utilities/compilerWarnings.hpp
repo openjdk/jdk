@@ -119,8 +119,10 @@
   extern "C" {                                                  \
     [[deprecated(Alternative)]]                                 \
     Signature                                                   \
-    /* Not PASTE_TOKENS, which expands FFCN => nothing. */      \
-    FORBIDDEN_FUNCTION_COND_NOEXCEPT_ ## Noexcept               \
+    /* 2-step pasting to avoid expansion of FFCN => nothing. */ \
+    PASTE_TOKENS(                                               \
+      FORBIDDEN_FUNCTION_,                                      \
+      PASTE_TOKENS(COND_NOEXCEPT_, Noexcept))                   \
     ;                                                           \
   }
 
@@ -144,7 +146,7 @@
 #define FORBID_IMPORTED_C_FUNCTION(Signature, Noexcept, Alternative) \
   FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Noexcept, Alternative)
 
-#define FORBID_NORETURN_C_FUNCTION(Signature, Noexcept, Alternative)    \
+#define FORBID_NORETURN_C_FUNCTION(Signature, Noexcept, Alternative) \
   FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE Signature, Noexcept, Alternative)
 
 #define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Noexcept, Alternative) \

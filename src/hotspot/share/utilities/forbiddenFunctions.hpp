@@ -58,8 +58,11 @@ FORBID_IMPORTED_NORETURN_C_FUNCTION(void _exit(int), /* not noexcept */, "use os
 FORBID_IMPORTED_C_FUNCTION(char* strerror(int), noexcept, "use os::strerror");
 FORBID_IMPORTED_C_FUNCTION(char* strtok(char*, const char*), noexcept, "use strtok_r");
 
-FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), noexcept, "use os::snprintf");
-FORBID_C_FUNCTION(int snprintf(char*, size_t, const char*, ...), noexcept, "use os::snprintf");
+// AIX declarations for sprintf and snprintf are not noexcept, which is
+// inconsistent with most other system header declarations, including being
+// inconsistent with vsprintf and fsnprintf.
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), NOT_AIX(noexcept), "use os::snprintf");
+FORBID_C_FUNCTION(int snprintf(char*, size_t, const char*, ...), NOT_AIX(noexcept), "use os::snprintf");
 
 PRAGMA_DIAG_PUSH
 FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
