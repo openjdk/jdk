@@ -59,15 +59,25 @@
  *
  * Some implementation considerations.
  *
- * It looks attractive to get rid of RF nodes early and transfer to safepoint-attached representation,
+ * (a) It looks attractive to get rid of RF nodes early and transfer to safepoint-attached representation,
  * but it is not correct until loop opts are done.
  *
- * RF nodes may interfere with RA, so stand-alone RF nodes are eliminated and their referents are
- * transferred to corresponding safepoints (phase #2). When safepoints are pruned during macro expansion,
- * corresponding reachability edges also go away.
+ * Live ranges of values are routinely extended during loop opts. And it can break the invariant that
+ * all interfering safepoints contain the referent in their oop map. (If an interfering safepoint doesn't
+ * keep the referent alive, then it becomes possible for the referent to be prematurely GCed.)
  *
- * Unfortunately, it's not straightforward to stay with safepoint-attached representation till the very end,
- * because information about derived oops is attached to safepoints the very same similar way. So, for now RFs are
+ * After loop opts are over, it becomes possible to reliably enumerate all interfering safe points and
+ * ensure the referent present in their oop maps.
+ *
+ * (b) RF nodes may interfere with Register Allocator (RA). If a safepoint is pruned during macro expansion,
+ * it can make some RF nodes redundant, but we don't have information about their relations anymore to detect that.
+ * Redundant RF node unnecessarily extends referent's live range and increases register pressure.
+ *
+ * Hence, we eliminate RF nodes and transfer their referents to corresponding safepoints (phase #2).
+ * When safepoints are pruned, corresponding reachability edges also go away.
+ *
+ * (c) Unfortunately, it's not straightforward to stay with safepoint-attached representation till the very end,
+ * because information about derived oops is attached to safepoints in a similar way. So, for now RFs are
  * rematerialized at safepoints before RA (phase #3).
  */
 
@@ -125,7 +135,8 @@ Node* ReachabilityFenceNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-// Turn the RF node into an no-op by setting it's referent to null.
+// Turn the RF node into a no-op by setting it's referent to null.
+// Subsequent IGVN pass removes cleared nodes.
 bool ReachabilityFenceNode::clear_referent(PhaseIterGVN& phase) {
   if (phase.type(in(1)) == TypePtr::NULL_PTR) {
     return false;
@@ -306,7 +317,7 @@ bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_on
 // Optimization pass over reachability fences during loop opts.
 // Eliminate redundant RFs and move RFs with loop-invariant referent out of the loop.
 bool PhaseIdealLoop::optimize_reachability_fences() {
-  Compile::TracePhase tp(_t_reachability);
+  Compile::TracePhase tp(_t_reachability_optimize);
 
   if (!OptimizeReachabilityFences) {
     return false;
@@ -431,12 +442,11 @@ static uint rf_start_offset(SafePointNode* sfpt) {
 // All RFs are replaced with edges from corresponding referents to interfering safepoints.
 // Interfering safepoints are safepoint nodes which are reachable from the RF to its referent through CFG.
 bool PhaseIdealLoop::eliminate_reachability_fences() {
-  Compile::TracePhase tp(_t_reachability);
+  Compile::TracePhase tp(_t_reachability_eliminate);
 
-  if (!OptimizeReachabilityFences) {
-    return false;
-  }
+  assert(OptimizeReachabilityFences, "required");
 
+  ResourceMark rm;
   Unique_Node_List redundant_rfs;
   Node_List worklist;
   for (int i = 0; i < C->reachability_fences_count(); i++) {

@@ -2507,14 +2507,15 @@ void Compile::Optimize() {
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
-  if (!optimize_loops(igvn, LoopOptsDefault)) {
+  if (!optimize_loops(igvn, LoopOptsDefaultFinal)) {
     return;
   }
 
   // No more loop opts. It is safe to get rid of all reachability fence nodes
   // and migrate reachability edges to safepoints.
   if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
-    TracePhase tp(_t_idealLoop);
+    TracePhase tp1(_t_idealLoop);
+    TracePhase tp2(_t_reachability);
     PhaseIdealLoop::optimize(igvn, LoopOptsEliminateRFs);
     print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
     if (failing())  return;

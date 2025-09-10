@@ -4929,7 +4929,7 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 void PhaseIdealLoop::build_and_optimize() {
   assert(!C->post_loop_opts_phase(), "no loop opts allowed");
 
-  bool do_split_ifs = (_mode == LoopOptsDefault);
+  bool do_split_ifs = (_mode == LoopOptsDefault || _mode == LoopOptsDefaultFinal);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
   bool eliminate_rfs = (_mode == LoopOptsEliminateRFs);
@@ -5327,6 +5327,16 @@ void PhaseIdealLoop::build_and_optimize() {
       tty->print_cr("PredicatesOff");
     }
     C->set_major_progress();
+  }
+
+  // Loop opts are over. It is safe to get rid of all reachability fence nodes
+  // and migrate reachability edges to safepoints.
+  if (OptimizeReachabilityFences && !C->major_progress() && C->reachability_fences_count() > 0 && _mode == LoopOptsDefaultFinal) {
+    Compile::TracePhase tp2(_t_reachability);
+    eliminate_reachability_fences();
+    if (C->failing())  return;
+    C->print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
+    assert(C->reachability_fences_count() == 0, "no RF nodes allowed");
   }
 }
 

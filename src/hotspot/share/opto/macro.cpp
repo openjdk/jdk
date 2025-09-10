@@ -970,7 +970,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         }
         _igvn._worklist.push(ac);
       } else if (use->is_ReachabilityFence() && OptimizeReachabilityFences) {
-        use->as_ReachabilityFence()->clear_referent(_igvn); // redundant fence
+        use->as_ReachabilityFence()->clear_referent(_igvn); // redundant fence; will be removed during IGVN
       } else {
         eliminate_gc_barrier(use);
       }

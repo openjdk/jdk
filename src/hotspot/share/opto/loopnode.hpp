@@ -743,7 +743,7 @@ public:
   Node *is_loop_exit(Node *iff) const;
 
   // Return unique loop-exit projection or null if there are multiple exits exist.
-  Node* unique_loop_exit_or_null();
+  IfFalseNode* unique_loop_exit_or_null();
 
   // Remove simplistic dead code from loop body
   void DCE_loop_body();

@@ -104,6 +104,7 @@ class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
+  LoopOptsDefaultFinal,
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsEliminateRFs,
