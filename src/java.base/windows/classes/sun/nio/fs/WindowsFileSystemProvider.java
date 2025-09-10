@@ -33,7 +33,6 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
@@ -419,15 +418,22 @@ class WindowsFileSystemProvider
         }
     }
 
-    // contains file attributes and its handle
-    // the attributes' key is valid as long as the handle remains open
-    private record LinkAttributes(WindowsFileAttributes attrs, long handle) {
+    /**
+     * Contains the attributes of a given file system entry and the open
+     * handle from which they were obtained. The handle must remain open
+     * until the volume serial number and file index of the attributes
+     * are no longer needed for comparison with other attributes.
+     *
+     * @param attrs  the file system entry attributes
+     * @param handle the open Windows file handle
+     */
+    private record EntryAttributes(WindowsFileAttributes attrs, long handle) {
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (obj instanceof LinkAttributes other) {
+            if (obj instanceof EntryAttributes other) {
                 WindowsFileAttributes oattrs = other.attrs();
-                return oattrs.volSerialNumber() == attrs.volSerialNumber() && 
+                return oattrs.volSerialNumber() == attrs.volSerialNumber() &&
                        oattrs.fileIndexHigh()   == attrs.fileIndexHigh() &&
                        oattrs.fileIndexLow()    == attrs.fileIndexLow();
             }
@@ -440,12 +446,22 @@ class WindowsFileSystemProvider
         }
     }
 
-    // find the attributes of the last accessible link in the chain
-    private LinkAttributes lastFileAttrs(WindowsPath path)
+    /**
+     * Returns the attributes of the last symbolic link encountered in the
+     * specified path. Links are not resolved in the path taken as a whole,
+     * but rather then first link is followed, then its target, and so on,
+     * until no more links are encountered.  The handle contained in the
+     * returned value must be closed once the attributes are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if no links are found
+     * @throws FileSystemLoopException if a symbolic link cycle is encountered
+     */
+    private EntryAttributes lastLinkAttributes(WindowsPath path)
         throws IOException, WindowsException
     {
-        var fileAttrs = new HashSet<LinkAttributes>();
-        LinkAttributes lastFileAttrs = null;
+        var linkAttrs = new HashSet<EntryAttributes>();
+        EntryAttributes lastLinkAttributes = null;
         try {
             while (path != null) {
                 long h;
@@ -458,39 +474,49 @@ class WindowsFileSystemProvider
                     break;
                 }
 
-                WindowsFileAttributes attrs =
-                    WindowsFileAttributes.readAttributes(h);
+                WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(h);
                 if (!attrs.isSymbolicLink())
                     break;
 
-                LinkAttributes linkAttr = new LinkAttributes(attrs, h);
-                if (!fileAttrs.add(linkAttr))
+                EntryAttributes linkAttr = new EntryAttributes(attrs, h);
+                if (!linkAttrs.add(linkAttr))
                     throw new FileSystemLoopException(path.toString());
 
-                lastFileAttrs = linkAttr;
+                lastLinkAttributes = linkAttr;
 
                 String target = WindowsLinkSupport.readLink(path, h);
                 path = WindowsPath.parse(path.getFileSystem(), target);
             }
         } catch (IOException|WindowsException e) {
-            if (lastFileAttrs != null) {
-                CloseHandle(lastFileAttrs.handle());
+            if (lastLinkAttributes != null) {
+                CloseHandle(lastLinkAttributes.handle());
                 throw e;
             }
         } finally {
-            fileAttrs.remove(lastFileAttrs);
-            for (LinkAttributes la : fileAttrs)
+            linkAttrs.remove(lastLinkAttributes);
+            for (EntryAttributes la : linkAttrs)
                 CloseHandle(la.handle());
         }
 
-        return lastFileAttrs;
+        return lastLinkAttributes;
     }
 
-    // find the key by following links
-    private LinkAttributes fileAttrs(WindowsPath file) throws WindowsException {
+    /**
+     * Returns the attributes of the file located by the supplied parameter
+     * with all symbolic links in its path resolved. If the file located by
+     * the resolved path does not exist, then null is returned. The handle
+     * contained in the returned value must be closed once the attributes
+     * are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if the real path does not exist
+     */
+    private EntryAttributes realPathAttributes(WindowsPath path)
+        throws WindowsException
+    {
         long h = INVALID_HANDLE_VALUE;
         try {
-            h = file.openForReadAttributeAccess(true);
+            h = path.openForReadAttributeAccess(true);
         } catch (WindowsException x) {
             if (x.lastError() != ERROR_FILE_NOT_FOUND &&
                 x.lastError() != ERROR_PATH_NOT_FOUND &&
@@ -507,7 +533,7 @@ class WindowsFileSystemProvider
                 throw x;
             }
 
-            return new LinkAttributes(attrs, h);
+            return new EntryAttributes(attrs, h);
         }
 
         return null;
@@ -521,22 +547,21 @@ class WindowsFileSystemProvider
             return true;
         if (obj2 == null)
             throw new NullPointerException();
-        if (!(obj2 instanceof WindowsPath))
+        if (!(obj2 instanceof WindowsPath file2))
             return false;
-        WindowsPath file2 = (WindowsPath)obj2;
 
-        LinkAttributes attrs1 = null;
+        EntryAttributes attrs1 = null;
         try {
-            attrs1 = fileAttrs(file1);
+            attrs1 = realPathAttributes(file1);
             if (attrs1 == null)
-                attrs1 = lastFileAttrs(file1);
+                attrs1 = lastLinkAttributes(file1);
             if (attrs1 != null) {
                 WindowsFileAttributes attrs = attrs1.attrs();
-                LinkAttributes attrs2 = null;
+                EntryAttributes attrs2 = null;
                 try {
-                     attrs2 = fileAttrs(file2);
+                     attrs2 = realPathAttributes(file2);
                      if (attrs2 == null)
-                         attrs2 = lastFileAttrs(file2);
+                         attrs2 = lastLinkAttributes(file2);
                      if (attrs2 != null)
                          return attrs1.equals(attrs2);
                 } catch (WindowsException y) {
