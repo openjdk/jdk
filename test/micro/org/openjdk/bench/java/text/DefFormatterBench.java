@@ -57,7 +57,7 @@ public class DefFormatterBench {
     public BigDecimal[] bdLargeValues;
     public BigDecimal[] bdSmallValues;
 
-    @Setup(Level.Iteration)
+    @Setup(Level.Invocation)
     public void setup() {
         values = new double[] {
             1.23, 1.49, 1.80, 1.7, 0.0, -1.49, -1.50, 9999.9123, 1.494, 1.495, 1.03, 25.996, -25.996
