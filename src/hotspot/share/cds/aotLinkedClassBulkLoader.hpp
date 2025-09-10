@@ -88,7 +88,6 @@ public:
 
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
   static bool has_finished_loading_classes() NOT_CDS_RETURN_(true);
-  static bool is_pending_aot_linked_class(Klass* k) NOT_CDS_RETURN_(false);
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

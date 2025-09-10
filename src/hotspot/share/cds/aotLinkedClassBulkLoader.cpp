@@ -503,56 +503,6 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
   HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
 }
 
-bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
-  if (!CDSConfig::is_using_aot_linked_classes()) {
-    return false;
-  }
-
-  if (_all_completed) { // no more pending aot-linked classes
-    return false;
-  }
-
-  if (k->is_objArray_klass()) {
-    k = ObjArrayKlass::cast(k)->bottom_klass();
-  }
-  if (!k->is_instance_klass()) {
-    // type array klasses (and their higher dimensions),
-    // must have been loaded before a GC can ever happen.
-    return false;
-  }
-
-  // There's a small window during VM start-up where a not-yet loaded aot-linked
-  // class k may be discovered by the GC during VM initialization. This can happen
-  // when the heap contains an aot-cached instance of k, but k is not ready to be
-  // loaded yet. (TODO: JDK-8342429 eliminates this possibility)
-  //
-  // The following checks try to limit this window as much as possible for each of
-  // the four AOTLinkedClassCategory of classes that can be aot-linked.
-
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->defined_by_boot_loader()) {
-    if (ik->module() != nullptr && ik->in_javabase_module()) {
-      // AOTLinkedClassCategory::BOOT1 -- all aot-linked classes in
-      // java.base must have been loaded before a GC can ever happen.
-      return false;
-    } else {
-      // AOTLinkedClassCategory::BOOT2 classes cannot be loaded until
-      // module system is ready.
-      return !_boot2_completed;
-    }
-  } else if (ik->defined_by_platform_loader()) {
-    // AOTLinkedClassCategory::PLATFORM classes cannot be loaded until
-    // the platform class loader is initialized.
-    return !_platform_completed;
-  } else if (ik->defined_by_app_loader()) {
-    // AOTLinkedClassCategory::APP cannot be loaded until the app class loader
-    // is initialized.
-    return !_app_completed;
-  } else {
-    return false;
-  }
-}
-
 void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
