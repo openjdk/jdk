@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 
 /**
@@ -73,7 +74,19 @@ record MacBundle(Path root) {
         return new MacBundle(dir).isValid();
     }
 
-    static MacBundle fromAppImageLayout(AppImageLayout layout) {
-        return new MacBundle(layout.rootDirectory());
+    static Optional<MacBundle> fromAppImageLayout(AppImageLayout layout) {
+        final var root = layout.rootDirectory();
+        final var bundleSubdir = root.relativize(layout.runtimeDirectory());
+        final var contentsDirname = Path.of("Contents");
+        var bundleRoot = root;
+        for (int i = 0; i != bundleSubdir.getNameCount(); i++) {
+            var nameComponent = bundleSubdir.getName(i);
+            if (contentsDirname.equals(nameComponent)) {
+                return Optional.of(new MacBundle(bundleRoot));
+            } else {
+                bundleRoot = bundleRoot.resolve(nameComponent);
+            }
+        }
+        return Optional.empty();
     }
 }

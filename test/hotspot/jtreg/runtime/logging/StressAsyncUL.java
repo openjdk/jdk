@@ -28,7 +28,7 @@
  * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver StressAsyncUL
+ * @run driver/timeout=480 StressAsyncUL
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

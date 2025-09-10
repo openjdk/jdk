@@ -69,14 +69,25 @@ else ifeq ($(BASE_OS), Fedora)
   ifeq ($(BASE_OS_VERSION), )
     BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
   endif
+  ifeq ($(filter aarch64 armhfp ppc64le riscv64 s390x x86_64, $(ARCH)), )
+    $(error Only "aarch64 armhfp ppc64le riscv64 s390x x86_64" architectures are supported for Fedora, but "$(ARCH)" was requested)
+  endif
   ifeq ($(ARCH), riscv64)
+    ifeq ($(filter 38 39 40 41, $(BASE_OS_VERSION)), )
+      $(error Only Fedora 38-41 are supported for "$(ARCH)", but Fedora $(BASE_OS_VERSION) was requested)
+    endif
     BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
   else
-    LATEST_ARCHIVED_OS_VERSION := 35
-    ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+    LATEST_ARCHIVED_OS_VERSION := 36
+    ifeq ($(filter aarch64 armhfp x86_64, $(ARCH)), )
       FEDORA_TYPE := fedora-secondary
     else
       FEDORA_TYPE := fedora/linux
+    endif
+    ifeq ($(ARCH), armhfp)
+      ifneq ($(BASE_OS_VERSION), 36)
+        $(error Fedora 36 is the last release supporting "armhfp", but $(BASE_OS) was requested)
+      endif
     endif
     NOT_ARCHIVED := $(shell [ $(BASE_OS_VERSION) -gt $(LATEST_ARCHIVED_OS_VERSION) ] && echo true)
     ifeq ($(NOT_ARCHIVED),true)
@@ -464,7 +475,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter riscv64 ppc64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif

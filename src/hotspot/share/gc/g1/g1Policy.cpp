@@ -97,10 +97,6 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-
-  // We immediately start allocating regions placing them in the collection set.
-  // Initialize the collection set info.
-  _collection_set->start_incremental_building();
 }
 
 void G1Policy::record_young_gc_pause_start() {
@@ -668,6 +664,12 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
 void G1Policy::record_pause_start_time() {
   Ticks now = Ticks::now();
   _cur_pause_start_sec = now.seconds();
+
+  double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_at_pause_end_ms();
+  double cur_gc_cpu_time_ms = _analytics->gc_cpu_time_ms();
+
+  double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
+  _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
 }
 
 void G1Policy::record_young_collection_start() {
@@ -1350,8 +1352,7 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
   double pause_time_sec = end_time_sec - start_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
 
-  _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
-  _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+  _analytics->update_gc_time_ratios(end_time_sec, pause_time_ms);
 
   if (gc_type == G1GCPauseType::Cleanup || gc_type == G1GCPauseType::Remark) {
     _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
@@ -1374,6 +1375,9 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
   }
 
   update_time_to_mixed_tracking(gc_type, start, end);
+
+  double elapsed_gc_cpu_time = _analytics->gc_cpu_time_ms();
+  _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
