@@ -36,6 +36,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -89,6 +90,7 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
@@ -132,6 +134,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
+  jlong _vmthread_cpu_time;
+
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
   GCCause::Cause _gc_cause;
@@ -158,8 +162,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -206,6 +209,13 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
+
  public:
 
   static inline size_t filler_array_max_size() {
@@ -239,12 +249,13 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -450,10 +461,6 @@ protected:
 
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
-
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
 
   void print_before_gc() const;
   void print_after_gc() const;

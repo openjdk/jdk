@@ -410,6 +410,7 @@ public class TestPrintContextual {
     private static List<String> readPrintedLines(Path file, String... options) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jfr");
         launcher.addToolArg("print");
+        launcher.addToolArg("--exact");
         for (String option : options) {
             launcher.addToolArg(option);
         }

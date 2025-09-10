@@ -1074,8 +1074,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     assert( !method ||
             !method->is_synchronized() ||
             method->is_native() ||
-            num_mon > 0 ||
-            !GenerateSynchronizationCode,
+            num_mon > 0,
             "monitors must always exist for synchronized methods");
 
     // Build the growable array of ScopeValues for exp stack
@@ -1399,10 +1398,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
   cb->initialize_consts_size(const_req);
   cb->initialize_stubs_size(stub_req);
   cb->initialize_oop_recorder(C->env()->oop_recorder());
-
-  // fill in the nop array for bundling computations
-  MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list);
 
   return cb;
 }
@@ -2063,8 +2058,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   // Create a MachNopNode
   _nop = new MachNopNode();
 
-  // Now that the nops are in the array, save the count
-  // (but allow entries for the nops)
+  // Save the count
   _node_bundling_limit = compile.unique();
   uint node_max = _regalloc->node_regs_max_index();
 
@@ -3490,7 +3484,8 @@ void PhaseOutput::install_stub(const char* stub_name) {
       } else {
         assert(rs->is_runtime_stub(), "sanity check");
         C->set_stub_entry_point(rs->entry_point());
-        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, C->stub_id(), stub_name);
+        BlobId blob_id = StubInfo::blob(C->stub_id());
+        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, blob_id);
       }
     }
   }

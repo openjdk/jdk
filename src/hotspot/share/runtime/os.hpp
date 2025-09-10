@@ -293,6 +293,8 @@ class os: AllStatic {
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
 
+  static double elapsed_process_cpu_time();
+
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
   // information may require a lock on some platforms.
@@ -330,15 +332,14 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  static julong available_memory();
-  static julong used_memory();
-  static julong free_memory();
+  [[nodiscard]] static bool available_memory(size_t& value);
+  [[nodiscard]] static bool used_memory(size_t& value);
+  [[nodiscard]] static bool free_memory(size_t& value);
 
-  static jlong total_swap_space();
-  static jlong free_swap_space();
+  [[nodiscard]] static bool total_swap_space(size_t& value);
+  [[nodiscard]] static bool free_swap_space(size_t& value);
 
-  static julong physical_memory();
-  static bool has_allocatable_memory_limit(size_t* limit);
+  static size_t physical_memory();
   static bool is_server_class_machine();
   static size_t rss();
 
@@ -446,6 +447,16 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
+
+  // Returns an upper limit beyond which reserve_memory() calls are guaranteed
+  // to fail. It is not guaranteed that reserving less memory than this will
+  // succeed, however.
+  static size_t reserve_memory_limit();
+
+  // Returns an upper limit beyond which commit_memory() calls are guaranteed
+  // to fail. It is not guaranteed that committing less memory than this will
+  // succeed, however.
+  static size_t commit_memory_limit();
 
   inline static size_t cds_core_region_alignment();
 
@@ -793,12 +804,20 @@ class os: AllStatic {
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
-  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
-  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
-  // Performs snprintf and asserts the result is non-negative (so there was not
-  // an encoding error) and that the output was not truncated.
-  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  // Performs vsnprintf and asserts the result is non-negative (so there was not
+  // an encoding error or any other kind of usage error).
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 0)
+  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args);
+  // Delegates to vsnprintf.
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 4)
+  static int snprintf(char* buf, size_t len, const char* fmt, ...);
+
+  // Delegates to snprintf and asserts that the output was not truncated.
+  ATTRIBUTE_PRINTF(3, 4)
+  static void snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);

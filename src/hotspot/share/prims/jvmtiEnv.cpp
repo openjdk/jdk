@@ -22,10 +22,9 @@
  *
  */
 
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -675,7 +674,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
-    ClassLoaderExt::append_boot_classpath(zip_entry);
+    ClassLoader::append_boot_classpath(zip_entry);
 #else
     ClassLoader::add_to_boot_append_entries(zip_entry);
 #endif
@@ -1368,11 +1367,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *owned_monitor_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
-  }
-
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
@@ -1426,11 +1420,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *monitor_info_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
   }
 
   // growable array of jvmti monitors info on the C-heap

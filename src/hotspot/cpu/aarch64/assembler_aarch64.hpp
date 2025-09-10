@@ -3814,7 +3814,11 @@ private:
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
-    if (imm8 <= 127 && imm8 >= -128) {
+    if (isFloat) {
+      assert(T != B, "invalid size");
+      assert((imm8 >> 8) == 0, "invalid immediate");
+      sh = 0;
+    } else if (imm8 <= 127 && imm8 >= -128) {
       sh = 0;
     } else if (T != B && imm8 <= 32512 && imm8 >= -32768 && (imm8 & 0xff) == 0) {
       sh = 1;
@@ -3824,7 +3828,7 @@ private:
     }
     int m = isMerge ? 1 : 0;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
-    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), f(imm8 & 0xff, 12, 5), rf(Zd, 0);
   }
 
 public:
@@ -3834,7 +3838,7 @@ public:
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<int8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
@@ -4231,12 +4235,29 @@ public:
     sf(imm1, 9, 5), rf(Zd, 0);
   }
 
-  // SVE programmable table lookup/permute using vector of element indices
-  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+private:
+  void _sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, unsigned reg_count, FloatRegister Zm) {
     starti;
     assert(T != Q, "invalid size");
+    // Only supports one or two vector lookup. One vector lookup was introduced in SVE1
+    // and two vector lookup in SVE2
+    assert(0 < reg_count && reg_count <= 2, "invalid number of registers");
+
+    int op11 = (reg_count == 1) ? 0b10 : 0b01;
+
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
-    f(0b001100, 15, 10), rf(Zn, 5), rf(Zd, 0);
+    f(0b001, 15, 13), f(op11, 12, 11), f(0b0, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
+public:
+  // SVE/SVE2 Programmable table lookup in one or two vector table (zeroing)
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+    _sve_tbl(Zd, T, Zn, 1, Zm);
+  }
+
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1, FloatRegister Zn2, FloatRegister Zm) {
+    assert(Zn1->successor() == Zn2, "invalid order of registers");
+    _sve_tbl(Zd, T, Zn1, 2, Zm);
   }
 
   // Shuffle active elements of vector to the right and fill with zero
@@ -4307,6 +4328,7 @@ public:
   static bool operand_valid_for_sve_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
   static int  operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T);
+  static bool operand_valid_for_sve_dup_immediate(int64_t imm);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);

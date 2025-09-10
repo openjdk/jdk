@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static org.testng.Assert.assertThrows;
  * @summary White box tests for HashMap-related internals around table sizing
  * @comment skip running this test on 32 bit VM
  * @requires vm.bits == "64"
- * @run testng/othervm -Xmx2g WhiteBoxResizeTest
+ * @run testng/othervm/timeout=960 -Xmx2g WhiteBoxResizeTest
  */
 public class WhiteBoxResizeTest {
 
