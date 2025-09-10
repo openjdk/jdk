@@ -1898,14 +1898,16 @@ public final class SunGraphics2D
 
     protected void validateCompClip() {
         int origClipState = clipState;
-        if (usrClip == null) {
+        final Shape clip = usrClip;
+
+        if (clip == null) {
             clipState = CLIP_DEVICE;
             clipRegion = devClip;
-        } else if (usrClip instanceof Rectangle2D clip) {
+        } else if (clip instanceof Rectangle2D rect2d) {
             clipState = CLIP_RECTANGULAR;
-            clipRegion = devClip.getIntersection(clip);
+            clipRegion = devClip.getIntersection(rect2d);
         } else {
-            PathIterator cpi = usrClip.getPathIterator(null);
+            PathIterator cpi = clip.getPathIterator(null);
             int[] box = new int[4];
             ShapeSpanIterator sr = LoopPipe.getFillSSI(this);
             try {
