@@ -654,7 +654,6 @@ public final class PassFailJFrame {
         text.setEditable(false);
         text.setBorder(createTextBorder());
         text.setCaretPosition(0);
-        text.getCaret().setVisible(false);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
