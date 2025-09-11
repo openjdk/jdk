@@ -170,7 +170,7 @@ void ReachabilityFenceNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra) con
 static bool is_significant_sfpt(Node* n) {
   if (n->is_SafePoint()) {
     SafePointNode* sfpt = n->as_SafePoint();
-    if (!sfpt->guaranteed_safepoint()) {
+    if (sfpt->jvms() == nullptr) {
       return false; // not a real safepoint
     } else if (sfpt->is_CallStaticJava() && sfpt->as_CallStaticJava()->is_uncommon_trap()) {
       return false; // uncommon traps are exit points
@@ -426,16 +426,8 @@ static void enumerate_interfering_sfpts(Node* rf, PhaseIdealLoop* phase, Node_Li
 }
 
 // Start offset for reachability info on a safepoint node.
-static uint rf_start_offset(SafePointNode* sfpt) {
-  uint nof_extra_edges = 0;
-  if (sfpt->is_Call()) {
-    address entry = sfpt->as_Call()->entry_point();
-    if (entry == OptoRuntime::new_array_Java() ||
-        entry == OptoRuntime::new_array_nozero_Java()) {
-      nof_extra_edges = 1; // valid_length_test_input
-    }
-  }
-  return sfpt->jvms()->oopoff() + nof_extra_edges;
+static uint rf_base_offset(SafePointNode* sfpt) {
+  return sfpt->jvms()->oopoff();
 }
 
 // Phase 2: migrate reachability info to safepoints.
@@ -460,7 +452,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
       while (safepoints.size() > 0) {
         SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
         assert(is_dominator(get_ctrl(referent), sfpt), "");
-        assert(sfpt->req() == rf_start_offset(sfpt), "");
+        assert(sfpt->req() == rf_base_offset(sfpt), "no extra edges allowed");
         if (sfpt->find_edge(referent) == -1) {
           worklist.push(sfpt);
           worklist.push(referent);
@@ -515,11 +507,23 @@ void Compile::expand_reachability_fences(Unique_Node_List& safepoints) {
   for (uint i = 0; i < safepoints.size(); i++) {
     SafePointNode* sfpt = safepoints.at(i)->as_SafePoint();
 
-    uint rf_offset = rf_start_offset(sfpt);
+    uint rf_offset = rf_base_offset(sfpt);
     if (sfpt->jvms() != nullptr && sfpt->req() > rf_offset) {
       assert(is_significant_sfpt(sfpt), "");
       Node* ctrl_out = sfpt_ctrl_out(sfpt);
       Node* ctrl_end = ctrl_out->unique_ctrl_out();
+
+      Node* extra_edge = nullptr;
+      if (sfpt->is_Call()) {
+        address entry = sfpt->as_Call()->entry_point();
+        if (entry == OptoRuntime::new_array_Java() ||
+            entry == OptoRuntime::new_array_nozero_Java()) {
+          // valid_length_test_input is appended during macro expansion at the very end
+          int last_idx = sfpt->req() - 1;
+          extra_edge = sfpt->in(last_idx);
+          sfpt->del_req(last_idx);
+        }
+      }
 
       while (sfpt->req() > rf_offset) {
         int idx = sfpt->req() - 1;
@@ -529,6 +533,10 @@ void Compile::expand_reachability_fences(Unique_Node_List& safepoints) {
         Node* new_rf = new ReachabilityFenceNode(C, ctrl_out, referent);
         ctrl_end->replace_edge(ctrl_out, new_rf);
         ctrl_end = new_rf;
+      }
+
+      if (extra_edge != nullptr) {
+        sfpt->add_req(extra_edge); // Add valid_length_test_input edge back
       }
     }
   }

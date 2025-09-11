@@ -34,6 +34,10 @@ class ReachabilityFenceNode : public Node {
 public:
   ReachabilityFenceNode(Compile* C, Node* ctrl, Node* referent)
       : Node(1) {
+    assert(referent->bottom_type()->isa_oopptr() ||
+           referent->bottom_type()->isa_narrowoop() != nullptr ||
+           referent->bottom_type() == TypePtr::NULL_PTR,
+           "%s", Type::str(referent->bottom_type()));
     init_class_id(Class_ReachabilityFence);
     init_req(TypeFunc::Control, ctrl);
     add_req(referent);
