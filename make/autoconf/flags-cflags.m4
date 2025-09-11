@@ -934,29 +934,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-
-  $2SVE_CFLAGS=""
-  if test "x$AARCH64_SVE_ENABLED" = xtrue; then
-    $2SVE_CFLAGS="-march=armv8-a+sve"
-    # Switching the initialization mode with gcc from 'pattern' to 'zero'
-    # avoids the use of unsupported `__builtin_clear_padding` for variable
-    # length aggregates
-    AC_LANG_PUSH(C)
-    OLD_CFLAGS="$CFLAGS"
-    if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
-      AC_MSG_CHECKING([Switching the initialization mode with gcc from pattern to zero])
-      INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
-        PREFIX: $3,
-        IF_TRUE: [
-          $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
-        ]
-      )
-    fi
-    CFLAGS="$OLD_CFLAGS"
-    AC_LANG_POP(C)
-  fi
-  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
