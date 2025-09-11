@@ -58,7 +58,7 @@ static void test(const char* s, const MallocLimitSet& expected) {
   EXPECT_TRUE(compare_sets(&set, &expected));
 }
 
-TEST(NMT, MallocLimitBasics) {
+TEST_VM(NMT, MallocLimitBasics) {
   MallocLimitSet expected;
 
   expected.set_global_limit(1 * G, MallocLimitMode::trigger_fatal);
@@ -76,7 +76,7 @@ TEST(NMT, MallocLimitBasics) {
   test("2048k:oom", expected);
 }
 
-TEST(NMT, MallocLimitPerCategory) {
+TEST_VM(NMT, MallocLimitPerCategory) {
   MallocLimitSet expected;
 
   expected.set_mem_tag_limit(mtMetaspace, 1 * M, MallocLimitMode::trigger_fatal);
@@ -92,7 +92,7 @@ TEST(NMT, MallocLimitPerCategory) {
   test("metaspace:1m,compiler:2m:oom,thread:3m:oom,threadstack:4m:oom,class:5m,classshared:6m", expected);
 }
 
-TEST(NMT, MallocLimitMemTagEnumNames) {
+TEST_VM(NMT, MallocLimitMemTagEnumNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
@@ -105,7 +105,7 @@ TEST(NMT, MallocLimitMemTagEnumNames) {
   test(option.base(), expected);
 }
 
-TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
+TEST_VM(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
@@ -124,7 +124,7 @@ static void test_failing(const char* s) {
   ASSERT_FALSE(set.parse_malloclimit_option(s, &err));
 }
 
-TEST(NMT, MallocLimitBadOptions) {
+TEST_VM(TNMT, MallocLimitBadOptions) {
   test_failing("abcd");
   test_failing("compiler:1g:");
   test_failing("compiler:1g:oom:mtTest:asas:1m");
