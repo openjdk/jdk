@@ -491,6 +491,7 @@ public:
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
 
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const {};
   void apply_vtn_inputs_to_node(Node* n, VTransformApplyState& apply_state) const;
   void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const;
 
@@ -553,6 +554,7 @@ public:
 
   virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };

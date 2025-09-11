@@ -1989,6 +1989,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
   ResourceMark rm;
   VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
+  // Apply: transform the node and connect with inputs (no backedges).
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyResult result = vtn->apply(apply_state);
@@ -1999,7 +2000,15 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
 
-  // TODO: cleanup backedges and memory state uses after loop?
+  // Cleanup: connect backedges
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    vtn->apply_backedge(apply_state);
+  }
+
+  // Memory uses after the loop: used to connect to old last store,
+  // now need to connect to new last store.
+  apply_state.fix_memory_state_uses_after_loop();
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
