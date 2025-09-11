@@ -25,6 +25,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/escape.hpp"
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
 #include "runtime/arguments.hpp"
@@ -161,6 +162,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
+  _cg = nullptr;
 
   if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files);
@@ -738,6 +740,18 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         lrg_id = _chaitin->_lrg_map.live_range_id(node);
       }
       print_prop("lrg", lrg_id);
+    }
+
+    if (_cg && node->_idx < _cg->nodes_size()) {
+      PointsToNode* ptn = _cg->ptnode_adr(node->_idx);
+      if (ptn) {
+        print_prop("ea_node", ptn->is_JavaObject() ? "javaobject" :
+                              ptn->is_LocalVar() ? "localvar" :
+                              ptn->is_Field() ? "field" :
+                              "");
+        print_prop("escape", ptn->escape_state());
+        print_prop("replaceable", ptn->scalar_replaceable());
+      }
     }
 
     if (node->is_MachSafePoint()) {
