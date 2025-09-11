@@ -553,7 +553,7 @@ class SignatureChekker : public SignatureIterator {
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);
-      guarantee(oopDesc::is_oop_or_null(vv, true),
+      guarantee(oopDesc::is_oop_or_null(vv),
                 "Bad JNI oop argument %d: " PTR_FORMAT " -> " PTR_FORMAT,
                 _pos, v, p2i(vv));
     }

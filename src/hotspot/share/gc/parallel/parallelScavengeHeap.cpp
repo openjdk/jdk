@@ -334,7 +334,9 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
-  PSParallelCompact::invoke(clear_all_soft_refs);
+  // No need for max-compaction in this context.
+  const bool should_do_max_compaction = false;
+  PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
 }
 
 static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
@@ -394,21 +396,11 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
     }
   }
 
-  // If we reach this point, we're really out of memory. Try every trick
-  // we can to reclaim memory. Force collection of soft references. Force
-  // a complete compaction of the heap. Any additional methods for finding
-  // free memory should be here, especially if they are expensive. If this
-  // attempt fails, an OOM exception will be thrown.
+  // Last resort GC; clear soft refs and do max-compaction before throwing OOM.
   {
-    // Make sure the heap is fully compacted
-    uintx old_interval = HeapMaximumCompactionInterval;
-    HeapMaximumCompactionInterval = 0;
-
     const bool clear_all_soft_refs = true;
-    PSParallelCompact::invoke(clear_all_soft_refs);
-
-    // Restore
-    HeapMaximumCompactionInterval = old_interval;
+    const bool should_do_max_compaction = true;
+    PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
   }
 
   if (check_gc_overhead_limit()) {
@@ -493,7 +485,8 @@ void ParallelScavengeHeap::collect_at_safepoint(bool full) {
     }
     // Upgrade to Full-GC if young-gc fails
   }
-  PSParallelCompact::invoke(clear_soft_refs);
+  const bool should_do_max_compaction = false;
+  PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {

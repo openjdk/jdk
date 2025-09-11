@@ -113,7 +113,7 @@ public class JdbStopInNotificationThreadTest extends JdbTest {
     private static final String DEBUGGEE_CLASS = JdbStopInNotificationThreadTestTarg.class.getName();
     private static final String PATTERN1_TEMPLATE = "^Breakpoint hit: \"thread=Notification Thread\", " +
             "JdbStopInNotificationThreadTestTarg\\$1\\.handleNotification\\(\\), line=%LINE_NUMBER.*\\R%LINE_NUMBER\\s+System\\.out\\.println\\(\"Memory usage low!!!\"\\);.*";
-    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx64M"};
+    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx256M"};
 
     private JdbStopInNotificationThreadTest() {
         super(new LaunchOptions(DEBUGGEE_CLASS)

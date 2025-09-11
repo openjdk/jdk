@@ -35,12 +35,6 @@ class BasicLock {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-  // * For LM_MONITOR
-  // Unused.
-  // * For LM_LEGACY
-  // This is either the actual displaced header from a locked object, or
-  // a sentinel zero value indicating a recursive stack-lock.
-  // * For LM_LIGHTWEIGHT
   // Used as a cache of the ObjectMonitor* used when locking. Must either
   // be nullptr or the ObjectMonitor* used when locking.
   volatile uintptr_t _metadata;
@@ -52,15 +46,10 @@ class BasicLock {
  public:
   BasicLock() : _metadata(0) {}
 
-  // LM_MONITOR
   void set_bad_metadata_deopt() { set_metadata(badDispHeaderDeopt); }
 
-  // LM_LEGACY
-  inline markWord displaced_header() const;
-  inline void set_displaced_header(markWord header);
   static int displaced_header_offset_in_bytes() { return metadata_offset_in_bytes(); }
 
-  // LM_LIGHTWEIGHT
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);

@@ -826,7 +826,8 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
+bool PSParallelCompact::check_maximum_compaction(bool should_do_max_compaction,
+                                                 size_t total_live_words,
                                                  MutableSpace* const old_space,
                                                  HeapWord* full_region_prefix_end) {
 
@@ -839,25 +840,17 @@ bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
   // Check if all live objs are too much for old-gen.
   const bool is_old_gen_too_full = (total_live_words >= old_space->capacity_in_words());
 
-  // JVM flags
-  const uint total_invocations = heap->total_full_collections();
-  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
-
   // If all regions in old-gen are full
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (is_max_on_system_gc || is_old_gen_too_full || is_interval_ended || is_region_full) {
-    _maximum_compaction_gc_num = total_invocations;
-    return true;
-  }
-
-  return false;
+  return should_do_max_compaction
+      || is_max_on_system_gc
+      || is_old_gen_too_full
+      || is_region_full;
 }
 
-void PSParallelCompact::summary_phase()
+void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -880,9 +873,10 @@ void PSParallelCompact::summary_phase()
       _space_info[i].set_dense_prefix(space->bottom());
     }
 
-    bool maximum_compaction = check_maximum_compaction(total_live_words,
-                                                       old_space,
-                                                       full_region_prefix_end);
+    should_do_max_compaction = check_maximum_compaction(should_do_max_compaction,
+                                                        total_live_words,
+                                                        old_space,
+                                                        full_region_prefix_end);
     {
       GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
       // Try to expand old-gen in order to fit all live objs and waste.
@@ -891,7 +885,7 @@ void PSParallelCompact::summary_phase()
       ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(target_capacity_bytes);
     }
 
-    HeapWord* dense_prefix_end = maximum_compaction
+    HeapWord* dense_prefix_end = should_do_max_compaction
                                  ? full_region_prefix_end
                                  : compute_dense_prefix_for_old_space(old_space,
                                                                       full_region_prefix_end);
@@ -961,11 +955,7 @@ void PSParallelCompact::summary_phase()
   }
 }
 
-// This method invokes a full collection. The argument controls whether
-// soft-refs should be cleared or not.
-// Note that this method should only be called from the vm_thread while at a
-// safepoint.
-bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
+bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
@@ -1020,7 +1010,7 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
 
     marking_phase(&_gc_tracer);
 
-    summary_phase();
+    summary_phase(should_do_max_compaction);
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
