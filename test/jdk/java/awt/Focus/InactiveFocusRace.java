@@ -100,6 +100,12 @@ public class InactiveFocusRace {
                 sema.raise();
             }
         });
+        inactiveFrame.addWindowListener(new WindowAdapter() {
+            public void windowActivated(WindowEvent e) {
+                System.err.println("inactive Window activated");
+                sema.raise();
+            }
+        });
         activeFrame.addWindowListener(new WindowAdapter() {
             public void windowActivated(WindowEvent e) {
                 System.err.println("Window activated");
@@ -107,11 +113,27 @@ public class InactiveFocusRace {
             }
         });
         inactiveFrame.setVisible(true);
-        activeFrame.setVisible(true);
     }
 
     public void start() {
 
+
+        // Wait for inactive frame to become active
+        try {
+            sema.doWait(TIMEOUT);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException("Wait was interrupted");
+        }
+        if (!sema.getState()) {
+            throw new RuntimeException("Frame doesn't become active on show");
+        }
+        sema.setState(false);
+
+        try {
+            EventQueue.invokeAndWait(() -> activeFrame.setVisible(true));
+        } catch (Exception e) {
+            throw new RuntimeException("Interrupted active frame rendering");
+        }
 
         // Wait for active frame to become active
         try {
