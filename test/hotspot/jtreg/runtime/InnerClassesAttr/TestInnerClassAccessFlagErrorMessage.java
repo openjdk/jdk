@@ -36,7 +36,7 @@ import static jdk.test.lib.Asserts.*;
 public class TestInnerClassAccessFlagErrorMessage {
 
     static String msg1 = "Illegal class modifiers in inner class Inner of class OuterTest1: 0x63F";
-    static String msg2 = "Illegal class modifiers in inner class unnamed of class OuterTest2: 0x63F";
+    static String msg2 = "Illegal class modifiers in anonymous inner class of class OuterTest2: 0x63F";
 
     public static void main(java.lang.String[] unused) {
         try {

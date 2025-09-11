@@ -512,7 +512,6 @@ class SerializeClosure;
   template(maxThawingSize_name,                       "maxThawingSize")                           \
   template(lockStackSize_name,                        "lockStackSize")                            \
   template(objectWaiter_name,                         "objectWaiter")                             \
-  template(unnamed_name,                              "unnamed")                                  \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
