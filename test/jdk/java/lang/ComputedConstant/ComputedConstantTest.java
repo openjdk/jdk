@@ -22,18 +22,20 @@
  */
 
 /* @test
- * @summary Basic tests for StableValue implementations
+ * @summary Basic tests for ComputedConstant implementations
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
- * @run junit ComputedConstantTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstantTest
  */
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.ComputedConstant;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -43,8 +45,39 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class ComputedConstantTest {
 
     private static final int VALUE = 42;
-    private static final int VALUE2 = 13;
+    private static final Supplier<Integer> SUPPLIER = () -> VALUE;
 
+    @Test
+    void factoryInvariants() {
+        assertThrows(NullPointerException.class, () -> ComputedConstant.of(null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("factories")
+    void basic(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        var cached = factory.apply(cs);
+        assertEquals(".unset", cached.toString());
+        assertEquals(SUPPLIER.get(), cached.get());
+        assertEquals(1, cs.cnt());
+        assertEquals(SUPPLIER.get(), cached.get());
+        assertEquals(1, cs.cnt());
+        assertEquals(Objects.toString(SUPPLIER.get()), cached.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("factories")
+    void exception(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+            throw new UnsupportedOperationException();
+        });
+        var cached = factory.apply(cs);
+        assertThrows(UnsupportedOperationException.class, cached::get);
+        assertEquals(1, cs.cnt());
+        assertThrows(UnsupportedOperationException.class, cached::get);
+        assertEquals(2, cs.cnt());
+        assertEquals(".unset", cached.toString());
+    }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
@@ -73,13 +106,15 @@ final class ComputedConstantTest {
     void testHashCode(ComputedConstant<Integer> stable) {
         // Should be Object::hashCode
         assertEquals(System.identityHashCode(stable), stable.hashCode());
+        stable.get();
+        assertEquals(System.identityHashCode(stable), stable.hashCode());
     }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
     void testEquals(ComputedConstant<Integer> s0) {
         assertNotEquals(null, s0);
-        ComputedConstant<Integer> s1 = ComputedConstant.of(() -> VALUE);
+        ComputedConstant<Integer> s1 = ComputedConstant.of(SUPPLIER);
         assertNotEquals(s0, s1); // Identity based
         s0.get();
         s1.get();
@@ -96,7 +131,7 @@ final class ComputedConstantTest {
     }
 
     @Test
-    void toStringCircular() {
+    void toStringCircuslar() {
         AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
         ComputedConstant<ComputedConstant<?>> stable = ComputedConstant.of(ref::get);
         ref.set(stable);
@@ -116,22 +151,55 @@ final class ComputedConstantTest {
         assertThrows(IllegalStateException.class, stable::get);
     }
 
-    private static Stream<ComputedConstant<Integer>> computedConstants() {
-        return factories()
-                .map(Supplier::get);
+    @ParameterizedTest
+    @MethodSource("factories")
+    void underlying(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        var f1 = factory.apply(cs);
+
+        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingBefore);
+        int v = f1.get();
+        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        assertNull(underlyingAfter);
     }
 
-    private static Stream<Supplier<ComputedConstant<Integer>>> factories() {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void functionHolderException(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+            throw new UnsupportedOperationException();
+        });
+        var f1 = factory.apply(cs);
+
+        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingBefore);
+        try {
+            int v = f1.get();
+        } catch (UnsupportedOperationException _) {
+            // Expected
+        }
+        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingAfter);
+    }
+
+    private static Stream<ComputedConstant<Integer>> computedConstants() {
+        return factories()
+                .map(f -> f.apply(() -> VALUE));
+    }
+
+    private static Stream<Function<Supplier<Integer>, ComputedConstant<Integer>>> factories() {
         return Stream.of(
-                supplier("ComputedConstant.of(<lambda>)", () -> ComputedConstant.of(() -> VALUE))
+                supplier("ComputedConstant.of(<lambda>)", ComputedConstant::of)
         );
     }
 
-    private static <T> Supplier<T> supplier(String name, Supplier<? extends T> underlying) {
-        return new Supplier<T>() {
+    private static Function<Supplier<Integer>, ComputedConstant<Integer>> supplier(String name,
+                                                                                   Function<Supplier<Integer>, ComputedConstant<Integer>> underlying) {
+        return new Function<Supplier<Integer>, ComputedConstant<Integer>>() {
             @Override
-            public T get() {
-                return underlying.get();
+            public ComputedConstant<Integer> apply(Supplier<Integer> supplier) {
+                return ComputedConstant.of(supplier);
             }
 
             @Override

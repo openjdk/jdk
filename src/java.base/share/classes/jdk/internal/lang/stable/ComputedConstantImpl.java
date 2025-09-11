@@ -55,10 +55,10 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
     //
     // This field is used directly and reflectively via Unsafe using explicit memory semantics.
     //
-    // | Value          |  Meaning      |
-    // | -------------- |  ------------ |
-    // | null           |  Unset        |
-    // | other          |  Set to other |
+    // | Value           | Meaning        |
+    // | --------------- | -------------- |
+    // | null            | Unset          |
+    // | `other`         | Set to `other` |
     //
     // This field is accessed reflectively
     @Stable
