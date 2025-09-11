@@ -3402,6 +3402,8 @@ void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3412,18 +3414,13 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
     return;
   }
 
-  Register xbase = dst;
-  if (dst == src) {
-    xbase = tmp;
-  }
+  Register xbase = tmp;
 
-  assert_different_registers(src, xbase);
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    Register t = src == dst ? dst : t0;
-    assert_different_registers(t, xbase);
-    shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
+    // dst = (src << shift) + xbase
+    shadd(dst, src, xbase, dst /* temporary, dst != xbase */, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
