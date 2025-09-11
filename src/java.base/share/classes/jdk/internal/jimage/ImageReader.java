@@ -315,10 +315,7 @@ public final class ImageReader implements AutoCloseable {
          * Returns a node with the given name, or null if no resource or directory of
          * that name exists.
          *
-         * <p>This is the only public API by which anything outside this class can access
-         * {@code Node} instances either directly, or by resolving symbolic links.
-         *
-         * <p>Note also that there is no reentrant calling back to this method from within
+         * <p>Note that there is no reentrant calling back to this method from within
          * the node handling code.
          *
          * @param name an absolute, {@code /}-separated path string, prefixed with either
@@ -330,6 +327,8 @@ public final class ImageReader implements AutoCloseable {
                 // We cannot get the root paths ("/modules" or "/packages") here
                 // because those nodes are already in the nodes cache.
                 if (name.startsWith(MODULES_ROOT + "/")) {
+                    // This may preform two lookups, one for a directory (in
+                    // /modules/...) and one for a non-prefixed resource.
                     node = buildModulesNode(name);
                 } else if (name.startsWith(PACKAGES_ROOT + "/")) {
                     node = buildPackagesNode(name);
@@ -349,34 +348,44 @@ public final class ImageReader implements AutoCloseable {
         /**
          * Returns a resource node in the given module, or null if no resource of
          * that name exists.
+         *
+         * <p>Note that there is no reentrant calling back to this method from within
+         * the node handling code.
          */
-        synchronized Node findResourceNode(String moduleName, String resourcePath) {
+        Node findResourceNode(String moduleName, String resourcePath) {
             // Unlike findNode(), this method makes only one lookup in the
             // underlying jimage, but can only reliably return resource nodes.
-            if (moduleName.contains("/") || resourcePath.startsWith("/")) {
+            // Use indexOf() instead of contains("/") or startsWith("/") for
+            // performance.
+            if (moduleName.indexOf('/') >= 0 || resourcePath.indexOf('/') == 0) {
                 return null;
             }
             String jimageName = "/" + moduleName + "/" + resourcePath;
             String nodeName = MODULES_ROOT + jimageName;
-            Node node = nodes.get(nodeName);
-            if (node == null) {
-                ImageLocation loc = findLocation(jimageName);
-                if (loc != null && isResource(loc)) {
-                    node = newResource(nodeName, loc);
-                    nodes.put(node.getName(), node);
+            // Synchronize as tightly as possible to reduce locking contention.
+            synchronized (this) {
+                Node node = nodes.get(nodeName);
+                if (node == null) {
+                    ImageLocation loc = findLocation(jimageName);
+                    if (loc != null && isResource(loc)) {
+                        node = newResource(nodeName, loc);
+                        nodes.put(node.getName(), node);
+                    }
+                    return node;
+                } else {
+                    return node.isResource() ? node : null;
                 }
-                return node;
-            } else {
-                return node.isResource() ? node : null;
             }
         }
 
         /** Returns whether a resource exists in the given module. */
-        synchronized boolean containsResource(String moduleName, String resourcePath) {
+        boolean containsResource(String moduleName, String resourcePath) {
             // This method is tuned for cases where resources are likely to NOT
             // exist, so it skips checking the nodes cache and only checks for
-            // an ImageLocation.
-            if (moduleName.contains("/") || resourcePath.startsWith("/")) {
+            // an ImageLocation. This also means it doesn't need synchronization.
+            // Use indexOf() instead of contains("/") or startsWith("/") for
+            // performance.
+            if (moduleName.indexOf('/') >= 0 || resourcePath.indexOf('/') == 0) {
                 return false;
             }
             // No leading "/modules" (and if the given module name is 'modules'
