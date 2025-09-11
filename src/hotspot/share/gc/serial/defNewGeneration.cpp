@@ -94,8 +94,6 @@ public:
 class CLDScanClosure: public CLDClosure {
 
   class CLDOopClosure : public OffHeapScanClosure {
-    DefNewGeneration* _g;
-
   public:
     // Records whether this CLD contains oops pointing into young-gen after scavenging.
     bool _has_oops_into_young_gen;
