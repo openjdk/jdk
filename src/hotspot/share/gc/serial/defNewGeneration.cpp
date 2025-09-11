@@ -267,7 +267,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   update_counters();
   _old_gen = nullptr;
   _tenuring_threshold = MaxTenuringThreshold;
-  _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
   _ref_processor = nullptr;
 

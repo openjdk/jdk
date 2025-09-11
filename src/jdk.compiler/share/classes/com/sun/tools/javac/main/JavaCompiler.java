@@ -258,6 +258,10 @@ public class JavaCompiler {
      */
     protected JNIWriter jniWriter;
 
+    /** The Lint mapper.
+     */
+    protected LintMapper lintMapper;
+
     /** The module for the symbol table entry phases.
      */
     protected Enter enter;
@@ -384,6 +388,7 @@ public class JavaCompiler {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        lintMapper = LintMapper.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
@@ -575,6 +580,7 @@ public class JavaCompiler {
     /** The number of errors reported so far.
      */
     public int errorCount() {
+        log.reportOutstandingWarnings();
         if (werror && log.nerrors == 0 && log.nwarnings > 0) {
             log.error(Errors.WarningsAndWerror);
         }
@@ -625,6 +631,7 @@ public class JavaCompiler {
     private JCCompilationUnit parse(JavaFileObject filename, CharSequence content, boolean silent) {
         long msec = now();
         JCCompilationUnit tree = make.TopLevel(List.nil());
+        lintMapper.startParsingFile(filename);
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
@@ -644,6 +651,7 @@ public class JavaCompiler {
         }
 
         tree.sourcefile = filename;
+        lintMapper.finishParsingFile(tree);
 
         if (content != null && !taskListener.isEmpty() && !silent) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, tree);
@@ -1843,6 +1851,7 @@ public class JavaCompiler {
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
+        log.reportOutstandingWarnings();
         log.reportOutstandingNotes();
         if (log.compressedOutput) {
             log.note(Notes.CompressedDiags);
@@ -1916,6 +1925,7 @@ public class JavaCompiler {
         attr = null;
         chk = null;
         gen = null;
+        lintMapper = null;
         flow = null;
         transTypes = null;
         lower = null;

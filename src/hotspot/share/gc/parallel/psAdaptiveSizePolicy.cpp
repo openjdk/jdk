@@ -36,10 +36,8 @@
 #include <math.h>
 
 PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t space_alignment,
-                                           double gc_pause_goal_sec,
-                                           uint gc_cost_ratio) :
-     AdaptiveSizePolicy(gc_pause_goal_sec,
-                        gc_cost_ratio),
+                                           double gc_pause_goal_sec) :
+     AdaptiveSizePolicy(gc_pause_goal_sec),
      _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _space_alignment(space_alignment),
      _young_gen_size_increment_supplement(YoungGenerationSizeSupplement) {}
@@ -73,14 +71,28 @@ void PSAdaptiveSizePolicy::print_stats(bool is_survivor_overflowing) {
     is_survivor_overflowing ? "true" : "false");
 }
 
+// The throughput goal is implemented as
+//      _throughput_goal = 1 - (1 / (1 + gc_cost_ratio))
+// gc_cost_ratio is the ratio
+//      application cost / gc cost
+// For example a gc_cost_ratio of 4 translates into a
+// throughput goal of .80
+static double calculate_throughput_goal(double gc_cost_ratio) {
+  return 1.0 - (1.0 / (1.0 + gc_cost_ratio));
+}
+
 size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflowing, size_t cur_eden) {
   // Guard against divide-by-zero; 0.001ms
   double gc_distance = MAX2(_gc_distance_seconds_seq.last(), 0.000001);
   double min_gc_distance = MinGCDistanceSecond;
 
-  if (mutator_time_percent() < _throughput_goal) {
+  // Get a local copy and use it inside gc-pause in case the global var gets updated externally.
+  const uint local_GCTimeRatio = Atomic::load(&GCTimeRatio);
+  const double throughput_goal = calculate_throughput_goal(local_GCTimeRatio);
+
+  if (mutator_time_percent() < throughput_goal) {
     size_t new_eden;
-    const double expected_gc_distance = _trimmed_minor_gc_time_seconds.last() * GCTimeRatio;
+    const double expected_gc_distance = _trimmed_minor_gc_time_seconds.last() * local_GCTimeRatio;
     if (gc_distance >= expected_gc_distance) {
       // The lastest sample already satisfies throughput goal; keep the current size
       new_eden = cur_eden;
@@ -90,7 +102,7 @@ size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflow
                       (double)increase_eden(cur_eden));
     }
     log_debug(gc, ergo)("Adaptive: throughput (actual vs goal): %.3f vs %.3f ; eden delta: + %zu K",
-      mutator_time_percent(), _throughput_goal, (new_eden - cur_eden)/K);
+      mutator_time_percent(), throughput_goal, (new_eden - cur_eden)/K);
     return new_eden;
   }
 
@@ -118,7 +130,7 @@ size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflow
     // promoted_bytes_estimate() / (gc_distance + gc_time_lower_estimate) < 1M/s
     // ==> promoted_bytes_estimate() / M - gc_time_lower_estimate < gc_distance
 
-    const double gc_distance_target = MAX3(minor_gc_time_conservative_estimate() * GCTimeRatio,
+    const double gc_distance_target = MAX3(minor_gc_time_conservative_estimate() * local_GCTimeRatio,
                                            promoted_bytes_estimate() / M - gc_time_lower_estimate,
                                            min_gc_distance);
     double predicted_gc_distance = gc_distance * (1 - delta_factor) - _gc_distance_seconds_seq.dsd();
