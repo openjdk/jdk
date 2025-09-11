@@ -41,6 +41,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
 
+/// UTF16 String operations.
+///
+/// UTF16 byte arrays have the identical layout as char arrays. They share the
+/// same base offset and scale, and for each two-byte unit interpreted as a char,
+/// it has the same endianness as a char, which is the platform endianness.
+/// This is ensured in the static initializer of StringUTF16.
+///
+/// All indices and sizes for byte arrays carrying UTF16 data are in number of
+/// chars instead of  number of bytes.
 final class StringUTF16 {
 
     // Return a new byte array for a UTF16-coded string for len chars
@@ -1636,6 +1645,9 @@ final class StringUTF16 {
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
     static {
+        // Assumptions for StringUTF16 operations. Present in `LibraryCallKit::inline_string_char_access` too.
+        assert Unsafe.ARRAY_CHAR_BASE_OFFSET == Unsafe.ARRAY_BYTE_BASE_OFFSET : "sanity: byte[] and char[] bases agree";
+        assert Unsafe.ARRAY_CHAR_INDEX_SCALE == Unsafe.ARRAY_BYTE_INDEX_SCALE * 2 : "sanity: byte[] and char[] scales agree";
         if (Unsafe.getUnsafe().isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;

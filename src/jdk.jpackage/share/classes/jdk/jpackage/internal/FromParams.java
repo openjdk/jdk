@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.Arguments.CLIOptions.LINUX_SHORTCUT_HINT;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_MENU_HINT;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_MODULES;
@@ -49,6 +52,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -63,7 +67,10 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.ParseUtils;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 
@@ -72,12 +79,13 @@ final class FromParams {
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
             ApplicationLayout appLayout) throws ConfigException, IOException {
-        return createApplicationBuilder(params, launcherMapper, appLayout, Optional.of(RuntimeLayout.DEFAULT));
+        return createApplicationBuilder(params, launcherMapper, appLayout, RuntimeLayout.DEFAULT, Optional.of(RuntimeLayout.DEFAULT));
     }
 
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
-            ApplicationLayout appLayout, Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
+            ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
+            Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
 
         final var appBuilder = new ApplicationBuilder();
 
@@ -97,7 +105,7 @@ final class FromParams {
                 layout -> predefinedRuntimeImage.map(layout::resolveAt)).map(RuntimeLayout::runtimeDirectory);
 
         if (isRuntimeInstaller) {
-            appBuilder.appImageLayout(predefinedRuntimeLayout.orElseThrow());
+            appBuilder.appImageLayout(runtimeLayout);
         } else {
             appBuilder.appImageLayout(appLayout);
 
@@ -165,6 +173,34 @@ final class FromParams {
                 jdk.jpackage.internal.model.Package.class.getName()));
     }
 
+    static Optional<LauncherShortcut> findLauncherShortcut(
+            BundlerParamInfo<String> shortcutParam,
+            Map<String, ? super Object> mainParams,
+            Map<String, ? super Object> launcherParams) {
+
+        Optional<String> launcherValue;
+        if (launcherParams == mainParams) {
+            // The main launcher
+            launcherValue = Optional.empty();
+        } else {
+            launcherValue = shortcutParam.findIn(launcherParams);
+        }
+
+        return launcherValue.map(ParseUtils::parseLauncherShortcutForAddLauncher).or(() -> {
+            return Optional.ofNullable(mainParams.get(shortcutParam.getID())).map(toFunction(value -> {
+                if (value instanceof Boolean) {
+                    return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
+                } else {
+                    try {
+                        return ParseUtils.parseLauncherShortcutForMainLauncher((String)value);
+                    } catch (IllegalArgumentException ex) {
+                        throw I18N.buildConfigException("error.invalid-option-value", value, "--" + shortcutParam.getID()).create();
+                    }
+                }
+            }));
+        });
+    }
+
     private static ApplicationLaunchers createLaunchers(
             Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper) {
@@ -195,8 +231,9 @@ final class FromParams {
 //                    mainParams), APP_NAME.fetchFrom(launcherParams)));
             launcherParams.put(DESCRIPTION.getID(), DESCRIPTION.fetchFrom(mainParams));
         }
-        return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(), ADD_LAUNCHERS
-                .getID(), FILE_ASSOCIATIONS.getID());
+        return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(),
+                ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID(), WIN_MENU_HINT.getId(),
+                WIN_SHORTCUT_HINT.getId(), LINUX_SHORTCUT_HINT.getId());
     }
 
     static final BundlerParamInfo<Application> APPLICATION = createApplicationBundlerParam(null);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import jdk.internal.classfile.impl.Util;
  *     Label endScope // @link substring="endScope" target="#endScope"
  * )
  * }
- * Where {@code slot} is within {@code [0, 65535]}.
+ * Where {@code slot} is {@link java.lang.classfile##u2 u2}.
  * <p>
  * Another model, {@link LocalVariableInfo}, also models a local variable
  * entry; it has no dependency on a {@code CodeModel} and represents of bci
@@ -79,7 +79,7 @@ public sealed interface LocalVariable extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {
     /**
      * {@return the local variable slot}
-     * The value is within {@code [0, 65535]}.
+     * It is a {@link java.lang.classfile##u2 u2} value.
      */
     int slot();
 
@@ -116,14 +116,15 @@ public sealed interface LocalVariable extends PseudoInstruction
 
     /**
      * {@return a local variable pseudo-instruction}
-     * {@code slot} must be within {@code [0, 65535]}.
+     * {@code slot} must be {@link java.lang.classfile##u2 u2}.
      *
      * @param slot the local variable slot
      * @param nameEntry the local variable name
      * @param descriptorEntry the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static LocalVariable of(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
@@ -132,14 +133,15 @@ public sealed interface LocalVariable extends PseudoInstruction
 
     /**
      * {@return a local variable pseudo-instruction}
-     * {@code slot} must be within {@code [0, 65535]}.
+     * {@code slot} must be {@link java.lang.classfile##u2 u2}.
      *
      * @param slot the local variable slot
      * @param name the local variable name
      * @param descriptor the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static LocalVariable of(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return of(slot,

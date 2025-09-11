@@ -141,6 +141,7 @@
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dsinh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
@@ -340,7 +341,6 @@
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   volatile_nonstatic_field(ObjectMonitor,      _entry_list,                                   ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
-  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
@@ -779,10 +779,6 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
                                                                           \
-  declare_constant(LockingMode::LM_MONITOR)                               \
-  declare_constant(LockingMode::LM_LEGACY)                                \
-  declare_constant(LockingMode::LM_LIGHTWEIGHT)                           \
-                                                                          \
   /*********************************/                                     \
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
@@ -832,7 +828,6 @@
                                                                           \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::stw_instruction_and_data_patch))  \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
-  AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
   declare_constant(ObjectMonitor::NO_OWNER)                               \
   declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \

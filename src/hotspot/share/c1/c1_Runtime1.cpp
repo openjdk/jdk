@@ -362,6 +362,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::dsin());
   FUNCTION_CASE(entry, StubRoutines::dcos());
   FUNCTION_CASE(entry, StubRoutines::dtan());
+  FUNCTION_CASE(entry, StubRoutines::dsinh());
   FUNCTION_CASE(entry, StubRoutines::dtanh());
   FUNCTION_CASE(entry, StubRoutines::dcbrt());
 
@@ -777,9 +778,6 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
     _monitorenter_slowcase_cnt++;
   }
 #endif
-  if (LockingMode == LM_MONITOR) {
-    lock->set_obj(obj);
-  }
   assert(obj == lock->obj(), "must match");
   SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
 JRT_END

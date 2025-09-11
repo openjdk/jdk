@@ -113,6 +113,13 @@ class PSPromotionManager {
   template<bool promote_immediately>
   oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
+  inline HeapWord* allocate_in_young_gen(Klass* klass,
+                                         size_t obj_size,
+                                         uint age);
+  inline HeapWord* allocate_in_old_gen(Klass* klass,
+                                       size_t obj_size,
+                                       uint age);
+
  public:
   // Static
   static void initialize();
@@ -159,9 +166,6 @@ class PSPromotionManager {
   }
 
   inline void process_popped_location_depth(ScannerTask task, bool stolen);
-
-  static bool should_scavenge(oop* p, bool check_to_space = false);
-  static bool should_scavenge(narrowOop* p, bool check_to_space = false);
 
   template <bool promote_immediately, class T>
   void copy_and_push_safe_barrier(T* p);

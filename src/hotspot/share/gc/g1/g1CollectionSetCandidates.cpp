@@ -44,12 +44,7 @@ G1CSetCandidateGroup::G1CSetCandidateGroup() :
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
   G1CollectionSetCandidateInfo c(hr);
-  add(c);
-}
-
-void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo& hr_info) {
-  G1HeapRegion* hr = hr_info._r;
-  _candidates.append(hr_info);
+  _candidates.append(c);
   hr->install_cset_group(this);
 }
 
@@ -63,10 +58,10 @@ void G1CSetCandidateGroup::calculate_efficiency() {
   _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
 }
 
-size_t G1CSetCandidateGroup::liveness() const {
+double G1CSetCandidateGroup::liveness_percent() const {
+  assert(length() > 0, "must be");
   size_t capacity = length() * G1HeapRegion::GrainBytes;
-
-  return (size_t) ceil(((capacity - _reclaimable_bytes) * 100.0) / capacity);
+  return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
 void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
@@ -128,31 +123,6 @@ int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CS
   if (gc_eff1 > gc_eff2) {
     return -1;
   } else if (gc_eff1 < gc_eff2) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-int G1CollectionSetCandidateInfo::compare_region_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
-  // Make sure that null entries are moved to the end.
-  if (ci1->_r == nullptr) {
-    if (ci2->_r == nullptr) {
-      return 0;
-    } else {
-      return 1;
-    }
-  } else if (ci2->_r == nullptr) {
-    return -1;
-  }
-
-  G1Policy* p = G1CollectedHeap::heap()->policy();
-  double gc_efficiency1 = p->predict_gc_efficiency(ci1->_r);
-  double gc_efficiency2 = p->predict_gc_efficiency(ci2->_r);
-
-  if (gc_efficiency1 > gc_efficiency2) {
-    return -1;
-  } else if (gc_efficiency1 < gc_efficiency2) {
     return 1;
   } else {
     return 0;
@@ -280,9 +250,9 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   _from_marking_groups.verify();
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
-                                                            uint num_infos) {
-  if (num_infos == 0) {
+void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candidates,
+                                                            uint num_candidates) {
+  if (num_candidates == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
   }
@@ -295,7 +265,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
   // the G1MixedGCCountTarget. For the first collection in a Mixed GC cycle, we can add all regions
   // required to meet this threshold to the same remset group. We are certain these will be collected in
   // the same MixedGC.
-  uint group_limit = p->calc_min_old_cset_length(num_infos);
+  uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
   uint num_added_to_group = 0;
 
@@ -304,8 +274,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
   current = new G1CSetCandidateGroup();
 
-  for (uint i = 0; i < num_infos; i++) {
-    G1HeapRegion* r = candidate_infos[i]._r;
+  for (uint i = 0; i < num_candidates; i++) {
+    G1HeapRegion* r = candidates[i];
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
@@ -319,16 +289,16 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
       current = new G1CSetCandidateGroup();
       num_added_to_group = 0;
     }
-    current->add(candidate_infos[i]);
+    current->add(r);
     num_added_to_group++;
   }
 
   _from_marking_groups.append(current);
 
-  assert(_from_marking_groups.num_regions() == num_infos, "Must be!");
+  assert(_from_marking_groups.num_regions() == num_candidates, "Must be!");
 
-  log_debug(gc, ergo, cset) ("Finished creating %u collection groups from %u regions", _from_marking_groups.length(), num_infos);
-  _last_marking_candidates_length = num_infos;
+  log_debug(gc, ergo, cset) ("Finished creating %u collection groups from %u regions", _from_marking_groups.length(), num_candidates);
+  _last_marking_candidates_length = num_candidates;
 
   verify();
 }

@@ -29,8 +29,8 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "oops/oop.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 

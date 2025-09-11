@@ -23,11 +23,11 @@
  */
 
 #include "jfr/metadata/jfrSerializer.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/utilities/jfrTypes.hpp"

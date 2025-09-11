@@ -1500,7 +1500,7 @@ void ZStatRelocation::print_page_summary() {
     summary.relocate += stats.relocate();
   };
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     account_page_size(small_summary, _selector_stats.small(age));
     account_page_size(medium_summary, _selector_stats.medium(age));
     account_page_size(large_summary, _selector_stats.large(age));
@@ -1561,7 +1561,7 @@ void ZStatRelocation::print_age_table() {
 
   uint oldest_none_empty_age = 0;
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     uint i = untype(age);
     auto summarize_pages = [&](const ZRelocationSetSelectorGroupStats& stats) {
       live[i] += stats.live();
@@ -1790,7 +1790,7 @@ void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stat
   ZLocker<ZLock> locker(&_stat_lock);
 
   size_t live = 0;
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     live += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
   }
   _at_mark_end.live = live;
