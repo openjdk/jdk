@@ -22,15 +22,14 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 7050935
-  @summary closed/java/awt/Choice/WheelEventsConsumed/WheelEventsConsumed.html fails on win32
-  @library ../../regtesthelpers
-  @author Oleg Pekhovskiy: area=awt-choice
-  @build Util
-  @run main ChoiceMouseWheelTest
-*/
+ * @test
+ * @key headful
+ * @bug 7050935
+ * @summary closed/java/awt/Choice/WheelEventsConsumed/WheelEventsConsumed.html fails on win32
+ * @library /java/awt/regtesthelpers
+ * @build Util
+ * @run main ChoiceMouseWheelTest
+ */
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -54,7 +53,7 @@ public class ChoiceMouseWheelTest extends Frame {
     private volatile boolean itemChanged = false;
     private volatile boolean wheelMoved = false;
     private volatile boolean frameExited = false;
-    private final Choice choice = new Choice();
+    private final Choice choice;
 
     public static void main(String[] args) throws Exception {
         ChoiceMouseWheelTest test = Util.invokeOnEDT(ChoiceMouseWheelTest::new);
@@ -76,6 +75,7 @@ public class ChoiceMouseWheelTest extends Frame {
             }
         });
 
+        choice = new Choice();
         for(int i = 0; i < 50; i++) {
             choice.add(Integer.toString(i));
         }
