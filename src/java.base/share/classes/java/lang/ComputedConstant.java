@@ -25,15 +25,10 @@
 
 package java.lang;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.InternalStableValue;
-import jdk.internal.lang.stable.ComputedStableValue;
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.lang.stable.ComputedConstantImpl;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -48,13 +43,12 @@ import java.util.function.Supplier;
  * A stable value is a holder of contents that can be set at most once.
  * <p>
  * A {@code StableValue<T>} is typically created using the factory method
- * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
+ * {@linkplain ComputedConstant#of(Supplier) {@code StableValue.of()}}. When created this way,
  * the stable value is <em>unset</em>, which means it holds no <em>contents</em>.
- * Its contents, of type {@code T}, can be <em>set</em> by calling
- * {@linkplain #trySet(Object) trySet()},  or {@linkplain #orElseSet(Supplier) orElseSet()}.
- * Once set, the contents can never change and can be retrieved by calling
- * {@linkplain #get() orElseThrow()} , {@linkplain #orElse(Object) () orElse()},
- * or {@linkplain #orElseSet(Supplier) orElseSet()}.
+ * Its contents, of type {@code T}, is <em>set</em> by calling
+ * {@linkplain #get() get()}.
+ * Once set, the contents can never change and can be retrieved again by calling
+ * {@linkplain #get() get} or {@linkplain #orElse(Object) () orElse()}.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
  * shallowly immutable holder of contents of type {@code Logger} and that is initially
@@ -67,7 +61,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    private final ComputedConstant<Logger> logger = ComputedConstant.of();
  *
  *    private Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -88,7 +82,7 @@ import java.util.function.Supplier;
  * meaning the first writer wins.
  * <p>
  * In order to guarantee that, even under races, only one instance of {@code Logger} is
- * ever created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
+ * ever created, the {@linkplain #get() xxxxxxxx orElseSet()} method can be used
  * instead, where the contents are lazily computed, and atomically set, via a
  * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
  * form of a lambda expression:
@@ -98,7 +92,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    private final ComputedConstant<Logger> logger = ComputedConstant.of();
  *
  *    private Logger getLogger() {
  *        return logger.orElseSet( () -> Logger.create(Component.class) );
@@ -127,16 +121,16 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>supplied stable value</em> is a stable value that computes a value and then caches
  * it into a backing stable value storage for subsequent use. A supplied stable value is
- * created via the {@linkplain #ofComputed(Supplier) StableValue.ofSupplied()} factory, by
+ * created via the {@linkplain #of(Supplier) StableValue.ofSupplied()} factory, by
  * providing an underlying {@linkplain Supplier} which is invoked when the
  * stable value is first accessed:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *     private final StableValue<Logger> logger =
+ *     private final ComputedConstant<Logger> logger =
  *             // @link substring="ofSupplied" target="StableValue#ofSupplied(Supplier)" :
- *             StableValue.ofComputed( () -> Logger.getLogger(Component.class) );
+ *             ComputedConstant.of( () -> Logger.getLogger(Component.class) );
  *
  *     public void process() {
  *        logger.get().info("Process started");
@@ -151,16 +145,16 @@ import java.util.function.Supplier;
  * Here is an example of how a rudimentary implementation of the supplied stable value
  * interface might look like if {@code StableValue} was not a sealed interface:
  *
- *{@snippet lang = java:
- * public record SuppliedStableValue<T>(StableValue<T> delegate,
- *                                      Supplier<? extends T> mapper) implements StableValue<T> {
+ * {@snippet lang = java:
+ * public record SuppliedStableValue<T>(java.lang.ComputedConstant<T> delegate,
+ *                                      Supplier<? extends T> mapper) implements ComputedConstant<T> {
  *
  *         @Override public T get() { return delegate.orElseSet(mapper); }
  *         @Override public boolean isSet() { return delegate.isSet(); }
  *         // ... throwing optional operations not shown
  * }
  *
- * StableValue<Integer> cc = new SuppliedStableValue<>(StableValue.of(), () -> 42);
+ * ComputedConstant<Integer> cc = new SuppliedStableValue<>(ComputedConstant.of(), () -> 42);
  * cc.get(); // 42
  *}
  *
@@ -303,38 +297,27 @@ import java.util.function.Supplier;
  * observes the stable value is set and leave the stable value unchanged.
  * <p>
  * The at-most-once write operation on a stable value that succeeds
- * (e.g. {@linkplain #trySet(Object) trySet()})
+ * (e.g. {@linkplain #get() trySet()})
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * any successful read operation (e.g. {@linkplain #get()}).
  * A successful write operation can be either:
  * <ul>
- *     <li>a {@link #trySet(Object)} that returns {@code true}, or</li>
- *     <li>an {@link #orElseSet(Supplier)} that successfully runs the supplier</li>
+ *     <li>a {@link #get()} that returns {@code true}, or</li>
  * </ul>
  * A successful read operation can be either:
  * <ul>
  *     <li>a {@link #get()} that does not throw,</li>
  *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value</li>
- *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}, or</li>
  *     <li>an {@link #isSet()} that returns {@code true}</li>
  * </ul>
  * <p>
- * The method {@link #orElseSet(Supplier)} guarantees that the provided
+ * The method {@link #get()} guarantees that the provided
  * {@linkplain Supplier} is invoked successfully at most once, even under race.
- * Invocations of {@link #orElseSet(Supplier)} form a total order of zero or
+ * Invocations of {@link #get()} form a total order of zero or
  * more exceptional invocations followed by zero (if the contents were already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
- * of the same principles as {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they
+ * of the same principles as {@linkplain ComputedConstant#get() orElseSet()} they
  * too are thread safe and guarantee at-most-once-per-input invocation.
- *
- * <h2 id="optional-operations">Optional Operations</h2>
- * The following stable value operations are optional:
- * <ul>
- *     <li>{@linkplain #trySet(Object)}</li>
- *     <li>{@linkplain #orElseSet(Supplier)}</li>
- * </ul>
- * An {@linkplain UnsupportedOperationException} will be thrown if an unsupported optional
- * operation is called.
  *
  * <h2 id="performance">Performance</h2>
  * As the contents of a stable value can never change after it has been set, a JVM
@@ -393,26 +376,10 @@ import java.util.function.Supplier;
  * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
-public sealed interface StableValue<T>
+public sealed interface ComputedConstant<T>
         extends Supplier<T>
-        permits InternalStableValue {
+        permits ComputedConstantImpl {
 
-    /**
-     * Tries to set the contents of this StableValue to the provided {@code contents}.
-     * The contents of this StableValue can only be set once, implying this method only
-     * returns {@code true} once.
-     * <p>
-     * When this method returns, the contents of this StableValue is always set.
-     *
-     * @return {@code true} if the contents of this StableValue was set to the
-     *         provided {@code contents}, {@code false} otherwise
-     * @param contents to set
-     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
-     *         recursively attempts to set this stable value by calling this method
-     *         directly or indirectly
-     * @throws NullPointerException if the provided {@code content} is {@code null}
-     */
-    boolean trySet(T contents);
 
     /**
      * {@return the contents if set, otherwise, returns {@code other}}
@@ -433,36 +400,6 @@ public sealed interface StableValue<T>
      */
     boolean isSet();
 
-    /**
-     * {@return the contents; if unset, first attempts to compute and set the
-     *          contents using the provided {@code supplier}}
-     * <p>
-     * The provided {@code supplier} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception. If this method is invoked several times
-     * with different suppliers, only one of them will be invoked provided it completes
-     * without throwing an exception.
-     * <p>
-     * If the supplier throws an (unchecked) exception, the exception is rethrown and no
-     * contents is set. The most common usage is to construct a new object serving
-     * as a lazily computed value or memoized result, as in:
-     *
-     * {@snippet lang=java:
-     * Value v = stable.orElseSet(Value::new);
-     * }
-     * <p>
-     * When this method returns successfully, the contents is always set.
-     * <p>
-     * The provided {@code supplier} will only be invoked once even if invoked from
-     * several threads unless the {@code supplier} throws an exception.
-     * <p>
-     * If the provided {@code supplier} returns {@code null},
-     * a {@linkplain NullPointerException} is thrown.
-     *
-     * @param  supplier to be used for computing the contents, if not previously set
-     * @throws IllegalStateException if the provided {@code supplier} recursively
-     *                               attempts to set this stable value
-     */
-    T orElseSet(Supplier<? extends T> supplier);
 
     // Object methods
 
@@ -482,119 +419,19 @@ public sealed interface StableValue<T>
     // Factories
 
     /**
-     * {@return a new unset stable value}
-     * <p>
-     * An unset stable value has no contents.
-     * <p>
-     * The returned stable value supports all
-     * {@linkplain ##optional-operation optional operations}.
-     *
-     * @param <T> type of the contents
-     */
-    static <T> StableValue<T> of() {
-        return StandardStableValue.of();
-    }
-
-    /**
-     * {@return a new pre-set stable value with the provided {@code contents}}
-     * <p>
-     * The returned stable value supports all
-     * {@linkplain ##optional-operation optional operations}.
-     *
-     * @param contents to set
-     * @param <T>     type of the contents
-     * @throws NullPointerException if the provided {@code contents} is {@code null}
-     */
-    static <T> StableValue<T> of(T contents) {
-        Objects.requireNonNull(contents);
-        return StandardStableValue.ofPreset(contents);
-    }
-
-    /**
      * {@return a new computed stable value which is to be computed using the provided
      *          {@code underlying} supplier}
      *
-     * The returned computed stable value will record the value of the provided {@code underlying}
-     * supplier upon being first accessed via the returned stable value's
-     * {@linkplain #get() get()} method as being fed to an underlying StableValue's
-     * {@linkplain #orElseSet(Supplier)} method.
-     * <p>
      * The returned StableValue does not support any of the
      * {@linkplain ##optional-operation optional operations}.
      *
      * @param underlying supplier used to compute the constant
      * @param <T>        type of the constant
      *
-     * @see StableValue
-     * @since 26
      */
-    static <T> StableValue<T> ofComputed(Supplier<? extends T> underlying) {
+    static <T> ComputedConstant<T> of(Supplier<? extends T> underlying) {
         Objects.requireNonNull(underlying);
-        return ComputedStableValue.of(underlying);
+        return ComputedConstantImpl.ofComputed(underlying);
     }
 
-    /**
-     * {@return a new unmodifiable list of the provided {@code size} containing
-     *          unset stable value elements}
-     * <p>
-     * The returned list is equivalent to creating an unmodifiable list as in this example:
-     * {@snippet lang = java:
-     * return Stream.generate(StableValue::<E>of)
-     *            .limit(size)
-     *            .toList();
-     *}
-     * except the returned implementation can be more performant and dense.
-     *
-     * @implNote The implementation is free to return distinct stable value elements
-     *           upon retrieving successive elements with the same index. Despite this,
-     *           any returned stable value always reflects the correct stable value
-     *           contents at any time.
-     *
-     * @param size of the returned list
-     * @param <E>  type of the contents
-     * @throws IllegalArgumentException if the provided {@code size} is negative
-     *
-     * @since 26
-     */
-    static <E> List<StableValue<E>> ofList(int size) {
-        Utils.checkNonNegativeArgument(size, "size");
-        return SharedSecrets.getJavaUtilCollectionAccess().denseStableList(size);
-    }
-
-    /**
-     * {@return a new unmodifiable list containing set stable value with values from
-     *          the provided array of {@code elements}}
-     * <p>
-     * The returned list is equivalent to creating an unmodifiable list as in this example:
-     * {@snippet lang = java:
-     * return Arrays.stream(elements)
-     *            .map(StableValue::of)
-     *            .toList();
-     *}
-     * except the returned implementation can be more performant and dense.
-     *
-     * @implNote The implementation is free to return distinct stable value elements
-     *           upon retrieving successive elements with the same index. Despite this,
-     *           any returned stable value always reflects the correct stable value
-     *           contents at any time.
-     *
-     * @param elements in the returned list
-     * @param <E>      type of the contents
-     * @throws NullPointerException if the provided array of {@code elements}
-     *         is {@code null} or contains a {@code null} component
-     *
-     * @since 26
-     */
-    @SafeVarargs
-    @SuppressWarnings("varargs")
-    // Note: This factory has another name than SV::ofList so that confusion
-    //       around if a first parameter is a size or an element can be avoided.
-    static <E> List<StableValue<E>> ofPresetList(E... elements) {
-        // Protect against TOC-TOU attacks
-        final E[] copy = Arrays.copyOf(elements, elements.length);
-        for (E e : copy) {
-            Objects.requireNonNull(e);
-        }
-        return SharedSecrets.getJavaUtilCollectionAccess().presetStableList(copy);
-    }
 }

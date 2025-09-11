@@ -25,10 +25,9 @@ package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.StableValue;
+import java.lang.ComputedConstant;
 import java.util.function.Supplier;
 
 /**
@@ -49,36 +48,25 @@ public class StableValueBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final StableValue<Integer> DCL = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> DCL2 = init(StableValue.of(), VALUE2);
+    private static final ComputedConstant<Integer> STABLE = init(VALUE);
+    private static final ComputedConstant<Integer> STABLE2 = init(VALUE2);
+    private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
+    private static final Supplier<Integer> DCL2 = new Dcl<>(() -> VALUE2);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
     private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
     private static final Holder HOLDER = new Holder(VALUE);
     private static final Holder HOLDER2 = new Holder(VALUE2);
     private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
     private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
-    private static final List<StableValue<Integer>> LIST = StableValue.ofList(10);
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
+    private final ComputedConstant<Integer> stable = init(VALUE);
+    private final ComputedConstant<Integer> stable2 = init(VALUE2);
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
     private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
     private final Supplier<Integer> supplier2 = () -> VALUE2;
-    private final List<StableValue<Integer>> list = StableValue.ofList(10);
-
-
-    @Setup
-    public void setup() {
-        LIST.get(2).trySet(VALUE);
-        LIST.get(3).trySet(VALUE2);
-        list.get(2).trySet(VALUE);
-        list.get(3).trySet(VALUE2);
-    }
 
     @Benchmark
     public int atomic() {
@@ -93,11 +81,6 @@ public class StableValueBenchmark {
     @Benchmark
     public int stable() {
         return stable.get() + stable2.get();
-    }
-
-    @Benchmark
-    public int list() {
-        return list.get(2).get() + list.get(3).get();
     }
 
     // Reference case
@@ -131,22 +114,17 @@ public class StableValueBenchmark {
         return STABLE.get() + STABLE2.get();
     }
 
-    @Benchmark
-    public int staticList() {
-        return LIST.get(2).get() + LIST.get(3).get();
-    }
 
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
+    private static ComputedConstant<Integer> init(Integer value) {
+        return ComputedConstant.of(() -> value);
     }
 
     private static final class Holder {
 
-        private final StableValue<Integer> delegate = StableValue.of();
+        private final ComputedConstant<Integer> delegate;
 
         Holder(int value) {
-            delegate.trySet(value);
+            delegate = ComputedConstant.of(() -> value);
         }
 
         int get() {
@@ -155,11 +133,10 @@ public class StableValueBenchmark {
 
     }
 
-    private record RecordHolder(StableValue<Integer> delegate) {
+    private record RecordHolder(ComputedConstant<Integer> delegate) {
 
         RecordHolder(int value) {
-            this(StableValue.of());
-            delegate.trySet(value);
+            this(ComputedConstant.of(() -> value));
         }
 
         int get() {

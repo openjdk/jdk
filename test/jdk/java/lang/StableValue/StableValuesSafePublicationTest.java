@@ -30,8 +30,7 @@
  * @run junit StableValuesSafePublicationTest
  */
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.StableValue;
-import java.util.function.Supplier;
+import java.lang.ComputedConstant;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -52,13 +50,13 @@ final class StableValuesSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final AtomicReference<StableValue<Holder>[]> STABLES = new AtomicReference<>();
+    private static final AtomicReference<ComputedConstant<Holder>[]> STABLES = new AtomicReference<>();
 
-    static StableValue<Holder>[] stables() {
+    static ComputedConstant<Holder>[] stables() {
         @SuppressWarnings("unchecked")
-        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
+        ComputedConstant<Holder>[] stables = (ComputedConstant<Holder>[]) new ComputedConstant[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = StableValue.of();
+            stables[i] = ComputedConstant.of(Holder::new);
         }
         return stables;
     }
@@ -76,13 +74,13 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final StableValue<Holder>[] stables = STABLES.get();
+        final ComputedConstant<Holder>[] stables = STABLES.get();
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                StableValue<Holder> s = stables[i];
+                ComputedConstant<Holder> s = stables[i];
                 Holder h;
                 // Wait until the StableValue has a holder value
                 while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
@@ -98,15 +96,15 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final StableValue<Holder>[] stables = STABLES.get();
+        final ComputedConstant<Holder>[] stables = STABLES.get();
 
         @Override
         public void run() {
-            StableValue<Holder> s;
+            ComputedConstant<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
                 s = stables[i];
-                s.trySet(new Holder());
+                s.get();
                 deadlineNs += 1000;
                 while (System.nanoTime() < deadlineNs) {
                     Thread.onSpinWait();
@@ -115,16 +113,9 @@ final class StableValuesSafePublicationTest {
         }
     }
 
-    @ParameterizedTest
-    @MethodSource("factories")
-    void mainTest(Supplier<StableValue<Integer>> factory) {
-        @SuppressWarnings("unchecked")
-        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            stables[i] = StableValue.of();
-        }
-        STABLES.set(stables);
-
+    @Test
+    void mainTest() {
+        STABLES.set(stables());
 
         List<Consumer> consumers = IntStream.range(0, THREADS)
                 .mapToObj(_ -> new Consumer())
@@ -189,32 +180,5 @@ final class StableValuesSafePublicationTest {
         } catch (InterruptedException ie) {
             fail(ie);
         }
-    }
-
-    private static final int LIST_SIZE = 8;
-    private static final int LIST_MID = 3;
-
-    private static Stream<Supplier<StableValue<Integer>>> factories() {
-        final List<StableValue<Integer>> list = StableValue.ofList(LIST_SIZE);
-        return Stream.of(
-                supplier("StableValue.of()", StableValue::of),
-                supplier("list::getFirst", list::getFirst),
-                supplier("() -> list.get(LIST_MID)", () -> list.get(LIST_MID)),
-                supplier("list::getLast", list::getLast)
-        );
-    }
-
-    private static <T> Supplier<T> supplier(String name, Supplier<? extends T> underlying) {
-        return new Supplier<T>() {
-            @Override
-            public T get() {
-                return underlying.get();
-            }
-
-            @Override
-            public String toString() {
-                return name;
-            }
-        };
     }
 }

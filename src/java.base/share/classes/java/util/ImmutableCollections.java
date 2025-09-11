@@ -31,7 +31,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.lang.StableValue;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -129,12 +128,6 @@ class ImmutableCollections {
                 }
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
-                }
-                public <E> List<StableValue<E>> denseStableList(int size) {
-                    return StableCollections.DenseStableList.ofList(size);
-                }
-                public <E> List<StableValue<E>> presetStableList(E[] array) {
-                    return StableCollections.PresetStableList.ofList(array);
                 }
             });
         }
@@ -445,7 +438,7 @@ class ImmutableCollections {
 
     static sealed class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess
-            permits StableCollections.ComputedList.StableSubList {
+            permits ComputedCollections.ComputedList.StableSubList {
 
         @Stable
         final AbstractImmutableList<E> root;
@@ -459,8 +452,7 @@ class ImmutableCollections {
         SubList(AbstractImmutableList<E> root, int offset, int size) {
             assert root instanceof List12
                     || root instanceof ListN
-                    || root instanceof StableCollections.ComputedList
-                    || root instanceof StableCollections.DenseStableList;
+                    || root instanceof ComputedCollections.ComputedList;
             this.root = root;
             this.offset = offset;
             this.size = size;

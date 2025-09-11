@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.StableValue;
+import java.lang.ComputedConstant;
 
 /**
  * Benchmark measuring StableValue performance
@@ -56,15 +56,11 @@ public class StableSupplierBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final StableValue<Integer> SUPPLIER = StableValue.ofComputed(() -> VALUE);
-    private static final StableValue<Integer> SUPPLIER2 = StableValue.ofComputed(() -> VALUE);
+    private static final ComputedConstant<Integer> STABLE = init(VALUE);
+    private static final ComputedConstant<Integer> STABLE2 = init(VALUE2);
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final StableValue<Integer> supplier = StableValue.ofComputed(() -> VALUE);
-    private final StableValue<Integer> supplier2 = StableValue.ofComputed(() -> VALUE2);
+    private final ComputedConstant<Integer> stable = init(VALUE);
+    private final ComputedConstant<Integer> stable2 = init(VALUE2);
 
     @Benchmark
     public int stable() {
@@ -72,23 +68,12 @@ public class StableSupplierBenchmark {
     }
 
     @Benchmark
-    public int supplier() {
-        return supplier.get() + supplier2.get();
-    }
-
-    @Benchmark
     public int staticStable() {
         return STABLE.get() + STABLE2.get();
     }
 
-    @Benchmark
-    public int staticSupplier() {
-        return SUPPLIER.get() + SUPPLIER2.get();
-    }
-
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
+    private static ComputedConstant<Integer> init(Integer value) {
+        return ComputedConstant.of(() -> value);
     }
 
 }

@@ -142,8 +142,8 @@ public final class Currency implements Serializable {
     // class data: instance map
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
-    private static final StableValue<HashSet<Currency>> available =
-            StableValue.ofComputed(new Supplier<HashSet<Currency>>() {
+    private static final ComputedConstant<HashSet<Currency>> available =
+            ComputedConstant.of(new Supplier<HashSet<Currency>>() {
                 @Override
                 public HashSet<Currency> get() {
                     return computeAllCurrencies();

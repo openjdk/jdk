@@ -29,20 +29,16 @@
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
-import jdk.internal.lang.stable.InternalStableValue;
-import jdk.internal.lang.stable.StableUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.lang.StableValue;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +54,6 @@ import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class ComputedMapTest {
-
 
     enum Value {
         // Zero is here so that we have enums with ordinals before the first one
@@ -414,18 +409,7 @@ final class ComputedMapTest {
         var map = newMap(set);
         assertFalse(map instanceof Serializable);
         assertFalse(map.entrySet() instanceof Serializable);
-        assertFalse(map.keySet() instanceof Serializable);
         assertFalse(map.values() instanceof Serializable);
-    }
-
-    @Test
-    void distinct() {
-        Map<Integer, InternalStableValue<Integer>> map = StableUtil.map(Set.of(1, 2, 3));
-        assertEquals(3, map.size());
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        map.forEach((k, v) -> idMap.put(v, true));
-        assertEquals(3, idMap.size());
     }
 
     @Test

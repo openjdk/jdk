@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.StableValue;
+import java.lang.ComputedConstant;
 
 /**
  * Benchmark measuring StableValue performance
@@ -60,7 +60,7 @@ import java.lang.StableValue;
 public class StableMethodHandleBenchmark {
 
     private static final MethodHandle FINAL_MH = identityHandle();
-    private static final StableValue<MethodHandle> STABLE_MH;
+    private static final ComputedConstant<MethodHandle> STABLE_MH = ComputedConstant.of(StableMethodHandleBenchmark::identityHandle);
 
     private static /* intentionally not final */ MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
@@ -69,8 +69,6 @@ public class StableMethodHandleBenchmark {
     private static final Map<String, MethodHandle> STABLE_MAP = Map.ofComputed(Set.of("identityHandle"), _ -> identityHandle());
 
     static {
-        STABLE_MH = StableValue.of();
-        STABLE_MH.trySet(identityHandle());
         MAP.put("identityHandle", identityHandle());
     }
 

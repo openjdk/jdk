@@ -30,13 +30,13 @@
 
 import jdk.internal.lang.stable.FunctionHolder;
 import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StandardStableValue;
+import jdk.internal.lang.stable.ComputedConstantImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.lang.StableValue;
+import java.lang.ComputedConstant;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -372,18 +372,6 @@ final class ComputedListTest {
         assertInstanceOf(RandomAccess.class, newList());
         assertInstanceOf(RandomAccess.class, newEmptyList());
         assertInstanceOf(RandomAccess.class, newList().subList(1, INDEX));
-    }
-
-    @Test
-    void distinct() {
-        StandardStableValue<Integer>[] array = StableUtil.array(SIZE);
-        assertEquals(SIZE, array.length);
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        for (var e: array) {
-            idMap.put(e, true);
-        }
-        assertEquals(SIZE, idMap.size());
     }
 
     @Test

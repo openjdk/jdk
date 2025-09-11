@@ -26,7 +26,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
  * @compile StableTestUtil.java
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedStableValueTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstant2Test
  */
 
 import jdk.internal.lang.stable.FunctionHolder;
@@ -38,13 +38,13 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ComputedStableValueTest {
+final class ComputedConstant2Test {
 
     private static final Supplier<Integer> SUPPLIER = () -> 42;
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.ofComputed(null));
+        assertThrows(NullPointerException.class, () -> ComputedConstant.of(null));
     }
 
     @Test
@@ -54,7 +54,7 @@ final class ComputedStableValueTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = StableValue.ofComputed(cs);
+        var cached = ComputedConstant.of(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -68,7 +68,7 @@ final class ComputedStableValueTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.ofComputed(cs);
+        var cached = ComputedConstant.of(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -78,8 +78,8 @@ final class ComputedStableValueTest {
 
     @Test
     void circular() {
-        final AtomicReference<StableValue<?>> ref = new AtomicReference<>();
-        StableValue<StableValue<?>> cached = StableValue.ofComputed(ref::get);
+        final AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
+        ComputedConstant<ComputedConstant<?>> cached = ComputedConstant.of(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -89,15 +89,15 @@ final class ComputedStableValueTest {
 
     @Test
     void equality() {
-        var f0 = StableValue.ofComputed(SUPPLIER);
-        var f1 = StableValue.ofComputed(SUPPLIER);
+        var f0 = ComputedConstant.of(SUPPLIER);
+        var f1 = ComputedConstant.of(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        var f0 = StableValue.ofComputed(SUPPLIER);
+        var f0 = ComputedConstant.of(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());
@@ -106,15 +106,13 @@ final class ComputedStableValueTest {
     @Test
     void functionHolder() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
-        var f1 = StableValue.ofComputed(cs);
+        var f1 = ComputedConstant.of(cs);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
-        assertEquals(1, holder.counter());
-        assertSame(cs, holder.function());
+        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingBefore);
         int v = f1.get();
-        int v2 = f1.get();
-        assertEquals(0, holder.counter());
-        assertNull(holder.function(), holder.toString());
+        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        assertNull(underlyingAfter);
     }
 
     @Test
@@ -122,18 +120,17 @@ final class ComputedStableValueTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var f1 = StableValue.ofComputed(cs);
+        var f1 = ComputedConstant.of(cs);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
-        assertEquals(1, holder.counter());
-        assertSame(cs, holder.function());
+        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingBefore);
         try {
             int v = f1.get();
         } catch (UnsupportedOperationException _) {
             // Expected
         }
-        assertEquals(1, holder.counter());
-        assertSame(cs, holder.function());
+        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        assertSame(cs, underlyingAfter);
     }
 
 }

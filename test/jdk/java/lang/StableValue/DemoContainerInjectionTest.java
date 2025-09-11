@@ -25,7 +25,7 @@
  * @summary Basic tests for dependency injection
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
- * @run junit ContainerInjectionTest
+ * @run junit DemoContainerInjectionTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ContainerInjectionTest {
+final class DemoContainerInjectionTest {
 
     interface Foo{}
     interface Bar{};
@@ -150,29 +150,5 @@ final class ContainerInjectionTest {
                 return ProviderContainer.of(providers.stream()
                                 .collect(Collectors.toMap(Provider::type, Provider::supplier)));
     }
-
-
-    record ImperativeContainer(Map<Class<?>, StableValue<Object>> components) implements SettableContainer {
-
-        @Override
-        public <T> void set(Class<T> type, T implementation) {
-            if (!components.get(type).trySet(implementation)) {
-                throw new IllegalStateException("Can only set once for " + type);
-            }
-        }
-
-        @Override
-        public <T> T get(Class<T> type) {
-            return type.cast(components.get(type));
-        }
-
-        static SettableContainer of(Set<Class<?>> components) {
-            var map = components.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
-            return new ImperativeContainer(map);
-        }
-
-    }
-
 
 }

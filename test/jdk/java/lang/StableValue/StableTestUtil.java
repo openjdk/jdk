@@ -130,6 +130,16 @@ final class StableTestUtil {
         }
     }
 
+    static Supplier<?> underlying(Object o) {
+        try {
+            final Field field = field(o.getClass(), "underlying");
+            field.setAccessible(true);
+            return (Supplier<?>) field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static Field field(Class<?> clazz, String name) {
         if (clazz.equals(Object.class)) {
             throw new RuntimeException("No " + name);

@@ -48,7 +48,8 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.lang.StableValue;
+import java.lang.ComputedConstant;
+import java.util.function.Supplier;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -95,13 +96,14 @@ public class Net {
         return EXCLUSIVE_BIND;
     }
 
-    private static final StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
+    private static final ComputedConstant<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = ComputedConstant.of(new Supplier<Boolean>() {
+        @Override  public Boolean get() { return shouldShutdownWriteBeforeClose0(); }});
 
     /**
      * Tells whether a TCP connection should be shutdown for writing before closing.
      */
     static boolean shouldShutdownWriteBeforeClose() {
-        return SHUTDOWN_WRITE_BEFORE_CLOSE.orElseSet(Net::shouldShutdownWriteBeforeClose0);
+        return SHUTDOWN_WRITE_BEFORE_CLOSE.get();
     }
 
     /**
