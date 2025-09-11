@@ -98,7 +98,7 @@ public:
       oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
-      if (PSScavenge::is_obj_in_young(new_obj) && !_has_oops_into_young_gen) {
+      if (!_has_oops_into_young_gen && PSScavenge::is_obj_in_young(new_obj)) {
         _has_oops_into_young_gen = true;
       }
     }
