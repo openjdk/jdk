@@ -42,6 +42,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -59,7 +60,7 @@ class UnixPath implements Path {
     private final byte[] path;
 
     // String representation (created lazily, no need to be volatile)
-    private String stringValue;
+    private @Stable String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
@@ -124,7 +125,6 @@ class UnixPath implements Path {
 
     // encodes the given path-string into a sequence of bytes
     private static byte[] encode(UnixFileSystem fs, String input) {
-        input = fs.normalizeNativePath(input);
         try {
             return JLA.uncheckedGetBytesOrThrow(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
@@ -814,7 +814,7 @@ class UnixPath implements Path {
         // OK if two or more threads create a String
         String stringValue = this.stringValue;
         if (stringValue == null) {
-            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = Util.toString(path);     // platform encoding
         }
         return stringValue;
     }
