@@ -39,9 +39,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 // The '_cnt', '_max' and '_times" fields are enabled via
@@ -191,15 +191,15 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void *, int, 1031,
+  typedef HashTable<void *, int, 1031,
                             AnyObj::C_HEAP, mtThread,
                             &ThreadScanHashtable::ptr_hash> PtrTable;
   PtrTable * _ptrs;
 
  public:
-  // ResourceHashtable is passed to various functions and populated in
+  // HashTable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
   ThreadScanHashtable() : _ptrs(new (mtThread) PtrTable()) {}

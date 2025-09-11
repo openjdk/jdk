@@ -6027,32 +6027,46 @@ void MacroAssembler::evpbroadcast(BasicType type, XMMRegister dst, Register src,
   }
 }
 
-// encode char[] to byte[] in ISO_8859_1 or ASCII
-   //@IntrinsicCandidate
-   //private static int implEncodeISOArray(byte[] sa, int sp,
-   //byte[] da, int dp, int len) {
-   //  int i = 0;
-   //  for (; i < len; i++) {
-   //    char c = StringUTF16.getChar(sa, sp++);
-   //    if (c > '\u00FF')
-   //      break;
-   //    da[dp++] = (byte)c;
-   //  }
-   //  return i;
-   //}
-   //
-   //@IntrinsicCandidate
-   //private static int implEncodeAsciiArray(char[] sa, int sp,
-   //    byte[] da, int dp, int len) {
-   //  int i = 0;
-   //  for (; i < len; i++) {
-   //    char c = sa[sp++];
-   //    if (c >= '\u0080')
-   //      break;
-   //    da[dp++] = (byte)c;
-   //  }
-   //  return i;
-   //}
+// Encode given char[]/byte[] to byte[] in ISO_8859_1 or ASCII
+//
+// @IntrinsicCandidate
+// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(
+//         char[] sa, int sp, byte[] da, int dp, int len) {
+//     int i = 0;
+//     for (; i < len; i++) {
+//         char c = sa[sp++];
+//         if (c > '\u00FF')
+//             break;
+//         da[dp++] = (byte) c;
+//     }
+//     return i;
+// }
+//
+// @IntrinsicCandidate
+// int java.lang.StringCoding.encodeISOArray0(
+//         byte[] sa, int sp, byte[] da, int dp, int len) {
+//   int i = 0;
+//   for (; i < len; i++) {
+//     char c = StringUTF16.getChar(sa, sp++);
+//     if (c > '\u00FF')
+//       break;
+//     da[dp++] = (byte) c;
+//   }
+//   return i;
+// }
+//
+// @IntrinsicCandidate
+// int java.lang.StringCoding.encodeAsciiArray0(
+//         char[] sa, int sp, byte[] da, int dp, int len) {
+//   int i = 0;
+//   for (; i < len; i++) {
+//     char c = sa[sp++];
+//     if (c >= '\u0080')
+//       break;
+//     da[dp++] = (byte) c;
+//   }
+//   return i;
+// }
 void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,

@@ -24,18 +24,25 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Function;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.RuntimeLayout;
 
 final class BuildEnvFromParams {
 
-    static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
+    static BuildEnv create(Map<String, ? super Object> params,
+            Function<Path, ApplicationLayout> predefinedAppImageLayoutProvider,
+            Function<Path, RuntimeLayout> predefinedRuntimeImageLayoutProvider) throws ConfigException {
 
         final var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params));
 
@@ -47,11 +54,13 @@ final class BuildEnvFromParams {
         final var pkg = FromParams.getCurrentPackage(params);
 
         if (app.isRuntime()) {
-            PREDEFINED_RUNTIME_IMAGE.copyInto(params, builder::appImageDir);
+            var layout = predefinedRuntimeImageLayoutProvider.apply(PREDEFINED_RUNTIME_IMAGE.findIn(params).orElseThrow());
+            builder.appImageLayout(layout);
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-            PREDEFINED_APP_IMAGE.copyInto(params, builder::appImageDir);
+            var layout = predefinedAppImageLayoutProvider.apply(PREDEFINED_APP_IMAGE.findIn(params).orElseThrow());
+            builder.appImageLayout(layout);
         } else if (pkg.isPresent()) {
-            builder.appImageDirForPackage();
+            builder.appImageDirFor(pkg.orElseThrow());
         } else {
             builder.appImageDirFor(app);
         }
@@ -59,6 +68,7 @@ final class BuildEnvFromParams {
         return builder.create();
     }
 
-    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(
-            BuildEnv.class, BuildEnvFromParams::create);
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
+        return create(params, PLATFORM_APPLICATION_LAYOUT::resolveAt, RuntimeLayout.DEFAULT::resolveAt);
+    });
 }

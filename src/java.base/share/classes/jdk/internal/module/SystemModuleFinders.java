@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.Constructor;
 import java.net.URI;
-import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,7 +53,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.access.JavaNetUriAccess;
@@ -210,7 +208,7 @@ public final class SystemModuleFinders {
     }
 
     /**
-     * Parses the module-info.class of all module in the runtime image and
+     * Parses the {@code module-info.class} of all modules in the runtime image and
      * returns a ModuleFinder to find the modules.
      *
      * @apiNote The returned ModuleFinder is thread safe.
@@ -219,20 +217,16 @@ public final class SystemModuleFinders {
         // parse the module-info.class in every module
         Map<String, ModuleInfo.Attributes> nameToAttributes = new HashMap<>();
         Map<String, byte[]> nameToHash = new HashMap<>();
-        ImageReader reader = SystemImage.reader();
-        for (String mn : reader.getModuleNames()) {
-            ImageLocation loc = reader.findLocation(mn, "module-info.class");
-            ModuleInfo.Attributes attrs
-                = ModuleInfo.read(reader.getResourceBuffer(loc), null);
 
-            nameToAttributes.put(mn, attrs);
+        allModuleAttributes().forEach(attrs -> {
+            nameToAttributes.put(attrs.descriptor().name(), attrs);
             ModuleHashes hashes = attrs.recordedHashes();
             if (hashes != null) {
                 for (String name : hashes.names()) {
                     nameToHash.computeIfAbsent(name, k -> hashes.hashFor(name));
                 }
             }
-        }
+        });
 
         // create a ModuleReference for each module
         Set<ModuleReference> mrefs = new HashSet<>();
@@ -251,6 +245,40 @@ public final class SystemModuleFinders {
         }
 
         return new SystemModuleFinder(mrefs, nameToModule);
+    }
+
+    /**
+     * Parses the {@code module-info.class} of all modules in the runtime image and
+     * returns a stream of {@link ModuleInfo.Attributes Attributes} for them. The
+     * returned attributes are in no specific order.
+     */
+    private static Stream<ModuleInfo.Attributes> allModuleAttributes() {
+        // System-wide image reader.
+        ImageReader reader = SystemImage.reader();
+        try {
+            return reader.findNode("/modules")
+                    .getChildNames()
+                    .map(mn -> readModuleAttributes(reader, mn));
+        } catch (IOException e) {
+            throw new Error("Error reading root /modules entry", e);
+        }
+    }
+
+    /**
+     * Returns the module's "module-info", returning a holder for its class file
+     * attributes. Every module is required to have a valid {@code module-info.class}.
+     */
+    private static ModuleInfo.Attributes readModuleAttributes(ImageReader reader, String moduleName) {
+        Exception err = null;
+        try {
+            ImageReader.Node node = reader.findNode(moduleName + "/module-info.class");
+            if (node != null && node.isResource()) {
+                return ModuleInfo.read(reader.getResourceBuffer(node), null);
+            }
+        } catch (IOException | UncheckedIOException e) {
+            err = e;
+        }
+        throw new Error("Missing or invalid module-info.class for module: " + moduleName, err);
     }
 
     /**
@@ -383,33 +411,17 @@ public final class SystemModuleFinders {
         }
 
         /**
-         * Returns the ImageLocation for the given resource, {@code null}
-         * if not found.
-         */
-        private ImageLocation findImageLocation(String name) throws IOException {
-            Objects.requireNonNull(name);
-            if (closed)
-                throw new IOException("ModuleReader is closed");
-            ImageReader imageReader = SystemImage.reader();
-            if (imageReader != null) {
-                return imageReader.findLocation(module, name);
-            } else {
-                // not an images build
-                return null;
-            }
-        }
-
-        /**
          * Returns {@code true} if the given resource exists, {@code false}
          * if not found.
          */
-        private boolean containsImageLocation(String name) throws IOException {
-            Objects.requireNonNull(name);
+        private boolean containsResource(String resourcePath) throws IOException {
+            Objects.requireNonNull(resourcePath);
             if (closed)
                 throw new IOException("ModuleReader is closed");
             ImageReader imageReader = SystemImage.reader();
             if (imageReader != null) {
-                return imageReader.verifyLocation(module, name);
+                ImageReader.Node node = imageReader.findNode("/modules" + resourcePath);
+                return node != null && node.isResource();
             } else {
                 // not an images build
                 return false;
@@ -418,8 +430,10 @@ public final class SystemModuleFinders {
 
         @Override
         public Optional<URI> find(String name) throws IOException {
-            if (containsImageLocation(name)) {
-                URI u = JNUA.create("jrt", "/" + module + "/" + name);
+            Objects.requireNonNull(name);
+            String resourcePath = "/" + module + "/" + name;
+            if (containsResource(resourcePath)) {
+                URI u = JNUA.create("jrt", resourcePath);
                 return Optional.of(u);
             } else {
                 return Optional.empty();
@@ -442,14 +456,25 @@ public final class SystemModuleFinders {
             }
         }
 
+        /**
+         * Returns the node for the given resource if found. If the name references
+         * a non-resource node, then {@code null} is returned.
+         */
+        private ImageReader.Node findResource(ImageReader reader, String name) throws IOException {
+            Objects.requireNonNull(name);
+            if (closed) {
+                throw new IOException("ModuleReader is closed");
+            }
+            String nodeName = "/modules/" + module + "/" + name;
+            ImageReader.Node node = reader.findNode(nodeName);
+            return (node != null && node.isResource()) ? node : null;
+        }
+
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
-            ImageLocation location = findImageLocation(name);
-            if (location != null) {
-                return Optional.of(SystemImage.reader().getResourceBuffer(location));
-            } else {
-                return Optional.empty();
-            }
+            ImageReader reader = SystemImage.reader();
+            return Optional.ofNullable(findResource(reader, name))
+                    .map(reader::getResourceBuffer);
         }
 
         @Override
@@ -481,7 +506,7 @@ public final class SystemModuleFinders {
     private static class ModuleContentSpliterator implements Spliterator<String> {
         final String moduleRoot;
         final Deque<ImageReader.Node> stack;
-        Iterator<ImageReader.Node> iterator;
+        Iterator<String> iterator;
 
         ModuleContentSpliterator(String module) throws IOException {
             moduleRoot = "/modules/" + module;
@@ -502,13 +527,10 @@ public final class SystemModuleFinders {
         private String next() throws IOException {
             for (;;) {
                 while (iterator.hasNext()) {
-                    ImageReader.Node node = iterator.next();
-                    String name = node.getName();
+                    String name = iterator.next();
+                    ImageReader.Node node = SystemImage.reader().findNode(name);
                     if (node.isDirectory()) {
-                        // build node
-                        ImageReader.Node dir = SystemImage.reader().findNode(name);
-                        assert dir.isDirectory();
-                        stack.push(dir);
+                        stack.push(node);
                     } else {
                         // strip /modules/$MODULE/ prefix
                         return name.substring(moduleRoot.length() + 1);
@@ -520,7 +542,7 @@ public final class SystemModuleFinders {
                 } else {
                     ImageReader.Node dir = stack.poll();
                     assert dir.isDirectory();
-                    iterator = dir.getChildren().iterator();
+                    iterator = dir.getChildNames().iterator();
                 }
             }
         }

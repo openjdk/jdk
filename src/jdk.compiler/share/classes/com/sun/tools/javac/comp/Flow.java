@@ -62,6 +62,7 @@ import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.SequencedSet;
@@ -220,7 +221,6 @@ public class Flow {
     private final Resolve rs;
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
-    private       Lint lint;
     private final Infer infer;
     private final int missingExhaustivenessTimeout;
 
@@ -344,7 +344,6 @@ public class Flow {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         chk = Check.instance(context);
-        lint = Lint.instance(context);
         infer = Infer.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -580,10 +579,8 @@ public class Flow {
             if (tree.sym == null) return;
             Liveness alivePrev = alive;
             ListBuffer<PendingExit> pendingExitsPrev = pendingExits;
-            Lint lintPrev = lint;
 
             pendingExits = new ListBuffer<>();
-            lint = lint.augment(tree.sym);
 
             try {
                 // process all the nested classes
@@ -614,30 +611,22 @@ public class Flow {
             } finally {
                 pendingExits = pendingExitsPrev;
                 alive = alivePrev;
-                lint = lintPrev;
             }
         }
 
         public void visitMethodDef(JCMethodDecl tree) {
             if (tree.body == null) return;
-            Lint lintPrev = lint;
-
-            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
-            try {
-                alive = Liveness.ALIVE;
-                scanStat(tree.body);
-                tree.completesNormally = alive != Liveness.DEAD;
+            alive = Liveness.ALIVE;
+            scanStat(tree.body);
+            tree.completesNormally = alive != Liveness.DEAD;
 
-                if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
-                    log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
+            if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
+                log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
 
-                clearPendingExits(true);
-            } finally {
-                lint = lintPrev;
-            }
+            clearPendingExits(true);
         }
 
         private void clearPendingExits(boolean inMethod) {
@@ -652,15 +641,7 @@ public class Flow {
         }
 
         public void visitVarDef(JCVariableDecl tree) {
-            if (tree.init != null) {
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
-                try{
-                    scan(tree.init);
-                } finally {
-                    lint = lintPrev;
-                }
-            }
+            scan(tree.init);
         }
 
         public void visitBlock(JCBlock tree) {
@@ -742,8 +723,7 @@ public class Flow {
                 // Warn about fall-through if lint switch fallthrough enabled.
                 if (alive == Liveness.ALIVE &&
                     c.stats.nonEmpty() && l.tail.nonEmpty())
-                    lint.logIfEnabled(l.tail.head.pos(),
-                                LintWarnings.PossibleFallThroughIntoCase);
+                    log.warning(l.tail.head.pos(), LintWarnings.PossibleFallThroughIntoCase);
             }
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
@@ -1159,13 +1139,14 @@ public class Flow {
 
         private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns) {
             Set<PatternDescription> updatedPatterns;
+            Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
             Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
             boolean useHashes = true;
             boolean repeat = true;
             do {
                 updatedPatterns = reduceBindingPatterns(selectorType, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
-                updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes);
+                updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                 updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                 repeat = !updatedPatterns.equals(patterns);
                 if (checkCovered(selectorType, patterns)) {
@@ -1394,6 +1375,7 @@ public class Flow {
          *            as pattern hashes cannot be used to speed up the matching process
          */
         private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
+                                                             Map<PatternDescription, Set<PatternDescription>> replaces,
                                                              boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
@@ -1445,7 +1427,7 @@ public class Flow {
 
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                    for (int i = 0; i < rpOne.nested.length; i++) {
+                                    ACCEPT: for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate) {
                                             if (!rpOne.nested[i].equals(rpOther.nested[i])) {
                                                 if (useHashes) {
@@ -1462,9 +1444,26 @@ public class Flow {
                                                         continue NEXT_PATTERN;
                                                     }
                                                 } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                    if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
+                                                    boolean foundMatchingReplaced = false;
+                                                    Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
+
+                                                    while (!pendingReplacedPatterns.isEmpty()) {
+                                                        PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
+
+                                                        pendingReplacedPatterns.remove(currentReplaced);
+
+                                                        if (nestedRPOne.equals(currentReplaced)) {
+                                                            foundMatchingReplaced = true;
+                                                            break;
+                                                        }
+
+                                                        pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
+                                                    }
+                                                    if (!foundMatchingReplaced) {
                                                         continue NEXT_PATTERN;
                                                     }
+                                                } else {
+                                                    continue NEXT_PATTERN;
                                                 }
                                             }
                                         }
@@ -1474,9 +1473,9 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes);
 
-                            updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                            updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
@@ -1489,9 +1488,11 @@ public class Flow {
                                     PatternDescription[] newNested =
                                             Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                     newNested[mismatchingCandidateFin] = nested;
-                                    current.add(new RecordPattern(rpOne.recordType(),
+                                    RecordPattern nue = new RecordPattern(rpOne.recordType(),
                                                                     rpOne.fullComponentTypes(),
-                                                                    newNested));
+                                                                    newNested);
+                                    current.add(nue);
+                                    replaces.put(nue, new HashSet<>(join));
                                 }
                             }
                         }
@@ -1513,12 +1514,12 @@ public class Flow {
          * all the $nestedX pattern cover the given record component,
          * and replace those with a simple binding pattern over $record.
          */
-        private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns, Map<PatternDescription, Set<PatternDescription>> replaces) {
             var newPatterns = new HashSet<PatternDescription>();
             boolean modified = false;
             for (PatternDescription pd : patterns) {
                 if (pd instanceof RecordPattern rpOne) {
-                    PatternDescription reducedPattern = reduceRecordPattern(rpOne);
+                    PatternDescription reducedPattern = reduceRecordPattern(rpOne, replaces);
                     if (reducedPattern != rpOne) {
                         newPatterns.add(reducedPattern);
                         modified = true;
@@ -1530,7 +1531,7 @@ public class Flow {
             return modified ? newPatterns : patterns;
         }
 
-        private PatternDescription reduceRecordPattern(PatternDescription pattern) {
+        private PatternDescription reduceRecordPattern(PatternDescription pattern, Map<PatternDescription, Set<PatternDescription>> replaces) {
             if (pattern instanceof RecordPattern rpOne) {
                 Type[] componentType = rpOne.fullComponentTypes();
                 //error recovery, ignore patterns with incorrect number of nested patterns:
@@ -1540,7 +1541,7 @@ public class Flow {
                 PatternDescription[] reducedNestedPatterns = null;
                 boolean covered = true;
                 for (int i = 0; i < componentType.length; i++) {
-                    PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
+                    PatternDescription newNested = reduceRecordPattern(rpOne.nested[i], replaces);
                     if (newNested != rpOne.nested[i]) {
                         if (reducedNestedPatterns == null) {
                             reducedNestedPatterns = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
@@ -1551,9 +1552,13 @@ public class Flow {
                     covered &= checkCovered(componentType[i], List.of(newNested));
                 }
                 if (covered) {
-                    return new BindingPattern(rpOne.recordType);
+                    PatternDescription pd = new BindingPattern(rpOne.recordType);
+                    replaces.put(pd, Set.of(pattern));
+                    return pd;
                 } else if (reducedNestedPatterns != null) {
-                    return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
+                    PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
+                    replaces.put(pd, Set.of(pattern));
+                    return pd;
                 }
             }
             return pattern;
@@ -1606,7 +1611,7 @@ public class Flow {
                 scanStat(tree.finalizer);
                 tree.finallyCanCompleteNormally = alive != Liveness.DEAD;
                 if (alive == Liveness.DEAD) {
-                    lint.logIfEnabled(TreeInfo.diagEndPos(tree.finalizer),
+                    log.warning(TreeInfo.diagEndPos(tree.finalizer),
                                 LintWarnings.FinallyCannotComplete);
                 } else {
                     while (exits.nonEmpty()) {
@@ -1827,7 +1832,6 @@ public class Flow {
             List<Type> thrownPrev = thrown;
             List<Type> caughtPrev = caught;
             ListBuffer<PendingExit> pendingExitsPrev = pendingExits;
-            Lint lintPrev = lint;
             boolean anonymousClass = tree.name == names.empty;
             pendingExits = new ListBuffer<>();
             if (!anonymousClass) {
@@ -1835,7 +1839,6 @@ public class Flow {
             }
             classDef = tree;
             thrown = List.nil();
-            lint = lint.augment(tree.sym);
 
             try {
                 // process all the nested classes
@@ -1884,7 +1887,6 @@ public class Flow {
                 pendingExits = pendingExitsPrev;
                 caught = caughtPrev;
                 classDef = classDefPrev;
-                lint = lintPrev;
             }
         }
 
@@ -1893,9 +1895,6 @@ public class Flow {
 
             List<Type> caughtPrev = caught;
             List<Type> mthrown = tree.sym.type.getThrownTypes();
-            Lint lintPrev = lint;
-
-            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -1928,20 +1927,11 @@ public class Flow {
                 }
             } finally {
                 caught = caughtPrev;
-                lint = lintPrev;
             }
         }
 
         public void visitVarDef(JCVariableDecl tree) {
-            if (tree.init != null) {
-                Lint lintPrev = lint;
-                lint = lint.augment(tree.sym);
-                try{
-                    scan(tree.init);
-                } finally {
-                    lint = lintPrev;
-                }
-            }
+            scan(tree.init);
         }
 
         public void visitBlock(JCBlock tree) {
@@ -2761,82 +2751,76 @@ public class Flow {
                 return;
             }
 
-            Lint lintPrev = lint;
-            lint = lint.augment(tree.sym);
+            JCClassDecl classDefPrev = classDef;
+            int firstadrPrev = firstadr;
+            int nextadrPrev = nextadr;
+            ListBuffer<PendingExit> pendingExitsPrev = pendingExits;
+
+            pendingExits = new ListBuffer<>();
+            if (tree.name != names.empty) {
+                firstadr = nextadr;
+            }
+            classDef = tree;
             try {
-                JCClassDecl classDefPrev = classDef;
-                int firstadrPrev = firstadr;
-                int nextadrPrev = nextadr;
-                ListBuffer<PendingExit> pendingExitsPrev = pendingExits;
-
-                pendingExits = new ListBuffer<>();
-                if (tree.name != names.empty) {
-                    firstadr = nextadr;
+                // define all the static fields
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(VARDEF)) {
+                        JCVariableDecl def = (JCVariableDecl)l.head;
+                        if ((def.mods.flags & STATIC) != 0) {
+                            VarSymbol sym = def.sym;
+                            if (trackable(sym)) {
+                                newVar(def);
+                            }
+                        }
+                    }
                 }
-                classDef = tree;
-                try {
-                    // define all the static fields
-                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                        if (l.head.hasTag(VARDEF)) {
-                            JCVariableDecl def = (JCVariableDecl)l.head;
-                            if ((def.mods.flags & STATIC) != 0) {
-                                VarSymbol sym = def.sym;
-                                if (trackable(sym)) {
-                                    newVar(def);
-                                }
+
+                // process all the static initializers
+                forEachInitializer(tree, true, def -> {
+                    scan(def);
+                    clearPendingExits(false);
+                });
+
+                // verify all static final fields got initialized
+                for (int i = firstadr; i < nextadr; i++) {
+                    JCVariableDecl vardecl = vardecls[i];
+                    VarSymbol var = vardecl.sym;
+                    if (var.owner == classDef.sym && var.isStatic()) {
+                        checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
+                    }
+                }
+
+                // define all the instance fields
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(VARDEF)) {
+                        JCVariableDecl def = (JCVariableDecl)l.head;
+                        if ((def.mods.flags & STATIC) == 0) {
+                            VarSymbol sym = def.sym;
+                            if (trackable(sym)) {
+                                newVar(def);
                             }
                         }
                     }
+                }
 
-                    // process all the static initializers
-                    forEachInitializer(tree, true, def -> {
-                        scan(def);
-                        clearPendingExits(false);
-                    });
-
-                    // verify all static final fields got initialized
-                    for (int i = firstadr; i < nextadr; i++) {
-                        JCVariableDecl vardecl = vardecls[i];
-                        VarSymbol var = vardecl.sym;
-                        if (var.owner == classDef.sym && var.isStatic()) {
-                            checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
-                        }
+                // process all the methods
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(METHODDEF)) {
+                        scan(l.head);
                     }
+                }
 
-                    // define all the instance fields
-                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                        if (l.head.hasTag(VARDEF)) {
-                            JCVariableDecl def = (JCVariableDecl)l.head;
-                            if ((def.mods.flags & STATIC) == 0) {
-                                VarSymbol sym = def.sym;
-                                if (trackable(sym)) {
-                                    newVar(def);
-                                }
-                            }
-                        }
+                // process all the nested classes
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(CLASSDEF)) {
+                        scan(l.head);
                     }
-
-                    // process all the methods
-                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                        if (l.head.hasTag(METHODDEF)) {
-                            scan(l.head);
-                        }
-                    }
-
-                    // process all the nested classes
-                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                        if (l.head.hasTag(CLASSDEF)) {
-                            scan(l.head);
-                        }
-                    }
-                } finally {
-                    pendingExits = pendingExitsPrev;
-                    nextadr = nextadrPrev;
-                    firstadr = firstadrPrev;
-                    classDef = classDefPrev;
                 }
             } finally {
-                lint = lintPrev;
+                pendingExits = pendingExitsPrev;
+                nextadr = nextadrPrev;
+                firstadr = firstadrPrev;
+                classDef = classDefPrev;
             }
         }
 
@@ -2851,87 +2835,81 @@ public class Flow {
                 return;
             }
 
-            Lint lintPrev = lint;
-            lint = lint.augment(tree.sym);
+            final Bits initsPrev = new Bits(inits);
+            final Bits uninitsPrev = new Bits(uninits);
+            int nextadrPrev = nextadr;
+            int firstadrPrev = firstadr;
+            int returnadrPrev = returnadr;
+
+            Assert.check(pendingExits.isEmpty());
+            boolean isConstructorPrev = isConstructor;
             try {
-                final Bits initsPrev = new Bits(inits);
-                final Bits uninitsPrev = new Bits(uninits);
-                int nextadrPrev = nextadr;
-                int firstadrPrev = firstadr;
-                int returnadrPrev = returnadr;
+                isConstructor = TreeInfo.isConstructor(tree);
 
-                Assert.check(pendingExits.isEmpty());
-                boolean isConstructorPrev = isConstructor;
-                try {
-                    isConstructor = TreeInfo.isConstructor(tree);
+                // We only track field initialization inside constructors
+                if (!isConstructor) {
+                    firstadr = nextadr;
+                }
 
-                    // We only track field initialization inside constructors
-                    if (!isConstructor) {
-                        firstadr = nextadr;
-                    }
+                // Mark all method parameters as DA
+                for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
+                    JCVariableDecl def = l.head;
+                    scan(def);
+                    Assert.check((def.sym.flags() & PARAMETER) != 0, "Method parameter without PARAMETER flag");
+                    /*  If we are executing the code from Gen, then there can be
+                     *  synthetic or mandated variables, ignore them.
+                     */
+                    initParam(def);
+                }
+                // else we are in an instance initializer block;
+                // leave caught unchanged.
+                scan(tree.body);
 
-                    // Mark all method parameters as DA
-                    for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
-                        JCVariableDecl def = l.head;
-                        scan(def);
-                        Assert.check((def.sym.flags() & PARAMETER) != 0, "Method parameter without PARAMETER flag");
-                        /*  If we are executing the code from Gen, then there can be
-                         *  synthetic or mandated variables, ignore them.
-                         */
-                        initParam(def);
-                    }
-                    // else we are in an instance initializer block;
-                    // leave caught unchanged.
-                    scan(tree.body);
-
-                    boolean isCompactOrGeneratedRecordConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
-                            (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD);
-                    if (isConstructor) {
-                        boolean isSynthesized = (tree.sym.flags() &
-                                                 GENERATEDCONSTR) != 0;
-                        for (int i = firstadr; i < nextadr; i++) {
-                            JCVariableDecl vardecl = vardecls[i];
-                            VarSymbol var = vardecl.sym;
-                            if (var.owner == classDef.sym && !var.isStatic()) {
-                                // choose the diagnostic position based on whether
-                                // the ctor is default(synthesized) or not
-                                if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
-                                    checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
-                                            var, Errors.VarNotInitializedInDefaultConstructor(var));
-                                } else if (isCompactOrGeneratedRecordConstructor) {
-                                    boolean isInstanceRecordField = var.enclClass().isRecord() &&
-                                            (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
-                                            var.owner.kind == TYP;
-                                    if (isInstanceRecordField) {
-                                        boolean notInitialized = !inits.isMember(var.adr);
-                                        if (notInitialized && uninits.isMember(var.adr) && tree.completesNormally) {
-                                        /*  this way we indicate Lower that it should generate an initialization for this field
-                                         *  in the compact constructor
-                                         */
-                                            var.flags_field |= UNINITIALIZED_FIELD;
-                                        } else {
-                                            checkInit(TreeInfo.diagEndPos(tree.body), var);
-                                        }
+                boolean isCompactOrGeneratedRecordConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                        (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD);
+                if (isConstructor) {
+                    boolean isSynthesized = (tree.sym.flags() &
+                                             GENERATEDCONSTR) != 0;
+                    for (int i = firstadr; i < nextadr; i++) {
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
+                        if (var.owner == classDef.sym && !var.isStatic()) {
+                            // choose the diagnostic position based on whether
+                            // the ctor is default(synthesized) or not
+                            if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
+                                checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
+                                        var, Errors.VarNotInitializedInDefaultConstructor(var));
+                            } else if (isCompactOrGeneratedRecordConstructor) {
+                                boolean isInstanceRecordField = var.enclClass().isRecord() &&
+                                        (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
+                                        var.owner.kind == TYP;
+                                if (isInstanceRecordField) {
+                                    boolean notInitialized = !inits.isMember(var.adr);
+                                    if (notInitialized && uninits.isMember(var.adr) && tree.completesNormally) {
+                                    /*  this way we indicate Lower that it should generate an initialization for this field
+                                     *  in the compact constructor
+                                     */
+                                        var.flags_field |= UNINITIALIZED_FIELD;
                                     } else {
-                                        checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
+                                        checkInit(TreeInfo.diagEndPos(tree.body), var);
                                     }
                                 } else {
-                                    checkInit(TreeInfo.diagEndPos(tree.body), var);
+                                    checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
                                 }
+                            } else {
+                                checkInit(TreeInfo.diagEndPos(tree.body), var);
                             }
                         }
                     }
-                    clearPendingExits(true);
-                } finally {
-                    inits.assign(initsPrev);
-                    uninits.assign(uninitsPrev);
-                    nextadr = nextadrPrev;
-                    firstadr = firstadrPrev;
-                    returnadr = returnadrPrev;
-                    isConstructor = isConstructorPrev;
                 }
+                clearPendingExits(true);
             } finally {
-                lint = lintPrev;
+                inits.assign(initsPrev);
+                uninits.assign(uninitsPrev);
+                nextadr = nextadrPrev;
+                firstadr = firstadrPrev;
+                returnadr = returnadrPrev;
+                isConstructor = isConstructorPrev;
             }
         }
 
@@ -2959,21 +2937,15 @@ public class Flow {
         }
 
         public void visitVarDef(JCVariableDecl tree) {
-            Lint lintPrev = lint;
-            lint = lint.augment(tree.sym);
-            try{
-                boolean track = trackable(tree.sym);
-                if (track && (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR)) {
-                    newVar(tree);
+            boolean track = trackable(tree.sym);
+            if (track && (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR)) {
+                newVar(tree);
+            }
+            if (tree.init != null) {
+                scanExpr(tree.init);
+                if (track) {
+                    letInit(tree.pos(), tree.sym);
                 }
-                if (tree.init != null) {
-                    scanExpr(tree.init);
-                    if (track) {
-                        letInit(tree.pos(), tree.sym);
-                    }
-                }
-            } finally {
-                lint = lintPrev;
             }
         }
 
@@ -3225,8 +3197,7 @@ public class Flow {
             final Bits uninitsEnd = new Bits(uninits);
             int nextadrCatch = nextadr;
 
-            if (!resourceVarDecls.isEmpty() &&
-                    lint.isEnabled(Lint.LintCategory.TRY)) {
+            if (!resourceVarDecls.isEmpty()) {
                 for (JCVariableDecl resVar : resourceVarDecls) {
                     if (unrefdResources.includes(resVar.sym) && !resVar.sym.isUnnamedVariable()) {
                         log.warning(resVar.pos(),

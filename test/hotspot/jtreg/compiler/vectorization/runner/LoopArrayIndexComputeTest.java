@@ -31,10 +31,18 @@
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.LoopArrayIndexComputeTest nAV_ySAC
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.LoopArrayIndexComputeTest yAV_ySAC
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.LoopArrayIndexComputeTest nAV_nSAC
+ *
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.LoopArrayIndexComputeTest yAV_nSAC
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled
@@ -47,6 +55,18 @@ import compiler.lib.ir_framework.*;
 import java.util.Random;
 
 public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
+
+    // We must pass the flags directly to the test-VM, and not the driver vm in the @run above.
+    @Override
+    protected String[] testVMFlags(String[] args) {
+        return switch (args[0]) {
+            case "nAV_ySAC" -> new String[]{"-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "yAV_ySAC" -> new String[]{"-XX:+AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "nAV_nSAC" -> new String[]{"-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
+            case "yAV_nSAC" -> new String[]{"-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"};
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+    }
 
     private static final int SIZE = 6543;
 
@@ -175,7 +195,16 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+     // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public int[] indexWithDifferentConstantsNeg() {
         int[] res = new int[SIZE];
         for (int i = 1; i < SIZE / 4; i++) {
@@ -186,7 +215,16 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public int[] indexWithDifferentInvariants() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 4; i < SIZE / 2; i++) {
@@ -276,7 +314,17 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.MUL_VS, ">0",
+                  IRNode.LOAD_VECTOR_S, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public short[] shortArrayWithDependenceNeg() {
         short[] res = new short[SIZE];
         System.arraycopy(shorts, 0, res, 0, SIZE);
@@ -304,8 +352,11 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // Data dependency at distance 2: restrict vector size to 2
     @IR(applyIfCPUFeatureOr = {"sse2", "true"},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
         counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.MUL_VS, IRNode.VECTOR_SIZE_2, ">0"}) // size 2 only
+                  IRNode.MUL_VS, IRNode.VECTOR_SIZE_2, ">0", // size 2 only
+                  ".*multiversion.*", "= 0"})
     public char[] charArrayWithDependenceNeg() {
         char[] res = new char[SIZE];
         System.arraycopy(chars, 0, res, 0, SIZE);
@@ -332,12 +383,22 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        failOn = {IRNode.STORE_VECTOR})
+    // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.ADD_VB, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public byte[] byteArrayWithDependenceNeg() {
         byte[] res = new byte[SIZE];
         System.arraycopy(bytes, 0, res, 0, SIZE);
         for (int i = 3; i < SIZE / 2; i++) {
-            res[i] *= bytes[i - 3];
+            res[i] += bytes[i - 3];
         }
         return res;
     }
@@ -359,8 +420,19 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // Data dependency at distance 4: restrict vector size to 4
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
         counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.OR_VB, IRNode.VECTOR_SIZE_4, ">0"}) // size 4 only
+                  IRNode.OR_VB, IRNode.VECTOR_SIZE_4, ">0", // size 4 only
+                  ".*multiversion.*", "= 0"})
+    // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.OR_VB, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public boolean[] booleanArrayWithDependenceNeg() {
         boolean[] res = new boolean[SIZE];
         System.arraycopy(booleans, 0, res, 0, SIZE);
@@ -386,7 +458,16 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    // Speculative aliasing check -> never fails -> only predicate, no multiversioning.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        phase = CompilePhase.PRINT_IDEAL,
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, ">0", // full vectorization
+                  ".*multiversion.*", "= 0"})
+    // JDK-8354303: could we prove statically that there is no aliasing?
     public int[] differentIndexWithSameType() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];

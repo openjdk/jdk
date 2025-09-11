@@ -40,10 +40,10 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
@@ -206,6 +206,12 @@ void* MallocTracker::record_free_block(void* memblock) {
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   deaccount(header->free_info());
+
+  if (ZapCHeap) {
+    // To do this zapping, we need to know the block size.
+    // This is why we have to do it here, and not in os::free.
+    memset(memblock, freeBlockPad, header->size());
+  }
 
   header->mark_block_as_dead();
 

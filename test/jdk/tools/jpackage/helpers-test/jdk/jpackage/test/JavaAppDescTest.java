@@ -42,11 +42,10 @@ public class JavaAppDescTest extends JUnitAdapter {
     @Parameter({"Foo", "Foo.class"})
     @Parameter({"com.bar.A", "com/bar/A.class"})
     @Parameter({"module/com.bar.A", "com/bar/A.class"})
-    public static void testClassFilePath(String... args) {
-        var appDesc = args[0];
-        var expectedClassFilePath = Path.of(args[1]);
-        TKit.assertEquals(expectedClassFilePath.toString(), JavaAppDesc.parse(
-                appDesc).classFilePath().toString(), null);
+    public static void testClassFilePath(String appDesc, String expectedClassFile) {
+        var expectedClassFilePath = Path.of(expectedClassFile);
+        TKit.assertEquals(expectedClassFilePath.toString(),
+                JavaAppDesc.parse(appDesc).classFilePath().toString(), null);
     }
 
     public static List<Object[]> input() {
@@ -55,6 +54,12 @@ public class JavaAppDescTest extends JUnitAdapter {
             createTestCase("foo.jar*", "foo.jar*hello.jar:Hello"),
             createTestCase("Bye", "hello.jar:Bye"),
             createTestCase("bye.jar:", "bye.jar:Hello"),
+            createTestCase("bye.jar:!", appDesc -> {
+                return appDesc
+                        .setBundleFileName("bye.jar")
+                        .setClassName("Hello")
+                        .setWithMainClass(true);
+            }),
             createTestCase("duke.jar:com.other/com.other.foo.bar.Buz!@3.7", appDesc -> {
                 return appDesc
                         .setBundleFileName("duke.jar")

@@ -55,6 +55,8 @@
 // Definition 3.3 A Pair is a Pack of size two, where the
 // first statement is considered the left element, and the
 // second statement is considered the right element.
+//
+// For more documentation, see: SuperWord::SLP_extract
 
 // The PairSet is a set of pairs. These are later combined to packs,
 // and stored in the PackSet.
