@@ -4274,6 +4274,7 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
 
 // utility methods for format checking
 
+// Verify the class modifiers for the current class, or an inner class if inner_name is non-null.
 void ClassFileParser::verify_legal_class_modifiers(jint flags, Symbol* inner_name, TRAPS) const {
   const bool is_module = (flags & JVM_ACC_MODULE) != 0;
   assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
