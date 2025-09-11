@@ -317,7 +317,20 @@ public:
   void set_transformed_node(VTransformNode* vtn, Node* n);
   Node* transformed_node(const VTransformNode* vtn) const;
 
-  // TODO: missing stuff?
+  Node* memory_state(int alias_idx) const { return _memory_states.at(alias_idx); }
+  void set_memory_state(int alias_idx, Node* n) { _memory_states.at_put(alias_idx, n); }
+
+  Node* memory_state(const TypePtr* adr_type) const {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return memory_state(alias_idx);
+  }
+
+  void set_memory_state(const TypePtr* adr_type, Node* n) {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return set_memory_state(alias_idx, n);
+  }
+
+  void fix_memory_state_uses_after_loop();
 
 private:
   int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }

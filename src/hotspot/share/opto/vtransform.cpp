@@ -755,20 +755,20 @@ void VTransformApplyState::init_memory_states_and_uses_after_loop() {
   }
 }
 
-// TODO: add in
-//// We may have reordered the scalar stores, or replaced them with vectors. Now
-//// the last memory state in the loop may have changed. Thus, we need to change
-//// the uses of the old last memory state the the new last memory state.
-//void VTransformApplyState::fix_memory_state_uses_after_loop() {
-//  for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
-//    MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
-//    Node* last_state = memory_state(use._alias_idx);
-//    phase()->igvn().replace_input_of(use._use, use._in_idx, last_state);
-//  }
-//}
+// We may have reordered the scalar stores, or replaced them with vectors. Now
+// the last memory state in the loop may have changed. Thus, we need to change
+// the uses of the old last memory state the the new last memory state.
+void VTransformApplyState::fix_memory_state_uses_after_loop() {
+  for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
+    MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
+    Node* last_state = memory_state(use._alias_idx);
+    phase()->igvn().replace_input_of(use._use, use._in_idx, last_state);
+  }
+}
 
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwrap without touching the inputs.
+  // TODO: hook inputs, memory state etc. check all nodes!
   return VTransformApplyResult::make_scalar(_node);
 }
 
@@ -847,7 +847,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     vn = VectorNode::make(_vector_opcode, in1, in2, in3, vt); // ternary
   }
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -862,7 +862,7 @@ VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(
   register_new_node_from_vectorization(apply_state, long_vn);
   // Cast long -> int, to mimic the scalar long -> int operation.
   VectorNode* vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -874,7 +874,7 @@ VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyStat
   Node* in1 = apply_state.transformed_node(in_req(1));
   VectorNode* vn = new VectorReinterpretNode(in1, src_vt, dst_vt);
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -893,7 +893,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   PhaseIdealLoop* phase = apply_state.phase();
   ConINode* mask_node  = phase->intcon((int)mask);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -902,7 +902,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   Node* vec  = apply_state.transformed_node(in_req(2));
 
   ReductionNode* vn = ReductionNode::make(scalar_opcode(), nullptr, init, vec, element_basic_type());
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
@@ -911,11 +911,8 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  LoadNode* first = nodes().at(0)->as_Load();
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
-  // TODO: fixme
-  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
 
   // Set the memory dependency of the LoadVector as early as possible.
@@ -934,7 +931,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt,
                                             control_dependency()); // TODO: fixme?
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
@@ -942,29 +939,16 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   int sopc  = scalar_opcode();
   uint vlen = vector_length();
 
-  StoreNode* first = nodes().at(0)->as_Store();
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
-  // TODO: fixme
-  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
 
   Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
   StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, _adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
-  return VTransformApplyResult::make_vector(vn, vn->vect_type());
-}
-
-void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const {
-  PhaseIdealLoop* phase = apply_state.phase();
   register_new_node_from_vectorization(apply_state, vn);
-
-  // TODO: remove + rename method - maybe just remove it completely and only use the one below?
-  for (int i = 0; i < _nodes.length(); i++) {
-    Node* n = _nodes.at(i);
-    phase->igvn().replace_node(n, vn);
-  }
+  apply_state.set_memory_state(_adr_type, vn);
+  return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
