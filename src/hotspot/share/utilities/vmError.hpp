@@ -251,7 +251,7 @@ public:
   ~VMErrorCallbackMark();
 };
 
-// Ergonomic construction for creating ad-hoc VMErrorCallback which automatically
+// Convenient construction for creating ad-hoc VMErrorCallback which automatically
 // calls the provided invocable f if a VM crash occurs within its lifetime.
 // Can be used to instrument a build for more detailed contextual information
 // gathering. Especially useful when hunting down intermittent bugs, or issues
