@@ -131,8 +131,15 @@ public class ImageReaderTest {
     public void testResourceNodes_present(String modAndPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
             String[] parts = modAndPath.split(":");
-            assertNotNull(reader.findResourceNode(parts[0], parts[1]));
-            assertTrue(reader.containsResource(parts[0], parts[1]));
+            String modName = parts[0];
+            String resPath = parts[1];
+
+            assertNotNull(reader.findResourceNode(modName, resPath));
+            assertTrue(reader.containsResource(modName, resPath));
+
+            String canonicalNodeName = "/modules/" + modName + "/" + resPath;
+            Node node = reader.findNode(canonicalNodeName);
+            assertTrue(node != null && node.isResource());
         }
     }
 
@@ -144,6 +151,9 @@ public class ImageReaderTest {
             // Resource in wrong module.
             "modfoo:com/bar/One.class",
             "modbar:com/foo/Alpha.class",
+            // Directories are not returned.
+            "modfoo:com/foo",
+            "modbar:com/bar",
             // JImage entries exist for these, but they are not resources.
             "modules:modfoo/com/foo/Alpha.class",
             "packages:com.foo/modfoo",
@@ -156,8 +166,17 @@ public class ImageReaderTest {
     public void testFindResourceNode_absent(String modAndPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
             String[] parts = modAndPath.split(":");
-            assertNull(reader.findResourceNode(parts[0], parts[1]));
-            assertFalse(reader.containsResource(parts[0], parts[1]));
+            String modName = parts[0];
+            String resPath = parts[1];
+
+            assertNull(reader.findResourceNode(modName, resPath));
+            assertFalse(reader.containsResource(modName, resPath));
+
+            // Non-existent resources names should either not be found,
+            // or (in the case of directory nodes) not be resources.
+            String canonicalNodeName = "/modules/" + modName + "/" + resPath;
+            Node node = reader.findNode(canonicalNodeName);
+            assertTrue(node == null || !node.isResource());
         }
     }
 
