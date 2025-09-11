@@ -192,6 +192,7 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
   }
 
+  // TODO: move up - PRIORITY
   VStatus body_status = _body.construct();
   if (!body_status.is_success()) {
     return body_status;
@@ -205,6 +206,8 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   return VStatus::make_success();
 }
+
+// TODO: VLoopMemorySlices::find_memory_slices etc. + print
 
 void VLoopVPointers::compute_vpointers() {
   count_vpointers();
@@ -267,6 +270,7 @@ void VLoopVPointers::print() const {
 //                   the edge, i.e. spaw the order.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  // TODO:fixme
   const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;

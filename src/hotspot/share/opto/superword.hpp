@@ -657,7 +657,7 @@ private:
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  bool schedule_and_apply() const;
+  bool do_vtransform() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

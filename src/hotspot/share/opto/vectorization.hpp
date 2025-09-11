@@ -379,6 +379,7 @@ private:
   static Node* original_input(const Node* n, uint i);
 };
 
+// TODO: move and refactor
 // Submodule of VLoopAnalyzer.
 // Find the memory slices in the loop.
 class VLoopMemorySlices : public StackObj {
@@ -460,6 +461,8 @@ private:
     _body_idx.at_put_grow(n->_idx, i);
   }
 };
+
+// TODO: move VLoopMemorySlices here
 
 // Submodule of VLoopAnalyzer.
 // Compute the vector element type for every node in the loop body.
@@ -601,7 +604,7 @@ private:
   Arena*                   _arena;
   const VLoop&             _vloop;
   const VLoopBody&         _body;
-  const VLoopMemorySlices& _memory_slices;
+  const VLoopMemorySlices& _memory_slices; // TODO: move?
   const VLoopVPointers&    _vpointers;
 
   // bb_idx -> DependenceNode*
@@ -619,7 +622,7 @@ public:
     _arena(arena),
     _vloop(vloop),
     _body(body),
-    _memory_slices(memory_slices),
+    _memory_slices(memory_slices), // TODO: add body etc?
     _vpointers(pointers),
     _dependency_nodes(arena,
                       vloop.estimated_body_length(),

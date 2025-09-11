@@ -455,6 +455,7 @@ bool SuperWord::transform_loop() {
 //
 // 8) The pairs are combined into vector sized packs.
 //
+// TODO: fix me
 // 9) Reorder the memory slices to co-locate members of the memory packs.
 //
 // 10) Generate ideal vector nodes for the final set of packs and where necessary,
@@ -498,7 +499,7 @@ bool SuperWord::SLP_extract() {
   DEBUG_ONLY(verify_packs();)
   DEBUG_ONLY(verify_no_extract());
 
-  return schedule_and_apply();
+  return do_vtransform();
 }
 
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
@@ -660,6 +661,7 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
   }
 }
 
+// TODO: fixme -> refactor
 void VLoopMemorySlices::find_memory_slices() {
   assert(_heads.is_empty(), "not yet computed");
   assert(_tails.is_empty(), "not yet computed");
@@ -681,6 +683,7 @@ void VLoopMemorySlices::find_memory_slices() {
 }
 
 #ifndef PRODUCT
+// TODO: fixme -> refactor
 void VLoopMemorySlices::print() const {
   tty->print_cr("\nVLoopMemorySlices::print: %s",
                 heads().length() > 0 ? "" : "NONE");
@@ -693,6 +696,7 @@ void VLoopMemorySlices::print() const {
 
 // Get all memory nodes of a slice, in reverse order
 void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
+  // TODO: add assert
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -1946,7 +1950,8 @@ void PackSet::verify() const {
 }
 #endif
 
-bool SuperWord::schedule_and_apply() const {
+// See description at top of "vtransform.hpp".
+bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
@@ -2002,6 +2007,7 @@ void VTransform::apply() {
   Compile* C = phase()->C;
   C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl());
 
+  // TODO: fix me - rm
   _graph.apply_memops_reordering_with_schedule();
   C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl());
 
@@ -2016,6 +2022,7 @@ void VTransform::apply() {
   C->print_method(PHASE_AUTO_VECTORIZATION5_AFTER_APPLY, 4, cl());
 }
 
+// TODO: fix me - rm
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
 // We reorder all slices in parallel, ensuring that the memops inside each slice are
 // ordered according to the _schedule. This means that all packed memops are consecutive
@@ -2121,6 +2128,8 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
+
+  // TODO: cleanup backedges and memory state uses after loop?
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
@@ -2774,6 +2783,7 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
+// TODO: refactor?
 LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
   for (int i = 0; i < nodes().length(); i++) {
@@ -2846,6 +2856,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+  // TODO: refactor with vpointer? Or separately?
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;

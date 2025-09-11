@@ -58,6 +58,8 @@
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
+//
+// TODO: fix me
 
 typedef int VTransformNodeIDX;
 class VTransformNode;
@@ -176,7 +178,7 @@ public:
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
-  void apply_memops_reordering_with_schedule() const;
+  void apply_memops_reordering_with_schedule() const; // TODO: rm?
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:
@@ -187,13 +189,14 @@ private:
 
   void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
 
+  // TODO: rm?
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
-  void print_memops_schedule() const;
+  void print_memops_schedule() const; // TODO: rm
   void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                             const VectorSet& pre_visited,
                             const VectorSet& post_visited) const;
@@ -280,6 +283,8 @@ private:
   // Since "apply" is called on defs before uses, this allows us to find the
   // generated def (input) nodes when we are generating the use nodes in "apply".
   GrowableArray<Node*> _vtnode_idx_to_transformed_node;
+
+  // TODO: memory states
 
 public:
   VTransformApplyState(const VLoopAnalyzer& vloop_analyzer, int num_vtnodes) :
@@ -633,7 +638,7 @@ class VTransformVectorNode : public VTransformNode {
 private:
   const VTransformVectorNodeProperties _properties;
 protected:
-  GrowableArray<Node*> _nodes;
+  GrowableArray<Node*> _nodes; // TODO: rm?
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
     VTransformNode(vtransform, req),
@@ -778,6 +783,7 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+// TODO: rm?
 // Invoke callback on all memops, in the order of the schedule.
 template<typename Callback>
 void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {

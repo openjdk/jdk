@@ -78,6 +78,7 @@ bool VTransformGraph::schedule() {
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
       for (uint i = 0; i < vtn->out_strong_edges(); i++) {
         VTransformNode* use = vtn->out_strong_edge(i);
+        // TODO: skip backedges -> if use is LoopPhi
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -863,6 +864,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
 
   LoadNode* first = nodes().at(0)->as_Load();
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
+  // TODO: fixme
   // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
@@ -881,7 +883,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   }
 
   LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt,
-                                            control_dependency());
+                                            control_dependency()); // TODO: fixme?
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
@@ -893,6 +895,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
 
   StoreNode* first = nodes().at(0)->as_Store();
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
+  // TODO: fixme
   // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
@@ -908,6 +911,7 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
   PhaseIdealLoop* phase = apply_state.phase();
   register_new_node_from_vectorization(apply_state, vn);
 
+  // TODO: remove + rename method - maybe just remove it completely and only use the one below?
   for (int i = 0; i < _nodes.length(); i++) {
     Node* n = _nodes.at(i);
     phase->igvn().replace_node(n, vn);
@@ -916,6 +920,7 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
 
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
+  // TODO: node notes!
   // Using the cl is sometimes not the most accurate, but still correct. We do not have to be
   // perfectly accurate, because we will set major_progress anyway.
   phase->register_new_node(vn, apply_state.vloop().cl());
@@ -944,6 +949,7 @@ void VTransformGraph::print_schedule() const {
   }
 }
 
+// TODO: rm
 void VTransformGraph::print_memops_schedule() const {
   tty->print_cr("\nVTransformGraph::print_memops_schedule:");
   int i = 0;

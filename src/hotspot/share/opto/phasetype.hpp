@@ -89,7 +89,7 @@
   flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
   flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
   flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
-  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") /* TODO: fix*/ \
   flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, after Adjusting Pre-loop Limit") \
   flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, after Adding Speculative Runtime Checks") \
   flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, after Apply") \

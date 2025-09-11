@@ -37,6 +37,8 @@ void SuperWordVTransformBuilder::build() {
   VectorSet vtn_memory_dependencies; // Shared, but cleared for every vtnode.
   build_inputs_for_vector_vtnodes(vtn_memory_dependencies);
   build_inputs_for_scalar_vtnodes(vtn_memory_dependencies);
+
+  // TODO: build_outputs
 }
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
@@ -50,6 +52,7 @@ void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
 }
 
 void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
+  // TODO: iterate loop not just bb
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
@@ -137,6 +140,7 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
     } else if (n->is_CountedLoop()) {
       continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
+      // TODO: rm comment?
       // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
       init_req_with_scalar(n, vtn, 0);
@@ -146,6 +150,8 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
     }
   }
 }
+
+// TODO: build_outputs
 
 // Create a vtnode for each pack. No in/out edges set yet.
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
@@ -159,6 +165,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   if (p0->is_Load()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * vlen));
+    // TODO: load_control_dependency ?
     vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, properties, vector_p, p0->adr_type());
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
@@ -209,6 +216,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     int vopc = VectorNode::opcode(sopc, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), properties, vopc);
   }
+  // TODO: rm?
   vtn->set_nodes(pack);
   return vtn;
 }
@@ -276,15 +284,15 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       // case of a ConvL2I, it can be int or some narrower type such
       // as short etc. But given we replicate the input of the Convert
       // node, we have to use the input type instead.
-      BasicType element_type = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
-      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type == T_LONG) {
+      BasicType element_bt = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
+      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_bt == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
         VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, pack->size(), element_type);
+      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, pack->size(), element_bt);
       replicate->init_req(1, same_input_vtn);
       return replicate;
     }
