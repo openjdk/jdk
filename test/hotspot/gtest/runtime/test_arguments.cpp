@@ -113,12 +113,12 @@ TEST_F(ArgumentsTest, check_memory_size__min) {
   EXPECT_EQ(check_memory_size(max_intx    , max_intx, max_uintx), Arguments::arg_in_range);
 
   NOT_LP64(
-    EXPECT_EQ(check_memory_size(max_intx + 1, max_intx, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 1, max_intx, max_uintx), Arguments::arg_in_range);
 
-    EXPECT_EQ(check_memory_size(max_intx - 1, max_intx + 1, max_uintx), Arguments::arg_too_small);
-    EXPECT_EQ(check_memory_size(max_intx    , max_intx + 1, max_uintx), Arguments::arg_too_small);
-    EXPECT_EQ(check_memory_size(max_intx + 1, max_intx + 1, max_uintx), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size(max_intx + 2, max_intx + 1, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(        max_intx - 1, (size_t)max_intx + 1, max_uintx), Arguments::arg_too_small);
+    EXPECT_EQ(check_memory_size(        max_intx    , (size_t)max_intx + 1, max_uintx), Arguments::arg_too_small);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 1, (size_t)max_intx + 1, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 2, (size_t)max_intx + 1, max_uintx), Arguments::arg_in_range);
   );
 
   EXPECT_EQ(check_memory_size(max_uintx - 2, max_uintx - 1, max_uintx), Arguments::arg_too_small);
@@ -141,11 +141,11 @@ TEST_F(ArgumentsTest, check_memory_size__max) {
   EXPECT_EQ(check_memory_size(max_intx         , 1000, max_intx), Arguments::arg_in_range);
 
   NOT_LP64(
-    EXPECT_EQ(check_memory_size(max_intx + 1     , 1000, max_intx), Arguments::arg_too_big);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 1     , 1000, max_intx), Arguments::arg_too_big);
 
-    EXPECT_EQ(check_memory_size(max_intx         , 1000, max_intx + 1), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size(max_intx + 1     , 1000, max_intx + 1), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size(max_intx + 2     , 1000, max_intx + 1), Arguments::arg_too_big);
+    EXPECT_EQ(check_memory_size(        max_intx         , 1000, (size_t)max_intx + 1), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 1     , 1000, (size_t)max_intx + 1), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size((size_t)max_intx + 2     , 1000, (size_t)max_intx + 1), Arguments::arg_too_big);
  );
 }
 
