@@ -60,10 +60,8 @@ static void check_relauncher_argument(char* arg) {
     }
     const char *progname_prefix = "-J-DjavaLauncherProgname=";
     int progname_prefix_len = strlen(progname_prefix);
-    printf("prefix is: %d\n", progname_prefix_len);
     if (strncmp(arg, progname_prefix, progname_prefix_len) == 0) {
         progname = arg + progname_prefix_len;
-    printf("PROGNAME is: %s\n", progname);
     }
     const char *args_prefix = "-J-DjavaLauncherArgs=";
     int args_prefix_len = strlen(args_prefix);
