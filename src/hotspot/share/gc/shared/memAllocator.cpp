@@ -48,7 +48,6 @@ class MemAllocator::Allocation: StackObj {
   const MemAllocator& _allocator;
   JavaThread*         _thread;
   oop*                _obj_ptr;
-  bool                _overhead_limit_exceeded;
   bool                _allocated_outside_tlab;
   size_t              _allocated_tlab_size;
 
@@ -71,7 +70,6 @@ public:
     : _allocator(allocator),
       _thread(JavaThread::cast(allocator._thread)), // Do not use Allocation in non-JavaThreads.
       _obj_ptr(obj_ptr),
-      _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),
       _allocated_tlab_size(0)
   {
@@ -119,7 +117,7 @@ bool MemAllocator::Allocation::check_out_of_memory() {
     return false;
   }
 
-  const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
+  const char* message = "Java heap space";
   if (!_thread->is_in_internal_oome_mark()) {
     // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
     report_java_out_of_memory(message);
@@ -133,10 +131,7 @@ bool MemAllocator::Allocation::check_out_of_memory() {
         message);
     }
 
-    oop exception = _overhead_limit_exceeded ?
-        Universe::out_of_memory_error_gc_overhead_limit() :
-        Universe::out_of_memory_error_java_heap();
-    THROW_OOP_(exception, true);
+    THROW_OOP_(Universe::out_of_memory_error_java_heap(), true);
   } else {
     THROW_OOP_(Universe::out_of_memory_error_java_heap_without_backtrace(), true);
   }
@@ -238,7 +233,7 @@ void MemAllocator::Allocation::notify_allocation() {
 
 HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const {
   allocation._allocated_outside_tlab = true;
-  HeapWord* mem = Universe::heap()->mem_allocate(_word_size, &allocation._overhead_limit_exceeded);
+  HeapWord* mem = Universe::heap()->mem_allocate(_word_size);
   if (mem == nullptr) {
     return mem;
   }

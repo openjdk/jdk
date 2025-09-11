@@ -23,7 +23,6 @@
  */
 
 #include "cds/archiveBuilder.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmSymbols.hpp"

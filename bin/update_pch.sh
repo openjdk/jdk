@@ -23,8 +23,18 @@
 # The output of this script may require some degree of human curation:
 # - Redundant headers, e.g. both x.hpp, x.inline.hpp are included;
 # - Headers relative to a non-default feature should be protected by an
-#   appropriate 'if' clause to make sure all variants can build without 
+#   appropriate 'if' clause to make sure all variants can build without
 #   errors.
+
+source_path="$(dirname ${0})"
+this_script_dir="$(cd -- "${source_path}" > /dev/null && pwd)"
+if test -z "${this_script_dir}"; then
+  echo "Error: Could not determine location of this script"
+  exit 1
+fi
+
+# Work in top directory
+cd $this_script_dir/..
 
 # Time threshold for header compilation, if the time exceeds the
 # threshold the header will be precompiled.

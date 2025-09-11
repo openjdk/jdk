@@ -302,7 +302,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 Klass::Klass(KlassKind kind) : _kind(kind),
                                _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
-  CDS_ONLY(_shared_class_flags = 0;)
+  CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));

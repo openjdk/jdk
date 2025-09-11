@@ -24,11 +24,11 @@
 
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -185,7 +185,7 @@ void ClassListParser::parse_class_name_and_attributes(TRAPS) {
     // cpcache to be created. The linking is done as soon as classes
     // are loaded in order that the related data structures (klass and
     // cpCache) are located together.
-    MetaspaceShared::try_link_class(THREAD, ik);
+    AOTMetaspace::try_link_class(THREAD, ik);
   }
 }
 
@@ -674,7 +674,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    MetaspaceShared::try_link_class(THREAD, ik);
+    AOTMetaspace::try_link_class(THREAD, ik);
     if (!ik->is_linked()) {
       // Verification of ik has failed
       return;

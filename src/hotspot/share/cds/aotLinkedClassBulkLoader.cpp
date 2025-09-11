@@ -221,7 +221,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
           log_error(aot)("Unable to resolve %s class from %s: %s", category_name, CDSConfig::type_of_archive_being_loaded(), ik->external_name());
           log_error(aot)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
           log_error(aot)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
-          MetaspaceShared::unrecoverable_loading_error();
+          AOTMetaspace::unrecoverable_loading_error();
         }
         assert(actual->is_loaded(), "must be");
       }

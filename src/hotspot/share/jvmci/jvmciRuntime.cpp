@@ -565,8 +565,8 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
 
   if (obj == nullptr) {
     tty->print("null");
-  } else if (oopDesc::is_oop_or_null(obj, true) && (!as_string || !java_lang_String::is_instance(obj))) {
-    if (oopDesc::is_oop_or_null(obj, true)) {
+  } else if (oopDesc::is_oop_or_null(obj) && (!as_string || !java_lang_String::is_instance(obj))) {
+    if (oopDesc::is_oop_or_null(obj)) {
       char buf[O_BUFLEN];
       tty->print("%s@" INTPTR_FORMAT, obj->klass()->name()->as_C_string(buf, O_BUFLEN), p2i(obj));
     } else {
