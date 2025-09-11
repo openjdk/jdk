@@ -174,7 +174,7 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   OptoReg::Name def_reg = def_lrg.reg();
   const RegMask &use_mask = n->in_RegMask(idx);
   bool can_use = ( RegMask::can_represent(def_reg) ? (use_mask.Member(def_reg) != 0)
-                                                   : (use_mask.is_AllStack() != 0));
+                                                   : (use_mask.is_infinite() != 0));
   if (!RegMask::is_vector(def->ideal_reg())) {
     // Check for a copy to or from a misaligned pair.
     // It is workaround for a sparc with misaligned pairs.

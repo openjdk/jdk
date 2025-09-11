@@ -1578,7 +1578,7 @@ uint PhaseChaitin::Select( ) {
     _ifg->re_insert(lidx);
     if( !lrg->alive() ) continue;
     // capture allstackedness flag before mask is hacked
-    const int is_allstack = lrg->mask().is_AllStack();
+    const int is_infinite = lrg->mask().is_infinite();
 
     // Yeah, yeah, yeah, I know, I know.  I can refactor this
     // to avoid the GOTO, although the refactored code will not
@@ -1640,9 +1640,9 @@ uint PhaseChaitin::Select( ) {
     OptoReg::Name reg = choose_color( *lrg, chunk );
 
     //---------------
-    // If we fail to color and the AllStack flag is set, trigger
+    // If we fail to color and the infinite flag is set, trigger
     // a chunk-rollover event
-    if(!OptoReg::is_valid(OptoReg::add(reg,-chunk)) && is_allstack) {
+    if(!OptoReg::is_valid(OptoReg::add(reg,-chunk)) && is_infinite) {
       // Bump register mask up to next stack chunk
       chunk += RegMask::CHUNK_SIZE;
       lrg->Set_All();
@@ -1708,7 +1708,7 @@ uint PhaseChaitin::Select( ) {
       assert( lrg->alive(), "" );
       assert( !lrg->_fat_proj || lrg->is_multidef() ||
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
-      assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
+      assert( !orig_mask.is_infinite(), "infinite does not spill" );
 
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));

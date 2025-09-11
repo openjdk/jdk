@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ static unsigned int find_highest_bit(uintptr_t mask) {
 // as any notion of register classes.  We provide a register mask, which is
 // just a collection of Register numbers.
 
-// The ADLC defines 2 macros, RM_SIZE and FORALL_BODY.
-// RM_SIZE is the size of a register mask in 32-bit words.
+// The ADLC defines 2 macros, RM_SIZE_IN_INTS and FORALL_BODY.
+// RM_SIZE_IN_INTS is the size of a register mask in 32-bit words.
 // FORALL_BODY replicates a BODY macro once per word in the register mask.
 // The usage is somewhat clumsy and limited to the regmask.[h,c]pp files.
 // However, it means the ADLC can redefine the unroll macro and all loops
@@ -59,13 +59,14 @@ class RegMask {
 
   friend class RegMaskIterator;
 
-  // The RM_SIZE is aligned to 64-bit - assert that this holds
-  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE, 2)));
+  // RM_SIZE_IN_INTS is aligned to 64-bit - assert that this holds
+  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE_IN_INTS, 2)));
 
   static const unsigned int _WordBitMask = BitsPerWord - 1U;
   static const unsigned int _LogWordBits = LogBitsPerWord;
-  static const unsigned int _RM_SIZE     = LP64_ONLY(RM_SIZE >> 1) NOT_LP64(RM_SIZE);
-  static const unsigned int _RM_MAX      = _RM_SIZE - 1U;
+  static const unsigned int _RM_SIZE_IN_WORDS =
+      LP64_ONLY(RM_SIZE_IN_INTS >> 1) NOT_LP64(RM_SIZE_IN_INTS);
+  static const unsigned int _RM_WORD_MAX_INDEX = _RM_SIZE_IN_WORDS - 1U;
 
   union {
     // Array of Register Mask bits.  This array is large enough to cover
@@ -73,8 +74,8 @@ class RegMask {
     // on the stack (stack registers) up to some interesting limit.  Methods
     // that need more parameters will NOT be compiled.  On Intel, the limit
     // is something like 90+ parameters.
-    int       _RM_I[RM_SIZE];
-    uintptr_t _RM_UP[_RM_SIZE];
+    int       _RM_INT[RM_SIZE_IN_INTS];
+    uintptr_t _RM_WORD[_RM_SIZE_IN_WORDS];
   };
 
   // The low and high water marks represents the lowest and highest word
@@ -85,7 +86,7 @@ class RegMask {
   unsigned int _hwm;
 
  public:
-  enum { CHUNK_SIZE = _RM_SIZE * BitsPerWord };
+  enum { CHUNK_SIZE = _RM_SIZE_IN_WORDS * BitsPerWord };
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
   // Also, consider the maximum alignment size for a normally allocated
@@ -117,17 +118,17 @@ class RegMask {
 #   undef BODY
     int dummy = 0) {
 #if defined(VM_LITTLE_ENDIAN) || !defined(_LP64)
-#   define BODY(I) _RM_I[I] = a##I;
+#   define BODY(I) _RM_INT[I] = a##I;
 #else
     // We need to swap ints.
-#   define BODY(I) _RM_I[I ^ 1] = a##I;
+#   define BODY(I) _RM_INT[I ^ 1] = a##I;
 #endif
     FORALL_BODY
 #   undef BODY
     _lwm = 0;
-    _hwm = _RM_MAX;
-    while (_hwm > 0      && _RM_UP[_hwm] == 0) _hwm--;
-    while ((_lwm < _hwm) && _RM_UP[_lwm] == 0) _lwm++;
+    _hwm = _RM_WORD_MAX_INDEX;
+    while (_hwm > 0      && _RM_WORD[_hwm] == 0) _hwm--;
+    while ((_lwm < _hwm) && _RM_WORD[_lwm] == 0) _lwm++;
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -135,14 +136,14 @@ class RegMask {
   RegMask(RegMask *rm) {
     _hwm = rm->_hwm;
     _lwm = rm->_lwm;
-    for (unsigned i = 0; i < _RM_SIZE; i++) {
-      _RM_UP[i] = rm->_RM_UP[i];
+    for (unsigned i = 0; i < _RM_SIZE_IN_WORDS; i++) {
+      _RM_WORD[i] = rm->_RM_WORD[i];
     }
     assert(valid_watermarks(), "post-condition");
   }
 
   // Construct an empty mask
-  RegMask() : _RM_UP(), _lwm(_RM_MAX), _hwm(0) {
+  RegMask() : _RM_WORD(), _lwm(_RM_WORD_MAX_INDEX), _hwm(0) {
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -156,18 +157,18 @@ class RegMask {
     assert(reg < CHUNK_SIZE, "");
 
     unsigned r = (unsigned)reg;
-    return _RM_UP[r >> _LogWordBits] & (uintptr_t(1) << (r & _WordBitMask));
+    return _RM_WORD[r >> _LogWordBits] & (uintptr_t(1) << (r & _WordBitMask));
   }
 
   // The last bit in the register mask indicates that the mask should repeat
   // indefinitely with ONE bits.  Returns TRUE if mask is infinite or
   // unbounded in size.  Returns FALSE if mask is finite size.
-  bool is_AllStack() const {
-    return (_RM_UP[_RM_MAX] & (uintptr_t(1) << _WordBitMask)) != 0;
+  bool is_infinite() const {
+    return (_RM_WORD[_RM_WORD_MAX_INDEX] & (uintptr_t(1) << _WordBitMask)) != 0;
   }
 
-  void set_AllStack() {
-    _RM_UP[_RM_MAX] |= (uintptr_t(1) << _WordBitMask);
+  void set_infinite() {
+    _RM_WORD[_RM_WORD_MAX_INDEX] |= (uintptr_t(1) << _WordBitMask);
   }
 
   // Test for being a not-empty mask.
@@ -175,7 +176,7 @@ class RegMask {
     assert(valid_watermarks(), "sanity");
     uintptr_t tmp = 0;
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      tmp |= _RM_UP[i];
+      tmp |= _RM_WORD[i];
     }
     return tmp;
   }
@@ -184,7 +185,7 @@ class RegMask {
   OptoReg::Name find_first_elem() const {
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      uintptr_t bits = _RM_UP[i];
+      uintptr_t bits = _RM_WORD[i];
       if (bits) {
         return OptoReg::Name((i << _LogWordBits) + find_lowest_bit(bits));
       }
@@ -198,7 +199,7 @@ class RegMask {
     // Careful not to overflow if _lwm == 0
     unsigned i = _hwm + 1;
     while (i > _lwm) {
-      uintptr_t bits = _RM_UP[--i];
+      uintptr_t bits = _RM_WORD[--i];
       if (bits) {
         return OptoReg::Name((i << _LogWordBits) + find_highest_bit(bits));
       }
@@ -213,13 +214,13 @@ class RegMask {
   // Verify watermarks are sane, i.e., within bounds and that no
   // register words below or above the watermarks have bits set.
   bool valid_watermarks() const {
-    assert(_hwm < _RM_SIZE, "_hwm out of range: %d", _hwm);
-    assert(_lwm < _RM_SIZE, "_lwm out of range: %d", _lwm);
+    assert(_hwm < _RM_SIZE_IN_WORDS, "_hwm out of range: %d", _hwm);
+    assert(_lwm < _RM_SIZE_IN_WORDS, "_lwm out of range: %d", _lwm);
     for (unsigned i = 0; i < _lwm; i++) {
-      assert(_RM_UP[i] == 0, "_lwm too high: %d regs at: %d", _lwm, i);
+      assert(_RM_WORD[i] == 0, "_lwm too high: %d regs at: %d", _lwm, i);
     }
-    for (unsigned i = _hwm + 1; i < _RM_SIZE; i++) {
-      assert(_RM_UP[i] == 0, "_hwm too low: %d regs at: %d", _hwm, i);
+    for (unsigned i = _hwm + 1; i < _RM_SIZE_IN_WORDS; i++) {
+      assert(_RM_WORD[i] == 0, "_hwm too low: %d regs at: %d", _hwm, i);
     }
     return true;
   }
@@ -267,7 +268,7 @@ class RegMask {
     unsigned lwm = MAX2(_lwm, rm._lwm);
     uintptr_t result = 0;
     for (unsigned i = lwm; i <= hwm; i++) {
-      result |= _RM_UP[i] & rm._RM_UP[i];
+      result |= _RM_WORD[i] & rm._RM_WORD[i];
     }
     return result;
   }
@@ -278,17 +279,17 @@ class RegMask {
 
   // Clear a register mask
   void Clear() {
-    _lwm = _RM_MAX;
+    _lwm = _RM_WORD_MAX_INDEX;
     _hwm = 0;
-    memset(_RM_UP, 0, sizeof(uintptr_t) * _RM_SIZE);
+    memset(_RM_WORD, 0, sizeof(uintptr_t) * _RM_SIZE_IN_WORDS);
     assert(valid_watermarks(), "sanity");
   }
 
   // Fill a register mask with 1's
   void Set_All() {
     _lwm = 0;
-    _hwm = _RM_MAX;
-    memset(_RM_UP, 0xFF, sizeof(uintptr_t) * _RM_SIZE);
+    _hwm = _RM_WORD_MAX_INDEX;
+    memset(_RM_WORD, 0xFF, sizeof(uintptr_t) * _RM_SIZE_IN_WORDS);
     assert(valid_watermarks(), "sanity");
   }
 
@@ -302,7 +303,7 @@ class RegMask {
     unsigned index = r >> _LogWordBits;
     if (index > _hwm) _hwm = index;
     if (index < _lwm) _lwm = index;
-    _RM_UP[index] |= (uintptr_t(1) << (r & _WordBitMask));
+    _RM_WORD[index] |= (uintptr_t(1) << (r & _WordBitMask));
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -310,7 +311,7 @@ class RegMask {
   void Remove(OptoReg::Name reg) {
     assert(reg < CHUNK_SIZE, "");
     unsigned r = (unsigned)reg;
-    _RM_UP[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & _WordBitMask));
+    _RM_WORD[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & _WordBitMask));
   }
 
   // OR 'rm' into 'this'
@@ -320,7 +321,7 @@ class RegMask {
     if (_lwm > rm._lwm) _lwm = rm._lwm;
     if (_hwm < rm._hwm) _hwm = rm._hwm;
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      _RM_UP[i] |= rm._RM_UP[i];
+      _RM_WORD[i] |= rm._RM_WORD[i];
     }
     assert(valid_watermarks(), "sanity");
   }
@@ -331,7 +332,7 @@ class RegMask {
     // Do not evaluate words outside the current watermark range, as they are
     // already zero and an &= would not change that
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      _RM_UP[i] &= rm._RM_UP[i];
+      _RM_WORD[i] &= rm._RM_WORD[i];
     }
     // Narrow the watermarks if &rm spans a narrower range.
     // Update after to ensure non-overlapping words are zeroed out.
@@ -345,7 +346,7 @@ class RegMask {
     unsigned hwm = MIN2(_hwm, rm._hwm);
     unsigned lwm = MAX2(_lwm, rm._lwm);
     for (unsigned i = lwm; i <= hwm; i++) {
-      _RM_UP[i] &= ~rm._RM_UP[i];
+      _RM_WORD[i] &= ~rm._RM_WORD[i];
     }
   }
 
@@ -415,7 +416,7 @@ class RegMaskIterator {
 
     // Find the next word with bits
     while (_next_index <= _rm._hwm) {
-      _current_bits = _rm._RM_UP[_next_index++];
+      _current_bits = _rm._RM_WORD[_next_index++];
       if (_current_bits != 0) {
         // Found a word. Calculate the first register element and
         // prepare _current_bits by shifting it down and clearing
@@ -435,6 +436,6 @@ class RegMaskIterator {
 };
 
 // Do not use this constant directly in client code!
-#undef RM_SIZE
+#undef RM_SIZE_IN_INTS
 
 #endif // SHARE_OPTO_REGMASK_HPP
