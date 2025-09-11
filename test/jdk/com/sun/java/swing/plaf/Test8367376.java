@@ -91,8 +91,8 @@ public class Test8367376 extends JFrame {
                 try {
                     super.dispatchEvent(event);
                 } catch (ExpectedException e) {
-                    // This is  part of the test. But if we don't catch
-                    // this here the test harness says we our test failed.
+                    // This is part of the test. But if we don't catch
+                    // this here the test harness says our test failed.
                     observedExpectedExceptionCtr++;
                 }
             }
