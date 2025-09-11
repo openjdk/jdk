@@ -1217,14 +1217,11 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
 
   // Mod by zero?  Throw exception at runtime!
   if (t2 == TypeInteger::zero(bt)) {
-    return TypeInt::TOP;
+    return Type::TOP;
   }
 
-  const TypeInteger* i1 = t1->isa_integer(bt);
-  const TypeInteger* i2 = t2->isa_integer(bt);
-  if (i1 == nullptr || i2 == nullptr) {
-    return bottom;
-  }
+  const TypeInteger* i1 = t1->is_integer(bt);
+  const TypeInteger* i2 = t2->is_integer(bt);
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 int constants.
     // Special case: min_jlong % '-1' is UB, and e.g., x86 triggers a division error.
@@ -1266,7 +1263,7 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
     lo = MAX2(lo, i1->lo_as_long());
     hi = MIN2(hi, i1->hi_as_long());
   }
-  return TypeInteger::make(lo, hi, MAX2(i1->_widen,i2->_widen), bt);
+  return TypeInteger::make(lo, hi, MAX2(i1->_widen, i2->_widen), bt);
 }
 
 const Type* ModINode::Value(PhaseGVN* phase) const {
