@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains
- * or looses the focus
+ * or loses the focus
  * @run main ActiveAWTWindowTest
  */
 
