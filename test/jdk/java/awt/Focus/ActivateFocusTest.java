@@ -43,28 +43,37 @@ import java.awt.event.WindowEvent;
 
 public class ActivateFocusTest {
 
+    private static final int NUM_FRAMES = 2;
     private static ActivateFocus[] af;
 
     public static void main(final String[] args) throws Exception {
-        ActivateFocusTest app = new ActivateFocusTest();
-        EventQueue.invokeAndWait(() -> app.doTest());
+        try {
+            ActivateFocusTest app = new ActivateFocusTest();
+            EventQueue.invokeAndWait(() -> app.doTest());
 
-        Thread.sleep(1000);
-        boolean testFailed = false;
-        for (int i = 0; i < 2; i++) {
-            testFailed = (af[i].lw.focusCounter > 1);
-        }
-        if (testFailed) {
-            throw new RuntimeException("TEST FAILED - focus is gained more than one time");
-        } else {
-            System.out.println("TEST PASSED");
+            Thread.sleep(1000);
+            boolean testFailed = false;
+            for (int i = 0; i < NUM_FRAMES; i++) {
+                testFailed = (af[i].lw.focusCounter > 1);
+            }
+            if (testFailed) {
+                throw new RuntimeException("TEST FAILED - focus is gained more than one time");
+            } else {
+                System.out.println("TEST PASSED");
+            }
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                for (int i = 0; i < NUM_FRAMES; i++) {
+                    af[i].dispose();
+                }
+            });
         }
     }
 
     public void doTest() {
-      af = new ActivateFocus[2];
+      af = new ActivateFocus[NUM_FRAMES];
       Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-      for (int i = 0; i < 2; i++) {
+      for (int i = 0; i < NUM_FRAMES; i++) {
           af[i] = new ActivateFocus(i);
           af[i].setLocation(i * 160 + scrSize.width / 2, scrSize.height / 2);
           af[i].setVisible(true);
