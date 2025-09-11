@@ -935,67 +935,26 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
 
-  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
-  # that check.
-  if test "x$FLAGS_CPU" = "xaarch64" && test "x$FLAGS_OS" = "xlinux"; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      AC_LANG_PUSH(C)
-      OLD_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve"
-      # check the compiler and binutils support sve or not
-      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      saved_cflags="$CFLAGS"
-      saved_cc="$CC"
-      CFLAGS="$CFLAGS $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
-      CC="$ARG_PREFIX[CC]"
-      AC_LANG_PUSH([C])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-          [
-            #include <arm_sve.h>
-            svfloat64_t a() {}
-          ],
-          [
-            svint32_t r = svdup_n_s32(1)
-          ])],
-          [sve_supported=yes],
-          [sve_supported=no]
+  $2SVE_CFLAGS=""
+  if test "x$AARCH64_SVE_ENABLED" = xtrue; then
+    $2SVE_CFLAGS="-march=armv8-a+sve"
+    # Switching the initialization mode with gcc from 'pattern' to 'zero'
+    # avoids the use of unsupported `__builtin_clear_padding` for variable
+    # length aggregates
+    AC_LANG_PUSH(C)
+    OLD_CFLAGS="$CFLAGS"
+    if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
+      AC_MSG_CHECKING([Switching the initialization mode with gcc from pattern to zero])
+      INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
+        PREFIX: $3,
+        IF_TRUE: [
+          $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
+        ]
       )
-      AC_MSG_RESULT([$sve_supported])
-      AC_LANG_POP([C])
-      CC="$saved_cc"
-      CFLAGS="$saved_cflags"
-      $2SVE_CFLAGS=""
-      if test "x$AARCH64_SVE_ENABLED" = "xtrue"; then
-        if test "x$sve_supported" = "xyes"; then
-          $2SVE_CFLAGS="-march=armv8-a+sve"
-        else
-          AC_MSG_ERROR([--enable-aarch64-sve but compiler or binutils does not support SVE])
-        fi
-      elif test "x$AARCH64_SVE_ENABLED" = "xfalse"; then
-        # disable sve explicitly
-        if test "x$sve_supported" = "xyes"; then
-          $2SVE_CFLAGS=""
-        fi
-      fi
-      # Switching the initialization mode with gcc from 'pattern' to 'zero'
-      # avoids the use of unsupported `__builtin_clear_padding` for variable
-      # length aggregates
-      if test "x$$2SVE_CFLAGS" != "x" && test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
-        AC_MSG_CHECKING([Switching the initialization mode with gcc from pattern to zero])
-        INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
-        FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
-          PREFIX: $3,
-          IF_TRUE: [
-            $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
-          ]
-        )
-      fi
-      CFLAGS="$OLD_CFLAGS"
-      AC_LANG_POP(C)
     fi
+    CFLAGS="$OLD_CFLAGS"
+    AC_LANG_POP(C)
   fi
   AC_SUBST($2SVE_CFLAGS)
 ])
