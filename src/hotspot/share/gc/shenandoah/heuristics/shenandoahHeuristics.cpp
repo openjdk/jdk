@@ -113,7 +113,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_garbage += garbage;
         region->make_trash_immediate();
         if (region->reserved_for_direct_allocation()) {
-          heap->free_set()->release_directly_allocatable_region<false/*IS_MUTATOR*/>(region);
+          heap->free_set()->release_directly_allocatable_region(region);
         }
       } else {
         // This is our candidate for later consideration.
