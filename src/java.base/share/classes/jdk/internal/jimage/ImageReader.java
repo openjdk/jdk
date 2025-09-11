@@ -360,13 +360,12 @@ public final class ImageReader implements AutoCloseable {
             if (moduleName.indexOf('/') >= 0 || resourcePath.indexOf('/') == 0) {
                 return null;
             }
-            String jimageName = "/" + moduleName + "/" + resourcePath;
-            String nodeName = MODULES_ROOT + jimageName;
+            String nodeName = MODULES_ROOT + "/" + moduleName + "/" + resourcePath;
             // Synchronize as tightly as possible to reduce locking contention.
             synchronized (this) {
                 Node node = nodes.get(nodeName);
                 if (node == null) {
-                    ImageLocation loc = findLocation(jimageName);
+                    ImageLocation loc = findLocation(moduleName, resourcePath);
                     if (loc != null && isResource(loc)) {
                         node = newResource(nodeName, loc);
                         nodes.put(node.getName(), node);
@@ -388,10 +387,9 @@ public final class ImageReader implements AutoCloseable {
             if (moduleName.indexOf('/') >= 0 || resourcePath.indexOf('/') == 0) {
                 return false;
             }
-            // No leading "/modules" (and if the given module name is 'modules'
-            // then 'isResource()' returns false to prevent false positives).
-            String jimageName = "/" + moduleName + "/" + resourcePath;
-            ImageLocation loc = findLocation(jimageName);
+            // If the given module name is 'modules', then 'isResource()'
+            // returns false to prevent false positives.
+            ImageLocation loc = findLocation(moduleName, resourcePath);
             return loc != null && isResource(loc);
         }
 
