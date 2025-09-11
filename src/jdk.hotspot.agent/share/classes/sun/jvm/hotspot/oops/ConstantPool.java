@@ -438,10 +438,12 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   private U4Array getOffsets() {
     Address a = bsmaentries.getValue(getAddress());
+    if (a == null) return null;
     return VMObjectFactory.newObject(U4Array.class, bsmaentries_offsets.getValue(a));
   }
   private U2Array getBootstrapMethods() {
     Address a = bsmaentries.getValue(getAddress());
+    if (a == null) return null;
     return VMObjectFactory.newObject(U2Array.class, bsmaentries_offsets.getValue(a));
   }
 
