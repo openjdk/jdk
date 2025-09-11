@@ -30,9 +30,9 @@
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
  *      -Xcomp -XX:-UseLoopPredicate -XX:-UseAutoVectorizationPredicate
- *      -XX:CompileCommand=compileonly,compiler.loopstripmining.MoveStoreAfterLoopSebsequentStores::test*
- *      compiler.loopstripmining.MoveStoreAfterLoopSebsequentStores
- * @run main compiler.loopstripmining.MoveStoreAfterLoopSebsequentStores
+ *      -XX:CompileCommand=compileonly,compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop::test*
+ *      compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop
+ * @run main compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop
  *
  */
 
