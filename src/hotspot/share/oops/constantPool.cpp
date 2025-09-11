@@ -2410,7 +2410,7 @@ void BSMAttributeEntries::append(BSMAttributeEntries& other, ClassLoaderData* lo
 
 BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
   if (cur_offset >= insert_into->offsets()->length() ||
-      cur_array + argc + 1 + 1 >= insert_into->bootstrap_methods()->length()) {
+      cur_array + argc + 1 >= insert_into->bootstrap_methods()->length()) {
     return nullptr;
   }
 
