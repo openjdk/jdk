@@ -305,9 +305,6 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         SupportedSignatureAlgorithmConstraints(
                 SSLSession session, SIGNATURE_CONSTRAINTS_MODE mode) {
-            supportedAlgorithms = null;
-            supportedSignatureSchemes = null;
-            checksDisabled = false;
 
             if (mode == null
                     || !(session instanceof ExtendedSSLSession extSession
@@ -400,7 +397,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             if (supportedSignatureSchemes == null
                     || key == null
                     || parameters == null
-                    || !algorithm.equalsIgnoreCase("RSASSA-PSS")) {
+                    || !"RSASSA-PSS".equalsIgnoreCase(algorithm)) {
                 return true;
             }
 

@@ -458,8 +458,14 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         }
     }
 
-    // Additional certificate chain check to verify the signature
-    // algorithms with the corresponding signing keys.
+    // Additional certificate chain check to verify that the algorithm
+    // constraints permit the signature algorithms to be used with the
+    // corresponding signing keys.
+    // This method is important to differentiate between "rsa_pss_pss_*"
+    // and "rsa_pss_rsae_*" signature schemes in SSLAlgorithmConstraints.
+    // We make AlgorithmChecker to perform a check against signature
+    // algorithms with the corresponding signing keys on the first iteration
+    // by setting a Trust Anchor.
     private void constraintsCertChainCheck(
             AlgorithmConstraints constraints, X509Certificate[] chain)
             throws CertificateException {
