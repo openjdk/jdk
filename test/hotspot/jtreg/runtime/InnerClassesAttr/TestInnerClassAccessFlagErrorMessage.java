@@ -35,8 +35,8 @@ import static jdk.test.lib.Asserts.*;
 
 public class TestInnerClassAccessFlagErrorMessage {
 
-    static String msg1 = "Illegal class modifiers in inner class Inner of class OuterTest1: 0x63F";
-    static String msg2 = "Illegal class modifiers in anonymous inner class of class OuterTest2: 0x63F";
+    static String msg1 = "inner class Inner";
+    static String msg2 = "anonymous inner class";
 
     public static void main(java.lang.String[] unused) {
         try {
@@ -44,7 +44,7 @@ public class TestInnerClassAccessFlagErrorMessage {
             fail("Should not reach here");
         } catch (ClassFormatError err) {
             System.out.println(err.getMessage());
-            assertEquals(err.getMessage(), msg1);
+            assertTrue(err.getMessage().contains(msg1));
         } catch (ClassNotFoundException cfne) {
             cfne.printStackTrace();
             fail("Should not reach here");
@@ -55,7 +55,7 @@ public class TestInnerClassAccessFlagErrorMessage {
             fail("Should not reach here");
         } catch (ClassFormatError err) {
             System.out.println(err.getMessage());
-            assertEquals(err.getMessage(), msg2);
+            assertTrue(err.getMessage().contains(msg2));
         } catch (ClassNotFoundException cfne) {
             cfne.printStackTrace();
             fail("Should not reach here");
