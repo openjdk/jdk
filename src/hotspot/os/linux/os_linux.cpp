@@ -377,7 +377,7 @@ size_t os::physical_memory() {
 size_t os::rss() {
   size_t size = 0;
   os::Linux::accurate_meminfo_t info;
-  if (os::Linux::query_accurate_process_memory_info(&info)) {
+  if (os::Linux::query_accurate_process_memory_info(&info) && info.rss != -1) {
     size = info.rss * K;
   } else {
     os::Linux::meminfo_t info;
