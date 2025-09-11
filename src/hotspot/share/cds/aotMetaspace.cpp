@@ -652,6 +652,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  CDSConfig::set_is_at_aot_safepoint(true);
+
   if (!CDSConfig::is_dumping_final_static_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
@@ -717,6 +719,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
+
+  CDSConfig::set_is_at_aot_safepoint(false);
 }
 
 class CollectClassesForLinking : public KlassClosure {
@@ -773,12 +777,9 @@ bool AOTMetaspace::may_be_eagerly_linked(InstanceKlass* ik) {
   return true;
 }
 
-void AOTMetaspace::link_shared_classes(TRAPS) {
-  AOTClassLinker::initialize();
-  AOTClassInitializer::init_test_class(CHECK);
-
+void AOTMetaspace::link_all_loaded_classes(JavaThread* current) {
   while (true) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     CollectClassesForLinking collect_classes;
     bool has_linked = false;
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
@@ -786,7 +787,7 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
       OopHandle mirror = mirrors->at(i);
       InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
       if (may_be_eagerly_linked(ik)) {
-        has_linked |= try_link_class(THREAD, ik);
+        has_linked |= try_link_class(current, ik);
       }
     }
 
@@ -796,6 +797,13 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
+}
+
+void AOTMetaspace::link_shared_classes(TRAPS) {
+  AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
+
+  link_all_loaded_classes(THREAD);
 
   // Eargerly resolve all string constants in constant pools
   {

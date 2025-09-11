@@ -36,7 +36,6 @@
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
 Mutex*   NMethodState_lock            = nullptr;
-Mutex*   NMethodEntryBarrier_lock     = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
@@ -207,8 +206,6 @@ void assert_lock_strong(const Mutex* lock) {
 void mutex_init() {
   MUTEX_DEFN(tty_lock                        , PaddedMutex  , tty);      // allow to lock in VM
 
-  MUTEX_DEFN(NMethodEntryBarrier_lock        , PaddedMutex  , service-1);
-
   MUTEX_DEFN(STS_lock                        , PaddedMonitor, nosafepoint);
 
 #if INCLUDE_G1GC
@@ -306,11 +303,11 @@ void mutex_init() {
 #endif
   MUTEX_DEFN(DumpTimeTable_lock              , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(CDSLambda_lock                  , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(DumpRegion_lock                 , PaddedMutex  , nosafepoint);
+  MUTEX_DEFL(DumpRegion_lock                 , PaddedMutex  , DumpTimeTable_lock);
   MUTEX_DEFN(ClassListFile_lock              , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
-  MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFL(ScratchObjects_lock             , PaddedMutex  , DumpTimeTable_lock);
   MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
