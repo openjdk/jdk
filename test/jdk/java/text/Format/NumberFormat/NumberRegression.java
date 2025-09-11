@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@
  * 4087251 4087535 4088161 4088503 4090489 4090504 4092480 4092561 4095713
  * 4098741 4099404 4101481 4106658 4106662 4106664 4108738 4110936 4122840
  * 4125885 4134034 4134300 4140009 4141750 4145457 4147295 4147706 4162198
- * 4162852 4167494 4170798 4176114 4179818 4185761 4212072 4212073 4216742
- * 4217661 4243011 4243108 4330377 4233840 4241880 4833877 8008577 8227313
- * 8174269
+ * 4162852 4167494 4170798 4176114 4179818 4212072 4212073 4216742 4217661
+ * 4243011 4243108 4330377 4233840 4241880 4833877 8008577 8227313 8174269
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
  * @build HexDumpReader TestUtils
@@ -305,33 +304,6 @@ public class NumberRegression {
             fail("Result -> " + d);
         }
         Locale.setDefault(savedLocale);
-    }
-
-    /* bugs 4069754, 4067878
-     * null pointer thrown when accessing a deserialized DecimalFormat
-     * object.
-     */
-    @Test
-    public void Test4069754()
-    {
-        try {
-            myformat it = new myformat();
-            System.out.println(it.Now());
-            FileOutputStream ostream = new FileOutputStream("t.tmp");
-            ObjectOutputStream p = new ObjectOutputStream(ostream);
-            p.writeObject(it);
-            ostream.close();
-            System.out.println("Saved ok.");
-
-            FileInputStream istream = new FileInputStream("t.tmp");
-            ObjectInputStream p2 = new ObjectInputStream(istream);
-            myformat it2 = (myformat)p2.readObject();
-            System.out.println(it2.Now());
-            istream.close();
-            System.out.println("Loaded ok.");
-        } catch (Exception foo) {
-            fail("Test for bug 4069754 or 4057878 failed => Exception: " + foo.getMessage());
-        }
     }
 
     /**
@@ -1485,59 +1457,6 @@ public class NumberRegression {
         }
     }
 
-    @Test
-    public void Test4185761() throws IOException, ClassNotFoundException {
-        /* Code used to write out the initial files, which are
-         * then edited manually:
-        NumberFormat nf = NumberFormat.getInstance(Locale.US);
-        nf.setMinimumIntegerDigits(0x111); // Keep under 309
-        nf.setMaximumIntegerDigits(0x112); // Keep under 309
-        nf.setMinimumFractionDigits(0x113); // Keep under 340
-        nf.setMaximumFractionDigits(0x114); // Keep under 340
-        FileOutputStream ostream =
-            new FileOutputStream("NumberFormat4185761");
-        ObjectOutputStream p = new ObjectOutputStream(ostream);
-        p.writeObject(nf);
-        ostream.close();
-        */
-
-        // File                 minint maxint minfrac maxfrac
-        // NumberFormat4185761a  0x122  0x121   0x124   0x123
-        // NumberFormat4185761b  0x311  0x312   0x313   0x314
-        // File a is bad because the mins are smaller than the maxes.
-        // File b is bad because the values are too big for a DecimalFormat.
-        // These files have a sufix ".ser.txt".
-
-        InputStream istream = HexDumpReader.getStreamFromHexDump("NumberFormat4185761a.ser.txt");
-        ObjectInputStream p = new ObjectInputStream(istream);
-        try {
-            NumberFormat nf = (NumberFormat) p.readObject();
-            fail("FAIL: Deserialized bogus NumberFormat int:" +
-                  nf.getMinimumIntegerDigits() + ".." +
-                  nf.getMaximumIntegerDigits() + " frac:" +
-                  nf.getMinimumFractionDigits() + ".." +
-                  nf.getMaximumFractionDigits());
-        } catch (InvalidObjectException e) {
-            System.out.println("Ok: " + e.getMessage());
-        }
-        istream.close();
-
-        istream = HexDumpReader.getStreamFromHexDump("NumberFormat4185761b.ser.txt");
-        p = new ObjectInputStream(istream);
-        try {
-            NumberFormat nf = (NumberFormat) p.readObject();
-            fail("FAIL: Deserialized bogus DecimalFormat int:" +
-                  nf.getMinimumIntegerDigits() + ".." +
-                  nf.getMaximumIntegerDigits() + " frac:" +
-                  nf.getMinimumFractionDigits() + ".." +
-                  nf.getMaximumFractionDigits());
-        } catch (InvalidObjectException e) {
-            System.out.println("Ok: " + e.getMessage());
-        }
-        istream.close();
-    }
-
-
     /**
      * Some DecimalFormatSymbols changes are not picked up by DecimalFormat.
      * This includes the minus sign, currency symbol, international currency
@@ -1927,20 +1846,6 @@ public class NumberRegression {
             fail("FAIL: normal parse failed. expected: " + inputNum +
                     ", got: " + parsed);
         }
-    }
-}
-
-@SuppressWarnings("serial")
-class myformat implements Serializable
-{
-    DateFormat _dateFormat = DateFormat.getDateInstance();
-
-    public String Now()
-    {
-        GregorianCalendar calendar = new GregorianCalendar();
-        Date t = calendar.getTime();
-        String nowStr = _dateFormat.format(t);
-        return nowStr;
     }
 }
 
