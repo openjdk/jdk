@@ -27,6 +27,7 @@
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/debug.hpp"
 
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:
@@ -686,22 +687,9 @@ public:
 class VTransformVectorNode : public VTransformNode {
 private:
   const VTransformVectorNodeProperties _properties;
-protected:
-  GrowableArray<Node*> _nodes; // TODO: rm?
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
-    VTransformNode(vtransform, req),
-    _properties(properties),
-    _nodes(vtransform.arena(),
-           properties.vector_length(),
-           properties.vector_length(),
-           nullptr) {}
-
-  void set_nodes(const Node_List* pack) {
-    for (uint k = 0; k < pack->size(); k++) {
-      _nodes.at_put(k, pack->at(k));
-    }
-  }
+    VTransformNode(vtransform, req), _properties(properties) {}
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
@@ -803,7 +791,7 @@ public:
     _vpointer(vpointer),
     _adr_type(adr_type) {}
 
-  const GrowableArray<Node*>& nodes() const { return _nodes; }
+  const GrowableArray<Node*>& nodes() const { ShouldNotReachHere(); }
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual const VPointer& vpointer() const override { return _vpointer; }

@@ -239,8 +239,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     int vopc = VectorNode::opcode(sopc, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), properties, vopc);
   }
-  // TODO: rm?
-  vtn->set_nodes(pack);
   return vtn;
 }
 
