@@ -228,8 +228,9 @@ public class Log extends AbstractLog {
             });
         }
 
+        // Represents the operation by which the suppression of a lint category is validated
         protected record SuppressionValidation(Lint lint, JCDiagnostic diag) {
-            void validate() {
+            void apply() {
                 lint.validateSuppression(diag.getLintCategory());
             }
         }
@@ -1010,7 +1011,7 @@ public class Log extends AbstractLog {
 
         @Override
         protected void validateSuppression(SuppressionValidation validation) {
-            validation.validate();
+            validation.apply();     // make it real
         }
     }
 
