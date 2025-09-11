@@ -1,6 +1,6 @@
 #! /bin/sh -f
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ B=`basename "${script_directory}"`
 script_dir="`cd \"${D}\" 2>/dev/null && pwd || echo \"${D}\"`/${B}"
 
 # set up a variable for the template directory
-template_dir=${script_dir}/../data/license-templates
+template_dir=${script_dir}/../make/data/license-templates
 
 # Check existence of the template directory.
 if [ ! -d ${template_dir} ] ; then
