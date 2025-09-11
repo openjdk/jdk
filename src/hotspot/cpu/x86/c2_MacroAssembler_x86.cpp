@@ -5163,7 +5163,7 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
   }
 }
 
-void C2_MacroAssembler::vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttps2qqs(dst, src, vec_enc);
@@ -5183,7 +5183,7 @@ void C2_MacroAssembler::vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttps2qqs(dst, src, vec_enc);
@@ -5203,7 +5203,7 @@ void C2_MacroAssembler::vector_cast2F2X_evex(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttpd2qqs(dst, src, vec_enc);
@@ -5223,7 +5223,7 @@ void C2_MacroAssembler::vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_cast2D2X_evex(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttpd2qqs(dst, src, vec_enc);

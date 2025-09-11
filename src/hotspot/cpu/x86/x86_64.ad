@@ -11725,7 +11725,7 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2F2I_reg_reg(rRegI dst, regF src)
+instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I src));
@@ -11736,7 +11736,7 @@ instruct conv2F2I_reg_reg(rRegI dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2F2I_reg_mem(rRegI dst, memory src)
+instruct convF2I_reg_mem_avx10(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I (LoadF src)));
@@ -11759,7 +11759,7 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2F2L_reg_reg(rRegL dst, regF src)
+instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L src));
@@ -11770,7 +11770,7 @@ instruct conv2F2L_reg_reg(rRegL dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2F2L_reg_mem(rRegL dst, memory src)
+instruct convF2L_reg_mem_avx10(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L (LoadF src)));
@@ -11793,7 +11793,7 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2D2I_reg_reg(rRegI dst, regD src)
+instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I src));
@@ -11804,7 +11804,7 @@ instruct conv2D2I_reg_reg(rRegI dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2D2I_reg_mem(rRegI dst, memory src)
+instruct convD2I_reg_mem_avx10(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I (LoadD src)));
@@ -11827,7 +11827,7 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2D2L_reg_reg(rRegL dst, regD src)
+instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L src));
@@ -11838,7 +11838,7 @@ instruct conv2D2L_reg_reg(rRegL dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct conv2D2L_reg_mem(rRegL dst, memory src)
+instruct convD2L_reg_mem_avx10(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L (LoadD src)));
