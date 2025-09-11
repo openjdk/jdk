@@ -29,7 +29,7 @@ import com.sun.java.swing.SwingUtilities3;
 /*
  * @test
  * @bug 8365379
- * @summary Verify LineBorder edges have the same width
+ * @summary Verify SwingUtilities3 insets return correct result independent of initial values
  * @modules java.desktop/com.sun.java.swing
  * @run main bug8365379
  */
