@@ -88,9 +88,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_F2I, "= 0", IRNode.CAST2_F2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV_F2I, "= 0", IRNode.CAST_F2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2int() {
         var cvec = (IntVector)fvec512.convertShape(VectorOperators.F2I, ispec512, 0);
@@ -110,9 +110,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_F2L, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeatureOr = {"avx512dq", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_F2L, "= 0", IRNode.CAST2_F2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV_F2L, "= 0", IRNode.CAST_F2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2long() {
         var cvec = (LongVector)fvec512.convertShape(VectorOperators.F2L, lspec512, 0);
@@ -132,9 +132,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_F2I, "= 0", IRNode.CAST2_F2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV_F2I, "= 0", IRNode.CAST_F2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2short() {
         var cvec = (ShortVector)fvec512.convertShape(VectorOperators.F2S, sspec256, 0);
@@ -154,9 +154,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_F2B, IRNode.VECTOR_SIZE_16, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_F2L, "= 0", IRNode.CAST2_F2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_F2X, "> 0"},
+    @IR(counts = {IRNode.CONV_F2L, "= 0", IRNode.CAST_F2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2byte() {
         var cvec = (ByteVector)fvec512.convertShape(VectorOperators.F2B, bspec128, 0);
@@ -176,9 +176,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_D2I, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_D2I, "= 0", IRNode.CAST2_D2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV_D2I, "= 0", IRNode.CAST_D2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2int() {
         var cvec = (IntVector)dvec512.convertShape(VectorOperators.D2I, ispec256, 0);
@@ -198,9 +198,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_D2L, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeatureOr = {"avx512dq", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_D2L, "= 0", IRNode.CAST2_D2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512dq", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV_D2L, "= 0", IRNode.CAST_D2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2long() {
         var cvec = (LongVector)dvec512.convertShape(VectorOperators.D2L, lspec512, 0);
@@ -220,9 +220,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_D2I, "= 0", IRNode.CAST2_D2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV_D2I, "= 0", IRNode.CAST_D2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2short() {
         var cvec = (ShortVector)dvec512.convertShape(VectorOperators.D2S, sspec128, 0);
@@ -242,9 +242,9 @@ public class VectorFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.VECTOR_CAST_D2B, IRNode.VECTOR_SIZE_8, "> 0"},
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
-    @IR(counts = {IRNode.CAST_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV2_D2I, "= 0", IRNode.CAST2_D2X, "= 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.CAST2_D2X, "> 0"},
+    @IR(counts = {IRNode.CONV_D2I, "= 0", IRNode.CAST_D2X, "= 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2byte() {
         var cvec = (ByteVector)dvec512.convertShape(VectorOperators.D2B, bspec64, 0);
