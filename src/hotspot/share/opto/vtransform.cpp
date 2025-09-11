@@ -766,29 +766,58 @@ void VTransformApplyState::fix_memory_state_uses_after_loop() {
   }
 }
 
+void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  for (uint i = 0; i < req(); i++) {
+    VTransformNode* vtn_def = in_req(i);
+    if (vtn_def != nullptr) {
+      Node* def = apply_state.transformed_node(vtn_def);
+      phase->igvn().replace_input_of(n, i, def);
+    }
+  }
+}
+
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
-  // TODO: hook inputs, memory state etc. check all nodes!
+  apply_vtn_inputs_to_node(_node, apply_state);
+
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
+  Node* mem = apply_state.memory_state(_node->adr_type());
+  apply_state.phase()->igvn().replace_input_of(_node, 1, mem);
+  if (_node->is_Store()) {
+    apply_state.set_memory_state(_node->adr_type(), _node);
+  }
+
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  apply_vtn_inputs_to_node(_node, apply_state);
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
-  return VTransformApplyResult::make_scalar(_node);
+  PhaseIdealLoop* phase = apply_state.phase();
+  PhiNode* phi = _node->as_Phi();
+  Node* in0 = apply_state.transformed_node(in_req(0));
+  Node* in1 = apply_state.transformed_node(in_req(1));
+  phase->igvn().replace_input_of(phi, 0, in0);
+  phase->igvn().replace_input_of(phi, 1, in1);
+  // Note: the backedge is hooked up later.
+
+  return VTransformApplyResult::make_scalar(phi);
 }
 
 VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  // We do not modify the inputs of the CountedLoop (and certainly not its backedge)
+  // TODO: separate apply?
+  if (!_node->is_CountedLoop()) {
+    apply_vtn_inputs_to_node(_node, apply_state);
+  }
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  apply_vtn_inputs_to_node(_node, apply_state);
   return VTransformApplyResult::make_scalar(_node);
 }
 
@@ -911,6 +940,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
   Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
@@ -939,6 +969,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   int sopc  = scalar_opcode();
   uint vlen = vector_length();
 
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
   Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
