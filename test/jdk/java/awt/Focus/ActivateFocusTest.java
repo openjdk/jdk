@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Toolkit;
@@ -42,32 +43,31 @@ import java.awt.event.WindowEvent;
 
 public class ActivateFocusTest {
 
-    public static void main(final String[] args) {
+    private static ActivateFocus[] af;
+
+    public static void main(final String[] args) throws Exception {
         ActivateFocusTest app = new ActivateFocusTest();
-        app.doTest();
+        EventQueue.invokeAndWait(() -> app.doTest());
+
+        Thread.sleep(1000);
+        boolean testFailed = false;
+        for (int i = 0; i < 2; i++) {
+            testFailed = (af[i].lw.focusCounter > 1);
+        }
+        if (testFailed) {
+            throw new RuntimeException("TEST FAILED - focus is gained more than one time");
+        } else {
+            System.out.println("TEST PASSED");
+        }
     }
 
     public void doTest() {
-      ActivateFocus[] af = new ActivateFocus[2];
-      boolean testFailed = false;
+      af = new ActivateFocus[2];
       Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
       for (int i = 0; i < 2; i++) {
           af[i] = new ActivateFocus(i);
           af[i].setLocation(i * 160 + scrSize.width / 2, scrSize.height / 2);
           af[i].setVisible(true);
-      }
-      try {
-          Thread.sleep(5000);
-      } catch (InterruptedException ie) {
-          throw new RuntimeException("TEST FAILED - thread was interrupted");
-      }
-      for (int i = 0; i < 2; i++) {
-          testFailed = (af[i].lw.focusCounter > 1);
-      }
-      if (testFailed) {
-          throw new RuntimeException("TEST FAILED - focus is gained more than one time");
-      } else {
-          System.out.println("TEST PASSED");
       }
     }
 
