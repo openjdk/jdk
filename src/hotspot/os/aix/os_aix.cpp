@@ -1753,10 +1753,6 @@ void os::numa_make_global(char *addr, size_t bytes) {
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
 }
 
-bool os::numa_topology_changed() {
-  return false;
-}
-
 size_t os::numa_get_groups_num() {
   return 1;
 }
