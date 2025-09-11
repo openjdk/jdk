@@ -955,12 +955,12 @@ public class SuppressionWarningTest extends TestRunner {
 // Support Stuff
 
     // Run a test on a sequence of test cases
-    private <T> void testAll(String testName, TestRunner<T> test, Iterable<T> testCases) throws Exception {
+    private <T> void testAll(String testName, ThrowingConsumer<T> test, Iterable<T> testCases) throws Exception {
         int totalCount = 0;
         int errorCount = 0;
         for (T testCase : testCases) {
             try {
-                test.run(testCase);
+                test.accept(testCase);
                 out.println(String.format("%s: %s: %s", testName, "PASSED", testCase));
             } catch (Exception e) {
                 out.println(String.format("%s: %s: %s: %s", testName, "FAILED", testCase, e));
@@ -1046,11 +1046,11 @@ public class SuppressionWarningTest extends TestRunner {
         Files.createDirectories(dir);
     }
 
-// TestRunner
+// ThrowingConsumer
 
     @FunctionalInterface
-    private interface TestRunner<T> {
-        void run(T testCase) throws Exception;
+    private interface ThrowingConsumer<T> {
+        void accept(T testCase) throws Exception;
     }
 
 // SuppressTest
