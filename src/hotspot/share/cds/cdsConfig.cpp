@@ -865,6 +865,11 @@ bool CDSConfig::current_thread_is_vm_or_dumper() {
   return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
 }
 
+bool CDSConfig::current_thread_is_dumper() {
+  Thread* t = Thread::current();
+  return t != nullptr && t == _dumper_thread;
+}
+
 const char* CDSConfig::type_of_archive_being_loaded() {
   if (is_dumping_final_static_archive()) {
     return "AOT configuration file";

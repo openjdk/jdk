@@ -127,6 +127,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != nullptr, "jdk/internal/misc/CDS must exist!");
 
+  assert(CDSConfig::current_thread_is_dumper(), "not supposed to be called from other threads");
   {
     // Stop other threads from recording into _lambdaform_lines.
     MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
