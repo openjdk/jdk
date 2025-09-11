@@ -850,6 +850,13 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     log_debug(class, resolve)("%s %s (verification)", from_name, to);
   }
 
+#if INCLUDE_CDS
+  if (CDSConfig::is_preserving_verification_constraints() && from_class->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(from_class);
+    SystemDictionaryShared::add_old_verification_constraint(THREAD, ik, h_name);
+  }
+#endif
+
   return result;
 JVM_END
 
