@@ -266,7 +266,7 @@ public final class Operations {
         ops.add(Expression.make(INTS, "Float.compare(", FLOATS, ", ", FLOATS, ")"));
         ops.add(Expression.make(INTS, "Float.floatToIntBits(", FLOATS, ")"));
         ops.add(Expression.make(INTS, "Float.floatToRawIntBits(", FLOATS, ")", withNondeterministicResult));
-	// Note: there are multiple NaN values with different bit representations.
+        // Note: there are multiple NaN values with different bit representations.
         ops.add(Expression.make(FLOATS, "Float.float16ToFloat(", SHORTS, ")"));
         ops.add(Expression.make(FLOATS, "Float.intBitsToFloat(", INTS, ")"));
         ops.add(Expression.make(BOOLEANS, "Float.isFinite(", FLOATS, ")"));
@@ -308,7 +308,7 @@ public final class Operations {
         ops.add(Expression.make(INTS, "Double.compare(", DOUBLES, ", ", DOUBLES, ")"));
         ops.add(Expression.make(LONGS, "Double.doubleToLongBits(", DOUBLES, ")"));
         ops.add(Expression.make(LONGS, "Double.doubleToRawLongBits(", DOUBLES, ")", withNondeterministicResult));
-	// Note: there are multiple NaN values with different bit representations.
+        // Note: there are multiple NaN values with different bit representations.
         ops.add(Expression.make(DOUBLES, "Double.longBitsToDouble(", LONGS, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isFinite(", DOUBLES, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isInfinite(", DOUBLES, ")"));
