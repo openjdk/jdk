@@ -37,7 +37,7 @@ public:
 
   // Expose the private Arguments functions.
 
-  static Arguments::ArgsRange check_memory_size(julong size, julong min_size, julong max_size) {
+  static Arguments::ArgsRange check_memory_size(size_t size, size_t min_size, size_t max_size) {
     return Arguments::check_memory_size(size, min_size, max_size);
   }
 
@@ -113,12 +113,12 @@ TEST_F(ArgumentsTest, check_memory_size__min) {
   EXPECT_EQ(check_memory_size(max_intx    , max_intx, max_uintx), Arguments::arg_in_range);
 
   NOT_LP64(
-    EXPECT_EQ(check_memory_size((julong)max_intx + 1, max_intx, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(max_intx + 1, max_intx, max_uintx), Arguments::arg_in_range);
 
-    EXPECT_EQ(check_memory_size(        max_intx - 1, (julong)max_intx + 1, max_uintx), Arguments::arg_too_small);
-    EXPECT_EQ(check_memory_size(        max_intx    , (julong)max_intx + 1, max_uintx), Arguments::arg_too_small);
-    EXPECT_EQ(check_memory_size((julong)max_intx + 1, (julong)max_intx + 1, max_uintx), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size((julong)max_intx + 2, (julong)max_intx + 1, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(max_intx - 1, max_intx + 1, max_uintx), Arguments::arg_too_small);
+    EXPECT_EQ(check_memory_size(max_intx    , max_intx + 1, max_uintx), Arguments::arg_too_small);
+    EXPECT_EQ(check_memory_size(max_intx + 1, max_intx + 1, max_uintx), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(max_intx + 2, max_intx + 1, max_uintx), Arguments::arg_in_range);
   );
 
   EXPECT_EQ(check_memory_size(max_uintx - 2, max_uintx - 1, max_uintx), Arguments::arg_too_small);
@@ -141,11 +141,11 @@ TEST_F(ArgumentsTest, check_memory_size__max) {
   EXPECT_EQ(check_memory_size(max_intx         , 1000, max_intx), Arguments::arg_in_range);
 
   NOT_LP64(
-    EXPECT_EQ(check_memory_size((julong)max_intx + 1     , 1000, max_intx), Arguments::arg_too_big);
+    EXPECT_EQ(check_memory_size(max_intx + 1     , 1000, max_intx), Arguments::arg_too_big);
 
-    EXPECT_EQ(check_memory_size(        max_intx         , 1000, (julong)max_intx + 1), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size((julong)max_intx + 1     , 1000, (julong)max_intx + 1), Arguments::arg_in_range);
-    EXPECT_EQ(check_memory_size((julong)max_intx + 2     , 1000, (julong)max_intx + 1), Arguments::arg_too_big);
+    EXPECT_EQ(check_memory_size(max_intx         , 1000, max_intx + 1), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(max_intx + 1     , 1000, max_intx + 1), Arguments::arg_in_range);
+    EXPECT_EQ(check_memory_size(max_intx + 2     , 1000, max_intx + 1), Arguments::arg_too_big);
  );
 }
 
