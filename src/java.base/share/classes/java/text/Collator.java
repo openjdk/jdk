@@ -114,7 +114,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * for {@link CollationKey} for an example using {@code CollationKey}s.
  *
  * @implNote Significant thread contention may occur during concurrent usage
- * of the JDK reference implementation's {@link RuleBasedCollator}, which is the
+ * of the JDK Reference Implementation's {@link RuleBasedCollator}, which is the
  * subtype returned by the default provider of the {@link #getInstance()} factory
  * methods. As such, users should consider retrieving a separate instance for
  * each thread when used in multithreaded environments.
