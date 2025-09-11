@@ -119,10 +119,10 @@ static const uintptr_t low_bits[5] = { fives, // 0x5555..55
 void RegMask::clear_to_pairs() {
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_WORD[i];
+    uintptr_t bits = _rm_word[i];
     bits &= ((bits & fives) << 1U); // 1 hi-bit set for each pair
     bits |= (bits >> 1U);          // Smear 1 hi-bit into a pair
-    _RM_WORD[i] = bits;
+    _rm_word[i] = bits;
   }
   assert(is_aligned_pairs(), "mask is not aligned, adjacent pairs");
 }
@@ -135,7 +135,7 @@ bool RegMask::is_aligned_pairs() const {
   // Assert that the register mask contains only bit pairs.
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_WORD[i];
+    uintptr_t bits = _rm_word[i];
     while (bits) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits); // Extract low bit
       // Low bit is not odd means its mis-aligned.
@@ -154,7 +154,7 @@ bool RegMask::is_bound1() const {
   if (is_infinite()) return false;
 
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t v = _RM_WORD[i];
+    uintptr_t v = _rm_word[i];
     if (v != 0) {
       // Only one bit allowed -> v must be a power of two
       if (!is_power_of_2(v)) {
@@ -163,7 +163,7 @@ bool RegMask::is_bound1() const {
 
       // A single bit was found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_WORD[i] != 0) {
+        if (_rm_word[i] != 0) {
           return false;
         }
       }
@@ -181,24 +181,24 @@ bool RegMask::is_bound_pair() const {
 
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_WORD[i] != 0) {               // Found some bits
-      unsigned int bit_index = find_lowest_bit(_RM_WORD[i]);
+    if (_rm_word[i] != 0) {               // Found some bits
+      unsigned int bit_index = find_lowest_bit(_rm_word[i]);
       if (bit_index != _WordBitMask) {   // Bit pair stays in same word?
         uintptr_t bit = uintptr_t(1) << bit_index; // Extract lowest bit from mask
-        if ((bit | (bit << 1U)) != _RM_WORD[i]) {
+        if ((bit | (bit << 1U)) != _rm_word[i]) {
           return false;            // Require adjacent bit pair and no more bits
         }
       } else {                     // Else its a split-pair case
-        assert(is_power_of_2(_RM_WORD[i]), "invariant");
+        assert(is_power_of_2(_rm_word[i]), "invariant");
         i++;                       // Skip iteration forward
-        if (i > _hwm || _RM_WORD[i] != 1) {
+        if (i > _hwm || _rm_word[i] != 1) {
           return false; // Require 1 lo bit in next word
         }
       }
 
       // A matching pair was found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_WORD[i] != 0) {
+        if (_rm_word[i] != 0) {
           return false;
         }
       }
@@ -244,9 +244,9 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   }
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_WORD[i]) {                // Found some bits
+    if (_rm_word[i]) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name((i<<_LogWordBits) + find_lowest_bit(_RM_WORD[i]) + (size - 1));
+      return OptoReg::Name((i<<_LogWordBits) + find_lowest_bit(_rm_word[i]) + (size - 1));
     }
   }
   return OptoReg::Bad;
@@ -260,7 +260,7 @@ void RegMask::clear_to_sets(const unsigned int size) {
   assert(valid_watermarks(), "sanity");
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_WORD[i];
+    uintptr_t bits = _rm_word[i];
     uintptr_t sets = (bits & low_bits_mask);
     for (unsigned j = 1U; j < size; j++) {
       sets = (bits & (sets << 1U)); // filter bits which produce whole sets
@@ -275,7 +275,7 @@ void RegMask::clear_to_sets(const unsigned int size) {
         }
       }
     }
-    _RM_WORD[i] = sets;
+    _rm_word[i] = sets;
   }
   assert(is_aligned_sets(size), "mask is not aligned, adjacent sets");
 }
@@ -288,7 +288,7 @@ void RegMask::smear_to_sets(const unsigned int size) {
   assert(valid_watermarks(), "sanity");
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_WORD[i];
+    uintptr_t bits = _rm_word[i];
     uintptr_t sets = 0;
     for (unsigned j = 0; j < size; j++) {
       sets |= (bits & low_bits_mask);  // collect partial bits
@@ -304,7 +304,7 @@ void RegMask::smear_to_sets(const unsigned int size) {
         }
       }
     }
-    _RM_WORD[i] = sets;
+    _rm_word[i] = sets;
   }
   assert(is_aligned_sets(size), "mask is not aligned, adjacent sets");
 }
@@ -317,7 +317,7 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_WORD[i];
+    uintptr_t bits = _rm_word[i];
     while (bits) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits);
       // Low bit is not odd means its mis-aligned.
@@ -344,31 +344,31 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_WORD[i] != 0) {       // Found some bits
-      unsigned bit_index = find_lowest_bit(_RM_WORD[i]);
+    if (_rm_word[i] != 0) {       // Found some bits
+      unsigned bit_index = find_lowest_bit(_rm_word[i]);
       uintptr_t bit = uintptr_t(1) << bit_index;
       if (bit_index + size <= BitsPerWord) { // Bit set stays in same word?
         uintptr_t hi_bit = bit << (size - 1);
         uintptr_t set = hi_bit + ((hi_bit-1) & ~(bit-1));
-        if (set != _RM_WORD[i]) {
+        if (set != _rm_word[i]) {
           return false;         // Require adjacent bit set and no more bits
         }
       } else {                  // Else its a split-set case
         // All bits from bit to highest bit in the word must be set
-        if ((all & ~(bit-1)) != _RM_WORD[i]) {
+        if ((all & ~(bit-1)) != _rm_word[i]) {
           return false;
         }
         i++;                    // Skip iteration forward and check high part
         // The lower bits should be 1 since it is split case.
         uintptr_t set = (bit >> (BitsPerWord - size)) - 1;
-        if (i > _hwm || _RM_WORD[i] != set) {
+        if (i > _hwm || _rm_word[i] != set) {
           return false; // Require expected low bits in next word
         }
       }
 
       // A matching set found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_WORD[i] != 0) {
+        if (_rm_word[i] != 0) {
           return false;
         }
       }
@@ -397,7 +397,7 @@ uint RegMask::Size() const {
   uint sum = 0;
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    sum += population_count(_RM_WORD[i]);
+    sum += population_count(_rm_word[i]);
   }
   return sum;
 }
