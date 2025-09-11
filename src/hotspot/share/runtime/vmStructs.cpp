@@ -735,6 +735,7 @@
   unchecked_nonstatic_field(Array<int>,                _data,                                 sizeof(int))                           \
   unchecked_nonstatic_field(Array<u1>,                 _data,                                 sizeof(u1))                            \
   unchecked_nonstatic_field(Array<u2>,                 _data,                                 sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<u4>,                 _data,                                 sizeof(u4))                            \
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
