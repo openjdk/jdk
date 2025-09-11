@@ -188,9 +188,6 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
         }
         assert(ik->is_loaded(), "must be");
         ik->link_class(CHECK);
-        if (CDSConfig::is_initing_classes_at_dump_time() && ik->force_aot_initialization()) {
-          ik->initialize(CHECK);
-        }
       }
     }
   }
