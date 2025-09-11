@@ -182,6 +182,11 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     _reductions.mark_reductions();
   }
 
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
   _memory_slices.find_memory_slices();
 
   // If there is no memory slice detected, it means there is no store.
@@ -190,12 +195,6 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   if (!_reductions.is_marked_reduction_loop() &&
       _memory_slices.heads().is_empty()) {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
-  }
-
-  // TODO: move up - PRIORITY
-  VStatus body_status = _body.construct();
-  if (!body_status.is_success()) {
-    return body_status;
   }
 
   _types.compute_vector_element_type();
