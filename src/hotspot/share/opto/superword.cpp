@@ -40,7 +40,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
            ),
-  _mem_ref_for_main_loop_alignment(nullptr),
+  _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -1547,7 +1547,7 @@ void SuperWord::filter_packs_for_alignment() {
     MemNode const* mem = current->as_constrained()->mem_ref();
     Node_List* pack = get_pack(mem);
     assert(pack != nullptr, "memop of final solution must still be packed");
-    _mem_ref_for_main_loop_alignment = mem;
+    _vpointer_for_main_loop_alignment = &vpointer(mem);
     _aw_for_main_loop_alignment = pack->size() * mem->memory_size();
   }
 }
@@ -1931,7 +1931,7 @@ bool SuperWord::do_vtransform() const {
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
-                        _mem_ref_for_main_loop_alignment,
+                        _vpointer_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT(COMMA trace)
                         );
@@ -2683,22 +2683,24 @@ LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(
 
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
-void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
-  if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
+  if (_vpointer_for_main_loop_alignment != nullptr) {
+    assert(VLoop::vectors_should_be_aligned(), "vpointer_for_main_loop_alignment only set if filtered for alignment");
     return;
   }
 
-  MemNode const* mem_ref = nullptr;
+  VPointer const* vpointer = nullptr;
   int max_aw = 0;
+  bool vpointer_is_load = false;
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
   for (int i = 0; i < vtnodes.length(); i++) {
     VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
     if (vtn == nullptr) { continue; }
-    MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
-    int vw = p0->memory_size() * vtn->nodes().length();
+    int vw = vtn->vpointer().size();
+    bool vtn_is_load = vtn->is_load_in_loop();
+
     // Generally, we prefer to align with the largest memory op (load or store).
     // If there are multiple, then SuperWordAutomaticAlignment determines if we
     // prefer loads or stores.
@@ -2708,15 +2710,16 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // it is worse if a store is split, and less bad if a load is split.
     // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
     // store if possible, to avoid splitting that store.
-    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
-    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    bool prefer_store = SuperWordAutomaticAlignment == 1 &&  vpointer_is_load && !vtn_is_load;
+    bool prefer_load  = SuperWordAutomaticAlignment == 2 && !vpointer_is_load &&  vtn_is_load;
     if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
+      vpointer = &vtn->vpointer();
       max_aw = vw;
-      mem_ref = p0;
+      vpointer_is_load = vtn_is_load;
     }
   }
-  assert(mem_ref != nullptr && max_aw > 0, "found mem_ref and aw");
-  _mem_ref_for_main_loop_alignment = mem_ref;
+  assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
+  _vpointer_for_main_loop_alignment = vpointer;
   _aw_for_main_loop_alignment = max_aw;
 }
 
@@ -2730,14 +2733,17 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 }                                       \
 
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
-// the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
+// the address of "_vpointer_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
-  // TODO: refactor with vpointer? Or separately?
-  determine_mem_ref_and_aw_for_main_loop_alignment();
-  const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
-  const int aw                = _aw_for_main_loop_alignment;
+  determine_vpointer_and_aw_for_main_loop_alignment();
+
+  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  assert(_vpointer_for_main_loop_alignment != nullptr &&
+         _vpointer_for_main_loop_alignment->is_valid() &&
+         _aw_for_main_loop_alignment > 0,
+         "must have alignment reference and aw");
 
   if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
@@ -2748,8 +2754,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     return;
   }
 
-  assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
-  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  const VPointer& p = *_vpointer_for_main_loop_alignment;
+  const int aw      = _aw_for_main_loop_alignment;
 
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
@@ -2764,10 +2770,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  const VPointer& p = vpointer(align_to_ref);
-  assert(p.is_valid(), "sanity");
-
-  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // For the main-loop, we want the address of vpointer p to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
   // limit by executing adjust_pre_iter many extra iterations, we can change the
@@ -2902,9 +2905,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print("  align_to_ref:");
-    align_to_ref->dump();
-    tty->print("  ");
+    tty->print("  vpointer_for_main_loop_alignment");
     p.print_on(tty);
     tty->print_cr("  aw:        %d", aw);
     tty->print_cr("  iv_stride: %d", iv_stride);

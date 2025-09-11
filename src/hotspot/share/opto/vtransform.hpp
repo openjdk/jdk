@@ -214,14 +214,14 @@ private:
 
   VTransformGraph _graph;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
 public:
   VTransform(const VLoopAnalyzer& vloop_analyzer,
-             MemNode const* mem_ref_for_main_loop_alignment,
+             VPointer const* vpointer_for_main_loop_alignment,
              int aw_for_main_loop_alignment
              NOT_PRODUCT( COMMA const VTransformTrace trace)
              ) :
@@ -230,7 +230,7 @@ public:
     NOT_PRODUCT(_trace(trace) COMMA)
     _arena(mtCompiler, Arena::Tag::tag_superword),
     _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
-    _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
+    _vpointer_for_main_loop_alignment(vpointer_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
@@ -256,7 +256,7 @@ private:
   }
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void determine_mem_ref_and_aw_for_main_loop_alignment();
+  void determine_vpointer_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
   void apply_speculative_alignment_runtime_checks();
@@ -791,7 +791,6 @@ public:
     _vpointer(vpointer),
     _adr_type(adr_type) {}
 
-  const GrowableArray<Node*>& nodes() const { ShouldNotReachHere(); }
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual const VPointer& vpointer() const override { return _vpointer; }
