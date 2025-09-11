@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -175,12 +175,6 @@ public:
 
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
   static void delete_segment(Segment* segment);
-
-  // Copies the contents of this segment into the destination.
-  void copy_to(void* dest) const {
-    ::memcpy(dest, _bottom, length() * _slot_size);
-  }
-
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
