@@ -414,9 +414,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
-#ifdef ASSERT
   bool make_first_group_optional = G1ForceOptionalEvacuation;
-#endif
 
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
@@ -435,7 +433,6 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
     double predicted_time_ms = group->predict_group_total_time_ms();
 
-#ifdef ASSERT
     if (make_first_group_optional) {
         make_first_group_optional = false;
         add_optional_group(group,
@@ -444,7 +441,6 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
                            predicted_time_ms);
         continue;
     }
-#endif
 
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
