@@ -779,7 +779,6 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
 
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
   apply_vtn_inputs_to_node(_node, apply_state);
-
   // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
   Node* mem = apply_state.memory_state(_node->adr_type());
   apply_state.phase()->igvn().replace_input_of(_node, 1, mem);
@@ -797,14 +796,12 @@ VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& appl
 
 VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  PhiNode* phi = _node->as_Phi();
   Node* in0 = apply_state.transformed_node(in_req(0));
   Node* in1 = apply_state.transformed_node(in_req(1));
-  phase->igvn().replace_input_of(phi, 0, in0);
-  phase->igvn().replace_input_of(phi, 1, in1);
+  phase->igvn().replace_input_of(_node, 0, in0);
+  phase->igvn().replace_input_of(_node, 1, in1);
   // Note: the backedge is hooked up later.
-
-  return VTransformApplyResult::make_scalar(phi);
+  return VTransformApplyResult::make_scalar(_node);
 }
 
 // Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
@@ -812,18 +809,15 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
 // We hook the backedges into the phis now, during cleanup.
 void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  // TODO: is already phi
-  PhiNode* phi = _node->as_Phi();
-
-  if (phi->is_memory_phi()) {
+  if (_node->is_memory_phi()) {
     // Memory phi/backedge
     // The last memory state of that slice is the backedge.
-    Node* last_state = apply_state.memory_state(phi->adr_type());
-    phase->igvn().replace_input_of(phi, 2, last_state);
+    Node* last_state = apply_state.memory_state(_node->adr_type());
+    phase->igvn().replace_input_of(_node, 2, last_state);
   } else {
     // Data phi/backedge
     Node* in2 = apply_state.transformed_node(in_req(2));
-    phase->igvn().replace_input_of(phi, 2, in2);
+    phase->igvn().replace_input_of(_node, 2, in2);
   }
 }
 
