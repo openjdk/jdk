@@ -78,7 +78,10 @@ bool VTransformGraph::schedule() {
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
       for (uint i = 0; i < vtn->out_strong_edges(); i++) {
         VTransformNode* use = vtn->out_strong_edge(i);
-        // TODO: skip backedges -> if use is LoopPhi
+
+        // Skip LoopPhi backedge.
+        if ((use->isa_LoopPhi() != nullptr || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) { continue; }
+
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!

@@ -56,7 +56,7 @@ private:
   void build_scalar_vtnodes_for_non_packed_nodes();
   void build_inputs_for_vector_vtnodes(VectorSet& vtn_memory_dependencies);
   void build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies);
-  // TODO: build_outputs
+  void build_uses_after_loop();
 
   // Helper methods for building VTransform.
   VTransformNode* get_vtnode_or_null(Node* n) const {

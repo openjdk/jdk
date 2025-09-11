@@ -67,6 +67,7 @@ class VTransformMemopScalarNode;
 class VTransformDataScalarNode;
 class VTransformLoopPhiNode;
 class VTransformCFGNode;
+class VTransformCountedLoopNode;
 class VTransformOuterNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
@@ -432,6 +433,8 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
+  virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
+  virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
@@ -509,6 +512,7 @@ public:
     assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
   }
 
+  virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -528,6 +532,16 @@ public:
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "CFG"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for CountedLoop, the only CFG node with a backedge.
+class VTransformCountedLoopNode : public VTransformCFGNode {
+public:
+  VTransformCountedLoopNode(VTransform& vtransform, CountedLoopNode* n) :
+    VTransformCFGNode(vtransform, n) {}
+
+  virtual VTransformCountedLoopNode* isa_CountedLoop() override { return this; }
+  NOT_PRODUCT(virtual const char* name() const override { return "CountedLoop"; };)
 };
 
 // Wrapper node for nodes outside the loop that are inputs to nodes in the loop.

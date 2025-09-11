@@ -38,7 +38,9 @@ void SuperWordVTransformBuilder::build() {
   build_inputs_for_vector_vtnodes(vtn_memory_dependencies);
   build_inputs_for_scalar_vtnodes(vtn_memory_dependencies);
 
-  // TODO: build_outputs
+  // Build vtnodes for all uses of nodes from the loop, and connect them
+  // as outputs to the nodes in the loop.
+  build_uses_after_loop();
 }
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
@@ -52,9 +54,8 @@ void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
 }
 
 void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
-  // TODO: iterate loop not just bb
-  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
-    Node* n = _vloop_analyzer.body().body().at(i);
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
 
     VTransformNode* vtn = nullptr;
@@ -64,6 +65,8 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
       vtn = new (_vtransform.arena()) VTransformMemopScalarNode(_vtransform, mem, mem_p);
     } else if (n->is_Phi()) {
       vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, n->as_Phi());
+    } else if (n->is_CountedLoop()) {
+      vtn = new (_vtransform.arena()) VTransformCountedLoopNode(_vtransform, n->as_CountedLoop());
     } else if (n->is_CFG()) {
       vtn = new (_vtransform.arena()) VTransformCFGNode(_vtransform, n);
     } else {
@@ -137,21 +140,42 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
       init_req_with_scalar(n, vtn, MemNode::Address);
       init_req_with_scalar(n, vtn, MemNode::ValueIn);
       add_memory_dependencies_of_node_to_vtnode(n, vtn, vtn_memory_dependencies);
-    } else if (n->is_CountedLoop()) {
-      continue; // Is "root", has no dependency.
-    } else if (n->is_Phi()) {
-      // TODO: rm comment?
-      // CountedLoop Phi's: ignore backedge (and entry value).
-      assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
-      init_req_with_scalar(n, vtn, 0);
-      continue;
+    } else if (n->isa_CountedLoop()) {
+      // Avoid self-loop, it only creates unnecessary issues in scheduling.
+      init_req_with_scalar(n, vtn, LoopNode::EntryControl);
+      init_req_with_scalar(n, vtn, LoopNode::LoopBackControl);
     } else {
       init_all_req_with_scalars(n, vtn);
     }
   }
 }
 
-// TODO: build_outputs
+// Build vtnodes for all uses of nodes from the loop, and connect them
+// as outputs to the nodes in the loop.
+// TODO: only bb or all nodes in loop? - check other places
+void SuperWordVTransformBuilder::build_uses_after_loop() {
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
+    VTransformNode* vtn = get_vtnode(n);
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* use = n->fast_out(i);
+
+      if (!_vloop.in_bb(use)) {
+        VTransformNode* vtn_use = get_vtnode_or_wrap_as_outer(use);
+
+        // Set all edges
+        for (uint j = 0; j < use->req(); j++) {
+          Node* def = use->in(j);
+          if (n == def && vtn_use->in_req(j) != vtn) {
+            assert(vtn_use->in_req(j) == nullptr, "should not yet be set");
+            vtn_use->init_req(j, vtn);
+          }
+        }
+      }
+    }
+  }
+}
 
 // Create a vtnode for each pack. No in/out edges set yet.
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
@@ -315,6 +339,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_outer(Node* n)
   assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
   vtn = new (_vtransform.arena()) VTransformOuterNode(_vtransform, n);
   map_node_to_vtnode(n, vtn);
+  assert(vtn == get_vtnode_or_null(n), "consistency");
   return vtn;
 }
 
