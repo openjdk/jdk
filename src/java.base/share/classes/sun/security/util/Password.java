@@ -174,11 +174,11 @@ public class Password {
         }
 
         /**
-         * Change a password read from Console.readPassword() into
-         * its original bytes.
+         * Convert a password read from console into its original bytes.
          *
          * @param pass a char[]
-         * @return its byte[] format, similar to new String(pass).getBytes()
+         * @return its byte[] format, equivalent to new String(pass).getBytes()
+         *      but String is immutable and cannot be cleaned up.
          */
         public static byte[] convertToBytes(char[] pass) {
             assert consoleIsAvailable();
@@ -187,8 +187,8 @@ public class Password {
             synchronized (enc) {
                 enc.reset().encode(CharBuffer.wrap(pass), bb, true);
             }
-            if (bb.position() < ba.length) {
-                ba[bb.position()] = '\n';
+            if (bb.remaining() > 0) {
+                bb.put((byte)'\n'); // will be recognized as a stop sign
             }
             return ba;
         }
