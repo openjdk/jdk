@@ -106,7 +106,7 @@ class OuterTest1 {
     ;
     Attr(#16) { // InnerClasses
       [] { // classes
-        #14 #7 #17 0x0fff;
+        #14 #7 #17 0x0fff;   // This access flag sets is_interface & is_final, so invalid.
       }
     } // end InnerClasses
   } // Attributes
