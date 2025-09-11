@@ -269,7 +269,7 @@ private:
 };
 
 // Keeps track of the state during "VTransform::apply"
-// -> keep track of the already transformed nodes
+// -> keep track of the already transformed nodes and the memory state.
 class VTransformApplyState : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -279,13 +279,35 @@ private:
   // generated def (input) nodes when we are generating the use nodes in "apply".
   GrowableArray<Node*> _vtnode_idx_to_transformed_node;
 
-  // TODO: memory states
+  // We keep track of the current memory state in each slice. If the slice has only
+  // loads (and no phi), then this is always the input memory state from before the
+  // loop. If there is a memory phi, this is initially the memory phi, and each time
+  // a store is processed, it is updated to that store.
+  GrowableArray<Node*> _memory_states;
+
+  // We need to keep track of the memory uses after the loop, for the slices that
+  // have a memory phi.
+  //   use->in(in_idx) = <last memory state in loop of slice alias_idx>
+  class MemoryStateUseAfterLoop : public StackObj {
+  public:
+    Node* _use;
+    int _in_idx;
+    int _alias_idx;
+
+    MemoryStateUseAfterLoop(Node* use, int in_idx, int alias_idx) :
+      _use(use), _in_idx(in_idx), _alias_idx(alias_idx) {}
+    MemoryStateUseAfterLoop() : MemoryStateUseAfterLoop(nullptr, 0, 0) {}
+  };
+
+  GrowableArray<MemoryStateUseAfterLoop> _memory_state_uses_after_loop;
 
 public:
   VTransformApplyState(const VLoopAnalyzer& vloop_analyzer, int num_vtnodes) :
     _vloop_analyzer(vloop_analyzer),
-    _vtnode_idx_to_transformed_node(num_vtnodes, num_vtnodes, nullptr)
+    _vtnode_idx_to_transformed_node(num_vtnodes, num_vtnodes, nullptr),
+    _memory_states(num_slices(), num_slices(), nullptr)
   {
+    init_memory_states_and_uses_after_loop();
   }
 
   const VLoop& vloop() const { return _vloop_analyzer.vloop(); }
@@ -294,6 +316,12 @@ public:
 
   void set_transformed_node(VTransformNode* vtn, Node* n);
   Node* transformed_node(const VTransformNode* vtn) const;
+
+  // TODO: missing stuff?
+
+private:
+  int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }
+  void init_memory_states_and_uses_after_loop();
 };
 
 // The vtnodes (VTransformNode) resemble the C2 IR Nodes, and model a part of the

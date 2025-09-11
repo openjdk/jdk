@@ -726,6 +726,47 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
+void VTransformApplyState::init_memory_states_and_uses_after_loop() {
+  const GrowableArray<Node*>& inputs = _vloop_analyzer.memory_slices().inputs();
+  const GrowableArray<PhiNode*>& heads = _vloop_analyzer.memory_slices().heads();
+  for (int i = 0; i < inputs.length(); i++) {
+    PhiNode* head = heads.at(i);
+    if (head != nullptr) {
+      // Slice with Phi (i.e. with stores) -> start with the phi (phi_mem)
+      _memory_states.at_put(i, head);
+
+      // Remember uses outside the loop of the last memory state (store).
+      StoreNode* last_store = head->in(2)->as_Store();
+      assert(vloop().in_bb(last_store), "backedge store should be in the loop");
+      for (DUIterator_Fast jmax, j = last_store->fast_outs(jmax); j < jmax; j++) {
+        Node* use = last_store->fast_out(j);
+        if (!vloop().in_bb(use)) {
+          for (uint k = 0; k < use->req(); k++) {
+            if (use->in(k) == last_store) {
+              _memory_state_uses_after_loop.push(MemoryStateUseAfterLoop(use, k, i));
+            }
+          }
+        }
+      }
+    } else {
+      // Slice without Phi (i.e. only loads) -> use the input state (entry_mem)
+      _memory_states.at_put(i, inputs.at(i));
+    }
+  }
+}
+
+// TODO: add in
+//// We may have reordered the scalar stores, or replaced them with vectors. Now
+//// the last memory state in the loop may have changed. Thus, we need to change
+//// the uses of the old last memory state the the new last memory state.
+//void VTransformApplyState::fix_memory_state_uses_after_loop() {
+//  for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
+//    MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
+//    Node* last_state = memory_state(use._alias_idx);
+//    phase()->igvn().replace_input_of(use._use, use._in_idx, last_state);
+//  }
+//}
+
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
   // This was just wrapped. Now we simply unwrap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
