@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,10 @@ class Shutdown {
      */
     private static void logRuntimeExit(int status) {
         try {
+            if (!VM.isBooted()) {
+                // skip logging when invoked too early during VM startup
+                return;
+            }
             System.Logger log = System.getLogger("java.lang.Runtime");
             if (log.isLoggable(System.Logger.Level.DEBUG)) {
                 Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
