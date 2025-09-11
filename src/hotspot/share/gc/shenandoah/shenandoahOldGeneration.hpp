@@ -75,7 +75,7 @@ private:
   // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
 
-  // Keep track of the size of promotions that failed. Perhaps we should use this to increase
+  // Keep track of the number and size of promotions that failed. Perhaps we should use this to increase
   // the size of the old generation for the next collection cycle.
   size_t _promotion_failure_count;
   size_t _promotion_failure_words;
