@@ -113,10 +113,10 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * {@code Collator}s can not be compared. See the class description
  * for {@link CollationKey} for an example using {@code CollationKey}s.
  *
- * @implNote While instances of {@code Collator} returned by {@link #getInstance()}
- * and {@link #getInstance(Locale)} in the JDK reference implementation are
- * thread safe, using a separate instance for each thread generally produces
- * better performance.
+ * @implNote The standard provider of the JDK reference implementation
+ * returns thread safe instances of {@code Collator} from the static factory methods.
+ * However, using a separate instance for each thread is the recommended approach
+ * for multithreaded environments.
  *
  * @see         RuleBasedCollator
  * @see         CollationKey

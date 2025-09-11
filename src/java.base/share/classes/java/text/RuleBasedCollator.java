@@ -236,7 +236,7 @@ package java.text;
  * </blockquote>
  *
  * @implNote While this class is thread safe, using a separate instance for each
- * thread generally produces better performance.
+ * thread is the recommended approach.
  *
  * @see        Collator
  * @see        CollationElementIterator
