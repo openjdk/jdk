@@ -44,6 +44,7 @@ protected:
   DEBUG_ONLY(void assert_size_info();)
 
 public:
+  virtual void set_heap_size();
   virtual void initialize();
 
   // Return the (conservative) maximum heap alignment
