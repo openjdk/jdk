@@ -99,7 +99,7 @@ void StubGenerator::generate_arraycopy_stubs() {
   // conjoint nopush entry is needed by generic/unsafe copy
   StubRoutines::_jbyte_arraycopy_nopush    = nopush_entry;
 
-  StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(&nnopush_entry);
+  StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(&nopush_entry);
   // disjoint nopush entry is needed by conjoint copy
   StubRoutines::_jshort_disjoint_arraycopy_nopush = nopush_entry;
   StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(StubRoutines::_jshort_disjoint_arraycopy_nopush, &nopush_entry);
@@ -116,7 +116,7 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_jlong_disjoint_arraycopy_id, &nopush_entry);
   // disjoint nopush entry is needed by conjoint copy
   StubRoutines::_jlong_disjoint_arraycopy_nopush  = nopush_entry;
-  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_jlong_arraycopy_id, StubRoutines::_jlong_disjoint_arraycopy_nopush, &nopust_entry);
+  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_jlong_arraycopy_id, StubRoutines::_jlong_disjoint_arraycopy_nopush, &nopush_entry);
   // conjoint nopush entry is needed by generic/unsafe copy
   StubRoutines::_jlong_arraycopy_nopush    = nopush_entry;
 
@@ -134,7 +134,7 @@ void StubGenerator::generate_arraycopy_stubs() {
     // generic/unsafe copy does not cater for uninit arrays.
     StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, StubRoutines::_oop_disjoint_arraycopy_uninit_nopush, nullptr);
   } else {
-    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &entry);
+    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &nopush_entry);
     // disjoint nopush entry is needed by conjoint copy
     StubRoutines::_oop_disjoint_arraycopy_nopush  = nopush_entry;
     StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_id, StubRoutines::_oop_disjoint_arraycopy_nopush, &nopush_entry);
@@ -145,7 +145,7 @@ void StubGenerator::generate_arraycopy_stubs() {
     StubRoutines::_oop_disjoint_arraycopy_uninit_nopush  = nopush_entry;
     // note that we don't need a returned nopush entry because the
     // generic/unsafe copy does not cater for uninit arrays.
-    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, entry, nullptr);
+    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, StubRoutines::_oop_disjoint_arraycopy_uninit_nopush, nullptr);
   }
 
   StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &nopush_entry);
