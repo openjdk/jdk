@@ -543,7 +543,7 @@ public class RSAExport {
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
-            Certificate serverCert =pemDecoder.decode(serverCertStr, X509Certificate.class);
+            Certificate serverCert = pemDecoder.decode(serverCertStr, X509Certificate.class);
 
             Certificate[] chain = new Certificate[2];
             chain[0] = serverCert;
