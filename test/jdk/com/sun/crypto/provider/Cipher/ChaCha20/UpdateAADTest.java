@@ -33,14 +33,32 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Objects;
+import java.util.HexFormat;
 
 public class UpdateAADTest {
     private static final SecureRandom RAND;
     private static final KeyGenerator CC20GEN;
+    private static final HexFormat HEX = HexFormat.of();
+
+    private static final byte[] TEST_KEY_BYTES = HEX.parseHex(
+            "3cb1283912536e4108c3094dc2940d0d020afbd7701de267bbfb359bc7d54dd7");
+    private static final byte[] TEST_NONCE_BYTES = HEX.parseHex(
+            "9bd647a43b6fa7826e2cc26d");
+    private static final byte[] TEST_AAD_BYTES =
+            "This is a bunch of additional data to throw into the mix.".
+                    getBytes(StandardCharsets.UTF_8);
+    private static final byte[] TEST_INPUT_BYTES =
+        "This is a plaintext message".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] TEST_CT_BYTES = HEX.parseHex(
+            "8536c999809f4b9d6a1594ee1084c751d1bd8a991e6a4b4ac26386f04b9a1303" +
+            "f40cbe6788d72af2d0c617");
+    private static final ByteBuffer EXPOUTBUF = ByteBuffer.wrap(TEST_CT_BYTES);
 
     static {
         try {
@@ -52,6 +70,10 @@ public class UpdateAADTest {
         }
     }
 
+    public interface TestAction {
+        void runTest(ByteBuffer buffer);
+    }
+
     public static void main(final String[] args) throws Exception {
         ByteBuffer twoKBuf = ByteBuffer.allocate(2048);
         ByteBuffer nonBABuf = ByteBuffer.allocate(1329);
@@ -60,76 +82,115 @@ public class UpdateAADTest {
         System.out.println("Make an array backed buffer that is 16-byte " +
                            "aligned, treat all data as AAD and feed it to " +
                            " updateAAD.");
-        new AADUpdateTest(twoKBuf, true).run();
+        aadUpdateTest.runTest(twoKBuf);
 
         System.out.println("----- Test 2: Non Block Aligned Offset -----");
         System.out.println("Use the same buffer, but place the offset such " +
                            "that the remaining data is not block aligned.");
-        new AADUpdateTest(twoKBuf.position(395), true).run();
+        aadUpdateTest.runTest(twoKBuf.position(395));
 
         System.out.println("----- Test 3: Non Block Aligned Buf/Off -----");
         System.out.println("Make a buffer of non-block aligned size with an " +
                            "offset that keeps the remaining data non-block " +
                            "aligned.");
-        new AADUpdateTest(nonBABuf.position(602), true).run();
+        aadUpdateTest.runTest(nonBABuf.position(602));
 
         System.out.println("----- Test 4: Aligned Buffer Slice -----");
         System.out.println("Use a buffer of block aligned size, but slice " +
                            "the buffer such that the slice offset is part " +
                            "way into the original buffer.");
-        new AADUpdateTest(twoKBuf.rewind().slice(1024,1024).position(42),
-                true).run();
+        aadUpdateTest.runTest(twoKBuf.rewind().slice(1024,1024).position(42));
 
         System.out.println("----- Test 5: Non-Aligned Buffer Slice -----");
         System.out.println("Try the same test as #4, this time with " +
                            "non-block aligned buffers/slices.");
-        new AADUpdateTest(nonBABuf.rewind().slice(347, 347).position(86),
-                true).run();
+        aadUpdateTest.runTest(nonBABuf.rewind().slice(347, 347).position(86));
+
+        System.out.println("----- Test 6: MemorySegment Buffer -----");
+        System.out.println("Make a ByteBuffer from an array-backed " +
+                           "MemorySegment, and try updating");
+        MemorySegment mseg = MemorySegment.ofArray(new byte[2048]);
+        ByteBuffer msegBuf = mseg.asByteBuffer();
+        aadUpdateTest.runTest(msegBuf.position(55));
+
+        System.out.println("----- Test 7: Buffer of MemorySegment Slice -----");
+        System.out.println("Use a slice from the MemorySegment and create a " +
+                           "buffer from that for testing");
+        MemorySegment msegSlice = mseg.asSlice(1024);
+        aadUpdateTest.runTest(msegSlice.asByteBuffer().position(55));
+
+        System.out.println("----- Test 8: MemorySegment Buffer Slice -----");
+        System.out.println("Create a slice from the ByteBuffer from the " +
+                           "original MemorySegment.");
+        aadUpdateTest.runTest(msegBuf.rewind().slice(1024, 1024));
+
+        System.out.println("Test vector processing");
+        System.out.println("----------------------");
+        System.out.println("----- Test 9: AAD + Plaintext on buffer ------");
+        System.out.println("Place the AAD, followed by plaintext and verify " +
+                           "the ciphertext");
+        // Create a ByteBuffer where the AAD and plaintext actually sit
+        // somewhere in the middle of the underlying array, with non-test-vector
+        // memory on either side of the data.
+        ByteBuffer vectorBuf = ByteBuffer.allocate(1024).position(600).
+                put(TEST_AAD_BYTES).put(TEST_INPUT_BYTES).flip().position(600);
+        vectorTest.runTest(vectorBuf);
+
+        System.out.println("----- Test 10: AAD + Plaintext on slice -----");
+        System.out.println("Perform the same test, this time on a slice" +
+                           "of the test vector buffer");
+        ByteBuffer vectorSlice = vectorBuf.slice(600,
+                TEST_AAD_BYTES.length + TEST_INPUT_BYTES.length);
+        vectorTest.runTest(vectorSlice);
     }
 
-    public static class AADUpdateTest implements Runnable {
-        private final ByteBuffer buffer;
-        private final boolean expectedPass;
+    // Simple test callback for taking a ByteBuffer and throwing all
+    // remaining bytes into an updateAAD call.
+    public static TestAction aadUpdateTest = buffer -> {
+        try {
+            SecretKey key = CC20GEN.generateKey();
+            byte[] nonce = new byte[12];
+            RAND.nextBytes(nonce);
 
-        AADUpdateTest(ByteBuffer buf, boolean expPass) {
-            buffer = Objects.requireNonNull(buf);
-            expectedPass = expPass;
-        }
+            Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
+            cipher.init(Cipher.ENCRYPT_MODE, key,
+                    new IvParameterSpec(nonce));
 
-        @Override
-        public void run() {
-            Cipher cipher;
-            try {
-                SecretKey key = CC20GEN.generateKey();
-                byte[] nonce = new byte[12];
-                RAND.nextBytes(nonce);
-
-                cipher = Cipher.getInstance("ChaCha20-Poly1305");
-                cipher.init(Cipher.ENCRYPT_MODE, key,
-                        new IvParameterSpec(nonce));
-            } catch (GeneralSecurityException gse) {
-                throw new RuntimeException("Failed during test setup", gse);
+            cipher.updateAAD(buffer);
+            // Per the API the buffer's position and limit should be equal
+            if (buffer.position() != buffer.limit()) {
+                throw new RuntimeException("Buffer position and limit " +
+                        "should be equal but are not: p = " +
+                        buffer.position() + ", l = " + buffer.limit());
             }
-
-            try {
-                cipher.updateAAD(buffer);
-                // Per the API the buffer's position and limit should be equal
-                if (buffer.position() != buffer.limit()) {
-                    throw new RuntimeException("Buffer position and limit " +
-                            "should be equal but are not: p = " +
-                            buffer.position() + ", l = " + buffer.limit());
-                }
-                if (!expectedPass) {
-                    throw new RuntimeException(
-                            "Expected failing test did not throw exception");
-                }
-            } catch (Exception exc) {
-                if (expectedPass) {
-                    throw new RuntimeException(
-                            "FAIL: Expected passing test failed", exc);
-                }
-            }
+        } catch (GeneralSecurityException gse) {
+            throw new RuntimeException("Failed during test setup", gse);
         }
-    }
+    };
+
+    // Test callback for making sure that the updateAAD method, when
+    // put in with a complete encryption operation still gets the
+    // expected answer.
+    public static TestAction vectorTest = buffer -> {
+        try {
+            Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
+            cipher.init(Cipher.ENCRYPT_MODE,
+                    new SecretKeySpec(TEST_KEY_BYTES, "ChaCha20"),
+                    new IvParameterSpec(TEST_NONCE_BYTES));
+            ByteBuffer outbuf = ByteBuffer.allocate(
+                    cipher.getOutputSize(TEST_INPUT_BYTES.length));
+
+            // Adjust the limit to be the end of the aad
+            int origLim = buffer.limit();
+            buffer.limit(buffer.position() + TEST_AAD_BYTES.length);
+            cipher.updateAAD(buffer);
+            buffer.limit(origLim);
+            cipher.doFinal(buffer, outbuf);
+            if (!outbuf.flip().equals(EXPOUTBUF)) {
+                throw new RuntimeException("Output data mismatch");
+            }
+        } catch (GeneralSecurityException gse) {
+            throw new RuntimeException("Failed during test setup", gse);
+        }
+    };
 }
-
