@@ -449,8 +449,8 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   if (_unnamed_module != nullptr) {
     f(_unnamed_module);
   }
-  if (_modules != nullptr) {
-    _modules->modules_do(f);
+  if (_modules.load_relaxed() != nullptr) {
+    _modules.load_relaxed()->modules_do(f);
   }
 }
 
@@ -635,17 +635,17 @@ void ClassLoaderData::unload() {
 ModuleEntryTable* ClassLoaderData::modules() {
   // Lazily create the module entry table at first request.
   // Lock-free access requires load_acquire.
-  ModuleEntryTable* modules = Atomic::load_acquire(&_modules);
+  ModuleEntryTable* modules = _modules.load_acquire();
   if (modules == nullptr) {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
-    if ((modules = _modules) == nullptr) {
+    if ((modules = _modules.load_relaxed()) == nullptr) {
       modules = new ModuleEntryTable();
 
       {
         MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
         // Ensure _modules is stable, since it is examined without a lock
-        Atomic::release_store(&_modules, modules);
+        _modules.release_store(modules);
       }
     }
   }
@@ -740,11 +740,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
 
   // Release C heap allocated hashtable for all the modules.
-  if (_modules != nullptr) {
-    // Destroy the table itself
-    delete _modules;
-    _modules = nullptr;
-  }
+  delete _modules.fetch_then_set(nullptr, memory_order_relaxed);
 
   // Release C heap allocated hashtable for the dictionary
   if (_dictionary != nullptr) {
@@ -1045,7 +1041,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
   }
   out->print_cr(" }");
   out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
-  out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
+  out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules.load_relaxed()));
   out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
   if (_dictionary != nullptr) {
     out->print   (" - dictionary          " INTPTR_FORMAT " ", p2i(_dictionary));
@@ -1100,8 +1096,8 @@ void ClassLoaderData::verify() {
     assert(k != k->next_link(), "no loops!");
   }
 
-  if (_modules != nullptr) {
-    _modules->verify();
+  if (_modules.load_relaxed() != nullptr) {
+    _modules.load_relaxed()->verify();
   }
 
   if (_deallocate_list != nullptr) {
