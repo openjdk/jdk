@@ -36,7 +36,7 @@ package compiler.escapeAnalysis;
 
 public class TestReduceAllocationNotReducibleAnymore {
     public static void main(String[] args) {
-        for (int i =0; i< 100; i++) {
+        for (int i = 0; i < 100; i++) {
             test(4, null);
         }
     }
