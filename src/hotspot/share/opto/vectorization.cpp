@@ -206,7 +206,17 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   return VStatus::make_success();
 }
 
-// TODO: VLoopMemorySlices::find_memory_slices etc. + print
+// TODO:
+void VLoopMemorySlices::find_memory_slices() {
+}
+
+// TODO: add methods
+
+#ifndef PRODUCT
+// TODO: fixme -> refactor
+void VLoopMemorySlices::print() const {
+}
+#endif
 
 void VLoopVPointers::compute_vpointers() {
   count_vpointers();
@@ -269,8 +279,6 @@ void VLoopVPointers::print() const {
 //                   the edge, i.e. spaw the order.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
-  // TODO:fixme
-  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
@@ -280,7 +288,10 @@ void VLoopDependencyGraph::construct() {
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
     PhiNode* head = mem_slice_heads.at(i);
-    MemNode* tail = mem_slice_tails.at(i);
+    // If there is no head (memory-phi) for this slice, then we have either no memops
+    // in the loop, or only loads. We do not need to add any memory edges in that case.
+    if (head == nullptr) { continue; }
+    MemNode* tail = head->in(2)->as_Mem();
 
     _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
 

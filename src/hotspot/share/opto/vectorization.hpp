@@ -430,7 +430,6 @@ private:
   }
 };
 
-// TODO: refactor
 // Submodule of VLoopAnalyzer.
 // Find the memory slices in the loop.
 class VLoopMemorySlices : public StackObj {
@@ -438,25 +437,20 @@ private:
   const VLoop& _vloop;
   const VLoopBody& _body;
 
+// TODO: refactor
   GrowableArray<PhiNode*> _heads;
-  GrowableArray<MemNode*> _tails;
 
 public:
   VLoopMemorySlices(Arena* arena, const VLoop& vloop, const VLoopBody& body) :
     _vloop(vloop),
     _body(body),
-    _heads(arena, 8, 0, nullptr),
-    _tails(arena, 8, 0, nullptr) {};
+    _heads(arena, 8, 0, nullptr) {};
   NONCOPYABLE(VLoopMemorySlices);
 
-  void find_memory_slices();
-
   const GrowableArray<PhiNode*>& heads() const { return _heads; }
-  const GrowableArray<MemNode*>& tails() const { return _tails; }
 
-  // Get all memory nodes of a slice, in reverse order
+  void find_memory_slices();
   void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
-
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
 #ifndef PRODUCT
@@ -604,7 +598,7 @@ private:
   Arena*                   _arena;
   const VLoop&             _vloop;
   const VLoopBody&         _body;
-  const VLoopMemorySlices& _memory_slices; // TODO: move?
+  const VLoopMemorySlices& _memory_slices;
   const VLoopVPointers&    _vpointers;
 
   // bb_idx -> DependenceNode*
@@ -622,7 +616,7 @@ public:
     _arena(arena),
     _vloop(vloop),
     _body(body),
-    _memory_slices(memory_slices), // TODO: add body etc?
+    _memory_slices(memory_slices),
     _vpointers(pointers),
     _dependency_nodes(arena,
                       vloop.estimated_body_length(),
