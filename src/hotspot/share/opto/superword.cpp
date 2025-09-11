@@ -2662,11 +2662,10 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-// TODO: refactor?
-LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
+LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List* pack) const {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (int i = 0; i < nodes().length(); i++) {
-    Node* n = nodes().at(i);
+  for (uint i = 0; i < pack->size(); i++) {
+    Node* n = pack->at(i);
     assert(n->is_Load(), "only meaningful for loads");
     if (!n->depends_only_on_test()) {
       if (n->as_Load()->has_unknown_control_dependency() &&
