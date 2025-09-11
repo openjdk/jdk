@@ -431,31 +431,70 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
-// Find the memory slices in the loop.
+// Find the memory slices in the loop. There are 3 kinds of slices:
+// 1. no use in loop:                     inputs(i) = nullptr,   heads(i) = nullptr
+// 2. stores in loop:                     inputs(i) = entry_mem, heads(i) = phi_mem
+//
+//    <mem state before loop> = entry_mem
+//                      |
+//         CountedLoop  |  +-----------------------+
+//                   |  v  v                       |
+//                   phi_mem                       |
+//                     |                           |
+//                   <stores (and maybe loads)>    |
+//                     |                           |
+//                     +---------------------------+
+//                     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are dependent on the last store in the loop.
+//          Once we vectorize, we may reorder the loads and stores, and replace
+//          scalar mem ops with vector mem ops. We will have to make sure that all
+//          uses after the loop use the new last store.
+//          See: VTransformApplyState::fix_memory_state_uses_after_loop
+//
+// 3. only loads but no stores in loop:   inputs(i) = entry_mem, heads(i) = nullptr
+//
+//    <mem state before loop> = entry_mem
+//     |                 |
+//     |   CountedLoop   |
+//     |             |   |
+//     |            <loads in loop>
+//     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are NOT dependent any mem ops in the loop,
+//          since there are no stores.
+//
 class VLoopMemorySlices : public StackObj {
 private:
   const VLoop& _vloop;
   const VLoopBody& _body;
 
-// TODO: refactor
+  GrowableArray<Node*>    _inputs;
   GrowableArray<PhiNode*> _heads;
 
 public:
   VLoopMemorySlices(Arena* arena, const VLoop& vloop, const VLoopBody& body) :
     _vloop(vloop),
     _body(body),
-    _heads(arena, 8, 0, nullptr) {};
+    _inputs(arena, num_slices(), num_slices(), nullptr),
+    _heads(arena, num_slices(), num_slices(), nullptr) {};
   NONCOPYABLE(VLoopMemorySlices);
 
+  const GrowableArray<Node*>& inputs() const { return _inputs; }
   const GrowableArray<PhiNode*>& heads() const { return _heads; }
 
   void find_memory_slices();
   void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
+private:
 #ifndef PRODUCT
   void print() const;
 #endif
+
+  int num_slices() const { return _vloop.phase()->C->num_alias_types(); }
 };
 
 // Submodule of VLoopAnalyzer.

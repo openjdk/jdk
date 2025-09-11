@@ -206,15 +206,59 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   return VStatus::make_success();
 }
 
-// TODO:
+// There are 2 kinds of slices:
+// - No memory phi: only loads. All have the same input memory state from before the loop.
+// - With memory phi. Chain of memory operations inside the loop.
 void VLoopMemorySlices::find_memory_slices() {
+  Compile* C = _vloop.phase()->C;
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    if (n->is_memory_phi()) {
+      // Memory slice with stores (and maybe loads)
+      PhiNode* phi = n->as_Phi();
+      int alias_idx = C->get_alias_index(phi->adr_type());
+      assert(_inputs.at(alias_idx) == nullptr, "did not yet touch this slice");
+      _inputs.at_put(alias_idx, phi->in(1));
+      _heads.at_put(alias_idx, phi);
+    } else if (n->is_Load()) {
+      LoadNode* load = n->as_Load();
+      int alias_idx = C->get_alias_index(load->adr_type());
+      PhiNode* head = _heads.at(alias_idx);
+      if (head == nullptr) {
+        // We did not find a phi on this slice yet -> must be a slice with only loads.
+        assert(_inputs.at(alias_idx) == nullptr || _inputs.at(alias_idx) == load->in(1),
+               "not yet touched or the same input");
+        _inputs.at_put(alias_idx, load->in(1));
+      } // else: the load belongs to a slice with a phi that already set heads and inputs.
+#ifdef ASSERT
+    } else if (n->is_Store()) {
+      // Found a store. Make sure it is in a slice with a Phi.
+      StoreNode* store = n->as_Store();
+      int alias_idx = C->get_alias_index(store->adr_type());
+      PhiNode* head = _heads.at(alias_idx);
+      assert(head != nullptr, "should have found a mem phi for this slice");
+#endif
+    }
+  }
+  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
 }
 
-// TODO: add methods
-
 #ifndef PRODUCT
-// TODO: fixme -> refactor
 void VLoopMemorySlices::print() const {
+  tty->print_cr("\nVLoopMemorySlices::print: %s",
+                heads().length() > 0 ? "" : "NONE");
+  for (int i = 0; i < _inputs.length(); i++) {
+    Node* input = _inputs.at(i);
+    PhiNode* head = _heads.at(i);
+    if (input != nullptr) {
+      tty->print("%3d input", i);  input->dump();
+      if (head == nullptr) {
+        tty->print_cr("    load only");
+      } else {
+        tty->print("    head ");  head->dump();
+      }
+    }
+  }
 }
 #endif
 
