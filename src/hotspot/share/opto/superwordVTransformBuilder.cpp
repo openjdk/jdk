@@ -127,8 +127,8 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
 }
 
 void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies) {
-  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
-    Node* n = _vloop_analyzer.body().body().at(i);
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
     VTransformNode* vtn = get_vtnode(n);
     if (vtn->isa_Vector() != nullptr) { continue; }
     vtn_memory_dependencies.clear(); // Add every dependency only once per vtn.
@@ -152,7 +152,6 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
 
 // Build vtnodes for all uses of nodes from the loop, and connect them
 // as outputs to the nodes in the loop.
-// TODO: only bb or all nodes in loop? - check other places
 void SuperWordVTransformBuilder::build_uses_after_loop() {
   for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
     Node* n = _vloop.lpt()->_body.at(i);

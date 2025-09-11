@@ -124,6 +124,11 @@ void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTrans
     if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
+    // If an Outer node has both inputs and outputs, we will most likely have cycles in the final graph.
+    // This is not a correctness problem, but it just will prevent vectorization. If this ever happens
+    // try to find a way to avoid the cycle somehow.
+    assert(vtn->isa_Outer() == nullptr || (vtn->has_strong_in_edge() != (vtn->out_strong_edges() > 0)),
+           "Outer nodes should either be inputs or outputs, but not both, otherwise we may get cycles");
   }
 }
 
