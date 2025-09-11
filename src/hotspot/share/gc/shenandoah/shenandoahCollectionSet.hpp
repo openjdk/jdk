@@ -104,16 +104,17 @@ public:
   inline bool is_in_loc(void* loc)           const;
 
   void print_on(outputStream* out) const;
+  void summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const;
 
   // It is not known how many of these bytes will be promoted.
-  inline size_t get_young_bytes_reserved_for_evacuation();
-  inline size_t get_old_bytes_reserved_for_evacuation();
+  inline size_t get_young_bytes_reserved_for_evacuation() const;
+  inline size_t get_old_bytes_reserved_for_evacuation() const;
 
-  inline size_t get_young_bytes_to_be_promoted();
+  inline size_t get_young_bytes_to_be_promoted() const;
 
   size_t get_young_available_bytes_collected() { return _young_available_bytes_collected; }
 
-  inline size_t get_old_garbage();
+  inline size_t get_old_garbage() const;
 
   bool is_preselected(size_t region_idx) {
     assert(_preselected_regions != nullptr, "Missing etsablish after abandon");
