@@ -38,6 +38,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
@@ -111,6 +112,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -310,13 +312,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
         };
         String[] requiredPrefix = new String[] {identifier};
-        return computeSuggestions(codeWrap, cursor, requiredPrefix, anchor).stream()
-                .filter(s -> s.continuation().startsWith(requiredPrefix[0]) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+        return computeSuggestions(codeWrap, code, cursor, requiredPrefix, anchor).stream()
+                .filter(s -> filteringText(s).startsWith(requiredPrefix[0]) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
                 .sorted(Comparator.comparing(Suggestion::continuation))
                 .toList();
     }
 
-    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, String[] requiredPrefix, int[] anchor) {
+    private static String filteringText(Suggestion suggestion) {
+        return suggestion instanceof SuggestionImpl impl
+                ? impl.filteringText
+                : suggestion.continuation();
+    }
+
+    private List<Suggestion> computeSuggestions(OuterWrap code, String inputCode, int cursor, String[] requiredPrefix, int[] anchor) {
         return proc.taskFactory.analyze(code, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
@@ -479,6 +487,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
                             break;
                         }
+                        if (isAnnotation(tp)) {
+                            if (getAnnotationAttributeNameOrNull(tp.getParentPath(), true) != null) {
+                                //nested annotation
+                                result = completionSuggestionsImpl(inputCode, cursor - 1, anchor);
+                                requiredPrefix[0] = "@" + requiredPrefix[0];
+                                return result;
+                            }
+
+                            Predicate<Element> accept = accessibility.and(STATIC_ONLY)
+                                    .and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
+                            addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
+                            break;
+                        }
                         ImportTree it = findImport(tp);
                         if (it != null) {
                             if (it.isModule()) {
@@ -512,6 +533,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     case ERRONEOUS: {
                         boolean staticOnly = ReplResolve.isStatic(((JavacScope)scope).getEnv());
                         Predicate<Element> accept = accessibility.and(staticOnly ? STATIC_ONLY : TRUE);
+                        boolean insertPrimitiveTypes = true;
                         if (isClass(tp)) {
                             ClassTree clazz = (ClassTree) tp.getParentPath().getLeaf();
                             if (clazz.getExtendsClause() == tp.getLeaf()) {
@@ -539,20 +561,101 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             if (var.getType() == tp.getLeaf()) {
                                 accept = accept.and(IS_TYPE);
                             }
+                        } else if (tp.getParentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                            AnnotationTree annotation = (AnnotationTree) tp.getParentPath().getLeaf();
+                            Element annotationType = at.trees().getElement(tp.getParentPath());
+                            Set<String> present = annotation.getArguments()
+                                                            .stream()
+                                                            .filter(expr -> expr.getKind() == Kind.ASSIGNMENT)
+                                                            .map(expr -> (AssignmentTree) expr)
+                                                            .map(assign -> assign.getVariable())
+                                                            .filter(var -> var.getKind() == Kind.IDENTIFIER)
+                                                            .map(var -> ((IdentifierTree) var).getName().toString())
+                                                            .collect(Collectors.toSet());
+                            addElements(ElementFilter.methodsIn(annotationType.getEnclosedElements()), el -> !present.contains(el.getSimpleName().toString()), TRUE, _ -> " = ", result);
+                            break;
+                        } else if (getAnnotationAttributeNameOrNull(tp, true) instanceof String attributeName) {
+                            Element annotationType = tp.getParentPath().getParentPath().getLeaf().getKind() == Kind.ANNOTATION
+                                    ? at.trees().getElement(tp.getParentPath().getParentPath())
+                                    : at.trees().getElement(tp.getParentPath().getParentPath().getParentPath());
+                            if (sp.getEndPosition(topLevel, tp.getParentPath().getLeaf()) == (-1)) {
+                                //synthetic 'value':
+                                addElements(ElementFilter.methodsIn(annotationType.getEnclosedElements()), TRUE, TRUE, _ -> " = ", result);
+                                boolean hasValue = findAnnotationAttributeIfAny(annotationType, "value").isPresent();
+                                if (!hasValue) {
+                                    break;
+                                }
+                            }
+                            Optional<ExecutableElement> ee = findAnnotationAttributeIfAny(annotationType, attributeName);
+                            if (ee.isEmpty()) {
+                                break;
+                            }
+                            TypeMirror relevantAttributeType = ee.orElseThrow().getReturnType();
+                            if (relevantAttributeType.getKind() == TypeKind.ARRAY) {
+                                relevantAttributeType = ((ArrayType) relevantAttributeType).getComponentType();
+                            }
+                            if (relevantAttributeType.getKind() == TypeKind.DECLARED &&
+                                at.getTypes().asElement(relevantAttributeType) instanceof Element attributeTypeEl) {
+                                if (attributeTypeEl.getKind() == ElementKind.ANNOTATION_TYPE) {
+                                    boolean hasAnyAttributes =
+                                            ElementFilter.methodsIn(attributeTypeEl.getEnclosedElements())
+                                                         .stream()
+                                                         .anyMatch(attribute -> attribute.getParameters().isEmpty());
+                                    String paren = hasAnyAttributes ? "(" : "";
+                                    String name = scopeContent(at, scope, IDENTITY).contains(attributeTypeEl)
+                                            ? attributeTypeEl.getSimpleName().toString() //simple name ought to be enough:
+                                            : ((TypeElement) attributeTypeEl).getQualifiedName().toString();
+                                    result.add(new SuggestionImpl("@" + name + paren, true));
+                                    break;
+                                } else if (attributeTypeEl.getKind() == ElementKind.ENUM) {
+                                    String typeName = scopeContent(at, scope, IDENTITY).contains(attributeTypeEl)
+                                            ? attributeTypeEl.getSimpleName().toString() //simple name ought to be enough:
+                                            : ((TypeElement) attributeTypeEl).getQualifiedName().toString();
+                                    result.add(new SuggestionImpl(typeName, true));
+                                    result.addAll(ElementFilter.fieldsIn(attributeTypeEl.getEnclosedElements())
+                                                               .stream()
+                                                               .filter(e -> e.getKind() == ElementKind.ENUM_CONSTANT)
+                                                               .map(c -> new SuggestionImpl(scopeContent(at, scope, IDENTITY).contains(c)
+                                                                       ? c.getSimpleName().toString()
+                                                                       : typeName + "." + c.getSimpleName(), c.getSimpleName().toString(),
+                                                                       true))
+                                                               .toList());
+                                    break;
+                                }
+                            }
+                            accept = accessibility.and(el -> {
+                                return switch (el.getKind()) {
+                                    case PACKAGE, ANNOTATION_TYPE, ENUM, INTERFACE, RECORD, ENUM_CONSTANT -> true;
+                                    case CLASS -> !((TypeElement) el).asType().getKind().isPrimitive();
+                                    case FIELD -> isPermittedAnnotationAttributeFieldType(at, el.asType());
+                                    default -> false;
+                                };
+                            });
+                            insertPrimitiveTypes = false;
                         }
 
                         addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
 
-                        Tree parent = tp.getParentPath().getLeaf();
-                        accept = switch (parent.getKind()) {
-                            case VARIABLE -> ((VariableTree) parent).getType() == tp.getLeaf() ?
-                                             IS_VOID.negate() :
-                                             TRUE;
-                            case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
-                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
-                            default -> TRUE;
-                        };
-                        addElements(primitivesOrVoid(at), accept, smartFilter, result);
+                        if (insertPrimitiveTypes) {
+                            Tree parent = tp.getParentPath().getLeaf();
+                            accept = switch (parent.getKind()) {
+                                case VARIABLE -> ((VariableTree) parent).getType() == tp.getLeaf() ?
+                                                 IS_VOID.negate() :
+                                                 TRUE;
+                                case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
+                                case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
+                                default -> TRUE;
+                            };
+                            addElements(primitivesOrVoid(at), accept, smartFilter, result);
+                        }
+
+                        boolean hasBooleanSmartType = targetTypes != null &&
+                                StreamSupport.stream(targetTypes.spliterator(), false)
+                                             .anyMatch(tm -> tm.getKind() == TypeKind.BOOLEAN);
+                        if (hasBooleanSmartType) {
+                            result.add(new SuggestionImpl("true", true));
+                            result.add(new SuggestionImpl("false", true));
+                        }
                         break;
                     }
                 }
@@ -917,6 +1020,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 long start = sp.getStartPosition(topLevel, tree);
                 long end = sp.getEndPosition(topLevel, tree);
 
+                if (end == (-1) && tree.getKind() == Kind.ASSIGNMENT &&
+                    getCurrentPath() != null &&
+                    getCurrentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                    //the assignment is synthetically generated, take the end pos of the nested tree:
+                    end = sp.getEndPosition(topLevel, ((AssignmentTree) tree).getExpression());
+                }
                 if (start <= wrapEndPos && wrapEndPos <= end &&
                     (deepest[0] == null || deepest[0].getLeaf() == getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
@@ -946,6 +1055,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 ((MethodTree)parent).getThrows().contains(tp.getLeaf());
     }
 
+    private boolean isAnnotation(TreePath tp) {
+        Tree parent = tp.getParentPath().getLeaf();
+        return parent.getKind() == Kind.ANNOTATION &&
+                ((AnnotationTree)parent).getAnnotationType().equals(tp.getLeaf());
+    }
+
     private boolean isClass(TreePath tp) {
         return tp.getParentPath() != null &&
                CLASS_KINDS.contains(tp.getParentPath().getLeaf().getKind());
@@ -959,6 +1074,39 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private boolean isVariable(TreePath tp) {
         return tp.getParentPath() != null &&
                tp.getParentPath().getLeaf().getKind() == Kind.VARIABLE;
+    }
+
+    private String getAnnotationAttributeNameOrNull(TreePath tp, boolean acceptArray) {
+        if (tp.getParentPath() == null) {
+            return null;
+        }
+        if (tp.getParentPath().getLeaf().getKind() == Kind.NEW_ARRAY &&
+            ((NewArrayTree) tp.getParentPath().getLeaf()).getInitializers().contains(tp.getLeaf())) {
+            if (acceptArray) {
+                return getAnnotationAttributeNameOrNull(tp.getParentPath(), false);
+            } else {
+                return null;
+            }
+        }
+        if (tp.getParentPath().getParentPath() == null ||
+            tp.getParentPath().getLeaf().getKind() != Kind.ASSIGNMENT ||
+            tp.getParentPath().getParentPath().getLeaf().getKind() != Kind.ANNOTATION) {
+            return null;
+        }
+        AssignmentTree assign = (AssignmentTree) tp.getParentPath().getLeaf();
+        if (assign.getVariable().getKind() != Kind.IDENTIFIER) {
+            return null;
+        }
+        return ((IdentifierTree) assign.getVariable()).getName().toString();
+    }
+
+    private Optional<ExecutableElement> findAnnotationAttributeIfAny(Element annotationType,
+                                                                     String attributeName) {
+        return ElementFilter.methodsIn(annotationType.getEnclosedElements())
+                            .stream()
+                            .filter(ee -> ee.getSimpleName().contentEquals(attributeName))
+                            .filter(ee -> ee.getParameters().isEmpty())
+                            .findAny();
     }
 
     private ImportTree findImport(TreePath tp) {
@@ -985,6 +1133,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         return true;
             }
         };
+    }
+
+    private boolean isPermittedAnnotationAttributeFieldType(AnalyzeTask at, TypeMirror type) {
+        if (type.getKind().isPrimitive()) {
+            return true;
+        }
+        if (type.getKind() == TypeKind.DECLARED) {
+            Element el = ((DeclaredType) type).asElement();
+            return el.getKind() == ElementKind.ENUM || el.equals(at.getElements().getTypeElement("java.lang.String"));
+        }
+        return false;
     }
 
     private final Predicate<Element> TRUE = el -> true;
@@ -1237,7 +1396,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return new VarSymbol(Flags.PUBLIC | Flags.STATIC | Flags.FINAL, _class, classType, erasedSite.tsym);
     }
 
-    private Iterable<? extends Element> scopeContent(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor) {
+    private Collection<? extends Element> scopeContent(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor) {
         Iterable<Scope> scopeIterable = () -> new Iterator<Scope>() {
             private Scope currentScope = scope;
             @Override
@@ -1306,11 +1465,54 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         Tree current = forPath.getLeaf();
 
+        if (current.getKind() == Kind.ANNOTATION) {
+            Element type = at.trees().getElement(forPath);
+            if (type != null) {
+                Optional<ExecutableElement> valueAttr =
+                        ElementFilter.methodsIn(type.getEnclosedElements())
+                                     .stream()
+                                     .filter(ee -> ee.getSimpleName().contentEquals("value"))
+                                     .findAny();
+                if (valueAttr.isPresent()) {
+                    TypeMirror returnType = valueAttr.orElseThrow().getReturnType();
+
+                    if (returnType.getKind() == TypeKind.ARRAY) {
+                        returnType = ((ArrayType) returnType).getComponentType();
+                    }
+
+                    return Collections.singletonList(returnType);
+                }
+            }
+        }
+
         switch (forPath.getParentPath().getLeaf().getKind()) {
+            case NEW_ARRAY:
+                if (getAnnotationAttributeNameOrNull(forPath, true) != null) {
+                    forPath = forPath.getParentPath();
+                    current = forPath.getLeaf();
+                    //fall-through
+                } else {
+                    break;
+                }
             case ASSIGNMENT: {
                 AssignmentTree tree = (AssignmentTree) forPath.getParentPath().getLeaf();
-                if (tree.getExpression() == current)
-                    return Collections.singletonList(at.trees().getTypeMirror(new TreePath(forPath.getParentPath(), tree.getVariable())));
+                if (tree.getExpression() == current) {
+                    if (forPath.getParentPath().getParentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                        Element method = at.trees().getElement(new TreePath(forPath.getParentPath(), tree.getVariable()));
+                        if (method != null && method.getKind() == ElementKind.METHOD) {
+                            TypeMirror returnType = ((ExecutableElement) method).getReturnType();
+
+                            if (returnType.getKind() == TypeKind.ARRAY) {
+                                returnType = ((ArrayType) returnType).getComponentType();
+                            }
+
+                            return Collections.singletonList(returnType);
+                        }
+                        return null;
+                    } else {
+                        return Collections.singletonList(at.trees().getTypeMirror(new TreePath(forPath.getParentPath(), tree.getVariable())));
+                    }
+                }
                 break;
             }
             case VARIABLE: {
@@ -1558,7 +1760,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             TreePath prevPath = null;
             while (tp != null && tp.getLeaf().getKind() != Kind.METHOD_INVOCATION &&
                    tp.getLeaf().getKind() != Kind.NEW_CLASS && tp.getLeaf().getKind() != Kind.IDENTIFIER &&
-                   tp.getLeaf().getKind() != Kind.MEMBER_SELECT) {
+                   tp.getLeaf().getKind() != Kind.MEMBER_SELECT &&
+                   tp.getLeaf().getKind() != Kind.ANNOTATION) {
                 prevPath = tp;
                 tp = tp.getParentPath();
             }
@@ -1611,6 +1814,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
 
                 elements = Stream.of(el);
+            } else if (tp.getLeaf().getKind() == Kind.ANNOTATION) {
+                Element el = at.trees().getElement(tp);
+
+                if (el == null ||
+                    el.getKind() != ElementKind.ANNOTATION_TYPE) {
+                    //erroneous state:
+                    return Collections.emptyList();
+                }
+
+                elements = ElementFilter.methodsIn(el.getEnclosedElements())
+                                        .stream()
+                                        .map(ee -> (Element) ee);
             } else {
                 return Collections.emptyList();
             }
@@ -2220,6 +2435,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private static class SuggestionImpl implements Suggestion {
 
         private final String continuation;
+        private final String filteringText;
         private final boolean matchesType;
 
         /**
@@ -2229,7 +2445,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
          * @param matchesType does the candidate match the target type
          */
         public SuggestionImpl(String continuation, boolean matchesType) {
+            this(continuation, continuation, matchesType);
+        }
+
+        /**
+         * Create a {@code Suggestion} instance.
+         *
+         * @param continuation a candidate continuation of the user's input
+         * @param filteringText a text that should be used for filtering
+         * @param matchesType does the candidate match the target type
+         */
+        public SuggestionImpl(String continuation, String filteringText, boolean matchesType) {
             this.continuation = continuation;
+            this.filteringText = filteringText;
             this.matchesType = matchesType;
         }
 
