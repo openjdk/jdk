@@ -438,27 +438,42 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   private U4Array getOffsets() {
     Address a = bsmaentries.getValue(getAddress());
-    return new U4Array(bsmaentries_offsets.getValue(a));
+    return VMObjectFactory.newObject(U4Array.class, bsmaentries_offsets.getValue(a));
   }
   private U2Array getBootstrapMethods() {
-      Address a = bsmaentries.getValue(getAddress());
-      return new U2Array(bsmaentries_bootstrap_methods.getValue(a));
+    Address a = bsmaentries.getValue(getAddress());
+    return VMObjectFactory.newObject(U4Array.class, bsmaentries_offsets.getValue(a));
   }
 
   public int getBootstrapMethodsCount() {
     U4Array offsets = getOffsets();
-    return offsets.length();
+    int count = 0;
+    if (offsets != null) {
+      count = offsets.length();
+    }
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodsCount: count = " + count);
+    }
+    return count;
   }
 
   public int getBootstrapMethodArgsCount(int bsmIndex) {
     U4Array offs = getOffsets();
     U2Array bsms = getBootstrapMethods();
-    return bsms.at(offs.at(bsmIndex) + INDY_ARGC_OFFSET);
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(offs != null && bsms != null, "BSM attribute is not present");
+    }
+    int argc = bsms.at(offs.at(bsmIndex) + INDY_ARGC_OFFSET);
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodArgsCount: bsm index = " + bsmIndex + ", args count = " + argc);
+    }
+    return argc;
   }
 
   public short[] getBootstrapMethodAt(int bsmIndex) {
     U4Array offs = getOffsets();
     U2Array bsms = getBootstrapMethods();
+    if (offs == null || bsms == null) return null; // safety first
     int basePos = offs.at(bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
     int argc = getBootstrapMethodArgsCount(bsmIndex);
