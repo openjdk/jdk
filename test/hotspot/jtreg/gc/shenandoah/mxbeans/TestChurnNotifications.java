@@ -159,7 +159,8 @@ public class TestChurnNotifications {
         final int size = 100_000;
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * size);
 
-        long mem = count * (16 + 4 * size);
+        long anticipated_humongous_waste_per_array = 124_272;
+        long mem = count * (16 + 4 * size + anticipated_humongous_waste_per_array);
 
         for (int c = 0; c < count; c++) {
             sink = new int[size];
