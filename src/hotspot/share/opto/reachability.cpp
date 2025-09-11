@@ -319,9 +319,7 @@ bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_on
 bool PhaseIdealLoop::optimize_reachability_fences() {
   Compile::TracePhase tp(_t_reachability_optimize);
 
-  if (!OptimizeReachabilityFences) {
-    return false;
-  }
+  assert(OptimizeReachabilityFences, "required");
 
   Unique_Node_List redundant_rfs;
   find_redundant_rfs(redundant_rfs);

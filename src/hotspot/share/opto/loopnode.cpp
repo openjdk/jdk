@@ -5002,7 +5002,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
           !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
-  bool do_reachability_fences = (C->reachability_fences_count() > 0);
+  bool do_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes && !do_reachability_fences) {
     return;
