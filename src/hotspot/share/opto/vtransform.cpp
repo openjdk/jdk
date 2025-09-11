@@ -949,16 +949,6 @@ void VTransformGraph::print_schedule() const {
   }
 }
 
-// TODO: rm
-void VTransformGraph::print_memops_schedule() const {
-  tty->print_cr("\nVTransformGraph::print_memops_schedule:");
-  int i = 0;
-  for_each_memop_in_schedule([&] (MemNode* mem) {
-    tty->print(" %3d: ", i++);
-    mem->dump();
-  });
-}
-
 void VTransformNode::print() const {
   tty->print("%3d %s (", _idx, name());
   for (uint i = 0; i < _req; i++) {

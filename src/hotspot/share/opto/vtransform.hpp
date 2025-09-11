@@ -178,7 +178,6 @@ public:
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
-  void apply_memops_reordering_with_schedule() const; // TODO: rm?
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:
@@ -189,14 +188,9 @@ private:
 
   void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
 
-  // TODO: rm?
-  template<typename Callback>
-  void for_each_memop_in_schedule(Callback callback) const;
-
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
-  void print_memops_schedule() const; // TODO: rm
   void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                             const VectorSet& pre_visited,
                             const VectorSet& post_visited) const;
@@ -782,31 +776,4 @@ public:
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
-
-// TODO: rm?
-// Invoke callback on all memops, in the order of the schedule.
-template<typename Callback>
-void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
-  assert(_schedule.length() == _vtnodes.length(), "schedule was computed");
-
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-
-    // We must ignore nodes outside the loop.
-    if (vtn->isa_Outer() != nullptr) { continue; }
-
-    VTransformMemopScalarNode* scalar = vtn->isa_MemopScalar();
-    if (scalar != nullptr) {
-      callback(scalar->node());
-    }
-
-    VTransformMemVectorNode* vector = vtn->isa_MemVector();
-    if (vector != nullptr) {
-      for (int j = 0; j < vector->nodes().length(); j++) {
-        callback(vector->nodes().at(j)->as_Mem());
-      }
-    }
-  }
-}
-
 #endif // SHARE_OPTO_VTRANSFORM_HPP
