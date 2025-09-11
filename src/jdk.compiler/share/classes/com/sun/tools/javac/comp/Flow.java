@@ -830,7 +830,7 @@ public class Flow {
                 }
             }
             try {
-                CoverageResult coveredResult = computeCoverage(selector.type, patternSet);
+                CoverageResult coveredResult = computeCoverage(selector.type, patternSet, false);
                 if (coveredResult.covered()) {
                     return true;
                 }
@@ -876,7 +876,7 @@ public class Flow {
 
                         Set<PatternDescription> replaced = replace(inMissingPatterns, toExpand, reducedPermittedPatterns);
 
-                        if (computeCoverage(selectorType, joinSets(basePatterns, replaced)).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replaced), true).covered()) {
                             it.remove();
                             reduced = true;
                         }
@@ -937,12 +937,12 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded)), true).covered()) {
                             it.remove();
                         }
                     }
 
-                    CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns);
+                    CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns, true);
 
                     if (!coverageResult.covered()) {
                         //nothing better can be done(?)
@@ -961,7 +961,7 @@ public class Flow {
 
                         reducedAdded.remove(current);
 
-                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded))).covered()) {
+                        if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded)), true).covered()) {
                             it.remove();
                         }
                     }
@@ -1137,7 +1137,7 @@ public class Flow {
             }
         }
 
-        private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns) {
+        private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns, boolean search) {
             Set<PatternDescription> updatedPatterns;
             Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
             Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
@@ -1145,7 +1145,7 @@ public class Flow {
             boolean repeat = true;
             do {
                 updatedPatterns = reduceBindingPatterns(selectorType, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes);
+                updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes, search);
                 updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                 updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                 repeat = !updatedPatterns.equals(patterns);
@@ -1376,7 +1376,8 @@ public class Flow {
          */
         private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
                                                              Map<PatternDescription, Set<PatternDescription>> replaces,
-                                                             boolean useHashes) {
+                                                             boolean useHashes,
+                                                             boolean search) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
@@ -1444,23 +1445,29 @@ public class Flow {
                                                         continue NEXT_PATTERN;
                                                     }
                                                 } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                    boolean foundMatchingReplaced = false;
-                                                    Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
-
-                                                    while (!pendingReplacedPatterns.isEmpty()) {
-                                                        PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
-
-                                                        pendingReplacedPatterns.remove(currentReplaced);
-
-                                                        if (nestedRPOne.equals(currentReplaced)) {
-                                                            foundMatchingReplaced = true;
-                                                            break;
+                                                    if (search) {
+                                                        if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
+                                                            continue NEXT_PATTERN;
                                                         }
+                                                    } else {
+                                                        boolean foundMatchingReplaced = false;
+                                                        Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
 
-                                                        pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
-                                                    }
-                                                    if (!foundMatchingReplaced) {
-                                                        continue NEXT_PATTERN;
+                                                        while (!pendingReplacedPatterns.isEmpty()) {
+                                                            PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
+
+                                                            pendingReplacedPatterns.remove(currentReplaced);
+
+                                                            if (nestedRPOne.equals(currentReplaced)) {
+                                                                foundMatchingReplaced = true;
+                                                                break;
+                                                            }
+
+                                                            pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
+                                                        }
+                                                        if (!foundMatchingReplaced) {
+                                                            continue NEXT_PATTERN;
+                                                        }
                                                     }
                                                 } else {
                                                     continue NEXT_PATTERN;
@@ -1473,7 +1480,7 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes, search);
 
                             updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
