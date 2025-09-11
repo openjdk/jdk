@@ -109,8 +109,7 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   }
   // We changed instruction stream
   if (mt_safe) {
-    OrderAccess::release();
-    // IC invalidation happens after we changed the instruction stream.
+    // IC invalidate provides a leading full fence, it thus happens after we changed the instruction stream.
     ICache::invalidate_range(jmp_ins_pc, NativeInstruction::instruction_size);
   }
 }
