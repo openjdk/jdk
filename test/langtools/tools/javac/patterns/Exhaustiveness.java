@@ -2222,7 +2222,7 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test //JDK-8364991
-    public void testX(Path base) throws Exception {
+    public void testBindingPatternDoesNotStandInPlaceOfRecordPatterns(Path base) throws Exception {
         doTest(base,
                new String[0],
                """
@@ -2232,7 +2232,7 @@ public class Exhaustiveness extends TestRunner {
                        return switch (r) {
                            case Root(R2 _, R2(R1 _)) -> 0;
                            case Root(R2(R1 _), R2(R2 _)) -> 0;
-                           case Root(R2(R2 _), R2 _) -> 0; //the above is functionally equivalent to: Root(R2(R2 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
                        };
                    }
                    sealed interface Base {}
@@ -2240,7 +2240,9 @@ public class Exhaustiveness extends TestRunner {
                    record R2(Base b) implements Base {}
                    record Root(R2 b2, R2 b3) {}
                }
-               """);
+               """,
+               "Test.java:4:16: compiler.err.not.exhaustive",
+               "1 error");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

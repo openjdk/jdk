@@ -60,6 +60,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -801,6 +802,7 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
+            Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
             Set<Set<PatternDescription>> seenFallback = new HashSet<>();
             boolean useHashes = true;
             try {
@@ -808,8 +810,8 @@ public class Flow {
                 while (repeat) {
                     Set<PatternDescription> updatedPatterns;
                     updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                    updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
-                    updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                    updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes);
+                    updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                     updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                     repeat = !updatedPatterns.equals(patterns);
                     if (checkCovered(selector.type, patterns)) {
@@ -1009,6 +1011,7 @@ public class Flow {
          *            as pattern hashes cannot be used to speed up the matching process
          */
         private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
+                                                             Map<PatternDescription, Set<PatternDescription>> replaces,
                                                              boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
@@ -1060,7 +1063,7 @@ public class Flow {
 
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                    for (int i = 0; i < rpOne.nested.length; i++) {
+                                    ACCEPT: for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate) {
                                             if (!rpOne.nested[i].equals(rpOther.nested[i])) {
                                                 if (useHashes) {
@@ -1077,9 +1080,26 @@ public class Flow {
                                                         continue NEXT_PATTERN;
                                                     }
                                                 } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                    if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
+                                                    boolean foundMatchingReplaced = false;
+                                                    Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
+
+                                                    while (!pendingReplacedPatterns.isEmpty()) {
+                                                        PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
+
+                                                        pendingReplacedPatterns.remove(currentReplaced);
+
+                                                        if (nestedRPOne.equals(currentReplaced)) {
+                                                            foundMatchingReplaced = true;
+                                                            break;
+                                                        }
+
+                                                        pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
+                                                    }
+                                                    if (!foundMatchingReplaced) {
                                                         continue NEXT_PATTERN;
                                                     }
+                                                } else {
+                                                    continue NEXT_PATTERN;
                                                 }
                                             }
                                         }
@@ -1089,9 +1109,9 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes);
 
-                            updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                            updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
@@ -1104,9 +1124,11 @@ public class Flow {
                                     PatternDescription[] newNested =
                                             Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                     newNested[mismatchingCandidateFin] = nested;
-                                    current.add(new RecordPattern(rpOne.recordType(),
+                                    RecordPattern nue = new RecordPattern(rpOne.recordType(),
                                                                     rpOne.fullComponentTypes(),
-                                                                    newNested));
+                                                                    newNested);
+                                    current.add(nue);
+                                    replaces.put(nue, new HashSet<>(join));
                                 }
                             }
                         }
@@ -1128,12 +1150,12 @@ public class Flow {
          * all the $nestedX pattern cover the given record component,
          * and replace those with a simple binding pattern over $record.
          */
-        private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns, Map<PatternDescription, Set<PatternDescription>> replaces) {
             var newPatterns = new HashSet<PatternDescription>();
             boolean modified = false;
             for (PatternDescription pd : patterns) {
                 if (pd instanceof RecordPattern rpOne) {
-                    PatternDescription reducedPattern = reduceRecordPattern(rpOne);
+                    PatternDescription reducedPattern = reduceRecordPattern(rpOne, replaces);
                     if (reducedPattern != rpOne) {
                         newPatterns.add(reducedPattern);
                         modified = true;
@@ -1145,7 +1167,7 @@ public class Flow {
             return modified ? newPatterns : patterns;
         }
 
-        private PatternDescription reduceRecordPattern(PatternDescription pattern) {
+        private PatternDescription reduceRecordPattern(PatternDescription pattern, Map<PatternDescription, Set<PatternDescription>> replaces) {
             if (pattern instanceof RecordPattern rpOne) {
                 Type[] componentType = rpOne.fullComponentTypes();
                 //error recovery, ignore patterns with incorrect number of nested patterns:
@@ -1155,7 +1177,7 @@ public class Flow {
                 PatternDescription[] reducedNestedPatterns = null;
                 boolean covered = true;
                 for (int i = 0; i < componentType.length; i++) {
-                    PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
+                    PatternDescription newNested = reduceRecordPattern(rpOne.nested[i], replaces);
                     if (newNested != rpOne.nested[i]) {
                         if (reducedNestedPatterns == null) {
                             reducedNestedPatterns = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
@@ -1166,9 +1188,13 @@ public class Flow {
                     covered &= checkCovered(componentType[i], List.of(newNested));
                 }
                 if (covered) {
-                    return new BindingPattern(rpOne.recordType);
+                    PatternDescription pd = new BindingPattern(rpOne.recordType);
+                    replaces.put(pd, Set.of(pattern));
+                    return pd;
                 } else if (reducedNestedPatterns != null) {
-                    return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
+                    PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
+                    replaces.put(pd, Set.of(pattern));
+                    return pd;
                 }
             }
             return pattern;
