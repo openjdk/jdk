@@ -287,7 +287,7 @@ CREATE_ZOFFSET_OPERATORS(zbacking_index)
 
 inline zbacking_index to_zbacking_index(zbacking_offset offset) {
   const uintptr_t value = untype(offset);
-  assert(is_aligned(value, ZGranuleSize), "Must be granule aligned (" PTR_FORMAT ")", value);
+  assert(is_aligned(value, ZGranuleSize), "Must be granule aligned: " PTR_FORMAT, value);
   return to_zbacking_index((uint32_t)(value >> ZGranuleSizeShift));
 }
 
