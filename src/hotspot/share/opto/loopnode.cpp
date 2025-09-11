@@ -5147,7 +5147,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 #endif
 
-  if (optimize_reachability_fences()) {
+  if (do_reachability_fences && optimize_reachability_fences()) {
     recompute_dom_depth();
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
@@ -5179,6 +5179,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   if (eliminate_rfs) {
+    assert(OptimizeReachabilityFences, "sanity");
     eliminate_reachability_fences();
     C->restore_major_progress(old_progress);
     return;
