@@ -58,12 +58,18 @@ static void check_relauncher_argument(char* arg) {
     if (strcmp(arg, "-J-DjavaLauncherWildcards=false") == 0) {
         cpwildcard = JNI_FALSE;
     }
-    if (strncmp(arg, "-J-DjavaLauncherProgname=", 26) == 0) {
-        progname = arg + 26;
+    const char *progname_prefix = "-J-DjavaLauncherProgname=";
+    int progname_prefix_len = strlen(progname_prefix);
+    printf("prefix is: %d\n", progname_prefix_len);
+    if (strncmp(arg, progname_prefix, progname_prefix_len) == 0) {
+        progname = arg + progname_prefix_len;
+    printf("PROGNAME is: %s\n", progname);
     }
-    if (strncmp(arg, "-J-DjavaLauncherArgs=", 21) == 0) {
-        char* java_args_ptr = arg + 21;
-        size_t java_args_len = strlen(arg) - 21;
+    const char *args_prefix = "-J-DjavaLauncherArgs=";
+    int args_prefix_len = strlen(args_prefix);
+    if (strncmp(arg, args_prefix, args_prefix_len) == 0) {
+        char* java_args_ptr = arg + args_prefix_len;
+        size_t java_args_len = strlen(arg) - args_prefix_len;
 
         JLI_List java_args = JLI_List_new(java_args_len);
         char* next_space;
