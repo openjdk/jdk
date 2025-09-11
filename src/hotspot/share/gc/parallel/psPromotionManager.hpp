@@ -167,9 +167,6 @@ class PSPromotionManager {
 
   inline void process_popped_location_depth(ScannerTask task, bool stolen);
 
-  static bool should_scavenge(oop* p, bool check_to_space = false);
-  static bool should_scavenge(narrowOop* p, bool check_to_space = false);
-
   template <bool promote_immediately, class T>
   void copy_and_push_safe_barrier(T* p);
 
