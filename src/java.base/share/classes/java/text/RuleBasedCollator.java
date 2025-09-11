@@ -236,9 +236,9 @@ package java.text;
  * </blockquote>
  *
  * @implNote For this implementation, concurrent usage of this class may
- * lead to significant thread contention. As such, users of this class should
- * consider creating a separate instance for each thread when used in
- * multithreaded environments.
+ * lead to significant thread contention since {@code synchronized} is employed
+ * to ensure thread-safety. As such, users of this class should consider creating
+ * a separate instance for each thread when used in multithreaded environments.
  *
  * @see        Collator
  * @see        CollationElementIterator
