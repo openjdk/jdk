@@ -71,22 +71,22 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         this.underlying = underlying;
     }
 
-    private ComputedConstantImpl(T contents) {
+    private ComputedConstantImpl(T constant) {
         this((Supplier<? extends T>) null);
-        setRelease(contents);
+        setRelease(constant);
     }
 
     @ForceInline
     @Override
     public T get() {
-        final T t = contentsAcquire();
+        final T t = getAcquire();
         return (t != null) ? t : getSlowPath();
     }
 
     private T getSlowPath() {
         preventReentry();
         synchronized (this) {
-            T t = contentsAcquire();
+            T t = getAcquire();
             if (t == null) {
                 t = underlying.get();
                 Objects.requireNonNull(t);
@@ -101,27 +101,27 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final T t = contentsAcquire();
+        final T t = getAcquire();
         return (t == null) ? other : t;
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return contentsAcquire() != null;
+        return getAcquire() != null;
     }
 
     // The methods equals() and hashCode() should be based on identity (defaults from Object)
 
     @Override
     public String toString() {
-        final T t = contentsAcquire();
+        final T t = getAcquire();
         return t == this ? "(this ComputedConstant)" : renderConstant(t);
     }
 
     @SuppressWarnings("unchecked")
     @ForceInline
-    private T contentsAcquire() {
+    private T getAcquire() {
         return (T) UNSAFE.getReferenceAcquire(this, CONSTANT_OFFSET);
     }
 
@@ -146,8 +146,8 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         return new ComputedConstantImpl<>(underlying);
     }
 
-    public static <T> ComputedConstantImpl<T> ofPreset(T contents) {
-        return new ComputedConstantImpl<>(contents);
+    public static <T> ComputedConstantImpl<T> ofPreset(T constant) {
+        return new ComputedConstantImpl<>(constant);
     }
 
 }
