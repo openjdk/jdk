@@ -45,7 +45,6 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -297,8 +296,7 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _contentions(0),
   _wait_set(nullptr),
   _waiters(0),
-  _wait_set_lock(0),
-  _stack_locker(nullptr)
+  _wait_set_lock(0)
 { }
 
 ObjectMonitor::~ObjectMonitor() {

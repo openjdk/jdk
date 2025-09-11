@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,16 @@
  * @bug 8169519 8168615 8176474
  * @summary Tests for JDI connector failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
- * @run testng JdiBogusHostListenExecutionControlTest
+ * @run junit JdiBogusHostListenExecutionControlTest
  */
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.testng.annotations.Test;
 import jdk.jshell.JShell;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JdiBogusHostListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
@@ -44,6 +43,7 @@ public class JdiBogusHostListenExecutionControlTest {
     private static final String EXPECTED_LOCATION =
             "@ com.sun.jdi.SocketListen";
 
+    @Test
     public void badOptionListenTest() {
         try {
             // turn on logging of launch failures

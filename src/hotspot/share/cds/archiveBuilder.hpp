@@ -93,6 +93,8 @@ constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignmen
 //    buffered_address + _buffer_to_requested_delta == requested_address
 //
 class ArchiveBuilder : public StackObj {
+  friend class AOTMapLogger;
+
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
@@ -180,6 +182,7 @@ private:
       return _buffered_addr;
     }
     MetaspaceObj::Type msotype() const { return _msotype; }
+    FollowMode follow_mode() const { return _follow_mode; }
   };
 
   class SourceObjList {
@@ -200,8 +203,6 @@ private:
     // convenience accessor
     SourceObjInfo* at(int i) const { return objs()->at(i); }
   };
-
-  class CDSMapLogger;
 
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
@@ -313,6 +314,12 @@ public:
   template <typename T> T to_requested(T obj) const {
     assert(is_in_buffer_space(obj), "must be");
     return (T)(address(obj) + _buffer_to_requested_delta);
+  }
+
+  template <typename T> T requested_to_buffered(T obj) const {
+    T b = (T)(address(obj) - _buffer_to_requested_delta);
+    assert(is_in_buffer_space(b), "must be");
+    return b;
   }
 
   static intx get_buffer_to_requested_delta() {
@@ -443,10 +450,8 @@ public:
   }
 
   bool has_been_archived(address src_addr) const;
-
-  bool has_been_buffered(address src_addr) const;
-  template <typename T> bool has_been_buffered(T src_addr) const {
-    return has_been_buffered((address)src_addr);
+  template <typename T> bool has_been_archived(T src_addr) const {
+    return has_been_archived((address)src_addr);
   }
 
   address get_buffered_addr(address src_addr) const;
