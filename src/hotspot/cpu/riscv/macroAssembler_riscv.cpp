@@ -5874,7 +5874,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be no less than zicboz block size.
+// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
   int zicboz_blk_size = VM_Version::zicboz_block_size.value();
   Label initial_table_end, loop;
