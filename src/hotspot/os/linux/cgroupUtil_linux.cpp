@@ -22,8 +22,8 @@
  *
  */
 
-#include "os_linux.hpp"
 #include "cgroupUtil_linux.hpp"
+#include "os_linux.hpp"
 
 int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
   assert(host_cpus > 0, "physical host cpus must be positive");

@@ -204,11 +204,11 @@ bool java_lang_String::_initialized;
 
 bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
   uint8_t* addr = flags_addr(java_string);
-  uint8_t value = Atomic::load(addr);
+  uint8_t value = AtomicAccess::load(addr);
   while ((value & flag_mask) == 0) {
     uint8_t old_value = value;
     value |= flag_mask;
-    value = Atomic::cmpxchg(addr, old_value, value);
+    value = AtomicAccess::cmpxchg(addr, old_value, value);
     if (value == old_value) return false; // Flag bit changed from 0 to 1.
   }
   return true;                  // Flag bit is already 1.
@@ -2140,7 +2140,7 @@ void java_lang_VirtualThread::set_state(oop vthread, int state) {
 
 int java_lang_VirtualThread::cmpxchg_state(oop vthread, int old_state, int new_state) {
   jint* addr = vthread->field_addr<jint>(_state_offset);
-  int res = Atomic::cmpxchg(addr, old_state, new_state);
+  int res = AtomicAccess::cmpxchg(addr, old_state, new_state);
   return res;
 }
 
@@ -2158,9 +2158,9 @@ void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
 // Method returns true if we added vthread to the list, false otherwise.
 bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
   jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
-  jboolean vthread_on_list = Atomic::load(addr);
+  jboolean vthread_on_list = AtomicAccess::load(addr);
   if (!vthread_on_list) {
-    vthread_on_list = Atomic::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
+    vthread_on_list = AtomicAccess::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
     if (!vthread_on_list) {
       for (;;) {
         oop head = list_head.resolve();
@@ -2583,85 +2583,64 @@ class BacktraceIterator : public StackObj {
 };
 
 
-// Print stack trace element to resource allocated buffer
+// Print stack trace element to the specified output stream.
+// The output is formatted into a stringStream and written to the outputStream in one step.
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
                                           int version, int bci, Symbol* name) {
   ResourceMark rm;
+  stringStream ss;
 
-  // Get strings and string lengths
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
   const char* klass_name  = holder->external_name();
-  int buf_len = (int)strlen(klass_name);
-
   char* method_name = name->as_C_string();
-  buf_len += (int)strlen(method_name);
+  ss.print("\tat %s.%s(", klass_name, method_name);
+
+  // Print module information
+  ModuleEntry* module = holder->module();
+  if (module->is_named()) {
+    char* module_name = module->name()->as_C_string();
+    if (module->version() != nullptr) {
+      char* module_version = module->version()->as_C_string();
+      ss.print("%s@%s/", module_name, module_version);
+    } else {
+      ss.print("%s/", module_name);
+    }
+  }
 
   char* source_file_name = nullptr;
   Symbol* source = Backtrace::get_source_file_name(holder, version);
   if (source != nullptr) {
     source_file_name = source->as_C_string();
-    buf_len += (int)strlen(source_file_name);
-  }
-
-  char *module_name = nullptr, *module_version = nullptr;
-  ModuleEntry* module = holder->module();
-  if (module->is_named()) {
-    module_name = module->name()->as_C_string();
-    buf_len += (int)strlen(module_name);
-    if (module->version() != nullptr) {
-      module_version = module->version()->as_C_string();
-      buf_len += (int)strlen(module_version);
-    }
-  }
-
-  // Allocate temporary buffer with extra space for formatting and line number
-  const size_t buf_size = buf_len + 64;
-  char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
-
-  // Print stack trace line in buffer
-  int buf_off = os::snprintf(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
-  assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
-  // Print module information
-  if (module_name != nullptr) {
-    if (module_version != nullptr) {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
-      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
-    } else {
-      buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s/", module_name);
-      assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
-    }
   }
 
   // The method can be null if the requested class version is gone
   Method* method = holder->method_with_orig_idnum(method_id, version);
   if (!version_matches(method, version)) {
-    strcat(buf, "Redefined)");
+    ss.print("Redefined)");
   } else {
     int line_number = Backtrace::get_line_number(method, bci);
     if (line_number == -2) {
-      strcat(buf, "Native Method)");
+      ss.print("Native Method)");
     } else {
       if (source_file_name != nullptr && (line_number != -1)) {
         // Sourcename and linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
-        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
+        ss.print("%s:%d)", source_file_name, line_number);
       } else if (source_file_name != nullptr) {
         // Just sourcename
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
-        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
+        ss.print("%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        buf_off += os::snprintf(buf + buf_off, buf_size - buf_off, "Unknown Source)");
-        assert(static_cast<size_t>(buf_off) < buf_size, "buffer is wrong size");
+        ss.print("Unknown Source)");
       }
       nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
-        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        ss.print("(nmethod " INTPTR_FORMAT ")", p2i(nm));
       }
     }
   }
 
-  st->print_cr("%s", buf);
+  ss.cr();
+  st->print_raw(ss.freeze(), ss.size());
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
@@ -4781,7 +4760,7 @@ int  java_lang_ClassLoader::_parent_offset;
 ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return Atomic::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
+  return AtomicAccess::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
@@ -4793,7 +4772,7 @@ ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
   assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  Atomic::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
+  AtomicAccess::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
 }
 
 #define CLASSLOADER_FIELDS_DO(macro) \
