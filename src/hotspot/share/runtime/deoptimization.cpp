@@ -1656,7 +1656,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 #ifdef ASSERT
               else {
                 assert(!UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_metadata_deopt();
+                mon_info->lock()->set_bad_monitor_deopt();
               }
 #endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
