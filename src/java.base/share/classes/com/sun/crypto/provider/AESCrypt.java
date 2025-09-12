@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -822,7 +821,7 @@ public final class AESCrypt extends SymmetricCipher {
         for (int i = nk; i < len * (rounds + 1); i++) {
             tmp = w[i - 1];
             if (i % nk == 0) {
-                rW = (tmp << 8) & 0xFFFFFF00 | (tmp >> 24) & 0x000000FF;
+                rW = (tmp << 8) & 0xFFFFFF00 | (tmp >> 24) & 0xFF;
                 SubWord = subByte(rW, SBOX);
                 g = SubWord ^ RCON[(i / nk) - 1];
                 tmp = g;
