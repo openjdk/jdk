@@ -43,7 +43,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sun.jndi.ldap.LdapCtx;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8357708
  * @summary verify that com.sun.jndi.ldap.Connection does not ignore the LDAP replies
  *          that were received before the Connection was closed.
- * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run junit/othervm LdapClientConnTest
@@ -381,17 +382,21 @@ public class LdapClientConnTest {
 
         @Override
         public Void call() throws Exception {
-            LdapCtx ldapCtx = null;
+            Context ldapCtx = null;
             try {
                 final InetSocketAddress serverAddr = server.getAddress();
                 final Hashtable<String, String> envProps = new Hashtable<>();
+                envProps.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+                final String providerUrl = URIBuilder.newBuilder()
+                        .scheme("ldap")
+                        .host(serverAddr.getAddress())
+                        .port(serverAddr.getPort())
+                        .build().toString();
+                envProps.put(Context.PROVIDER_URL, providerUrl);
                 // explicitly set LDAP version to 3 to prevent LDAP BIND requests
                 // during LdapCtx instantiation
                 envProps.put("java.naming.ldap.version", "3");
-                ldapCtx = new LdapCtx("",
-                        serverAddr.getAddress().getHostAddress(),
-                        serverAddr.getPort(),
-                        envProps, false);
+                ldapCtx = new InitialContext(envProps);
                 final String name = SEARCH_REQ_DN_PREFIX + taskName + SEARCH_REQ_DN_SUFFIX;
                 // trigger the LDAP SEARCH requests through the lookup call. we are not
                 // interested in the returned value and are merely interested in a normal
