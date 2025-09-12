@@ -63,7 +63,7 @@ public class Win8365790Test {
 
         // Launch the main launcher and send Ctrl+C signal to it.
         Thread.ofVirtual().start(() -> {
-            configureAndExecute(0, Executor.of("powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted", "-File", SEND_CTRL_C_PS1.toString())
+            configureAndExecute(0, Executor.of("powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted", "-File", TEST_PS1.toString())
                     .addArguments("-TimeoutSeconds", "5")
                     .addArgument("-Executable").addArgument(cmd.appLauncherPath())
                     .dumpOutput());
@@ -71,9 +71,10 @@ public class Win8365790Test {
 
         TKit.waitForFileCreated(outputFile, Duration.ofSeconds(20), Duration.ofSeconds(1));
 
+        TKit.assertFileExists(outputFile);
         TKit.assertEquals("shutdown hook executed", Files.readString(outputFile), "Check shutdown hook executed");
     }
 
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT.resolve("apps/UseShutdownHook.java");
-    private static final Path SEND_CTRL_C_PS1 = TKit.TEST_SRC_ROOT.resolve(Path.of("resources/Win8365790Test.ps1")).normalize();
+    private static final Path TEST_PS1 = TKit.TEST_SRC_ROOT.resolve(Path.of("resources/Win8365790Test.ps1")).normalize();
 }
