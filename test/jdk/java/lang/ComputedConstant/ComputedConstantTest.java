@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for ComputedConstant implementations
  * @enablePreview
- * @modules java.base/jdk.internal.lang.stable
- * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstantTest
+ * @modules java.base/jdk.internal.lang
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang=ALL-UNNAMED ComputedConstantTest
  */
 
 import org.junit.jupiter.api.Test;

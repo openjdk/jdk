@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.stable;
+package jdk.internal.lang;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -43,37 +43,36 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
 
     static final String UNSET_LABEL = ".unset";
 
-    // Unsafe allows ComputedConstant to be used early in the boot sequence
+    // Unsafe allows `ComputedConstant` instances to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    // Unsafe offset for access of the constant field
+    // Unsafe offset for access of the `constant` field
     private static final long CONSTANT_OFFSET =
             UNSAFE.objectFieldOffset(ComputedConstantImpl.class, "constant");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
-    // This field is used directly and reflectively via Unsafe using explicit memory semantics.
+    // This field is used reflectively via Unsafe using explicit memory semantics.
     //
     // | Value           | Meaning        |
     // | --------------- | -------------- |
-    // | null            | Unset          |
+    // | `null`          | Unset          |
     // | `other`         | Set to `other` |
     //
-    // This field is accessed reflectively
     @Stable
     private T constant;
 
+    // Underlying supplier to be used to compute the `constant` field.
+    // The field needs to be `volatile` as a computed constant can be
+    // created by one thread and computed by another thread.
+    // After the underlying supplier is successfully invoked, the field is set to
+    // `null` to allow the underlying supplier to be collected.
     @Stable
     private volatile Supplier<? extends T> underlying;
 
     private ComputedConstantImpl(Supplier<? extends T> underlying) {
         this.underlying = underlying;
-    }
-
-    private ComputedConstantImpl(T constant) {
-        this((Supplier<? extends T>) null);
-        setRelease(constant);
     }
 
     @ForceInline
@@ -91,7 +90,7 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
                 t = underlying.get();
                 Objects.requireNonNull(t);
                 setRelease(t);
-                // Allow the underlying supplier to be collected after use
+                // Allow the underlying supplier to be collected after successful use
                 underlying = null;
             }
             return t;
@@ -111,13 +110,33 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         return getAcquire() != null;
     }
 
-    // The methods equals() and hashCode() should be based on identity (defaults from Object)
+    // The methods `equals()` and `hashCode()` should be based on identity.
+    // We will get that for free as we directly extend Object
 
     @Override
     public String toString() {
         final T t = getAcquire();
         return t == this ? "(this ComputedConstant)" : renderConstant(t);
     }
+
+    public static String renderConstant(Object t) {
+        return (t == null) ? UNSET_LABEL : Objects.toString(t);
+    }
+
+    // Discussion on the memory semantics used.
+    // ----------------------------------------
+    // Using acquire/release semantics on the `constant` field is the cheapest way to
+    // obtain a happens-before (HB) relation between load and store operations. Every
+    // implementation of a method defined in the interface `ComputedConstant` except
+    // `equals()` and `hashCode()` starts with a load of the `constant` field using
+    // acquire semantics.
+    //
+    // If the underlying supplier was guaranteed to always create a new object,
+    // a fence after creation and subsequent plain loads would suffice to ensure
+    // new objects' state are always correctly observed. However, no such restriction is
+    // imposed on the underlying supplier. Hence, the docs state there should be an
+    // HB relation meaning we will have to pay a price (on certain platforms) on every
+    // `get()` operation that is not constant-folded.
 
     @SuppressWarnings("unchecked")
     @ForceInline
@@ -135,19 +154,10 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         }
     }
 
-    public static String renderConstant(Object t) {
-        return (t == null) ? UNSET_LABEL : Objects.toString(t);
-    }
-
-
-    // Factories
+    // Factory
 
     public static <T> ComputedConstantImpl<T> ofComputed(Supplier<? extends T> underlying) {
         return new ComputedConstantImpl<>(underlying);
-    }
-
-    public static <T> ComputedConstantImpl<T> ofPreset(T constant) {
-        return new ComputedConstantImpl<>(constant);
     }
 
 }

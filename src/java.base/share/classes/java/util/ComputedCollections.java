@@ -25,8 +25,7 @@
 
 package java.util;
 
-import jdk.internal.lang.stable.FunctionHolder;
-import jdk.internal.lang.stable.ComputedConstantImpl;
+import jdk.internal.lang.ComputedConstantImpl;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
@@ -39,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -51,7 +51,7 @@ final class ComputedCollections {
      */
     private ComputedCollections() { }
 
-    // Unsafe allows StableValue to be used early in the boot sequence
+    // Unsafe allows ComputedCollection classes to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @jdk.internal.ValueBased
@@ -78,9 +78,9 @@ final class ComputedCollections {
             super();
         }
 
-        @Override public final boolean  isEmpty() { return size == 0;}
-        @Override public final int      size() { return size; }
-        @Override public final Object[] toArray() { return copyInto(new Object[size]); }
+        @Override public boolean  isEmpty() { return size == 0;}
+        @Override public int      size() { return size; }
+        @Override public Object[] toArray() { return copyInto(new Object[size]); }
 
         @ForceInline
         @Override
@@ -145,13 +145,13 @@ final class ComputedCollections {
 
         @Override
         public List<E> reversed() {
-            return new StableReverseOrderListView<>(this);
+            return new ReverseOrderComputedListView<>(this);
         }
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
             subListRangeCheck(fromIndex, toIndex, size());
-            return StableSubList.fromStableList(this, fromIndex, toIndex);
+            return ComputedSubList.fromComputedList(this, fromIndex, toIndex);
         }
 
         @Override
@@ -177,22 +177,22 @@ final class ComputedCollections {
         }
 
         // @ValueBased cannot be used here as ImmutableCollections.SubList declares fields
-        static final class StableSubList<E> extends ImmutableCollections.SubList<E>
+        static final class ComputedSubList<E> extends ImmutableCollections.SubList<E>
                 implements LenientList<E> {
 
-            private StableSubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
+            private ComputedSubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
                 super(root, offset, size);
             }
 
             @Override
             public List<E> reversed() {
-                return new StableReverseOrderListView<>(this);
+                return new ReverseOrderComputedListView<>(this);
             }
 
             @Override
             public List<E> subList(int fromIndex, int toIndex) {
                 subListRangeCheck(fromIndex, toIndex, size());
-                return StableSubList.fromStableSubList(this, fromIndex, toIndex);
+                return ComputedSubList.fromComputedSubList(this, fromIndex, toIndex);
             }
 
             @Override
@@ -212,21 +212,21 @@ final class ComputedCollections {
                 return ((LenientList<E>) root).getAcquire(offset + index);
             }
 
-            static <E> ImmutableCollections.SubList<E> fromStableList(ComputedList<E> list, int fromIndex, int toIndex) {
-                return new StableSubList<>(list, fromIndex, toIndex - fromIndex);
+            static <E> ImmutableCollections.SubList<E> fromComputedList(ComputedList<E> list, int fromIndex, int toIndex) {
+                return new ComputedSubList<>(list, fromIndex, toIndex - fromIndex);
             }
 
-            static <E> ImmutableCollections.SubList<E> fromStableSubList(StableSubList<E> parent, int fromIndex, int toIndex) {
-                return new StableSubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
+            static <E> ImmutableCollections.SubList<E> fromComputedSubList(ComputedSubList<E> parent, int fromIndex, int toIndex) {
+                return new ComputedSubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
             }
 
         }
 
-        private static final class StableReverseOrderListView<E>
+        private static final class ReverseOrderComputedListView<E>
                 extends ReverseOrderListView.Rand<E>
                 implements LenientList<E> {
 
-            private StableReverseOrderListView(List<E> base) {
+            private ReverseOrderComputedListView(List<E> base) {
                 super(base, false);
             }
 
@@ -240,7 +240,7 @@ final class ComputedCollections {
             public List<E> subList(int fromIndex, int toIndex) {
                 final int size = base.size();
                 subListRangeCheck(fromIndex, toIndex, size);
-                return new StableReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex));
+                return new ReverseOrderComputedListView<>(base.subList(size - toIndex, size - fromIndex));
             }
 
             @Override
@@ -388,7 +388,7 @@ final class ComputedCollections {
         @Override public final int              size() { return size; }
         @Override public final boolean          isEmpty() { return size == 0; }
         @Override public final Set<Entry<K, V>> entrySet() { return entrySet; }
-        @Override public Set<K> keySet() { return keySet; }
+        @Override public Set<K>                 keySet() { return keySet; }
 
         @ForceInline
         @Override
@@ -432,7 +432,7 @@ final class ComputedCollections {
 
             @Override
             public String toString() {
-                return renderMappings(map, "StableCollection", false);
+                return renderMappings(map, "Collection", false);
             }
 
             // For @ValueBased
@@ -665,10 +665,6 @@ final class ComputedCollections {
         return -1;
     }
 
-    private static long indexFor(long offset) {
-        return (offset - Unsafe.ARRAY_OBJECT_BASE_OFFSET) / Unsafe.ARRAY_OBJECT_INDEX_SCALE;
-    }
-
     @ForceInline
     private static long offsetFor(long index) {
         return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * index;
@@ -684,7 +680,7 @@ final class ComputedCollections {
         for (int i = 0; i < self.size(); i++) {
             final Object e = self.getAcquire(i);
             if (e == self) {
-                sj.add("(this ComputedCollection)");
+                sj.add("(this Collection)");
             } else {
                 sj.add(ComputedConstantImpl.renderConstant(e));
             }
@@ -760,21 +756,17 @@ final class ComputedCollections {
     }
 
     static void preventReentry(Object mutex) {
-        // This method is not annotated with @ForceInline as it is always called
-        // in a slow path.
         if (Thread.holdsLock(mutex)) {
-            throw new IllegalStateException("Recursive initialization of a stable value is illegal");
+            throw new IllegalStateException("Recursive initialization of a computed collection is illegal");
         }
     }
 
-    static <T> boolean set(T[] array, int index, Object mutex, T newValue) {
+    static <T> void set(T[] array, int index, Object mutex, T newValue) {
         assert Thread.holdsLock(mutex) : index + "didn't hold " + mutex;
         // We know we hold the monitor here so plain semantic is enough
         if (array[index] == null) {
             UNSAFE.putReferenceRelease(array, Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index, newValue);
-            return true;
         }
-        return false;
     }
 
     public static <K, V> String renderMappings(AbstractComputedMap<K, V> self,
@@ -792,6 +784,43 @@ final class ComputedCollections {
             sj.add(k + "=" + valueString);
         }
         return sj.toString();
+    }
+
+    /**
+     * This class is thread safe. Any thread can create and use an instance of this class at
+     * any time. The `function` field is only accessed if `counter` is positive so the setting
+     * of function to `null` is safe.
+     *
+     * @param <U> the underlying function type
+     */
+    static final class FunctionHolder<U> {
+
+        private static final long COUNTER_OFFSET = UNSAFE.objectFieldOffset(FunctionHolder.class, "counter");
+
+        // This field can only transition at most once from being set to a
+        // non-null reference to being `null`. Once `null`, it is never read.
+        private U function;
+        // Used reflectively via Unsafe
+        private int counter;
+
+        public FunctionHolder(U function, int counter) {
+            this.function = (counter == 0) ? null : function;
+            this.counter = counter;
+            // Safe publication
+            UNSAFE.storeStoreFence();
+        }
+
+        @ForceInline
+        public U function() {
+            return function;
+        }
+
+        public void countDown() {
+            if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
+                // Do not reference the underlying function anymore so it can be collected.
+                function = null;
+            }
+        }
     }
 
 }

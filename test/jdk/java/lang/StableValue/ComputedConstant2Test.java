@@ -29,7 +29,6 @@
  * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED ComputedConstant2Test
  */
 
-import jdk.internal.lang.stable.FunctionHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Objects;

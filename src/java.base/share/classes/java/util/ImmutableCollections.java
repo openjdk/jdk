@@ -438,7 +438,7 @@ class ImmutableCollections {
 
     static sealed class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess
-            permits ComputedCollections.ComputedList.StableSubList {
+            permits ComputedCollections.ComputedList.ComputedSubList {
 
         @Stable
         final AbstractImmutableList<E> root;

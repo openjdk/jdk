@@ -26,26 +26,31 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.ComputedConstantImpl;
+import jdk.internal.lang.ComputedConstantImpl;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A computed constant can be computed at any time, by any thread but at most once.
+ * A computed constant is a deferred constant to be computed at a later time by an
+ * underlying supplier.
  * <p>
  * A computed constant is created using the factory method
  * {@linkplain ComputedConstant#of(Supplier)}. When created, the computed constant is
  * <em>unset</em>, which means the constant is not yet set. The constant, of type
  * {@code T}, can then be <em>set</em> (and retrieved) by calling
  * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an
- * <em>underlying supplier</em> will be invoked. The underlying supplier is provided at
- * construction. Once set, the constant can _never change_ and can be retrieved
- * over and over again by subsequent {@linkplain #get() get} invocations.
+ * <em>underlying supplier</em> will be invoked which would compute the constant. The
+ * underlying supplier is provided at construction. Once set, the constant
+ * can <em>never change</em> and can be retrieved over and over again by subsequent
+ * {@linkplain #get() get} invocations.
  * <p>
  * Consider the following example where a computed constant field "{@code logger}" is a
  * shallowly immutable holder of a constant of type {@code Logger} and that is initially
@@ -124,8 +129,8 @@ import java.util.function.Supplier;
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A computed constant is guaranteed to be set at most once. If competing
- * threads are racing to set a computed constant, only one update computes, while the other
- * updates are blocked until the constant is set, whereafter the other updates
+ * threads are racing to set a computed constant, only one update computes, while
+ * the other updates are blocked until the constant is set, whereafter the other updates
  * observes the computed constant is set and leave the constant unchanged and will never
  * invoke any computation.
  * <p>
@@ -157,8 +162,8 @@ import java.util.function.Supplier;
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote As objects can be set via computed constants but never removed, this can be a
- *           source of unintended memory leak. A computed constant is
+ * @implNote As objects can be set via computed constants but never removed, this can be
+ *           a source of an unintended memory leak. A computed constant is
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
  *           Be advised that reachable computed constants will hold their constants until
  *           the computed constant itself is collected.
@@ -166,8 +171,8 @@ import java.util.function.Supplier;
  *           A {@code ComputedConstant} that has a type parameter {@code T} that is an
  *           array type (of arbitrary rank) will only allow the JVM to treat the
  *           <em>array reference</em> as a constant but <em>not its components</em>.
- *           Instead, a {@linkplain List#ofComputed(int, IntFunction) a stable list} of
- *           arbitrary depth can be used, which provides stable components.
+ *           Instead, a {@linkplain List#ofComputed(int, IntFunction) a computed list} of
+ *           arbitrary depth can be used, which provides constant components.
  *           More generally, a computed constant can hold other computed constants of
  *           arbitrary depth and still provide transitive constantness.
  *           <p>
@@ -183,9 +188,11 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the constant
  *
+ * @see List#ofComputed(int, IntFunction)
+ * @see Map#ofComputed(Set, Function)
  * @since 26
  */
-@PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
+@PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
 public sealed interface ComputedConstant<T>
         extends Supplier<T>
         permits ComputedConstantImpl {

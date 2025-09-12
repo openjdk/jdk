@@ -1793,7 +1793,7 @@ public interface Map<K, V> {
      * @see ComputedConstant
      * @since 26
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
     static <K, V> Map<K, V> ofComputed(Set<? extends K> keys,
                                        Function<? super K, ? extends V> mapper) {
         // Protect against TOC-TOU attacks.

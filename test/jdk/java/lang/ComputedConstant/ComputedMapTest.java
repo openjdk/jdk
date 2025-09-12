@@ -28,7 +28,6 @@
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedMapTest
  */
 
-import jdk.internal.lang.stable.FunctionHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -425,18 +424,18 @@ final class ComputedMapTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        Object holder = StableTestUtil.functionHolder(f1);
 
         int i = 0;
         for (Value key : set) {
-            assertEquals(set.size() - i, holder.counter());
-            assertSame(cif, holder.function());
+            assertEquals(set.size() - i, StableTestUtil.functionHolderCounter(holder));
+            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
             int v = f1.get(key);
             int v2 = f1.get(key);
             i++;
         }
-        assertEquals(0, holder.counter());
-        assertNull(holder.function());
+        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
+        assertNull(StableTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
@@ -445,18 +444,18 @@ final class ComputedMapTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        Object holder = StableTestUtil.functionHolder(f1);
 
         int i = 0;
         for (Map.Entry<Value, Integer> e : f1.entrySet()) {
-            assertEquals(set.size() - i, holder.counter());
-            assertSame(cif, holder.function());
+            assertEquals(set.size() - i, StableTestUtil.functionHolderCounter(holder));
+            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
             int v = e.getValue();
             int v2 = e.getValue();
             i++;
         }
-        assertEquals(0, holder.counter());
-        assertNull(holder.function());
+        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
+        assertNull(StableTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
@@ -465,18 +464,18 @@ final class ComputedMapTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        Object holder = StableTestUtil.functionHolder(f1);
 
         final AtomicInteger i = new AtomicInteger();
         f1.entrySet().forEach(e -> {
-            assertEquals(set.size() - i.get(), holder.counter());
-            assertSame(cif, holder.function());
+            assertEquals(set.size() - i.get(), StableTestUtil.functionHolderCounter(holder));
+            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
             Integer val = e.getValue();
             Integer val2 = e.getValue();
             i.incrementAndGet();
         });
-        assertEquals(0, holder.counter());
-        assertNull(holder.function());
+        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
+        assertNull(StableTestUtil.functionHolderFunction(holder));
     }
 
     @Test

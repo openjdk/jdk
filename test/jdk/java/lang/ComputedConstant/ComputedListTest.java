@@ -28,19 +28,13 @@
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedListTest
  */
 
-import jdk.internal.lang.stable.FunctionHolder;
-import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.ComputedConstantImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.lang.ComputedConstant;
 import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
@@ -315,7 +309,7 @@ final class ComputedListTest {
         var lazy = List.ofComputed(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
-        assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
+        assertEquals("Recursive initialization of a computed collection is illegal", x.getMessage());
     }
 
     // Immutability
@@ -412,15 +406,15 @@ final class ComputedListTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
         List<Integer> f1 = List.ofComputed(SIZE, cif);
 
-        FunctionHolder<?> holder = StableTestUtil.functionHolder(f1);
+        Object holder = StableTestUtil.functionHolder(f1);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(SIZE - i, holder.counter());
-            assertSame(cif, holder.function());
+            assertEquals(SIZE - i, StableTestUtil.functionHolderCounter(holder));
+            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
             int v = f1.get(i);
             int v2 = f1.get(i);
         }
-        assertEquals(0, holder.counter());
-        assertNull(holder.function());
+        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
+        assertNull(StableTestUtil.functionHolderFunction(holder));
     }
 
     // Support constructs

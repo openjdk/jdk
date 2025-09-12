@@ -1239,7 +1239,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @see ComputedConstant
      * @since 26
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
     static <E> List<E> ofComputed(int size,
                                   IntFunction<? extends E> mapper) {
         Utils.checkNonNegativeArgument(size, "size");

@@ -21,8 +21,6 @@
  * questions.
  */
 
-import jdk.internal.lang.stable.FunctionHolder;
-
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -120,17 +118,37 @@ final class StableTestUtil {
         }
     }
 
-    static FunctionHolder<?> functionHolder(Object o) {
+    static Object functionHolder(Object o) {
         try {
             final Field field = field(o.getClass(), "mapperHolder");
             field.setAccessible(true);
-            return (FunctionHolder<?>) field.get(o);
+            return field.get(o);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    static Supplier<?> underlying(Object o) {
+    static Object functionHolderFunction(Object o) {
+        try {
+            final Field field = field(o.getClass(), "function");
+            field.setAccessible(true);
+            return field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int functionHolderCounter(Object o) {
+        try {
+            final Field field = field(o.getClass(), "counter");
+            field.setAccessible(true);
+            return (int)field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static Supplier<?> underlying(ComputedConstant<?> o) {
         try {
             final Field field = field(o.getClass(), "underlying");
             field.setAccessible(true);
