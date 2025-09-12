@@ -28,6 +28,7 @@
 #include "code/compiledIC.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -99,10 +100,10 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   if (Assembler::reachable_from_branch_at(jmp_ins_pc, dest)) {
     int64_t distance = dest - jmp_ins_pc;
     uint32_t new_jal = Assembler::encode_jal(ra, distance);
-    Atomic::store((uint32_t *)jmp_ins_pc, new_jal);
+    AtomicAccess::store((uint32_t *)jmp_ins_pc, new_jal);
   } else if (!MacroAssembler::is_jalr_at(jmp_ins_pc)) { // The jalr is always identical: jalr ra, 0(t1)
     uint32_t new_jalr = Assembler::encode_jalr(ra, t1, 0);
-    Atomic::store((uint32_t *)jmp_ins_pc, new_jalr);
+    AtomicAccess::store((uint32_t *)jmp_ins_pc, new_jalr);
   } else {
     // No change to instruction stream
     return;
