@@ -3926,14 +3926,14 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
-  assert(_vmholder_offset != 0, "Uninitialized vm_holder");
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
   reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-  assert(_vmholder_offset != 0, "Uninitialized vm_holder");
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = reflect->obj_field(_vmholder_offset);
   Klass* k = java_lang_Class::as_Klass(mirror);
   assert(k->is_instance_klass(), "Must be");
