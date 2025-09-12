@@ -596,12 +596,12 @@ public:
     for (uint i = 0; i < _num_buffer_lists; i++) {
       uint index = (start + i) % _num_buffer_lists;
 
-      BufferNode* next = Atomic::load(&_rdc_buffers[index]._head);
-      BufferNode* tail = Atomic::load(&_rdc_buffers[index]._tail);
+      BufferNode* next = AtomicAccess::load(&_rdc_buffers[index]._head);
+      BufferNode* tail = AtomicAccess::load(&_rdc_buffers[index]._tail);
 
       while (next != nullptr) {
         BufferNode* node = next;
-        next = Atomic::cmpxchg(&_rdc_buffers[index]._head, node, (node != tail ) ? node->next() : nullptr);
+        next = AtomicAccess::cmpxchg(&_rdc_buffers[index]._head, node, (node != tail ) ? node->next() : nullptr);
         if (next == node) {
           cl.apply_to_buffer(node, worker_id);
           next = (node != tail ) ? node->next() : nullptr;
@@ -869,7 +869,7 @@ public:
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
 
-    bool has_new_retained_regions = Atomic::load(&_num_retained_regions) != 0;
+    bool has_new_retained_regions = AtomicAccess::load(&_num_retained_regions) != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
       candidates->sort_by_efficiency();
@@ -904,7 +904,7 @@ public:
     // Report per-region type timings.
     cl.report_timing();
 
-    Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
+    AtomicAccess::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }
 };
 

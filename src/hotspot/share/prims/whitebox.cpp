@@ -46,6 +46,7 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -73,7 +74,7 @@
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -2303,7 +2304,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
       jt->print_on(tty);
       jt->print_stack_on(tty);
       tty->cr();
-      Atomic::inc(&_num_threads_completed);
+      AtomicAccess::inc(&_num_threads_completed);
     }
 
   public:
@@ -2370,14 +2371,14 @@ WB_ENTRY(void, WB_LockAndBlock(JNIEnv* env, jobject wb, jboolean suspender))
     // We will deadlock here if we are 'suspender' and 'suspendee'
     // suspended in ~ThreadBlockInVM. This verifies we only suspend
     // at the right place.
-    while (Atomic::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
+    while (AtomicAccess::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
     assert(_emulated_lock == 1, "Must be locked");
 
     // Sleep much longer in suspendee to force situation where
     // 'suspender' is waiting above to acquire lock.
     os::naked_short_sleep(suspender ? 1 : 10);
   }
-  Atomic::store(&_emulated_lock, 0);
+  AtomicAccess::store(&_emulated_lock, 0);
 WB_END
 
 // Some convenience methods to deal with objects from java
@@ -2658,6 +2659,32 @@ WB_END
 
 WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
     os::naked_short_sleep(time);
+WB_END
+
+WB_ENTRY(void, WB_BusyWait(JNIEnv* env, jobject wb, jint time))
+  ThreadToNativeFromVM  ttn(thread);
+  u8 start = os::current_thread_cpu_time();
+  u8 target_duration = time * (u8)1000000;
+  while (os::current_thread_cpu_time() - start < target_duration) {
+    for (volatile int i = 0; i < 1000000; i++);
+  }
+WB_END
+
+WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
+  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
+    JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE);
+    return JNI_TRUE;
+  #else
+    return JNI_FALSE;
+  #endif
+WB_END
+
+WB_ENTRY(jlong, WB_CPUSamplerOutOfStackWalkingIterations(JNIEnv* env, jobject wb))
+  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
+    return (jlong)JfrCPUTimeThreadSampling::out_of_stack_walking_iterations();
+  #else
+    return 0;
+  #endif
 WB_END
 
 WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
@@ -3013,6 +3040,9 @@ static JNINativeMethod methods[] = {
 
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
+  {CC"busyWait", CC"(I)V",                            (void*)&WB_BusyWait},
+  {CC"cpuSamplerSetOutOfStackWalking", CC"(Z)Z",      (void*)&WB_CPUSamplerSetOutOfStackWalking},
+  {CC"cpuSamplerOutOfStackWalkingIterations", CC"()J",(void*)&WB_CPUSamplerOutOfStackWalkingIterations},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
