@@ -554,7 +554,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                                                        items.stream()
                                                                             .filter(s -> s.element().getKind() == ElementKind.ANNOTATION_TYPE)
                                                                             .filter(s -> s.element().getSimpleName().toString().startsWith(prefix))
-                                                                            .map(s -> new ElementSuggestionImpl(s.element(), s.keyword(), s.matchesType(), s.anchor() - 1, s.documentation()))
+                                                                            .map(s -> new ElementSuggestionImpl(s.element(), s.keyword(), s.matchesType(), s.anchor(), s.documentation()))
                                                                             .<ElementSuggestion>toList());
                                 });
                             }
