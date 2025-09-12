@@ -115,11 +115,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
     RESULT: AARCH64_SVE_ENABLED,
     DESC: [Use SVE when compiling libsleef],
     CHECK_AVAILABLE: [
-      # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-      # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-      # ACLE and this flag are required to build the aarch64 SVE related functions in
-      # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
-      # that check.
+      # Apple Silicon does not support SVE; use macOS as a proxy for that check.
       if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_OS" = "xlinux"; then
         if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
           # check the compiler and binutils support sve or not
