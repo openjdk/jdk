@@ -1187,6 +1187,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // We are not concerned about skipping this step in abbreviated cycles because regions
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
     heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for

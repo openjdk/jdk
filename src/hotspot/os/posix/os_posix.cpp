@@ -31,7 +31,7 @@
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -70,14 +70,13 @@
 #include <grp.h>
 #include <locale.h>
 #include <netdb.h>
-#include <pwd.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
+#include <spawn.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <spawn.h>
-#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -1692,7 +1691,7 @@ void PlatformEvent::park() {       // AKA "down()"
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1739,7 +1738,7 @@ int PlatformEvent::park_nanos(jlong nanos) {
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1795,7 +1794,7 @@ void PlatformEvent::unpark() {
   // but only in the correctly written condition checking loops of ObjectMonitor,
   // Mutex/Monitor, and JavaThread::sleep
 
-  if (Atomic::xchg(&_event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_event, 1) >= 0) return;
 
   int status = pthread_mutex_lock(_mutex);
   assert_status(status == 0, status, "mutex_lock");
@@ -1848,9 +1847,9 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  // We depend on Atomic::xchg() having full barrier semantics
+  // We depend on AtomicAccess::xchg() having full barrier semantics
   // since we are doing a lock-free update to _counter.
-  if (Atomic::xchg(&_counter, 0) > 0) return;
+  if (AtomicAccess::xchg(&_counter, 0) > 0) return;
 
   JavaThread *jt = JavaThread::current();
 

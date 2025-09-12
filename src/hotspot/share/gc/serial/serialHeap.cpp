@@ -67,7 +67,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -336,8 +335,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   return result;
 }
 
-HeapWord* SerialHeap::mem_allocate(size_t size,
-                                   bool* gc_overhead_limit_was_exceeded) {
+HeapWord* SerialHeap::mem_allocate(size_t size) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
 }

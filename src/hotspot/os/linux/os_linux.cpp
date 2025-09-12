@@ -36,13 +36,13 @@
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "osContainer_linux.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
@@ -81,42 +81,39 @@
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
-// put OS-includes here
 # include <ctype.h>
-# include <stdlib.h>
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <sys/stat.h>
-# include <sys/select.h>
-# include <sys/sendfile.h>
-# include <pthread.h>
-# include <signal.h>
+# include <dlfcn.h>
 # include <endian.h>
 # include <errno.h>
+# include <fcntl.h>
 # include <fenv.h>
-# include <dlfcn.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/resource.h>
+# include <inttypes.h>
+# include <link.h>
+# include <linux/elf-em.h>
+# include <poll.h>
 # include <pthread.h>
+# include <pwd.h>
+# include <signal.h>
+# include <stdint.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <sys/ioctl.h>
+# include <sys/ipc.h>
+# include <sys/mman.h>
+# include <sys/prctl.h>
+# include <sys/resource.h>
+# include <sys/select.h>
+# include <sys/sendfile.h>
+# include <sys/socket.h>
 # include <sys/stat.h>
+# include <sys/sysinfo.h>
 # include <sys/time.h>
 # include <sys/times.h>
+# include <sys/types.h>
 # include <sys/utsname.h>
-# include <sys/socket.h>
-# include <pwd.h>
-# include <poll.h>
-# include <fcntl.h>
-# include <string.h>
 # include <syscall.h>
-# include <sys/sysinfo.h>
-# include <sys/ipc.h>
-# include <link.h>
-# include <stdint.h>
-# include <inttypes.h>
-# include <sys/ioctl.h>
-# include <linux/elf-em.h>
-# include <sys/prctl.h>
+# include <unistd.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -2991,8 +2988,6 @@ void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
 }
 
-bool os::numa_topology_changed() { return false; }
-
 size_t os::numa_get_groups_num() {
   // Return just the number of nodes in which it's possible to allocate memory
   // (in numa terminology, configured nodes).
@@ -4786,8 +4781,8 @@ static bool should_warn_invalid_processor_id() {
 
   static volatile int warn_once = 1;
 
-  if (Atomic::load(&warn_once) == 0 ||
-      Atomic::xchg(&warn_once, 0) == 0) {
+  if (AtomicAccess::load(&warn_once) == 0 ||
+      AtomicAccess::xchg(&warn_once, 0) == 0) {
     // Don't warn more than once
     return false;
   }
