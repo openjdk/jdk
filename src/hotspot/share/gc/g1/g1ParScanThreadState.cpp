@@ -149,7 +149,7 @@ size_t G1ParScanThreadState::num_cards_pending() const {
   return _num_cards_marked_dirty + _num_cards_from_evac_failure;
 }
 
-size_t G1ParScanThreadState::num_marked_cards() const {
+size_t G1ParScanThreadState::num_cards_marked() const {
   return num_cards_pending() + _num_cards_marked_to_cset;
 }
 
@@ -603,9 +603,9 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
     size_t pending_cards = pss->num_cards_pending();
-    size_t to_young_gen_cards = pss->num_marked_cards() - pss->num_cards_pending();
+    size_t to_young_gen_cards = pss->num_cards_marked() - pss->num_cards_pending();
     size_t evac_failure_cards = pss->num_cards_from_evac_failure();
-    size_t marked_cards = pss->num_marked_cards();
+    size_t marked_cards = pss->num_cards_marked();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);

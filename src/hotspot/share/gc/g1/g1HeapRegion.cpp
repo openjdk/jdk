@@ -603,11 +603,11 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     G1HeapRegion* _from;
     G1HeapRegion* _to;
 
-    CardValue _cv_obj;    // In card table
-    CardValue _cv_field;
+    CardValue _cv_obj_ct;    // In card table.
+    CardValue _cv_field_ct;
 
-    CardValue _cv_obj2;   // In refinement card table
-    CardValue _cv_field2;
+    CardValue _cv_obj_rt;    // In refinement table.
+    CardValue _cv_field_rt;
 
     RemSetChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj)
       : Checker<T>(failures, containing_obj, p, obj) {
@@ -615,12 +615,12 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       _to = this->_g1h->heap_region_containing(obj);
 
       CardTable* ct = this->_g1h->card_table();
-      _cv_obj = *ct->byte_for_const(this->_containing_obj);
-      _cv_field = *ct->byte_for_const(p);
+      _cv_obj_ct = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_ct = *ct->byte_for_const(p);
 
       ct = this->_g1h->refinement_table();
-      _cv_obj2 = *ct->byte_for_const(this->_containing_obj);
-      _cv_field2 = *ct->byte_for_const(p);
+      _cv_obj_rt = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_rt = *ct->byte_for_const(p);
     }
 
     bool failed() const {
@@ -630,8 +630,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
         const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
-                  (_cv_field != clean || _cv_field2 != clean) :
-                  (_cv_obj != clean || _cv_field != clean || _cv_obj2 != clean || _cv_field2 != clean)));
+                  (_cv_field_ct != clean || _cv_field_rt != clean) :
+                  (_cv_obj_ct != clean || _cv_field_ct != clean || _cv_obj_rt != clean || _cv_field_rt != clean)));
       }
       return false;
     }
@@ -649,7 +649,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       log.error("Missing rem set entry:");
       this->print_containing_obj(&ls, _from);
       this->print_referenced_obj(&ls, _to, "");
-      log.error("Obj head CV = %d, field CV = %d.", _cv_obj, _cv_field);
+      log.error("CT obj head CV = %d, field CV = %d.", _cv_obj_ct, _cv_field_ct);
+      log.error("RT Obj head CV = %d, field CV = %d.", _cv_obj_rt, _cv_field_rt);
       log.error("----------");
     }
   };
