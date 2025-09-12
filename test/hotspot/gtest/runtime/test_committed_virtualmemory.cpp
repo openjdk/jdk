@@ -41,11 +41,7 @@ public:
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
-    }
-
-    // snapshot current stack usage
-    {
-      MemTracker::NmtVirtualMemoryLocker nvml;
+      // snapshot current stack usage
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
     }
 
