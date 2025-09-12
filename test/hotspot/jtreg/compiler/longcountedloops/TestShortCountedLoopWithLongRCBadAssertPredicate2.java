@@ -37,7 +37,7 @@ public class TestShortCountedLoopWithLongRCBadAssertPredicate2 {
     private static MemorySegment ms = MemorySegment.ofArray(new byte[80000]);
     private static final ValueLayout.OfByte BYTE = ValueLayout.JAVA_BYTE;
     static byte[] bArr = new byte[80000];
-        
+
     public static void main(String[] args) {
         for (int i = 0; i < 10000; i++) {
             test(i);
