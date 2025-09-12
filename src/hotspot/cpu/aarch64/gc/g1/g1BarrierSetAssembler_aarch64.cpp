@@ -86,23 +86,31 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
   }
 }
 
-void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                             Register start, Register count, Register scratch, RegSet saved_regs) {
+void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm,
+                                                             DecoratorSet decorators,
+                                                             Register start,
+                                                             Register count,
+                                                             Register scratch,
+                                                             RegSet saved_regs) {
 
   Label done;
   Label loop;
   Label next;
-  const Register end = count;
 
   __ cbz(count, done);
 
-  __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
-  __ sub(end, end, BytesPerHeapOop);                                    // last element address to make inclusive
+  // Calculate the number of card marks to set. Since the object might start and
+  // end within a card, we need to calculate this via the card table indexes of
+  // the actual start and last addresses covered by the object.
+  // Temporarily use the count register for the last element address.
+  __ lea(count, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
+  __ sub(count, count, BytesPerHeapOop);                                  // Use last element address for end.
 
   __ lsr(start, start, CardTable::card_shift());
-  __ lsr(end, end, CardTable::card_shift());
-  __ sub(count, end, start);                                            // Number of bytes to mark - 1
+  __ lsr(count, count, CardTable::card_shift());
+  __ sub(count, count, start);                                            // Number of bytes to mark - 1.
 
+  // Add card table base offset to start.
   __ ldr(scratch, Address(rthread, in_bytes(G1ThreadLocalData::card_table_base_offset())));
   __ add(start, start, scratch);
 
