@@ -114,6 +114,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
   UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
     RESULT: AARCH64_SVE_ENABLED,
     DESC: [Use SVE when compiling libsleef],
+    AVAILABLE: false,
     CHECK_AVAILABLE: [
       # Apple Silicon does not support SVE; use macOS as a proxy for that check.
       if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_OS" = "xlinux"; then
