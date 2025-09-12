@@ -606,7 +606,7 @@ void CollectedHeap::post_initialize() {
 }
 
 bool CollectedHeap::is_shutting_down() const {
-  return Atomic::load_acquire(&_is_shutting_down);
+  return AtomicAccess::load_acquire(&_is_shutting_down);
 }
 
 void CollectedHeap::stall_for_vm_shutdown() {
@@ -674,7 +674,7 @@ void CollectedHeap::before_exit() {
     MutexLocker ml(Heap_lock);
     log_cpu_time();
     print_tracing_info();
-    Atomic::release_store(&_is_shutting_down, true);
+    AtomicAccess::release_store(&_is_shutting_down, true);
   }
   // Stop any on-going concurrent work and prepare for exit.
   stop();

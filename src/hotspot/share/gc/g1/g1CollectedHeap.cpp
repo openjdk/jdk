@@ -471,6 +471,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
 
     if (is_shutting_down()) {
       stall_for_vm_shutdown();
+      return nullptr;
     }
   }
 
@@ -706,6 +707,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         (try_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, alloc)("%s: Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
   }
 

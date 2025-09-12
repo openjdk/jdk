@@ -321,6 +321,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
       if (is_shutting_down()) {
         stall_for_vm_shutdown();
+        return nullptr;
       }
     }
 
