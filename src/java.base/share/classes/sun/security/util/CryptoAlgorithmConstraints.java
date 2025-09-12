@@ -48,7 +48,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
             Set.of("Cipher", "KeyStore", "MessageDigest", "Signature");
 
     // Disabled algorithm security property for JCE crypto services
-    public static final String PROPERTY_CRYPTO_DISABLED_ALGS =
+    private static final String PROPERTY_CRYPTO_DISABLED_ALGS =
             "jdk.crypto.disabledAlgorithms";
 
     private static class CryptoHolder {
