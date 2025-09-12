@@ -1317,6 +1317,7 @@ public:
 
 #ifndef PRODUCT
 private:
+  // getting rid of the template makes things easier
   Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
                               Node* parm0 = nullptr, Node* parm1 = nullptr,
                               Node* parm2 = nullptr, Node* parm3 = nullptr,
@@ -1324,7 +1325,11 @@ private:
                               Node* parm6 = nullptr) const;
 
 public:
-  // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
+  // Creates a CallLeafNode for a runtime call that prints a static string and the values of the
+  // nodes passed as arguments.
+  // This function also takes care of doing the necessary wiring, including finding a suitable control
+  // based on the nodes that need to be printed. Note that passing nodes that have incompatible controls
+  // is undefined behavior.
   template <typename... TT, typename... NN>
   Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
     address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);

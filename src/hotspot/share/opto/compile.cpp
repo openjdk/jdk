@@ -5372,6 +5372,7 @@ void Compile::record_method_not_compilable_oom() {
 }
 
 #ifndef PRODUCT
+// Collects all the control inputs from nodes on the worklist and from their data dependencies
 static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Node_List& candidates) {
   // Follow non-control edges until we reach CFG nodes
   for (uint i = 0; i < worklist.size(); i++) {
@@ -5393,7 +5394,7 @@ static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Nod
   }
 }
 
-// Returns a candidate node whose CFG predecessors cover all other candidates
+// Returns the candidate node that is a descendant to all the other candidates
 static Node* pick_control(const Unique_Node_List& candidates) {
   const uint num_candidates = candidates.size();
   for (uint i = 0; i < num_candidates; i++) {
@@ -5435,7 +5436,8 @@ static Node* pick_control(const Unique_Node_List& candidates) {
   return nullptr;
 }
 
-static void debug_init_req(Node* call, Node* parm, Node* half, int* pos) {
+// Initialize a parameter input for a debug print call, using a placeholder for jlong and jdouble
+static void debug_print_init_parm(Node* call, Node* parm, Node* half, int* pos) {
   call->init_req((*pos)++, parm);
   const BasicType bt = parm->bottom_type()->basic_type();
   if (bt == T_LONG || bt == T_DOUBLE) {
@@ -5462,7 +5464,6 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   if (parm5 != nullptr) { worklist.push(parm5);
   if (parm6 != nullptr) { worklist.push(parm6);
   /* close each nested if ===> */  } } } } } } }
-
   find_candidate_control_inputs(worklist, candidates);
   Node* control = nullptr;
   if (candidates.size() == 0) {
@@ -5471,47 +5472,46 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
     control = pick_control(candidates);
   }
 
-  Node* frame_ptr = C->start()->proj_out(TypeFunc::FramePtr);
+  // find all the previous users of the control we picked
+  GrowableArray<Node*> users_of_control;
+  for (DUIterator_Fast kmax, k = control->fast_outs(kmax); k < kmax; k++) {
+    Node* use = control->fast_out(k);
+    if (use->is_CFG() && use != control) {
+      users_of_control.push(use);
+    }
+  }
 
   // we do not actually care about IO and memory as it uses neither
   call->init_req(TypeFunc::Control,   control);
   call->init_req(TypeFunc::I_O,       top());
   call->init_req(TypeFunc::Memory,    top());
-  call->init_req(TypeFunc::FramePtr,  frame_ptr);
+  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out(TypeFunc::FramePtr));
   call->init_req(TypeFunc::ReturnAdr, top());
 
   int pos = TypeFunc::Parms;
   call->init_req(pos++, str_node);
-  if (parm0 != nullptr) { debug_init_req(call, parm0, top(), &pos);
-  if (parm1 != nullptr) { debug_init_req(call, parm1, top(), &pos);
-  if (parm2 != nullptr) { debug_init_req(call, parm2, top(), &pos);
-  if (parm3 != nullptr) { debug_init_req(call, parm3, top(), &pos);
-  if (parm4 != nullptr) { debug_init_req(call, parm4, top(), &pos);
-  if (parm5 != nullptr) { debug_init_req(call, parm5, top(), &pos);
-  if (parm6 != nullptr) { debug_init_req(call, parm6, top(), &pos);
+  if (parm0 != nullptr) { debug_print_init_parm(call, parm0, top(), &pos);
+  if (parm1 != nullptr) { debug_print_init_parm(call, parm1, top(), &pos);
+  if (parm2 != nullptr) { debug_print_init_parm(call, parm2, top(), &pos);
+  if (parm3 != nullptr) { debug_print_init_parm(call, parm3, top(), &pos);
+  if (parm4 != nullptr) { debug_print_init_parm(call, parm4, top(), &pos);
+  if (parm5 != nullptr) { debug_print_init_parm(call, parm5, top(), &pos);
+  if (parm6 != nullptr) { debug_print_init_parm(call, parm6, top(), &pos);
   /* close each nested if ===> */  } } } } } } }
   assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
 
   call = gvn->transform(call);
   Node* call_control_proj = gvn->transform(new ProjNode(call, TypeFunc::Control));
 
-  GrowableArray<Node*> users_of_control;
-  for (DUIterator_Fast kmax, k = control->fast_outs(kmax); k < kmax; k++) {
-    Node* use = control->fast_out(k);
-    if (use->is_CFG() && use != control && use != call) {
-      users_of_control.push(use);
-    }
-  }
-
+  // rewire previous users to have the new call as control instead
   PhaseIterGVN* igvn = gvn->is_IterGVN();
-  for (int k = 0; k < users_of_control.length(); k++) {
-    Node* use = users_of_control.at(k);
+  for (int i = 0; i < users_of_control.length(); i++) {
+    Node* use = users_of_control.at(i);
     for (uint j = 0; j < use->req(); j++) {
-      Node* def = use->in(j);
-      if (def == control) {
-        if (igvn != nullptr) {
+      if (use->in(j) == control) {
+        if (igvn) {
           igvn->replace_input_of(use, j, call_control_proj);
-        } else if (gvn != nullptr) {
+        } else {
           use->set_req(j, call_control_proj);
         }
       }
