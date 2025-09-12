@@ -1609,15 +1609,13 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Extend the operands array with the length and size of the ext_cp operands.
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
-ConstantPool::extend_to_fit(const constantPoolHandle& ext_cp, TRAPS) {
+ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
   return bsm_entries().extend_to_fit(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
                                      CHECK_(BSMAttributeEntries::InsertionIterator()));
 }
 
 
-// Shrink the operands array to a smaller array with new_len length.
-// Used in RedefineClasses for CP merge.
-void ConstantPool::shrink_operands(BSMAttributeEntries::InsertionIterator iter, TRAPS) {
+void ConstantPool::end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS) {
   bsm_entries().truncate_to(iter, pool_holder()->class_loader_data(), CHECK);
 }
 

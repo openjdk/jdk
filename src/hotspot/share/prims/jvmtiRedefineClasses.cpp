@@ -729,8 +729,8 @@ void VM_RedefineClasses::finalize_bsmentries_merge(const constantPoolHandle& mer
   if (merge_cp->bsm_entries().number_of_entries() == 0) {
     return;
   }
-  // Shrink the merge_cp operands
-  merge_cp->shrink_operands(_bsmae_iter, CHECK);
+  // Finished extending the BSMAEs
+  merge_cp->end_extension(_bsmae_iter, CHECK);
 
   if (log_is_enabled(Trace, redefine, class, constantpool)) {
     // don't want to loop unless we are tracing

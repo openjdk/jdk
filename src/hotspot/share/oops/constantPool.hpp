@@ -673,9 +673,8 @@ class ConstantPool : public Metadata {
                             int offset_limit);
   // Extend the BSM attribute storage to fit both the current data and the BSM data in ext_cp.
   // Use the returned InsertionIterator to fill out the newly allocated space.
-  BSMAttributeEntries::InsertionIterator extend_to_fit(const constantPoolHandle& ext_cp, TRAPS);
-  // Shrink the 
-  void shrink_operands(BSMAttributeEntries::InsertionIterator iter, TRAPS);
+  BSMAttributeEntries::InsertionIterator start_extension(const constantPoolHandle& ext_cp, TRAPS);
+  void end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS);
 
   u2 bootstrap_method_ref_index_at(int cp_index) {
     assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
