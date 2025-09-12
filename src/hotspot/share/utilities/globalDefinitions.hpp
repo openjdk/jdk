@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/limits.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -35,7 +36,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <type_traits>
 
 class oopDesc;
