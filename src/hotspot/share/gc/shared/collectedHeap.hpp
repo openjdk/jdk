@@ -231,17 +231,6 @@ protected:
     _filler_object_klass = k;
   }
 
-  // Does the "cause" of GC indicate that
-  // we absolutely __must__ clear soft refs?
-  static inline bool should_clear_all_soft_refs(GCCause::Cause cause) {
-    return cause == GCCause::_metadata_GC_clear_soft_refs ||
-           cause == GCCause::_wb_full_gc;
-  }
-
-  inline bool should_clear_all_soft_refs() const {
-    return should_clear_all_soft_refs(_gc_cause);
-  }
-
   virtual Name kind() const = 0;
 
   virtual const char* name() const = 0;

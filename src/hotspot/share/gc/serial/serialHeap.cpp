@@ -492,7 +492,7 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
 
 void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = should_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = do_young_collection(clear_soft_refs);

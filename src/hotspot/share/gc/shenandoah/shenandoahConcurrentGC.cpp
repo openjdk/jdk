@@ -115,7 +115,7 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   _generation->ref_processor()->set_soft_reference_policy(
-      ShenandoahHeap::should_clear_all_soft_refs(cause));
+      GCCause::should_clear_all_soft_refs(cause));
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 

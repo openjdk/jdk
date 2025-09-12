@@ -217,7 +217,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   // Blow away all soft references on this cycle, if handling allocation failure,
   // either implicit or explicit GC request, or we are requested to do so unconditionally.
-  if (ShenandoahHeap::should_clear_all_soft_refs(request.cause) || (request.generation->is_global() &&
+  if (GCCause::should_clear_all_soft_refs(request.cause) || (request.generation->is_global() &&
       (ShenandoahCollectorPolicy::is_allocation_failure(request.cause) || ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || ShenandoahAlwaysClearSoftRefs))) {
     request.generation->ref_processor()->set_soft_reference_policy(true);
   }

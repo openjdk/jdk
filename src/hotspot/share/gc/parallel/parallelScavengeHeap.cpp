@@ -471,7 +471,7 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
 
 void ParallelScavengeHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = should_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = PSScavenge::invoke(clear_soft_refs);
