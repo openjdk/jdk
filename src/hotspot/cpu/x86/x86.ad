@@ -7667,7 +7667,8 @@ instruct castFtoX_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec
   predicate(!VM_Version::supports_avx10_2() &&
             !VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n->in(1)) < 64 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) <= 4);
+            type2aelembytes(Matcher::vector_element_basic_type(n)) <= 4 &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, KILL cr);
   format %{ "vector_cast_f2x $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}

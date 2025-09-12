@@ -23,7 +23,7 @@
 
 /**
 * @test
-* @bug 8287835 8320347
+* @bug 8287835 8364305
 * @summary Test float/double to integral cast
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled

@@ -359,8 +359,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
     @IR(counts = {IRNode.X86_VCAST_F2X, "> 0"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx10_2", "false"})
     @IR(counts = {IRNode.X86_VCAST_F2X_AVX10, "> 0"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
@@ -382,8 +384,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_char)", "> 0"})
     @IR(counts = {IRNode.X86_VCAST_F2X, "> 0"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfCPUFeatureAnd = {"avx2", "true", "avx10_2", "false"})
     @IR(counts = {IRNode.X86_VCAST_F2X_AVX10, "> 0"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
@@ -408,8 +412,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIf = {"MaxVectorSize", ">=16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_short)", "> 0"})
     @IR(counts = {IRNode.X86_VCAST_D2X, "> 0"},
+        applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {IRNode.X86_VCAST_D2X_AVX10, "> 0"},
+        applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public short[] convertDoubleToShort() {
         short[] res = new short[SIZE];
@@ -427,8 +433,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         applyIf = {"MaxVectorSize", ">= 16"},
         counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_char)", "> 0"})
     @IR(counts = {IRNode.X86_VCAST_D2X, "> 0"},
+        applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeatureAnd = {"avx", "true", "avx10_2", "false"})
     @IR(counts = {IRNode.X86_VCAST_D2X_AVX10, "> 0"},
+        applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public char[] convertDoubleToChar() {
         char[] res = new char[SIZE];
