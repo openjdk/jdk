@@ -183,7 +183,7 @@ bool RegMask::is_bound_pair() const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_rm_word[i] != 0) {               // Found some bits
       unsigned int bit_index = find_lowest_bit(_rm_word[i]);
-      if (bit_index != _WordBitMask) {   // Bit pair stays in same word?
+      if (bit_index != WORD_BIT_MASK) {   // Bit pair stays in same word?
         uintptr_t bit = uintptr_t(1) << bit_index; // Extract lowest bit from mask
         if ((bit | (bit << 1U)) != _rm_word[i]) {
           return false;            // Require adjacent bit pair and no more bits
