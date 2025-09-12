@@ -168,7 +168,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
     offset >>= 2;
     starti;
     f(0, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
-    rf(Rd, 0);
+    zrf(Rd, 0);
   }
 
   void Assembler::_adrp(Register Rd, address adr) {

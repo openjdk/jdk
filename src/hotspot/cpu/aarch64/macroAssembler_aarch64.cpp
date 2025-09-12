@@ -1143,9 +1143,31 @@ void MacroAssembler::post_call_nop() {
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
+  uint32_t offs = offset() + CodeBlob::align_code_offset(sizeof(nmethod));
+  offs += code()->total_offset_of(code()->insts());
+  uint32_t chunks_count = NativePostCallNop::metadata_chunks_count(offs);
+  if (code_section()->scratch_emit()) {
+    // Review
+    // For size estimation, conservatively assume two slots will be required.
+    chunks_count = 2;
+  }
   nop();
-  movk(zr, 0);
-  movk(zr, 0);
+  if (chunks_count == 1) {
+    if (UsePostCallSequenceWithADRP) {
+      adr(zr, pc());
+    } else {
+      movk(zr, 0);
+    }
+  } else if (chunks_count > 1) {
+    assert(chunks_count == 2, "either 1 or 2");
+    if (UsePostCallSequenceWithADRP) {
+      _adrp(zr, pc());
+      adr(zr, pc());
+    } else {
+      movz(zr, 0);
+      movk(zr, 0);
+    }
+  }
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
