@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,11 +26,11 @@
 #ifndef SHARE_UTILITIES_REVERSE_BITS_HPP
 #define SHARE_UTILITIES_REVERSE_BITS_HPP
 
+#include "cppstdlib/cstddef.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 

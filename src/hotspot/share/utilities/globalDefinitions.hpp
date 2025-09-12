@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
 #include "cppstdlib/limits.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
@@ -34,7 +35,6 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 

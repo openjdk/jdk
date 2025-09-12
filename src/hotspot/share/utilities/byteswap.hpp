@@ -25,11 +25,11 @@
 #ifndef SHARE_UTILITIES_BYTESWAP_HPP
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
+#include "cppstdlib/cstddef.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 

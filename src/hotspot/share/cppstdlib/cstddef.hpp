@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,45 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZINITIALIZE_HPP
-#define SHARE_GC_Z_ZINITIALIZE_HPP
+#ifndef SHARE_CPPSTDLIB_CSTDDEF_HPP
+#define SHARE_CPPSTDLIB_CSTDDEF_HPP
 
-#include "cppstdlib/cstddef.hpp"
-#include "memory/allStatic.hpp"
 #include "utilities/compilerWarnings.hpp"
 
-class ZBarrierSet;
+// HotSpot usage for <cstddef>:
+// permitted:
+// * std::max_align_t, std::nullptr_t
+// * size_t (preferred) and std::size_t
+// * ptrdiff_t (preferred) and std::ptrdiff_t
+// * offsetof
+//
+// forbidden:
+// * <upcase>null</> macro - use nullptr instead.
+// * std::byte
 
-class ZInitializer {
-public:
-  ZInitializer(ZBarrierSet* barrier_set);
-};
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+#include "utilities/vmassert_uninstall.hpp"
 
-class ZInitialize : public AllStatic {
-  friend class ZTest;
+#include <cstddef>
 
-private:
-  static constexpr size_t ErrorMessageLength = 256;
+#include "utilities/vmassert_reinstall.hpp" // don't reorder
+END_ALLOW_FORBIDDEN_FUNCTIONS
 
-  static char _error_message[ErrorMessageLength];
-  static bool _had_error;
-  static bool _finished;
-
-  static void register_error(bool debug, const char *error_msg);
-
-  static void pd_initialize();
-
-public:
-  static void error(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
-  static void error_d(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
-
-  static bool had_error();
-  static const char* error_message();
-
-  static void initialize(ZBarrierSet* barrier_set);
-  static void finish();
-};
-
-#endif // SHARE_GC_Z_ZINITIALIZE_HPP
+#endif // SHARE_CPPSTDLIB_CSTDDEF_HPP
