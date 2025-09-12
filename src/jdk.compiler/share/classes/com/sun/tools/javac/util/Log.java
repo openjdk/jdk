@@ -171,7 +171,7 @@ public class Log extends AbstractLog {
                   lint.isEnabled(category) :                            // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
                     !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
-                    !options.isLintDisabled(category);                  // ...suppression happens via -Xlint:-category
+                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
                 if (!emit)
                     return;
             }
@@ -553,9 +553,13 @@ public class Log extends AbstractLog {
      */
     public int nerrors = 0;
 
-    /** The number of warnings encountered so far.
+    /** The total number of warnings encountered so far.
      */
     public int nwarnings = 0;
+
+    /** Tracks whether any warnings have been encountered in each {@link LintCategory}.
+     */
+    public final EnumSet<LintCategory> lintWarnings = LintCategory.newEmptySet();
 
     /** The number of errors encountered after MaxErrors was reached.
      */
@@ -885,6 +889,7 @@ public class Log extends AbstractLog {
     public void clear() {
         recorded.clear();
         sourceMap.clear();
+        lintWarnings.clear();
         nerrors = 0;
         nwarnings = 0;
         nsuppressederrors = 0;
@@ -940,7 +945,6 @@ public class Log extends AbstractLog {
                 // Strict warnings are always emitted
                 if (diagnostic.isFlagSet(STRICT)) {
                     writeDiagnostic(diagnostic);
-                    nwarnings++;
                     return;
                 }
 
@@ -948,7 +952,6 @@ public class Log extends AbstractLog {
                 if (emitWarnings || diagnostic.isMandatory()) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
-                        nwarnings++;
                     } else {
                         nsuppressedwarns++;
                     }
@@ -959,7 +962,6 @@ public class Log extends AbstractLog {
                 if (diagnostic.isFlagSet(API) || shouldReport(diagnostic)) {
                     if (nerrors < MaxErrors) {
                         writeDiagnostic(diagnostic);
-                        nerrors++;
                     } else {
                         nsuppressederrors++;
                     }
@@ -973,9 +975,25 @@ public class Log extends AbstractLog {
     }
 
     /**
-     * Write out a diagnostic.
+     * Write out a diagnostic and bump the warning and error counters as needed.
      */
     protected void writeDiagnostic(JCDiagnostic diag) {
+
+        // Increment counter(s)
+        switch (diag.getType()) {
+        case WARNING:
+            nwarnings++;
+            Optional.of(diag)
+              .map(JCDiagnostic::getLintCategory)
+              .ifPresent(lintWarnings::add);
+            break;
+        case ERROR:
+            nerrors++;
+            break;
+        default:
+            break;
+        }
+
         if (diagListener != null) {
             diagListener.report(diag);
             return;
