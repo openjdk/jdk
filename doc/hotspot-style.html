@@ -594,14 +594,14 @@ title="Runtime Type Information">RTTI</a> are deemed not worthwhile,
 given the alternatives.</p>
 <h3 id="memory-allocation">Memory Allocation</h3>
 <p>Do not use the standard global allocation and deallocation functions
-(operator new and related functions). Use of these functions by HotSpot
-code is disabled for some platforms.</p>
+(global <code>operator new</code> and related functions). Use of these
+functions by HotSpot code is disabled for some platforms.</p>
 <p>Rationale: HotSpot often uses "resource" or "arena" allocation. Even
 where heap allocation is used, the standard global functions are avoided
-in favor of wrappers around malloc and free that support the VM's Native
-Memory Tracking (NMT) feature. Typically, uses of the global operator
-new are inadvertent and therefore often associated with memory
-leaks.</p>
+in favor of wrappers around <code>malloc</code> and <code>free</code>
+that support the JVM's Native Memory Tracking (NMT) feature. Typically,
+uses of the global <code>operator new</code> are inadvertent and
+therefore often associated with memory leaks.</p>
 <p>Native memory allocation failures are often treated as
 non-recoverable. The place where "out of memory" is (first) detected may
 be an innocent bystander, unrelated to the actual culprit.</p>
@@ -648,7 +648,39 @@ for anonymous namespaces.</p>
 class="uri">https://sourceware.org/bugzilla/show_bug.cgi?id=16874</a><br>
 Bug for similar gdb problems.</p>
 <h3 id="c-standard-library">C++ Standard Library</h3>
-<p>Avoid using the C++ Standard Library.</p>
+<p>Only curated parts of the C++ Standard Library may be used by HotSpot
+code.</p>
+<p>Functions that may throw exceptions must not be used. This is in
+accordance with the HotSpot policy of <a href="#error-handling">not
+using exceptions</a>.</p>
+<p>Also in accordance with HotSpot policy, the <a
+href="#memory-allocation">standard global allocator must not be
+used</a>. This means that uses of standard container classes cannot
+presently be used, as doing so requires specialization on some allocator
+type that is integrated with the existing HotSpot allocation mechanisms.
+(Such allocators may be provided in the future.)</p>
+<p>Standard Library identifiers should usually be fully qualified;
+<code>using</code> directives must not be used to bring Standard Library
+identifiers into scope just to remove the need for namespace
+qualification. Requiring qualification makes it easy to distinguish
+between references to external libraries and code that is part of
+HotSpot.</p>
+<p>As with language features, standard library facilities are either
+permitted, explicitly excluded, or undecided (and so implicitly
+excluded).</p>
+<p>Most HotSpot code should not directly <code>#include</code> C++
+Standard Library headers. HotSpot provides a set of wrapper headers for
+the Standard Library headers containing permitted definitions. These
+wrappers are in the <code>cppstdlib</code> directory, with the same name
+as the corresponding Standard Library header and a <code>.hpp</code>
+extension. These wrappers provide a place for any additional code (some
+of which may be platform-specific) needed to support HotSpot usage.</p>
+<p>These wrappers also provide a place to document HotSpot usage,
+including any restrictions. The set of wrappers and the usage
+documentation should be considered part of HotSpot style. Any changes
+are subject to the same process as applies to this document. (For
+historical reasons, there may be many direct inclusions of some C++
+Standard Library headers.)</p>
 <p>Historically, HotSpot has mostly avoided use of the Standard
 Library.</p>
 <p>(It used to be impossible to use most of it in shared code, because
@@ -661,46 +693,40 @@ in mid-2017. Support for Solaris was removed in 2020.)</p>
 of Standard Library facilities is exceptions. HotSpot does not use
 exceptions and, for platforms which allow doing so, builds with them
 turned off. Many Standard Library facilities implicitly or explicitly
-use exceptions.</p></li>
+use exceptions. On the other hand, many don't, and can be used without
+concern for this issue. Others may have a useful subset that doesn't use
+exceptions.</p></li>
 <li><p><code>assert</code>. An issue that is quickly encountered is the
 <code>assert</code> macro name collision (<a
 href="https://bugs.openjdk.org/browse/JDK-8007770">JDK-8007770</a>).
-Some mechanism for addressing this would be needed before much of the
-Standard Library could be used. (Not all Standard Library
-implementations use assert in header files, but some do.)</p></li>
+(Not all Standard Library implementations use <code>assert</code> in
+header files, but some do.) HotSpot provides a mechanism for addressing
+this, by establishing a scope around the include of a library header
+where the HotSpot <code>assert</code> macro is suppressed. One of the
+reasons for using wrapper headers rather than directly including
+standard headers is to provide a central place to deal with this issue
+for each header.</p></li>
 <li><p>Memory allocation. HotSpot requires explicit control over where
 allocations occur. The C++98/03 <code>std::allocator</code> class is too
-limited to support our usage. (Changes in more recent Standards may
-remove this limitation.)</p></li>
+limited to support our usage. But changes to the allocator concept in
+more recent Standards removed some of the limitations, supporting
+statefull allocators. HotSpot may, in the future, provide
+standard-conforming allocators that are integrated with HotSpot's
+existing allocation mechanisms.</p></li>
 <li><p>Implementation vagaries. Bugs, or simply different implementation
 choices, can lead to different behaviors among the various Standard
-Libraries we need to deal with.</p></li>
+Libraries we need to deal with. But only selected parts of the Standard
+Library are being permitted, and one of the selection criteria is
+maturity. Some of these facilities are among the most heavily tested and
+used C++ codes that exist.</p></li>
 <li><p>Inconsistent naming conventions. HotSpot and the C++ Standard use
 different naming conventions. The coexistence of those different
-conventions might appear jarring and reduce readability.</p></li>
+conventions might appear jarring and reduce readability. However,
+experience in some other code bases suggests this isn't a significant
+problem and can even be beneficial, as it makes HotSpot-specific
+facilities and Standard Library facilities easily
+distinguishable.</p></li>
 </ul>
-<p>There are a few exceptions to this rule.</p>
-<ul>
-<li><code>#include &lt;new&gt;</code> to use placement <code>new</code>,
-<code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
-<li><code>#include &lt;limits&gt;</code> to use
-<code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code> with some restrictions,
-listed below.</li>
-<li><code>#include &lt;cstddef&gt;</code> to use
-<code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
-</ul>
-<p>Certain restrictions apply to the declarations provided by
-<code>&lt;type_traits&gt;</code>.</p>
-<ul>
-<li>The <code>alignof</code> operator should be used rather than
-<code>std::alignment_of&lt;&gt;</code>.</li>
-</ul>
-<p>TODO: Rather than directly #including (permitted) Standard Library
-headers, use a convention of #including wrapper headers (in some
-location like hotspot/shared/stdcpp). This provides a single place for
-dealing with issues we might have for any given header, esp.
-platform-specific issues.</p>
 <h3 id="type-deduction">Type Deduction</h3>
 <p>Use type deduction only if it makes the code clearer or safer. Do not
 use it merely to avoid the inconvenience of writing an explicit type,
@@ -1624,6 +1650,34 @@ use of aggregate classes, preferring explicit constructors even for very
 simple classes.</p>
 <h3 id="additional-excluded-features">Additional Excluded Features</h3>
 <ul>
+<li><p><code>&lt;algorithm&gt;</code>, <code>&lt;iterator&gt;</code>,
+<code>&lt;numeric&gt;</code><br> Not useful without standard containers
+or similar classes in HotSpot.</p></li>
+<li><p><code>&lt;bitset&gt;</code> - Overlap with HotSpot
+<code>BitMap</code>.</p></li>
+<li><p><code>&lt;cassert&gt;</code>, <code>assert.h</code> - HotSpot has
+its own <code>assert</code> macro.</p></li>
+<li><p><code>&lt;exception&gt;</code>, <code>&lt;stdexcept&gt;</code> -
+Use of <a href="#error-handling">exceptions</a> is not
+permitted.</p></li>
+<li><p>Thread support - <code>&lt;thread&gt;</code>,
+<code>&lt;mutex&gt;</code>, <code>&lt;shared_mutex&gt;</code>,
+<code>&lt;condition_varible&gt;</code>, <code>&lt;future&gt;</code><br>
+HotSpot has its own threading support.</p></li>
+<li><p>Streams - HotSpot doesn't use the C++ I/O library.</p></li>
+<li><p><code>&lt;scoped_allocator&gt;</code> - Not useful without
+specialized allocators.</p></li>
+<li><p><code>&lt;string&gt;</code> - Requires allocator support, similar
+to standard containers.</p></li>
+<li><p><code>&lt;tuple&gt;</code> - Prefer named access to class
+objects, rather than indexed access to anonymous heterogeneous
+sequences. In particular, a standard-layout class is preferred to a
+tuple.</p></li>
+<li><p><code>&lt;typeinfo&gt;</code>, <code>&lt;typeindex&gt;</code><br>
+Use of <a href="#runtime-type-information">runtime type information</a>
+is not permitted.</p></li>
+<li><p><code>&lt;valarray&gt;</code> - May allocate, but is not
+allocator-aware.</p></li>
 <li><p>New string and character literals</p>
 <ul>
 <li>New character types (<a
@@ -1883,6 +1937,10 @@ significantly worse, because pack manipulation without this can be
 complicated.</p></li>
 <li><p><code>std::invoke&lt;&gt;()</code> (<a
 href="http://wg21.link/n4169">n4169</a>)</p></li>
+<li><p><code>&lt;chrono&gt;</code></p></li>
+<li><p><code>&lt;initializer_list&gt;</code></p></li>
+<li><p><code>&lt;ratio&gt;</code></p></li>
+<li><p><code>&lt;system_error&gt;</code></p></li>
 </ul>
 </body>
 </html>
