@@ -628,7 +628,8 @@ public class FieldGen {
         result.appendLine("private static final long CARRY_ADD = 1 << "
                 + (params.getBitsPerLimb() - 1) + ";");
         if (params.getBitsPerLimb() * params.getNumLimbs() != params.getPower()) {
-            result.appendLine("@SuppressWarnings(\"lossy-conversions\") private static final int LIMB_MASK = -1 "
+            result.appendLine("@SuppressWarnings(\"lossy-conversions\")");
+            result.appendLine("private static final int LIMB_MASK = -1 "
                     + ">>> (64 - BITS_PER_LIMB);");
         }
 
