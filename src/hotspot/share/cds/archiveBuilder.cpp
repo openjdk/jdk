@@ -1110,7 +1110,7 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    // It is acceptable that new_bottom/new_top becomes zero.
+    // It is acceptable that new_bottom/new_top may be zero.
     // As zero is allowed for new_bottom, use integer arithmetic to avoid UB pointer arithmetic.
     address new_bottom = (address)((uintptr_t)bottom + _buffer_to_requested_delta);
     address new_top = (address)((uintptr_t)top + _buffer_to_requested_delta);
