@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run junit LdapClientConnTest
+ * @run junit/othervm LdapClientConnTest
  */
 public class LdapClientConnTest {
 
