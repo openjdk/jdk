@@ -60,13 +60,15 @@ import static java.util.stream.Collectors.groupingBy;
  *  deletion without notice.</b>
  */
 public class ExhaustivenessComputer {
+    private static final long DEFAULT_TIMEOUT = 5000; //5s
     protected static final Context.Key<ExhaustivenessComputer> exhaustivenessKey = new Context.Key<>();
 
     private final Symtab syms;
     private final Types types;
     private final Check chk;
     private final Infer infer;
-    private final int missingExhaustivenessTimeout;
+    private final long missingExhaustivenessTimeout;
+    private long startTime = -1;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -84,18 +86,19 @@ public class ExhaustivenessComputer {
         infer = Infer.instance(context);
         Options options = Options.instance(context);
         String timeout = options.get("exhaustivityTimeout");
-        int computedTimeout = 1000;
+        long computedTimeout = DEFAULT_TIMEOUT;
         if (timeout != null) {
             try {
-                computedTimeout = Integer.parseInt(timeout);
+                computedTimeout = Long.parseLong(timeout);
             } catch (NumberFormatException ex) {
                 //TODO: notify?
             }
         }
+
         missingExhaustivenessTimeout = computedTimeout;
     }
 
-    public boolean exhausts(JCExpression selector, List<JCCase> cases, Set<String> pendingNotExhaustiveDetails) {
+    public ExhaustivenessResult exhausts(JCExpression selector, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new HashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
         Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
@@ -129,7 +132,7 @@ public class ExhaustivenessComputer {
         }
 
         if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
-            return true;
+            return ExhaustivenessResult.ofExhaustive();
         }
 
         for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
@@ -140,26 +143,49 @@ public class ExhaustivenessComputer {
         try {
             CoverageResult coveredResult = computeCoverage(selector.type, patternSet, false);
             if (coveredResult.covered()) {
-                return true;
+                return ExhaustivenessResult.ofExhaustive();
             }
-            if (missingExhaustivenessTimeout == 0) {
-                return false;
-            }
-            //TODO: should stop computation when time runs out:
-            PatternDescription defaultPattern = new BindingPattern(selector.type);
-            Set<PatternDescription> missingPatterns = expandMissingPatternDescriptions(selector.type, selector.type, defaultPattern, coveredResult.incompletePatterns(), Set.of(defaultPattern));
 
-            for (PatternDescription missing : missingPatterns) {
-                pendingNotExhaustiveDetails.add(missing.toString());
-            }
-            return false;
+            Set<String> details =
+                    this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
+                        .stream()
+                        .map(PatternDescription::toString)
+                        .collect(Collectors.toSet());
+
+            return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
             chk.completionError(selector.pos(), cf);
-            return true; //error recovery
+            return ExhaustivenessResult.ofExhaustive(); //error recovery
+        }
+    }
+
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType, Set<PatternDescription> incompletePatterns) {
+        if (missingExhaustivenessTimeout == 0) {
+            return Set.of();
+        }
+        try {
+            startTime = System.currentTimeMillis();
+            PatternDescription defaultPattern = new BindingPattern(selectorType);
+            return expandMissingPatternDescriptions(selectorType, selectorType, defaultPattern, incompletePatterns, Set.of(defaultPattern));
+        } catch (TimeoutException ex) {
+            return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
+        } finally {
+            startTime = -1;
         }
     }
 
     private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType, Type targetType, PatternDescription toExpand, Set<? extends PatternDescription> basePatterns, Set<PatternDescription> inMissingPatterns) {
+        try {
+            return doExpandMissingPatternDescriptions(selectorType, targetType, toExpand, basePatterns, inMissingPatterns);
+        } catch (TimeoutException ex) {
+            if (ex.missingPatterns == null) {
+                ex = new TimeoutException(inMissingPatterns);
+            }
+            throw ex;
+        }
+    }
+
+    private Set<PatternDescription> doExpandMissingPatternDescriptions(Type selectorType, Type targetType, PatternDescription toExpand, Set<? extends PatternDescription> basePatterns, Set<PatternDescription> inMissingPatterns) {
         if (toExpand instanceof BindingPattern bp) {
             if (bp.type.tsym.isSealed()) {
                 List<Type> permitted = ((ClassSymbol) bp.type.tsym).getPermittedSubclasses();
@@ -717,6 +743,8 @@ public class ExhaustivenessComputer {
                          .filter(pd -> pd.nested.length == nestedPatternsCount)
                          .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
                 for (var candidates : groupEquivalenceCandidates.values()) {
+                    checkTimeout();
+
                     var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
                     for (int firstCandidate = 0;
@@ -897,6 +925,8 @@ public class ExhaustivenessComputer {
     }
 
     private boolean isBpCovered(Type componentType, PatternDescription newNested) {
+        checkTimeout();
+
         if (newNested instanceof BindingPattern bp) {
             Type seltype = types.erasure(componentType);
             Type pattype = types.erasure(bp.type);
@@ -908,9 +938,16 @@ public class ExhaustivenessComputer {
         return false;
     }
 
-    sealed interface PatternDescription {
+    protected void checkTimeout() {
+        if (startTime != (-1) && (System.currentTimeMillis() - startTime) > missingExhaustivenessTimeout) {
+            throw new TimeoutException(null);
+        }
+    }
+
+    protected sealed interface PatternDescription {
         public Type type();
- }
+    }
+
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
         if (pattern instanceof JCBindingPattern binding) {
             Type type = !selectorType.isPrimitive() && types.isSubtype(selectorType, binding.type)
@@ -1007,6 +1044,25 @@ public class ExhaustivenessComputer {
         @Override
         public Type type() {
             return recordType;
+        }
+    }
+
+    public record ExhaustivenessResult(boolean exhaustive, Set<String> notExhaustiveDetails) {
+        public static ExhaustivenessResult ofExhaustive() {
+            return new ExhaustivenessResult(true, null);
+        }
+        public static ExhaustivenessResult ofDetails(Set<String> notExhaustiveDetails) {
+            return new ExhaustivenessResult(false, notExhaustiveDetails != null ? notExhaustiveDetails : Set.of());
+        }
+    }
+
+    protected static class TimeoutException extends RuntimeException {
+        private static final long serialVersionUID = 0L;
+        private transient final Set<PatternDescription> missingPatterns;
+
+        public TimeoutException(Set<PatternDescription> missingPatterns) {
+            super(null, null, false, false);
+            this.missingPatterns = missingPatterns;
         }
     }
 }

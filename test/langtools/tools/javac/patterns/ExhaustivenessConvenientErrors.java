@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 9999999
- * @summary Check exhaustiveness of switches over sealed types.
+ * @bug 8367530
+ * @summary Check enhanced exhaustiveness errors
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -445,7 +445,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                      "-Xlint:-preview",
                      "--class-path", libClasses.toString(),
                      "-XDshould-stop.at=FLOW",
-                     "-XDshould-stop.ifNoError=FLOW")
+                     "-XDshould-stop.ifNoError=FLOW",
+                     "-XDexhaustivityTimeout=" + Long.MAX_VALUE) //never timeout
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .diagnosticListener(d -> {

@@ -53,6 +53,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.ExhaustivenessResult;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
@@ -699,13 +700,17 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                Set<String> pendingNotExhaustiveDetails = new TreeSet<>();
-                tree.isExhaustive = tree.isExhaustive || exhaustiveness.exhausts(tree.selector, tree.cases, pendingNotExhaustiveDetails);
                 if (!tree.isExhaustive) {
-                    if (pendingNotExhaustiveDetails.isEmpty()) {
-                        log.error(tree, Errors.NotExhaustiveStatement);
-                    } else {
-                        log.error(tree, Errors.NotExhaustiveStatementDetails(pendingNotExhaustiveDetails.stream().collect(Collectors.joining("\n"))));
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                    tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                    if (!tree.isExhaustive) {
+                        if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                            log.error(tree, Errors.NotExhaustiveStatement);
+                        } else {
+                            log.error(tree, Errors.NotExhaustiveStatementDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                        }
                     }
                 }
             }
@@ -739,21 +744,23 @@ public class Flow {
                 }
             }
 
-            Set<String> pendingNotExhaustiveDetails = new TreeSet<>();
             if (tree.hasUnconditionalPattern ||
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                tree.isExhaustive = exhaustiveness.exhausts(tree.selector, tree.cases, pendingNotExhaustiveDetails);
-            }
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
 
-            if (!tree.isExhaustive) {
-                if (pendingNotExhaustiveDetails.isEmpty()) {
-                    log.error(tree, Errors.NotExhaustive);
-                } else {
-                    log.error(tree, Errors.NotExhaustiveDetails(pendingNotExhaustiveDetails.stream().collect(Collectors.joining("\n"))));
+                tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                if (!tree.isExhaustive) {
+                    if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                        log.error(tree, Errors.NotExhaustive);
+                    } else {
+                        log.error(tree, Errors.NotExhaustiveDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                    }
                 }
             }
+
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
