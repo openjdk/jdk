@@ -871,8 +871,9 @@ public final class Float extends Number
      * same if and only if the method {@link #floatToIntBits(float)}
      * returns the identical {@code int} value when applied to
      * each.
-     * In other words, {@linkplain ##repEquivalence representation
-     * equivalence} is used to compare the {@code float} values.
+     * In other words, {@linkplain Double##repEquivalence
+     * representation equivalence} is used to compare the {@code
+     * float} values.
      *
      * @apiNote
      * This method is defined in terms of {@link

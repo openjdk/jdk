@@ -1458,9 +1458,8 @@ public final class Double extends Number
      * </pre>
      *
      * @apiNote
-     * One idiom to implement {@linkplain
-     * Double##repEquivalence representation equivalence} on {@code
-     * double} values is
+     * One idiom to implement {@linkplain ##repEquivalence
+     * representation equivalence} on {@code double} values is
      * {@snippet lang="java" :
      * Double.compare(a, b) == 0
      * }
