@@ -136,11 +136,11 @@ AC_DEFUN([FLAGS_SETUP_SVE],
             ])],
             [
               AVAILABLE=true
-              AC_MSG_RESULT([$AVAILABLE])
+              AC_MSG_RESULT([yes])
             ],
             [
               AVAILABLE=false
-              AC_MSG_RESULT([$AVAILABLE])
+              AC_MSG_RESULT([no])
             ]
           )
           CFLAGS="$saved_cflags"
