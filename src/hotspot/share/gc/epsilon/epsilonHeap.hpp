@@ -76,6 +76,8 @@ public:
   size_t max_capacity() const override { return _virtual_space.reserved_size();  }
   size_t capacity()     const override { return _virtual_space.committed_size(); }
   size_t used()         const override { return _space->used(); }
+  size_t used_unlocked() const override { return used(); }
+
 
   bool is_in(const void* p) const override {
     return _space->is_in(p);

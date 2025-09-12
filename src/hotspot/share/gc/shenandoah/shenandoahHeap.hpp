@@ -248,6 +248,7 @@ public:
   size_t initial_capacity()  const;
   size_t capacity()          const override;
   size_t used()              const override;
+  size_t used_unlocked()     const override { return used(); }
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);

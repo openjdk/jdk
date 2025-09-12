@@ -45,6 +45,7 @@ class NonJavaThread: public Thread {
  public:
   NonJavaThread();
   ~NonJavaThread();
+  static int count();
 
   class Iterator;
 };
