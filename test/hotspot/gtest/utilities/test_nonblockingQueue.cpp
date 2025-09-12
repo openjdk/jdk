@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -28,8 +29,6 @@
 #include "utilities/pair.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
-
-#include <new>
 
 class NonblockingQueueTestElement {
   typedef NonblockingQueueTestElement Element;
