@@ -2656,11 +2656,23 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_first_loop, L_loop, L_calculate_one_next;
 
+    __ bind(L_main);
+    // Check whether the counter increases overflow 64 bit and changes to the scalar path,
+    // most of time the counter may not increase over 64 bit,
+    // but when counter starts with a large init number, we may encounter overflow one time
+    // at most, just calculate it on the scalar path, and then go back to the large block
+    __ addi(t0, counter, 8);
+    __ ld(tmp, Address(t0));
+    __ rev8(tmp, tmp);
+    __ srli(t0, len, 4);
+    __ addi(t0, t0, 1);
+    __ add(t0, tmp, t0);
+    __ bltu(t0, tmp, L_calculate_one_next);
+
     // Calculate the number of 16 Bytes for CTR large block as t0.
     // Because of zvkned need sew as e32, so we save t0 * 4 into len32.
     // After that we save the data length < 16 back into len,
     // and calculate them one by one in L_next later.
-    __ bind(L_main);
     __ srli(t0, len, 4);
     __ slli(len32, t0, 2);
     __ slli(t0, len32, 2);
@@ -2766,13 +2778,23 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vse32_v(v24, saved_encrypted_ctr);
     __ mv(used, 0);
-    // Increase counter and save it for next
-    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
-    __ vle64_v(v31, counter);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t);
-    __ vadd_vi(v31, v31, 1, Assembler::VectorMask::v0_t);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t);
-    __ vse64_v(v31, counter);
+
+    // Increase counter
+    Label L_skip_next_inc;
+    __ addi(t0, counter, 8);
+    __ ld(tmp, Address(t0));
+    __ rev8(tmp, tmp);
+    __ addi(tmp, tmp, 1);
+    __ rev8(tmp, tmp);
+    __ sd(tmp, Address(t0));
+    __ mv(t0, 0x0ul);
+    __ bne(tmp, t0, L_skip_next_inc);
+    __ ld(tmp, Address(counter));
+    __ rev8(tmp, tmp);
+    __ addi(tmp, tmp, 1);
+    __ rev8(tmp, tmp);
+    __ sd(tmp, Address(counter));
+    __ bind(L_skip_next_inc);
     __ beqz(len, L_exit);
     __ j(L_encrypt_next);
 
