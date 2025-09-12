@@ -250,7 +250,7 @@ void PerfDataManager::destroy() {
   // counter users that we are at shutdown; b) sync up with current users, waiting
   // for them to finish with counters.
   //
-  Atomic::store(&_has_PerfData, false);
+  AtomicAccess::store(&_has_PerfData, false);
   GlobalCounter::write_synchronize();
 
   log_debug(perf, datacreation)("Total = %d, Constants = %d",
@@ -276,7 +276,7 @@ void PerfDataManager::add_item(PerfData* p) {
   // Default sizes determined using -Xlog:perf+datacreation=debug
   if (_all == nullptr) {
     _all = new PerfDataList(191);
-    Atomic::release_store(&_has_PerfData, true);
+    AtomicAccess::release_store(&_has_PerfData, true);
   }
 
   assert(!_all->contains(p->name()), "duplicate name added: %s", p->name());

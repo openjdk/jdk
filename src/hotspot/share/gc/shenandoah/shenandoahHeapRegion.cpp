@@ -43,7 +43,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -834,20 +834,20 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  Atomic::store(&_state, to);
+  AtomicAccess::store(&_state, to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  Atomic::add(&_critical_pins, (size_t)1);
+  AtomicAccess::add(&_critical_pins, (size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  Atomic::sub(&_critical_pins, (size_t)1);
+  AtomicAccess::sub(&_critical_pins, (size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {
-  return Atomic::load(&_critical_pins);
+  return AtomicAccess::load(&_critical_pins);
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {

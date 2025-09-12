@@ -61,7 +61,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -135,7 +135,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
 
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
-  Atomic::store(&nm->_deoptimization_status, status);
+  AtomicAccess::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
@@ -1119,7 +1119,7 @@ public:
   static BoxCache<PrimitiveType, CacheType, BoxType>* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BoxCache<PrimitiveType, CacheType, BoxType>* s = new BoxCache<PrimitiveType, CacheType, BoxType>(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1182,7 +1182,7 @@ public:
   static BooleanBoxCache* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BooleanBoxCache* s = new BooleanBoxCache(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1971,7 +1971,7 @@ class DeoptActionSerializer : public JfrSerializer {
 
 static void register_serializers() {
   static int critical_section = 0;
-  if (1 == critical_section || Atomic::cmpxchg(&critical_section, 0, 1) == 1) {
+  if (1 == critical_section || AtomicAccess::cmpxchg(&critical_section, 0, 1) == 1) {
     return;
   }
   JfrSerializer::register_serializer(TYPE_DEOPTIMIZATIONREASON, true, new DeoptReasonSerializer());

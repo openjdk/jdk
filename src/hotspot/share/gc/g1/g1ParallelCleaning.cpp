@@ -24,7 +24,7 @@
 
 
 #include "gc/g1/g1ParallelCleaning.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
@@ -35,11 +35,11 @@ JVMCICleaningTask::JVMCICleaningTask() :
 }
 
 bool JVMCICleaningTask::claim_cleaning_task() {
-  if (Atomic::load(&_cleaning_claimed)) {
+  if (AtomicAccess::load(&_cleaning_claimed)) {
     return false;
   }
 
-  return !Atomic::cmpxchg(&_cleaning_claimed, false, true);
+  return !AtomicAccess::cmpxchg(&_cleaning_claimed, false, true);
 }
 
 void JVMCICleaningTask::work(bool unloading_occurred) {

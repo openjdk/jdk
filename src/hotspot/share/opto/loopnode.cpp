@@ -830,7 +830,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_candidates);
+    AtomicAccess::inc(&_long_loop_candidates);
   }
 #endif
 
@@ -1148,7 +1148,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_nests);
+    AtomicAccess::inc(&_long_loop_nests);
   }
 #endif
 
@@ -2585,7 +2585,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
 #ifndef PRODUCT
   if (x->as_Loop()->is_loop_nest_inner_loop() && iv_bt == T_LONG) {
-    Atomic::inc(&_long_loop_counted_loops);
+    AtomicAccess::inc(&_long_loop_counted_loops);
   }
 #endif
   if (iv_bt == T_LONG && x->as_Loop()->is_loop_nest_outer_loop()) {

@@ -37,7 +37,7 @@
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -117,14 +117,14 @@ void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
 }
 
 size_t G1DirtyCardQueueSet::num_cards() const {
-  return Atomic::load(&_num_cards);
+  return AtomicAccess::load(&_num_cards);
 }
 
 void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   assert(cbn != nullptr, "precondition");
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
-  Atomic::add(&_num_cards, cbn->size());
+  AtomicAccess::add(&_num_cards, cbn->size());
   // Perform push in CS.  The old tail may be popped while the push is
   // observing it (attaching it to the new buffer).  We need to ensure it
   // can't be reused until the push completes, to avoid ABA problems.
@@ -160,7 +160,7 @@ BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
     result = dequeue_completed_buffer();
     if (result == nullptr) return nullptr;
   }
-  Atomic::sub(&_num_cards, result->size());
+  AtomicAccess::sub(&_num_cards, result->size());
   return result;
 }
 
@@ -172,9 +172,9 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
        cur = cur->next()) {
     actual += cur->size();
   }
-  assert(actual == Atomic::load(&_num_cards),
+  assert(actual == AtomicAccess::load(&_num_cards),
          "Num entries in completed buffers should be %zu but are %zu",
-         Atomic::load(&_num_cards), actual);
+         AtomicAccess::load(&_num_cards), actual);
 }
 #endif // ASSERT
 
@@ -185,7 +185,7 @@ G1DirtyCardQueueSet::PausedBuffers::PausedList::PausedList() :
 
 #ifdef ASSERT
 G1DirtyCardQueueSet::PausedBuffers::PausedList::~PausedList() {
-  assert(Atomic::load(&_head) == nullptr, "precondition");
+  assert(AtomicAccess::load(&_head) == nullptr, "precondition");
   assert(_tail == nullptr, "precondition");
 }
 #endif // ASSERT
@@ -198,7 +198,7 @@ bool G1DirtyCardQueueSet::PausedBuffers::PausedList::is_next() const {
 void G1DirtyCardQueueSet::PausedBuffers::PausedList::add(BufferNode* node) {
   assert_not_at_safepoint();
   assert(is_next(), "precondition");
-  BufferNode* old_head = Atomic::xchg(&_head, node);
+  BufferNode* old_head = AtomicAccess::xchg(&_head, node);
   if (old_head == nullptr) {
     assert(_tail == nullptr, "invariant");
     _tail = node;
@@ -208,9 +208,9 @@ void G1DirtyCardQueueSet::PausedBuffers::PausedList::add(BufferNode* node) {
 }
 
 G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::PausedList::take() {
-  BufferNode* head = Atomic::load(&_head);
+  BufferNode* head = AtomicAccess::load(&_head);
   BufferNode* tail = _tail;
-  Atomic::store(&_head, (BufferNode*)nullptr);
+  AtomicAccess::store(&_head, (BufferNode*)nullptr);
   _tail = nullptr;
   return HeadTail(head, tail);
 }
@@ -219,17 +219,17 @@ G1DirtyCardQueueSet::PausedBuffers::PausedBuffers() : _plist(nullptr) {}
 
 #ifdef ASSERT
 G1DirtyCardQueueSet::PausedBuffers::~PausedBuffers() {
-  assert(Atomic::load(&_plist) == nullptr, "invariant");
+  assert(AtomicAccess::load(&_plist) == nullptr, "invariant");
 }
 #endif // ASSERT
 
 void G1DirtyCardQueueSet::PausedBuffers::add(BufferNode* node) {
   assert_not_at_safepoint();
-  PausedList* plist = Atomic::load_acquire(&_plist);
+  PausedList* plist = AtomicAccess::load_acquire(&_plist);
   if (plist == nullptr) {
     // Try to install a new next list.
     plist = new PausedList();
-    PausedList* old_plist = Atomic::cmpxchg(&_plist, (PausedList*)nullptr, plist);
+    PausedList* old_plist = AtomicAccess::cmpxchg(&_plist, (PausedList*)nullptr, plist);
     if (old_plist != nullptr) {
       // Some other thread installed a new next list.  Use it instead.
       delete plist;
@@ -247,11 +247,11 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_previous(
     // Deal with plist in a critical section, to prevent it from being
     // deleted out from under us by a concurrent take_previous().
     GlobalCounter::CriticalSection cs(Thread::current());
-    previous = Atomic::load_acquire(&_plist);
+    previous = AtomicAccess::load_acquire(&_plist);
     if ((previous == nullptr) ||   // Nothing to take.
         previous->is_next() ||  // Not from a previous safepoint.
         // Some other thread stole it.
-        (Atomic::cmpxchg(&_plist, previous, (PausedList*)nullptr) != previous)) {
+        (AtomicAccess::cmpxchg(&_plist, previous, (PausedList*)nullptr) != previous)) {
       return HeadTail();
     }
   }
@@ -268,9 +268,9 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_previous(
 G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_all() {
   assert_at_safepoint();
   HeadTail result;
-  PausedList* plist = Atomic::load(&_plist);
+  PausedList* plist = AtomicAccess::load(&_plist);
   if (plist != nullptr) {
-    Atomic::store(&_plist, (PausedList*)nullptr);
+    AtomicAccess::store(&_plist, (PausedList*)nullptr);
     result = plist->take();
     delete plist;
   }
@@ -286,7 +286,7 @@ void G1DirtyCardQueueSet::record_paused_buffer(BufferNode* node) {
   // notification checking after the coming safepoint if it doesn't GC.
   // Note that this means the queue's _num_cards differs from the number
   // of cards in the queued buffers when there are paused buffers.
-  Atomic::add(&_num_cards, node->size());
+  AtomicAccess::add(&_num_cards, node->size());
   _paused.add(node);
 }
 
@@ -325,7 +325,7 @@ void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
   assert(allocator() == src->allocator(), "precondition");
   const BufferNodeList from = src->take_all_completed_buffers();
   if (from._head != nullptr) {
-    Atomic::add(&_num_cards, from._entry_count);
+    AtomicAccess::add(&_num_cards, from._entry_count);
     _completed.append(*from._head, *from._tail);
   }
 }
@@ -334,8 +334,8 @@ BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
   enqueue_all_paused_buffers();
   verify_num_cards();
   Pair<BufferNode*, BufferNode*> pair = _completed.take_all();
-  size_t num_cards = Atomic::load(&_num_cards);
-  Atomic::store(&_num_cards, size_t(0));
+  size_t num_cards = AtomicAccess::load(&_num_cards);
+  AtomicAccess::store(&_num_cards, size_t(0));
   return BufferNodeList(pair.first, pair.second, num_cards);
 }
 
@@ -480,7 +480,7 @@ void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node,
   enqueue_completed_buffer(new_node);
 
   // No need for mutator refinement if number of cards is below limit.
-  if (Atomic::load(&_num_cards) <= Atomic::load(&_mutator_refinement_threshold)) {
+  if (AtomicAccess::load(&_num_cards) <= AtomicAccess::load(&_mutator_refinement_threshold)) {
     return;
   }
 
@@ -514,7 +514,7 @@ bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_id,
                                                                size_t stop_at,
                                                                G1ConcurrentRefineStats* stats) {
   // Not enough cards to trigger processing.
-  if (Atomic::load(&_num_cards) <= stop_at) return false;
+  if (AtomicAccess::load(&_num_cards) <= stop_at) return false;
 
   BufferNode* node = get_completed_buffer();
   if (node == nullptr) return false; // Didn't get a buffer to process.
@@ -591,9 +591,9 @@ void G1DirtyCardQueueSet::record_detached_refinement_stats(G1ConcurrentRefineSta
 }
 
 size_t G1DirtyCardQueueSet::mutator_refinement_threshold() const {
-  return Atomic::load(&_mutator_refinement_threshold);
+  return AtomicAccess::load(&_mutator_refinement_threshold);
 }
 
 void G1DirtyCardQueueSet::set_mutator_refinement_threshold(size_t value) {
-  Atomic::store(&_mutator_refinement_threshold, value);
+  AtomicAccess::store(&_mutator_refinement_threshold, value);
 }

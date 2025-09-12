@@ -148,15 +148,15 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
 }
 
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return Atomic::load(&_bytes_allocated_since_gc_start);
+  return AtomicAccess::load(&_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
+  AtomicAccess::store(&_bytes_allocated_since_gc_start, (size_t)0);
 }
 
 void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
+  AtomicAccess::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
@@ -854,7 +854,7 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  return Atomic::add(&_affiliated_region_count, (size_t) 1);
+  return AtomicAccess::add(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
@@ -862,7 +862,7 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
+  auto affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
@@ -870,19 +870,19 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
-  return Atomic::sub(&_affiliated_region_count, (size_t) 1);
+  return AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  return Atomic::add(&_affiliated_region_count, delta);
+  return AtomicAccess::add(&_affiliated_region_count, delta);
 }
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(Atomic::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
+  assert(AtomicAccess::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
 
-  auto const affiliated_region_count = Atomic::sub(&_affiliated_region_count, delta);
+  auto const affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, delta);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
@@ -891,18 +891,18 @@ size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
 
 void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  Atomic::store(&_affiliated_region_count, num_regions);
-  Atomic::store(&_used, num_bytes);
+  AtomicAccess::store(&_affiliated_region_count, num_regions);
+  AtomicAccess::store(&_used, num_bytes);
   _humongous_waste = humongous_waste;
 }
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes);
+  AtomicAccess::add(&_used, bytes);
 }
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
   if (bytes > 0) {
-    Atomic::add(&_humongous_waste, bytes);
+    AtomicAccess::add(&_humongous_waste, bytes);
   }
 }
 
@@ -910,18 +910,18 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
            "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
-    Atomic::sub(&_humongous_waste, bytes);
+    AtomicAccess::sub(&_humongous_waste, bytes);
   }
 }
 
 void ShenandoahGeneration::decrease_used(size_t bytes) {
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used >= bytes), "cannot reduce bytes used by generation below zero");
-  Atomic::sub(&_used, bytes);
+  AtomicAccess::sub(&_used, bytes);
 }
 
 size_t ShenandoahGeneration::used_regions() const {
-  return Atomic::load(&_affiliated_region_count);
+  return AtomicAccess::load(&_affiliated_region_count);
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {

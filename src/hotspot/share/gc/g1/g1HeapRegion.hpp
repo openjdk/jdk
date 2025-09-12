@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,7 +394,7 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  size_t pinned_count() const { return AtomicAccess::load(&_pinned_object_count); }
   bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();

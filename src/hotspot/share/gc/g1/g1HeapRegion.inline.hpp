@@ -35,7 +35,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -194,7 +194,7 @@ inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = Atomic::cmpxchg(&_top, obj, new_top);
+      HeapWord* result = AtomicAccess::cmpxchg(&_top, obj, new_top);
       // result can be one of two:
       // the old top value: the exchange succeeded
       // otherwise: the new value of the top is returned.
@@ -258,11 +258,11 @@ inline HeapWord* G1HeapRegion::parsable_bottom() const {
 }
 
 inline HeapWord* G1HeapRegion::parsable_bottom_acquire() const {
-  return Atomic::load_acquire(&_parsable_bottom);
+  return AtomicAccess::load_acquire(&_parsable_bottom);
 }
 
 inline void G1HeapRegion::reset_parsable_bottom() {
-  Atomic::release_store(&_parsable_bottom, bottom());
+  AtomicAccess::release_store(&_parsable_bottom, bottom());
 }
 
 inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs) {
@@ -511,7 +511,7 @@ inline void G1HeapRegion::record_surv_words_in_group(size_t words_survived) {
 inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   assert(value != 0, "wasted effort");
   assert(!is_free(), "trying to pin free region %u, adding %zu", hrm_index(), value);
-  Atomic::add(&_pinned_object_count, value, memory_order_relaxed);
+  AtomicAccess::add(&_pinned_object_count, value, memory_order_relaxed);
 }
 
 inline void G1HeapRegion::install_cset_group(G1CSetCandidateGroup* cset_group) {

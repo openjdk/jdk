@@ -675,7 +675,7 @@ public:
   }
   void dec_init_deps_left_release(KlassTrainingData* ktd);
   int init_deps_left_acquire() const {
-    return Atomic::load_acquire(&_init_deps_left);
+    return AtomicAccess::load_acquire(&_init_deps_left);
   }
   uint compute_init_deps_left(bool count_initialized = false);
 

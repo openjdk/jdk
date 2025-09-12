@@ -57,7 +57,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/methodComparator.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -4537,7 +4537,7 @@ u8 VM_RedefineClasses::next_id() {
   while (true) {
     u8 id = _id_counter;
     u8 next_id = id + 1;
-    u8 result = Atomic::cmpxchg(&_id_counter, id, next_id);
+    u8 result = AtomicAccess::cmpxchg(&_id_counter, id, next_id);
     if (result == id) {
       return next_id;
     }

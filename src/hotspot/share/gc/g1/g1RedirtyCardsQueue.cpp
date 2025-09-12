@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -132,7 +132,7 @@ void G1RedirtyCardsQueueSet::update_tail(BufferNode* node) {
 
 void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
   assert(_collecting, "precondition");
-  Atomic::add(&_entry_count, node->size());
+  AtomicAccess::add(&_entry_count, node->size());
   _list.push(*node);
   update_tail(node);
 }
@@ -141,7 +141,7 @@ void G1RedirtyCardsQueueSet::add_bufferlist(const BufferNodeList& buffers) {
   assert(_collecting, "precondition");
   if (buffers._head != nullptr) {
     assert(buffers._tail != nullptr, "invariant");
-    Atomic::add(&_entry_count, buffers._entry_count);
+    AtomicAccess::add(&_entry_count, buffers._entry_count);
     _list.prepend(*buffers._head, *buffers._tail);
     update_tail(buffers._tail);
   }

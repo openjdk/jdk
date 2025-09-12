@@ -438,11 +438,11 @@ public:
   }
 
   void add_humongous_candidates(uint candidates) {
-    Atomic::add(&_humongous_candidates, candidates);
+    AtomicAccess::add(&_humongous_candidates, candidates);
   }
 
   void add_humongous_total(uint total) {
-    Atomic::add(&_humongous_total, total);
+    AtomicAccess::add(&_humongous_total, total);
   }
 
   uint humongous_candidates() {
@@ -679,7 +679,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!Atomic::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);

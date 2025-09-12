@@ -281,7 +281,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // old_value, using AtomicAccess::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
   // Same as above but uses owner_id of current as new_value.

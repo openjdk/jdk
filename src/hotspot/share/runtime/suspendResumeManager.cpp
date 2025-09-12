@@ -26,7 +26,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -78,7 +78,7 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
     }
   }
 #endif
-  Atomic::store(&_suspended, is_suspend);
+  AtomicAccess::store(&_suspended, is_suspend);
 }
 
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {

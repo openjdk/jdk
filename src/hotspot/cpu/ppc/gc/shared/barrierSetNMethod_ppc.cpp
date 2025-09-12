@@ -73,7 +73,7 @@ public:
       u_char buf[NativeMovRegMem::instruction_size];
       uint64_t u64;
     } new_mov_instr, old_mov_instr;
-    new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
+    new_mov_instr.u64 = old_mov_instr.u64 = AtomicAccess::load(instr);
     while (true) {
       // Only bits in the mask are changed
       int old_value = nativeMovRegMem_at(old_mov_instr.buf)->offset();
@@ -81,7 +81,7 @@ public:
       if (new_value == old_value) return; // skip icache flush if nothing changed
       nativeMovRegMem_at(new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
       // Swap in the new value
-      uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_relaxed);
+      uint64_t v = AtomicAccess::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_relaxed);
       if (v == old_mov_instr.u64) break;
       old_mov_instr.u64 = v;
     }

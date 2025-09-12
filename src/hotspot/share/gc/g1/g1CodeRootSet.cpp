@@ -28,7 +28,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 
@@ -120,7 +120,7 @@ public:
     bool grow_hint = false;
     bool inserted = _table.insert(Thread::current(), lookup, method, &grow_hint);
     if (inserted) {
-      Atomic::inc(&_num_entries);
+      AtomicAccess::inc(&_num_entries);
     }
     if (grow_hint) {
       _table.grow(Thread::current());
@@ -131,7 +131,7 @@ public:
     HashTableLookUp lookup(method);
     bool removed = _table.remove(Thread::current(), lookup);
     if (removed) {
-      Atomic::dec(&_num_entries);
+      AtomicAccess::dec(&_num_entries);
     }
     return removed;
   }
@@ -182,7 +182,7 @@ public:
     guarantee(succeeded, "unable to clean table");
 
     if (num_deleted != 0) {
-      size_t current_size = Atomic::sub(&_num_entries, num_deleted);
+      size_t current_size = AtomicAccess::sub(&_num_entries, num_deleted);
       shrink_to_match(current_size);
     }
   }
@@ -226,7 +226,7 @@ public:
 
   size_t mem_size() { return sizeof(*this) + _table.get_mem_size(Thread::current()); }
 
-  size_t number_of_entries() const { return Atomic::load(&_num_entries); }
+  size_t number_of_entries() const { return AtomicAccess::load(&_num_entries); }
 };
 
 uintx G1CodeRootSetHashTable::HashTableLookUp::get_hash() const {

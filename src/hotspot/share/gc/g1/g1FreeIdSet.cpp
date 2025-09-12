@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -74,13 +74,13 @@ uint G1FreeIdSet::claim_par_id() {
   // Semaphore gate permits passage by no more than the number of
   // available ids, so there must be one that we can claim.  But there
   // may be multiple threads trying to claim ids at the same time.
-  uintx old_head = Atomic::load(&_head);
+  uintx old_head = AtomicAccess::load(&_head);
   uint index;
   while (true) {
     index = head_index(old_head);
     assert(index < _size, "invariant");
     uintx new_head = make_head(_next[index], old_head);
-    new_head = Atomic::cmpxchg(&_head, old_head, new_head);
+    new_head = AtomicAccess::cmpxchg(&_head, old_head, new_head);
     if (new_head == old_head) break;
     old_head = new_head;
   }
@@ -92,11 +92,11 @@ void G1FreeIdSet::release_par_id(uint id) {
   uint index = id - _start;
   assert(index < _size, "invalid id %u", id);
   assert(_next[index] == Claimed, "precondition");
-  uintx old_head = Atomic::load(&_head);
+  uintx old_head = AtomicAccess::load(&_head);
   while (true) {
     _next[index] = head_index(old_head);
     uintx new_head = make_head(index, old_head);
-    new_head = Atomic::cmpxchg(&_head, old_head, new_head);
+    new_head = AtomicAccess::cmpxchg(&_head, old_head, new_head);
     if (new_head == old_head) break;
     old_head = new_head;
   }

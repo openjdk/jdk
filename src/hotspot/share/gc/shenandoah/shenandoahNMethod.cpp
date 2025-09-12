@@ -434,7 +434,7 @@ void ShenandoahNMethodTableSnapshot::parallel_nmethods_do(NMethodClosure *f) {
 
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_then_add(&_claimed, stride, memory_order_relaxed);
+    size_t cur = AtomicAccess::fetch_then_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;
@@ -458,7 +458,7 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   ShenandoahNMethod** list = _list->list();
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_then_add(&_claimed, stride, memory_order_relaxed);
+    size_t cur = AtomicAccess::fetch_then_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;

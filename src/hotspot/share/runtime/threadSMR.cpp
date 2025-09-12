@@ -25,7 +25,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -68,7 +68,7 @@ volatile uint         ThreadsSMRSupport::_deleted_thread_cnt = 0;
 
 // Max time in millis to delete a thread.
 // Impl note: 16-bit might be too small on an overloaded machine. Use
-// unsigned since this is a time value. Set via Atomic::cmpxchg() in a
+// unsigned since this is a time value. Set via AtomicAccess::cmpxchg() in a
 // loop for correctness.
 volatile uint         ThreadsSMRSupport::_deleted_thread_time_max = 0;
 
@@ -116,7 +116,7 @@ volatile uint         ThreadsSMRSupport::_tlh_cnt = 0;
 
 // Max time in millis to delete a ThreadsListHandle.
 // Impl note: 16-bit might be too small on an overloaded machine. Use
-// unsigned since this is a time value. Set via Atomic::cmpxchg() in a
+// unsigned since this is a time value. Set via AtomicAccess::cmpxchg() in a
 // loop for correctness.
 volatile uint         ThreadsSMRSupport::_tlh_time_max = 0;
 
@@ -140,11 +140,11 @@ uint                  ThreadsSMRSupport::_to_delete_list_max = 0;
 // 'inline' functions first so the definitions are before first use:
 
 inline void ThreadsSMRSupport::add_deleted_thread_times(uint add_value) {
-  Atomic::add(&_deleted_thread_times, add_value);
+  AtomicAccess::add(&_deleted_thread_times, add_value);
 }
 
 inline void ThreadsSMRSupport::inc_deleted_thread_cnt() {
-  Atomic::inc(&_deleted_thread_cnt);
+  AtomicAccess::inc(&_deleted_thread_cnt);
 }
 
 inline void ThreadsSMRSupport::inc_java_thread_list_alloc_cnt() {
@@ -162,7 +162,7 @@ inline void ThreadsSMRSupport::update_deleted_thread_time_max(uint new_value) {
       // No need to update max value so we're done.
       break;
     }
-    if (Atomic::cmpxchg(&_deleted_thread_time_max, cur_value, new_value) == cur_value) {
+    if (AtomicAccess::cmpxchg(&_deleted_thread_time_max, cur_value, new_value) == cur_value) {
       // Updated max value so we're done. Otherwise try it all again.
       break;
     }
@@ -176,7 +176,7 @@ inline void ThreadsSMRSupport::update_java_thread_list_max(uint new_value) {
 }
 
 inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_list) {
-  return (ThreadsList*)Atomic::xchg(&_java_thread_list, new_list);
+  return (ThreadsList*)AtomicAccess::xchg(&_java_thread_list, new_list);
 }
 
 // Hash table of pointers found by a scan. Used for collecting hazard
@@ -690,7 +690,7 @@ ThreadsList *ThreadsList::add_thread(ThreadsList *list, JavaThread *java_thread)
 }
 
 void ThreadsList::dec_nested_handle_cnt() {
-  Atomic::dec(&_nested_handle_cnt);
+  AtomicAccess::dec(&_nested_handle_cnt);
 }
 
 int ThreadsList::find_index_of_JavaThread(JavaThread *target) {
@@ -733,7 +733,7 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
 }
 
 void ThreadsList::inc_nested_handle_cnt() {
-  Atomic::inc(&_nested_handle_cnt);
+  AtomicAccess::inc(&_nested_handle_cnt);
 }
 
 bool ThreadsList::includes(const JavaThread * const p) const {
@@ -895,13 +895,13 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 // when the delete_lock is dropped.
 //
 void ThreadsSMRSupport::clear_delete_notify() {
-  Atomic::dec(&_delete_notify);
+  AtomicAccess::dec(&_delete_notify);
 }
 
 bool ThreadsSMRSupport::delete_notify() {
   // Use load_acquire() in order to see any updates to _delete_notify
   // earlier than when delete_lock is grabbed.
-  return (Atomic::load_acquire(&_delete_notify) != 0);
+  return (AtomicAccess::load_acquire(&_delete_notify) != 0);
 }
 
 // Safely free a ThreadsList after a Threads::add() or Threads::remove().
@@ -1054,7 +1054,7 @@ void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
 // See note for clear_delete_notify().
 //
 void ThreadsSMRSupport::set_delete_notify() {
-  Atomic::inc(&_delete_notify);
+  AtomicAccess::inc(&_delete_notify);
 }
 
 // Safely delete a JavaThread when it is no longer in use by a

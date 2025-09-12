@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,7 +40,7 @@
 #endif
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
 
@@ -71,10 +71,10 @@ struct Atomic::PlatformAdd {
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
 
   if (order != memory_order_relaxed) {
@@ -122,10 +122,10 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((
 // See also JDK-8326936.
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 
   int32_t old_value;
@@ -154,9 +154,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
-                                                     T exchange_value,
-                                                     atomic_memory_order order) const {
+inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
+                                                           T exchange_value,
+                                                           atomic_memory_order order) const {
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
   // If we add xchg for sub word and are using older compiler
   // it must be added here due to not using lib atomic.
@@ -180,10 +180,10 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                        T compare_value,
-                                                        T exchange_value,
-                                                        atomic_memory_order order) const {
+inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
+                                                              T compare_value,
+                                                              T exchange_value,
+                                                              atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
   STATIC_ASSERT(byte_size > 4);
@@ -204,21 +204,21 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
 }
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
   T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
 };
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X>
+struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
 };
 
 template<size_t byte_size>
-struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }

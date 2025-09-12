@@ -38,7 +38,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -912,7 +912,7 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
         }
         guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
       }
-      FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
+      FailedSpeculation* old_fs = AtomicAccess::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
       if (old_fs == nullptr) {
         // Successfully appended fs to end of the list
         return true;
@@ -1511,7 +1511,7 @@ ProfileData* MethodData::bci_to_extra_data_find(int bci, Method* m, DataLayout*&
 
   for (;; dp = next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
-    // No need for "Atomic::load_acquire" ops,
+    // No need for "AtomicAccess::load_acquire" ops,
     // since the data structure is monotonic.
     switch(dp->tag()) {
     case DataLayout::no_tag:
@@ -1638,7 +1638,7 @@ void MethodData::print_data_on(outputStream* st) const {
   DataLayout* end   = args_data_limit();
   for (;; dp = next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
-    // No need for "Atomic::load_acquire" ops,
+    // No need for "AtomicAccess::load_acquire" ops,
     // since the data structure is monotonic.
     switch(dp->tag()) {
     case DataLayout::no_tag:
@@ -1859,11 +1859,11 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  Mutex* lock = Atomic::load_acquire(&_extra_data_lock);
+  Mutex* lock = AtomicAccess::load_acquire(&_extra_data_lock);
   if (lock == nullptr) {
     // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
     lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
-    Mutex* old = Atomic::cmpxchg(&_extra_data_lock, (Mutex*)nullptr, lock);
+    Mutex* old = AtomicAccess::cmpxchg(&_extra_data_lock, (Mutex*)nullptr, lock);
     if (old != nullptr) {
       // Another thread created the lock before us. Use that lock instead.
       delete lock;

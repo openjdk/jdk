@@ -65,12 +65,12 @@ public:
     assert(align_up(immediate_address(), sizeof(jint)) ==
            align_down(immediate_address(), sizeof(jint)), "immediate not aligned");
     jint* data_addr = (jint*)immediate_address();
-    jint old_value = Atomic::load(data_addr);
+    jint old_value = AtomicAccess::load(data_addr);
     while (true) {
       // Only bits in the mask are changed
       jint new_value = imm | (old_value & ~bit_mask);
       if (new_value == old_value) break;
-      jint v = Atomic::cmpxchg(data_addr, old_value, new_value, memory_order_release);
+      jint v = AtomicAccess::cmpxchg(data_addr, old_value, new_value, memory_order_release);
       if (v == old_value) break;
       old_value = v;
     }

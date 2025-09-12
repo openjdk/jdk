@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_COUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_COUNTERS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -93,22 +93,22 @@ public:
 
   AbstractAtomicCounter() : _c(0) {}
 
-  T get() const               { return Atomic::load(&_c); }
+  T get() const               { return AtomicAccess::load(&_c); }
 
   void increment() {
-    Atomic::inc(&_c, memory_order_relaxed);
+    AtomicAccess::inc(&_c, memory_order_relaxed);
   }
 
   void decrement() {
-    Atomic::dec(&_c, memory_order_relaxed);
+    AtomicAccess::dec(&_c, memory_order_relaxed);
   }
 
   void increment_by(T v) {
-    Atomic::add(&_c, v, memory_order_relaxed);
+    AtomicAccess::add(&_c, v, memory_order_relaxed);
   }
 
   void decrement_by(T v) {
-    Atomic::sub(&_c, v, memory_order_relaxed);
+    AtomicAccess::sub(&_c, v, memory_order_relaxed);
   }
 
 #ifdef ASSERT

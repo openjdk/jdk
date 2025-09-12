@@ -80,7 +80,7 @@ uint8_t* java_lang_String::flags_addr(oop java_string) {
 }
 
 bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
-  return (Atomic::load(flags_addr(java_string)) & flag_mask) != 0;
+  return (AtomicAccess::load(flags_addr(java_string)) & flag_mask) != 0;
 }
 
 bool java_lang_String::deduplication_forbidden(oop java_string) {

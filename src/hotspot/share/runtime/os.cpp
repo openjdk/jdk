@@ -50,7 +50,7 @@
 #include "prims/jvmtiAgent.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -827,7 +827,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
-    if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
+    if (AtomicAccess::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
       return static_cast<int>(rand);
     }
   }
@@ -1576,12 +1576,12 @@ void os::read_image_release_file() {
       tmp[i] = ' ';
     }
   }
-  Atomic::release_store(&_image_release_file_content, tmp);
+  AtomicAccess::release_store(&_image_release_file_content, tmp);
   fclose(file);
 }
 
 void os::print_image_release_file(outputStream* st) {
-  char* ifrc = Atomic::load_acquire(&_image_release_file_content);
+  char* ifrc = AtomicAccess::load_acquire(&_image_release_file_content);
   if (ifrc != nullptr) {
     st->print_cr("%s", ifrc);
   } else {
@@ -2346,7 +2346,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
       // avoid overflow if the last page abuts the end of the address range.
       last = align_down(static_cast<char*>(end) - 1, pd_page_size);
       for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
-        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        AtomicAccess::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
         if (cur >= last) break;
       }
     }
