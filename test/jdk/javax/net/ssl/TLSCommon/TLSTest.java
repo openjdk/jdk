@@ -321,7 +321,7 @@ public class TLSTest {
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ts.load(null, null);
         ks.load(null, null);
-        char passphrase[] = "passphrase".toCharArray();
+        char[] passphrase = "passphrase".toCharArray();
 
         // Import the trusted cert
         ts.setCertificateEntry("trusted-cert-" + keyType,

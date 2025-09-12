@@ -49,6 +49,7 @@
  * @author Xuelei Fan
  */
 
+import java.security.DEREncodable;
 import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
@@ -339,11 +340,11 @@ public class CPBuilder {
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection entries = new HashSet();
+        Collection<DEREncodable> entries = new HashSet<>();
 
         for (String key : certmap.keySet()) {
             String certStr = certmap.get(key);
-            Certificate cert = PEM_DECODER.decode(certStr, X509Certificate.class);
+            DEREncodable cert = PEM_DECODER.decode(certStr, X509Certificate.class);
             entries.add(cert);
         }
 
