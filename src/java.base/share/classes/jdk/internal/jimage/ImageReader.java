@@ -327,7 +327,7 @@ public final class ImageReader implements AutoCloseable {
                 // We cannot get the root paths ("/modules" or "/packages") here
                 // because those nodes are already in the nodes cache.
                 if (name.startsWith(MODULES_ROOT + "/")) {
-                    // This may preform two lookups, one for a directory (in
+                    // This may perform two lookups, one for a directory (in
                     // "/modules/...") and one for a non-prefixed resource
                     // (with "/modules" removed).
                     node = buildModulesNode(name);
