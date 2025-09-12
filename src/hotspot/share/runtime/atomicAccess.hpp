@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_ATOMIC_HPP
-#define SHARE_RUNTIME_ATOMIC_HPP
+#ifndef SHARE_RUNTIME_ATOMICACCESS_HPP
+#define SHARE_RUNTIME_ATOMICACCESS_HPP
 
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -54,7 +54,7 @@ enum ScopedFenceType {
   , RELEASE_X_FENCE
 };
 
-class Atomic : AllStatic {
+class AtomicAccess : AllStatic {
 public:
   // Atomic operations on int64 types are required to be available on
   // all platforms. At a minimum a 64-bit cmpxchg must be available
@@ -491,7 +491,7 @@ private:
 };
 
 template<typename From, typename To>
-struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
+struct AtomicAccess::IsPointerConvertible<From*, To*> : AllStatic {
   // Determine whether From* is implicitly convertible to To*, using
   // the "sizeof trick".
   typedef char yes;
@@ -506,7 +506,7 @@ struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
 
 // Handle load for pointer and integral types.
 template<typename T, typename PlatformOp>
-struct Atomic::LoadImpl<
+struct AtomicAccess::LoadImpl<
   T,
   PlatformOp,
   typename EnableIf<std::is_integral<T>::value || std::is_pointer<T>::value>::type>
@@ -525,7 +525,7 @@ struct Atomic::LoadImpl<
 // arguments, and returns the recovered result of that translated
 // call.
 template<typename T, typename PlatformOp>
-struct Atomic::LoadImpl<
+struct AtomicAccess::LoadImpl<
   T,
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
@@ -544,9 +544,9 @@ struct Atomic::LoadImpl<
 // For increased safety, the default implementation only allows
 // load types that are pointer sized or smaller. If a platform still
 // supports wide atomics, then it has to use specialization
-// of Atomic::PlatformLoad for that wider size class.
+// of AtomicAccess::PlatformLoad for that wider size class.
 template<size_t byte_size>
-struct Atomic::PlatformLoad {
+struct AtomicAccess::PlatformLoad {
   template<typename T>
   T operator()(T const volatile* dest) const {
     STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
@@ -558,7 +558,7 @@ struct Atomic::PlatformLoad {
 //
 // All the involved types must be identical.
 template<typename T, typename PlatformOp>
-struct Atomic::StoreImpl<
+struct AtomicAccess::StoreImpl<
   T, T,
   PlatformOp,
   typename EnableIf<std::is_integral<T>::value>::type>
@@ -575,10 +575,10 @@ struct Atomic::StoreImpl<
 // destination's type; it must be type-correct to store the
 // new_value in the destination.
 template<typename D, typename T, typename PlatformOp>
-struct Atomic::StoreImpl<
+struct AtomicAccess::StoreImpl<
   D*, T*,
   PlatformOp,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  typename EnableIf<AtomicAccess::IsPointerConvertible<T*, D*>::value>::type>
 {
   void operator()(D* volatile* dest, T* new_value) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -594,7 +594,7 @@ struct Atomic::StoreImpl<
 // This translates the original call into a call on the decayed
 // arguments.
 template<typename T, typename PlatformOp>
-struct Atomic::StoreImpl<
+struct AtomicAccess::StoreImpl<
   T, T,
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
@@ -613,9 +613,9 @@ struct Atomic::StoreImpl<
 // For increased safety, the default implementation only allows
 // storing types that are pointer sized or smaller. If a platform still
 // supports wide atomics, then it has to use specialization
-// of Atomic::PlatformStore for that wider size class.
+// of AtomicAccess::PlatformStore for that wider size class.
 template<size_t byte_size>
-struct Atomic::PlatformStore {
+struct AtomicAccess::PlatformStore {
   template<typename T>
   void operator()(T volatile* dest,
                   T new_value) const {
@@ -625,23 +625,23 @@ struct Atomic::PlatformStore {
 };
 
 template<typename D>
-inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
+inline void AtomicAccess::inc(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
-  Atomic::add(dest, I(1), order);
+  AtomicAccess::add(dest, I(1), order);
 }
 
 template<typename D>
-inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
+inline void AtomicAccess::dec(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
-  Atomic::add(dest, I(-1), order);
+  AtomicAccess::add(dest, I(-1), order);
 }
 
 template<typename D, typename I>
-inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
+inline D AtomicAccess::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
@@ -654,7 +654,7 @@ inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146) // In case AddendType is not signed.
-  return Atomic::add(dest, -addend, order);
+  return AtomicAccess::add(dest, -addend, order);
 }
 
 // Define the class before including platform file, which may specialize
@@ -663,7 +663,7 @@ inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
 // specializations of the class.  The platform file is responsible for
 // providing those.
 template<size_t byte_size>
-struct Atomic::PlatformCmpxchg {
+struct AtomicAccess::PlatformCmpxchg {
   template<typename T>
   T operator()(T volatile* dest,
                T compare_value,
@@ -674,7 +674,7 @@ struct Atomic::PlatformCmpxchg {
 // Define the class before including platform file, which may use this
 // as a base class, requiring it be complete.  The definition is later
 // in this file, near the other definitions related to cmpxchg.
-struct Atomic::CmpxchgByteUsingInt {
+struct AtomicAccess::CmpxchgByteUsingInt {
   static uint8_t get_byte_in_int(uint32_t n, uint32_t idx);
   static uint32_t set_byte_in_int(uint32_t n, uint8_t b, uint32_t idx);
   template<typename T>
@@ -688,7 +688,7 @@ struct Atomic::CmpxchgByteUsingInt {
 // as a base class, requiring it be complete.  The definition is later
 // in this file, near the other definitions related to xchg.
 template<size_t byte_size>
-struct Atomic::XchgUsingCmpxchg {
+struct AtomicAccess::XchgUsingCmpxchg {
   template<typename T>
   T operator()(T volatile* dest,
                T exchange_value,
@@ -698,7 +698,7 @@ struct Atomic::XchgUsingCmpxchg {
 // Define the class before including platform file, which may use this
 // as a base class, requiring it be complete.
 template<size_t byte_size>
-class Atomic::AddUsingCmpxchg {
+class AtomicAccess::AddUsingCmpxchg {
 public:
   template<typename D, typename I>
   static inline D add_then_fetch(D volatile* dest,
@@ -718,9 +718,9 @@ public:
     D old_value;
     D new_value;
     do {
-      old_value = Atomic::load(dest);
+      old_value = AtomicAccess::load(dest);
       new_value = old_value + add_value;
-    } while (old_value != Atomic::cmpxchg(dest, old_value, new_value, order));
+    } while (old_value != AtomicAccess::cmpxchg(dest, old_value, new_value, order));
     return old_value;
   }
 };
@@ -731,7 +731,7 @@ public:
 // specializations of the class.  The platform file is responsible for
 // providing those.
 template<size_t byte_size>
-struct Atomic::PlatformXchg {
+struct AtomicAccess::PlatformXchg {
   template<typename T>
   T operator()(T volatile* dest,
                T exchange_value,
@@ -739,16 +739,16 @@ struct Atomic::PlatformXchg {
 };
 
 // Implement fetch_then_bitop operations using a CAS loop.
-class Atomic::PrefetchBitopsUsingCmpxchg {
+class AtomicAccess::PrefetchBitopsUsingCmpxchg {
   template<typename T, typename Op>
   T bitop(T volatile* dest, atomic_memory_order order, Op operation) const {
     T old_value;
     T new_value;
-    T fetched_value = Atomic::load(dest);
+    T fetched_value = AtomicAccess::load(dest);
     do {
       old_value = fetched_value;
       new_value = operation(old_value);
-      fetched_value = Atomic::cmpxchg(dest, old_value, new_value, order);
+      fetched_value = AtomicAccess::cmpxchg(dest, old_value, new_value, order);
     } while (old_value != fetched_value);
     return fetched_value;
   }
@@ -771,16 +771,16 @@ public:
 };
 
 // Implement bitop_then_fetch operations using a CAS loop.
-class Atomic::PostfetchBitopsUsingCmpxchg {
+class AtomicAccess::PostfetchBitopsUsingCmpxchg {
   template<typename T, typename Op>
   T bitop(T volatile* dest, atomic_memory_order order, Op operation) const {
     T old_value;
     T new_value;
-    T fetched_value = Atomic::load(dest);
+    T fetched_value = AtomicAccess::load(dest);
     do {
       old_value = fetched_value;
       new_value = operation(old_value);
-      fetched_value = Atomic::cmpxchg(dest, old_value, new_value, order);
+      fetched_value = AtomicAccess::cmpxchg(dest, old_value, new_value, order);
     } while (old_value != fetched_value);
     return new_value;
   }
@@ -804,21 +804,21 @@ public:
 
 // Implement bitop_then_fetch operations by calling fetch_then_bitop and
 // applying the operation to the result and the bits argument.
-class Atomic::PostfetchBitopsUsingPrefetch {
+class AtomicAccess::PostfetchBitopsUsingPrefetch {
 public:
   template<typename T>
   T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    return bits & Atomic::fetch_then_and(dest, bits, order);
+    return bits & AtomicAccess::fetch_then_and(dest, bits, order);
   }
 
   template<typename T>
   T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    return bits | Atomic::fetch_then_or(dest, bits, order);
+    return bits | AtomicAccess::fetch_then_or(dest, bits, order);
   }
 
   template<typename T>
   T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    return bits ^ Atomic::fetch_then_xor(dest, bits, order);
+    return bits ^ AtomicAccess::fetch_then_xor(dest, bits, order);
   }
 };
 
@@ -826,7 +826,7 @@ public:
 // partial specialization providing size, either as a template parameter or as
 // a specific value.
 template<size_t size, bool>
-class Atomic::PlatformBitops
+class AtomicAccess::PlatformBitops
   : public PrefetchBitopsUsingCmpxchg,
     public PostfetchBitopsUsingCmpxchg
 {};
@@ -869,62 +869,62 @@ class ScopedFence : public ScopedFenceGeneral<T> {
 #endif
 
 template<typename T>
-inline T Atomic::load(const volatile T* dest) {
+inline T AtomicAccess::load(const volatile T* dest) {
   return LoadImpl<T, PlatformLoad<sizeof(T)> >()(dest);
 }
 
 template<size_t byte_size, ScopedFenceType type>
-struct Atomic::PlatformOrderedLoad {
+struct AtomicAccess::PlatformOrderedLoad {
   template <typename T>
   T operator()(const volatile T* p) const {
     ScopedFence<type> f((void*)p);
-    return Atomic::load(p);
+    return AtomicAccess::load(p);
   }
 };
 
 template <typename T>
-inline T Atomic::load_acquire(const volatile T* p) {
+inline T AtomicAccess::load_acquire(const volatile T* p) {
   return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
 }
 
 template<typename D, typename T>
-inline void Atomic::store(volatile D* dest, T store_value) {
+inline void AtomicAccess::store(volatile D* dest, T store_value) {
   StoreImpl<D, T, PlatformStore<sizeof(D)> >()(dest, store_value);
 }
 
 template<size_t byte_size, ScopedFenceType type>
-struct Atomic::PlatformOrderedStore {
+struct AtomicAccess::PlatformOrderedStore {
   template <typename T>
   void operator()(volatile T* p, T v) const {
     ScopedFence<type> f((void*)p);
-    Atomic::store(p, v);
+    AtomicAccess::store(p, v);
   }
 };
 
 template <typename D, typename T>
-inline void Atomic::release_store(volatile D* p, T v) {
+inline void AtomicAccess::release_store(volatile D* p, T v) {
   StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(p, v);
 }
 
 template <typename D, typename T>
-inline void Atomic::release_store_fence(volatile D* p, T v) {
+inline void AtomicAccess::release_store_fence(volatile D* p, T v) {
   StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(p, v);
 }
 
 template<typename D, typename I>
-inline D Atomic::add(D volatile* dest, I add_value,
-                     atomic_memory_order order) {
+inline D AtomicAccess::add(D volatile* dest, I add_value,
+                           atomic_memory_order order) {
   return AddImpl<D, I>::add_then_fetch(dest, add_value, order);
 }
 
 template<typename D, typename I>
-inline D Atomic::fetch_then_add(D volatile* dest, I add_value,
-                                atomic_memory_order order) {
+inline D AtomicAccess::fetch_then_add(D volatile* dest, I add_value,
+                                      atomic_memory_order order) {
   return AddImpl<D, I>::fetch_then_add(dest, add_value, order);
 }
 
 template<typename D, typename I>
-struct Atomic::AddImpl<
+struct AtomicAccess::AddImpl<
   D, I,
   typename EnableIf<std::is_integral<I>::value &&
                     std::is_integral<D>::value &&
@@ -942,7 +942,7 @@ struct Atomic::AddImpl<
 };
 
 template<typename P, typename I>
-struct Atomic::AddImpl<
+struct AtomicAccess::AddImpl<
   P*, I,
   typename EnableIf<std::is_integral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
@@ -989,23 +989,23 @@ struct Atomic::AddImpl<
 };
 
 template<typename Type, typename Fn, typename D, typename I>
-inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
+inline D AtomicAccess::add_using_helper(Fn fn, D volatile* dest, I add_value) {
   return PrimitiveConversions::cast<D>(
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 
 template<typename D, typename U, typename T>
-inline D Atomic::cmpxchg(D volatile* dest,
-                         U compare_value,
-                         T exchange_value,
-                         atomic_memory_order order) {
+inline D AtomicAccess::cmpxchg(D volatile* dest,
+                               U compare_value,
+                               T exchange_value,
+                               atomic_memory_order order) {
   return CmpxchgImpl<D, U, T>()(dest, compare_value, exchange_value, order);
 }
 
 template<typename D, typename T>
-inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
-                                    atomic_memory_order order) {
+inline bool AtomicAccess::replace_if_null(D* volatile* dest, T* value,
+                                          atomic_memory_order order) {
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
@@ -1017,7 +1017,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
 //
 // All the involved types must be identical.
 template<typename T>
-struct Atomic::CmpxchgImpl<
+struct AtomicAccess::CmpxchgImpl<
   T, T, T,
   typename EnableIf<std::is_integral<T>::value>::type>
 {
@@ -1041,9 +1041,9 @@ struct Atomic::CmpxchgImpl<
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
 template<typename D, typename U, typename T>
-struct Atomic::CmpxchgImpl<
+struct AtomicAccess::CmpxchgImpl<
   D*, U*, T*,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
+  typename EnableIf<AtomicAccess::IsPointerConvertible<T*, D*>::value &&
                     std::is_same<std::remove_cv_t<D>,
                                  std::remove_cv_t<U>>::value>::type>
 {
@@ -1066,7 +1066,7 @@ struct Atomic::CmpxchgImpl<
 // arguments, and returns the recovered result of that translated
 // call.
 template<typename T>
-struct Atomic::CmpxchgImpl<
+struct AtomicAccess::CmpxchgImpl<
   T, T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
@@ -1084,10 +1084,10 @@ struct Atomic::CmpxchgImpl<
 };
 
 template<typename Type, typename Fn, typename T>
-inline T Atomic::cmpxchg_using_helper(Fn fn,
-                                      T volatile* dest,
-                                      T compare_value,
-                                      T exchange_value) {
+inline T AtomicAccess::cmpxchg_using_helper(Fn fn,
+                                            T volatile* dest,
+                                            T compare_value,
+                                            T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
@@ -1095,25 +1095,25 @@ inline T Atomic::cmpxchg_using_helper(Fn fn,
        PrimitiveConversions::cast<Type>(compare_value)));
 }
 
-inline uint32_t Atomic::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
-                                                             uint8_t b,
-                                                             uint32_t idx) {
+inline uint32_t AtomicAccess::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
+                                                                   uint8_t b,
+                                                                   uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
   return (n & ~(static_cast<uint32_t>(0xff) << bitsIdx))
           | (static_cast<uint32_t>(b) << bitsIdx);
 }
 
-inline uint8_t Atomic::CmpxchgByteUsingInt::get_byte_in_int(uint32_t n,
-                                                            uint32_t idx) {
+inline uint8_t AtomicAccess::CmpxchgByteUsingInt::get_byte_in_int(uint32_t n,
+                                                                  uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
   return (uint8_t)(n >> bitsIdx);
 }
 
 template<typename T>
-inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
-                                                 T compare_value,
-                                                 T exchange_value,
-                                                 atomic_memory_order order) const {
+inline T AtomicAccess::CmpxchgByteUsingInt::operator()(T volatile* dest,
+                                                       T compare_value,
+                                                       T exchange_value,
+                                                       atomic_memory_order order) const {
   STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
   uint8_t canon_compare_value = compare_value;
@@ -1127,7 +1127,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 
   // current value may not be what we are looking for, so force it
   // to that value so the initial cmpxchg will fail if it is different
-  uint32_t cur = set_byte_in_int(Atomic::load(aligned_dest), canon_compare_value, idx);
+  uint32_t cur = set_byte_in_int(AtomicAccess::load(aligned_dest), canon_compare_value, idx);
 
   // always execute a real cmpxchg so that we get the required memory
   // barriers even on initial failure
@@ -1152,7 +1152,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 //
 // All the involved types must be identical.
 template<typename T>
-struct Atomic::XchgImpl<
+struct AtomicAccess::XchgImpl<
   T, T,
   typename EnableIf<std::is_integral<T>::value>::type>
 {
@@ -1168,9 +1168,9 @@ struct Atomic::XchgImpl<
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
 template<typename D, typename T>
-struct Atomic::XchgImpl<
+struct AtomicAccess::XchgImpl<
   D*, T*,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  typename EnableIf<AtomicAccess::IsPointerConvertible<T*, D*>::value>::type>
 {
   D* operator()(D* volatile* dest, T* exchange_value, atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -1187,7 +1187,7 @@ struct Atomic::XchgImpl<
 // arguments, and returns the recovered result of that translated
 // call.
 template<typename T>
-struct Atomic::XchgImpl<
+struct AtomicAccess::XchgImpl<
   T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
@@ -1203,9 +1203,9 @@ struct Atomic::XchgImpl<
 };
 
 template<typename Type, typename Fn, typename T>
-inline T Atomic::xchg_using_helper(Fn fn,
-                                   T volatile* dest,
-                                   T exchange_value) {
+inline T AtomicAccess::xchg_using_helper(Fn fn,
+                                         T volatile* dest,
+                                         T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   // Notice the swapped order of arguments. Change when/if stubs are rewritten.
   return PrimitiveConversions::cast<T>(
@@ -1214,22 +1214,22 @@ inline T Atomic::xchg_using_helper(Fn fn,
 }
 
 template<typename D, typename T>
-inline D Atomic::xchg(volatile D* dest, T exchange_value, atomic_memory_order order) {
+inline D AtomicAccess::xchg(volatile D* dest, T exchange_value, atomic_memory_order order) {
   return XchgImpl<D, T>()(dest, exchange_value, order);
 }
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+inline T AtomicAccess::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
+                                                               T exchange_value,
+                                                               atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
 
   T old_value;
   do {
-    old_value = Atomic::load(dest);
-  } while (old_value != Atomic::cmpxchg(dest, old_value, exchange_value, order));
+    old_value = AtomicAccess::load(dest);
+  } while (old_value != AtomicAccess::cmpxchg(dest, old_value, exchange_value, order));
   return old_value;
 }
 
-#endif // SHARE_RUNTIME_ATOMIC_HPP
+#endif // SHARE_RUNTIME_ATOMICACCESS_HPP
