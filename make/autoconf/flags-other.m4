@@ -125,9 +125,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
           AC_MSG_CHECKING([if Arm SVE ACLE is supported])
           AC_LANG_PUSH([C])
           saved_cflags="$CFLAGS"
-          saved_cc="$CC"
           CFLAGS="$CFLAGS -march=armv8-a+sve $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
-          CC="$ARG_PREFIX[CC]"
           AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
             [
               #include <arm_sve.h>
@@ -140,7 +138,6 @@ AC_DEFUN([FLAGS_SETUP_SVE],
             [AVAILABLE=false]
           )
           AC_MSG_RESULT([$AVAILABLE])
-          CC="$saved_cc"
           CFLAGS="$saved_cflags"
           AC_LANG_POP([C])
         fi
