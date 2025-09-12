@@ -25,7 +25,7 @@
   @test
   @key headful
   @bug 4041703 4096228 4025223 4260929
-  @summary Ensures that reasonable default focus is set on Frame on start
+  @summary Ensures that reasonable default focus is set correctly on start
   @library ../../regtesthelpers
   @build   Util
   @run main InitialFocusTest
