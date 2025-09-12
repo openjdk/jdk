@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_SUPPORT_JFRSTACKTRACEMARK_HPP
 #define SHARE_JFR_SUPPORT_JFRSTACKTRACEMARK_HPP
 
-#include "memory/allocation.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
+#include "memory/allocation.hpp"
 
 class Thread;
 

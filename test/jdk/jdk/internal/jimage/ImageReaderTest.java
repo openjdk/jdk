@@ -25,11 +25,12 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.util.JarBuilder;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.opentest4j.TestSkippedException;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -54,6 +55,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
  * @test
  * @summary Tests for ImageReader.
  * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jimage
  * @library /test/jdk/tools/lib
  *          /test/lib
@@ -214,15 +216,15 @@ public class ImageReaderTest {
 
     ///  Returns the helper for building JAR and jimage files.
     private static Helper getHelper() {
+        Helper helper;
         try {
-            Helper helper = Helper.newHelper();
-            if (helper == null) {
-                throw new TestSkippedException("Cannot create test helper (exploded image?)");
-            }
-            return helper;
+            boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
+            helper = Helper.newHelper(isLinkableRuntime);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        Assumptions.assumeTrue(helper != null, "Cannot create test helper, skipping test!");
+        return helper;
     }
 
     /// Loads and performs actions on classes stored in a given `ImageReader`.

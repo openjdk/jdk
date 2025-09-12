@@ -1590,8 +1590,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   }
 }
 
-void LIR_Assembler::emit_delay(LIR_OpDelay*) { Unimplemented(); }
-
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
@@ -1821,7 +1819,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
   }
 
   LIR_Address* adr = addr->as_address_ptr();
-  Register dst = dest->as_register_lo();
+  Register dst = dest->as_pointer_register();
 
   assert_different_registers(dst, t0);
   if (adr->base()->is_valid() && dst == adr->base()->as_pointer_register() && (!adr->index()->is_cpu_register())) {
