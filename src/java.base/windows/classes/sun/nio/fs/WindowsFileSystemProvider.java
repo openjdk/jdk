@@ -474,7 +474,14 @@ class WindowsFileSystemProvider
                     break;
                 }
 
-                WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(h);
+                WindowsFileAttributes attrs;
+                try {
+                    attrs = WindowsFileAttributes.readAttributes(h);
+                } catch (WindowsException x) {
+                    CloseHandle(h);
+                    throw x;
+                }
+
                 if (!attrs.isSymbolicLink())
                     break;
 
