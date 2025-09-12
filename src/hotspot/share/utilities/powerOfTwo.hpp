@@ -26,13 +26,12 @@
 #define SHARE_UTILITIES_POWEROFTWO_HPP
 
 #include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // Power of two convenience library.
 

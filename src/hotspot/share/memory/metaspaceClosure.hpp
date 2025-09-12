@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_METASPACECLOSURE_HPP
 #define SHARE_MEMORY_METASPACECLOSURE_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -34,8 +35,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
-
-#include <type_traits>
 
 // The metadata hierarchy is separate from the oop hierarchy
   class MetaspaceObj;        // no C++ vtable

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 #ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
 #define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/growableArray.hpp"
-
-#include <type_traits>
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely

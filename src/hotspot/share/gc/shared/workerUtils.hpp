@@ -25,13 +25,12 @@
 #ifndef SHARE_GC_SHARED_WORKERUTILS_HPP
 #define SHARE_GC_SHARED_WORKERUTILS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // A class that acts as a synchronisation barrier. Workers enter
 // the barrier and must wait until all other workers have entered

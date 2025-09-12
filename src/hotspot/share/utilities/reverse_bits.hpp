@@ -27,12 +27,12 @@
 #define SHARE_UTILITIES_REVERSE_BITS_HPP
 
 #include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cstdint>
-#include <type_traits>
 
 template <typename T, size_t N = sizeof(T)>
 struct ReverseBitsImpl;

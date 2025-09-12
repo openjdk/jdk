@@ -25,12 +25,11 @@
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // An intrusive red-black tree is constructed with two template parameters:
 // K is the key type used.

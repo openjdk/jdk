@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_HPP
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
-
-#include <type_traits>
 
 class Klass;
 

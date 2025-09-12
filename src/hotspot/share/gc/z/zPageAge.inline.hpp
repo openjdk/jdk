@@ -26,9 +26,8 @@
 
 #include "gc/z/zPageAge.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/checkedCast.hpp"
-
-#include <type_traits>
 
 inline uint untype(ZPageAge age) {
   return static_cast<uint>(age);

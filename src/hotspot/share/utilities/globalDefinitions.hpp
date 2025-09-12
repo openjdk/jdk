@@ -28,6 +28,7 @@
 #include "classfile_constants.h"
 #include "cppstdlib/cstddef.hpp"
 #include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -36,7 +37,6 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstdint>
-#include <type_traits>
 
 class oopDesc;
 
