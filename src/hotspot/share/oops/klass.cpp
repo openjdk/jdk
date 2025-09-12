@@ -278,13 +278,8 @@ static markWord make_prototype(const Klass* kls) {
   markWord prototype = markWord::prototype();
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therfore seed the mark word with the narrow Klass ID.
-    // Note that only those Klass that can be instantiated have a narrow Klass ID.
-    // For those who don't, we leave the klass bits empty and assert if someone
-    // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
-        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    precond(CompressedKlassPointers::is_encodable(kls));
+    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
   }
 #endif
