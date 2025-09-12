@@ -45,7 +45,7 @@ ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get
 }
 
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
-  : _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring),
+  : _use_age_table(!ShenandoahGenerationalAdaptiveTenuring),
     _age_table(nullptr) {
   if (_use_age_table) {
     _age_table = new AgeTable(false);
@@ -168,7 +168,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);
 
-  if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     // Ingest mutator & worker collected population vectors into the heap's
     // global census data, and use it to compute an appropriate tenuring threshold
     // for use in the next cycle.
