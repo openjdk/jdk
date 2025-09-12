@@ -211,27 +211,24 @@ private:
   static constexpr bool HasNodeVerifier<CMP, std::void_t<decltype(&CMP::less_than)>> =
       std::is_invocable_r_v<bool, decltype(&CMP::less_than), const NodeType*, const NodeType*>;
 
-  template <typename CMP = COMPARATOR>
   RBTreeOrdering cmp(const K& a, const NodeType* b) const {
-    if constexpr (HasNodeComparator<CMP>) {
+    if constexpr (HasNodeComparator<COMPARATOR>) {
       return COMPARATOR::cmp(a, b);
-    } else if constexpr (HasKeyComparator<CMP>) {
+    } else if constexpr (HasKeyComparator<COMPARATOR>) {
       return COMPARATOR::cmp(a, b->key());
     }
   }
 
-  template <typename CMP = COMPARATOR>
   bool less_than(const NodeType* a, const NodeType* b) const {
-    if constexpr (HasNodeVerifier<CMP>) {
+    if constexpr (HasNodeVerifier<COMPARATOR>) {
       return COMPARATOR::less_than(a, b);
     } else {
       return true;
     }
   }
 
-  template <typename CMP = COMPARATOR>
   void assert_key_leq(K a, K b) const {
-    if constexpr (HasKeyComparator<CMP>) { // Cannot assert if no key comparator exist.
+    if constexpr (HasKeyComparator<COMPARATOR>) { // Cannot assert if no key comparator exist.
       assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::GT, "key a must be less or equal to key b");
     }
   }
@@ -434,11 +431,11 @@ public:
   // Accepts an optional callable `bool extra_verifier(const Node* n)`.
   // This should return true if the node is valid.
   // If provided, each node is also verified through this callable.
-  template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR>
+  template <typename USER_VERIFIER = empty_verifier>
   void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    if constexpr (HasNodeVerifier<CMP>) {
+    if constexpr (HasNodeVerifier<COMPARATOR>) {
       verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less_than(a, b);}, extra_verifier);
-    } else if constexpr (HasKeyComparator<CMP>) {
+    } else if constexpr (HasKeyComparator<COMPARATOR>) {
       verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::LT; }, extra_verifier);
     } else {
       verify_self([](const NodeType*, const NodeType*){ return true;}, extra_verifier);
