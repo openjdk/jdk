@@ -704,7 +704,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   uint last_populated_age = 0;
   size_t last_populated_live = 0;
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
       last_populated_age = untype(age);

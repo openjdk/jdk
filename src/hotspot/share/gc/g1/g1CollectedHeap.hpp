@@ -442,8 +442,7 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  HeapWord* mem_allocate(size_t word_size,
-                         bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t word_size) override;
 
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
@@ -804,7 +803,7 @@ public:
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
-  void abandon_collection_set(G1CollectionSet* collection_set);
+  void abandon_collection_set();
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
@@ -1214,7 +1213,6 @@ public:
     return named_heap<G1CollectedHeap>(CollectedHeap::G1);
   }
 
-  void set_region_short_lived_locked(G1HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
   G1SurvivorRegions* survivor() { return &_survivor; }

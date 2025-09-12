@@ -1988,6 +1988,7 @@ enum VectorMask {
 
   // Vector Narrowing Integer Right Shift Instructions
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
+  INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
 #undef INSN
 

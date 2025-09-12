@@ -261,43 +261,43 @@ class MetaspaceObj {
   //   void deallocate_contents(ClassLoaderData* loader_data);
 
   friend class VMStructs;
-  // When CDS is enabled, all shared metaspace objects are mapped
+  // All metsapce objects in the AOT cache (CDS archive) are mapped
   // into a single contiguous memory block, so we can use these
-  // two pointers to quickly determine if something is in the
-  // shared metaspace.
-  // When CDS is not enabled, both pointers are set to null.
-  static void* _shared_metaspace_base;  // (inclusive) low address
-  static void* _shared_metaspace_top;   // (exclusive) high address
+  // two pointers to quickly determine if a MetaspaceObj is in the
+  // AOT cache.
+  // When AOT/CDS is not enabled, both pointers are set to null.
+  static void* _aot_metaspace_base;  // (inclusive) low address
+  static void* _aot_metaspace_top;   // (exclusive) high address
 
  public:
 
   // Returns true if the pointer points to a valid MetaspaceObj. A valid
   // MetaspaceObj is MetaWord-aligned and contained within either
-  // non-shared or shared metaspace.
+  // regular- or aot metaspace.
   static bool is_valid(const MetaspaceObj* p);
 
 #if INCLUDE_CDS
-  static bool is_shared(const MetaspaceObj* p) {
-    // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
+  static bool in_aot_cache(const MetaspaceObj* p) {
+    // If no shared metaspace regions are mapped, _aot_metaspace_{base,top} will
     // both be null and all values of p will be rejected quickly.
-    return (((void*)p) < _shared_metaspace_top &&
-            ((void*)p) >= _shared_metaspace_base);
+    return (((void*)p) < _aot_metaspace_top &&
+            ((void*)p) >= _aot_metaspace_base);
   }
-  bool is_shared() const { return MetaspaceObj::is_shared(this); }
+  bool in_aot_cache() const { return MetaspaceObj::in_aot_cache(this); }
 #else
-  static bool is_shared(const MetaspaceObj* p) { return false; }
-  bool is_shared() const { return false; }
+  static bool in_aot_cache(const MetaspaceObj* p) { return false; }
+  bool in_aot_cache() const { return false; }
 #endif
 
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
-  static void set_shared_metaspace_range(void* base, void* top) {
-    _shared_metaspace_base = base;
-    _shared_metaspace_top = top;
+  static void set_aot_metaspace_range(void* base, void* top) {
+    _aot_metaspace_base = base;
+    _aot_metaspace_top = top;
   }
 
-  static void* shared_metaspace_base() { return _shared_metaspace_base; }
-  static void* shared_metaspace_top()  { return _shared_metaspace_top;  }
+  static void* aot_metaspace_base() { return _aot_metaspace_base; }
+  static void* aot_metaspace_top()  { return _aot_metaspace_top;  }
 
 #define METASPACE_OBJ_TYPES_DO(f) \
   f(Class) \

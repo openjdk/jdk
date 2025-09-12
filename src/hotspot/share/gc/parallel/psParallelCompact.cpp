@@ -685,6 +685,9 @@ void PSParallelCompact::post_compact()
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 
+  // Need to clear claim bits for the next full-gc (marking and adjust-pointers).
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
@@ -823,7 +826,8 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
+bool PSParallelCompact::check_maximum_compaction(bool should_do_max_compaction,
+                                                 size_t total_live_words,
                                                  MutableSpace* const old_space,
                                                  HeapWord* full_region_prefix_end) {
 
@@ -836,25 +840,17 @@ bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
   // Check if all live objs are too much for old-gen.
   const bool is_old_gen_too_full = (total_live_words >= old_space->capacity_in_words());
 
-  // JVM flags
-  const uint total_invocations = heap->total_full_collections();
-  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
-
   // If all regions in old-gen are full
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (is_max_on_system_gc || is_old_gen_too_full || is_interval_ended || is_region_full) {
-    _maximum_compaction_gc_num = total_invocations;
-    return true;
-  }
-
-  return false;
+  return should_do_max_compaction
+      || is_max_on_system_gc
+      || is_old_gen_too_full
+      || is_region_full;
 }
 
-void PSParallelCompact::summary_phase()
+void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -877,9 +873,10 @@ void PSParallelCompact::summary_phase()
       _space_info[i].set_dense_prefix(space->bottom());
     }
 
-    bool maximum_compaction = check_maximum_compaction(total_live_words,
-                                                       old_space,
-                                                       full_region_prefix_end);
+    should_do_max_compaction = check_maximum_compaction(should_do_max_compaction,
+                                                        total_live_words,
+                                                        old_space,
+                                                        full_region_prefix_end);
     {
       GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
       // Try to expand old-gen in order to fit all live objs and waste.
@@ -888,7 +885,7 @@ void PSParallelCompact::summary_phase()
       ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(target_capacity_bytes);
     }
 
-    HeapWord* dense_prefix_end = maximum_compaction
+    HeapWord* dense_prefix_end = should_do_max_compaction
                                  ? full_region_prefix_end
                                  : compute_dense_prefix_for_old_space(old_space,
                                                                       full_region_prefix_end);
@@ -958,38 +955,14 @@ void PSParallelCompact::summary_phase()
   }
 }
 
-// This method should contain all heap-specific policy for invoking a full
-// collection.  invoke_no_policy() will only attempt to compact the heap; it
-// will do nothing further.  If we need to bail out for policy reasons, scavenge
-// before full gc, or any other specialized behavior, it needs to be added here.
-//
-// Note that this method should only be called from the vm_thread while at a
-// safepoint.
-//
-// Note that the all_soft_refs_clear flag in the soft ref policy
-// may be true because this method can be called without intervening
-// activity.  For example when the heap space is tight and full measure
-// are being taken to free space.
-bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
+bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
+  assert(ref_processor() != nullptr, "Sanity");
 
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
-
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  clear_all_soft_refs = clear_all_soft_refs
-                     || heap->soft_ref_policy()->should_clear_all_soft_refs();
-
-  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
-}
-
-// This method contains no policy. You should probably
-// be calling invoke() instead.
-bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  assert(ref_processor() != nullptr, "Sanity");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -1000,11 +973,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   GCCause::Cause gc_cause = heap->gc_cause();
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
-
-  // The scope of casr should end after code that can change
-  // SoftRefPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(clear_all_soft_refs,
-                          heap->soft_ref_policy());
 
   // Make sure data structures are sane, make the heap parsable, and do other
   // miscellaneous bookkeeping.
@@ -1042,7 +1010,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     marking_phase(&_gc_tracer);
 
-    summary_phase();
+    summary_phase(should_do_max_compaction);
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
@@ -1305,9 +1273,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       ClassLoaderDataGraph::purge(true /* at_safepoint */);
       DEBUG_ONLY(MetaspaceUtils::verify();)
     }
-
-    // Need to clear claim bits for the next mark.
-    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {
