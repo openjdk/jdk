@@ -26,6 +26,7 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
+ * TODO: rename to TemplateScope?
  * A Template generates a {@link TemplateBody}, which is a list of {@link Token}s,
  * which are then later rendered to {@link String}s.
  *
