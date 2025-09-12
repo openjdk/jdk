@@ -19,12 +19,15 @@ public class ShiftOutOfRange {
         a >>>= (byte)-1;
 
         // These should not generate warnings
-        a = a << (byte)16;
-        a = a >> (char)16;
-        a = a >>> (short)16;
-        a <<= 16;
-        a >>= (long)16;     // also generates "implicit cast from long to int in compound assignment is possibly lossy"
-        a >>>= (byte)16;
+        a = a << (byte)0;
+        a = a >> (char)7;
+        a = a >>> (short)13;
+        a <<= 17;
+        a >>= (long)23;     // also generates "implicit cast from long to int in compound assignment is possibly lossy"
+        a >>>= (byte)31;
+        a <<= hashCode();
+        a >>= hashCode();
+        a >>>= hashCode();
 
         // These should generate warnings
         a = a << (byte)32;
@@ -47,12 +50,15 @@ public class ShiftOutOfRange {
         a >>>= (byte)-1;
 
         // These should not generate warnings
-        a = a << (byte)32;
-        a = a >> (char)32;
-        a = a >>> (short)32;
-        a <<= 32;
-        a >>= (long)32;
-        a >>>= (byte)32;
+        a = a << (byte)0;
+        a = a >> (char)15;
+        a = a >>> (short)25;
+        a <<= 34;
+        a >>= (long)47;
+        a >>>= (byte)63;
+        a <<= hashCode();
+        a >>= hashCode();
+        a >>>= hashCode();
 
         // These should generate warnings
         a = a << (byte)64;
