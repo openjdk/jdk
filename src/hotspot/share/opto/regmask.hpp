@@ -73,7 +73,7 @@ class RegMask {
     // on the stack (stack registers) up to some interesting limit.  Methods
     // that need more parameters will NOT be compiled.  On Intel, the limit
     // is something like 90+ parameters.
-    int       _rm_int[RM_SIZE_IN_INTS];
+    int _rm_int[RM_SIZE_IN_INTS];
     uintptr_t _rm_word[RM_SIZE_IN_WORDS];
   };
 
@@ -126,8 +126,12 @@ class RegMask {
 #   undef BODY
     _lwm = 0;
     _hwm = RM_WORD_MAX_INDEX;
-    while (_hwm > 0      && _rm_word[_hwm] == 0) _hwm--;
-    while ((_lwm < _hwm) && _rm_word[_lwm] == 0) _lwm++;
+    while (_hwm > 0 && _rm_word[_hwm] == 0) {
+      _hwm--;
+    }
+    while ((_lwm < _hwm) && _rm_word[_lwm] == 0) {
+      _lwm++;
+    }
     assert(valid_watermarks(), "post-condition");
   }
 

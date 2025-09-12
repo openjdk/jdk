@@ -151,7 +151,9 @@ bool RegMask::is_aligned_pairs() const {
 
 // Return TRUE if the mask contains a single bit
 bool RegMask::is_bound1() const {
-  if (is_infinite_stack()) return false;
+  if (is_infinite_stack()) {
+    return false;
+  }
 
   for (unsigned i = _lwm; i <= _hwm; i++) {
     uintptr_t v = _rm_word[i];
@@ -177,7 +179,9 @@ bool RegMask::is_bound1() const {
 
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
 bool RegMask::is_bound_pair() const {
-  if (is_infinite_stack()) return false;
+  if (is_infinite_stack()) {
+    return false;
+  }
 
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
@@ -246,7 +250,7 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_rm_word[i]) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name((i<<LogBitsPerWord) + find_lowest_bit(_rm_word[i]) + (size - 1));
+      return OptoReg::Name((i << LogBitsPerWord) + find_lowest_bit(_rm_word[i]) + (size - 1));
     }
   }
   return OptoReg::Bad;
@@ -340,7 +344,9 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
 // Return TRUE if the mask contains one adjacent set of bits and no other bits.
 // Works also for size 1.
 bool RegMask::is_bound_set(const unsigned int size) const {
-  if (is_infinite_stack()) return false;
+  if (is_infinite_stack()) {
+    return false;
+  }
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
@@ -355,7 +361,7 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         }
       } else {                  // Else its a split-set case
         // All bits from bit to highest bit in the word must be set
-        if ((all & ~(bit-1)) != _rm_word[i]) {
+        if ((all & ~(bit - 1)) != _rm_word[i]) {
           return false;
         }
         i++;                    // Skip iteration forward and check high part
@@ -383,8 +389,9 @@ bool RegMask::is_bound_set(const unsigned int size) const {
 // UP means register only, Register plus stack, or stack only is DOWN
 bool RegMask::is_UP() const {
   // Quick common case check for DOWN (any stack slot is legal)
-  if (is_infinite_stack())
+  if (is_infinite_stack()) {
     return false;
+  }
   // Slower check for any stack bits set (also DOWN)
   if (overlap(Matcher::STACK_ONLY_mask))
     return false;
@@ -445,7 +452,9 @@ void RegMask::dump(outputStream *st) const {
       st->print("-");
       OptoReg::dump(last, st);
     }
-    if (is_infinite_stack()) st->print("...");
+    if (is_infinite_stack()) {
+      st->print("...");
+    }
   }
   st->print("]");
 }

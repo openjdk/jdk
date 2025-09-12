@@ -1642,7 +1642,7 @@ uint PhaseChaitin::Select( ) {
     //---------------
     // If we fail to color and the infinite flag is set, trigger
     // a chunk-rollover event
-    if(!OptoReg::is_valid(OptoReg::add(reg,-chunk)) && is_infinite_stack) {
+    if (!OptoReg::is_valid(OptoReg::add(reg, -chunk)) && is_infinite_stack) {
       // Bump register mask up to next stack chunk
       chunk += RegMask::CHUNK_SIZE;
       lrg->Set_All();
@@ -1651,7 +1651,7 @@ uint PhaseChaitin::Select( ) {
 
     //---------------
     // Did we get a color?
-    else if( OptoReg::is_valid(reg)) {
+    else if (OptoReg::is_valid(reg)) {
 #ifndef PRODUCT
       RegMask avail_rm = lrg->mask();
 #endif
