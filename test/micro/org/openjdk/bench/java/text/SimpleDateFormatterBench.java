@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,8 +39,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -48,32 +50,62 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 @State(Scope.Benchmark)
-public class DateFormatterBench {
+public class SimpleDateFormatterBench {
 
     private Date date;
-
     private Object objDate;
+    private String dateStr;
+    private String timeStr;
+
+    private static final String DATE_PATTERN = "EEEE, MMMM d, y";
+    private static final String TIME_PATTERN = "h:mm:ss a zzzz";
+
+    // Use non-factory methods w/ pattern to ensure test data can be round
+    // tripped and guarantee no re-use of the same instance
+    private DateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
+    private DateFormat timeFormat = new SimpleDateFormat(TIME_PATTERN);
 
     @Setup
     public void setup() {
         date = new Date();
         objDate = new Date();
+        // Generate the strings for parsing using dedicated separate instances
+        dateStr = new SimpleDateFormat(DATE_PATTERN).format(date);
+        timeStr = new SimpleDateFormat(TIME_PATTERN).format(date);
     }
 
-    private DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
+    @Benchmark
+    public String testTimeFormat() {
+        return timeFormat.format(date);
+    }
 
     @Benchmark
-    public String testFormatDate() {
+    public String testTimeFormatObject() {
+        return timeFormat.format(objDate);
+    }
+
+    @Benchmark
+    public String testDateFormat() {
         return dateFormat.format(date);
     }
 
     @Benchmark
-    public String testFormatObject() {
+    public String testDateFormatObject() {
         return dateFormat.format(objDate);
     }
 
+    @Benchmark
+    public Date testDateParse() throws ParseException {
+        return dateFormat.parse(dateStr);
+    }
+
+    @Benchmark
+    public Date testTimeParse() throws ParseException {
+        return timeFormat.parse(timeStr);
+    }
+
     public static void main(String... args) throws Exception {
-        Options opts = new OptionsBuilder().include(DateFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
+        Options opts = new OptionsBuilder().include(org.openjdk.bench.java.text.SimpleDateFormatterBench.class.getSimpleName()).shouldDoGC(true).build();
         new Runner(opts).run();
     }
 }
