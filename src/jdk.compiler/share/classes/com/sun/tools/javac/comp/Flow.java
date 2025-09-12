@@ -28,7 +28,10 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -50,6 +53,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.ExhaustivenessResult;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
@@ -324,9 +328,9 @@ public class Flow {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         chk = Check.instance(context);
+        exhaustiveness = ExhaustivenessComputer.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        exhaustiveness = ExhaustivenessComputer.instance(context);
     }
 
     /**
@@ -696,9 +700,18 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                tree.isExhaustive |= exhaustiveness.exhausts(tree.selector, tree.cases);
                 if (!tree.isExhaustive) {
-                    log.error(tree, Errors.NotExhaustiveStatement);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                    tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                    if (!tree.isExhaustive) {
+                        if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                            log.error(tree, Errors.NotExhaustiveStatement);
+                        } else {
+                            log.error(tree, Errors.NotExhaustiveStatementDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                        }
+                    }
                 }
             }
             if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
@@ -735,12 +748,19 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                tree.isExhaustive = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                if (!tree.isExhaustive) {
+                    if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                        log.error(tree, Errors.NotExhaustive);
+                    } else {
+                        log.error(tree, Errors.NotExhaustiveDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                    }
+                }
             }
 
-            if (!tree.isExhaustive) {
-                log.error(tree, Errors.NotExhaustive);
-            }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
