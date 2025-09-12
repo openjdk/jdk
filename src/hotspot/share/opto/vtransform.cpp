@@ -823,7 +823,6 @@ void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) co
 
 VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
   // We do not modify the inputs of the CountedLoop (and certainly not its backedge)
-  // TODO: separate apply?
   if (!_node->is_CountedLoop()) {
     apply_vtn_inputs_to_node(_node, apply_state);
   }
@@ -997,7 +996,6 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
 
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  // TODO: node notes!
   // Using the cl is sometimes not the most accurate, but still correct. We do not have to be
   // perfectly accurate, because we will set major_progress anyway.
   phase->register_new_node(vn, apply_state.vloop().cl());

@@ -40,7 +40,7 @@
 //
 // This is the life-cycle of a VTransform:
 // - Construction:
-//   - From SuperWord, with the SuperWordVTransformBuilder.
+//   - From SuperWord PackSet, with the SuperWordVTransformBuilder.
 //
 // - Future Plans: optimize, if-conversion, etc.
 //
@@ -50,8 +50,16 @@
 //
 // - Apply:
 //   - Changes to the C2 IR are only made once the "apply" method is called.
+//   - Align the main loop, by adjusting pre loop limit.
+//   - Add speculative runtime checks (alignment and aliasing).
 //   - Each vtnode generates its corresponding scalar and vector C2 nodes,
-//     possibly replacing old scalar C2 nodes.
+//     possibly replacing old scalar C2 nodes. We apply each vtnode in order
+//     of the schedule, so that all input vtnodes are already applied, i.e.
+//     all input vtnodes have already generated the transformed C2 nodes.
+//   - We also build the new memory graph on the fly. The schedule may have
+//     reordered the memory operations, and so we cannot use the old memory
+//     graph, but must build it from the scheduled order. We keep track of
+//     the current memory state in VTransformApplyState.
 //
 // Future Plans with VTransform:
 // - Cost model: estimate if vectorization is profitable.
@@ -59,8 +67,6 @@
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
-//
-// TODO: fix me
 
 typedef int VTransformNodeIDX;
 class VTransformNode;

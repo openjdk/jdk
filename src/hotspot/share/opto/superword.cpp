@@ -455,12 +455,16 @@ bool SuperWord::transform_loop() {
 //
 // 8) The pairs are combined into vector sized packs.
 //
-// TODO: fix me
-// 9) Reorder the memory slices to co-locate members of the memory packs.
+// 9) The packs are split and filtered, to ensure correctness and that
+//    all packs have corresponding vector nodes implemented in the backend.
 //
-// 10) Generate ideal vector nodes for the final set of packs and where necessary,
-//    inserting scalar promotion, vector creation from multiple scalars, and
-//    extraction of scalar values from vectors.
+// 10) VTransform (see vtransform.hpp)
+//     - construct from PackSet
+//     - schedule (detect circles)
+//     - apply
+//       - align main loop
+//       - add runtime checks (aliasing and alignment)
+//       - build new loop with vector C2 nodes
 //
 // Runtime Checks:
 //   Some required properties cannot be proven statically, and require a
@@ -1917,6 +1921,7 @@ void PackSet::verify() const {
 }
 #endif
 
+// Build VTransform from SuperWord Packset, and eventually apply it (create new vectorized C2 loop).
 // See description at top of "vtransform.hpp".
 bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
@@ -1960,6 +1965,7 @@ bool SuperWord::do_vtransform() const {
 
 // Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
 // correctness and profitability checks have passed, and the graph was successfully scheduled.
+// See description at top of "vtransform.hpp".
 void VTransform::apply() {
 #ifndef PRODUCT
   if (_trace._info || TraceLoopOpts) {
