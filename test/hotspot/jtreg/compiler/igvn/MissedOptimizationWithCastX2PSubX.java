@@ -27,15 +27,15 @@
  * @summary Missed worklist notification during IGVN for CastX2P(SubX(x, y)) pattern,
  *          leads to missed optimization.
  * @run main/othervm
- *           -XX:CompileCommand=compileonly,compiler.c2.gvn.MissedOptimizationWithCastX2PSubX::test
+ *           -XX:CompileCommand=compileonly,compiler.igvn.MissedOptimizationWithCastX2PSubX::test
  *           -XX:-TieredCompilation
  *           -XX:+IgnoreUnrecognizedVMOptions
  *           -XX:VerifyIterativeGVN=1110
- *           compiler.c2.gvn.MissedOptimizationWithCastX2PSubX
- * @run main compiler.c2.gvn.MissedOptimizationWithCastX2PSubX
+ *           compiler.igvn.MissedOptimizationWithCastX2PSubX
+ * @run main compiler.igvn.MissedOptimizationWithCastX2PSubX
  */
 
-package compiler.c2.gvn;
+package compiler.igvn;
 
 import java.lang.foreign.*;
 
