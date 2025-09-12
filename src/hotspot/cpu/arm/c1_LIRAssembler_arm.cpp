@@ -2552,11 +2552,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
-
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);
   __ add_slow(dst->as_pointer_register(), mon_addr.base(), mon_addr.disp());

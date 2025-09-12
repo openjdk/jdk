@@ -251,6 +251,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                                      \
   decl(unaligned_access, "Unaligned"   , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                                      \
   decl(satp_mode       , "SATP"        , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                                      \
+  decl(zicboz_block_size, "ZicbozBlockSize", RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                                  \
 
   #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)        \
   struct NAME##RVFeatureValue : public RVFeatureValue {                \

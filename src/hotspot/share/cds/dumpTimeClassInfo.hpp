@@ -88,7 +88,7 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
     Symbol* _from_name;
   public:
     DTVerifierConstraint() : _name(nullptr), _from_name(nullptr) {}
-    DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
+    DTVerifierConstraint(Symbol* n, Symbol* fn = nullptr) : _name(n), _from_name(fn) {
       Symbol::maybe_increment_refcount(_name);
       Symbol::maybe_increment_refcount(_from_name);
     }
@@ -152,8 +152,9 @@ public:
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
-  void add_verification_constraint(InstanceKlass* k, Symbol* name,
-         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
+  // For old verifier: only name is saved; all other fields are null/false.
+  void add_verification_constraint(Symbol* name,
+         Symbol* from_name = nullptr, bool from_field_is_protected = false, bool from_is_array = false, bool from_is_object = false);
   void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);
   void add_enum_klass_static_field(int archived_heap_root_index);
   int  enum_klass_static_field(int which_field);
@@ -173,6 +174,14 @@ public:
 
   int num_verifier_constraints() const {
     return array_length_or_zero(_verifier_constraint_flags);
+  }
+
+  Symbol* verifier_constraint_name_at(int i) const {
+    return _verifier_constraints->at(i).name();
+  }
+
+  Symbol* verifier_constraint_from_name_at(int i) const {
+    return _verifier_constraints->at(i).from_name();
   }
 
   int num_loader_constraints() const {

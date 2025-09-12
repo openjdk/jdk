@@ -540,7 +540,6 @@ class os: AllStatic {
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
   static size_t numa_get_leaf_groups(uint *ids, size_t size);
-  static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
   static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
@@ -1106,7 +1105,7 @@ class os: AllStatic {
 };
 
 // Note that "PAUSE" is almost always used with synchronization
-// so arguably we should provide Atomic::SpinPause() instead
+// so arguably we should provide AtomicAccess::SpinPause() instead
 // of the global SpinPause() with C linkage.
 // It'd also be eligible for inlining on many platforms.
 

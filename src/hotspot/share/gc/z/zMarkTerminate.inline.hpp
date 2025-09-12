@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMarkStack.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -42,8 +42,8 @@ inline ZMarkTerminate::ZMarkTerminate()
     _lock() {}
 
 inline void ZMarkTerminate::reset(uint nworkers) {
-  Atomic::store(&_nworkers, nworkers);
-  Atomic::store(&_nworking, nworkers);
+  AtomicAccess::store(&_nworkers, nworkers);
+  AtomicAccess::store(&_nworking, nworkers);
   _nawakening = 0;
 }
 
@@ -51,7 +51,7 @@ inline void ZMarkTerminate::leave() {
   SuspendibleThreadSetLeaver sts_leaver;
   ZLocker<ZConditionLock> locker(&_lock);
 
-  Atomic::store(&_nworking, _nworking - 1);
+  AtomicAccess::store(&_nworking, _nworking - 1);
   if (_nworking == 0) {
     // Last thread leaving; notify waiters
     _lock.notify_all();
@@ -69,7 +69,7 @@ inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_n
   SuspendibleThreadSetLeaver sts_leaver;
   ZLocker<ZConditionLock> locker(&_lock);
 
-  Atomic::store(&_nworking, _nworking - 1);
+  AtomicAccess::store(&_nworking, _nworking - 1);
   if (_nworking == 0) {
     // Last thread entering termination: success
     _lock.notify_all();
@@ -84,7 +84,7 @@ inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_n
   // We either got notification about more work
   // or got a spurious wakeup; don't terminate
   if (_nawakening > 0) {
-    Atomic::store(&_nawakening, _nawakening - 1);
+    AtomicAccess::store(&_nawakening, _nawakening - 1);
   }
 
   if (_nworking == 0) {
@@ -92,15 +92,15 @@ inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_n
     return true;
   }
 
-  Atomic::store(&_nworking, _nworking + 1);
+  AtomicAccess::store(&_nworking, _nworking + 1);
 
   return false;
 }
 
 inline void ZMarkTerminate::wake_up() {
-  uint nworking = Atomic::load(&_nworking);
-  uint nawakening = Atomic::load(&_nawakening);
-  if (nworking + nawakening == Atomic::load(&_nworkers)) {
+  uint nworking = AtomicAccess::load(&_nworking);
+  uint nawakening = AtomicAccess::load(&_nawakening);
+  if (nworking + nawakening == AtomicAccess::load(&_nworkers)) {
     // Everyone is working or about to
     return;
   }
@@ -113,22 +113,22 @@ inline void ZMarkTerminate::wake_up() {
   ZLocker<ZConditionLock> locker(&_lock);
   if (_nworking + _nawakening != _nworkers) {
     // Everyone is not working
-    Atomic::store(&_nawakening, _nawakening + 1);
+    AtomicAccess::store(&_nawakening, _nawakening + 1);
     _lock.notify();
   }
 }
 
 inline bool ZMarkTerminate::saturated() const {
-  uint nworking = Atomic::load(&_nworking);
-  uint nawakening = Atomic::load(&_nawakening);
+  uint nworking = AtomicAccess::load(&_nworking);
+  uint nawakening = AtomicAccess::load(&_nawakening);
 
-  return nworking + nawakening == Atomic::load(&_nworkers);
+  return nworking + nawakening == AtomicAccess::load(&_nworkers);
 }
 
 inline void ZMarkTerminate::set_resurrected(bool value) {
   // Update resurrected if it changed
   if (resurrected() != value) {
-    Atomic::store(&_resurrected, value);
+    AtomicAccess::store(&_resurrected, value);
     if (value) {
       log_debug(gc, marking)("Resurrection broke termination");
     } else {
@@ -138,7 +138,7 @@ inline void ZMarkTerminate::set_resurrected(bool value) {
 }
 
 inline bool ZMarkTerminate::resurrected() const {
-  return Atomic::load(&_resurrected);
+  return AtomicAccess::load(&_resurrected);
 }
 
 #endif // SHARE_GC_Z_ZMARKTERMINATE_INLINE_HPP

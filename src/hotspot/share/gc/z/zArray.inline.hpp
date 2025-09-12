@@ -27,7 +27,7 @@
 #include "gc/z/zArray.hpp"
 
 #include "gc/z/zLock.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 ZArraySlice<T>::ZArraySlice(T* data, int len)
@@ -130,7 +130,7 @@ inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(size_t* index) {
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(size_t* index) {
-  const size_t claimed_index = Atomic::fetch_then_add(&_next, 1u, memory_order_relaxed);
+  const size_t claimed_index = AtomicAccess::fetch_then_add(&_next, 1u, memory_order_relaxed);
 
   if (claimed_index < _end) {
     *index = claimed_index;
