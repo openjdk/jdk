@@ -134,10 +134,15 @@ AC_DEFUN([FLAGS_SETUP_SVE],
             [
               svint32_t r = svdup_n_s32(1)
             ])],
-            [AVAILABLE=true],
-            [AVAILABLE=false]
+            [
+              AVAILABLE=true
+              AC_MSG_RESULT([$AVAILABLE])
+            ],
+            [
+              AVAILABLE=false
+              AC_MSG_RESULT([$AVAILABLE])
+            ]
           )
-          AC_MSG_RESULT([$AVAILABLE])
           CFLAGS="$saved_cflags"
           AC_LANG_POP([C])
         fi
