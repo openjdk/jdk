@@ -376,8 +376,8 @@ AC_DEFUN([FLAGS_SETUP_FLAGS],
 
   # Check whether the compiler supports the Arm C Language Extensions (ACLE)
   # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath.
+  # ACLE and this flag are required to build the aarch64 SVE related functions
+  # in libvectormath.
   FLAGS_SETUP_SVE
 
   FLAGS_SETUP_ASFLAGS
