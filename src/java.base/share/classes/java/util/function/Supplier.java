@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.util.function;
 
 /**
@@ -47,5 +46,4 @@ public interface Supplier<T> {
      * @return a result
      */
     T get();
-
 }

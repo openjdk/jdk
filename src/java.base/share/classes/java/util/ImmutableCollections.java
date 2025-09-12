@@ -59,7 +59,7 @@ class ImmutableCollections {
      * it needs to vary sufficiently from one run to the next so that iteration order
      * will vary between JVM runs.
      */
-    static final long SALT32L;
+    private static final long SALT32L;
 
     /**
      * For set and map iteration, we will iterate in "reverse" stochastically,
