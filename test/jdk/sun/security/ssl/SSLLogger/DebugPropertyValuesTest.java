@@ -83,7 +83,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         // "ALL" shouldn't be seen as a valid Level
         debugMessages.put("javax.net.debug.logger.ALL", List.of("ALL:"));
         debugMessages.put("javax.net.debug.logger",
-                List.of("FINE: adding as trusted certificates",
+                List.of("FINE: adding as trusted certificates:"
+                            + System.lineSeparator() +
+                            "  \"certificate\" : \\{",
+                        "FINE: Produced ClientHello handshake message:" +
+                            System.lineSeparator() +
+                            "\"ClientHello\": \\{",
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
 
