@@ -35,7 +35,7 @@ static void contains_expected_num_of_registers(const RegMask& rm, unsigned int e
     ASSERT_TRUE(rm.is_NotEmpty());
   } else {
     ASSERT_TRUE(!rm.is_NotEmpty());
-    ASSERT_TRUE(!rm.is_infinite());
+    ASSERT_TRUE(!rm.is_infinite_stack());
   }
 
   RegMaskIterator rmi(rm);
@@ -85,7 +85,7 @@ TEST_VM(RegMask, Set_ALL) {
   ASSERT_TRUE(rm.Size() == RegMask::CHUNK_SIZE);
   ASSERT_TRUE(rm.is_NotEmpty());
   // Set_All sets the infinite bit
-  ASSERT_TRUE(rm.is_infinite());
+  ASSERT_TRUE(rm.is_infinite_stack());
   contains_expected_num_of_registers(rm, RegMask::CHUNK_SIZE);
 }
 
@@ -135,7 +135,7 @@ TEST_VM(RegMask, SUBTRACT) {
   for (int i = 17; i < RegMask::CHUNK_SIZE; i++) {
     rm1.Insert(i);
   }
-  ASSERT_TRUE(rm1.is_infinite());
+  ASSERT_TRUE(rm1.is_infinite_stack());
   rm2.SUBTRACT(rm1);
   contains_expected_num_of_registers(rm1, RegMask::CHUNK_SIZE - 17);
   contains_expected_num_of_registers(rm2, 17);

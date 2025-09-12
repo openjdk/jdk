@@ -151,7 +151,7 @@ bool RegMask::is_aligned_pairs() const {
 
 // Return TRUE if the mask contains a single bit
 bool RegMask::is_bound1() const {
-  if (is_infinite()) return false;
+  if (is_infinite_stack()) return false;
 
   for (unsigned i = _lwm; i <= _hwm; i++) {
     uintptr_t v = _rm_word[i];
@@ -177,7 +177,7 @@ bool RegMask::is_bound1() const {
 
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
 bool RegMask::is_bound_pair() const {
-  if (is_infinite()) return false;
+  if (is_infinite_stack()) return false;
 
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
@@ -340,7 +340,7 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
 // Return TRUE if the mask contains one adjacent set of bits and no other bits.
 // Works also for size 1.
 bool RegMask::is_bound_set(const unsigned int size) const {
-  if (is_infinite()) return false;
+  if (is_infinite_stack()) return false;
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
@@ -383,7 +383,7 @@ bool RegMask::is_bound_set(const unsigned int size) const {
 // UP means register only, Register plus stack, or stack only is DOWN
 bool RegMask::is_UP() const {
   // Quick common case check for DOWN (any stack slot is legal)
-  if (is_infinite())
+  if (is_infinite_stack())
     return false;
   // Slower check for any stack bits set (also DOWN)
   if (overlap(Matcher::STACK_ONLY_mask))
@@ -445,7 +445,7 @@ void RegMask::dump(outputStream *st) const {
       st->print("-");
       OptoReg::dump(last, st);
     }
-    if (is_infinite()) st->print("...");
+    if (is_infinite_stack()) st->print("...");
   }
   st->print("]");
 }

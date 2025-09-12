@@ -162,7 +162,7 @@ class RegMask {
   // The last bit in the register mask indicates that the mask should repeat
   // indefinitely with ONE bits.  Returns TRUE if mask is infinite or
   // unbounded in size.  Returns FALSE if mask is finite size.
-  bool is_infinite() const {
+  bool is_infinite_stack() const {
     return (_rm_word[RM_WORD_MAX_INDEX] & (uintptr_t(1) << WORD_BIT_MASK)) != 0;
   }
 
