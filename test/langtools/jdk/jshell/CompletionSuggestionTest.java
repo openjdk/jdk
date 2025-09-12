@@ -898,4 +898,47 @@ public class CompletionSuggestionTest extends KullaTesting {
 
         assertCompletion("p1.|", "p2.", "p3.");
     }
+
+    @Test
+    public void testAnnotation() {
+        assertCompletion("@Deprec|", "Deprecated");
+        assertCompletion("@Deprecated(|", "forRemoval = ", "since = ");
+        assertCompletion("@Deprecated(forRemoval = |", true, "false", "true");
+        assertCompletion("@Deprecated(forRemoval = true, |", "since = ");
+        assertEval("import java.lang.constant.ConstantDescs;");
+        assertEval("import static java.lang.constant.ConstantDescs.*;");
+        assertEval("@interface Ann1 { public String test(); }");
+        assertCompletionIncludesExcludes("@Ann1(test = |", Set.of("java.", "ConstantDescs", "INIT_NAME"), Set.of("CD_char", "byte"));
+        assertEval("@interface Ann2 { public String[] test(); }");
+        assertCompletionIncludesExcludes("@Ann2(test = {|", Set.of("java.", "ConstantDescs", "INIT_NAME"), Set.of("CD_char", "byte"));
+        assertCompletionIncludesExcludes("@Ann2(test = {|", true, Set.of("INIT_NAME"), Set.of("java.", "ConstantDescs", "CD_char", "byte"));
+        assertEval("@interface Ann3 { public String value(); }");
+        assertCompletionIncludesExcludes("@Ann3(|", Set.of("java.", "ConstantDescs", "INIT_NAME", "value = "), Set.of("CD_char", "byte"));
+        assertCompletionIncludesExcludes("@Ann3(|", true, Set.of("INIT_NAME", "value = "), Set.of("java.", "ConstantDescs", "CD_char", "byte"));
+        assertSignature("@Deprecated(|", "boolean Deprecated.forRemoval()", "String Deprecated.since()");
+        assertEval("@interface Ann4 { public String[] value(); }");
+        assertCompletionIncludesExcludes("@Ann4({|", Set.of("java.", "ConstantDescs", "INIT_NAME"), Set.of("value = "));
+        assertEval("@interface Ann5 { public Ann4[] value(); }");
+        assertCompletion("@Ann5(|", true, "@Ann4(", "value = ");
+        assertCompletion("@Ann5({|", true, "@Ann4(");
+        assertCompletion("@Ann5(|", false);
+        assertCompletion("@Ann5({|", false);
+        assertCompletion("@Ann5(@|", true, "@Ann4(");
+        assertCompletion("@Ann5(v|", true, "value = ");
+        assertEval("@interface Ann6 { public java.lang.annotation.Retention[] value(); }");
+        assertCompletion("@Ann6(|", true, "@java.lang.annotation.Retention(", "value = ");
+        assertEval("@interface Ann7 { }"); //no attributes
+        assertEval("@interface Ann8 { public Ann7[] value(); }");
+        assertCompletion("@Ann8(|", true, "@Ann7", "value = ");
+        assertEval("enum En { AA, BB, EE; }");
+        assertEval("@interface Ann9 { public En[] value(); }");
+        assertCompletion("@Ann9(|", true, "En", "En.AA", "En.BB", "En.EE", "value = ");
+        assertCompletion("@Ann9(A|", true, "En.AA");
+        assertCompletion("@Ann9(E|", true, "En", "En.EE");
+        assertCompletionIncludesExcludes("@Ann9(En.|", Set.of("AA", "BB", "EE"), Set.of());
+        assertEval("@interface AnnA { public java.lang.annotation.RetentionPolicy[] value(); }");
+        assertCompletion("@AnnA(C|", true, "java.lang.annotation.RetentionPolicy.CLASS");
+        assertEval("import static java.lang.annotation.RetentionPolicy.*;");
+        assertCompletion("@AnnA(C|", true, "CLASS");
+    }
 }

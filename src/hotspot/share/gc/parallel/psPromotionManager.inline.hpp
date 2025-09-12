@@ -31,7 +31,7 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -139,7 +139,8 @@ inline void PSPromotionManager::push_contents_bounded(oop obj, HeapWord* left, H
 
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
-  assert(should_scavenge(&o), "Sanity");
+  assert(PSScavenge::is_obj_in_young(o), "precondition");
+  assert(!PSScavenge::is_obj_in_to_space(o), "precondition");
 
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
@@ -235,8 +236,6 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
                                                                markWord test_mark) {
-  assert(should_scavenge(&o), "Sanity");
-
   oop new_obj = nullptr;
   bool new_obj_is_tenured = false;
 
@@ -334,7 +333,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 template <bool promote_immediately, class T>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   assert(ParallelScavengeHeap::heap()->is_in_reserved(p), "precondition");
-  assert(should_scavenge(p, true), "revisiting object?");
 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = copy_to_survivor_space<promote_immediately>(o);

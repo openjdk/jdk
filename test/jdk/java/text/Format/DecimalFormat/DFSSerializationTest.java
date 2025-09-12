@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @bug 8366401
+ * @bug 4068067 4101150 8366401
+ * @library /java/text/testlib
+ * @build HexDumpReader
  * @summary Check serialization of DecimalFormatSymbols. That is, ensure the
  *          behavior for each stream version is correct during de-serialization.
  * @run junit/othervm --add-opens java.base/java.text=ALL-UNNAMED DFSSerializationTest
@@ -35,9 +37,11 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.text.DecimalFormatSymbols;
 import java.util.Currency;
@@ -51,13 +55,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DFSSerializationTest {
 
+    // Test that rely on hex dump files that were written from older JDK versions
     @Nested
-    class VersionTests {
+    class HexDumpTests {
+
+        @Test // See 4068067 and CDFS which is the class in the serialized hex dump
+        void JDK1_1_4Test() {
+            // Reconstruct a class serialized during 1.1.4 which has a DFS holder
+            var cdfs = (CheckDecimalFormatSymbols) assertDoesNotThrow(
+                    () -> deSer("DecimalFormatSymbols.114.txt"));
+            assertDoesNotThrow(cdfs::Update); // Checks getDigit call succeeds
+        }
+
+        @Test // See 4068067
+        void JDK1_4_2Test() {
+            // Reconstruct a 1.4.2 DFS
+            var dfs = (DecimalFormatSymbols) assertDoesNotThrow(
+                    () -> deSer("DecimalFormatSymbols.142.txt"));
+            // Checks curr symbol is saved, and exponent separator default set
+            assertEquals("E", dfs.getExponentSeparator());
+            assertEquals("*SpecialCurrencySymbol*", dfs.getCurrencySymbol());
+        }
+    }
+
+    @Nested
+    class StreamVersionTests {
 
         // Ensure correct monetarySeparator and exponential field defaults
         // Reads monetary from decimal, and sets exponential to 'E'
         @Test
-        public void version0Test() {
+        void version0Test() {
             var crafted = new DFSBuilder()
                     .setVer(0)
                     .set("monetarySeparator", '~')
@@ -76,7 +103,7 @@ public class DFSSerializationTest {
         // Note that other versions did allow a locale field, which was nullable.
         // E.g. see nullableLocaleTest which does not set locale when it is `null`
         @Test
-        public void version1Test() {
+        void version1Test() {
             var crafted = new DFSBuilder()
                     .setVer(1)
                     .set("locale", null)
@@ -89,7 +116,7 @@ public class DFSSerializationTest {
         // Version 2 did not have an exponential separator, and created it via exponent
         // char field.
         @Test
-        public void version2Test() {
+        void version2Test() {
             var crafted = new DFSBuilder()
                     .setVer(2)
                     .set("exponentialSeparator", null)
@@ -103,7 +130,7 @@ public class DFSSerializationTest {
         // Version 3 didn't have perMillText, percentText, and minusSignText.
         // These were created from the corresponding char equivalents.
         @Test
-        public void version3Test() {
+        void version3Test() {
             var crafted = new DFSBuilder()
                     .setVer(3)
                     .set("perMillText", null)
@@ -125,7 +152,7 @@ public class DFSSerializationTest {
         // Version 4 did not have monetaryGroupingSeparator. It should be based
         // off of groupingSeparator.
         @Test
-        public void version4Test() {
+        void version4Test() {
             var crafted = new DFSBuilder()
                     .setVer(4)
                     .set("monetaryGroupingSeparator", 'Z')
@@ -142,7 +169,7 @@ public class DFSSerializationTest {
     // the case and previous stream versions can contain a null locale. Thus,
     // ensure that a null locale does not cause number data loading to fail.
     @Test
-    public void nullableLocaleTest() {
+    void nullableLocaleTest() {
         var bytes = ser(new DFSBuilder()
                 .set("locale", null)
                 .set("minusSignText", "zFoo")
@@ -157,7 +184,7 @@ public class DFSSerializationTest {
     // readObject fails when the {@code char} and {@code String} representations
     // of percent, per mille, and/or minus sign disagree.
     @Test
-    public void disagreeingTextTest() {
+    void disagreeingTextTest() {
         var expected = "'char' and 'String' representations of either percent, " +
                 "per mille, and/or minus sign disagree.";
         assertEquals(expected, assertThrows(InvalidObjectException.class, () ->
@@ -179,7 +206,7 @@ public class DFSSerializationTest {
 
     // Ensure the serial version is updated to the current after de-serialization.
     @Test
-    public void updatedVersionTest() {
+    void updatedVersionTest() {
         var bytes = ser(new DFSBuilder().setVer(-25).build());
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         assertEquals(5, readField(dfs, "serialVersionOnStream"));
@@ -187,7 +214,7 @@ public class DFSSerializationTest {
 
     // Should set currency from 4217 code when it is valid.
     @Test
-    public void validIntlCurrencyTest() {
+    void validIntlCurrencyTest() {
         var bytes = ser(new DFSBuilder().set("intlCurrencySymbol", "JPY").build());
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         assertEquals(Currency.getInstance("JPY"), dfs.getCurrency());
@@ -195,7 +222,7 @@ public class DFSSerializationTest {
 
     // Should not set currency when 4217 code is invalid, it remains null.
     @Test
-    public void invalidIntlCurrencyTest() {
+    void invalidIntlCurrencyTest() {
         var bytes = ser(new DFSBuilder()
                 .set("intlCurrencySymbol", ">.,")
                 .set("locale", Locale.JAPAN)
@@ -203,6 +230,26 @@ public class DFSSerializationTest {
         var dfs = assertDoesNotThrow(() -> deSer(bytes));
         // Can not init off invalid 4217 code, remains null
         assertNull(dfs.getCurrency());
+    }
+
+    // Ensure the currency symbol is read properly
+    @Test
+    void currencySymbolTest() {
+        var crafted = new DecimalFormatSymbols();
+        crafted.setCurrencySymbol("*SpecialCurrencySymbol*");
+        var bytes = ser(crafted);
+        var dfs = assertDoesNotThrow(() -> deSer(bytes));
+        assertEquals("*SpecialCurrencySymbol*", dfs.getCurrencySymbol());
+    }
+
+    // Ensure the exponent separator is read properly
+    @Test
+    void exponentSeparatorTest() {
+        var crafted = new DecimalFormatSymbols();
+        crafted.setExponentSeparator("*SpecialExponentSeparator*");
+        var bytes = ser(crafted);
+        var dfs = assertDoesNotThrow(() -> deSer(bytes));
+        assertEquals("*SpecialExponentSeparator*", dfs.getExponentSeparator());
     }
 
 // Utilities ----
@@ -218,11 +265,19 @@ public class DFSSerializationTest {
         }, "Unexpected error during serialization");
     }
 
-    // Utility to deserialize
+    // Utility to deserialize from byte array
     private static DecimalFormatSymbols deSer(byte[] bytes) throws IOException, ClassNotFoundException {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
              ObjectInputStream ois = new ObjectInputStream(byteArrayInputStream)) {
             return (DecimalFormatSymbols) ois.readObject();
+        }
+    }
+
+    // Utility to deserialize from file in hex format
+    private static Object deSer(String file) throws IOException, ClassNotFoundException {
+        try (InputStream stream = HexDumpReader.getStreamFromHexDump(file);
+             ObjectInputStream ois = new ObjectInputStream(stream)) {
+            return ois.readObject();
         }
     }
 
@@ -260,5 +315,14 @@ public class DFSSerializationTest {
         private DecimalFormatSymbols build() {
             return dfs;
         }
+    }
+}
+
+// Not nested, so that it can be cast correctly for the 1.1.4 test
+class CheckDecimalFormatSymbols implements Serializable {
+    DecimalFormatSymbols _decFormatSymbols = new DecimalFormatSymbols();
+    public char Update()
+    {
+        return  _decFormatSymbols.getDigit();
     }
 }
