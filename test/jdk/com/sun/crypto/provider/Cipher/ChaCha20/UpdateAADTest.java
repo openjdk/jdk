@@ -71,7 +71,7 @@ public class UpdateAADTest {
     }
 
     public interface TestAction {
-        void runTest(ByteBuffer buffer);
+        void runTest(ByteBuffer buffer) throws Exception;
     }
 
     public static void main(final String[] args) throws Exception {
@@ -147,24 +147,19 @@ public class UpdateAADTest {
     // Simple test callback for taking a ByteBuffer and throwing all
     // remaining bytes into an updateAAD call.
     public static TestAction aadUpdateTest = buffer -> {
-        try {
-            SecretKey key = CC20GEN.generateKey();
-            byte[] nonce = new byte[12];
-            RAND.nextBytes(nonce);
+        SecretKey key = CC20GEN.generateKey();
+        byte[] nonce = new byte[12];
+        RAND.nextBytes(nonce);
 
-            Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
-            cipher.init(Cipher.ENCRYPT_MODE, key,
-                    new IvParameterSpec(nonce));
+        Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
+        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(nonce));
 
-            cipher.updateAAD(buffer);
-            // Per the API the buffer's position and limit should be equal
-            if (buffer.position() != buffer.limit()) {
-                throw new RuntimeException("Buffer position and limit " +
-                        "should be equal but are not: p = " +
-                        buffer.position() + ", l = " + buffer.limit());
-            }
-        } catch (GeneralSecurityException gse) {
-            throw new RuntimeException("Failed during test setup", gse);
+        cipher.updateAAD(buffer);
+        // Per the API the buffer's position and limit should be equal
+        if (buffer.position() != buffer.limit()) {
+            throw new RuntimeException("Buffer position and limit " +
+                    "should be equal but are not: p = " +
+                    buffer.position() + ", l = " + buffer.limit());
         }
     };
 
@@ -172,25 +167,21 @@ public class UpdateAADTest {
     // put in with a complete encryption operation still gets the
     // expected answer.
     public static TestAction vectorTest = buffer -> {
-        try {
-            Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
-            cipher.init(Cipher.ENCRYPT_MODE,
-                    new SecretKeySpec(TEST_KEY_BYTES, "ChaCha20"),
-                    new IvParameterSpec(TEST_NONCE_BYTES));
-            ByteBuffer outbuf = ByteBuffer.allocate(
-                    cipher.getOutputSize(TEST_INPUT_BYTES.length));
+        Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
+        cipher.init(Cipher.ENCRYPT_MODE,
+                new SecretKeySpec(TEST_KEY_BYTES, "ChaCha20"),
+                new IvParameterSpec(TEST_NONCE_BYTES));
+        ByteBuffer outbuf = ByteBuffer.allocate(cipher.getOutputSize(
+                TEST_INPUT_BYTES.length));
 
-            // Adjust the limit to be the end of the aad
-            int origLim = buffer.limit();
-            buffer.limit(buffer.position() + TEST_AAD_BYTES.length);
-            cipher.updateAAD(buffer);
-            buffer.limit(origLim);
-            cipher.doFinal(buffer, outbuf);
-            if (!outbuf.flip().equals(EXPOUTBUF)) {
-                throw new RuntimeException("Output data mismatch");
-            }
-        } catch (GeneralSecurityException gse) {
-            throw new RuntimeException("Failed during test setup", gse);
+        // Adjust the limit to be the end of the aad
+        int origLim = buffer.limit();
+        buffer.limit(buffer.position() + TEST_AAD_BYTES.length);
+        cipher.updateAAD(buffer);
+        buffer.limit(origLim);
+        cipher.doFinal(buffer, outbuf);
+        if (!outbuf.flip().equals(EXPOUTBUF)) {
+            throw new RuntimeException("Output data mismatch");
         }
     };
 }
