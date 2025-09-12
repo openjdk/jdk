@@ -67,6 +67,13 @@ extern void gtest_exit_from_child_vm(int num);
 
 #define CONCAT(a, b) a ## b
 
+// GTEST_TEST and friends expand into code that includes a `new` expression
+// that uses the global allocator, which is forbidden in normal HotSpot code,
+// and enforced via deprecation warnings. For now, just suppress deprecation
+// warnings in gtests while we figure out some better mechanism for dealing
+// with this.
+PRAGMA_DEPRECATED_IGNORED
+
 #define TEST(category, name) GTEST_TEST(category, name)
 
 #define TEST_VM(category, name) GTEST_TEST(category, CONCAT(name, _vm))

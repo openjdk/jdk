@@ -25,14 +25,13 @@
 #ifndef SHARE_CODE_RELOCINFO_HPP
 #define SHARE_CODE_RELOCINFO_HPP
 
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <new>
 
 class CodeBlob;
 class Metadata;

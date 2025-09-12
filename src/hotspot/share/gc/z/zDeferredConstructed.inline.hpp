@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_Z_ZDEFERREDCONSTRUCTED_INLINE_HPP
 #define SHARE_GC_Z_ZDEFERREDCONSTRUCTED_INLINE_HPP
 
+#include "cppstdlib/new.hpp"
 #include "gc/z/zDeferredConstructed.hpp"
 
-#include <new>
 #include <type_traits>
 
 template <typename T>

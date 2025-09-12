@@ -24,6 +24,7 @@
 
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "cppstdlib/new.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/vtableStubs.hpp"
@@ -63,7 +64,6 @@
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
-#include <new>
 #include <stdarg.h>
 #include <stdio.h>
 
