@@ -3763,20 +3763,17 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   return element();
 }
 
-int reflect_ConstantPool::_oop_offset;
-
-#define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "vmholder", object_signature, false)
+int reflect_ConstantPool::_vmholder_offset;
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
-  // The field is called ConstantPool* in the sun.reflect.ConstantPool class.
-  CONSTANTPOOL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  // The field is injected and called Object vmholder in the jdk.internal.reflect.ConstantPool class.
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
-  CONSTANTPOOL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -3929,15 +3926,15 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
-  assert(_oop_offset != 0, "Uninitialized oop_offset");
+  assert(_vmholder_offset != 0, "Uninitialized vm_holder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
-  reflect->obj_field_put(_oop_offset, mirror);
+  reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-  assert(_oop_offset != 0, "Uninitialized oop_offset");
-  oop mirror = reflect->obj_field(_oop_offset);
+  assert(_vmholder_offset != 0, "Uninitialized vm_holder");
+  oop mirror = reflect->obj_field(_vmholder_offset);
   Klass* k = java_lang_Class::as_Klass(mirror);
   assert(k->is_instance_klass(), "Must be");
 

@@ -941,8 +941,9 @@ class java_lang_Module {
 class reflect_ConstantPool {
  private:
   // Note that to reduce dependencies on the JDK we compute these
-  // offsets at run-time.
-  static int _oop_offset;
+  // offsets at run-time. This field is the oop offset for the
+  // actual constant pool, previously called constantPoolOop.
+  static int _vmholder_offset;
 
   static void compute_offsets();
 
@@ -954,7 +955,6 @@ class reflect_ConstantPool {
 
   // Accessors
   static void set_cp(oop reflect, ConstantPool* value);
-  static int oop_offset() { CHECK_INIT(_oop_offset); }
 
   static ConstantPool* get_cp(oop reflect);
 
