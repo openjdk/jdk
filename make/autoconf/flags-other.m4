@@ -113,7 +113,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
 [
   UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
     RESULT: AARCH64_SVE_ENABLED,
-    DESC: [Use SVE when compile libsleef],
+    DESC: [Use SVE when compiling libsleef],
     CHECK_AVAILABLE: [
       # Check whether the compiler supports the Arm C Language Extensions (ACLE)
       # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
