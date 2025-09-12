@@ -139,6 +139,16 @@ class CompilerTypeConstant : public JfrSerializer {
 class NMTTypeConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
+
+  static void register_single_type(MemTag i, const char* name) {
+    if (Jfr::is_recording()) {
+      JfrCheckpointWriter w;
+      w.write_type(TYPE_NMTTYPE);
+      w.write_count(1);
+      w.write_key(static_cast<u8>(i));
+      w.write(name);
+    }
+  }
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPE_HPP
