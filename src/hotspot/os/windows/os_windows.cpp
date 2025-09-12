@@ -2795,8 +2795,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
           address deopt = nm->is_method_handle_return(pc) ?
-            nm->deopt_mh_handler_begin() :
-            nm->deopt_handler_begin();
+            nm->deopt_mh_handler_entry() :
+            nm->deopt_handler_entry();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler

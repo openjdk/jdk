@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2092,7 +2093,7 @@ class HandlerImpl {
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2118,12 +2119,21 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_point = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
   __ end_a_stub();
 
-  return offset;
+  return entry_point;
 }
 
 //=============================================================================

@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -108,7 +109,7 @@ class HandlerImpl {
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_deopt_handler() {
-    return ( 9 * 4 );
+    return ( 4 * 4 );
   }
 
 };
@@ -880,19 +881,21 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
-  address deopt_pc = __ pc();
 
-  __ sub(SP, SP, wordSize); // make room for saved PC
-  __ push(LR); // save LR that may be live when we get here
-  __ mov_relative_address(LR, deopt_pc);
-  __ str(LR, Address(SP, wordSize)); // save deopt PC
-  __ pop(LR); // restore LR
+  Label start;
+  __ bind(start);
+
+  // Store address of the entry point
+  __ push(PC);
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
+
+  int entry_point = __ offset();
+  __ b(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
 
   __ end_a_stub();
-  return offset;
+  return entry_point;
 }
 
 bool Matcher::match_rule_supported(int opcode) {

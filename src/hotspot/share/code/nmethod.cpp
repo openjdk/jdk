@@ -1316,8 +1316,8 @@ nmethod::nmethod(
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_offset    = 0;
-    _deopt_mh_handler_offset = 0;
+    _deopt_handler_entry_offset    = 0;
+    _deopt_mh_handler_entry_offset = 0;
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
@@ -1461,14 +1461,14 @@ nmethod::nmethod(
         _exception_offset        = -1;
       }
       if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
+        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
       } else {
-        _deopt_handler_offset    = -1;
+        _deopt_handler_entry_offset    = -1;
       }
       if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = code_offset() + offsets->value(CodeOffsets::DeoptMH);
+        _deopt_mh_handler_entry_offset = code_offset() + offsets->value(CodeOffsets::DeoptMH);
       } else {
-        _deopt_mh_handler_offset = -1;
+        _deopt_mh_handler_entry_offset = -1;
       }
     } else
 #endif
@@ -1485,11 +1485,11 @@ nmethod::nmethod(
         _exception_offset = -1;
       }
 
-      _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
+      _deopt_handler_entry_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
       if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
+        _deopt_mh_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
       } else {
-        _deopt_mh_handler_offset = -1;
+        _deopt_mh_handler_entry_offset = -1;
       }
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
@@ -2714,7 +2714,7 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
       break;
     }
   }
-  assert(has_method_handle_invokes() == (_deopt_mh_handler_offset != -1), "must have deopt mh handler");
+  assert(has_method_handle_invokes() == (_deopt_mh_handler_entry_offset != -1), "must have deopt mh handler");
 
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
@@ -3725,12 +3725,12 @@ const char* nmethod::nmethod_section_label(address pos) const {
   if (pos == code_begin())                                              label = "[Instructions begin]";
   if (pos == entry_point())                                             label = "[Entry Point]";
   if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
-  if (has_method_handle_invokes() && (pos == deopt_mh_handler_begin())) label = "[Deopt MH Handler Code]";
+  if (has_method_handle_invokes() && (pos == deopt_mh_handler_entry())) label = "[Deopt MH Handler Entry Point]";
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
   if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_offset != -1 &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
   return label;
 }
 
