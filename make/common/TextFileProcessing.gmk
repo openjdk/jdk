@@ -36,7 +36,7 @@ ifeq ($(INCLUDE), true)
 # param 4 = the target file name (possibly with a partial path)
 define SetupSingleTextFileForProcessing
   $(strip $3)/$(strip $4): $2 $$($1_VARDEPS_FILE)
-	$$(call LogInfo, Processing $(strip $4))
+	$$(call LogInfo, $$(if $$($1_INFO), $$($1_INFO), Processing $(strip $4)))
 	$$(call MakeDir, $$(@D))
 	$(RM) '$$@' '$$@.includes.tmp' '$$@.replacements.tmp' ; \
 	$$($1_INCLUDES_COMMAND_LINE) < '$$<' > '$$@.includes.tmp' ; \
@@ -66,6 +66,8 @@ endef
 #       SOURCE_DIRS)
 #   EXCLUDE_FILES exclude files matching these patterns (used only with
 #       SOURCE_DIRS)
+#   INFO a message to print on the info log level, instead of the default
+#       "Processing <file>". Applies to all files processed in this rule.
 #   INCLUDES replace the occurrences of a pattern with the contents of a file;
 #       one or more such include pattern, using the syntax:
 #       PLACEHOLDER => FILE_TO_INCLUDE ; ...

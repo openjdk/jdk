@@ -1,0 +1,417 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+include TextFileProcessing.gmk
+
+NIO_EXCEPTIONS_INPUT_DIR := $(MODULE_SRC)/share/classes/java/nio
+NIO_EXCEPTIONS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
+
+SetupGenException = $(NamedParamsMacroTemplate)
+define SetupGenExceptionBody
+  ifeq ($$($1_SUBPACKAGE), )
+    $1_DOTTED_SUBPACKAGE :=
+  else
+    $1_DOTTED_SUBPACKAGE := .$$($1_SUBPACKAGE)
+  endif
+  ifeq ($$($1_TEMPLATE), )
+    $1_TEMPLATE := NioExceptions
+  endif
+  ifeq ($$($1_SINCE), )
+    $1_SINCE := 1.4
+  endif
+
+  $1_OUTPUT := $(NIO_EXCEPTIONS_OUTPUT_DIR)/$$($1_SUBPACKAGE)/$1.java
+  $$(eval $$(call SetupTextFileProcessing, $1, \
+      SOURCE_FILES := $(NIO_EXCEPTIONS_INPUT_DIR)/$$($1_TEMPLATE).java.template, \
+      OUTPUT_FILE := $$($1_OUTPUT), \
+      INFO := Generating java.nio$$($1_DOTTED_SUBPACKAGE).$1.java, \
+      REPLACEMENTS := \
+          @@SUBPACKAGE@@ => $$($1_DOTTED_SUBPACKAGE) ; \
+          @@DESCRIPTION@@ => $$($1_DESCRIPTION) ; \
+          @@SINCE@@ => $$($1_SINCE) ; \
+          @@CLASS_NAME@@ => $1 ; \
+          @@SUPERCLASS@@ => $$($1_SUPERCLASS) ; \
+          @@SERIAL_VERSION_UID@@ => $$($1_SERIAL_VERSION_UID) ; \
+          @@NAME_DESC@@ => $$($1_NAME_DESC) , \
+  ))
+endef
+
+################################################################################
+# Exceptions for java.nio
+
+$(eval $(call SetupGenException, BufferOverflowException, \
+    SUPERCLASS := RuntimeException, \
+    SERIAL_VERSION_UID := -5484897634319144535L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when a relative <i>put</i> operation reaches\n \
+        $(SPACE)* the target buffer'"'"'s limit., \
+))
+TARGETS += $(BufferOverflowException)
+
+$(eval $(call SetupGenException, BufferUnderflowException, \
+    SUPERCLASS := RuntimeException, \
+    SERIAL_VERSION_UID := -1713313658691622206L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when a relative <i>get</i> operation reaches\n \
+        $(SPACE)* the source buffer'"'"'s limit., \
+))
+TARGETS += $(BufferUnderflowException)
+
+$(eval $(call SetupGenException, InvalidMarkException, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 1698329710438510774L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to reset a buffer\n \
+        $(SPACE)* when its mark is not defined., \
+))
+TARGETS += $(InvalidMarkException)
+
+$(eval $(call SetupGenException, ReadOnlyBufferException, \
+    SUPERCLASS := UnsupportedOperationException, \
+    SERIAL_VERSION_UID := -1210063976496234090L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when a content-mutation method such as\n \
+        $(SPACE)* <code>put</code> or <code>compact</code> is invoked upon a read-only buffer., \
+))
+TARGETS += $(ReadOnlyBufferException)
+
+################################################################################
+# Exceptions for java.nio.charset
+
+$(eval $(call SetupGenException, CharacterCodingException, \
+    SUBPACKAGE := charset, \
+    SUPERCLASS := java.io.IOException, \
+    SERIAL_VERSION_UID := 8421532232154627783L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception thrown when a character encoding\n \
+        $(SPACE)* or decoding error occurs., \
+))
+TARGETS += $(CharacterCodingException)
+
+$(eval $(call SetupGenException, UnsupportedCharsetException, \
+    TEMPLATE := CharsetNameExceptions, \
+    SUBPACKAGE := charset, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := 1490765524727386367L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when no support is available\n \
+        $(SPACE)* for a requested charset., \
+    NAME_DESC := name of the unsupported charset, \
+))
+TARGETS += $(UnsupportedCharsetException)
+
+$(eval $(call SetupGenException, IllegalCharsetNameException, \
+    TEMPLATE := CharsetNameExceptions, \
+    SUBPACKAGE := charset, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := 1457525358470002989L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when a string that is not a\n \
+        $(SPACE)* <a href="Charset.html#names">legal charset name</a> is used as such., \
+    NAME_DESC := illegal charset name, \
+))
+TARGETS += $(IllegalCharsetNameException)
+
+################################################################################
+# Exceptions for java.nio.channels
+
+$(eval $(call SetupGenException, ClosedChannelException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := java.io.IOException, \
+    SERIAL_VERSION_UID := 882777185433553857L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception thrown when an attempt is made to invoke or complete an\n \
+        $(SPACE)* I/O operation upon channel that is closed$(COMMA) or at least closed to that\n \
+        $(SPACE)* operation.'" "''" "'That this exception is thrown does not necessarily imply that\n \
+        $(SPACE)* the channel is completely closed.'" "''" "'A socket channel whose write half has\n \
+        $(SPACE)* been shut down$(COMMA) for example$(COMMA) may still be open for reading., \
+))
+TARGETS += $(ClosedChannelException)
+
+$(eval $(call SetupGenException, FileLockInterruptionException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := java.io.IOException, \
+    SERIAL_VERSION_UID := 7104080643653532383L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception received by a thread when another thread interrupts it\n \
+        $(SPACE)* while it is waiting to acquire a file lock.'" "''" "'Before this exception is thrown\n \
+        $(SPACE)* the interrupt status of the previously-blocked thread will have been set., \
+))
+TARGETS += $(FileLockInterruptionException)
+
+$(eval $(call SetupGenException, AsynchronousCloseException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := ClosedChannelException, \
+    SERIAL_VERSION_UID := 6891178312432313966L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception received by a thread when another thread closes the\n \
+        $(SPACE)* channel or the part of the channel upon which it is blocked in an I/O\n \
+        $(SPACE)* operation., \
+))
+TARGETS += $(AsynchronousCloseException)
+
+$(eval $(call SetupGenException, ClosedByInterruptException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := AsynchronousCloseException, \
+    SERIAL_VERSION_UID := -4488191543534286750L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception received by a thread when another thread interrupts it\n \
+        $(SPACE)* while it is blocked in an I/O operation upon a channel.'" "''" "'Before this\n \
+        $(SPACE)* exception is thrown the channel will have been closed and the interrupt\n \
+        $(SPACE)* status of the previously-blocked thread will have been set., \
+))
+TARGETS += $(ClosedByInterruptException)
+
+$(eval $(call SetupGenException, IllegalSelectorException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := -8406323347253320987L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to register a channel\n \
+        $(SPACE)* with a selector that was not created by the provider that created the\n \
+        $(SPACE)* channel., \
+))
+TARGETS += $(IllegalSelectorException)
+
+$(eval $(call SetupGenException, UnresolvedAddressException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := 6136959093620794148L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to invoke a network\n \
+        $(SPACE)* operation upon an unresolved socket address., \
+))
+TARGETS += $(UnresolvedAddressException)
+
+$(eval $(call SetupGenException, UnsupportedAddressTypeException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := -2964323842829700493L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to bind or connect\n \
+        $(SPACE)* to a socket address of a type that is not supported., \
+))
+TARGETS += $(UnsupportedAddressTypeException)
+
+$(eval $(call SetupGenException, AlreadyConnectedException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -7331895245053773357L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to connect a {@link\n \
+        $(SPACE)* SocketChannel} that is already connected., \
+))
+TARGETS += $(AlreadyConnectedException)
+
+$(eval $(call SetupGenException, ConnectionPendingException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 2008393366501760879L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to connect a {@link\n \
+        $(SPACE)* SocketChannel} for which a non-blocking connection operation is already in\n \
+        $(SPACE)* progress., \
+))
+TARGETS += $(ConnectionPendingException)
+
+$(eval $(call SetupGenException, ClosedSelectorException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 6466297122317847835L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to invoke an I/O\n \
+        $(SPACE)* operation upon a closed selector., \
+))
+TARGETS += $(ClosedSelectorException)
+
+$(eval $(call SetupGenException, CancelledKeyException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -8438032138028814268L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to use\n \
+        $(SPACE)* a selection key that is no longer valid., \
+))
+TARGETS += $(CancelledKeyException)
+
+$(eval $(call SetupGenException, IllegalBlockingModeException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -3335774961855590474L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when a blocking-mode-specific operation\n \
+        $(SPACE)* is invoked upon a channel in the incorrect blocking mode., \
+))
+TARGETS += $(IllegalBlockingModeException)
+
+$(eval $(call SetupGenException, NoConnectionPendingException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -8296561183633134743L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when the {@link SocketChannel#finishConnect\n \
+        $(SPACE)* finishConnect} method of a {@link SocketChannel} is invoked without first\n \
+        $(SPACE)* successfully invoking its {@link SocketChannel#connect connect} method., \
+))
+TARGETS += $(NoConnectionPendingException)
+
+$(eval $(call SetupGenException, NonReadableChannelException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -3200915679294993514L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to read\n \
+        $(SPACE)* from a channel that was not originally opened for reading., \
+))
+TARGETS += $(NonReadableChannelException)
+
+$(eval $(call SetupGenException, NonWritableChannelException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -7071230488279011621L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to write\n \
+        $(SPACE)* to a channel that was not originally opened for writing., \
+))
+TARGETS += $(NonWritableChannelException)
+
+$(eval $(call SetupGenException, NotYetBoundException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 4640999303950202242L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to invoke an I/O\n \
+        $(SPACE)* operation upon a server socket channel that is not yet bound., \
+))
+TARGETS += $(NotYetBoundException)
+
+$(eval $(call SetupGenException, NotYetConnectedException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 4697316551909513464L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to invoke an I/O\n \
+        $(SPACE)* operation upon a socket channel that is not yet connected., \
+))
+TARGETS += $(NotYetConnectedException)
+
+$(eval $(call SetupGenException, OverlappingFileLockException, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 2047812138163068433L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to acquire a lock on a\n \
+        $(SPACE)* region of a file that overlaps a region already locked by the same Java\n \
+        $(SPACE)* virtual machine$(COMMA) or when another thread is already waiting to lock an\n \
+        $(SPACE)* overlapping region of the same file., \
+))
+TARGETS += $(OverlappingFileLockException)
+
+$(eval $(call SetupGenException, InterruptedByTimeoutException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := java.io.IOException, \
+    SERIAL_VERSION_UID := -4268008601014042947L, \
+    DESCRIPTION := \
+        $(SPACE)* Checked exception received by a thread when a timeout elapses before an\n \
+        $(SPACE)* asynchronous operation completes., \
+))
+TARGETS += $(InterruptedByTimeoutException)
+
+$(eval $(call SetupGenException, IllegalChannelGroupException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalArgumentException, \
+    SERIAL_VERSION_UID := -2495041211157744253L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to open a channel\n \
+        $(SPACE)* in a group that was not created by the same provider., \
+))
+TARGETS += $(IllegalChannelGroupException)
+
+$(eval $(call SetupGenException, AlreadyBoundException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 6796072983322737592L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to bind the socket a\n \
+        $(SPACE)* network oriented channel that is already bound., \
+))
+TARGETS += $(AlreadyBoundException)
+
+$(eval $(call SetupGenException, AcceptPendingException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 2721339977965416421L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to initiate an accept\n \
+        $(SPACE)* operation on a channel and a previous accept operation has not completed., \
+    ))
+TARGETS += $(AcceptPendingException)
+
+$(eval $(call SetupGenException, ReadPendingException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 1986315242191227217L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to read from an\n \
+        $(SPACE)* asynchronous socket channel and a previous read has not completed., \
+))
+TARGETS += $(ReadPendingException)
+
+$(eval $(call SetupGenException, WritePendingException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := 7031871839266032276L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to write to an\n \
+        $(SPACE)* asynchronous socket channel and a previous write has not completed., \
+))
+TARGETS += $(WritePendingException)
+
+$(eval $(call SetupGenException, ShutdownChannelGroupException, \
+    SINCE := 1.7, \
+    SUBPACKAGE := channels, \
+    SUPERCLASS := IllegalStateException, \
+    SERIAL_VERSION_UID := -3903801676350154157L, \
+    DESCRIPTION := \
+        $(SPACE)* Unchecked exception thrown when an attempt is made to construct a channel in\n \
+        $(SPACE)* a group that is shutdown or the completion handler for an I/O operation\n \
+        $(SPACE)* cannot be invoked because the channel group has terminated., \
+))
+TARGETS += $(ShutdownChannelGroupException)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk
