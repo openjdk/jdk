@@ -63,7 +63,6 @@ class RegMask {
   LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE_IN_INTS, 2)));
 
   static const unsigned int _WordBitMask = BitsPerWord - 1U;
-  static const unsigned int _LogWordBits = LogBitsPerWord;
   static const unsigned int _RM_SIZE_IN_WORDS =
       LP64_ONLY(RM_SIZE_IN_INTS >> 1) NOT_LP64(RM_SIZE_IN_INTS);
   static const unsigned int _RM_WORD_MAX_INDEX = _RM_SIZE_IN_WORDS - 1U;
@@ -157,7 +156,7 @@ class RegMask {
     assert(reg < CHUNK_SIZE, "");
 
     unsigned r = (unsigned)reg;
-    return _rm_word[r >> _LogWordBits] & (uintptr_t(1) << (r & _WordBitMask));
+    return _rm_word[r >> LogBitsPerWord] & (uintptr_t(1) << (r & _WordBitMask));
   }
 
   // The last bit in the register mask indicates that the mask should repeat
@@ -187,7 +186,7 @@ class RegMask {
     for (unsigned i = _lwm; i <= _hwm; i++) {
       uintptr_t bits = _rm_word[i];
       if (bits) {
-        return OptoReg::Name((i << _LogWordBits) + find_lowest_bit(bits));
+        return OptoReg::Name((i << LogBitsPerWord) + find_lowest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -201,7 +200,7 @@ class RegMask {
     while (i > _lwm) {
       uintptr_t bits = _rm_word[--i];
       if (bits) {
-        return OptoReg::Name((i << _LogWordBits) + find_highest_bit(bits));
+        return OptoReg::Name((i << LogBitsPerWord) + find_highest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -300,7 +299,7 @@ class RegMask {
     assert(reg < CHUNK_SIZE, "sanity");
     assert(valid_watermarks(), "pre-condition");
     unsigned r = (unsigned)reg;
-    unsigned index = r >> _LogWordBits;
+    unsigned index = r >> LogBitsPerWord;
     if (index > _hwm) _hwm = index;
     if (index < _lwm) _lwm = index;
     _rm_word[index] |= (uintptr_t(1) << (r & _WordBitMask));
@@ -311,7 +310,7 @@ class RegMask {
   void Remove(OptoReg::Name reg) {
     assert(reg < CHUNK_SIZE, "");
     unsigned r = (unsigned)reg;
-    _rm_word[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & _WordBitMask));
+    _rm_word[r >> LogBitsPerWord] &= ~(uintptr_t(1) << (r & _WordBitMask));
   }
 
   // OR 'rm' into 'this'
@@ -424,7 +423,7 @@ class RegMaskIterator {
         unsigned int next_bit = find_lowest_bit(_current_bits);
         assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
         _current_bits = (_current_bits >> next_bit) - 1;
-        _reg = OptoReg::Name(((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
+        _reg = OptoReg::Name(((_next_index - 1) << LogBitsPerWord) + next_bit);
         return r;
       }
     }

@@ -246,7 +246,7 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_rm_word[i]) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name((i<<_LogWordBits) + find_lowest_bit(_rm_word[i]) + (size - 1));
+      return OptoReg::Name((i<<LogBitsPerWord) + find_lowest_bit(_rm_word[i]) + (size - 1));
     }
   }
   return OptoReg::Bad;
