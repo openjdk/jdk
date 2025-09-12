@@ -662,8 +662,6 @@ uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
 
   double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
 
-  time_remaining_ms -= total_prediction_ms;
-
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_regions_selected, optional_regions_count, total_prediction_ms);
 
