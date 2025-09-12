@@ -110,9 +110,10 @@ protected:
   void deallocate(void* slot) override { ShouldNotReachHere(); }
 };
 
+static constexpr uint SegmentAlignment = 8;
 // A single segment/arena containing _num_slots blocks of memory of _slot_size.
 // Segments can be linked together using a singly linked list.
-class G1MonotonicArena::Segment {
+class alignas(SegmentAlignment) G1MonotonicArena::Segment {
   const uint _slot_size;
   const uint _num_slots;
   Segment* volatile _next;
@@ -122,7 +123,7 @@ class G1MonotonicArena::Segment {
   uint volatile _next_allocate;
   const MemTag _mem_tag;
 
-  static size_t header_size() { return align_up(sizeof(Segment), Alignment); }
+  static size_t header_size() { return align_up(sizeof(Segment), SegmentAlignment); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
     // The cast is required to guard against overflow wrap around.
@@ -174,12 +175,11 @@ public:
 
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
   static void delete_segment(Segment* segment);
-  static constexpr uint Alignment = 8;
 
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
-static_assert(alignof(G1MonotonicArena::Segment) >= G1MonotonicArena::Segment::Alignment, "assert alignment of Segment (and indirectly its payload)");
+static_assert(alignof(G1MonotonicArena::Segment) >= SegmentAlignment, "assert alignment of Segment (and indirectly its payload)");
 
 // Set of (free) Segments. The assumed usage is that allocation
 // to it and removal of segments is strictly separate, but every action may be
@@ -236,7 +236,7 @@ public:
     assert(_initial_num_slots > 0, "Must be");
     assert(_max_num_slots > 0, "Must be");
     assert(_slot_alignment > 0, "Must be");
-    assert(_slot_alignment <= Segment::Alignment, "Must be");
+    assert(_slot_alignment <= SegmentAlignment, "Must be");
   }
 
   virtual uint next_num_slots(uint prev_num_slots) const {
