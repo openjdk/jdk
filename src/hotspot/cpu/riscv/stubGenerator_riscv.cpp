@@ -2332,7 +2332,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_copy(StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id, &nopush_entry);
     // disjoint arrayof nopush entry is needed by conjoint copy
     StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
-    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, entry, nullptr);
+    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush, nullptr);
 
     //*** jshort
     // Always need aligned and unaligned versions
@@ -2344,14 +2344,15 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_jshort_arraycopy_nopush = nopush_entry;
     StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, &nopush_entry);
     // disjoint arrayof nopush entry is needed by conjoint copy
-    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, nullptr);
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush, nullptr);
 
     //*** jint
     // Aligned versions
     StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_copy(StubId::stubgen_arrayof_jint_disjoint_arraycopy_id, &nopush_entry);
     // disjoint arrayof nopush entry is needed by conjoint copy
     StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush = nopush_entry;
-    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, StubRoutines::_arrayof_jint_disjoint_arraycopy, nullptr);
+    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush, nullptr);
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
     // entry_jint_arraycopy always points to the unaligned version
     StubRoutines::_jint_disjoint_arraycopy           = generate_disjoint_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &nopush_entry);

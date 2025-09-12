@@ -2825,13 +2825,12 @@ class StubGenerator: public StubCodeGenerator {
       // Aligned versions without pre-barriers
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
         = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
-      // disjoint arrayof+uninit nopush entry is needed by conjoint
-      // copy
+      // disjoint arrayof+uninit nopush entry is needed by conjoint copy
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush = nopush_entry;
       // note that we don't need a returned nopush entry because the
       // generic/unsafe copy does not cater for uninit arrays.
       StubRoutines::_arrayof_oop_arraycopy_uninit
-        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit, nullptr);
+        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush, nullptr);
     }
 
     // for oop copies reuse arrayof entries for non-arrayof cases
