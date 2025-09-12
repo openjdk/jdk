@@ -1288,7 +1288,7 @@ void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   } else if (CDSConfig::new_aot_flags_used()) {
     vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
   } else {
-    vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error", message);
+    vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
 }
 
