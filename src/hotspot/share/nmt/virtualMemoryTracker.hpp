@@ -344,7 +344,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 };
 
 class VirtualMemoryWalker : public StackObj {
-public:
+ public:
   virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
 };
 
