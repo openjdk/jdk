@@ -242,7 +242,7 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
         BigInteger serialNumber = BigInteger.valueOf(
                 random.nextLong(1000000) + 1);
         return customCertificateBuilder(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
+                name.toString(),
                 caKeys.getPublic(), caKeys.getPublic())
                 .setSerialNumber(serialNumber)
                 .addExtension(new AuthorityKeyIdentifierExtension(kid, gns,
