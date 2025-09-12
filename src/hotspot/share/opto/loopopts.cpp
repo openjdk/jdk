@@ -1933,7 +1933,9 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
 
 // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
 // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
-// test of the pre loop above the point in the graph where it's pinned.
+// test of the pre loop above the point in the graph where it's pinned. This results in a broken graph. One way to avoid
+// it would be to not eliminate the check in the main loop. Instead, we prevent sinking of the node here so better code
+// is generated for the main loop.
 bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node* ctrl) {
   if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
     CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
