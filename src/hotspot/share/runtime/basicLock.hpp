@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_BASICLOCK_HPP
 
 #include "oops/markWord.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
@@ -39,8 +39,8 @@ class BasicLock {
   // be nullptr or the ObjectMonitor* used when locking.
   volatile uintptr_t _metadata;
 
-  uintptr_t get_metadata() const { return Atomic::load(&_metadata); }
-  void set_metadata(uintptr_t value) { Atomic::store(&_metadata, value); }
+  uintptr_t get_metadata() const { return AtomicAccess::load(&_metadata); }
+  void set_metadata(uintptr_t value) { AtomicAccess::store(&_metadata, value); }
   static int metadata_offset_in_bytes() { return (int)offset_of(BasicLock, _metadata); }
 
  public:

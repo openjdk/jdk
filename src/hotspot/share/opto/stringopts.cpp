@@ -31,7 +31,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ kit.
@@ -409,7 +409,7 @@ Node_List PhaseStringOpts::collect_toString_calls() {
     }
   }
 #ifndef PRODUCT
-  Atomic::add(&_stropts_total, encountered);
+  AtomicAccess::add(&_stropts_total, encountered);
 #endif
   return string_calls;
 }
@@ -682,7 +682,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
             StringConcat* merged = sc->merge(other, arg);
             if (merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
-              Atomic::inc(&_stropts_merged);
+              AtomicAccess::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {
                 tty->print_cr("stacking would succeed");
               }
@@ -2041,7 +2041,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   string_sizes->disconnect_inputs(C);
   sc->cleanup();
 #ifndef PRODUCT
-  Atomic::inc(&_stropts_replaced);
+  AtomicAccess::inc(&_stropts_replaced);
 #endif
 }
 
