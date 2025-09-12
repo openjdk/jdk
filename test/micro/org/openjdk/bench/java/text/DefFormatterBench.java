@@ -53,6 +53,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 public class DefFormatterBench {
 
+    public static final int VALUES_SIZE = 13;
     public double[] values;
     public BigDecimal[] bdLargeValues;
     public BigDecimal[] bdSmallValues;
@@ -75,7 +76,7 @@ public class DefFormatterBench {
     private DefNumberFormat dnf = new DefNumberFormat();
 
     @Benchmark
-    @OperationsPerInvocation(13)
+    @OperationsPerInvocation(VALUES_SIZE)
     public void testDefNumberFormatter(final Blackhole blackhole) {
         for (double value : values) {
             blackhole.consume(this.dnf.format(value));
@@ -83,7 +84,7 @@ public class DefFormatterBench {
     }
 
     @Benchmark
-    @OperationsPerInvocation(13)
+    @OperationsPerInvocation(VALUES_SIZE)
     public void testSmallBigDecDefNumberFormatter(final Blackhole blackhole) {
         for (BigDecimal value : bdSmallValues) {
             blackhole.consume(this.dnf.format(value));
@@ -91,7 +92,7 @@ public class DefFormatterBench {
     }
 
     @Benchmark
-    @OperationsPerInvocation(13)
+    @OperationsPerInvocation(VALUES_SIZE)
     public void testLargeBigDecDefNumberFormatter(final Blackhole blackhole) {
         for (BigDecimal value : bdLargeValues) {
             blackhole.consume(this.dnf.format(value));
