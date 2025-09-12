@@ -82,6 +82,7 @@ if ($Restarted) {
   # Restart this script in a new PowerShell process with a new console.
   Start-Process -Wait -FilePath powershell -ArgumentList @(
     "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
+    "-WindowStyle", "Hidden", # Hide the window to avoid focus being distracted
     "-File", $PSCommandPath,
     "-Executable", $Executable,
     "-TimeoutSeconds", $TimeoutSeconds,
