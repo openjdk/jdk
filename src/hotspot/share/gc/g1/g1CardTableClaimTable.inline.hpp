@@ -29,26 +29,26 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 bool G1CardTableClaimTable::has_unclaimed_cards(uint region) {
   assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-  return Atomic::load(&_card_claims[region]) < G1HeapRegion::CardsPerRegion;
+  return AtomicAccess::load(&_card_claims[region]) < G1HeapRegion::CardsPerRegion;
 }
 
 void G1CardTableClaimTable::reset_to_unclaimed(uint region) {
   assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-  Atomic::store(&_card_claims[region], 0u);
+  AtomicAccess::store(&_card_claims[region], 0u);
 }
 
 uint G1CardTableClaimTable::claim_cards(uint region, uint increment) {
   assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-  return Atomic::fetch_then_add(&_card_claims[region], increment, memory_order_relaxed);
+  return AtomicAccess::fetch_then_add(&_card_claims[region], increment, memory_order_relaxed);
 }
 
 uint G1CardTableClaimTable::claim_chunk(uint region) {
   assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-  return Atomic::fetch_then_add(&_card_claims[region], cards_per_chunk(), memory_order_relaxed);
+  return AtomicAccess::fetch_then_add(&_card_claims[region], cards_per_chunk(), memory_order_relaxed);
 }
 
 uint G1CardTableClaimTable::claim_all_cards(uint region) {

@@ -52,7 +52,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -146,9 +146,9 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
         return;
       }
 
-      bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
+      bool marked_as_dirty = AtomicAccess::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
-        uint allocated = Atomic::fetch_then_add(&_cur_idx, 1u);
+        uint allocated = AtomicAccess::fetch_then_add(&_cur_idx, 1u);
         _buffer[allocated] = region;
       }
     }
@@ -213,7 +213,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
       const uint num_regions_per_worker = num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion;
 
       while (_cur_dirty_regions < _regions->size()) {
-        uint next = Atomic::fetch_then_add(&_cur_dirty_regions, num_regions_per_worker);
+        uint next = AtomicAccess::fetch_then_add(&_cur_dirty_regions, num_regions_per_worker);
         uint max = MIN2(next + num_regions_per_worker, _regions->size());
 
         for (uint i = next; i < max; i++) {
@@ -1150,7 +1150,7 @@ public:
         if (_initial_evacuation &&
             g1h->has_humongous_reclaim_candidates() &&
             !_fast_reclaim_handled &&
-            !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
+            !AtomicAccess::cmpxchg(&_fast_reclaim_handled, false, true)) {
 
           G1GCParPhaseTimesTracker subphase_x(p, G1GCPhaseTimes::MergeER, worker_id);
 

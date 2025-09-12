@@ -30,7 +30,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -126,7 +126,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
+      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.

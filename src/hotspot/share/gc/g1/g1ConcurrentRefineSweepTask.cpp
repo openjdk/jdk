@@ -25,7 +25,6 @@
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
-#include "runtime/atomic.hpp"
 
 class G1RefineRegionClosure : public G1HeapRegionClosure {
   using CardValue = G1CardTable::CardValue;

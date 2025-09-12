@@ -922,28 +922,29 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     return;
   }
 
-  if (!CompilationModeFlag::disable_intermediate()) {
-    // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
-    // in the interpreter and then compile with C2 (the transition function will request that,
-    // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
-    // pure C1.
-    if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
-      if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-        compile(mh, bci, CompLevel_simple, THREAD);
-      }
-      return;
+  // Check if the method can be compiled. Additional logic for TieredCompilation:
+  // If it cannot be compiled with C1, continue profiling in the interpreter
+  // and then compile with C2 (the transition function will request that,
+  // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
+  // pure C1.
+  if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
+    if (!CompilationModeFlag::disable_intermediate() &&
+        level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
+      compile(mh, bci, CompLevel_simple, THREAD);
     }
-    if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
-      if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
-        nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
-        if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
-          // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1);
-        }
-        compile(mh, bci, CompLevel_simple, THREAD);
+    return;
+  }
+  if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
+    if (!CompilationModeFlag::disable_intermediate() &&
+        level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
+      nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
+      if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
+        // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
+        osr_nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1);
       }
-      return;
+      compile(mh, bci, CompLevel_simple, THREAD);
     }
+    return;
   }
   if (bci != InvocationEntryBci && mh->is_not_osr_compilable(level)) {
     return;

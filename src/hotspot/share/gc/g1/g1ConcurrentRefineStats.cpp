@@ -23,7 +23,7 @@
  */
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/timer.hpp"
 
 G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
@@ -39,17 +39,17 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
 {}
 
 void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
-  Atomic::add(&_sweep_duration, other->_sweep_duration, memory_order_relaxed);
-  Atomic::add(&_yield_during_sweep_duration, other->_yield_during_sweep_duration, memory_order_relaxed);
+  AtomicAccess::add(&_sweep_duration, other->_sweep_duration, memory_order_relaxed);
+  AtomicAccess::add(&_yield_during_sweep_duration, other->_yield_during_sweep_duration, memory_order_relaxed);
 
-  Atomic::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
-  Atomic::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);
-  Atomic::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
-  Atomic::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
-  Atomic::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
-  Atomic::add(&_cards_no_cross_region, other->_cards_no_cross_region, memory_order_relaxed);
+  AtomicAccess::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
+  AtomicAccess::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);
+  AtomicAccess::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
+  AtomicAccess::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
+  AtomicAccess::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
+  AtomicAccess::add(&_cards_no_cross_region, other->_cards_no_cross_region, memory_order_relaxed);
 
-  Atomic::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
+  AtomicAccess::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
 }
 
 void G1ConcurrentRefineStats::reset() {

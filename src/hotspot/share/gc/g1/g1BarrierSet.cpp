@@ -135,7 +135,7 @@ void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
   // marks next time.
   // If we write to the old card table (after the switching, then the refinement
   // table) the oncoming handshake will do the memory synchronization.
-  CardTable* card_table = Atomic::load(&_card_table);
+  CardTable* card_table = AtomicAccess::load(&_card_table);
 
   volatile CardValue* byte = card_table->byte_for(mr.start());
   CardValue* last_byte = card_table->byte_for(mr.last());

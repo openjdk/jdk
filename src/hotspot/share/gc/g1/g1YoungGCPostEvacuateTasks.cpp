@@ -789,7 +789,7 @@ public:
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
 
-    bool has_new_retained_regions = Atomic::load(&_num_retained_regions) != 0;
+    bool has_new_retained_regions = AtomicAccess::load(&_num_retained_regions) != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
       candidates->sort_by_efficiency();
@@ -824,7 +824,7 @@ public:
     // Report per-region type timings.
     cl.report_timing();
 
-    Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
+    AtomicAccess::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }
 };
 

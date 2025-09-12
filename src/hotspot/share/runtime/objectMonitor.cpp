@@ -37,7 +37,7 @@
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -695,9 +695,9 @@ void ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
   node->TState  = ObjectWaiter::TS_ENTER;
 
   for (;;) {
-    ObjectWaiter* head = Atomic::load(&_entry_list);
+    ObjectWaiter* head = AtomicAccess::load(&_entry_list);
     node->_next = head;
-    if (Atomic::cmpxchg(&_entry_list, head, node) == head) {
+    if (AtomicAccess::cmpxchg(&_entry_list, head, node) == head) {
       return;
     }
   }
@@ -714,9 +714,9 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
   node->TState  = ObjectWaiter::TS_ENTER;
 
   for (;;) {
-    ObjectWaiter* head = Atomic::load(&_entry_list);
+    ObjectWaiter* head = AtomicAccess::load(&_entry_list);
     node->_next = head;
-    if (Atomic::cmpxchg(&_entry_list, head, node) == head) {
+    if (AtomicAccess::cmpxchg(&_entry_list, head, node) == head) {
       return false;
     }
 
@@ -805,7 +805,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
 
     // Make a zero contentions field negative to force any contending threads
     // to retry. This is the second part of the async deflation dance.
-    if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
+    if (AtomicAccess::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
       // ObjectMonitor is now busy. Restore owner to null if it is
       // still DEFLATER_MARKER:
@@ -822,7 +822,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   guarantee(contentions() < 0, "must be negative: contentions=%d",
             contentions());
   guarantee(_waiters == 0, "must be 0: waiters=%d", _waiters);
-  ObjectWaiter* w = Atomic::load(&_entry_list);
+  ObjectWaiter* w = AtomicAccess::load(&_entry_list);
   guarantee(w == nullptr,
             "must be no entering threads: entry_list=" INTPTR_FORMAT,
             p2i(w));
@@ -1269,7 +1269,7 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
   ObjectWaiter* prev = nullptr;
   // Need acquire here to match the implicit release of the cmpxchg
   // that updated entry_list, so we can access w->prev().
-  ObjectWaiter* w = Atomic::load_acquire(&_entry_list);
+  ObjectWaiter* w = AtomicAccess::load_acquire(&_entry_list);
   assert(w != nullptr, "should only be called when entry list is not empty");
   while (w != nullptr) {
     assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
@@ -1338,10 +1338,10 @@ void ObjectMonitor::unlink_after_acquire(JavaThread* current, ObjectWaiter* curr
   if (currentNode->next() == nullptr) {
     assert(_entry_list_tail == nullptr || _entry_list_tail == currentNode, "invariant");
 
-    ObjectWaiter* w = Atomic::load(&_entry_list);
+    ObjectWaiter* w = AtomicAccess::load(&_entry_list);
     if (w == currentNode) {
       // The currentNode is the only element in _entry_list.
-      if (Atomic::cmpxchg(&_entry_list, w, (ObjectWaiter*)nullptr) == w) {
+      if (AtomicAccess::cmpxchg(&_entry_list, w, (ObjectWaiter*)nullptr) == w) {
         _entry_list_tail = nullptr;
         currentNode->set_bad_pointers();
         return;
@@ -1378,13 +1378,13 @@ void ObjectMonitor::unlink_after_acquire(JavaThread* current, ObjectWaiter* curr
   // _entry_list. If we are the head then we try to remove ourselves,
   // else we convert to the doubly linked list.
   if (currentNode->prev() == nullptr) {
-    ObjectWaiter* w = Atomic::load(&_entry_list);
+    ObjectWaiter* w = AtomicAccess::load(&_entry_list);
 
     assert(w != nullptr, "invariant");
     if (w == currentNode) {
       ObjectWaiter* next = currentNode->next();
       // currentNode is at the head of _entry_list.
-      if (Atomic::cmpxchg(&_entry_list, w, next) == w) {
+      if (AtomicAccess::cmpxchg(&_entry_list, w, next) == w) {
         // The CAS above sucsessfully unlinked currentNode from the
         // head of the _entry_list.
         assert(_entry_list != w, "invariant");
@@ -1511,7 +1511,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // possible, so that the successor can acquire the lock. If there is
     // no successor, we might need to wake up a waiting thread.
     if (!has_successor()) {
-      ObjectWaiter* w = Atomic::load(&_entry_list);
+      ObjectWaiter* w = AtomicAccess::load(&_entry_list);
       if (w != nullptr) {
         // Other threads are blocked trying to acquire the lock and
         // there is no successor, so it appears that an heir-
