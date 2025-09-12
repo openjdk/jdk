@@ -226,8 +226,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session,
                         trustedChain, identityAlg, checkClientTrusted);
             }
-
-            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -271,8 +269,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session, trustedChain,
                         identityAlg, checkClientTrusted);
             }
-
-            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -454,35 +450,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             } else {
                 throw new CertificateException(
                         "Unknown identification algorithm: " + algorithm);
-            }
-        }
-    }
-
-    // Additional certificate chain check to verify that the algorithm
-    // constraints permit the signature algorithms to be used with the
-    // corresponding signing keys.
-    // This method is important to differentiate between "rsa_pss_pss_*"
-    // and "rsa_pss_rsae_*" signature schemes in SSLAlgorithmConstraints.
-    // We make AlgorithmChecker to perform a check against signature
-    // algorithms with the corresponding signing keys on the first iteration
-    // by setting a Trust Anchor.
-    private void constraintsCertChainCheck(
-            AlgorithmConstraints constraints, X509Certificate[] chain)
-            throws CertificateException {
-
-        // Omit checks if EE cert is also a trust anchor
-        if (chain.length > 1) {
-            AlgorithmChecker checker = new AlgorithmChecker(
-                    new TrustAnchor(chain[chain.length - 1], null),
-                    constraints, null, null);
-            try {
-                checker.init(false);
-
-                for (int i = chain.length - 2; i >= 0; i--) {
-                    checker.check(chain[i], Collections.emptySet());
-                }
-            } catch (CertPathValidatorException e) {
-                throw new CertificateException(e);
             }
         }
     }
