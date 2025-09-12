@@ -238,7 +238,7 @@ protected:
            cause == GCCause::_wb_full_gc;
   }
 
-  inline bool should_clear_all_soft_refs() {
+  inline bool should_clear_all_soft_refs() const {
     return should_clear_all_soft_refs(_gc_cause);
   }
 
