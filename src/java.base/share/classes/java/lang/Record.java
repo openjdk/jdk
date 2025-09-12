@@ -129,8 +129,8 @@ public abstract class Record {
      *
      * Note that these rules imply that {@linkplain
      * Double##repEquivalence representation equivalence} is used for
-     * the equality comparison of both for primitive floating-point
-     * values and wrapped floating-point values.
+     * the equality comparison of both primitive floating-point values
+     * and wrapped floating-point values.
      *
      * <p>Apart from the semantics described above, the precise algorithm
      * used in the implicitly provided implementation is unspecified
