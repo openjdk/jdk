@@ -174,7 +174,7 @@ public:
   }
 
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
-  static void delete_segment(Segment *segment);
+  static void delete_segment(Segment* segment);
 
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
