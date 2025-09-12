@@ -2222,6 +2222,37 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test //JDK-8364991
+    public void testDifferentReductionPathsSimplified(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test1(Root r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
+                       };
+                   }
+                   private int test2(Root r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2 _,     R2(R2 _)) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b1) implements Base {}
+                   record Root(R2 b2, R2 b3) {}
+               }
+               """);
+    }
+
+    @Test //JDK-8364991
     public void testBindingPatternDoesNotStandInPlaceOfRecordPatterns(Path base) throws Exception {
         doTest(base,
                new String[0],
