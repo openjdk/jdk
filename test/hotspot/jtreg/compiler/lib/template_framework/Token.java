@@ -35,5 +35,4 @@ public sealed interface Token permits StringToken,
                                TemplateToken.ThreeArgs,
                                HookAnchorToken,
                                HookInsertToken,
-                               AddNameToken,
                                NothingToken {}

@@ -175,6 +175,10 @@ final class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
+    void addName(Name name) {
+        currentCodeFrame.addName(name);
+    }
+
     Name sampleName(NameSet.Predicate predicate) {
         return currentCodeFrame.sampleName(predicate);
     }
@@ -315,9 +319,6 @@ final class Renderer {
 
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;
-            }
-            case AddNameToken(Name name) -> {
-                currentCodeFrame.addName(name);
             }
         }
     }
