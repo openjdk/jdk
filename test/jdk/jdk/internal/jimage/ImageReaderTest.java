@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -124,16 +125,12 @@ public class ImageReaderTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
+    @CsvSource(delimiter = ':', value = {
             "modfoo:com/foo/Alpha.class",
             "modbar:com/bar/One.class",
     })
-    public void testResourceNodes_present(String modAndPath) throws IOException {
+    public void testResourceNodes_present(String modName, String resPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
-            String[] parts = modAndPath.split(":");
-            String modName = parts[0];
-            String resPath = parts[1];
-
             assertNotNull(reader.findResourceNode(modName, resPath));
             assertTrue(reader.containsResource(modName, resPath));
 
@@ -145,7 +142,7 @@ public class ImageReaderTest {
 
     // Important to ensure we cannot be fooled.
     @ParameterizedTest
-    @ValueSource(strings = {
+    @CsvSource(delimiter = ':', value = {
             // Absolute resource names are not allowed.
             "modfoo:/com/bar/One.class",
             // Resource in wrong module.
@@ -161,14 +158,11 @@ public class ImageReaderTest {
             "modfoo/com/bar:One.class",
             "modfoo/com:bar/One.class",
             "modules/modfoo/com:foo/Alpha.class",
-            // Or module name to be empty.
-            ":modfoo/com/foo/Alpha.class"})
-    public void testFindResourceNode_absent(String modAndPath) throws IOException {
+            // Or module names/paths to be empty.
+            "'':modfoo/com/foo/Alpha.class",
+            "modfoo:''"})
+    public void testFindResourceNode_absent(String modName, String resPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
-            String[] parts = modAndPath.split(":");
-            String modName = parts[0];
-            String resPath = parts[1];
-
             assertNull(reader.findResourceNode(modName, resPath));
             assertFalse(reader.containsResource(modName, resPath));
 
