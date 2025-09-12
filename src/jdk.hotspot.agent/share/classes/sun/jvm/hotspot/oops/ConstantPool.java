@@ -117,7 +117,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField tags;
   private static AddressField cache;
   private static AddressField resolved_klasses;
-  private static long bsmaentries; // Offset in the constantpool
+  private static long bsmaentries; // Offset in the constantpool where the BSMAEntries are found
   private static AddressField bsmaentries_offsets;
   private static AddressField bsmaentries_bootstrap_methods;
   private static MetadataField poolHolder;
@@ -437,12 +437,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
     private U4Array getOffsets() {
-        System.out.println(getAddress().toString());
         Address a =  getAddress().addOffsetTo(bsmaentries);
-        System.out.println(a.toString());
         if (a == null) return null;
         a = bsmaentries_offsets.getValue(a);
-        System.out.println(a.toString());
         return VMObjectFactory.newObject(U4Array.class, a);
   }
   private U2Array getBootstrapMethods() {
