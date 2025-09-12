@@ -4074,9 +4074,9 @@ public class Check {
                 return;
             }
             long specifiedShift = shiftAmount.longValue();
-            long actualShift = specifiedShift & (maximumShift - 1);
+            int actualShift = (int)specifiedShift & (maximumShift - 1);
             if (specifiedShift != actualShift) {
-                log.warning(pos, LintWarnings.BitShiftOutOfRange(targetType, "" + specifiedShift, "" + actualShift));
+                log.warning(pos, LintWarnings.BitShiftOutOfRange(targetType, specifiedShift, actualShift));
             }
         }
     }

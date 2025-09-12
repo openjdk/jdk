@@ -84,6 +84,7 @@ public interface MessageType {
         FILE_OBJECT("file object", "JavaFileObject", "javax.tools"),
         PATH("path", "Path", "java.nio.file"),
         NAME("name", "Name", "com.sun.tools.javac.util"),
+        LONG("long", "long", null),
         NUMBER("number", "int", null),
         OPTION_NAME("option name", "Option", "com.sun.tools.javac.main"),
         PROFILE("profile", "Profile", "com.sun.tools.javac.jvm"),
