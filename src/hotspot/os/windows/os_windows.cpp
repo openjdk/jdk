@@ -42,7 +42,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -2462,7 +2462,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_sem != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -2475,7 +2475,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -3794,7 +3794,6 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
 
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
-bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
@@ -4298,15 +4297,15 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, nullptr)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (Atomic::load_acquire(&process_exiting) == 0) {
+    } else if (AtomicAccess::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
+        AtomicAccess::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
       }
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD && Atomic::load_acquire(&process_exiting) == 0) {
+      if (what == EPT_THREAD && AtomicAccess::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -4419,7 +4418,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     }
 
     if (!registered &&
-        Atomic::load_acquire(&process_exiting) != 0 &&
+        AtomicAccess::load_acquire(&process_exiting) != 0 &&
         process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()
@@ -5585,7 +5584,7 @@ int PlatformEvent::park(jlong Millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return OS_OK;
@@ -5648,7 +5647,7 @@ void PlatformEvent::park() {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;
@@ -5695,7 +5694,7 @@ void PlatformEvent::unpark() {
   // from the first park() call after an unpark() call which will help
   // shake out uses of park() and unpark() without condition variables.
 
-  if (Atomic::xchg(&_Event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_Event, 1) >= 0) return;
 
   ::SetEvent(_ParkHandle);
 }

@@ -344,4 +344,24 @@ public class ToolTabSnippetTest extends UITesting {
             waitOutput(out, PROMPT + "new InstantiationE");
         });
     }
+
+    @Test
+    public void testAnnotation() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("@interface Ann1 { public java.lang.annotation.Retention[] value(); }\n");
+            waitOutput(out, "\n\\u001B\\[\\?2004h" + PROMPT);
+
+            //-> <tab>
+            inputSink.write("@Ann1(" + TAB);
+            waitOutput(out, ".*@java.lang.annotation.Retention\\(.*value =.*" +
+                            REDRAW_PROMPT + "@Ann1\\(");
+            inputSink.write("@" + TAB);
+            waitOutput(out, "^@java.lang.annotation.Retention\\(");
+            inputSink.write(TAB);
+            waitOutput(out, ".*java.lang.annotation.RetentionPolicy.*java.lang.annotation.RetentionPolicy.CLASS.*" +
+                            REDRAW_PROMPT + "@Ann1\\(@java.lang.annotation.Retention\\(");
+            inputSink.write("CL" + TAB);
+            waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
+        });
+    }
 }
