@@ -2166,7 +2166,7 @@ static const TypeFunc* make_load_reference_barrier_Type() {
   return TypeFunc::make(domain, range);
 }
 
-static const TypeFunc* ShenandoahBarrierSetC2::make_write_barrier_pre_Type() {
+static const TypeFunc* make_write_barrier_pre_Type() {
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
