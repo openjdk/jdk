@@ -107,8 +107,10 @@ AC_DEFUN([FLAGS_SETUP_NMFLAGS],
   AC_SUBST(NMFLAGS)
 ])
 
-################################################################################
-# platform independent
+# Check whether the compiler supports the Arm C Language Extensions (ACLE)
+# for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
+# ACLE and this flag are required to build the aarch64 SVE related functions
+# in libvectormath.
 AC_DEFUN([FLAGS_SETUP_SVE],
 [
   UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
@@ -163,6 +165,8 @@ AC_DEFUN([FLAGS_SETUP_SVE],
   AC_SUBST(SVE_CFLAGS)
 ])
 
+################################################################################
+# platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],
 [
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
