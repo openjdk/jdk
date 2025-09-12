@@ -1577,7 +1577,7 @@ uint PhaseChaitin::Select( ) {
     // Re-insert into the IFG
     _ifg->re_insert(lidx);
     if( !lrg->alive() ) continue;
-    // capture allstackedness flag before mask is hacked
+    // capture infinitestackedness flag before mask is hacked
     const int is_infinite = lrg->mask().is_infinite();
 
     // Yeah, yeah, yeah, I know, I know.  I can refactor this
@@ -1629,7 +1629,7 @@ uint PhaseChaitin::Select( ) {
         }
       }
     }
-    //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
+    //assert(is_infinite == lrg->mask().is_infinite(), "nbrs must not change InfiniteStackedness");
     // Aligned pairs need aligned masks
     assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
     if (lrg->num_regs() > 1 && !lrg->_fat_proj) {
