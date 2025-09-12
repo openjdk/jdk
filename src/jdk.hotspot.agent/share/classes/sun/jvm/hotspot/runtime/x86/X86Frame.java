@@ -363,8 +363,7 @@ public class X86Frame extends Frame {
     NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
     if (senderNm != null) {
       // If the sender PC is a deoptimization point, get the original PC.
-      if (senderNm.isDeoptEntry(getPC()) ||
-          senderNm.isDeoptMhEntry(getPC())) {
+      if (senderNm.isDeoptEntry(getPC())) {
         // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
       }
     }
