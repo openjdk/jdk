@@ -5379,61 +5379,50 @@ static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Nod
     const Node* n = worklist.at(i);
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
-      if (in != nullptr && !in->is_Root()) {
-        if (in->is_CFG()) {
-          if (in->is_Multi()) {
-            candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
-          } else {
-            candidates.push(in);
-          }
+      if (in == nullptr || in->is_Root()) {
+        continue;
+      }
+      if (in->is_CFG()) {
+        if (in->is_Multi()) {
+          candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
         } else {
-          worklist.push(in);
+          candidates.push(in);
         }
+      } else {
+        worklist.push(in);
       }
     }
   }
 }
 
 // Returns the candidate node that is a descendant to all the other candidates
-static Node* pick_control(const Unique_Node_List& candidates) {
-  const uint num_candidates = candidates.size();
-  for (uint i = 0; i < num_candidates; i++) {
-    Node* candidate = candidates.at(i);
-    uint matching_predecessors = 0;
-    Unique_Node_List worklist;
-    worklist.push(candidate);
+static Node* pick_control(Unique_Node_List& candidates) {
+  Unique_Node_List worklist;
+  worklist.copy(candidates);
 
-    // Traverse backwards through the CFG
-    for (uint j = 0; j < worklist.size(); j++) {
-      Node* n = worklist.at(j);
-      if (n->is_Root()) {
+  // Traverse backwards through the CFG
+  for (uint i = 0; i < worklist.size(); i++) {
+    const Node* n = worklist.at(i);
+    if (n->is_Root()) {
+      continue;
+    }
+    for (uint j = 0; j < n->req(); j++) {
+      // Skip backedge of loops to avoid cycles
+      if (n->is_Loop() && j == LoopNode::LoopBackControl) {
         continue;
       }
-      for (uint k = 0; k < n->req(); k++) {
-        Node* pred = n->in(k);
-        if (pred == nullptr) {
-          continue;
-        }
-        // Skip backedge of loops to avoid cycles
-        if (n->is_Loop() && k == LoopNode::LoopBackControl) {
-          continue;
-        }
-        // Count candidates that we have encountered
-        if (candidates.member(pred) && !worklist.member(pred)) {
-          matching_predecessors++;
-        }
 
-        if (pred->is_CFG()) {
-          worklist.push(pred);
-        }
+      Node* pred = n->in(j);
+      if (pred != nullptr && pred != n && pred->is_CFG()) {
+        worklist.push(pred);
+        // if pred is an ancestor of n, then pred is an ancestor to at least one candidate
+        candidates.remove(pred);
       }
     }
-    if (matching_predecessors == num_candidates - 1) {
-      return candidate;
-    }
   }
-  ShouldNotReachHere();
-  return nullptr;
+
+  assert(candidates.size() == 1, "unexpected control flow");
+  return candidates.at(0);
 }
 
 // Initialize a parameter input for a debug print call, using a placeholder for jlong and jdouble
@@ -5474,8 +5463,8 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
 
   // find all the previous users of the control we picked
   GrowableArray<Node*> users_of_control;
-  for (DUIterator_Fast kmax, k = control->fast_outs(kmax); k < kmax; k++) {
-    Node* use = control->fast_out(k);
+  for (DUIterator_Fast kmax, i = control->fast_outs(kmax); i < kmax; i++) {
+    Node* use = control->fast_out(i);
     if (use->is_CFG() && use != control) {
       users_of_control.push(use);
     }
