@@ -150,20 +150,15 @@ AC_DEFUN([FLAGS_SETUP_SVE],
     # Switching the initialization mode with gcc from 'pattern' to 'zero'
     # avoids the use of unsupported `__builtin_clear_padding` for variable
     # length aggregates
-    AC_LANG_PUSH(C)
-    OLD_CFLAGS="$CFLAGS"
     if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
       AC_MSG_CHECKING([Switching the initialization mode with gcc from pattern to zero])
       INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
-        PREFIX: $3,
         IF_TRUE: [
           SVE_CFLAGS="${SVE_CFLAGS} $INIT_ZERO_FLAG"
         ]
       )
     fi
-    CFLAGS="$OLD_CFLAGS"
-    AC_LANG_POP(C)
   fi
   AC_SUBST(SVE_CFLAGS)
 ])
