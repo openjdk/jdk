@@ -89,7 +89,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     Type type   = db.lookupType("ConstantPool");
     tags        = type.getAddressField("_tags");
     cache       = type.getAddressField("_cache");
-    bsmaentries = type.getAddressField("_bsmaentries");
+    bsmaentries = type.getField("_bsmaentries").getOffset();
     Type bsmaetype = db.lookupType("BSMAttributeEntries");
     bsmaentries_offsets = bsmaetype.getAddressField("_offsets");
     bsmaentries_bootstrap_methods = bsmaetype.getAddressField("_bootstrap_methods");
@@ -117,7 +117,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField tags;
   private static AddressField cache;
   private static AddressField resolved_klasses;
-  private static AddressField bsmaentries;
+  private static long bsmaentries; // Offset in the constantpool
   private static AddressField bsmaentries_offsets;
   private static AddressField bsmaentries_bootstrap_methods;
   private static MetadataField poolHolder;
@@ -436,8 +436,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
-  private U4Array getOffsets() {
-    Address a = bsmaentries.getValue(getAddress());
+    private U4Array getOffsets() {
+        System.out.println(getAddress().toString());
+      Address a =  getAddress().addOffsetTo(bsmaentries);
       System.out.println(a.toString());
     if (a == null) return null;
     a = bsmaentries_offsets.getValue(a);
@@ -445,7 +446,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return VMObjectFactory.newObject(U4Array.class, bsmaentries_offsets.getValue(a));
   }
   private U2Array getBootstrapMethods() {
-    Address a = bsmaentries.getValue(getAddress());
+    Address a =  getAddress().addOffsetTo(bsmaentries);
     if (a == null) return null;
     return VMObjectFactory.newObject(U2Array.class, bsmaentries_bootstrap_methods.getValue(a));
   }
