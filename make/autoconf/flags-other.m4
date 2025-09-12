@@ -134,8 +134,8 @@ AC_DEFUN([FLAGS_SETUP_SVE],
             [
               svint32_t r = svdup_n_s32(1)
             ])],
-            [AVAILABLE=yes],
-            [AVAILABLE=no]
+            [AVAILABLE=true],
+            [AVAILABLE=false]
           )
           AC_MSG_RESULT([$AVAILABLE])
           CC="$saved_cc"
@@ -145,7 +145,7 @@ AC_DEFUN([FLAGS_SETUP_SVE],
       fi
     ])
   SVE_CFLAGS=""
-  if test "x$AARCH64_SVE_ENABLED" = xyes || test "x$AARCH64_SVE_ENABLED" = xtrue; then
+  if test "x$AARCH64_SVE_ENABLED" = xtrue; then
     SVE_CFLAGS="-march=armv8-a+sve"
     # Switching the initialization mode with gcc from 'pattern' to 'zero'
     # avoids the use of unsupported `__builtin_clear_padding` for variable
