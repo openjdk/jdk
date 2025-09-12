@@ -26,7 +26,7 @@
 #ifndef OS_CPU_LINUX_AARCH64_ATOMICACCESS_LINUX_AARCH64_HPP
 #define OS_CPU_LINUX_AARCH64_ATOMICACCESS_LINUX_AARCH64_HPP
 
-#include "atomicAccess_aarch64.hpp"
+#include "atomic_aarch64.hpp"
 #include "runtime/vm_version.hpp"
 
 // Implementation of class AtomicAccess
