@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
   @test
   @key headful
   @bug 4041703 4096228 4025223 4260929
-  @summary Ensures that appletviewer sets a reasonable default focus for an Applet on start
+  @summary Ensures that reasonable default focus is set correctly on start
   @library ../../regtesthelpers
   @build   Util
-  @run main AppletInitialFocusTest
+  @run main InitialFocusTest
 */
 
 import java.awt.Button;
@@ -37,13 +37,13 @@ import java.awt.Frame;
 import java.awt.Robot;
 import test.java.awt.regtesthelpers.Util;
 
-public class AppletInitialFocusTest extends Frame {
+public class InitialFocusTest extends Frame {
 
     Robot robot = Util.createRobot();
     Button button = new Button("Button");
 
     public static void main(final String[] args) throws Exception {
-        AppletInitialFocusTest app = new AppletInitialFocusTest();
+        InitialFocusTest app = new InitialFocusTest();
         app.init();
         app.start();
     }
@@ -63,7 +63,7 @@ public class AppletInitialFocusTest extends Frame {
                     robot.delay(1000); // delay the thread to let EDT to start dispatching focus events
                     Util.waitForIdle(robot);
                     if (!button.hasFocus()) {
-                        throw new RuntimeException("Appletviewer doesn't set default focus correctly.");
+                        throw new RuntimeException("default focus is not set correctly.");
                     }
                 }
             });

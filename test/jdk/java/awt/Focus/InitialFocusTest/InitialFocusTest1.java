@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@ import java.awt.event.FocusListener;
  * @test
  * @key headful
  * @bug 4411534 4517274
- * @summary ensures that user's requestFocus() during applet initialization
+ * @summary ensures that user's requestFocus() during frame initialization
  *          is not ignored
  */
-public class AppletInitialFocusTest1 extends Frame implements FocusListener {
+public class InitialFocusTest1 extends Frame implements FocusListener {
 
     Button button1 = new Button("Button1");
     Button button2 = new Button("Button2");
     private static volatile Object focused;
 
     public static void main(final String[] args) throws Exception {
-        AppletInitialFocusTest1 app = new AppletInitialFocusTest1();
+        InitialFocusTest1 app = new InitialFocusTest1();
         try {
             app.setSize(200, 200);
             app.setLocationRelativeTo(null);
