@@ -96,8 +96,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void update_parallel_worker_threads_cpu_time();
 
-  bool must_clear_all_soft_refs();
-
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;

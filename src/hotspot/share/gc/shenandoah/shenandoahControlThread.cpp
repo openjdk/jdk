@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
@@ -118,7 +119,7 @@ void ShenandoahControlThread::run_service() {
     // Blow all soft references on this cycle, if handling allocation failure,
     // either implicit or explicit GC request,  or we are requested to do so unconditionally.
     if (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
-      heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
+      heap->global_generation()->ref_processor()->set_soft_reference_policy(true);
     }
 
     const bool gc_requested = (mode != none);
@@ -193,7 +194,7 @@ void ShenandoahControlThread::run_service() {
       heap->set_forced_counters_update(false);
 
       // Retract forceful part of soft refs policy
-      heap->soft_ref_policy()->set_should_clear_all_soft_refs(false);
+      heap->global_generation()->ref_processor()->set_soft_reference_policy(false);
 
       // Clear metaspace oom flag, if current cycle unloaded classes
       if (heap->unload_classes()) {

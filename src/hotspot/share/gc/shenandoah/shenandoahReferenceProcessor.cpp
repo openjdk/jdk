@@ -221,8 +221,10 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
+AlwaysClearPolicy ShenandoahReferenceProcessor::_always_clear_policy;
+
 ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
-  _soft_reference_policy(nullptr),
+  _soft_reference_policy(&_always_clear_policy),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
@@ -245,12 +247,11 @@ void ShenandoahReferenceProcessor::set_mark_closure(uint worker_id, ShenandoahMa
 }
 
 void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
-  static AlwaysClearPolicy always_clear_policy;
   static LRUMaxHeapPolicy lru_max_heap_policy;
 
   if (clear) {
     log_info(gc, ref)("Clearing All SoftReferences");
-    _soft_reference_policy = &always_clear_policy;
+    _soft_reference_policy = &_always_clear_policy;
   } else {
     _soft_reference_policy = &lru_max_heap_policy;
   }
@@ -284,7 +285,7 @@ bool ShenandoahReferenceProcessor::is_softly_live(oop reference, ReferenceType t
   // Ask SoftReference policy
   const jlong clock = java_lang_ref_SoftReference::clock();
   assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != nullptr, "Policy not initialized");
+  assert(_soft_reference_policy != nullptr, "Should never be null");
   return !_soft_reference_policy->should_clear_reference(reference, clock);
 }
 
