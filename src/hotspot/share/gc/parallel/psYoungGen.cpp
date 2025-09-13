@@ -83,12 +83,12 @@ void PSYoungGen::initialize_work() {
   }
 
   if (UseNUMA) {
-    _eden_space = new MutableNUMASpace(virtual_space()->alignment());
+    _eden_space = new MutableNUMASpace(virtual_space()->page_size());
   } else {
-    _eden_space = new MutableSpace(virtual_space()->alignment());
+    _eden_space = new MutableSpace(virtual_space()->page_size());
   }
-  _from_space = new MutableSpace(virtual_space()->alignment());
-  _to_space   = new MutableSpace(virtual_space()->alignment());
+  _from_space = new MutableSpace(virtual_space()->page_size());
+  _to_space   = new MutableSpace(virtual_space()->page_size());
 
   // Generation Counters - generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3, min_gen_size(),
