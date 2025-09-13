@@ -1143,9 +1143,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
 
   STEP_IF("printing registered callbacks", _verbose && _thread != nullptr);
+    size_t count = 0;
     for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
         callback != nullptr;
         callback = callback->_next) {
+      st->print_cr("VMErrorCallback %zu:", ++count);
       callback->call(st);
       st->cr();
     }
