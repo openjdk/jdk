@@ -1455,8 +1455,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             igvn->add_users_to_worklist( n );
           } else if (dead->is_data_proj_of_pure_function(n)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
