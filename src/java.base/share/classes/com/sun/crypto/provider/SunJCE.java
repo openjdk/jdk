@@ -371,6 +371,8 @@ public final class SunJCE extends Provider {
         ps("Cipher", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA512_256AndAES_256");
 
+        ps("Cipher", "HPKE", "com.sun.crypto.provider.HPKE");
+
         /*
          * Key(pair) Generator engines
          */
