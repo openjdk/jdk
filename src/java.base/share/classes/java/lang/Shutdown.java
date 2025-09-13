@@ -157,8 +157,10 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        logRuntimeExit(status);         // Log without holding the lock;
-
+        // log only if VM is fully initialized
+        if (VM.isBooted()) {
+            logRuntimeExit(status);         // Log without holding the lock;
+        }
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
@@ -173,10 +175,6 @@ class Shutdown {
      * Catch and ignore any and all exceptions.
      */
     private static void logRuntimeExit(int status) {
-        if (!VM.isBooted()) {
-            // skip logging when invoked too early during VM startup
-            return;
-        }
         try {
             System.Logger log = System.getLogger("java.lang.Runtime");
             if (log.isLoggable(System.Logger.Level.DEBUG)) {
