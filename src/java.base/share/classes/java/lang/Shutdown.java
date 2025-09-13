@@ -173,11 +173,11 @@ class Shutdown {
      * Catch and ignore any and all exceptions.
      */
     private static void logRuntimeExit(int status) {
+        if (!VM.isBooted()) {
+            // skip logging when invoked too early during VM startup
+            return;
+        }
         try {
-            if (!VM.isBooted()) {
-                // skip logging when invoked too early during VM startup
-                return;
-            }
             System.Logger log = System.getLogger("java.lang.Runtime");
             if (log.isLoggable(System.Logger.Level.DEBUG)) {
                 Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
