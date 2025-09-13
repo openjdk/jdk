@@ -610,9 +610,29 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2I, "ConvD2I");
+    }
+
+    public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2L, "ConvD2L");
+    }
+
     public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_F2HF, "ConvF2HF");
+    }
+
+    public static final String CONV_F2I = PREFIX + "CONV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2I, "ConvF2I");
+    }
+
+    public static final String CONV_F2L = PREFIX + "CONV_F2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2L, "ConvF2L");
     }
 
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
 * @test
 * @bug 8287835 8364305
-* @summary Test float/double to integral cast
+* @summary Test vector float/double to integral cast
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
 * @library /test/lib /
@@ -100,7 +100,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkf2int(int len) {
         for (int i = 0; i < len; i++) {
-            int expected = (int)float_arr[i];
+            int expected = (int) float_arr[i];
             if (int_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: int_arr[" + i + "] = " + int_arr[i] + " != " + expected);
             }
@@ -122,7 +122,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkf2long(int len) {
         for (int i = 0; i < len; i++) {
-            long expected = (long)float_arr[i];
+            long expected = (long) float_arr[i];
             if (long_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: long_arr[" + i + "] = " + long_arr[i] + " != " + expected);
             }
@@ -144,7 +144,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkf2short(int len) {
         for (int i = 0; i < len; i++) {
-            short expected = (short)float_arr[i];
+            short expected = (short) float_arr[i];
             if (short_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: short_arr[" + i + "] = " + short_arr[i] + " != " + expected);
             }
@@ -166,7 +166,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkf2byte(int len) {
         for (int i = 0; i < len; i++) {
-            byte expected = (byte)float_arr[i];
+            byte expected = (byte) float_arr[i];
             if (byte_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: byte_arr[" + i + "] = " + byte_arr[i] + " != " + expected);
             }
@@ -188,7 +188,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkd2int(int len) {
         for (int i = 0; i < len; i++) {
-            int expected = (int)double_arr[i];
+            int expected = (int) double_arr[i];
             if (int_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: int_arr[" + i + "] = " + int_arr[i] + " != " + expected);
             }
@@ -210,7 +210,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkd2long(int len) {
         for (int i = 0; i < len; i++) {
-            long expected = (long)double_arr[i];
+            long expected = (long) double_arr[i];
             if (long_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: long_arr[" + i + "] = " + long_arr[i] + " != " + expected);
             }
@@ -232,7 +232,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkd2short(int len) {
         for (int i = 0; i < len; i++) {
-            short expected = (short)double_arr[i];
+            short expected = (short) double_arr[i];
             if (short_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: short_arr[" + i + "] = " + short_arr[i] + " != " + expected);
             }
@@ -254,7 +254,7 @@ public class VectorFPtoIntCastTest {
 
     public void checkd2byte(int len) {
         for (int i = 0; i < len; i++) {
-            byte expected = (byte)double_arr[i];
+            byte expected = (byte) double_arr[i];
             if (byte_arr[i] != expected) {
                 throw new RuntimeException("Invalid result: byte_arr[" + i + "] = " + byte_arr[i] + " != " + expected);
             }
