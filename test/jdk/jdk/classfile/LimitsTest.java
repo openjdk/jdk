@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8320360 8330684 8331320 8331655 8331940 8332486 8335820 8336833 8361635
+ *      8367585
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -61,8 +62,11 @@ import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
 import jdk.internal.classfile.impl.LabelContext;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
@@ -446,5 +450,34 @@ class LimitsTest {
     void testZeroHashCPEntry() {
         var cpb = ConstantPoolBuilder.of();
         cpb.intEntry(-cpb.intEntry(0).hashCode());
+    }
+
+    static List<String> legalStrings() {
+        var empty = "";
+        var allAscii = "e".repeat(0xFFFF);
+        // 3-byte utf8 characters
+        var largeChars = String.valueOf((char) 0x800).repeat(0xFFFF / 3);
+        return List.of(empty, allAscii, largeChars);
+    }
+
+    @ParameterizedTest
+    @MethodSource("legalStrings")
+    void testStringLengthInLimit(String st) {
+        TemporaryConstantPool.INSTANCE.utf8Entry(st);
+        ConstantPoolBuilder.of().utf8Entry(st);
+    }
+
+    static List<String> oversizedStrings() {
+        var allAscii = "e".repeat(0x10000);
+        // 3-byte utf8 characters
+        var largeChars = String.valueOf((char) 0x800).repeat(0xFFFF / 3 + 1);
+        return List.of(allAscii, largeChars);
+    }
+
+    @ParameterizedTest
+    @MethodSource("oversizedStrings")
+    void testStringLengthOverLimit(String st) {
+        assertThrows(IllegalArgumentException.class, () -> TemporaryConstantPool.INSTANCE.utf8Entry(st));
+        assertThrows(IllegalArgumentException.class, () -> ConstantPoolBuilder.of().utf8Entry(st));
     }
 }
