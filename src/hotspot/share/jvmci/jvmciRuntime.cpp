@@ -187,7 +187,7 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oop
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(type_mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(type_mirror);
 
   if (klass == nullptr) {
     ResourceMark rm(current);
