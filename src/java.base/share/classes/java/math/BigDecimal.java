@@ -1817,8 +1817,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
              * A proof for the formula can be found at the following link:
              * https://github.com/user-attachments/files/22314648/frazioni_decimali.pdf
              */
-            int prec = (digitLengthLower(aInt) + 1) - digitLengthLower(bInt)
-                    + Math.max(m_b, log5Upper(bInt.shiftRight(m_b))) + 1;
+            int prec = saturateLong((digitLengthLower(aInt) + 1L) - digitLengthLower(bInt)
+                    + Math.max(m_b, log5Upper(bInt.shiftRight(m_b))) + 1L);
             BigDecimal quotient;
             try {
                 quotient = a.divide(b, new MathContext(prec, RoundingMode.UNNECESSARY));
