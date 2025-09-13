@@ -1411,7 +1411,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 
   C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
 
-  Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
   Node *limit     = main_end ->limit();
