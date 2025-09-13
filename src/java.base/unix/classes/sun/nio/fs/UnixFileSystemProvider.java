@@ -249,14 +249,29 @@ public abstract class UnixFileSystemProvider
     boolean implDelete(Path obj, boolean failIfNotExists) throws IOException {
         UnixPath file = UnixPath.toUnixPath(obj);
 
-        // need file attributes to know if file is directory
-        UnixFileAttributes attrs = null;
+        boolean isDirectory = false;
         try {
-            attrs = UnixFileAttributes.get(file, false);
-            if (attrs.isDirectory()) {
-                rmdir(file);
+            if (UnixNativeDispatcher.unlinkDirFailureSupported()) {
+                try {
+                    // assume the common case that the file is a regular file
+                    unlink(file);
+                } catch (UnixException e) {
+                    // check whether the file is a directory and, if so,
+                    // try rmdir, otherwise re-throw and let the exception
+                    // be handled below
+                    if (e.errno() == EISDIR) {
+                        isDirectory = true;
+                        rmdir(file);
+                    } else {
+                        throw e;
+                    }
+                }
             } else {
-                unlink(file);
+                isDirectory = UnixFileAttributes.get(file, false).isDirectory();
+                if (isDirectory)
+                    rmdir(file);
+                else
+                    unlink(file);
             }
             return true;
         } catch (UnixException x) {
@@ -265,7 +280,7 @@ public abstract class UnixFileSystemProvider
                 return false;
 
             // DirectoryNotEmptyException if not empty
-            if (attrs != null && attrs.isDirectory() &&
+            if (isDirectory &&
                 (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
                 throw new DirectoryNotEmptyException(file.getPathForExceptionMessage());
 
