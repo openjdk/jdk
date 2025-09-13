@@ -1813,6 +1813,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
              * Therefore, create a MathContext object with this
              * precision and do a divide with the UNNECESSARY rounding
              * mode.
+             *
+             * A proof for the formula can be found at the following link:
+             * https://github.com/user-attachments/files/22314648/frazioni_decimali.pdf
              */
             int prec = (digitLengthLower(aInt) + 1) - digitLengthLower(bInt)
                     + Math.max(m_b, log5Upper(bInt.shiftRight(m_b))) + 1;
