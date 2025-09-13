@@ -748,7 +748,7 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
       OptoReg::Name r_reg = rm.find_first_elem();
       if (interfering_lrg.mask().Member(r_reg)) {
         interfering_lrg.Remove(r_reg);
-        interfering_lrg.set_mask_size(interfering_lrg.mask().is_AllStack() ? LRG::AllStack_size : old_size - 1);
+        interfering_lrg.set_mask_size(interfering_lrg.mask().is_infinite_stack() ? LRG::INFINITE_STACK_SIZE : old_size - 1);
       }
     }
 

@@ -1577,8 +1577,8 @@ uint PhaseChaitin::Select( ) {
     // Re-insert into the IFG
     _ifg->re_insert(lidx);
     if( !lrg->alive() ) continue;
-    // capture allstackedness flag before mask is hacked
-    const int is_allstack = lrg->mask().is_AllStack();
+    // capture infinitestackedness flag before mask is hacked
+    const int is_infinite_stack = lrg->mask().is_infinite_stack();
 
     // Yeah, yeah, yeah, I know, I know.  I can refactor this
     // to avoid the GOTO, although the refactored code will not
@@ -1629,7 +1629,7 @@ uint PhaseChaitin::Select( ) {
         }
       }
     }
-    //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
+    //assert(is_infinite_stack == lrg->mask().is_infinite_stack(), "nbrs must not change InfiniteStackedness");
     // Aligned pairs need aligned masks
     assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
     if (lrg->num_regs() > 1 && !lrg->_fat_proj) {
@@ -1640,9 +1640,9 @@ uint PhaseChaitin::Select( ) {
     OptoReg::Name reg = choose_color( *lrg, chunk );
 
     //---------------
-    // If we fail to color and the AllStack flag is set, trigger
+    // If we fail to color and the infinite flag is set, trigger
     // a chunk-rollover event
-    if(!OptoReg::is_valid(OptoReg::add(reg,-chunk)) && is_allstack) {
+    if (!OptoReg::is_valid(OptoReg::add(reg, -chunk)) && is_infinite_stack) {
       // Bump register mask up to next stack chunk
       chunk += RegMask::CHUNK_SIZE;
       lrg->Set_All();
@@ -1651,7 +1651,7 @@ uint PhaseChaitin::Select( ) {
 
     //---------------
     // Did we get a color?
-    else if( OptoReg::is_valid(reg)) {
+    else if (OptoReg::is_valid(reg)) {
 #ifndef PRODUCT
       RegMask avail_rm = lrg->mask();
 #endif
@@ -1708,7 +1708,7 @@ uint PhaseChaitin::Select( ) {
       assert( lrg->alive(), "" );
       assert( !lrg->_fat_proj || lrg->is_multidef() ||
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
-      assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
+      assert( !orig_mask.is_infinite_stack(), "infinite stack does not spill" );
 
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));
