@@ -99,7 +99,7 @@ class JdbStopInNotificationThreadTestTarg {
                 }
             }
         }
-        
+
         System.out.println("Done");
     }
 
@@ -113,7 +113,7 @@ class JdbStopInNotificationThreadTestTarg {
             "Shenandoah",         // Shenandoah GC
             "Shenandoah Old Gen"  // Shenandoah generational mode GC
         };
-            
+
         for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
             if (pool.getType() == MemoryType.HEAP && pool.isUsageThresholdSupported()) {
                 System.out.println("Verify pool: " + pool.getName());
