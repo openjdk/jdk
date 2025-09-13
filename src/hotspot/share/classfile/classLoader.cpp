@@ -80,8 +80,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 

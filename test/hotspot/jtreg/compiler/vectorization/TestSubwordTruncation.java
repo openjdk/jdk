@@ -403,7 +403,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.ROUND_F, ">0" })
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_F, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testRoundF(byte[] in) {
         short[] res = new short[SIZE];
@@ -416,7 +416,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.ROUND_D, ">0" })
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_D, ">0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testRoundD(byte[] in) {
         short[] res = new short[SIZE];

@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
@@ -104,6 +104,8 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
+Thread* volatile VMError::_handshake_timed_out_thread = nullptr;
+Thread* volatile VMError::_safepoint_timed_out_thread = nullptr;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -819,7 +821,13 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        st->print(" (sent by kill)");
+        if (get_handshake_timed_out_thread() == _thread) {
+          st->print(" (sent by handshake timeout handler)");
+        } else if (get_safepoint_timed_out_thread() == _thread) {
+          st->print(" (sent by safepoint timeout handler)");
+        } else {
+          st->print(" (sent by kill)");
+        }
       }
     } else {
       if (should_report_bug(_id)) {
@@ -1070,7 +1078,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
-  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread());
     st->print_cr("Lock stack of current Java thread (top to bottom):");
     JavaThread::cast(_thread)->lock_stack().print_on(st);
     st->cr();
@@ -1191,7 +1199,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1330,6 +1338,26 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
+void VMError::set_handshake_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  Atomic::replace_if_null(&_handshake_timed_out_thread, thread);
+}
+
+void VMError::set_safepoint_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  Atomic::replace_if_null(&_safepoint_timed_out_thread, thread);
+}
+
+Thread* VMError::get_handshake_timed_out_thread() {
+  return Atomic::load(&_handshake_timed_out_thread);
+}
+
+Thread* VMError::get_safepoint_timed_out_thread() {
+  return Atomic::load(&_safepoint_timed_out_thread);
+}
+
 // Report for the vm_info_cmd. This prints out the information above omitting
 // crash and thread specific information.  If output is added above, it should be added
 // here also, if it is safe to call during a running process.
@@ -1382,15 +1410,15 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedOops::print_mode(st);
     st->cr();
   }
+#endif
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
   }
-#endif
 
   // Take heap lock over heap, GC and metaspace printing so that information
   // is consistent.

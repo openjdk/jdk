@@ -48,8 +48,8 @@ void RegionsTree::NodeHelper::print_on(outputStream* st) {
 }
 
 void RegionsTree::print_on(outputStream* st) {
-  visit_in_order([&](Node* node) {
-    NodeHelper curr(node);
+  visit_in_order([&](const Node* node) {
+    NodeHelper curr(const_cast<Node*>(node));
     curr.print_on(st);
     return true;
   });
