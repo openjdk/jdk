@@ -37,6 +37,7 @@
   template(jdk_vm_ci_hotspot_HotSpotInstalledCode,                "jdk/vm/ci/hotspot/HotSpotInstalledCode")                               \
   template(jdk_vm_ci_hotspot_HotSpotNmethod,                      "jdk/vm/ci/hotspot/HotSpotNmethod")                                     \
   template(jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl,       "jdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl")                      \
+  template(jdk_vm_ci_hotspot_HotSpotResolvedJavaRecordComponent,  "jdk/vm/ci/hotspot/HotSpotResolvedJavaRecordComponent")                 \
   template(jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl,       "jdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl")                      \
   template(jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo, "jdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl$FieldInfo")        \
   template(jdk_vm_ci_hotspot_HotSpotResolvedPrimitiveType,        "jdk/vm/ci/hotspot/HotSpotResolvedPrimitiveType")                       \
@@ -55,6 +56,7 @@
   template(jdk_vm_ci_hotspot_VMFlag,                              "jdk/vm/ci/hotspot/VMFlag")                                             \
   template(jdk_vm_ci_hotspot_VMIntrinsicMethod,                   "jdk/vm/ci/hotspot/VMIntrinsicMethod")                                  \
   template(jdk_vm_ci_meta_ResolvedJavaMethod,                     "jdk/vm/ci/meta/ResolvedJavaMethod")                                    \
+  template(jdk_vm_ci_meta_ResolvedJavaRecordComponent,            "jdk/vm/ci/meta/ResolvedJavaRecordComponent")                           \
   template(jdk_vm_ci_meta_JavaConstant,                           "jdk/vm/ci/meta/JavaConstant")                                          \
   template(jdk_vm_ci_meta_PrimitiveConstant,                      "jdk/vm/ci/meta/PrimitiveConstant")                                     \
   template(jdk_vm_ci_meta_RawConstant,                            "jdk/vm/ci/meta/RawConstant")                                           \
@@ -97,6 +99,7 @@
   template(getCompiler_signature,                                 "()Ljdk/vm/ci/runtime/JVMCICompiler;")                                  \
   template(exceptionToString_name,                                "exceptionToString")                                                    \
   template(exceptionToString_signature,                           "(Ljava/lang/Throwable;ZZ)[Ljava/lang/String;")                         \
+  template(HotSpotResolvedJavaRecordComponent_constructor_signature,  "(Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;III)V")          \
   template(postTranslation_name,                                  "postTranslation")                                                      \
   template(getName_name,                                          "getName")                                                              \
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \

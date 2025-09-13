@@ -22,10 +22,11 @@
  */
 package jdk.vm.ci.meta;
 
+import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.annotation.Annotated;
+
 import java.lang.reflect.AnnotatedElement;
 import java.util.List;
-
-import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
 /**
  * Represents a resolved Java type. Types include primitives, objects, {@code void}, and arrays
@@ -311,6 +312,18 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * fields returned by this method is the same as {@link Class#getDeclaredFields}.
      */
     ResolvedJavaField[] getStaticFields();
+
+    /**
+     * Returns whether this type is a {@link Record}.
+     */
+    boolean isRecord();
+
+    /**
+     * Returns an array of {@code ResolvedJavaRecordComponent} objects representing all the
+     * record components of this record class, or {@code null} if this class is
+     * not a record class.
+     */
+    ResolvedJavaRecordComponent[] getRecordComponents();
 
     /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,

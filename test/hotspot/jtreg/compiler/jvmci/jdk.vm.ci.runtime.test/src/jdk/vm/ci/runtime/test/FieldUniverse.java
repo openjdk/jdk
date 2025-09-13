@@ -23,10 +23,13 @@
 package jdk.vm.ci.runtime.test;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.RecordComponent;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Context for field related tests.
@@ -34,12 +37,18 @@ import java.util.Map;
 public class FieldUniverse extends TypeUniverse {
 
     public static final Map<Field, ResolvedJavaField> fields = new HashMap<>();
+    public static final Map<RecordComponent, ResolvedJavaRecordComponent> recordComponents = new HashMap<>();
 
-    {
+    static {
         for (Class<?> c : classes) {
             for (Field f : c.getDeclaredFields()) {
                 ResolvedJavaField field = metaAccess.lookupJavaField(f);
                 fields.put(f, field);
+            }
+            if (c.isRecord()) {
+                for (RecordComponent rc : Objects.requireNonNull(c.getRecordComponents())) {
+                    recordComponents.put(rc, metaAccess.lookupJavaRecordComponent(rc));
+                }
             }
         }
     }

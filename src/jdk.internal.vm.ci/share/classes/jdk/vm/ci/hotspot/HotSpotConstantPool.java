@@ -852,8 +852,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             final int offset = info[1];
             final int fieldIndex = info[2];
             final int fieldFlags = info[3];
-            HotSpotResolvedJavaField result = resolvedHolder.createField(type, offset, flags, fieldFlags, fieldIndex);
-            return result;
+            return resolvedHolder.createField(type, offset, flags, fieldFlags, fieldIndex);
         } else {
             return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type);
         }
