@@ -28,10 +28,7 @@ param (
 
   # Timeout to wait after the executable has been started.
   [Parameter(Mandatory=$true)]
-  [double]$TimeoutSeconds,
-
-  # Internal.
-  [switch]$Restarted
+  [double]$TimeoutSeconds
 )
 
 $type = @{
@@ -64,28 +61,15 @@ Add-Type @type
 
 Set-PSDebug -Trace 2
 
-if ($Restarted) {
-  # Launch the target executable.
-  # `-NoNewWindow` parameter will attach the started process to the existing console.
-  Start-Process -NoNewWindow $Executable
+# Launch the target executable.
+# `-NoNewWindow` parameter will attach the started process to the existing console.
+Start-Process -NoNewWindow $Executable
 
-  # Wait a bit to let the started process complete initialization.
+# Wait a bit to let the started process complete initialization.
+Start-Sleep -Seconds $TimeoutSeconds
 
-  Start-Sleep -Seconds $TimeoutSeconds
-
-  # Call GenerateConsoleCtrlEvent to send a CTRL+C event to the launched executable.
-  # CTRL+C event will be sent to all processes attached to the console of the current process,
-  # i.e., it will be sent to this PowerShell process and to the started $Executable process because
-  # it was configured to attach to the existing console (the console of this PowerShell process).
-  [Stuff.Facade]::GenerateConsoleCtrlEvent()
-} else {
-  # Restart this script in a new PowerShell process with a new console.
-  Start-Process -Wait -FilePath powershell -ArgumentList @(
-    "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
-    "-WindowStyle", "Hidden", # Hide the window to avoid focus being distracted
-    "-File", $PSCommandPath,
-    "-Executable", $Executable,
-    "-TimeoutSeconds", $TimeoutSeconds,
-    "-Restarted"
-  )
-}
+# Call GenerateConsoleCtrlEvent to send a CTRL+C event to the launched executable.
+# CTRL+C event will be sent to all processes attached to the console of the current process,
+# i.e., it will be sent to this PowerShell process and to the started $Executable process because
+# it was configured to attach to the existing console (the console of this PowerShell process).
+[Stuff.Facade]::GenerateConsoleCtrlEvent()
