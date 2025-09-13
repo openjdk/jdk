@@ -803,6 +803,10 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    FinalImageRecipes::apply_recipes(CHECK);
+  }
+
   link_all_loaded_classes(THREAD);
 
   // Eargerly resolve all string constants in constant pools
@@ -815,10 +819,6 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
       InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
-  }
-
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    FinalImageRecipes::apply_recipes(CHECK);
   }
 }
 
@@ -1221,6 +1221,8 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     return false;
   }
 
+  bool made_progress = false;
+
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
@@ -1246,10 +1248,22 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
-    return true;
-  } else {
-    return false;
+    made_progress = true;
   }
+
+  if (CDSConfig::is_initing_classes_at_dump_time() && ik->force_aot_initialization() && !ik->is_initialized()) {
+    ik->initialize(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm;
+      log_error(aot, init)("class %s has @AOTForceInitialize but failed to initialize",
+                           ik->external_name());
+      AOTMetaspace::unrecoverable_writing_error("Unexpected failure.");
+    }
+    // May cause more classes to be loaded.
+    made_progress = true;
+  }
+
+  return made_progress;
 }
 
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
