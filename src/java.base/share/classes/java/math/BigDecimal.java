@@ -1797,36 +1797,33 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (this.signum() == 0) // 0/y
             return zeroValueOf(preferredScale);
         else {
+            BigDecimal a = this.stripTrailingZeros(), b = divisor.stripTrailingZeros();
+            BigInteger aInt = a.unscaledValue(), bInt = b.unscaledValue();
+
+            // Remove common powers of 2
+            int m_b = bInt.getLowestSetBit();
+            int powsOf2 = Math.min(aInt.getLowestSetBit(), m_b);
+            aInt = aInt.shiftRight(powsOf2);
+            bInt = bInt.shiftRight(powsOf2);
+            m_b -= powsOf2;
             /*
              * If the quotient this/divisor has a terminating decimal
-             * expansion, the expansion can have no more than
-             * (a.precision() + ceil(10*b.precision)/3) digits.
+             * expansion, the expansion can have no more than prec digits,
+             * where prec is defined as below.
              * Therefore, create a MathContext object with this
              * precision and do a divide with the UNNECESSARY rounding
              * mode.
              */
-            MathContext mc = new MathContext( (int)Math.min(this.precision() +
-                                                            (long)Math.ceil(10.0*divisor.precision()/3.0),
-                                                            Integer.MAX_VALUE),
-                                              RoundingMode.UNNECESSARY);
+            int prec = (digitLengthLower(aInt) + 1) - digitLengthLower(bInt)
+                    + Math.max(m_b, log5Upper(bInt.shiftRight(m_b))) + 1;
             BigDecimal quotient;
             try {
-                quotient = this.divide(divisor, mc);
+                quotient = a.divide(b, new MathContext(prec, RoundingMode.UNNECESSARY));
             } catch (ArithmeticException e) {
                 throw new ArithmeticException("Non-terminating decimal expansion; " +
                                               "no exact representable decimal result.");
             }
-
-            int quotientScale = quotient.scale();
-
-            // divide(BigDecimal, mc) tries to adjust the quotient to
-            // the desired one by removing trailing zeros; since the
-            // exact divide method does not have an explicit digit
-            // limit, we can add zeros too.
-            if (preferredScale > quotientScale)
-                return quotient.setScale(preferredScale, ROUND_UNNECESSARY);
-
-            return quotient;
+            return quotient.adjustToPreferredScale(preferredScale, 0);
         }
     }
 
@@ -5116,6 +5113,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
 
+    private static int log5Upper(BigInteger x) {
+        // Let b = x.bitLength(), m = max{n : 5^n <= x}. It can be shown that
+        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic),
+        // which entails m <= Math.round(b * LOG_5_OF_2) <= m + 1.
+        // Since log5(2)+2^(-21) < 1/2
+        // and (b-1) * LOG_5_OF_2 > [b log5(2) - log5(2)] - 2^(-21),
+        // then m <= Math.round((b - 1) * LOG_5_OF_2) <= m + 1 follows.
+        return (int) Math.round((x.bitLength() - 1) * LOG_5_OF_2);
+    }
+
     /**
      * Remove insignificant trailing zeros from this
      * {@code BigInteger} value until the preferred scale is reached or no
@@ -5143,12 +5150,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
         // Let k = max{n : (intVal % 5^n) == 0}, m = max{n : 5^n <= intVal}, so m >= k.
-        // Let b = intVal.bitLength(). It can be shown that
-        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic),
-        // which entails m <= maxPowsOf5 <= m + 1, where maxPowsOf5 is as below.
-        // Hence, maxPowsOf5 >= k.
-        long maxPowsOf5 = Math.round(intVal.bitLength() * LOG_5_OF_2);
-        remainingZeros = Math.min(remainingZeros, maxPowsOf5);
+        // Since m <= log5Upper(intVal) <= m + 1, then log5Upper(intVal) >= k.
+        remainingZeros = Math.min(remainingZeros, log5Upper(intVal));
 
         BigInteger[] qr; // quotient-remainder pair
         // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i).
