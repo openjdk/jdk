@@ -199,14 +199,14 @@ public:
 
   // Extend to have the space for both this BSMAEntries and other's.
   // Does not copy in the other's BSMAEntrys, that must be done via the InsertionIterator.
-  // This can be thought of as starting an insertion iteration.
-  InsertionIterator extend_to_fit(BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
-  InsertionIterator extend_to_fit(int number_of_entries, int data_size,
+  // This starts an insertion iterator.
+  InsertionIterator start_extension(BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
+  InsertionIterator start_extension(int number_of_entries, int data_size,
                                   ClassLoaderData* loader_data, TRAPS);
   // Reallocates the underlying memory to fit the limits of the InsertionITerator precisely.
-  // This can be thought of as ending an insertion iteration, ensuring that any over-allocated space
+  // This ends an insertion iteration, ensuring that any over-allocated space
   // is deleted.
-  void truncate_to(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS);
+  void end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS);
   // Append all of the BSMAEs in other into this.
   void append(BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
 

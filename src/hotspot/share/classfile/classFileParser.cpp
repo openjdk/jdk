@@ -3319,7 +3319,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   // Eagerly assign the arrays so that they will be deallocated with the constant
   // pool if there is an error.
   BSMAttributeEntries::InsertionIterator iter =
-    cp->bsm_entries().extend_to_fit(num_bootstrap_methods,
+    cp->bsm_entries().start_extension(num_bootstrap_methods,
                                     bootstrap_methods_u2_len,
                                     _loader_data,
                                     CHECK);
@@ -3350,7 +3350,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
       entry->set_argument(argi, bootstrap_argument_index);
     }
   }
-  cp->bsm_entries().truncate_to(iter, _loader_data, CHECK);
+  cp->bsm_entries().end_extension(iter, _loader_data, CHECK);
   guarantee_property(current_before_parsing + attribute_byte_length == cfs->current(),
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);

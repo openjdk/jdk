@@ -1610,13 +1610,13 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
 ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
-  return bsm_entries().extend_to_fit(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
+  return bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
                                      CHECK_(BSMAttributeEntries::InsertionIterator()));
 }
 
 
 void ConstantPool::end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS) {
-  bsm_entries().truncate_to(iter, pool_holder()->class_loader_data(), CHECK);
+  bsm_entries().end_extension(iter, pool_holder()->class_loader_data(), CHECK);
 }
 
 
@@ -2366,12 +2366,12 @@ void BSMAttributeEntries::copy_into(Array<u4>* new_offsets, Array<u2>* new_array
   }
 }
 
-BSMAttributeEntries::InsertionIterator BSMAttributeEntries::extend_to_fit(BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
-  return extend_to_fit(other.number_of_entries(), other.array_length(), loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+BSMAttributeEntries::InsertionIterator BSMAttributeEntries::start_extension(BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
+  return start_extension(other.number_of_entries(), other.array_length(), loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
 }
 
 BSMAttributeEntries::InsertionIterator
-BSMAttributeEntries::extend_to_fit(int number_of_entries, int array_length,
+BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
                                    ClassLoaderData* loader_data, TRAPS) {
   InsertionIterator ii(this, this->number_of_entries(), this->array_length());
   int new_number_of_entries = this->number_of_entries() + number_of_entries;
@@ -2397,7 +2397,7 @@ void BSMAttributeEntries::append(BSMAttributeEntries& other, ClassLoaderData* lo
   }
   int initial_offset_index = number_of_entries();
   int initial_array_offset = array_length();
-  extend_to_fit(other, loader_data, CHECK);
+  start_extension(other, loader_data, CHECK);
   other.copy_into(_offsets,
                   _bootstrap_methods,
                   other.number_of_entries(),
@@ -2424,7 +2424,7 @@ BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 
   return e;
 }
 
-void BSMAttributeEntries::truncate_to(InsertionIterator& iter, ClassLoaderData* loader_data,
+void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data,
                                       TRAPS) {
   assert(iter.insert_into == this, "must be");
   assert(iter.cur_offset <= this->_offsets->length(), "must be");
