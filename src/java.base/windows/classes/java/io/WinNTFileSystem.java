@@ -635,7 +635,23 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int compare(File f1, File f2) {
-        return f1.getPath().compareToIgnoreCase(f2.getPath());
+        String s1 = f1.getPath();
+        String s2 = f2.getPath();
+        int n1 = s1.length();
+        int n2 = s2.length();
+        int min = Math.min(n1, n2);
+        for (int i = 0; i < min; i++) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(i);
+             if (c1 != c2) {
+                 c1 = Character.toUpperCase(c1);
+                 c2 = Character.toUpperCase(c2);
+                 if (c1 != c2) {
+                     return c1 - c2;
+                 }
+             }
+        }
+        return n1 - n2;
     }
 
     @Override
