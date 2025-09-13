@@ -54,6 +54,7 @@ class LogOutputList {
   };
 
   LogOutputNode* volatile _level_start[LogLevel::Count];
+  volatile bool _output_level_configured_by_user;
   volatile jint   _active_readers;
 
   LogOutputNode* find(const LogOutput* output) const;
@@ -66,7 +67,7 @@ class LogOutputList {
   jint decrease_readers();
 
  public:
-  LogOutputList() : _active_readers(0) {
+  LogOutputList() : _output_level_configured_by_user(false), _active_readers(0) {
     for (size_t i = 0; i < LogLevel::Count; i++) {
       _level_start[i] = nullptr;
     }
@@ -87,6 +88,18 @@ class LogOutputList {
 
   // Set (add/update/remove) the output to the specified level.
   void set_output_level(LogOutput* output, LogLevelType level);
+
+  void set_output_level_configured_by_user() {
+    Atomic::release_store(&_output_level_configured_by_user, true);
+  }
+
+  void set_output_level_not_configured_by_user() {
+    Atomic::release_store(&_output_level_configured_by_user, false);
+  }
+
+  bool is_output_level_configured_by_user() const {
+    return Atomic::load_acquire(&_output_level_configured_by_user);
+  }
 
   // Removes all outputs. Equivalent of set_output_level(out, Off)
   // for all outputs.
