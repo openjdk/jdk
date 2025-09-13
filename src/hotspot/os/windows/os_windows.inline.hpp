@@ -39,7 +39,7 @@ inline bool os::uses_stack_guard_pages() {
   return true;
 }
 
-inline bool os::must_commit_stack_guard_pages() {
+inline bool os::must_allocate_stack_guard_pages() {
   return true;
 }
 
