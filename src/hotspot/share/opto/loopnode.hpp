@@ -1859,6 +1859,8 @@ public:
 
   bool ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop);
 
+  bool would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node* ctrl);
+
   Node* compute_early_ctrl(Node* n, Node* n_ctrl);
 
   void try_sink_out_of_loop(Node* n);
