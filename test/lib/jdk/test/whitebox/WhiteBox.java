@@ -810,6 +810,7 @@ public class WhiteBox {
 
   // Container testing
   public native boolean isContainerized();
+  public native boolean hasMemoryLimit();
   public native int validateCgroup(boolean cgroupsV2Enabled,
                                    String controllersFile,
                                    String procSelfCgroup,
