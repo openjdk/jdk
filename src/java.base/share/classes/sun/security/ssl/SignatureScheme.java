@@ -148,9 +148,9 @@ enum SignatureScheme {
 
     final int id;                       // hash + signature
     final String name;                  // literal name
-    private final String algorithm;     // signature algorithm
+    final String algorithm;     // signature algorithm
     final String keyAlgorithm;          // signature key algorithm
-    private final SigAlgParamSpec signAlgParams;    // signature parameters
+    final SigAlgParamSpec signAlgParams;    // signature parameters
     private final NamedGroup namedGroup;    // associated named group
 
     // The minimal required key size in bits.
@@ -185,7 +185,7 @@ enum SignatureScheme {
         RSA_PSS_SHA384 ("SHA-384", 48),
         RSA_PSS_SHA512 ("SHA-512", 64);
 
-        private final AlgorithmParameterSpec parameterSpec;
+        final AlgorithmParameterSpec parameterSpec;
         private final AlgorithmParameters parameters;
         private final boolean isAvailable;
 

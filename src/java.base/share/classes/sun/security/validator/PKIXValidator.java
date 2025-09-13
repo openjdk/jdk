@@ -249,6 +249,18 @@ public final class PKIXValidator extends Validator {
                         (trustedSubjects.containsKey(dn) && // replacing ...
                          trustedSubjects.get(dn).contains(  // ... weak cert
                             cert.getPublicKey()))) {
+                    // Set trusted cert as a trust anchor for AlgorithmChecker
+                    // we have added above.
+                    if (pkixParameters != null && constraints != null) {
+                        var checkers = new ArrayList<>(
+                                pkixParameters.getCertPathCheckers());
+                        var lastChecker = checkers.removeLast();
+                        if (lastChecker instanceof AlgorithmChecker) {
+                            checkers.add(new AlgorithmChecker(new TrustAnchor(
+                                    cert, null), constraints, null, variant));
+                            pkixParameters.setCertPathCheckers(checkers);
+                        }
+                    }
                     // Remove and call validator on partial chain [0 .. i-1]
                     X509Certificate[] newChain = new X509Certificate[i];
                     System.arraycopy(chain, 0, newChain, 0, i);
@@ -261,7 +273,6 @@ public final class PKIXValidator extends Validator {
         // apparently issued by trust anchor?
         X509Certificate last = chain[chain.length - 1];
         X500Principal issuer = last.getIssuerX500Principal();
-        X500Principal subject = last.getSubjectX500Principal();
         if (trustedSubjects.containsKey(issuer)) {
             return doValidate(chain, pkixParameters);
         }
