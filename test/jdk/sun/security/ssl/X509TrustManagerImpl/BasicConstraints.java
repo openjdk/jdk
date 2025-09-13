@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,33 @@
  * @bug 7166570
  * @summary JSSE certificate validation has started to fail for
  *     certificate chains
+ * @enablePreview
  * @run main/othervm BasicConstraints PKIX
  * @run main/othervm BasicConstraints SunX509
  */
 
-import java.util.*;
-import java.io.*;
-import javax.net.ssl.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.PEMDecoder;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.security.KeyStore;
 import java.security.KeyFactory;
-import java.security.cert.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
 
-import java.util.Base64;
+import java.util.Arrays;
 
 public class BasicConstraints {
 
@@ -96,33 +109,6 @@ public class BasicConstraints {
         "cwIDUWqQda62xV7ChkTh7ia3uvBXob2iiB0aI3gVTTqDfK9F5XXtW4BXfqx0hvwB\n" +
         "6JzgmNyDQos=\n" +
         "-----END CERTIFICATE-----";
-    static String trustedPrivateKey = // Private key in the format of PKCS#8
-        "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDUJ3hT/9jY/i8i\n" +
-        "70EEaL6mbrhhdg/Ys1E0r97n+dZaY0olqkIBhh1r8UkKWtvOkj8WBFQ0sz0HhSjT\n" +
-        "rkVEisGLW+7zPJiDBPtQrRawvCDpnzUofnQ98zQKUTHji1OqhxgNzsKCy9vIh5Mh\n" +
-        "tX0CdGUScEDXlYUkAkxMKCVo2V5dRn34D+1rNGEeWxGnQ5vyPi0IwlpEOkYxhPLV\n" +
-        "dsb5aoLzBc/rdrrdzCM+svm7O38LhbVuA0F9NHAgdJRKE2F91ztkk1KvY0U9zCh1\n" +
-        "3u5WV7kl481qDujKGM4UURoEarbV2Xr+jNVGSpJZYCLU/sxFrL15iPeYtmJlovo2\n" +
-        "VbFed/NXAgMBAAECggEAUZvlQ5q1VbNhenTCc+m+/NK2hncd3WQNJtFIU7/dXuO2\n" +
-        "0ApQXbmzc6RbTmppB2tmbRe5NJSGM3BbpiHxb05Y6TyyDEsQ98Vgz0Xl5pJXrsaZ\n" +
-        "cjxChtoY+KcHI9qikoRpElaoqBu3LcpJJLxlnB4eCxu3NbbEgneH1fvTeCO1kvcp\n" +
-        "i3DDdyfY7WB9RW1yWAveiuqvtnbsPfJJLKEhFvZL2ArYCRTm/oIw64yukNe/QLR5\n" +
-        "bGzEJMT2ZNQMld1f+CW9tOrUKrnnPCGfMa351T5we+8B6sujWfftPutgEVx5TmHs\n" +
-        "AOW1SntMapbgg46K9EC/C5YQa5D1aNOH9ZTEMkgUMQKBgQDrpPQIHFozeeyZ0iiq\n" +
-        "HtReLPcqpkwr/9ELc3SjgUypSvpu0l/m++um0yLinlXMn25km/BP6Mv3t/+1uzAc\n" +
-        "qpopkcyek8X1hzNRhDkWuMv4KDOKk5c6qLx8FGSm6q8PYm5KbsiyeCM7CJoeoqJ5\n" +
-        "74IZjOIw7UrYLckCb6W8xGQLIwKBgQDmew3vGRR3JmCCSumtJQOqhF6bBYrNb6Qc\n" +
-        "r4vrng+QhNIquwGqHKPorAI1J8J1jOS+dkDWTxSz2xQKQ83nsOspzVPskpDh5mWL\n" +
-        "gGk5QCkX87jFsXfhvZFLksZMbIdpWze997Zs2fe/PWfPaH6o3erqo2zAhQV0eA9q\n" +
-        "C7tfImREPQKBgQDi2Xq/8CN52M9IScQx+dnyC5Gqckt0NCKXxn8sBIa7l129oDMI\n" +
-        "187FXA8CYPEyOu14V5KiKvdos66s0daAUlB04lI8+v+g3ZYuzH50/FQHwxPTPUBi\n" +
-        "DRzeyncXJWiAA/8vErWM8hDgfOh5w5Fsl4EEfdcmyNm7gWA4Qyknr1ysRwKBgQDC\n" +
-        "JSPepUy09VHUTxA59nT5HRmoEeoTFRizxTfi2LkZrphuwCotxoRXiRUu+3f1lyJU\n" +
-        "Qb5qCCFTQ5bE8squgTwGcVxhajC66V3ePePlAuPatkWN2ek28X1DoLaDR+Rk3h69\n" +
-        "Wb2EQbNMl4grkUUoMA8jaVhBb4vhyQSK+qjyAUFerQKBgQDXZPuflfsjH/d/O2yw\n" +
-        "qZbssKe9AKORjv795teblAc3vmsSlNwwVnPdS2aq1LHyoNbetc/OaZV151hTQ/9z\n" +
-        "bsA48oOojgrDD07Ovg3uDcNEIufxR0aGeSSvqhElp1r7wAYj8bAr6W/RH6MS16WW\n" +
-        "dRd+PH6hsap8BD2RlVCnrT3vIQ==";
 
     // Certificate information:
     // Issuer: C=US, O=Java, OU=SunJSSE Test Serivce
@@ -156,33 +142,6 @@ public class BasicConstraints {
         "P0QqaqP+xJIY+sRrzdckxSfS9AOOrJk2VXY8qEoxCN4wCvHJWuHEAF/Lm65d/hq3\n" +
         "2Uh8P+QHLeuEwF8RoTpjiGM9dXvaqcQz7w5G\n" +
         "-----END CERTIFICATE-----";
-    static String caSignerPrivateKey = // Private key in the format of PKCS#8
-        "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDAvGeLKlW1ljae\n" +
-        "eu8NvDCjfW5BNK2c0C4ry7Is+1mM4PC7FA4bRpMaQHKIjLsZ5D1hoA9183cv3p1a\n" +
-        "P75/ZYMOyx1id/hXmbd3jp8BR0wbvrKxa53+4lO0S5AL5dOpU2AVhcdeQ7+DwoL6\n" +
-        "iAuHqNcABg3CijrIcFeZHcPMwaZMd9YxJG6YrnNHMWjbXTGKpma02NMB1UnRxsdN\n" +
-        "phqfRt2gkUs18l6697sSJ7eblvSWEWw1Bmtrg9No28UUsiF8q0m9i/G0QzYOrS6v\n" +
-        "ghum5bpHAixxfA9Z/ozHrN8gf8gNDTRnG6phDwVb1Uj9nO2f9yTArx7Kz5EtRNmD\n" +
-        "x9SNMS9rAgMBAAECggEAZk6cF/8s5+sIqy9OXdgbaW1XbT1tOuQ23gCOX9o8Os/c\n" +
-        "eTG4GzpnM3QqV9l8J85D1uKD0nSeO8bLd/CGSlG0M9IVkwNjy/xIqyoFtUQHXmLn\n" +
-        "r84UXAv/qqDBoc8pf6RGSKZuodcMfgBuTlaQ6D3zgou0GiQN9//KP/jQyouwnr3A\n" +
-        "LyXQekxriwPuSYAPak8s5XLfugOebbSRm2UdGEgX3yrT9FVu9rtgeMKdRaCOU8T4\n" +
-        "G2UdpGaiDfm5yrR+2XEIv4oaH3WFxmmfQCxVcOFJ1iRvfKBbLb1UCgtJuCBD067y\n" +
-        "dq5PrwUTeAvd7hwZd0lxCSnWY7VvYFNr7iJfyElowQKBgQD8eosot+Th03hpkYDs\n" +
-        "BIVsw7oqhJmcrPV1bSZ+aQwqqrOGypNmb7nLGTC8Cj1sT+EzfGs7GqxiLOEn4NXr\n" +
-        "TYV//RUPBSEXVp2y+2dot1a9oq0BJ8FwGTYL0qSwJrIXJfkQFrYhVVz3JLIWJbwV\n" +
-        "cy4YCQr094BhXTS7joJOUDRsYwKBgQDDbI3Lv+bBK8lLfIBll1RY1k5Gqy/H+qxp\n" +
-        "sMN8FmadmIGzHhe9xml6b5EfAZphAUF4vZJhQXloT5Wm+NNIAf6X6dRjvzyw7N9B\n" +
-        "d48EFJF4ChqNGBocsQRNr2wPRzQ+k2caw9YyYMIjbhktDzO1U/FJGYW6/Vgr2v4K\n" +
-        "siROnXfLWQKBgBOVAZQP5z2opC8z7NbhZuPPrnG7xRpEw+jupUyqoxnwEWqD7bjF\n" +
-        "M5jQBFqhRLBQ5buTi9GSuQoIRxJLuuu8IH2TyH1YvX9M5YBLRXL2vVCJ/HcZeURT\n" +
-        "gECcfs92wNtQw6d+y3N8ZnB4tSNIm/Th8RJGKUZkp91lWECvxeWDDP3XAoGASfNq\n" +
-        "NRAJYlAPfGFAtTDu2i8+r79X9XUGiXg6gVp4umpbqkxY75eFkq9lWzZgFRVEkUwr\n" +
-        "eGIubyquluDSEw2uKg5yMMzNSqZYVY3IsOKXqbUpFvtn5jOWTU90tNNdEdD100sI\n" +
-        "Y0f6Ly4amNKH3rZFOERQNtJn6zCTsbh3xMgR7QECgYBhQTqxLU5eIu38MKobzRue\n" +
-        "RoUkMcoY3DePkKPSYjilFhkUDozIXf/xUGnB8kERZKO+44wUkuPGljiFL1/P/RO9\n" +
-        "zhHAV94Kw2ddtfxy05GVtUZ99miBmsMb2m8vumGJqfR8h2xpfc1Ra0zfrsPgLNru\n" +
-        "xDTDW+bNbM7XyPvg9mOf7Q==";
 
     // Certificate information:
     // Issuer: C=US, O=Java, OU=SunJSSE Test Serivce, CN=casigner
@@ -216,33 +175,6 @@ public class BasicConstraints {
         "zr4da2aIg9CKrH2QWoMkDfRKkJvrU3/VhVfVWpNbXFE2xZXftQl3hpFCJ3FkpciA\n" +
         "l3hKeq4byY3LXxhAClHpk1KkXJkMnQdOfA5aGekj/Cjuaz1/iKYAG2vRq7YcuM/o\n" +
         "-----END CERTIFICATE-----";
-    static String certIssuerPrivateKey = // Private key in the format of PKCS#8
-        "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC1lDVpzmzwbKOL\n" +
-        "yFWkjPjqtX9xLMq7SVqobvhBv+VChMGGjQbNQPbtczOcXNOcuMFyXxY++eXY7c37\n" +
-        "MzhbdZHv4Y4aWEn+A3EiX2/fTAbxx165qxKiHbD2EmlKk/Q6yIvi9M9EXXr/viEC\n" +
-        "Y4/Sdtd4KYtfETa0FpfF5/ZpZMYQo8I9RqBQOmhfvXL1l/Lodla5elZtvIUyp5k2\n" +
-        "nRQe58AxeP5hrilbIgfmEySf9mOkaTalRf2epBE/wRNA7Qi5Sr2O4pY2x3PPdmMy\n" +
-        "NL4cZaOJTgdyeDYbEMSW6vpiJW26ma/qeFgPIXZ8COFJZLSOEu310M4QOdSR1Y2c\n" +
-        "l3/V2E0VAgMBAAECggEBAJjfVrjl2kHwtSCSYchQB6FTfSBDnctgTrtP8iMo9FO0\n" +
-        "gVpOkVNtRndTbjhOzro7smIgPBJ5QlIIpErBLMmTinJza7gybNk2/KD7yKwuzgnw\n" +
-        "2IdoyB9E8B+8EHmBZzW2ck953KaqLUvzPsdMG2IOPAomr/gx/eRQwScVzBefiEGo\n" +
-        "sN+rGfUt/RNAHwWje1KuNDj21S84agQhN6hdYUnIMsvJLu/9mOwUb9ff+AzTUfFr\n" +
-        "zyx2MJL4Cx59DkUUMESCfinlHUc21llQjFWmX/zOoGY0X0qV/YM/GRsv1ZDFHw9o\n" +
-        "hQ6m8Ov7D9wB3TKZBI97sCyggjBfSeuYQlNbs99KWQECgYEA7IKNL0ME7FuIrKYu\n" +
-        "FCQ/Duz1N3oQXLzrTGKUSU1qSbrU2Jwk4SfJ8ZYCW1TP6vZkaQsTXmXun3yyCAqZ\n" +
-        "hcOtDBhI+b7Wpmmyf6nb83oYJtzHMRQZ5qS+9vOBfV9Uf1za8XI4p90EqkFHByCF\n" +
-        "tHfjVbjK39zN4CvaO3tqpOaYtL0CgYEAxIrTAhGWy9nBsxf8QeqDou0rV5Cw50Kl\n" +
-        "kQsE7KLmjvrMaFFpUc5lgWoC+pm/69VpNBUuN/38YozwxVjVi/nMJuuK150mhdWI\n" +
-        "B28FI7ORnFmVeSvTrP4mBX1ct2Tny9zpchXn3rpHR5NZUs7oBhjudHSfRMrHxeBs\n" +
-        "Kv2pr2s6uzkCgYAtrEh3iAm7WzHZpX3ghd9nknsIa5odTp5h8eeRAFI2Ss4vxneY\n" +
-        "w4ZMERwDZy1/wnVBk9H5uNWMFxiKVQGww0j3vPjawe/R0zeVT8gaDMn9N0WARNF7\n" +
-        "qPT3265196LptZTSa6xlPllYR6LfzXgEkeJk+3qyIIHheJZ8RikiDyYOQQKBgQC/\n" +
-        "rxlegiMNC4KDldf7vanGxAKqcz5lPbXWQOX7mGC+f9HNx+Cs3VxYHDltiXgJnOju\n" +
-        "191s1HRK9WR5REt5KhY2uzB9WxJQItJ5VYiwqhhQYXqLY/gdVv1kC0DayDndtMWk\n" +
-        "88JhklGkeAv83DikgbpGr9sJr6+oyFkWkLDmmfD82QKBgQCMgkZJzrdSNNlB0n5x\n" +
-        "xC3MzlsQ5aBJuUctnMfuyDi+11yLAuP1oLzGEJ7qEfFoGRO0V8zJWmHAfNhmVYEX\n" +
-        "ow5g0WbPT16GoRCiOAzq+ewH+TEELMF6HWqnDuTnCg28Jg0dw2kdVTqeyzKOQlLG\n" +
-        "ua9c2DY3PUTXQPNqLVhz+XxZKA==";
 
     // Certificate information:
     // Issuer: C=US, O=Java, OU=SunJSSE Test Serivce, CN=certissuer
@@ -277,6 +209,7 @@ public class BasicConstraints {
         "u/inkyf8NcG7zLBJJyuKfUXO/OzGPD5QMviVc+PCGTY=\n" +
         "-----END CERTIFICATE-----";
     static String serverPrivateKey = // Private key in the format of PKCS#8
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCaDgoxN2UQQero\n" +
         "oBQ4JlQP1BFaZEtIkdIU2VJs4whz85J0LSB/68iEOS5e8wCz9wiQWr4isor7sl3e\n" +
         "B2dnLGY28BthOTw2j/CYw/dRqyDbPZniooB233uLGarKjqQWXpRFQi6bgEQmNqWe\n" +
@@ -302,7 +235,8 @@ public class BasicConstraints {
         "/RiupLD4/awmf21ytpfHcmOWCcdQoE4WC69a6VyVAoGAboeogM5/TRKj80rXfUH2\n" +
         "lFZzgX246XGwNyOVVgOuv/Oxa61b5FeeCpnFQcjpZmC5vd63X3w7oYSDe2wUt+Wh\n" +
         "LhYunmcCEj+yb3of33loQb/FM2OLW9UoQakB7ewio9vtw+BAnWxnHFkEaqdxMXpy\n" +
-        "TiSXLpQ1Q9GvDpzngDzJzzY=";
+        "TiSXLpQ1Q9GvDpzngDzJzzY=\n" +
+        "-----END PRIVATE KEY-----";
 
     // Certificate information:
     // Issuer: C=US, O=Java, OU=SunJSSE Test Serivce, CN=certissuer
@@ -337,6 +271,7 @@ public class BasicConstraints {
         "tL85OZz8ov7d2jVet/w7FD4M5XfcogsNtpX4kaMsctyvQbDYRA==\n" +
         "-----END CERTIFICATE-----";
     static String clientPrivateKey = // Private key in the format of PKCS#8
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDFwNzVfqQ58J0I\n" +
         "FxUO1ng7XE3uKg0FfbQ4/XEWRakF6PeAt9JZLl83R++tW2QfOAxEldKiyJOv5/g/\n" +
         "UjrIO0j3u7noxtuK6Yf1aTwDaz16PI8cIfylvvMtKWDYoBVGQ4vphAwDhoMqmgG2\n" +
@@ -362,9 +297,10 @@ public class BasicConstraints {
         "cWJdYS5BrwEUen8vaQt1LhgS6lOqYsjysCxkYm078QKBgEJuq4RzecgiGx8srWDb\n" +
         "pQKpxrdEt82Y7OXLVj+W9vixcW/xUYhDYGsfdUigZoOjo4nV8KVmMbuI48PIYwnw\n" +
         "haLwWrBWlki4x9MRwuZUdewOYoo7hDZToZmIDescdiwv8CA/Dg9kOX3YYLPW+cWl\n" +
-        "i1pnyMPaloBOhz3Y07sWXxCz";
+        "i1pnyMPaloBOhz3Y07sWXxCz\n" +
+        "-----END PRIVATE KEY-----";
 
-    static char passphrase[] = "passphrase".toCharArray();
+    static char[] passphrase = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
@@ -374,7 +310,7 @@ public class BasicConstraints {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * Define the server side of the test.
@@ -447,48 +383,39 @@ public class BasicConstraints {
     // get the ssl context
     private static SSLContext getSSLContext(boolean isServer) throws Exception {
 
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        final PEMDecoder pemDecoder = PEMDecoder.of();
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
 
-        // import the trused cert
-        ByteArrayInputStream is =
-            new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
-        is.close();
+        // generate certificate from cert string
 
+        Certificate trusedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
+
+        // import the trused cert
         ks.setCertificateEntry("SunJSSE Test Serivce", trusedCert);
 
         // import the certificate chain and key
         Certificate[] chain = new Certificate[3];
 
-        is = new ByteArrayInputStream(caSignerStr.getBytes());
-        Certificate caSignerCert = cf.generateCertificate(is);
-        is.close();
+        Certificate caSignerCert =pemDecoder.decode(caSignerStr, X509Certificate.class);
         chain[2] = caSignerCert;
 
-        is = new ByteArrayInputStream(certIssuerStr.getBytes());
-        Certificate certIssuerCert = cf.generateCertificate(is);
-        is.close();
+        Certificate certIssuerCert =pemDecoder.decode(certIssuerStr, X509Certificate.class);
         chain[1] = certIssuerCert;
 
-        PKCS8EncodedKeySpec priKeySpec = null;
+        PKCS8EncodedKeySpec priKeySpec;
+        Certificate keyCert;
         if (isServer) {
-            priKeySpec = new PKCS8EncodedKeySpec(
-                            Base64.getMimeDecoder().decode(serverPrivateKey));
-            is = new ByteArrayInputStream(serverCertStr.getBytes());
+            priKeySpec =pemDecoder.decode(serverPrivateKey, PKCS8EncodedKeySpec.class);
+            keyCert = pemDecoder.decode(serverCertStr, X509Certificate.class);
         } else {
-            priKeySpec = new PKCS8EncodedKeySpec(
-                            Base64.getMimeDecoder().decode(clientPrivateKey));
-            is = new ByteArrayInputStream(clientCertStr.getBytes());
+            priKeySpec = pemDecoder.decode(clientPrivateKey, PKCS8EncodedKeySpec.class);
+            keyCert = pemDecoder.decode(clientCertStr, X509Certificate.class);
         }
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKey priKey = (RSAPrivateKey)kf.generatePrivate(priKeySpec);
-        Certificate keyCert = cf.generateCertificate(is);
-        is.close();
         chain[0] = keyCert;
 
         ks.setKeyEntry("End Entity", priKey, passphrase, chain);
@@ -496,7 +423,8 @@ public class BasicConstraints {
         // check the certification path
         PKIXParameters paras = new PKIXParameters(ks);
         paras.setRevocationEnabled(false);
-        CertPath path = cf.generateCertPath(Arrays.asList(chain));
+        CertPath path = CertificateFactory.getInstance("X.509")
+                .generateCertPath(Arrays.asList(chain));
         CertPathValidator cv = CertPathValidator.getInstance("PKIX");
         cv.validate(path, paras);
 
@@ -531,7 +459,7 @@ public class BasicConstraints {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
@@ -586,22 +514,20 @@ public class BasicConstraints {
 
     void startServer(boolean newThread) throws Exception {
         if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+            serverThread = new Thread(() -> {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died...");
+                    serverReady = true;
+                    serverException = e;
                 }
-            };
+            });
             serverThread.start();
         } else {
             doServerSide();
@@ -610,19 +536,17 @@ public class BasicConstraints {
 
     void startClient(boolean newThread) throws Exception {
         if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
+            clientThread = new Thread(() -> {
+                try {
+                    doClientSide();
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died...");
+                    clientException = e;
                 }
-            };
+            });
             clientThread.start();
         } else {
             doClientSide();
