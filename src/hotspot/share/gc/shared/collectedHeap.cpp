@@ -277,6 +277,7 @@ CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
   _soft_ref_policy(),
+  _is_shutting_down(false),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -604,9 +605,77 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::before_exit() {
-  print_tracing_info();
+bool CollectedHeap::is_shutting_down() const {
+  return AtomicAccess::load_acquire(&_is_shutting_down);
+}
 
+void CollectedHeap::stall_for_vm_shutdown() {
+  assert(is_shutting_down(), "Precondition");
+  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
+  // To avoid returning nullptr (which could cause premature OOME), we stall
+  // allocation requests here allow the VM shutdown is complete.
+  //
+  // We use a timed wait (2 seconds) instead of an indefinite wait to avoid blocking
+  // VM shutdown if it happens to trigger a GC.
+  // The 2-second timeout is:
+  //   - long enough to keep daemon threads stalled, while the shutdown
+  //     sequence completes in the common case.
+  //   - short enough to avoid excessive stall time if the shutdown itself
+  //     triggers a GC.
+  MonitorLocker ml(VMExit_lock);
+  ml.wait(2 * 1000);
+}
+
+static void log_cpu_time() {
+  LogTarget(Info, cpu) cpuLog;
+  if (!cpuLog.is_enabled()) {
+    return;
+  }
+
+  const double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
+
+  const double elasped_time = os::elapsedTime();
+  const bool has_error = CPUTimeUsage::Error::has_error();
+
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    if (has_error) {
+      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
+    }
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
+
+    if (UseStringDeduplication) {
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
+    }
+    cpuLog.print("=====================================================================================");
+  }
+}
+
+void CollectedHeap::before_exit() {
+
+  {
+    // Acquire the Heap_lock to ensure mutual exclusion with VM_GC_Operations.
+    MutexLocker ml(Heap_lock);
+    log_cpu_time();
+    print_tracing_info();
+    AtomicAccess::release_store(&_is_shutting_down, true);
+  }
   // Stop any on-going concurrent work and prepare for exit.
   stop();
 }
