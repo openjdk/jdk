@@ -194,15 +194,37 @@ class VirtualMemorySummary : AllStatic {
  */
 class VirtualMemoryRegion {
  private:
-  address      _base_address;
-  size_t       _size;
+  address         _base_address;
+  size_t          _size;
+  MemTag          _mem_tag;
+  NativeCallStack _reserved_stack, _committed_stack;
 
  public:
+  VirtualMemoryRegion() :
+    _base_address(0), _size(0), _mem_tag(mtNone),
+    _reserved_stack(NativeCallStack::empty_stack()) ,
+    _committed_stack(NativeCallStack::empty_stack()) {}
+
   VirtualMemoryRegion(address addr, size_t size) :
-    _base_address(addr), _size(size) {
+    _base_address(addr), _size(size), _mem_tag(mtNone),
+    _reserved_stack(NativeCallStack::empty_stack()) ,
+    _committed_stack(NativeCallStack::empty_stack()) {
      assert(addr != nullptr, "Invalid address");
      assert(size > 0, "Invalid size");
-   }
+  }
+
+  VirtualMemoryRegion(address addr, size_t size, const NativeCallStack& stack, bool committed) :
+    _base_address(addr), _size(size), _mem_tag(mtNone),
+    _reserved_stack(NativeCallStack::empty_stack()) ,
+    _committed_stack(stack) {
+     assert(addr != nullptr, "Invalid address");
+     assert(size > 0, "Invalid size");
+  }
+
+  VirtualMemoryRegion(address addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone)
+    : _base_address(addr), _size(size), _mem_tag(mem_tag),
+     _reserved_stack(stack),
+    _committed_stack(NativeCallStack::empty_stack()) {}
 
   inline address base() const { return _base_address;   }
   inline address end()  const { return base() + size(); }
@@ -211,46 +233,16 @@ class VirtualMemoryRegion {
   inline bool is_empty() const { return size() == 0; }
 
   inline bool contain_address(address addr) const {
+    assert(is_valid(), "snaity");
     return (addr >= base() && addr < end());
   }
 
-
-  inline bool contain_region(address addr, size_t size) const {
-    return contain_address(addr) && contain_address(addr + size - 1);
-  }
-
-  inline bool same_region(address addr, size_t sz) const {
-    return (addr == base() && sz == size());
-  }
-
-
+ private:
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
+    assert(is_valid(), "snaity");
     return MAX2(addr, base()) < MIN2(addr + sz, end());
-  }
-
-  inline bool adjacent_to(address addr, size_t sz) const {
-    return (addr == end() || (addr + sz) == base());
-  }
-
-  void exclude_region(address addr, size_t sz) {
-    assert(contain_region(addr, sz), "Not containment");
-    assert(addr == base() || addr + sz == end(), "Can not exclude from middle");
-    size_t new_size = size() - sz;
-
-    if (addr == base()) {
-      set_base(addr + sz);
-    }
-    set_size(new_size);
-  }
-
-  void expand_region(address addr, size_t sz) {
-    assert(adjacent_to(addr, sz), "Not adjacent regions");
-    if (base() == addr + sz) {
-      set_base(addr);
-    }
-    set_size(size() + sz);
   }
 
   // Returns 0 if regions overlap; 1 if this region follows rgn;
@@ -266,10 +258,24 @@ class VirtualMemoryRegion {
     }
   }
 
+ public:
   // Returns true if regions overlap, false otherwise.
   inline bool equals(const VirtualMemoryRegion& rgn) const {
     return compare(rgn) == 0;
   }
+
+  bool equals_including_stacks(const VirtualMemoryRegion& other) const;
+  inline void set_committed_call_stack(const NativeCallStack& stack) { _committed_stack = stack; }
+  inline const NativeCallStack* committed_call_stack() const         { return &_committed_stack; }
+
+  bool is_valid() const { return base() != nullptr && size() != 0;}
+
+  inline void  set_reserved_call_stack(const NativeCallStack& stack) { _reserved_stack = stack; }
+  inline const NativeCallStack* reserved_call_stack() const          { return &_reserved_stack;  }
+
+  inline MemTag mem_tag() const { return _mem_tag;  }
+
+  const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
 
  protected:
   void set_base(address base) {
@@ -283,69 +289,9 @@ class VirtualMemoryRegion {
   }
 };
 
-
-class CommittedMemoryRegion : public VirtualMemoryRegion {
- private:
-  NativeCallStack  _stack;
-
- public:
-  CommittedMemoryRegion()
-    : VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()) { }
-
-  CommittedMemoryRegion(address addr, size_t size, const NativeCallStack& stack)
-    : VirtualMemoryRegion(addr, size), _stack(stack) { }
-
-  inline void set_call_stack(const NativeCallStack& stack) { _stack = stack; }
-  inline const NativeCallStack* call_stack() const         { return &_stack; }
-  bool equals(const ReservedMemoryRegion& other) const;
-};
-
-class ReservedMemoryRegion : public VirtualMemoryRegion {
- private:
-  NativeCallStack  _stack;
-  MemTag         _mem_tag;
-
- public:
-  bool is_valid() { return base() != (address)1 && size() != 1;}
-
-  ReservedMemoryRegion()
-    : VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
-
-  ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone)
-    : VirtualMemoryRegion(base, size), _stack(stack), _mem_tag(mem_tag) { }
-
-
-  ReservedMemoryRegion(address base, size_t size)
-    : VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
-
-  // Copy constructor
-  ReservedMemoryRegion(const ReservedMemoryRegion& rr)
-    : VirtualMemoryRegion(rr.base(), rr.size()) {
-    *this = rr;
-  }
-
-  inline void  set_call_stack(const NativeCallStack& stack) { _stack = stack; }
-  inline const NativeCallStack* call_stack() const          { return &_stack;  }
-
-  inline MemTag mem_tag() const            { return _mem_tag;  }
-
-  ReservedMemoryRegion& operator= (const ReservedMemoryRegion& other) {
-    set_base(other.base());
-    set_size(other.size());
-
-    _stack = *other.call_stack();
-    _mem_tag = other.mem_tag();
-
-    return *this;
-  }
-
-  const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
-};
-
 class VirtualMemoryWalker : public StackObj {
  public:
-   virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
+   virtual bool do_allocation_site(const VirtualMemoryRegion* rgn) { return false; }
 };
 
 
@@ -376,8 +322,8 @@ class VirtualMemoryTracker {
   // Snapshot current thread stacks
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff diff);
-  size_t committed_size(const ReservedMemoryRegion* rmr);
-  address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
+  size_t committed_size(const VirtualMemoryRegion* rmr);
+  address thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr);
 
   RegionsTree* tree() { return &_tree; }
 
@@ -401,9 +347,9 @@ class VirtualMemoryTracker {
     static bool print_containing_region(const void* p, outputStream* st);
     static void snapshot_thread_stacks();
     static void apply_summary_diff(VMATree::SummaryDiff diff);
-    static size_t committed_size(const ReservedMemoryRegion* rmr);
+    static size_t committed_size(const VirtualMemoryRegion* rmr);
     // uncommitted thread stack bottom, above guard pages if there is any.
-    static address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
+    static address thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr);
 
     static RegionsTree* tree() { return _tracker->tree(); }
   };
