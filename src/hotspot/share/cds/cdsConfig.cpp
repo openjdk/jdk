@@ -862,7 +862,11 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
 
 bool CDSConfig::current_thread_is_vm_or_dumper() {
   Thread* t = Thread::current();
-  return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
+  return t->is_VM_thread() || t == _dumper_thread;
+}
+
+bool CDSConfig::current_thread_is_dumper() {
+  return Thread::current() == _dumper_thread;
 }
 
 const char* CDSConfig::type_of_archive_being_loaded() {
