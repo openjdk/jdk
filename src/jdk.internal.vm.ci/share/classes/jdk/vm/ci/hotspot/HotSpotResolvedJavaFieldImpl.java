@@ -244,18 +244,16 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
+    public List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
         checkAreAnnotations(types);
         if (!hasAnnotations()) {
             return List.of();
         }
-        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+        return getAnnotationData0(types);
     }
 
     private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
-        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder(getDeclaringClass()));
     }
 }
