@@ -665,10 +665,16 @@ void G1Policy::record_pause_start_time() {
   Ticks now = Ticks::now();
   _cur_pause_start_sec = now.seconds();
 
-  double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_at_pause_end_ms();
-  double cur_gc_cpu_time_ms = _analytics->gc_cpu_time_ms();
+  // Do not read CPU times for concurrent GC threads if the VM is shutting down,
+  // as these threads may have already terminated, resulting in crashes.
+  // Only compute concurrent GC CPU time if the VM is not in the process of shutting down.
+  double concurrent_gc_cpu_time_ms = 0.0;
+  if (!_g1h->is_shutting_down()) {
+    double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_at_pause_end_ms();
+    double cur_gc_cpu_time_ms = _analytics->gc_cpu_time_ms();
 
-  double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
+    concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
+  }
   _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
 }
 
@@ -1246,7 +1252,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
 
   // We should not be starting a concurrent start pause if the concurrent mark
   // thread is terminating.
-  if (_g1h->concurrent_mark_is_terminating()) {
+  if (_g1h->is_shutting_down()) {
     return;
   }
 
@@ -1376,8 +1382,10 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
 
   update_time_to_mixed_tracking(gc_type, start, end);
 
-  double elapsed_gc_cpu_time = _analytics->gc_cpu_time_ms();
-  _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
+  if (!_g1h->is_shutting_down()) {
+    double elapsed_gc_cpu_time = _analytics->gc_cpu_time_ms();
+    _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
+  }
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
