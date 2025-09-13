@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  */
 package org.openjdk.bench.java.text;
 
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.DoubleStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
@@ -50,21 +53,48 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 public class DefFormatterBench {
 
+    public static final int VALUES_SIZE = 13;
     public double[] values;
+    public BigDecimal[] bdLargeValues;
+    public BigDecimal[] bdSmallValues;
 
-    @Setup
+    @Setup(Level.Invocation)
     public void setup() {
         values = new double[] {
             1.23, 1.49, 1.80, 1.7, 0.0, -1.49, -1.50, 9999.9123, 1.494, 1.495, 1.03, 25.996, -25.996
         };
+
+        bdLargeValues = DoubleStream.of(values)
+                .mapToObj(BigDecimal::new)
+                .toArray(BigDecimal[]::new);
+
+        bdSmallValues = DoubleStream.of(values)
+                .mapToObj(BigDecimal::valueOf)
+                .toArray(BigDecimal[]::new);
     }
 
     private DefNumberFormat dnf = new DefNumberFormat();
 
     @Benchmark
-    @OperationsPerInvocation(13)
+    @OperationsPerInvocation(VALUES_SIZE)
     public void testDefNumberFormatter(final Blackhole blackhole) {
         for (double value : values) {
+            blackhole.consume(this.dnf.format(value));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(VALUES_SIZE)
+    public void testSmallBigDecDefNumberFormatter(final Blackhole blackhole) {
+        for (BigDecimal value : bdSmallValues) {
+            blackhole.consume(this.dnf.format(value));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(VALUES_SIZE)
+    public void testLargeBigDecDefNumberFormatter(final Blackhole blackhole) {
+        for (BigDecimal value : bdLargeValues) {
             blackhole.consume(this.dnf.format(value));
         }
     }
@@ -87,6 +117,10 @@ public class DefFormatterBench {
 
         public String format(final double d) {
             return this.n.format(d);
+        }
+
+        public String format(final BigDecimal bd) {
+            return this.n.format(bd);
         }
     }
 }
