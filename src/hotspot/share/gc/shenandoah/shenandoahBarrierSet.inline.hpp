@@ -44,8 +44,18 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
+inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p, ShenandoahHeap* heap, CSetState cset_state) {
+  switch (cset_state) {
+    case CSetState::NOT_IN_CSET: return p;
+    case CSetState::IN_CSET: return ShenandoahForwarding::get_forwardee(p);
+    case CSetState::FWDTABLE_COMPACT: return heap->heap_region_containing(p)->forwardee_compact(p);
+    case CSetState::FWDTABLE_WIDE: return heap->heap_region_containing(p)->forwardee_wide(p);
+    default: ShouldNotReachHere();
+  }
+}
+
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
-  return ShenandoahForwarding::get_forwardee(p);
+  return resolve_forwarded_not_null(p, ShenandoahHeap::heap(), _cset_map.cset_state(p));
 }
 
 inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
@@ -57,7 +67,14 @@ inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
 }
 
 inline oop ShenandoahBarrierSet::resolve_forwarded_not_null_mutator(oop p) {
-  return ShenandoahForwarding::get_forwardee_mutator(p);
+  CSetState cset_state = _cset_map.cset_state(p);
+  switch (cset_state) {
+    case CSetState::NOT_IN_CSET: return p;
+    case CSetState::IN_CSET: return ShenandoahForwarding::get_forwardee_mutator(p);
+    case CSetState::FWDTABLE_COMPACT: return ShenandoahHeap::heap()->heap_region_containing(p)->forwardee_compact(p);
+    case CSetState::FWDTABLE_WIDE: return ShenandoahHeap::heap()->heap_region_containing(p)->forwardee_wide(p);
+    default: ShouldNotReachHere();
+  }
 }
 
 template <class T>
@@ -65,12 +82,27 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   assert(ShenandoahLoadRefBarrier, "should be enabled");
   shenandoah_assert_in_cset(load_addr, obj);
 
-  oop fwd = resolve_forwarded_not_null_mutator(obj);
-  if (obj == fwd) {
-    assert(_heap->is_evacuation_in_progress(), "evac should be in progress");
-    Thread* const t = Thread::current();
-    ShenandoahEvacOOMScope scope(t);
-    fwd = _heap->evacuate_object(obj, t);
+  CSetState cset_state = _cset_map.cset_state(obj);
+  oop fwd;
+  switch (cset_state) {
+    case CSetState::NOT_IN_CSET: ShouldNotReachHere();
+    case CSetState::IN_CSET: {
+      fwd = ShenandoahForwarding::get_forwardee_mutator(obj);
+      if (obj == fwd) {
+        assert(_heap->is_evacuation_in_progress(), "evac should be in progress");
+        Thread* const t = Thread::current();
+        ShenandoahEvacOOMScope scope(t);
+        fwd = _heap->evacuate_object(obj, t);
+      }
+      break;
+    }
+    case CSetState::FWDTABLE_COMPACT:
+      fwd = ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee_compact(obj);
+      break;
+    case CSetState::FWDTABLE_WIDE:
+      fwd = ShenandoahHeap::heap()->heap_region_containing(obj)->forwardee_wide(obj);
+      break;
+    default: ShouldNotReachHere();
   }
 
   if (load_addr != nullptr && fwd != obj) {
@@ -85,7 +117,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
-  if (_heap->has_forwarded_objects() && _heap->in_collection_set(obj)) {
+  if (_heap->has_forwarded_objects() && _cset_map.is_in(obj)) {
     // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
     oop fwd = resolve_forwarded_not_null(obj);

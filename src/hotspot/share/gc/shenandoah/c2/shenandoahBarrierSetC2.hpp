@@ -27,19 +27,40 @@
 
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "utilities/growableArray.hpp"
 
-class ShenandoahBarrierSetC2State : public ArenaObj {
-private:
+class ShenandoahBarrierStub;
+
+const uint8_t ShenandoahC2CASBarrier         = 1;
+
+class ShenandoahBarrierSetC2State : public BarrierSetC2State {
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
+  GrowableArray<ShenandoahBarrierStub*>* _stubs;
+  int _stubs_start_offset;
 
 public:
-  ShenandoahBarrierSetC2State(Arena* comp_arena);
+  explicit ShenandoahBarrierSetC2State(Arena* comp_arena);
+
+  bool needs_liveness_data(const MachNode* mach) const override;
+  bool needs_livein_data() const override;
 
   int load_reference_barriers_count() const;
   ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
   void add_load_reference_barrier(ShenandoahLoadReferenceBarrierNode* n);
   void remove_load_reference_barrier(ShenandoahLoadReferenceBarrierNode * n);
+
+  GrowableArray<ShenandoahBarrierStub*>* stubs() {
+    return _stubs;
+  }
+
+  void set_stubs_start_offset(int offset) {
+    _stubs_start_offset = offset;
+  }
+
+  int stubs_start_offset() {
+    return _stubs_start_offset;
+  }
 };
 
 class ShenandoahBarrierSetC2 : public BarrierSetC2 {
@@ -150,6 +171,44 @@ public:
 
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const;
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const;
+
+  int estimate_stub_size() const /* override */;
+  void emit_stubs(CodeBuffer& cb) const /* override */;
+};
+
+class ShenandoahBarrierStub : public BarrierStubC2 {
+protected:
+  explicit ShenandoahBarrierStub(const MachNode* node) : BarrierStubC2(node) {}
+  void register_stub();
+public:
+  virtual void emit_code(MacroAssembler& masm) = 0;
+};
+
+class ShenandoahCASBarrierSlowStub : public ShenandoahBarrierStub {
+  Register _addr;
+  Register _expected;
+  Register _new_val;
+  Register _result;
+  bool     _cae;
+
+  explicit ShenandoahCASBarrierSlowStub(const MachNode* node, Register addr, Register expected, Register new_val, Register result, bool cae) :
+    ShenandoahBarrierStub(node),
+    _addr(addr), _expected(expected), _new_val(new_val), _result(result), _cae(cae) {}
+
+public:
+  static ShenandoahCASBarrierSlowStub* create(const MachNode* node, Register addr, Register expected, Register new_val, Register result, bool cae);
+  void emit_code(MacroAssembler& masm) override;
+};
+
+class ShenandoahCASBarrierMidStub : public ShenandoahBarrierStub {
+  ShenandoahCASBarrierSlowStub* _slow_stub;
+  Register _tmp;
+  bool _cae;
+  ShenandoahCASBarrierMidStub(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp, bool cae) :
+    ShenandoahBarrierStub(node), _slow_stub(slow_stub), _tmp(tmp), _cae(cae) {}
+public:
+  static ShenandoahCASBarrierMidStub* create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp, bool cae);
+  void emit_code(MacroAssembler& masm) override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP

@@ -80,4 +80,18 @@ ShenandoahEvacOOMScope::~ShenandoahEvacOOMScope() {
   ShenandoahHeap::heap()->leave_evacuation(_thread);
 }
 
+ShenandoahEvacOOMScopeLeaver::ShenandoahEvacOOMScopeLeaver() :
+  _thread(Thread::current()) {
+  ShenandoahHeap::heap()->leave_evacuation(_thread);
+}
+
+ShenandoahEvacOOMScopeLeaver::ShenandoahEvacOOMScopeLeaver(Thread* t) :
+  _thread(t) {
+  ShenandoahHeap::heap()->leave_evacuation(_thread);
+}
+
+ShenandoahEvacOOMScopeLeaver::~ShenandoahEvacOOMScopeLeaver() {
+  ShenandoahHeap::heap()->enter_evacuation(_thread);
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_INLINE_HPP
