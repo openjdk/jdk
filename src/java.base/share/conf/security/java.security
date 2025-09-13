@@ -972,6 +972,33 @@ jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37, \
                   ChaCha20-Poly1305 KeyUpdate 2^37
 
 #
+# QUIC TLS key limits on symmetric cryptographic algorithms
+#
+# This security property sets limits on algorithms key usage in QUIC.
+# When the number of encrypted datagrams reaches the algorithm value
+# listed below, key update operation will be initiated.
+#
+# The syntax for the property is described below:
+#   KeyLimits:
+#       " KeyLimit { , KeyLimit } "
+#
+#   KeyLimit:
+#       AlgorithmName Length
+#
+#   AlgorithmName:
+#       A full algorithm transformation.
+#
+#   Length:
+#       The amount of encrypted data in a session before the Action occurs
+#       This value may be an integer value in bytes, or as a power of two, 2^23.
+#
+# Note: This property is currently used by OpenJDK's JSSE implementation. It
+# is not guaranteed to be examined and used by other implementations.
+#
+jdk.quic.tls.keyLimits=AES/GCM/NoPadding 2^23, \
+                       ChaCha20-Poly1305 2^23
+
+#
 # Cryptographic Jurisdiction Policy defaults
 #
 # Import and export control rules on cryptographic software vary from

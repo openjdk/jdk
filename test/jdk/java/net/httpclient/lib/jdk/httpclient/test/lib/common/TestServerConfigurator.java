@@ -57,11 +57,22 @@ public final class TestServerConfigurator extends HttpsConfigurator {
     @Override
     public void configure(final HttpsParameters params) {
         final SSLParameters sslParams = getSSLContext().getDefaultSSLParameters();
-        final String hostname = serverAddr.getHostName();
-
-        final List<SNIMatcher> sniMatchers = List.of(new ServerNameMatcher(hostname));
-        sslParams.setSNIMatchers(sniMatchers);
+        addSNIMatcher(serverAddr, sslParams);
         // configure the server with these custom SSLParameters
         params.setSSLParameters(sslParams);
+    }
+
+    public static void addSNIMatcher(final InetAddress serverAddr, final SSLParameters sslParams) {
+        final String hostname;
+        if (serverAddr.isLoopbackAddress()) {
+            // when it's loopback address, don't rely on InetAddress.getHostName() to get us the
+            // hostname, since it has been observed on Windows setups that InetAddress.getHostName()
+            // can return an IP address (127.0.0.1) instead of the hostname for loopback address
+            hostname = "localhost";
+        } else {
+                hostname = serverAddr.getHostName();
+        }
+        final List<SNIMatcher> sniMatchers = List.of(new ServerNameMatcher(hostname));
+        sslParams.setSNIMatchers(sniMatchers);
     }
 }
