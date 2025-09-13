@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package javax.swing.text.html;
 
 import java.awt.Component;
+import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,7 +44,6 @@ import javax.swing.Box;
 import javax.swing.ButtonModel;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultButtonModel;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -273,15 +273,21 @@ public class FormView extends ComponentView implements ActionListener {
             maxIsPreferred = 3;
         } else if (type.equals("image")) {
             String srcAtt = (String) attr.getAttribute(HTML.Attribute.SRC);
+            String altAtt = (String) attr.getAttribute(HTML.Attribute.ALT);
+            if (altAtt == null) {
+                altAtt = srcAtt;
+            }
             JButton button;
             try {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
                 @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
-                Icon icon = new ImageIcon(srcURL);
-                button  = new JButton(icon);
+                ImageIcon icon = new ImageIcon(srcURL, altAtt);
+                button = icon.getImageLoadStatus() == MediaTracker.COMPLETE
+                         ? new JButton(icon)
+                         : new JButton(altAtt);
             } catch (MalformedURLException e) {
-                button = new JButton(srcAtt);
+                button = new JButton(altAtt);
             }
             if (model != null) {
                 button.setModel((ButtonModel)model);
