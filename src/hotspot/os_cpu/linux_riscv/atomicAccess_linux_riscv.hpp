@@ -23,12 +23,12 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_RISCV_ATOMIC_LINUX_RISCV_HPP
-#define OS_CPU_LINUX_RISCV_ATOMIC_LINUX_RISCV_HPP
+#ifndef OS_CPU_LINUX_RISCV_ATOMICACCESS_LINUX_RISCV_HPP
+#define OS_CPU_LINUX_RISCV_ATOMICACCESS_LINUX_RISCV_HPP
 
 #include "runtime/vm_version.hpp"
 
-// Implementation of class atomic
+// Implementation of class AtomicAccess
 
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
@@ -226,4 +226,4 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
 
 #undef FULL_COMPILER_ATOMIC_SUPPORT
 
-#endif // OS_CPU_LINUX_RISCV_ATOMIC_LINUX_RISCV_HPP
+#endif // OS_CPU_LINUX_RISCV_ATOMICACCESS_LINUX_RISCV_HPP

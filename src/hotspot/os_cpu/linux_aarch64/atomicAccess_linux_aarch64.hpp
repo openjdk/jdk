@@ -23,13 +23,13 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP
+#ifndef OS_CPU_LINUX_AARCH64_ATOMICACCESS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_ATOMICACCESS_LINUX_AARCH64_HPP
 
 #include "atomic_aarch64.hpp"
 #include "runtime/vm_version.hpp"
 
-// Implementation of class atomic
+// Implementation of class AtomicAccess
 
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
@@ -217,4 +217,4 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
   void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }
 };
 
-#endif // OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP
+#endif // OS_CPU_LINUX_AARCH64_ATOMICACCESS_LINUX_AARCH64_HPP
