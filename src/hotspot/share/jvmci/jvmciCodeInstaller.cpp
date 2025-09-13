@@ -1141,7 +1141,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, CallSiteBindingContext* binding_context, JVMCI_TRAPS) {
   if (full_info) {
     read_virtual_objects(stream, JVMCI_CHECK);
   }
@@ -1170,6 +1170,11 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
 
         if (bci >= 0) {
           reexecute = !is_set(frame_flags, DIF_DURING_CALL);
+          if (i == depth - 1 && binding_context != nullptr) {
+            binding_context->bci = bci;
+            binding_context->caller = method;
+            binding_context->reexecute = reexecute;
+          }
         }
 
         GrowableArray<ScopeValue*>* locals = read_local_or_stack_values(stream, frame_flags, true, JVMCI_CHECK);
@@ -1199,7 +1204,7 @@ void CodeInstaller::site_Safepoint(CodeBuffer& buffer, jint pc_offset, HotSpotCo
   u1 flags = stream->read_u1("debugInfo:flags");
   OopMap *map = create_oop_map(stream, flags, JVMCI_CHECK);
   _debug_recorder->add_safepoint(pc_offset, map);
-  record_scope(pc_offset, stream, flags, true, JVMCI_CHECK);
+  record_scope(pc_offset, stream, flags, true, nullptr, JVMCI_CHECK);
   _debug_recorder->end_safepoint(pc_offset);
   if (_orig_pc_offset < 0) {
     JVMCI_ERROR("method contains safepoint, but has no deopt rescue slot");
@@ -1215,8 +1220,23 @@ void CodeInstaller::site_Safepoint(CodeBuffer& buffer, jint pc_offset, HotSpotCo
 void CodeInstaller::site_Infopoint(CodeBuffer& buffer, jint pc_offset, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
   u1 flags = stream->read_u1("debugInfo:flags");
   _debug_recorder->add_non_safepoint(pc_offset);
-  record_scope(pc_offset, stream, flags, false, JVMCI_CHECK);
+  record_scope(pc_offset, stream, flags, false, nullptr, JVMCI_CHECK);
   _debug_recorder->end_non_safepoint(pc_offset);
+}
+
+// see CallGenerator::is_inlined_method_handle_intrinsic
+bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle& caller, int bci, methodHandle& method) {
+  constantPoolHandle cpool(thread, caller->constants());
+  InstanceKlass* pool_holder = cpool->pool_holder();
+  Bytecode_invoke bytecode(caller, bci);
+  Method* symbolic_info = JVMCIRuntime::get_method_by_index(cpool, bytecode.index(), caller->java_code_at(bci), pool_holder);
+  return symbolic_info->is_method_handle_intrinsic() && !method->is_method_handle_intrinsic();
+}
+
+// computation if binding is necessary corresponds to SharedRuntime::find_callee_info_helper
+bool bind_call(JavaThread* thread, CallSiteBindingContext& binding_context, methodHandle& method) {
+  // TODO for Valhalla: if method has scalarized parameters bind as well
+  return binding_context.reexecute || is_inlined_method_handle_intrinsic(thread, binding_context.caller, binding_context.bci, method);
 }
 
 void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
@@ -1224,6 +1244,8 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
   jlong target = stream->read_u8("target");
   methodHandle method;
   bool direct_call = false;
+  int method_index = 0;
+  CallSiteBindingContext binding_context;
   if (tag == SITE_CALL) {
     method = methodHandle(thread, (Method*) target);
     assert(Method::is_valid_method(method()), "invalid method");
@@ -1249,9 +1271,9 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
                 (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
       }
       bool return_oop = method->is_returning_oop();
-      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, &binding_context, JVMCI_CHECK);
     } else {
-      record_scope(next_pc_offset, stream, flags, true, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, &binding_context, JVMCI_CHECK);
     }
   }
 
@@ -1259,7 +1281,10 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     jlong foreign_call_destination = target;
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, JVMCI_CHECK);
   } else {
-    CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, JVMCI_CHECK);
+    if (direct_call && bind_call(thread, binding_context, method)) {
+      method_index = _oop_recorder->find_index(method());
+    }
+    CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, method_index, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
       MacroAssembler masm(&buffer);

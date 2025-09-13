@@ -585,5 +585,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Test only function
   static jint test_deoptimize_call_int(JavaThread* current, int value);
+  static jint test_deoptimize_caller_of_caller(JavaThread* current, int value);
 };
 #endif // SHARE_JVMCI_JVMCIRUNTIME_HPP
