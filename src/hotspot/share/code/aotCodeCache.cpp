@@ -1675,63 +1675,60 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (StubRoutines::contains(addr)) {
     // Search in stubs
     id = search_address(addr, _stubs_addr, _stubs_length);
-    if (id < 0) {
-      StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
-      if (desc == nullptr) {
-        desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
-      }
-      const char* sub_name = (desc != nullptr) ? desc->name() : "<unknown>";
-      assert(false, "Address " INTPTR_FORMAT " for Stub:%s is missing in AOT Code Cache addresses table", p2i(addr), sub_name);
-    } else {
+    if (id >= 0) {
       return id + _stubs_base;
     }
-  } else {
-    CodeBlob* cb = CodeCache::find_blob(addr);
-    if (cb != nullptr) {
-      // Search in code blobs
-      int id_base = _shared_blobs_base;
-      id = search_address(addr, _shared_blobs_addr, _blobs_max);
-      if (id < 0) {
-        assert(false, "Address " INTPTR_FORMAT " for Blob:%s is missing in AOT Code Cache addresses table", p2i(addr), cb->name());
-      } else {
-        return id_base + id;
-      }
-    } else {
-      // Search in runtime functions
-      id = search_address(addr, _extrs_addr, _extrs_length);
-      if (id < 0) {
-        ResourceMark rm;
-        const int buflen = 1024;
-        char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
-        int offset = 0;
-        if (os::dll_address_to_function_name(addr, func_name, buflen, &offset)) {
-          if (offset > 0) {
-            // Could be address of C string
-            uint dist = (uint)pointer_delta(addr, (address)os::init, 1);
-            log_debug(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
-                                      p2i(addr), dist, (const char*)addr);
-            assert(dist > (uint)(_all_max + MAX_STR_COUNT), "change encoding of distance");
-            return dist;
-          }
-#ifdef ASSERT
-          reloc.print_current_on(tty);
-          code_blob->print_on(tty);
-          code_blob->print_code_on(tty);
-          assert(false, "Address " INTPTR_FORMAT " for runtime target '%s+%d' is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
-#endif
-        } else {
-#ifdef ASSERT
-          reloc.print_current_on(tty);
-          code_blob->print_on(tty);
-          code_blob->print_code_on(tty);
-          os::find(addr, tty);
-          assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
-#endif
-        }
-      } else {
-        return _extrs_base + id;
-      }
+    StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
+    if (desc == nullptr) {
+      desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
     }
+    const char* sub_name = (desc != nullptr) ? desc->name() : "<unknown>";
+    assert(false, "Address " INTPTR_FORMAT " for Stub:%s is missing in AOT Code Cache addresses table", p2i(addr), sub_name);
+    return id;
+  }
+  CodeBlob* cb = CodeCache::find_blob(addr);
+  if (cb != nullptr) {
+    // Search in code blobs
+    int id_base = _shared_blobs_base;
+    id = search_address(addr, _shared_blobs_addr, _blobs_max);
+    if (id >= 0) {
+      return id_base + id;
+    }
+    assert(false, "Address " INTPTR_FORMAT " for Blob:%s is missing in AOT Code Cache addresses table", p2i(addr), cb->name());
+    return id;
+  }
+  // Search in runtime functions
+  id = search_address(addr, _extrs_addr, _extrs_length);
+  if (id >= 0) {
+    return _extrs_base + id;
+  }
+  ResourceMark rm;
+  const int buflen = 1024;
+  char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
+  int offset = 0;
+  if (os::dll_address_to_function_name(addr, func_name, buflen, &offset)) {
+    if (offset > 0) {
+      // Could be address of C string
+      uint dist = (uint)pointer_delta(addr, (address)os::init, 1);
+      log_debug(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
+                                p2i(addr), dist, (const char*)addr);
+      assert(dist > (uint)(_all_max + MAX_STR_COUNT), "change encoding of distance");
+      return dist;
+    }
+#ifdef ASSERT
+    reloc.print_current_on(tty);
+    code_blob->print_on(tty);
+    code_blob->print_code_on(tty);
+    assert(false, "Address " INTPTR_FORMAT " for runtime target '%s+%d' is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
+#endif
+  } else {
+#ifdef ASSERT
+    reloc.print_current_on(tty);
+    code_blob->print_on(tty);
+    code_blob->print_code_on(tty);
+    os::find(addr, tty);
+    assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
+#endif
   }
   return id;
 }
