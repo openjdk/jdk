@@ -145,6 +145,25 @@ abstract class WixFragmentBuilder {
         return Architecture.is64bit();
     }
 
+    enum Arch {
+        X64,
+        X86,
+        AARCH64,
+        OTHER;
+    }
+
+    static Arch getArch() {
+        if (Architecture.isX64()) {
+            return Arch.X64;
+        } else if (Architecture.isX86()) {
+            return Arch.X86;
+        } else if (Architecture.isAARCH64()) {
+            return Arch.AARCH64;
+        } else {
+            return Arch.OTHER;
+        }
+    }
+
     protected final Path getConfigRoot() {
         return configRoot;
     }
