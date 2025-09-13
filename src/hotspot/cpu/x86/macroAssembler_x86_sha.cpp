@@ -23,10 +23,9 @@
 *
 */
 
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // ofs and limit are used for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)

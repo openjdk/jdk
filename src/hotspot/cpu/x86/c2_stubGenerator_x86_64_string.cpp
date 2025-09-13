@@ -24,10 +24,10 @@
  */
 
 #include "macroAssembler_x86.hpp"
-#include "stubGenerator_x86_64.hpp"
 #include "oops/arrayOop.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "stubGenerator_x86_64.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics

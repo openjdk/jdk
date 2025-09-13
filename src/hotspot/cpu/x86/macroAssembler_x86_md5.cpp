@@ -43,10 +43,9 @@
  *   Software.
  */
 
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // int com.sun.security.provider.MD5.implCompress0(byte[] b, int ofs)
 void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address limit, bool multi_block) {

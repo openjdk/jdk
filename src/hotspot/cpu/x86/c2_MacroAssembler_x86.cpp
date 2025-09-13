@@ -22,15 +22,14 @@
  *
  */
 
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
-#include "opto/output.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/objectMonitor.hpp"

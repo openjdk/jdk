@@ -25,7 +25,7 @@
 #ifndef CPU_X86_CONTINUATIONENTRY_X86_INLINE_HPP
 #define CPU_X86_CONTINUATIONENTRY_X86_INLINE_HPP
 
-#include "runtime/continuationEntry.hpp"
+#include "continuationEntry_x86.hpp"
 
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
