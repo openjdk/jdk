@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1187,8 +1187,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             if (value == null) {
                 text = "";
 
-            } else if (value instanceof File) {
-                File file = (File)value;
+            } else if (value instanceof File file) {
                 text = chooser.getName(file);
                 Icon icon = chooser.getIcon(file);
                 setIcon(icon);
@@ -1885,8 +1884,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (viewMenu != null) {
             Component[] comps = viewMenu.getMenuComponents();
             for (Component comp : comps) {
-                if (comp instanceof JRadioButtonMenuItem) {
-                    JRadioButtonMenuItem mi = (JRadioButtonMenuItem) comp;
+                if (comp instanceof JRadioButtonMenuItem mi) {
                     if (((ViewTypeAction)mi.getAction()).viewType == viewType) {
                         mi.setSelected(true);
                     }
@@ -1955,8 +1953,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             int index;
             if (source instanceof JList) {
                 index = SwingUtilities2.loc2IndexFileList(list, evt.getPoint());
-            } else if (source instanceof JTable) {
-                JTable table = (JTable)source;
+            } else if (source instanceof JTable table) {
                 Point p = evt.getPoint();
                 index = table.rowAtPoint(p);
 

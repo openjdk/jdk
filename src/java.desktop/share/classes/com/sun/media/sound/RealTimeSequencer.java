@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -872,10 +872,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         int size = controllerEventListeners.size();
         if (size == 0) return;
 
-        if (! (message instanceof ShortMessage)) {
+        if (! (message instanceof ShortMessage msg)) {
             return;
         }
-        ShortMessage msg = (ShortMessage) message;
         int controller = msg.getData1();
         List<Object> sendToListeners = new ArrayList<>();
         for (int i = 0; i < size; i++) {
@@ -984,8 +983,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                 // do not record real-time events
                 // see 5048381: NullPointerException when saving a MIDI sequence
                 if (message.getLength() > 1) {
-                    if (message instanceof ShortMessage) {
-                        ShortMessage sm = (ShortMessage) message;
+                    if (message instanceof ShortMessage sm) {
                         // all real-time messages have 0xF in the high nibble of the status byte
                         if ((sm.getStatus() & 0xF0) != 0xF0) {
                             track = RecordingTrack.get(recordingTracks, sm.getChannel());
@@ -1536,8 +1534,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                     int len = msg.getLength();
                     if (len == 3 && ((status & 0xF0) == ShortMessage.NOTE_ON)) {
                         int note = -1;
-                        if (msg instanceof ShortMessage) {
-                            ShortMessage smsg = (ShortMessage) msg;
+                        if (msg instanceof ShortMessage smsg) {
                             if (smsg.getData2() > 0) {
                                 // only consider Note On with velocity > 0
                                 note = smsg.getData1();
@@ -1642,8 +1639,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                     int status = msg.getStatus();
                     int len = msg.getLength();
                     if (len == 3 && ((status & 0xF0) == ShortMessage.CONTROL_CHANGE)) {
-                        if (msg instanceof ShortMessage) {
-                            ShortMessage smsg = (ShortMessage) msg;
+                        if (msg instanceof ShortMessage smsg) {
                             tempArray[smsg.getData1() & 0x7F][status & 0x0F] = (byte) smsg.getData2();
                         } else {
                             byte[] data = msg.getMessage();
@@ -1651,8 +1647,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                         }
                     }
                     if (len == 2 && ((status & 0xF0) == ShortMessage.PROGRAM_CHANGE)) {
-                        if (msg instanceof ShortMessage) {
-                            ShortMessage smsg = (ShortMessage) msg;
+                        if (msg instanceof ShortMessage smsg) {
                             progs[status & 0x0F] = (byte) smsg.getData1();
                         } else {
                             byte[] data = msg.getMessage();

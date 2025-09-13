@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,16 +594,12 @@ public abstract class TIFFDecompressor {
                     return false;
                 }
             }
-        } else if(sm instanceof MultiPixelPackedSampleModel) {
-            MultiPixelPackedSampleModel mppsm =
-                (MultiPixelPackedSampleModel)sm;
+        } else if(sm instanceof MultiPixelPackedSampleModel mppsm) {
             if(dataTypeSize % mppsm.getPixelBitStride() != 0) {
                 // Pixels do not fill the data element.
                 return false;
             }
-        } else if(sm instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                (SinglePixelPackedSampleModel)sm;
+        } else if(sm instanceof SinglePixelPackedSampleModel sppsm) {
             int numBands = sm.getNumBands();
             int numBits = 0;
             for(int i = 0; i < numBands; i++) {
@@ -2424,93 +2420,76 @@ public abstract class TIFFDecompressor {
 
             boolean isSupportedType = false;
 
-            if (sm instanceof ComponentSampleModel) {
-                ComponentSampleModel csm = (ComponentSampleModel)sm;
+            if (sm instanceof ComponentSampleModel csm) {
                 dstOffset = csm.getOffset(-ras.getSampleModelTranslateX(),
                                           -ras.getSampleModelTranslateY());
                 scanlineStride = csm.getScanlineStride();
-                if(db instanceof DataBufferByte) {
-                    DataBufferByte dbb = (DataBufferByte)db;
+                if(db instanceof DataBufferByte dbb) {
 
                     byteData = dbb.getData();
                     pixelBitStride = csm.getPixelStride()*8;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferUShort) {
-                    DataBufferUShort dbus = (DataBufferUShort)db;
+                } else if(db instanceof DataBufferUShort dbus) {
 
                     shortData = dbus.getData();
                     pixelBitStride = csm.getPixelStride()*16;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferShort) {
-                    DataBufferShort dbs = (DataBufferShort)db;
+                } else if(db instanceof DataBufferShort dbs) {
 
                     shortData = dbs.getData();
                     pixelBitStride = csm.getPixelStride()*16;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferInt) {
-                    DataBufferInt dbi = (DataBufferInt)db;
+                } else if(db instanceof DataBufferInt dbi) {
 
                     intData = dbi.getData();
                     pixelBitStride = csm.getPixelStride()*32;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferFloat) {
-                    DataBufferFloat dbf = (DataBufferFloat)db;
+                } else if(db instanceof DataBufferFloat dbf) {
 
                     floatData = dbf.getData();
                     pixelBitStride = csm.getPixelStride()*32;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferDouble) {
-                    DataBufferDouble dbd = (DataBufferDouble)db;
+                } else if(db instanceof DataBufferDouble dbd) {
 
                     doubleData = dbd.getData();
                     pixelBitStride = csm.getPixelStride()*64;
                     isSupportedType = true;
                 }
-            } else if (sm instanceof MultiPixelPackedSampleModel) {
-                MultiPixelPackedSampleModel mppsm =
-                    (MultiPixelPackedSampleModel)sm;
+            } else if (sm instanceof MultiPixelPackedSampleModel mppsm) {
                 dstOffset =
                     mppsm.getOffset(-ras.getSampleModelTranslateX(),
                                     -ras.getSampleModelTranslateY());
                 pixelBitStride = mppsm.getPixelBitStride();
                 scanlineStride = mppsm.getScanlineStride();
-                if(db instanceof DataBufferByte) {
-                    DataBufferByte dbb = (DataBufferByte)db;
+                if(db instanceof DataBufferByte dbb) {
 
                     byteData = dbb.getData();
                     isSupportedType = true;
-                } else if(db instanceof DataBufferUShort) {
-                    DataBufferUShort dbus = (DataBufferUShort)db;
+                } else if(db instanceof DataBufferUShort dbus) {
 
                     shortData = dbus.getData();
                     isSupportedType = true;
-                } else if(db instanceof DataBufferInt) {
-                    DataBufferInt dbi = (DataBufferInt)db;
+                } else if(db instanceof DataBufferInt dbi) {
 
                     intData = dbi.getData();
                     isSupportedType = true;
                 }
-            } else if (sm instanceof SinglePixelPackedSampleModel) {
-                SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sm;
+            } else if (sm instanceof SinglePixelPackedSampleModel sppsm) {
                 dstOffset =
                     sppsm.getOffset(-ras.getSampleModelTranslateX(),
                                     -ras.getSampleModelTranslateY());
                 scanlineStride = sppsm.getScanlineStride();
-                if(db instanceof DataBufferByte) {
-                    DataBufferByte dbb = (DataBufferByte)db;
+                if(db instanceof DataBufferByte dbb) {
 
                     byteData = dbb.getData();
                     pixelBitStride = 8;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferUShort) {
-                    DataBufferUShort dbus = (DataBufferUShort)db;
+                } else if(db instanceof DataBufferUShort dbus) {
 
                     shortData = dbus.getData();
                     pixelBitStride = 16;
                     isSupportedType = true;
-                } else if(db instanceof DataBufferInt) {
-                    DataBufferInt dbi = (DataBufferInt)db;
+                } else if(db instanceof DataBufferInt dbi) {
 
                     intData = dbi.getData();
                     pixelBitStride = 32;

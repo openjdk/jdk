@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,7 @@ public class PropertyChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy proxy =
-                   (PropertyChangeListenerProxy)listener;
+        if (listener instanceof PropertyChangeListenerProxy proxy) {
             // Call two argument add method.
             addPropertyChangeListener(proxy.getPropertyName(),
                                       proxy.getListener());
@@ -136,9 +134,7 @@ public class PropertyChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy proxy =
-                    (PropertyChangeListenerProxy)listener;
+        if (listener instanceof PropertyChangeListenerProxy proxy) {
             // Call two argument remove method.
             removePropertyChangeListener(proxy.getPropertyName(),
                                          proxy.getListener());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,9 +759,8 @@ public final class SoftPerformer {
     private static boolean isUnnecessaryTransform(ModelTransform transform) {
         if (transform == null)
             return false;
-        if (!(transform instanceof ModelStandardTransform))
+        if (!(transform instanceof ModelStandardTransform stransform))
             return false;
-        ModelStandardTransform stransform = (ModelStandardTransform)transform;
         if (stransform.getDirection() != ModelStandardTransform.DIRECTION_MIN2MAX)
             return false;
         if (stransform.getPolarity() != ModelStandardTransform.POLARITY_UNIPOLAR)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -821,11 +821,9 @@ public final class AlphaComposite implements Composite {
      * {@code AlphaComposite}; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof AlphaComposite)) {
+        if (!(obj instanceof AlphaComposite ac)) {
             return false;
         }
-
-        AlphaComposite ac = (AlphaComposite) obj;
 
         if (rule != ac.rule) {
             return false;

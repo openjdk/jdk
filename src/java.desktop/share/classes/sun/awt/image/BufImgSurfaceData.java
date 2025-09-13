@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,8 +178,7 @@ public class BufImgSurfaceData extends SurfaceData {
                     ((IntegerComponentRaster)raster).getPixelStride() == 1)
                 {
                     SurfaceType sType = SurfaceType.AnyInt;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
+                    if (cm instanceof DirectColorModel dcm) {
                         int aMask = dcm.getAlphaMask();
                         int rMask = dcm.getRedMask();
                         int gMask = dcm.getGreenMask();
@@ -210,8 +209,7 @@ public class BufImgSurfaceData extends SurfaceData {
                 {
                     SurfaceType sType = SurfaceType.AnyShort;
                     IndexColorModel icm = null;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
+                    if (cm instanceof DirectColorModel dcm) {
                         int aMask = dcm.getAlphaMask();
                         int rMask = dcm.getRedMask();
                         int gMask = dcm.getGreenMask();
