@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
+import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
@@ -198,32 +200,19 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
         X509Certificate[] trustedChain;
-        if ((socket != null) && socket.isConnected() &&
-                (socket instanceof SSLSocket sslSocket)) {
+        if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
 
             SSLSession session = sslSocket.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forSocket(
-                                sslSocket, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
             // Grab any stapled OCSP responses for use in validation
             List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
+            if (!checkClientTrusted && session instanceof ExtendedSSLSession) {
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
@@ -237,6 +226,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session,
                         trustedChain, identityAlg, checkClientTrusted);
             }
+
+            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -255,29 +246,18 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         X509Certificate[] trustedChain;
         if (engine != null) {
+
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forEngine(
-                                engine, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forEngine(engine, false);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
+                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
             // Grab any stapled OCSP responses for use in validation
             List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
+            if (!checkClientTrusted && session instanceof ExtendedSSLSession) {
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
@@ -291,6 +271,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 checkIdentity(session, trustedChain,
                         identityAlg, checkClientTrusted);
             }
+
+            constraintsCertChainCheck(constraints, trustedChain);
         } else {
             trustedChain = v.validate(chain, null, Collections.emptyList(),
                     null, checkClientTrusted ? null : authType);
@@ -472,6 +454,35 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             } else {
                 throw new CertificateException(
                         "Unknown identification algorithm: " + algorithm);
+            }
+        }
+    }
+
+    // Additional certificate chain check to verify that the algorithm
+    // constraints permit the signature algorithms to be used with the
+    // corresponding signing keys.
+    // This method is important to differentiate between "rsa_pss_pss_*"
+    // and "rsa_pss_rsae_*" signature schemes in SSLAlgorithmConstraints.
+    // We make AlgorithmChecker to perform a check against signature
+    // algorithms with the corresponding signing keys on the first iteration
+    // by setting a Trust Anchor.
+    private void constraintsCertChainCheck(
+            AlgorithmConstraints constraints, X509Certificate[] chain)
+            throws CertificateException {
+
+        // Omit checks if EE cert is also a trust anchor
+        if (chain.length > 1) {
+            AlgorithmChecker checker = new AlgorithmChecker(
+                    new TrustAnchor(chain[chain.length - 1], null),
+                    constraints, null, null);
+            try {
+                checker.init(false);
+
+                for (int i = chain.length - 2; i >= 0; i--) {
+                    checker.check(chain[i], Collections.emptySet());
+                }
+            } catch (CertPathValidatorException e) {
+                throw new CertificateException(e);
             }
         }
     }
