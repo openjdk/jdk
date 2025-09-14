@@ -1843,7 +1843,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     quot = quot.multiply(fiveTo(powsOf2 - powsOf5));
             }
 
-            return new BigDecimal(quot, preferredScale + powsOf10).adjustToPreferredScale(preferredScale, 0);
+            return powsOf10 == 0
+                    ? new BigDecimal(quot, preferredScale)
+                    : createAndStripZerosToMatchScale(quot, preferredScale + powsOf10, preferredScale);
         }
     }
 
