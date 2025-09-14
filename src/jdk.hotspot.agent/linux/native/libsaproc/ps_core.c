@@ -183,6 +183,18 @@ static ps_prochandle_ops core_ops = {
    .get_lwp_regs= core_get_lwp_regs
 };
 
+static void core_handle_ntfile(struct ps_prochandle* ph, const char* buf) {
+  ph->core->nt_file_entries_count = *(const uint64_t*) buf;
+
+  buf += sizeof(uint64_t);
+  ph->core->nt_file_page_size = *(const uint64_t*) (buf);
+
+  buf += sizeof(uint64_t);
+  size_t entries_size = sizeof(struct nt_file_entry) * ph->core->nt_file_entries_count;
+  ph->core->nt_file_entries = (struct nt_file_entry*) malloc(entries_size);
+  memcpy(ph->core->nt_file_entries, buf, entries_size);
+}
+
 // read regs and create thread from NT_PRSTATUS entries from core file
 static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size_t nbytes) {
    // we have to read prstatus_t from buf
@@ -284,7 +296,7 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
                                    notep->n_type, notep->n_descsz);
 
       if (notep->n_type == NT_PRSTATUS) {
-        if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
+        if (!core_handle_prstatus(ph, descdata, notep->n_descsz)) {
           print_error("failed to handle NT_PRSTATUS note\n");
           goto err;
         }
@@ -300,6 +312,8 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
           }
           auxv++;
         }
+      } else if (notep->n_type == NT_FILE) {
+        core_handle_ntfile(ph, descdata);
       }
       p = descdata + ROUNDUP(notep->n_descsz, 4);
    }
@@ -317,6 +331,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
    int i = 0;
    ELF_PHDR* phbuf = NULL;
    ELF_PHDR* core_php = NULL;
+   ph->core->nt_file_entries = NULL;
 
    if ((phbuf = read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL) {
       print_error("failed to read program header table\n");
@@ -377,6 +392,18 @@ err:
    return false;
 }
 
+static u_int64_t lookup_nt_file_memsz(struct ps_prochandle* ph, ELF_PHDR* lib_php, uint64_t start_address) {
+  for (u_int64_t i = 0; i < ph->core->nt_file_entries_count; ++i) {
+    struct nt_file_entry* entry = ph->core->nt_file_entries + i;
+    if (start_address == entry->start_address) {
+      u_int64_t ntfile_offset = entry->offset * ph->core->nt_file_page_size;
+      u_int64_t offset_diff = lib_php->p_offset - ntfile_offset;
+      return lib_php->p_memsz + offset_diff;
+    }
+  }
+  return 0;
+}
+
 // read segments of a shared object
 static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* lib_ehdr, uintptr_t lib_base) {
   int i = 0;
@@ -423,6 +450,16 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
             (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
+
+          if (ph->core->nt_file_entries != NULL &&
+              ROUNDUP(existing_map->memsz, page_size) == ROUNDUP(lookup_nt_file_memsz(ph, lib_php, existing_map->vaddr), page_size)) {
+            // Not an error: the offset in the core dump is aligned down to page_size.
+            // Thus, existing_map->offset != lib_php->p_offset. The difference between
+            // the static and runtime p_offset addds to the static p_memsz. Thus, the
+            // resulting runtime p_memsz is larger than the static p_memsz. We should
+            // trust the core dump in this case.
+            continue;
+          }
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);

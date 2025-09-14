@@ -111,11 +111,18 @@ static void destroy_map_info(struct ps_prochandle* ph) {
   }
 }
 
+static void destroy_ns_file(struct ps_prochandle* ph) {
+  free(ph->core->nt_file_entries);
+  ph->core->nt_file_entries = NULL;
+  ph->core->nt_file_entries_count = 0;
+}
+
 // ps_prochandle operations
 void core_release(struct ps_prochandle* ph) {
   if (ph->core) {
     close_files(ph);
     destroy_map_info(ph);
+    destroy_ns_file(ph);
     free(ph->core);
   }
 }
