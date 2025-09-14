@@ -5118,7 +5118,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     private static int log5Upper(BigInteger x) {
         // Let b = x.magBitLength(), m = max{n : 5^n <= |x|}. It can be shown that
-        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic).
+        // | (b-1) * LOG_5_OF_2 - (b-1) log5(2) | < 2^(-21) (fp viz. real arithmetic).
         // Since b log5(2) > m, log5(2)+2^(-21) < 1/2
         // and (b-1) * LOG_5_OF_2 > [b log5(2) - log5(2)] - 2^(-21),
         // then m <= Math.round((b - 1) * LOG_5_OF_2) <= m + 1 follows.
