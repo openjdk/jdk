@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,13 @@ public class bug6698013 {
 
     public static void main(String[] args) throws Exception {
         String instructions = """
-                1. Go into 'subdir' folder via double click
-                2. Return to parent directory
-                3. Go into 'subdir' folder: select 'subdir' folder and press the 'Open' button
-                If both methods of navigating into the subdir work, pass test. Otherwise fail.""";
+            This test verifies navigating into 'subdir' folder in couple of ways
+
+            1. Go into 'subdir' folder via double click and then
+                    return to 'testdir' parent directory
+            2. Select 'subdir' folder and press the 'Open' button
+
+            If both methods of navigating into the 'subdir' folder work, press Pass else Fail.""";
 
         PassFailJFrame pfframe = PassFailJFrame.builder()
                 .title("bug6698013")
