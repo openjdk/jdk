@@ -34,11 +34,11 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 /**
  * Implements the AES cipher, which is based on the following sepcifications:
  *
- * i) https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
+ * @spec https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
  *
- * ii) https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+ * @spec https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
  *
- * iii) https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/view/134688
+ * https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/view/134688
  */
 public final class AESCrypt extends SymmetricCipher {
 
@@ -844,8 +844,9 @@ public final class AESCrypt extends SymmetricCipher {
      * @return the processed round key row.
      */
     private static int invMix(int[] state, int idx) {
-        // Utilize lookup tables for the inverse mix column transformation to
-        // help mitigate against timing attacks.
+        // If we want to repurpose the inverse lookup tables for mix column
+        // transform of the inverse expansion key - saves 4KB of memory with the
+        // cost of 19.7% of decreased performance of key reinitialization.
         int a0 = TMI0[(state[idx] >> 24) & 0xFF];
         int a1 = TMI1[(state[idx] >> 16) & 0xFF];
         int a2 = TMI2[(state[idx] >> 8) & 0xFF];
@@ -853,21 +854,6 @@ public final class AESCrypt extends SymmetricCipher {
 
         // Add columns
         return a0 ^ a1 ^ a2 ^ a3;
-
-        /**
-         * If we want to repurpose the inverse lookup tables for mix column
-         * transform of the inverse expansion key - saves 4KB of memory with the
-         * cost of 19.7% of decreased performance of key reinitialization:
-         * int i0 = (state[idx] >> 24) & 0xFF;
-         * int i1 = (state[idx] >> 16) & 0xFF;
-         * int i2 = (state[idx] >> 8) & 0xFF;
-         * int i3 = state[idx] & 0xFF;
-         * int a0 = TI0[SBOX[(i0&0xF0)>>4][i0&0x0F] & 0xFF];
-         * int a1 = TI1[SBOX[(i1&0xF0)>>4][i1&0x0F] & 0xFF];
-         * int a2 = TI2[SBOX[(i2&0xF0)>>4][i2&0x0F] & 0xFF];
-         * int a3 = TI3[SBOX[(i3&0xF0)>>4][i3&0x0F] & 0xFF];
-         * return a0 ^ a1 ^ a2 ^ a3;
-        */
     }
 
     /**
