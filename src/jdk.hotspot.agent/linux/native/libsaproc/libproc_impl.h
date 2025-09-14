@@ -72,13 +72,6 @@ typedef struct map_info {
    struct map_info* next;
 } map_info;
 
-// NT_FILE
-struct nt_file_entry {
-    uint64_t start_address;   // Start address of the mapping in memory
-    uint64_t end_address;     // End address of the mapping in memory
-    uint64_t offset;          // Offset within the mapped file, page aligned
-};
-
 // vtable for ps_prochandle
 typedef struct ps_prochandle_ops {
    // "derived class" clean-up
@@ -108,10 +101,6 @@ struct core_data {
    // part of the class sharing workaround
    map_info*          class_share_maps;// class share maps in a linked list
    map_info**         map_array; // sorted (by vaddr) array of map_info pointers
-
-   uint64_t               nt_file_entries_count;
-   uint64_t               nt_file_page_size;
-   struct nt_file_entry*  nt_file_entries; // sorted by start_address
 };
 
 struct ps_prochandle {
