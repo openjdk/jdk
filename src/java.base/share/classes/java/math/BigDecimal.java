@@ -5117,12 +5117,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
 
     private static int log5Upper(BigInteger x) {
-        // Let b = x.bitLength(), m = max{n : 5^n <= x}. It can be shown that
+        // Let b = x.magBitLength(), m = max{n : 5^n <= |x|}. It can be shown that
         // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic).
         // Since b log5(2) > m, log5(2)+2^(-21) < 1/2
         // and (b-1) * LOG_5_OF_2 > [b log5(2) - log5(2)] - 2^(-21),
         // then m <= Math.round((b - 1) * LOG_5_OF_2) <= m + 1 follows.
-        return (int) Math.round((x.bitLength() - 1) * LOG_5_OF_2);
+        return (int) Math.round((x.magBitLength() - 1) * LOG_5_OF_2);
     }
 
     /**
