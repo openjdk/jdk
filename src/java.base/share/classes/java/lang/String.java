@@ -177,7 +177,7 @@ public final class String
     private int hash; // Default to 0
 
     /**
-     * Cache if the hash has been calculated enabling us to avoid recalculating 
+     * Cache if the hash has been calculated enabling us to avoid recalculating
      * this.
      */
     @Stable
