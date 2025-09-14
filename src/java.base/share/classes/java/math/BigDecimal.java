@@ -1042,10 +1042,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             rb = (compactVal == INFLATED) ? INFLATED_BIGINT : null;
         } else {
             if (exponent < 0) {
-                rb = BigInteger.valueOf(5).pow(-exponent).multiply(compactVal);
+                rb = fiveTo(-exponent).multiply(compactVal);
                 scl = -exponent;
             } else { //  (exponent > 0)
-                rb = BigInteger.TWO.pow(exponent).multiply(compactVal);
+                rb = BigInteger.ONE.shiftLeft(exponent).multiply(compactVal);
             }
             compactVal = compactValFor(rb);
         }
