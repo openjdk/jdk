@@ -1198,7 +1198,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node* in2, const BasicType bt, const Type* bottom) {
+static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node* in2, const BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "unexpected basic type");
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(in1);
@@ -1267,7 +1267,7 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
 }
 
 const Type* ModINode::Value(PhaseGVN* phase) const {
-  return mod_value(phase, in(1), in(2), T_INT, bottom_type());
+  return mod_value(phase, in(1), in(2), T_INT);
 }
 
 //=============================================================================
@@ -1496,7 +1496,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 const Type* ModLNode::Value(PhaseGVN* phase) const {
-  return mod_value(phase, in(1), in(2), T_LONG, bottom_type());
+  return mod_value(phase, in(1), in(2), T_LONG);
 }
 
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
