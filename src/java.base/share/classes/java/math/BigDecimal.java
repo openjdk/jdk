@@ -1797,36 +1797,53 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (this.signum() == 0) // 0/y
             return zeroValueOf(preferredScale);
         else {
-            BigDecimal a = this.stripTrailingZeros(), b = divisor.stripTrailingZeros();
-            BigInteger aInt = a.unscaledValue(), bInt = b.unscaledValue();
+            BigInteger den = divisor.unscaledValue();
+            int powsOf2 = den.getLowestSetBit();
+            den = den.shiftRight(powsOf2); // Remove powers of 2
 
-            // Remove common powers of 2
-            int m_b = bInt.getLowestSetBit();
-            int powsOf2 = Math.min(aInt.getLowestSetBit(), m_b);
-            aInt = aInt.shiftRight(powsOf2);
-            bInt = bInt.shiftRight(powsOf2);
-            m_b -= powsOf2;
-            /*
-             * If the quotient this/divisor has a terminating decimal
-             * expansion, the expansion can have no more than prec digits,
-             * where prec is defined as below.
-             * Therefore, create a MathContext object with this
-             * precision and do a divide with the UNNECESSARY rounding
-             * mode.
-             *
-             * A proof for the formula can be found at the following link:
-             * https://github.com/user-attachments/files/22314648/frazioni_decimali.pdf
-             */
-            int prec = saturateLong((digitLengthLower(aInt) + 1L) - digitLengthLower(bInt)
-                    + Math.max(m_b, log5Upper(bInt.shiftRight(m_b))) + 1L);
-            BigDecimal quotient;
-            try {
-                quotient = a.divide(b, new MathContext(prec, RoundingMode.UNNECESSARY));
-            } catch (ArithmeticException e) {
-                throw new ArithmeticException("Non-terminating decimal expansion; " +
-                                              "no exact representable decimal result.");
+            int powsOf5 = 0;
+            // Remove and count powers of 5
+            BigInteger[] qr;
+            int i;
+            for (i = 0; ; i++) {
+                final int exp = 1 << i;
+                qr = den.divideAndRemainder(fiveToTwoToThe(i));
+                if (qr[1].signum != 0) { // non-0 remainder
+                    break;
+                } else {
+                    den = qr[0];
+                    powsOf5 += exp;
+                }
             }
-            return quotient.adjustToPreferredScale(preferredScale, 0);
+            i--;
+
+            for (; i >= 0; i--) {
+                final int exp = 1 << i;
+                qr = den.divideAndRemainder(fiveToTwoToThe(i));
+                if (qr[1].signum == 0) { // zero remainder
+                    den = qr[0];
+                    powsOf5 += exp;
+                }
+            }
+
+            qr = this.unscaledValue().divideAndRemainder(den);
+            if (qr[1].signum != 0)
+                throw new ArithmeticException("Non-terminating decimal expansion; " +
+                        "no exact representable decimal result.");
+
+            BigInteger quot = qr[0];
+            // Equalize multiplicities of 2 and 5
+            int powsOf10;
+            if (powsOf2 < powsOf5) {
+                powsOf10 = powsOf5;
+                quot = quot.shiftLeft(powsOf5 - powsOf2);
+            } else {
+                powsOf10 = powsOf2;
+                if (powsOf2 > powsOf5)
+                    quot = quot.multiply(fiveTo(powsOf2 - powsOf5));
+            }
+
+            return new BigDecimal(quot, preferredScale + powsOf10).adjustToPreferredScale(preferredScale, 0);
         }
     }
 
@@ -5110,6 +5127,31 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigInteger pow = FIVE_TO_2_TO[i];
         for (; i < n; i++)
             pow = pow.multiply(pow);
+
+        return pow;
+    }
+
+    /**
+     * @param n a non-negative integer
+     * @return {@code 5^n}
+     */
+    private static BigInteger fiveTo(int n) {
+        BigInteger pow = BigInteger.ONE;
+        for (int i = 0; n != 0 && i < FIVE_TO_2_TO.length; i++) {
+            if ((n & 1) != 0)
+                pow = pow.multiply(FIVE_TO_2_TO[i]);
+
+            n >>= 1;
+        }
+
+        BigInteger factor = FIVE_TO_2_TO[FIVE_TO_2_TO.length - 1];
+        while (n != 0) {
+            factor = factor.multiply(factor);
+            if ((n & 1) != 0)
+                pow = pow.multiply(factor);
+
+            n >>= 1;
+        }
 
         return pow;
     }
