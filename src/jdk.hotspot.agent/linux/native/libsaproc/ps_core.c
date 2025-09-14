@@ -249,6 +249,7 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
 }
 
 #define ROUNDUP(x, y)  ((((x)+((y)-1))/(y))*(y))
+#define ROUNDDOWN(x, y) (((x) / (y)) * (y))
 
 // read NT_PRSTATUS entries from core NOTE segment
 static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
@@ -423,6 +424,13 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
             (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
+
+          if ((ROUNDUP(existing_map->memsz, page_size) ==
+                ROUNDUP(lib_php->p_memsz + lib_php->p_offset - ROUNDDOWN(lib_php->p_offset, page_size), page_size))) {
+            // Not an error: the offset in the core dump is aligned down to page_size.
+            // We should trust the core dump in this case.
+            continue;
+          }
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
