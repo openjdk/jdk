@@ -81,7 +81,7 @@ TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
   rt.reserve_mapping(1200, 50, rd);
   rt.reserve_mapping(1300, 50, rd);
   rt.reserve_mapping(1400, 50, rd);
-  ReservedMemoryRegion rmr;
+  VirtualMemoryRegion rmr;
   rmr = rt.find_reserved_region((address)1205);
   EXPECT_EQ(rmr.base(), (address)1200);
   rmr = rt.find_reserved_region((address)1305);
@@ -100,7 +100,7 @@ TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
   rt.reserve_mapping(1300, 50, rd);
   rt.reserve_mapping(1400, 50, rd);
 
-  rt.visit_reserved_regions([&](const ReservedMemoryRegion& rgn) {
+  rt.visit_reserved_regions([&](const VirtualMemoryRegion& rgn) {
     EXPECT_EQ(((size_t)rgn.base()) % 100, 0UL);
     EXPECT_EQ(rgn.size(), 50UL);
     return true;
@@ -119,9 +119,9 @@ TEST_VM_F(NMTRegionsTreeTest, VisitCommittedRegions) {
   rt.commit_region((address)1020, 5UL, ncs);
   rt.commit_region((address)1030, 5UL, ncs);
   rt.commit_region((address)1040, 5UL, ncs);
-  ReservedMemoryRegion rmr((address)1000, 50);
+  VirtualMemoryRegion rmr((address)1000, 50);
   size_t count = 0;
-  rt.visit_committed_regions(rmr, [&](CommittedMemoryRegion& crgn) {
+  rt.visit_committed_regions(rmr, [&](VirtualMemoryRegion& crgn) {
     count++;
     EXPECT_EQ((((size_t)crgn.base()) % 100) / 10, count);
     EXPECT_EQ(crgn.size(), 5UL);

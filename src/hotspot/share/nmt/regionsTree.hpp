@@ -29,8 +29,7 @@
 #include "nmt/vmatree.hpp"
 
 
-class ReservedMemoryRegion;
-class CommittedMemoryRegion;
+class VirtualMemoryRegion;
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
 // for processing the tree nodes in a shorter and more meaningful way.
 class RegionsTree : public VMATree {
@@ -40,7 +39,13 @@ class RegionsTree : public VMATree {
  public:
   RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage), _with_storage(with_storage) { }
 
-  ReservedMemoryRegion find_reserved_region(address addr);
+  RegionsTree(const RegionsTree& other)
+  : VMATree(other),
+    _ncs_storage(other._ncs_storage),
+    _with_storage(other._with_storage) {}
+  RegionsTree& operator=(const RegionsTree& other) = delete;
+
+  VirtualMemoryRegion find_reserved_region(address addr);
 
   SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
   SummaryDiff uncommit_region(address addr, size_t size);
@@ -75,7 +80,7 @@ class RegionsTree : public VMATree {
   DEBUG_ONLY(void print_on(outputStream* st);)
 
   template<typename F>
-  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func);
+  void visit_committed_regions(const VirtualMemoryRegion& rgn, F func);
 
   template<typename F>
   void visit_reserved_regions(F func);
@@ -91,6 +96,8 @@ class RegionsTree : public VMATree {
     NativeCallStackStorage::StackIndex si = node.out_stack_index();
     return _ncs_storage.get(si);
   }
+
+  size_t committed_size(VirtualMemoryRegion& rgn);
 };
 
 #endif // NMT_REGIONSTREE_HPP

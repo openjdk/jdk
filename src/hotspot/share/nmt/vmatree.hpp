@@ -39,7 +39,7 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree {
+class VMATree : public CHeapObjBase {
   friend class NMTVMATreeTest;
   friend class VMTWithVMATreeTest;
   // A position in memory.
@@ -65,7 +65,7 @@ private:
   static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
-  NONCOPYABLE(VMATree);
+
 
   static const char* statetype_to_string(StateType type) {
     assert(type < StateType::st_number_of_states, "must be");
@@ -226,6 +226,10 @@ private:
 
 public:
   VMATree() : _tree() {}
+  VMATree(const VMATree& other) : _tree() {
+    assert(other._tree.copy_into(_tree), "VMATree dies on OOM");
+  }
+  VMATree& operator=(VMATree const&) = delete;
 
   struct SingleDiff {
     using delta = int64_t;
@@ -329,5 +333,8 @@ public:
     _tree.visit_range_in_order(from, to, f);
   }
   VMARBTree& tree() { return _tree; }
+
+  void clear();
+  bool is_empty();
 };
 #endif
