@@ -1083,11 +1083,85 @@ public final class AESCrypt extends SymmetricCipher {
 
         initState(ti, p, po);
         addRoundKey(ti, expandedKey, 0);
-        for (int k = 0; k < (rounds - 1); k++) {
-            a0 = round(ti, 0, k);
-            a1 = round(ti, 1, k);
-            a2 = round(ti, 2, k);
-            a3 = round(ti, 3, k);
+
+        a0 = round(ti, 0, 0);
+        a1 = round(ti, 1, 0);
+        a2 = round(ti, 2, 0);
+        a3 = round(ti, 3, 0);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 1);
+        a1 = round(ti, 1, 1);
+        a2 = round(ti, 2, 1);
+        a3 = round(ti, 3, 1);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 2);
+        a1 = round(ti, 1, 2);
+        a2 = round(ti, 2, 2);
+        a3 = round(ti, 3, 2);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 3);
+        a1 = round(ti, 1, 3);
+        a2 = round(ti, 2, 3);
+        a3 = round(ti, 3, 3);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 4);
+        a1 = round(ti, 1, 4);
+        a2 = round(ti, 2, 4);
+        a3 = round(ti, 3, 4);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 5);
+        a1 = round(ti, 1, 5);
+        a2 = round(ti, 2, 5);
+        a3 = round(ti, 3, 5);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 6);
+        a1 = round(ti, 1, 6);
+        a2 = round(ti, 2, 6);
+        a3 = round(ti, 3, 6);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 7);
+        a1 = round(ti, 1, 7);
+        a2 = round(ti, 2, 7);
+        a3 = round(ti, 3, 7);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = round(ti, 0, 8);
+        a1 = round(ti, 1, 8);
+        a2 = round(ti, 2, 8);
+        a3 = round(ti, 3, 8);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        if (rounds > AES_128_ROUNDS) {
+            a0 = round(ti, 0, 9);
+            a1 = round(ti, 1, 9);
+            a2 = round(ti, 2, 9);
+            a3 = round(ti, 3, 9);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+            a0 = round(ti, 0, 10);
+            a1 = round(ti, 1, 10);
+            a2 = round(ti, 2, 10);
+            a3 = round(ti, 3, 10);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        }
+        if (rounds > AES_192_ROUNDS) {
+            a0 = round(ti, 0, 11);
+            a1 = round(ti, 1, 11);
+            a2 = round(ti, 2, 11);
+            a3 = round(ti, 3, 11);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+            a0 = round(ti, 0, 12);
+            a1 = round(ti, 1, 12);
+            a2 = round(ti, 2, 12);
+            a3 = round(ti, 3, 12);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         a0 = lastRound(ti, 0);
@@ -1112,11 +1186,85 @@ public final class AESCrypt extends SymmetricCipher {
 
         initState(ti, c, co);
         addRoundKey(ti, invExpandedKey, WB);
-        for (int k = 0; k < (rounds - 1); k++) {
-            a0 = invRound(ti, 0, k);
-            a1 = invRound(ti, 1, k);
-            a2 = invRound(ti, 2, k);
-            a3 = invRound(ti, 3, k);
+
+        a0 = invRound(ti, 0, 0);
+        a1 = invRound(ti, 1, 0);
+        a2 = invRound(ti, 2, 0);
+        a3 = invRound(ti, 3, 0);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 1);
+        a1 = invRound(ti, 1, 1);
+        a2 = invRound(ti, 2, 1);
+        a3 = invRound(ti, 3, 1);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 2);
+        a1 = invRound(ti, 1, 2);
+        a2 = invRound(ti, 2, 2);
+        a3 = invRound(ti, 3, 2);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 3);
+        a1 = invRound(ti, 1, 3);
+        a2 = invRound(ti, 2, 3);
+        a3 = invRound(ti, 3, 3);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 4);
+        a1 = invRound(ti, 1, 4);
+        a2 = invRound(ti, 2, 4);
+        a3 = invRound(ti, 3, 4);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 5);
+        a1 = invRound(ti, 1, 5);
+        a2 = invRound(ti, 2, 5);
+        a3 = invRound(ti, 3, 5);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 6);
+        a1 = invRound(ti, 1, 6);
+        a2 = invRound(ti, 2, 6);
+        a3 = invRound(ti, 3, 6);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 7);
+        a1 = invRound(ti, 1, 7);
+        a2 = invRound(ti, 2, 7);
+        a3 = invRound(ti, 3, 7);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        a0 = invRound(ti, 0, 8);
+        a1 = invRound(ti, 1, 8);
+        a2 = invRound(ti, 2, 8);
+        a3 = invRound(ti, 3, 8);
+        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+        if (rounds > AES_128_ROUNDS) {
+            a0 = invRound(ti, 0, 9);
+            a1 = invRound(ti, 1, 9);
+            a2 = invRound(ti, 2, 9);
+            a3 = invRound(ti, 3, 9);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+            a0 = invRound(ti, 0, 10);
+            a1 = invRound(ti, 1, 10);
+            a2 = invRound(ti, 2, 10);
+            a3 = invRound(ti, 3, 10);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        }
+        if (rounds > AES_192_ROUNDS) {
+            a0 = invRound(ti, 0, 11);
+            a1 = invRound(ti, 1, 11);
+            a2 = invRound(ti, 2, 11);
+            a3 = invRound(ti, 3, 11);
+            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
+            a0 = invRound(ti, 0, 12);
+            a1 = invRound(ti, 1, 12);
+            a2 = invRound(ti, 2, 12);
+            a3 = invRound(ti, 3, 12);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         a0 = invLastRound(ti, 0);
