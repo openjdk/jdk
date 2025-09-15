@@ -2411,7 +2411,6 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
     InsertionIterator copy_iter(&carrier, 0, 0);
     copy_into(copy_iter, iter._cur_offset);
   }
-  copy_into(new_offsets, new_array, iter._cur_offset);
 
   deallocate_contents(loader_data);
   _offsets = new_offsets;
