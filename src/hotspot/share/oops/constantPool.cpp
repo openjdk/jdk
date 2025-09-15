@@ -2368,7 +2368,7 @@ BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
   Array<u2>* new_array = MetadataFactory::new_array<u2>(loader_data, new_array_length, CHECK_(InsertionIterator()));
   { // Copy over all the old BSMAEntry's and their respective offsets
     BSMAttributeEntries carrier(new_offsets, new_array);
-    InsertionIterator copy_iter(&carrier);
+    InsertionIterator copy_iter(&carrier, 0, 0);
     copy_into(copy_iter, this->number_of_entries());
   }
   // Replace content
@@ -2408,7 +2408,7 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
     MetadataFactory::new_array<u2>(loader_data, iter._cur_array, CHECK);
   { // Copy over the constructed BSMAEntry's
     BSMAttributeEntries carrier(new_offsets, new_array);
-    InsertionIterator copy_iter(&carrier);
+    InsertionIterator copy_iter(&carrier, 0, 0);
     copy_into(copy_iter, iter._cur_offset);
   }
   copy_into(new_offsets, new_array, iter._cur_offset);
