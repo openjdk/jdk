@@ -917,7 +917,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = allocate(loader_data, word_size, type);
 
   if (result == nullptr) {
-    MetadataType mdtype = type == MetaspaceObj::ClassType ? ClassType: NonClassType;
+    MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
