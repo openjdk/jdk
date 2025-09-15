@@ -257,7 +257,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     // get the previous marked object, if any
     if (region->bottom() < left) {
       HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left);
-      if (prev < left) {
+      if (prev <= left) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
         HeapWord* obj_end = prev + obj->size();

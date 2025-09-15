@@ -30,6 +30,7 @@
 
 #include "runtime/atomic.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+#include "utilities/count_leading_zeros.hpp"
 
 inline size_t ShenandoahMarkBitMap::address_to_index(const HeapWord* addr) const {
   return (pointer_delta(addr, _covered.start()) << 1) >> _shift;
@@ -135,6 +136,9 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
     // Get the word containing l_index, and shift out low bits.
     idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
+#ifdef KELVIN_THINKING_OUT_LOUD
+    // the following test should look at (cword & 0x3)
+#endif
     if ((cword & 1) != 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
@@ -202,43 +206,66 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t
   // an interesting bit will be present.
 
   if (l_index < r_index) {
-    // Get the word containing r_index, and shift out low bits.
+    // Get the word containing r_index, and shift out the high-order bits (representing objects that come after r_index)
     idx_t index = to_words_align_down(r_index);
-    bm_word_t cword = (map(index) ^ flip) >> bit_in_word(r_index);
-    if ((cword & 1) != 0) {
-      // The first bit is similarly often interesting. When it matters
+    assert(BitsPerWord - 2 >= bit_in_word(r_index), "sanity");
+    size_t shift = BitsPerWord - 2 - bit_in_word(r_index);
+    bm_word_t cword = (map(index) ^ flip) << shift;
+    // After this shift, the highest order bits correspond to r_index.
+
+    // With 64-bit words, 
+    // We give special handling if either of the two most significant bits (Weak or Strong) is set.  With 64-bit
+    // words, the mask of interest is 0xc000_0000_0000_0000.  Symbolically, this constant is represented by:
+    const bm_word_t first_object_mask = ((bm_word_t) 0x3) << (BitsPerWord - 2);
+    if ((cword & first_object_mask) != 0) {
+      // The first object is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
       // the first bit is set), going straight to the next clause compares
-      // poorly with doing this check first; count_trailing_zeros can be
+      // poorly with doing this check first; count_leading_zeros can be
       // relatively expensive, plus there is the additional range check.
       // But when the first bit isn't set, the cost of having tested for
       // it is relatively small compared to the rest of the search.
       return r_index;
     } else if (cword != 0) {
-      // Flipped and shifted first word is non-zero.
-      idx_t result = r_index + count_trailing_zeros(cword);
-      if (aligned_left || (result > l_index)) return result;
-      // Result is beyond range bound; return l_index.
+      // Note that there are 2 bits corresponding to every index value (Weak and Strong), and every odd index value
+      //  corresponds to the same object as index-1
+      // Flipped and shifted first word is non-zero.  If leading_zeros is 0 or 1, we return r_index (above).
+      // if leading zeros is 2 or 3, we return (r_index - 1) or (r_index - 2), and so forth
+      idx_t result = r_index + 1 - count_leading_zeros(cword);
+      if (aligned_left || (result >= l_index)) return result;
+      else {
+        // Sentinel value means no object found within specified range.
+        return r_index + 2;
+      }
     } else {
       // Flipped and shifted first word is zero.  Word search through
       // aligned up r_index for a non-zero flipped word.
       idx_t limit = aligned_left
                     ? to_words_align_down(l_index) // Minuscule savings when aligned.
                     : to_words_align_up(l_index);
-      while (--index > limit) {
+      // Unsigned index is always >= unsigned limit if limit equals zero, so test for strictly greater than before decrement.
+      while (index-- > limit) {
         cword = map(index) ^ flip;
         if (cword != 0) {
-          idx_t result = bit_index(index) + count_trailing_zeros(cword);
-          if (aligned_left || (result > l_index)) return result;
-          // Result is beyond range bound; return r_index.
-          assert((index - 1) == limit, "invariant");
-          break;
+          // cword hods bits:
+          //    0x03 for the object corresponding to index (and index+1)       (count_leading_zeros is 62 or 63)
+          //    0x0c for the object corresponding to index + 2 (and index+3)   (count_leading_zeros is 60 or 61)
+          //    and so on.
+          idx_t result = bit_index(index + 1) - (count_leading_zeros(cword) + 1);
+          if (aligned_left || (result >= l_index)) return result;
+          else {
+            // Sentinel value means no object found within specified range.
+            return r_index + 2;
+          }
         }
       }
-      // No bits in range; return l_index.
+      // No bits in range; return r_index+2.
+      return r_index + 2;
     }
   }
-  return l_index;
+  else {
+    return r_index + 2;
+  }
 }
 
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {

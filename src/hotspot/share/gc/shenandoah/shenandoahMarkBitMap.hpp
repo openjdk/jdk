@@ -207,7 +207,7 @@ public:
   // this way and the commentaries are wrong.
 #endif
 
-  // Return the last marked address in the range [limit, addr), or addr if none found.
+  // Return the last marked address in the range [limit, addr], or addr+1 if none found.
   HeapWord* get_last_marked_addr(const HeapWord* limit,
                                  const HeapWord* addr) const;
 

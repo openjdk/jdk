@@ -58,10 +58,9 @@ bool ShenandoahMarkBitMap::is_bitmap_clear_range(const HeapWord* start, const He
 }
 
 #ifdef KELVIN_THINKING_OUT_LOUD
-// This is new functionality intorudced by this PR.  I want to change
-// the name to get_prev_marked_addr.  I want to clarify that we search over the range [limit, addr) and
-// that the Sentinel value addr denotes no previous marked object found.
-
+// This is new functionality introduced by this PR.  I want to change
+// the name to get_prev_marked_addr.  I want to clarify that we search over the range [limit, addr] and
+// that the Sentinel value addr+1 denotes no previous marked object found.
 // This comment is present in the .hpp file.
 #endif
 
@@ -81,8 +80,9 @@ HeapWord* ShenandoahMarkBitMap::get_last_marked_addr(const HeapWord* limit,
   size_t const addr_offset = address_to_index(align_down(addr, HeapWordSize << LogMinObjAlignment));
   size_t const limit_offset = address_to_index(limit);
   size_t const last_offset = get_last_one_offset(limit_offset, addr_offset);
+
   // cast required to remove const-ness of the value pointed to.  We won't modify that object, but my caller might.
-  return (last_offset == addr_offset)? (HeapWord*) addr: index_to_address(last_offset);
+  return (last_offset > addr_offset)? (HeapWord*) addr + 1: index_to_address(last_offset);
 }
 
 HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
