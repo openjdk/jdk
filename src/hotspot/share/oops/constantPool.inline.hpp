@@ -103,7 +103,7 @@ inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_en
   return e;
 }
 
-void BSMAttributeEntry::copy_args_into(BSMAttributeEntry* entry) const {
+inline void BSMAttributeEntry::copy_args_into(BSMAttributeEntry* entry) const {
   assert(entry->argument_count() == this->argument_count(), "must be same");
   for (int i = 0; i < argument_count(); i++) {
     entry->set_argument(i, this->argument(i));
