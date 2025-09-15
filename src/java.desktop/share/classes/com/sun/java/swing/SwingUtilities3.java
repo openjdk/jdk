@@ -147,7 +147,7 @@ public class SwingUtilities3 {
 
     public static void applyInsets(Rectangle rect, Insets insets) {
         if (insets != null) {
-            applyInsets(rect, insets, ture);
+            applyInsets(rect, insets, true);
         }
     }
 
