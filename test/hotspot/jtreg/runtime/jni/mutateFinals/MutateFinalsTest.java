@@ -28,7 +28,7 @@
  * @modules java.management
  * @library /test/lib
  * @compile MutateFinals.java
- * @run junit/native MutateFinalsTest
+ * @run junit/native/timeout=600 MutateFinalsTest
  */
 
 import java.lang.management.ManagementFactory;
