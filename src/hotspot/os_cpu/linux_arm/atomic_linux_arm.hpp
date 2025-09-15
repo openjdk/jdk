@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public:
 
 template<>
 template<typename T>
-inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   return PrimitiveConversions::cast<T>(
     (*ARMAtomicFuncs::_load_long_func)(reinterpret_cast<const volatile int64_t*>(src)));
@@ -86,20 +86,20 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
-                                                 T store_value) const {
+inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
+                                                       T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   (*ARMAtomicFuncs::_store_long_func)(
     PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
-// As per atomic.hpp all read-modify-write operations have to provide two-way
+// As per atomicAccess.hpp all read-modify-write operations have to provide two-way
 // barriers semantics.
 //
 // For ARMv7 we add explicit barriers in the stubs.
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
@@ -111,8 +111,8 @@ struct Atomic::PlatformAdd {
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
   return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
@@ -121,26 +121,26 @@ inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order order) const {
+inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
+                                                   T exchange_value,
+                                                   atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   return xchg_using_helper<int32_t>(ARMAtomicFuncs::_xchg_func, dest, exchange_value);
 }
 
 // No direct support for 8-byte xchg; emulate using cmpxchg.
 template<>
-struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+struct AtomicAccess::PlatformXchg<8> : AtomicAccess::XchgUsingCmpxchg<8> {};
 
 // No direct support for 8-byte add; emulate using cmpxchg.
 template<>
-struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
+struct AtomicAccess::PlatformAdd<8> : AtomicAccess::AddUsingCmpxchg<8> {};
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 
 // No direct support for cmpxchg of bytes; emulate using int.
 template<>
-struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgByteUsingInt {};
 
 
 inline int32_t reorder_cmpxchg_func(int32_t exchange_value,
@@ -160,20 +160,20 @@ inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   return cmpxchg_using_helper<int32_t>(reorder_cmpxchg_func, dest, compare_value, exchange_value);
 }
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
+inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, dest, compare_value, exchange_value);
 }

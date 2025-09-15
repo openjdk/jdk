@@ -36,7 +36,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
@@ -61,20 +61,20 @@ void ClassLoaderDataGraph::clear_claimed_marks() {
   //
   // Any ClassLoaderData added after or during walking the list are prepended to
   // _head. Their claim mark need not be handled here.
-  for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
+  for (ClassLoaderData* cld = AtomicAccess::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
     cld->clear_claim();
   }
 }
 
 void ClassLoaderDataGraph::clear_claimed_marks(int claim) {
- for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
+ for (ClassLoaderData* cld = AtomicAccess::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
     cld->clear_claim(claim);
   }
 }
 
 void ClassLoaderDataGraph::verify_claimed_marks_cleared(int claim) {
 #ifdef ASSERT
- for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
+ for (ClassLoaderData* cld = AtomicAccess::load_acquire(&_head); cld != nullptr; cld = cld->next()) {
     cld->verify_not_claimed(claim);
   }
 #endif
@@ -155,7 +155,7 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool has_clas
 
   // First install the new CLD to the Graph.
   cld->set_next(_head);
-  Atomic::release_store(&_head, cld);
+  AtomicAccess::release_store(&_head, cld);
 
   // Next associate with the class_loader.
   if (!has_class_mirror_holder) {
@@ -192,14 +192,14 @@ inline void assert_is_safepoint_or_gc() {
 // These are functions called by the GC, which require all of the CLDs, including not yet unlinked CLDs.
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   assert_is_safepoint_or_gc();
-  for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
+  for (ClassLoaderData* cld = AtomicAccess::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
     cl->do_cld(cld);
   }
 }
 
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
   assert_is_safepoint_or_gc();
-  for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
+  for (ClassLoaderData* cld = AtomicAccess::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
     CLDClosure* closure = (cld->keep_alive_ref_count() > 0) ? strong : weak;
     if (closure != nullptr) {
       closure->do_cld(cld);
@@ -428,7 +428,7 @@ bool ClassLoaderDataGraph::do_unloading() {
       } else {
         assert(data == _head, "sanity check");
         // The GC might be walking this concurrently
-        Atomic::store(&_head, data->next());
+        AtomicAccess::store(&_head, data->next());
       }
     }
   }
@@ -533,7 +533,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
   while (head != nullptr) {
     Klass* next = next_klass_in_cldg(head);
 
-    Klass* old_head = Atomic::cmpxchg(&_next_klass, head, next);
+    Klass* old_head = AtomicAccess::cmpxchg(&_next_klass, head, next);
 
     if (old_head == head) {
       return head; // Won the CAS.
