@@ -208,14 +208,15 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 }
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  MemTracker::NmtVirtualMemoryLocker nvml;
+  bool ret = true;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
+      ret = false;
       return false;
     }
     return true;
   });
-  return true;
+  return ret;
 }
 
 size_t VirtualMemoryTracker::committed_size(const ReservedMemoryRegion* rmr) {

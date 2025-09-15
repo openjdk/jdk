@@ -138,9 +138,9 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
-  VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
     MemTracker::NmtVirtualMemoryLocker nvml;
+    VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 
@@ -160,7 +160,7 @@ bool MemBaseline::baseline_allocation_sites() {
 
   // Virtual memory allocation sites
   VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!VirtualMemoryTracker::Instance::walk_virtual_memory(&virtual_memory_walker)) {
+  if (!MemTracker::walk_virtual_memory(&virtual_memory_walker)) {
     return false;
   }
 
