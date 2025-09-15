@@ -28,7 +28,7 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run main DumpThreadsWhenParking 1000 1 100
+ * @run main/timeout=600 DumpThreadsWhenParking 1000 1 100
  */
 
 /*
@@ -38,7 +38,7 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run main DumpThreadsWhenParking 100 4 100
+ * @run main/timeout=600 DumpThreadsWhenParking 100 4 100
  */
 
 import java.lang.management.ManagementFactory;
