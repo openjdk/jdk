@@ -153,6 +153,9 @@ public class ActiveAWTWindowTest {
         if (!windowDeactivatedLatch.await(2000, TimeUnit.MILLISECONDS)) {
             throw new RuntimeException("Frame was not deactivated");
         }
+        if (frame.hasFocus()) {
+            throw new RuntimeException("Frame did not lose focus");
+        }
     }
 
     private static void clickButtonCenter(Robot robot, Component button) {
