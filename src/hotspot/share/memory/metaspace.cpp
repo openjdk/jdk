@@ -882,7 +882,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Deal with concurrent unloading failed allocation starvation
   MetaspaceCriticalAllocation::block_if_concurrent_purge();
 
-  MetadataType mdtype = type == MetaspaceObj::ClassType ? ClassType: NonClassType;
+  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
 
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
