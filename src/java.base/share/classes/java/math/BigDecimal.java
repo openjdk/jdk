@@ -1839,8 +1839,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 quot = quot.shiftLeft(powsOf5 - powsOf2);
             } else {
                 powsOf10 = powsOf2;
-                if (powsOf2 > powsOf5)
-                    quot = quot.multiply(fiveTo(powsOf2 - powsOf5));
+                quot = quot.multiply(fiveTo(powsOf2 - powsOf5));
             }
 
             return powsOf10 == 0
