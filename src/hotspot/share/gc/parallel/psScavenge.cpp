@@ -33,7 +33,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -127,7 +127,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       pm->process_popped_location_depth(task, true);
-      pm->drain_stacks_depth(true);
+      pm->drain_stacks(true);
     } else {
       if (terminator.offer_termination()) {
         break;
@@ -148,15 +148,10 @@ public:
 PSIsAliveClosure PSScavenge::_is_alive_closure;
 
 class PSKeepAliveClosure: public OopClosure {
-protected:
-  MutableSpace* _to_space;
   PSPromotionManager* _promotion_manager;
 
 public:
   PSKeepAliveClosure(PSPromotionManager* pm) : _promotion_manager(pm) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    _to_space = heap->young_gen()->to_space();
-
     assert(_promotion_manager != nullptr, "Sanity");
   }
 

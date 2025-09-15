@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_FILEMAP_HPP
 #define SHARE_CDS_FILEMAP_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
@@ -71,7 +71,7 @@ public:
   size_t mapping_offset()           const { return _mapping_offset; }
   size_t mapping_end_offset()       const { return _mapping_offset + used_aligned(); }
   size_t used()                     const { return _used; }
-  size_t used_aligned()             const; // aligned up to MetaspaceShared::core_region_alignment()
+  size_t used_aligned()             const; // aligned up to AOTMetaspace::core_region_alignment()
   char*  mapped_base()              const { return _mapped_base; }
   char*  mapped_end()               const { return mapped_base()        + used_aligned(); }
   bool   read_only()                const { return _read_only != 0; }

@@ -27,8 +27,8 @@
 
 #include "os_linux.hpp"
 
-#include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
+#include "runtime/os.hpp"
 
 inline bool os::zero_page_read_protected() {
   return true;

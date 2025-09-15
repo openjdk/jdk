@@ -45,13 +45,27 @@ static void ThrowException(JNIEnv *env, const char *name, const char *msg) {
 
 /*
  * Class:     DirectIO
- * Method:    isFileInCache0
- * Signature: (ILjava/lang/String;)Z
+ * Method:    flushFileCache
+ * Signature: (II;)V
  */
-JNIEXPORT jboolean Java_DirectIOTest_isFileInCache0(JNIEnv *env,
+JNIEXPORT void Java_DirectIOTest_flushFileCache(JNIEnv *env,
                                                 jclass cls,
                                                 jint file_size,
-                                                jstring file_path) {
+                                                jint fd) {
+#ifdef __linux__
+    posix_fadvise(fd, 0, file_size, POSIX_FADV_DONTNEED);
+#endif
+}
+
+/*
+ * Class:     DirectIO
+ * Method:    isFileInCache
+ * Signature: (II;)Z
+ */
+JNIEXPORT jboolean Java_DirectIOTest_isFileInCache(JNIEnv *env,
+                                                jclass cls,
+                                                jint file_size,
+                                                jint fd) {
     void *f_mmap;
 #ifdef __linux__
     unsigned char *f_seg;
@@ -69,17 +83,10 @@ JNIEXPORT jboolean Java_DirectIOTest_isFileInCache0(JNIEnv *env,
     size_t index = (file_size + page_size - 1) /page_size;
     jboolean result = JNI_FALSE;
 
-    const char* path = (*env)->GetStringUTFChars(env, file_path, JNI_FALSE);
-
-    int fd = open(path, O_RDWR);
-
-    (*env)->ReleaseStringUTFChars(env, file_path, path);
-
     f_mmap = mmap(0, file_size, PROT_NONE, MAP_SHARED, fd, 0);
     if (f_mmap == MAP_FAILED) {
-        close(fd);
         ThrowException(env, "java/io/IOException",
-            "test of whether file exists in cache failed");
+            "test of whether file exists in cache failed: mmap failed");
     }
     f_seg = malloc(index);
     if (f_seg != NULL) {
@@ -95,9 +102,8 @@ JNIEXPORT jboolean Java_DirectIOTest_isFileInCache0(JNIEnv *env,
         free(f_seg);
     } else {
         ThrowException(env, "java/io/IOException",
-            "test of whether file exists in cache failed");
+            "test of whether file exists in cache failed: malloc failed");
     }
-    close(fd);
     munmap(f_mmap, file_size);
     return result;
 }

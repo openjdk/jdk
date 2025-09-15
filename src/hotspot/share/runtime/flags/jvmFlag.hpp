@@ -25,10 +25,11 @@
 #ifndef SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 #define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmEnums.hpp"
+
 #include <type_traits>
 
 class outputStream;
