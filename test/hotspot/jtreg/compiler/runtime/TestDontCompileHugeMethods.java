@@ -26,6 +26,7 @@
  * @bug 8366118
  * @summary Check that a huge method is not compiled under -XX:+DontCompileHugeMethods.
  * @library /test/lib
+ * @requires (vm.compMode != "Xcomp")
  * @run main compiler.runtime.TestDontCompileHugeMethods
  */
 package compiler.runtime;
