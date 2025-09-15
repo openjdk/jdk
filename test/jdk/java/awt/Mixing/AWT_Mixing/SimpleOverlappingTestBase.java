@@ -27,7 +27,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.lang.Override;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -157,8 +156,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         /* this is a workaround for certain jtreg(?) focus issue:
            tests fail starting after failing mixing tests but always pass alone.
          */
-        JFrame ancestor = (JFrame)(testedComponent.getTopLevelAncestor());
-
+        JFrame ancestor = (JFrame) (testedComponent.getTopLevelAncestor());
         if (ancestor != null) {
             final CountDownLatch latch = new CountDownLatch(1);
             ancestor.addFocusListener(new FocusAdapter() {
@@ -168,9 +166,9 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             });
             ancestor.requestFocus();
             try {
-                boolean await = latch.await(1L, TimeUnit.SECONDS);
-                if (!await) {
-                    throw new RuntimeException("Ancestor frame didn't receive focus");
+                if (!latch.await(1L, TimeUnit.SECONDS)) {
+                    throw new RuntimeException(
+                            "Ancestor frame didn't receive focus");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
