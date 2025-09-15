@@ -557,13 +557,13 @@ void Matcher::init_first_stack_mask() {
     C->FIRST_STACK_mask().Insert(i);
   }
   // Finally, set the "infinite stack" bit.
-  C->FIRST_STACK_mask().set_AllStack();
+  C->FIRST_STACK_mask().set_infinite_stack();
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
   RegMask aligned_stack_mask = C->FIRST_STACK_mask();
   // Keep spill masks aligned.
   aligned_stack_mask.clear_to_pairs();
-  assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
+  assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
   RegMask scalable_stack_mask = aligned_stack_mask;
 
   *idealreg2spillmask[Op_RegP] = *idealreg2regmask[Op_RegP];
@@ -620,7 +620,7 @@ void Matcher::init_first_stack_mask() {
       in = OptoReg::add(in, -1);
     }
      aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
-     assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
+     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecX] = *idealreg2regmask[Op_VecX];
      idealreg2spillmask[Op_VecX]->OR(aligned_stack_mask);
   } else {
@@ -635,7 +635,7 @@ void Matcher::init_first_stack_mask() {
       in = OptoReg::add(in, -1);
     }
      aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
-     assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
+     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecY] = *idealreg2regmask[Op_VecY];
      idealreg2spillmask[Op_VecY]->OR(aligned_stack_mask);
   } else {
@@ -650,7 +650,7 @@ void Matcher::init_first_stack_mask() {
       in = OptoReg::add(in, -1);
     }
      aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecZ);
-     assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
+     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecZ] = *idealreg2regmask[Op_VecZ];
      idealreg2spillmask[Op_VecZ]->OR(aligned_stack_mask);
   } else {
@@ -670,7 +670,7 @@ void Matcher::init_first_stack_mask() {
 
       // For RegVectMask
       scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
-      assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
+      assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
       *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
       idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
     }
@@ -684,7 +684,7 @@ void Matcher::init_first_stack_mask() {
 
     // For VecA
      scalable_stack_mask.clear_to_sets(RegMask::SlotsPerVecA);
-     assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
+     assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecA] = *idealreg2regmask[Op_VecA];
      idealreg2spillmask[Op_VecA]->OR(scalable_stack_mask);
   } else {
@@ -998,7 +998,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1))
     STACK_ONLY_mask.Insert(i);
   // Also set the "infinite stack" bit.
-  STACK_ONLY_mask.set_AllStack();
+  STACK_ONLY_mask.set_infinite_stack();
 
   for (i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i, 1)) {
     // Copy the register names over into the shared world.
