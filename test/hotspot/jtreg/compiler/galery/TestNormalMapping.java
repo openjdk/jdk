@@ -23,12 +23,11 @@
 
 /*
  * @test id=ir
- * @bug 8324751
- * @summary Visual example of auto vectorization: normal mapping
+ * @bug 8367657
+ * @summary Visual example of auto vectorization: normal mapping.
  * @library /test/lib /
  * @run main compiler.galery.TestNormalMapping ir
  */
-// TODO: fix bug id above
 
 /*
  * @test id=visual
@@ -92,8 +91,8 @@ public class TestNormalMapping {
 
     @Test
     @Warmup(1000)
-    @IR(counts = {IRNode.REPLICATE_I, "> 0",
-                  IRNode.REPLICATE_F, "> 0",
+    @IR(counts = {IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.REPLICATE_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.SUB_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.MUL_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",

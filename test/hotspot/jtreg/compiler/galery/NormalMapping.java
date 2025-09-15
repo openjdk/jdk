@@ -275,7 +275,6 @@ public class NormalMapping {
             outputRGB_2 = outputRGBTmp;
         }
 
-
         public void computeLight(Light l) {
             for (int i = 0; i < outputRGB.length; i++) {
                 float x = coordsX[i];
@@ -352,7 +351,7 @@ public class NormalMapping {
             // Setting it instead to 255 will make the image brighter, but most likely
             // it will give you some funky artefacts.
             // Setting it to 100 will make the image darker.
-            float targetExposure = 100f;
+            float targetExposure = 230f;
             luminosityCorrection *= targetExposure / maxC;
         }
     }
