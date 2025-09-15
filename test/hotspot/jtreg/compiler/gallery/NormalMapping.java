@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.galery;
+package compiler.gallery;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;

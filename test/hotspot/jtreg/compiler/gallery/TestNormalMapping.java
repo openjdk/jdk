@@ -26,17 +26,17 @@
  * @bug 8367657
  * @summary Visual example of auto vectorization: normal mapping.
  * @library /test/lib /
- * @run main compiler.galery.TestNormalMapping ir
+ * @run main compiler.gallery.TestNormalMapping ir
  */
 
 /*
  * @test id=visual
  * @key headful
  * @library /test/lib /
- * @run main compiler.galery.TestNormalMapping visual
+ * @run main compiler.gallery.TestNormalMapping visual
  */
 
-package compiler.galery;
+package compiler.gallery;
 
 import jdk.test.lib.Utils;
 
@@ -67,7 +67,7 @@ public class TestNormalMapping {
         String src = System.getProperty("test.src", null);
         if (src == null) { throw new RuntimeException("Could not find test.src property."); }
         TestFramework.runWithFlags("-Dtest.src=" + src,
-                                   "-XX:CompileCommand=inline,compiler.galery.NormalMapping$State::update");
+                                   "-XX:CompileCommand=inline,compiler.gallery.NormalMapping$State::update");
     }
 
     private static void runVisual() throws InterruptedException {
