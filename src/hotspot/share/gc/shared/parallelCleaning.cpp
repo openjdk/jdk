@@ -119,6 +119,9 @@ void KlassCleaningTask::work(uint worker_id) {
   for (ClassLoaderData* cur = _klass_iterator.next(); cur != nullptr; cur = _klass_iterator.next()) {
       jlong start_clean = os::elapsed_counter();
     num_clds_processed++;
+
+    guarantee(cur->is_alive(), "must be?");
+
     for (Klass* klass = cur->klasses(); klass != nullptr; klass = klass->next_link()) {
       klass->clean_subklass();
       Klass* sibling = klass->next_sibling(true);
