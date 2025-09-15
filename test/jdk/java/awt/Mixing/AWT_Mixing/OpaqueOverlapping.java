@@ -56,7 +56,7 @@ public class OpaqueOverlapping extends OverlappingTestBase {
 
     {
         useClickValidation = false;
-        failMessage = "Opacity test mismatchs";
+        failMessage = "Opacity test mismatches";
 
         // CR 6994264 (Choice autohides dropdown on Solaris 10)
         skipClassNames = new String[] { "Choice" };
