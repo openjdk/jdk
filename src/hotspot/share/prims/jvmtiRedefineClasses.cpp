@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -254,7 +254,7 @@ void VM_RedefineClasses::doit() {
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
     // the safepoint to be safer.
-    if (!MetaspaceShared::remap_shared_readonly_as_readwrite()) {
+    if (!AOTMetaspace::remap_shared_readonly_as_readwrite()) {
       log_info(redefine, class, load)("failed to remap shared readonly space to readwrite, private");
       _res = JVMTI_ERROR_INTERNAL;
       _timer_vm_op_doit.stop();

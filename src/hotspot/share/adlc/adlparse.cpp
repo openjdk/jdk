@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1507,36 +1507,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "nops")) {
+          parse_err(WARN, "Using obsolete token, nops");
           skipws();
-          if (_curchar != '(') {
-            parse_err(SYNERR, "expected `(`, found '%c'\n", _curchar);
-            break;
-            }
-
-          next_char(); skipws();
-
-          while (_curchar != ')') {
-            ident = get_ident();
-            if (ident == nullptr) {
-              parse_err(SYNERR, "expected identifier for nop instruction, found '%c'\n", _curchar);
-              break;
-            }
-
-            pipeline->_noplist.addName(ident);
-            pipeline->_nopcnt++;
-            skipws();
-
-            if (_curchar == ',') {
-              next_char(); skipws();
-            }
-          }
-
-          next_char(); skipws();
-
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
           continue;
         }
 

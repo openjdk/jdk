@@ -1399,10 +1399,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
   cb->initialize_stubs_size(stub_req);
   cb->initialize_oop_recorder(C->env()->oop_recorder());
 
-  // fill in the nop array for bundling computations
-  MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list);
-
   return cb;
 }
 
@@ -2062,8 +2058,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   // Create a MachNopNode
   _nop = new MachNopNode();
 
-  // Now that the nops are in the array, save the count
-  // (but allow entries for the nops)
+  // Save the count
   _node_bundling_limit = compile.unique();
   uint node_max = _regalloc->node_regs_max_index();
 

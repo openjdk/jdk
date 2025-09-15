@@ -217,7 +217,7 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
-  add_speculative_check(bol_alignment);
+  add_speculative_check([&] (Node* ctrl) { return bol_alignment; });
 }
 
 class VPointerWeakAliasingPair : public StackObj {
@@ -389,8 +389,9 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
       }
 #endif
 
-      BoolNode* bol = vp1_union.make_speculative_aliasing_check_with(vp2_union);
-      add_speculative_check(bol);
+      add_speculative_check([&] (Node* ctrl) {
+        return vp1_union.make_speculative_aliasing_check_with(vp2_union, ctrl);
+      });
 
       group_start = group_end;
     }
@@ -420,7 +421,13 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
 //       Multiversioning takes more compile time and code cache, but it also
 //       produces fast code for when the runtime check passes (vectorized) and
 //       when it fails (scalar performance).
-void VTransform::add_speculative_check(BoolNode* bol) {
+//
+// Callback:
+//   In some cases, we require the ctrl just before the check iff_speculate to
+//   generate the values required in the check. We pass this ctrl into the
+//   callback, which is expected to produce the check, i.e. a BoolNode.
+template<typename Callback>
+void VTransform::add_speculative_check(Callback callback) {
   assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
   IfTrueNode* new_check_proj = nullptr;
@@ -432,6 +439,10 @@ void VTransform::add_speculative_check(BoolNode* bol) {
     new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
   }
   Node* iff_speculate = new_check_proj->in(0);
+
+  // Create the check, given the ctrl just before the iff.
+  BoolNode* bol = callback(iff_speculate->in(0));
+
   igvn().replace_input_of(iff_speculate, 1, bol);
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
 }
@@ -802,7 +813,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   } else if (VectorNode::is_reinterpret_opcode(opc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     const TypeVect* vt = TypeVect::make(bt, vlen);
-    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
+    vn = new VectorReinterpretNode(in1, in1->bottom_type()->is_vect(), vt);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);

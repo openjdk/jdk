@@ -1115,12 +1115,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  bool use_delay() { return ((_flags & _use_delay) != 0); }\n");
   fprintf(fp_hpp, "  bool used_in_delay() { return ((_flags & _used_in_delay) != 0); }\n\n");
 
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _nop_count = %d\n",
-    _pipeline->_nopcnt);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  static void initialize_nops(MachNode *nop_list[%d]);\n\n",
-    _pipeline->_nopcnt);
   fprintf(fp_hpp, "#ifndef PRODUCT\n");
   fprintf(fp_hpp, "  void dump(outputStream *st = tty) const;\n");
   fprintf(fp_hpp, "#endif\n");

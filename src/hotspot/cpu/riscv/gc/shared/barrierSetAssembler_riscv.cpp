@@ -241,10 +241,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   __ lwu(t0, *guard);
 
   switch (patching_type) {
-    case NMethodPatchingType::conc_data_patch:
-      // Subsequent loads of oops must occur after load of guard value.
-      // BarrierSetNMethod::disarm sets guard with release semantics.
-      __ membar(MacroAssembler::LoadLoad); // fall through to stw_instruction_and_data_patch
     case NMethodPatchingType::stw_instruction_and_data_patch:
       {
         // With STW patching, no data or instructions are updated concurrently,

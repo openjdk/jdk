@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,9 +385,6 @@ public:
   NameList   _classlist;          // List of pipeline classes
   FormDict   _classdict;          // Class Name -> PipeClassForm mapping
   int        _classcnt;           // Number of classes
-
-  NameList   _noplist;            // List of NOP instructions
-  int        _nopcnt;             // Number of nop instructions
 
   bool       _variableSizeInstrs; // Indicates if this architecture has variable sized instructions
   bool       _branchHasDelaySlot; // Indicates that branches have delay slot instructions

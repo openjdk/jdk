@@ -1367,11 +1367,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *owned_monitor_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
-  }
-
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
@@ -1425,11 +1420,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *monitor_info_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
   }
 
   // growable array of jvmti monitors info on the C-heap
