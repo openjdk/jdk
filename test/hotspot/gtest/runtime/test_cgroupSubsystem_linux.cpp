@@ -341,7 +341,6 @@ TEST(cgroupTest, read_string_tests) {
   ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_STREQ("", result) << "Expected untouched result";
-  delete_file(test_file);
 
   // File contents larger than 1K
   // We only read in the first 1K - 1 bytes
@@ -358,6 +357,8 @@ TEST(cgroupTest, read_string_tests) {
   EXPECT_TRUE(1023 == strlen(result)) << "Expected only the first 1023 chars to be read in";
   EXPECT_EQ(0, strncmp(too_large, result, 1023));
   EXPECT_EQ(result[1023], '\0') << "The last character must be the null character";
+
+  delete_file(test_file);
 }
 
 TEST(cgroupTest, read_number_tuple_test) {
@@ -393,6 +394,8 @@ TEST(cgroupTest, read_number_tuple_test) {
   ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, &result);
   EXPECT_FALSE(ok) << "Empty file should be an error";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
+
+  delete_file(test_file);
 }
 
 TEST(cgroupTest, read_numerical_key_beyond_max_path) {

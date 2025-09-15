@@ -116,6 +116,9 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
+// A static dummy to serve as a safe pointer when there is no relocation info.
+static relocInfo dummy_relocInfo = relocInfo(relocInfo::none, 0);
+
 void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
@@ -127,9 +130,14 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   guarantee(nm != nullptr, "must be able to deduce nmethod from other arguments");
 
   _code    = nm;
-  _base = nm->relocation_begin();
-  _current = -1;
-  _len = nm->relocation_end() - _base;
+  if (nm->relocation_size() == 0) {
+    _current = &dummy_relocInfo - 1;
+    _end = &dummy_relocInfo;
+  } else {
+    assert(((nm->relocation_begin() != nullptr) && (nm->relocation_end() != nullptr)), "valid start and end pointer");
+    _current = nm->relocation_begin() - 1;
+    _end     = nm->relocation_end();
+  }
   _addr    = nm->content_begin();
 
   // Initialize code sections.
@@ -148,21 +156,11 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
 }
 
 
-RelocIterator::RelocIterator(relocInfo& ri) {
-  initialize_misc();
-  _base = &ri;
-  _len = 1;
-  _current = -1;
-  _limit = nullptr;
-  _addr = 0;
-}
-
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
   assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)), "valid start and end pointer");
-  _base = cs->locs_start();
-  _len = cs->locs_end() - _base;
-  _current = -1;
+  _current = cs->locs_start() - 1;
+  _end     = cs->locs_end();
   _addr    = cs->start();
   _code    = nullptr; // Not cb->blob();
 
@@ -188,9 +186,8 @@ RelocIterator::RelocIterator(CodeBlob* cb) {
   } else {
     _code = nullptr;
   }
-  _base = cb->relocation_begin();
-  _len = cb->relocation_end() - _base;
-  _current = -1;
+  _current = cb->relocation_begin() - 1;
+  _end     = cb->relocation_end();
   _addr    = cb->content_begin();
 
   _section_start[CodeBuffer::SECT_CONSTS] = cb->content_begin();
@@ -219,7 +216,7 @@ void RelocIterator::set_limits(address begin, address limit) {
 
   // the limit affects this next stuff:
   if (begin != nullptr) {
-    int backup;
+    relocInfo* backup;
     address    backup_addr;
     while (true) {
       backup      = _current;
@@ -241,12 +238,12 @@ void RelocIterator::set_limits(address begin, address limit) {
 // very efficiently (a single extra halfword).  Larger chunks of
 // relocation data need a halfword header to hold their size.
 void RelocIterator::advance_over_prefix() {
-  if (current()->is_datalen()) {
-    _data    = (short*) current()->data();
-    _datalen =          current()->datalen();
+  if (_current->is_datalen()) {
+    _data    = (short*) _current->data();
+    _datalen =          _current->datalen();
     _current += _datalen + 1;   // skip the embedded data & header
   } else {
-    _databuf = current()->immediate();
+    _databuf = _current->immediate();
     _data = &_databuf;
     _datalen = 1;
     _current++;                 // skip the header
@@ -353,9 +350,9 @@ void Relocation::const_verify_data_value(address x) {
 
 RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   if (rtype == relocInfo::none)  return RelocationHolder::none;
-  relocInfo ri(rtype, 0);
-  RelocIterator itr(ri);
-  itr.next();
+  relocInfo ri = relocInfo(rtype, 0);
+  RelocIterator itr;
+  itr.set_current(ri);
   itr.reloc();
   return itr._rh;
 }
@@ -842,7 +839,7 @@ void RelocIterator::print_current_on(outputStream* st) {
     return;
   }
   st->print("relocInfo@" INTPTR_FORMAT " [type=%d(%s) addr=" INTPTR_FORMAT " offset=%d",
-            p2i(current()), type(), relocInfo::type_name((relocInfo::relocType) type()), p2i(_addr), current()->addr_offset());
+             p2i(_current), type(), relocInfo::type_name((relocInfo::relocType) type()), p2i(_addr), _current->addr_offset());
   if (current()->format() != 0)
     st->print(" format=%d", current()->format());
   if (datalen() == 1) {
@@ -993,7 +990,7 @@ void RelocIterator::print_current_on(outputStream* st) {
 
 void RelocIterator::print_on(outputStream* st) {
   RelocIterator save_this = (*this);
-  relocInfo* scan = current_no_check();
+  relocInfo* scan = _current;
   if (!has_current())  scan += 1;  // nothing to scan here!
 
   bool skip_next = has_current();
@@ -1003,7 +1000,7 @@ void RelocIterator::print_on(outputStream* st) {
     skip_next = false;
 
     st->print("         @" INTPTR_FORMAT ": ", p2i(scan));
-    relocInfo* newscan = current_no_check()+1;
+    relocInfo* newscan = _current+1;
     if (!has_current())  newscan -= 1;  // nothing to scan here!
     while (scan < newscan) {
       st->print("%04x", *(short*)scan & 0xFFFF);

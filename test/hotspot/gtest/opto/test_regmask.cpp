@@ -38,7 +38,7 @@ static void contains_expected_num_of_registers(const RegMask& rm, unsigned int e
     ASSERT_TRUE(!rm.is_Empty());
   } else {
     ASSERT_TRUE(rm.is_Empty());
-    ASSERT_TRUE(!rm.is_AllStack());
+    ASSERT_TRUE(!rm.is_infinite_stack());
   }
 
   RegMaskIterator rmi(rm);
@@ -85,11 +85,11 @@ TEST_VM(RegMask, Set_ALL) {
   // Check that Set_All doesn't add bits outside of rm.rm_size_bits()
   RegMask rm;
   rm.Set_All();
-  ASSERT_TRUE(rm.Size() == rm.rm_size_bits());
+  ASSERT_TRUE(rm.Size() == rm.rm_size_in_bits());
   ASSERT_TRUE(!rm.is_Empty());
-  // Set_All sets AllStack bit
-  ASSERT_TRUE(rm.is_AllStack());
-  contains_expected_num_of_registers(rm, rm.rm_size_bits());
+  // Set_All sets infinite_stack
+  ASSERT_TRUE(rm.is_infinite_stack());
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
 TEST_VM(RegMask, Clear) {
@@ -135,13 +135,13 @@ TEST_VM(RegMask, SUBTRACT) {
   RegMask rm2;
 
   rm2.Set_All();
-  for (int i = 17; i < (int)rm1.rm_size_bits(); i++) {
+  for (int i = 17; i < (int)rm1.rm_size_in_bits(); i++) {
     rm1.Insert(i);
   }
-  rm1.set_AllStack(true);
-  ASSERT_TRUE(rm1.is_AllStack());
+  rm1.set_infinite_stack(true);
+  ASSERT_TRUE(rm1.is_infinite_stack());
   rm2.SUBTRACT(rm1);
-  contains_expected_num_of_registers(rm1, rm1.rm_size_bits() - 17);
+  contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - 17);
   contains_expected_num_of_registers(rm2, 17);
 }
 
@@ -149,33 +149,33 @@ TEST_VM(RegMask, SUBTRACT_inner) {
   RegMask rm1;
   RegMask rm2;
   rm2.Set_All();
-  for (int i = 17; i < (int)rm1.rm_size_bits(); i++) {
+  for (int i = 17; i < (int)rm1.rm_size_in_bits(); i++) {
     rm1.Insert(i);
   }
   rm2.SUBTRACT_inner(rm1);
-  contains_expected_num_of_registers(rm1, rm1.rm_size_bits() - 17);
+  contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - 17);
   contains_expected_num_of_registers(rm2, 17);
 }
 
 TEST_VM(RegMask, is_bound1) {
   RegMask rm;
   ASSERT_FALSE(rm.is_bound1());
-  for (int i = 0; i < (int)rm.rm_size_bits() - 1; i++) {
+  for (int i = 0; i < (int)rm.rm_size_in_bits() - 1; i++) {
     rm.Insert(i);
     ASSERT_TRUE(rm.is_bound1())       << "Index " << i;
     ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
     contains_expected_num_of_registers(rm, 1);
     rm.Remove(i);
   }
-  // AllStack bit does not count as a bound register
-  rm.set_AllStack(true);
+  // infinite_stack does not count as a bound register
+  rm.set_infinite_stack(true);
   ASSERT_FALSE(rm.is_bound1());
 }
 
 TEST_VM(RegMask, is_bound_pair) {
   RegMask rm;
   ASSERT_TRUE(rm.is_bound_pair());
-  for (int i = 0; i < (int)rm.rm_size_bits() - 2; i++) {
+  for (int i = 0; i < (int)rm.rm_size_in_bits() - 2; i++) {
     rm.Insert(i);
     rm.Insert(i + 1);
     ASSERT_TRUE(rm.is_bound_pair())   << "Index " << i;
@@ -184,11 +184,11 @@ TEST_VM(RegMask, is_bound_pair) {
     contains_expected_num_of_registers(rm, 2);
     rm.Clear();
   }
-  // A pair with the AllStack bit does not count as a bound pair
+  // A pair with the infinite bit does not count as a bound pair
   rm.Clear();
-  rm.Insert(rm.rm_size_bits() - 2);
-  rm.Insert(rm.rm_size_bits() - 1);
-  rm.set_AllStack(true);
+  rm.Insert(rm.rm_size_in_bits() - 2);
+  rm.Insert(rm.rm_size_in_bits() - 1);
+  rm.set_infinite_stack(true);
   ASSERT_FALSE(rm.is_bound_pair());
 }
 
@@ -196,7 +196,7 @@ TEST_VM(RegMask, is_bound_set) {
   RegMask rm;
   for (int size = 1; size <= 16; size++) {
     ASSERT_TRUE(rm.is_bound_set(size));
-    for (int i = 0; i < (int)rm.rm_size_bits() - size; i++) {
+    for (int i = 0; i < (int)rm.rm_size_in_bits() - size; i++) {
       for (int j = i; j < i + size; j++) {
         rm.Insert(j);
       }
@@ -204,11 +204,11 @@ TEST_VM(RegMask, is_bound_set) {
       contains_expected_num_of_registers(rm, size);
       rm.Clear();
     }
-    // A set with the AllStack bit does not count as a bound set
-    for (int j = rm.rm_size_bits() - size; j < (int)rm.rm_size_bits(); j++) {
+    // A set with infinite_stack does not count as a bound set
+    for (int j = rm.rm_size_in_bits() - size; j < (int)rm.rm_size_in_bits(); j++) {
       rm.Insert(j);
     }
-    rm.set_AllStack(true);
+    rm.set_infinite_stack(true);
     ASSERT_FALSE(rm.is_bound_set(size));
     rm.Clear();
   }
@@ -216,10 +216,10 @@ TEST_VM(RegMask, is_bound_set) {
 
 TEST_VM(RegMask, external_member) {
   RegMask rm;
-  rm.set_AllStack(false);
-  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_bits())));
-  rm.set_AllStack(true);
-  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_bits())));
+  rm.set_infinite_stack(false);
+  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  rm.set_infinite_stack(true);
+  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
 }
 
 TEST_VM(RegMask, find_element) {
@@ -229,7 +229,7 @@ TEST_VM(RegMask, find_element) {
   rm.Insert(OptoReg::Name(54));
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Name(30));
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Name(54));
-  rm.set_AllStack(true);
+  rm.set_infinite_stack(true);
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Name(54));
   rm.Clear();
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Bad);
@@ -352,9 +352,9 @@ TEST_VM(RegMask, valid_reg) {
 
 TEST_VM(RegMask, rollover_and_insert_remove) {
   RegMask rm;
-  OptoReg::Name reg1(rm.rm_size_bits() + 42);
-  OptoReg::Name reg2(rm.rm_size_bits() * 2 + 42);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
+  OptoReg::Name reg2(rm.rm_size_in_bits() * 2 + 42);
+  rm.set_infinite_stack(true);
   ASSERT_TRUE(rm.Member(reg1));
   rm.rollover();
   rm.Clear();
@@ -362,7 +362,7 @@ TEST_VM(RegMask, rollover_and_insert_remove) {
   ASSERT_TRUE(rm.Member(reg1));
   rm.Remove(reg1);
   ASSERT_FALSE(rm.Member(reg1));
-  rm.set_AllStack(true);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   rm.Insert(reg2);
@@ -372,9 +372,9 @@ TEST_VM(RegMask, rollover_and_insert_remove) {
 
 TEST_VM(RegMask, rollover_and_find) {
   RegMask rm;
-  OptoReg::Name reg1(rm.rm_size_bits() + 42);
-  OptoReg::Name reg2(rm.rm_size_bits() + 7);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
+  OptoReg::Name reg2(rm.rm_size_in_bits() + 7);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Bad);
@@ -390,15 +390,15 @@ TEST_VM(RegMask, rollover_and_find_first_set) {
   lrg._is_scalable = 0;
   lrg._is_vector = 0;
   RegMask rm;
-  OptoReg::Name reg1(rm.rm_size_bits() + 24);
-  OptoReg::Name reg2(rm.rm_size_bits() + 25);
-  OptoReg::Name reg3(rm.rm_size_bits() + 26);
-  OptoReg::Name reg4(rm.rm_size_bits() + 27);
-  OptoReg::Name reg5(rm.rm_size_bits() + 16);
-  OptoReg::Name reg6(rm.rm_size_bits() + 17);
-  OptoReg::Name reg7(rm.rm_size_bits() + 18);
-  OptoReg::Name reg8(rm.rm_size_bits() + 19);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 24);
+  OptoReg::Name reg2(rm.rm_size_in_bits() + 25);
+  OptoReg::Name reg3(rm.rm_size_in_bits() + 26);
+  OptoReg::Name reg4(rm.rm_size_in_bits() + 27);
+  OptoReg::Name reg5(rm.rm_size_in_bits() + 16);
+  OptoReg::Name reg6(rm.rm_size_in_bits() + 17);
+  OptoReg::Name reg7(rm.rm_size_in_bits() + 18);
+  OptoReg::Name reg8(rm.rm_size_in_bits() + 19);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   ASSERT_EQ(rm.find_first_set(lrg, 2), OptoReg::Bad);
@@ -415,30 +415,30 @@ TEST_VM(RegMask, rollover_and_find_first_set) {
 
 TEST_VM(RegMask, rollover_and_Set_All_From) {
   RegMask rm;
-  OptoReg::Name reg1(rm.rm_size_bits() + 42);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   rm.Set_All_From(reg1);
-  contains_expected_num_of_registers(rm, rm.rm_size_bits() - 42);
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - 42);
 }
 
 TEST_VM(RegMask, rollover_and_Set_All_From_Offset) {
   RegMask rm;
-  rm.set_AllStack(true);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   rm.Set_All_From_Offset();
-  contains_expected_num_of_registers(rm, rm.rm_size_bits());
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
 TEST_VM(RegMask, rollover_and_iterate) {
   RegMask rm;
-  OptoReg::Name reg1(rm.rm_size_bits() + 2);
-  OptoReg::Name reg2(rm.rm_size_bits() + 6);
-  OptoReg::Name reg3(rm.rm_size_bits() + 17);
-  OptoReg::Name reg4(rm.rm_size_bits() + 43);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 2);
+  OptoReg::Name reg2(rm.rm_size_in_bits() + 6);
+  OptoReg::Name reg3(rm.rm_size_in_bits() + 17);
+  OptoReg::Name reg4(rm.rm_size_in_bits() + 43);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Clear();
   rm.Insert(reg1);
@@ -456,8 +456,8 @@ TEST_VM(RegMask, rollover_and_iterate) {
 TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint) {
   RegMask rm1;
   RegMask rm2;
-  OptoReg::Name reg1(rm1.rm_size_bits() + 42);
-  rm1.set_AllStack(true);
+  OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
+  rm1.set_infinite_stack(true);
   rm1.rollover();
   rm1.Clear();
   rm1.SUBTRACT_inner(rm2);
@@ -475,11 +475,11 @@ TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint) {
 TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap) {
   RegMask rm1;
   RegMask rm2;
-  OptoReg::Name reg1(rm1.rm_size_bits() + 42);
-  rm1.set_AllStack(true);
+  OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
+  rm1.set_infinite_stack(true);
   rm1.rollover();
   rm1.Clear();
-  rm2.set_AllStack(true);
+  rm2.set_infinite_stack(true);
   rm2.rollover();
   rm2.Clear();
   rm1.SUBTRACT_inner(rm2);
@@ -502,22 +502,22 @@ Arena* arena() {
 }
 
 static void is_basic(const RegMask& rm) {
-  ASSERT_EQ(rm.rm_size(), RegMask::basic_rm_size());
+  ASSERT_EQ(rm.rm_size_in_words(), RegMask::basic_rm_size_in_words());
 }
 
 static void is_extended(const RegMask& rm) {
-  ASSERT_TRUE(rm.rm_size() > RegMask::basic_rm_size());
+  ASSERT_TRUE(rm.rm_size_in_words() > RegMask::basic_rm_size_in_words());
 }
 
 static int first_extended() {
-  return RegMask::basic_rm_size() * BitsPerWord;
+  return RegMask::basic_rm_size_in_words() * BitsPerWord;
 }
 
 static void extend(RegMask& rm, unsigned int n = 4) {
   // Extend the given RegMask with at least n dynamically-allocated words.
   rm.Insert(OptoReg::Name(first_extended() + (BitsPerWord * n) - 1));
   rm.Clear();
-  ASSERT_TRUE(rm.rm_size() >= RegMask::basic_rm_size() + n);
+  ASSERT_TRUE(rm.rm_size_in_words() >= RegMask::basic_rm_size_in_words() + n);
 }
 
 TEST_VM(RegMask, static_by_default) {
@@ -555,25 +555,25 @@ TEST_VM(RegMask, Set_ALL_extended) {
   RegMask rm(arena());
   extend(rm);
   rm.Set_All();
-  ASSERT_EQ(rm.Size(), rm.rm_size_bits());
+  ASSERT_EQ(rm.Size(), rm.rm_size_in_bits());
   ASSERT_TRUE(!rm.is_Empty());
-  // Set_All sets AllStack bit
-  ASSERT_TRUE(rm.is_AllStack());
-  contains_expected_num_of_registers(rm, rm.rm_size_bits());
+  // Set_All sets infinite_stack bit
+  ASSERT_TRUE(rm.is_infinite_stack());
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
 TEST_VM(RegMask, Set_ALL_From_extended) {
   RegMask rm(arena());
   extend(rm);
   rm.Set_All_From(OptoReg::Name(42));
-  contains_expected_num_of_registers(rm, rm.rm_size_bits() - 42);
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - 42);
 }
 
 TEST_VM(RegMask, Set_ALL_From_extended_grow) {
   RegMask rm(arena());
   rm.Set_All_From(first_extended() + OptoReg::Name(42));
   is_extended(rm);
-  contains_expected_num_of_registers(rm, rm.rm_size_bits() - first_extended() - 42);
+  contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - first_extended() - 42);
 }
 
 TEST_VM(RegMask, Clear_extended) {
@@ -661,24 +661,24 @@ TEST_VM(RegMask, SUBTRACT_extended) {
   extend(rm2);
 
   rm2.Set_All();
-  ASSERT_TRUE(rm2.is_AllStack());
-  for (int i = first_extended() + 17; i < (int)rm1.rm_size_bits(); i++) {
+  ASSERT_TRUE(rm2.is_infinite_stack());
+  for (int i = first_extended() + 17; i < (int)rm1.rm_size_in_bits(); i++) {
     rm1.Insert(i);
   }
-  rm1.set_AllStack(true);
-  ASSERT_TRUE(rm1.is_AllStack());
+  rm1.set_infinite_stack(true);
+  ASSERT_TRUE(rm1.is_infinite_stack());
   rm2.SUBTRACT(rm1);
-  contains_expected_num_of_registers(rm1, rm1.rm_size_bits() - first_extended() - 17);
+  contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - first_extended() - 17);
   contains_expected_num_of_registers(rm2, first_extended() + 17);
 }
 
 TEST_VM(RegMask, external_member_extended) {
   RegMask rm(arena());
   extend(rm);
-  rm.set_AllStack(false);
-  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_bits())));
-  rm.set_AllStack(true);
-  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_bits())));
+  rm.set_infinite_stack(false);
+  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  rm.set_infinite_stack(true);
+  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
 }
 
 TEST_VM(RegMask, overlap_extended) {
@@ -709,7 +709,7 @@ TEST_VM(RegMask, up_extended) {
   rm.Insert(OptoReg::Name(first_extended()));
   ASSERT_FALSE(rm.is_UP());
   rm.Clear();
-  rm.set_AllStack(true);
+  rm.set_infinite_stack(true);
   ASSERT_FALSE(rm.is_UP());
 }
 
@@ -747,8 +747,8 @@ TEST_VM(RegMask, rollover_extended) {
   RegMask rm(arena());
   extend(rm);
   is_extended(rm);
-  OptoReg::Name reg1(rm.rm_size_bits() + 42);
-  rm.set_AllStack(true);
+  OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
+  rm.set_infinite_stack(true);
   rm.rollover();
   rm.Insert(reg1);
   ASSERT_TRUE(rm.Member(reg1));
@@ -758,8 +758,8 @@ TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint_extended) {
   RegMask rm1(arena());
   RegMask rm2;
   extend(rm1);
-  OptoReg::Name reg1(rm1.rm_size_bits() + 42);
-  rm1.set_AllStack(true);
+  OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
+  rm1.set_infinite_stack(true);
   rm1.rollover();
   rm1.Clear();
   rm1.SUBTRACT_inner(rm2);
@@ -777,9 +777,9 @@ TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint_extended) {
 TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap_extended) {
   RegMask rm1(arena());
   RegMask rm2;
-  OptoReg::Name reg1(rm1.rm_size_bits() + 42);
+  OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
   extend(rm1);
-  rm2.set_AllStack(true);
+  rm2.set_infinite_stack(true);
   rm2.rollover();
   rm2.Clear();
   rm1.SUBTRACT_inner(rm2);
@@ -814,13 +814,13 @@ static void init_random() {
 static void print(const char* name, const RegMask& mask) {
   tty->print("%s: ", name);
   mask.print();
-  tty->print_cr(", size: %u, offset: %u, all_stack: %u", mask.rm_size_bits(),
-                mask.offset_bits(), mask.is_AllStack());
+  tty->print_cr(", size: %u, offset: %u, infinite_stack: %u", mask.rm_size_in_bits(),
+                mask.offset_bits(), mask.is_infinite_stack());
 }
 
 static void assert_equivalent(const RegMask& mask,
                               const ResourceBitMap& mask_ref,
-                              bool all_stack_ref) {
+                              bool infinite_stack_ref) {
   ASSERT_EQ(mask_ref.count_one_bits(), mask.Size());
   RegMaskIterator it(mask);
   OptoReg::Name reg = OptoReg::Bad;
@@ -829,7 +829,7 @@ static void assert_equivalent(const RegMask& mask,
     ASSERT_TRUE(OptoReg::is_valid(reg));
     ASSERT_TRUE(mask_ref.at(reg));
   }
-  ASSERT_EQ(all_stack_ref, mask.is_AllStack());
+  ASSERT_EQ(infinite_stack_ref, mask.is_infinite_stack());
 }
 
 static void populate_auxiliary_sets(RegMask& mask_aux,
@@ -863,7 +863,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
       FAIL();
     }
     offset = new_offset_in_words * BitsPerWord;
-    if (offset + RegMask::rm_size_max_bits() > mask_aux_ref.size()) {
+    if (offset + RegMask::rm_size_in_bits_max() > mask_aux_ref.size()) {
       // Ensure that there is space in the reference mask.
       offset = 0;
     }
@@ -880,7 +880,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
     max_size = reg_capacity;
     break;
   case 2: // larger (if possible)
-    max_size = RegMask::rm_size_max_bits();
+    max_size = RegMask::rm_size_in_bits_max();
     break;
   default:
     FAIL();
@@ -905,23 +905,23 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
     mask_aux.Insert(reg);
     mask_aux_ref.set_bit(reg);
   }
-  mask_aux.set_AllStack(next_random() % 2);
-  assert_equivalent(mask_aux, mask_aux_ref, mask_aux.is_AllStack());
+  mask_aux.set_infinite_stack(next_random() % 2);
+  assert_equivalent(mask_aux, mask_aux_ref, mask_aux.is_infinite_stack());
 
   if (Verbose) {
     print("mask_aux", mask_aux);
   }
 }
 
-static void stack_extend_ref_masks(ResourceBitMap& mask1, bool all_stack1,
+static void stack_extend_ref_masks(ResourceBitMap& mask1, bool infinite_stack1,
                                    uint size_bits1, uint offset1,
-                                   ResourceBitMap& mask2, bool all_stack2,
+                                   ResourceBitMap& mask2, bool infinite_stack2,
                                    uint size_bits2, uint offset2) {
   uint size_bits_after = MAX2(size_bits1, size_bits2);
-  if (all_stack1) {
+  if (infinite_stack1) {
     mask1.set_range(size_bits1 + offset1, size_bits_after + offset1);
   }
-  if (all_stack2) {
+  if (infinite_stack2) {
     mask2.set_range(size_bits2 + offset2, size_bits_after + offset2);
   }
 }
@@ -930,7 +930,7 @@ TEST_VM(RegMask, random) {
   ResourceMark rm;
   RegMask mask(arena());
   ResourceBitMap mask_ref(std::numeric_limits<short>::max() + 1);
-  bool all_stack_ref = false;
+  bool infinite_stack_ref = false;
   uint offset_ref = 0;
   init_random();
 
@@ -941,7 +941,7 @@ TEST_VM(RegMask, random) {
     }
     uint action = next_random() % 13;
     uint reg;
-    uint size_bits_before = mask.rm_size_bits();
+    uint size_bits_before = mask.rm_size_in_bits();
     // This copy is used for stack-extension in overlap.
     ResourceBitMap mask_ref_copy(std::numeric_limits<short>::max() + 1);
     mask_ref_copy.clear();
@@ -953,7 +953,7 @@ TEST_VM(RegMask, random) {
     RegMask mask_aux(arena());
     switch (action) {
     case 0:
-      reg = (next_random() % RegMask::rm_size_max_bits()) + offset_ref;
+      reg = (next_random() % RegMask::rm_size_in_bits_max()) + offset_ref;
       if (Verbose) {
         tty->print_cr("action: Insert");
         tty->print("value   : ");
@@ -962,10 +962,10 @@ TEST_VM(RegMask, random) {
       }
       mask.Insert(reg);
       mask_ref.set_bit(reg);
-      if (mask.is_AllStack() && reg >= size_bits_before) {
+      if (mask.is_infinite_stack() && reg >= size_bits_before) {
         // Stack-extend reference bitset.
         mask_ref.set_range(size_bits_before + offset_ref,
-                           mask.rm_size_bits() + offset_ref);
+                           mask.rm_size_in_bits() + offset_ref);
       }
       break;
     case 1:
@@ -985,7 +985,7 @@ TEST_VM(RegMask, random) {
       }
       mask.Clear();
       mask_ref.clear();
-      all_stack_ref = false;
+      infinite_stack_ref = false;
       break;
     case 3:
       if (offset_ref > 0) {
@@ -997,58 +997,58 @@ TEST_VM(RegMask, random) {
       }
       mask.Set_All();
       mask_ref.set_range(0, size_bits_before);
-      all_stack_ref = true;
+      infinite_stack_ref = true;
       break;
     case 4:
       if (Verbose) {
         tty->print_cr("action: AND");
       }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
       mask.AND(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
-                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
-                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
+                             mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
       mask_ref.set_intersection(mask_aux_ref);
-      all_stack_ref = all_stack_ref && mask_aux.is_AllStack();
+      infinite_stack_ref = infinite_stack_ref && mask_aux.is_infinite_stack();
       break;
     case 5:
       if (Verbose) {
         tty->print_cr("action: OR");
       }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
       mask.OR(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
-                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
-                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
+                             mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
       mask_ref.set_union(mask_aux_ref);
-      all_stack_ref = all_stack_ref || mask_aux.is_AllStack();
+      infinite_stack_ref = infinite_stack_ref || mask_aux.is_infinite_stack();
       break;
     case 6:
       if (Verbose) {
         tty->print_cr("action: SUBTRACT");
       }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
       mask.SUBTRACT(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
-                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
-                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
+                             mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
       mask_ref.set_difference(mask_aux_ref);
-      if (mask_aux.is_AllStack()) {
-        all_stack_ref = false;
+      if (mask_aux.is_infinite_stack()) {
+        infinite_stack_ref = false;
       }
       break;
     case 7:
       if (Verbose) {
         tty->print_cr("action: SUBTRACT_inner");
       }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ true);
-      // SUBTRACT_inner expects an argument register mask with all_stack =
+      // SUBTRACT_inner expects an argument register mask with infinite_stack =
       // false.
-      mask_aux.set_AllStack(false);
+      mask_aux.set_infinite_stack(false);
       mask.SUBTRACT_inner(mask_aux);
       // SUBTRACT_inner does not have "stack-extension semantics".
       mask_ref.set_difference(mask_aux_ref);
@@ -1057,25 +1057,25 @@ TEST_VM(RegMask, random) {
       if (Verbose) {
         tty->print_cr("action: overlap");
       }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
       // Stack-extend a copy of mask_ref to avoid mutating the original.
-      stack_extend_ref_masks(mask_ref_copy, all_stack_ref, size_bits_before,
-                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
-                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref_copy, infinite_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
+                             mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
       ASSERT_EQ(mask_ref_copy.intersects(mask_aux_ref) ||
-                    (all_stack_ref && mask_aux.is_AllStack()),
+                    (infinite_stack_ref && mask_aux.is_infinite_stack()),
                 mask.overlap(mask_aux));
       break;
     case 9:
       if (Verbose) {
         tty->print_cr("action: rollover");
       }
-      // rollover expects the mask to be cleared and with all_stack = true
+      // rollover expects the mask to be cleared and with infinite_stack = true
       mask.Clear();
-      mask.set_AllStack(true);
+      mask.set_infinite_stack(true);
       mask_ref.clear();
-      all_stack_ref = true;
+      infinite_stack_ref = true;
       if (mask.rollover()) {
         offset_ref += size_bits_before;
         mask_ref.set_range(offset_ref, offset_ref + size_bits_before);
@@ -1088,7 +1088,7 @@ TEST_VM(RegMask, random) {
       mask.set_offset(0);
       mask.Clear();
       mask_ref.clear();
-      all_stack_ref = false;
+      infinite_stack_ref = false;
       offset_ref = 0;
       break;
     case 11:
@@ -1097,7 +1097,7 @@ TEST_VM(RegMask, random) {
       }
       mask.Set_All_From_Offset();
       mask_ref.set_range(offset_ref, offset_ref + size_bits_before);
-      all_stack_ref = true;
+      infinite_stack_ref = true;
       break;
     case 12:
       reg = (next_random() % size_bits_before) + offset_ref;
@@ -1109,12 +1109,12 @@ TEST_VM(RegMask, random) {
       }
       mask.Set_All_From(reg);
       mask_ref.set_range(reg, offset_ref + size_bits_before);
-      all_stack_ref = true;
+      infinite_stack_ref = true;
       break;
     default:
       FAIL() << "Unimplemented action";
     }
-    ASSERT_NO_FATAL_FAILURE(assert_equivalent(mask, mask_ref, all_stack_ref));
+    ASSERT_NO_FATAL_FAILURE(assert_equivalent(mask, mask_ref, infinite_stack_ref));
   }
 }
 
@@ -1122,12 +1122,12 @@ TEST_VM(RegMask, random) {
 static void randomize(RegMask& rm) {
   rm.Clear();
   // Uniform distribution over number of registers.
-  uint regs = next_random() % (rm.rm_size_bits() + 1);
+  uint regs = next_random() % (rm.rm_size_in_bits() + 1);
   for (uint i = 0; i < regs; i++) {
-    uint reg = (next_random() % rm.rm_size_bits()) + rm.offset_bits();
+    uint reg = (next_random() % rm.rm_size_in_bits()) + rm.offset_bits();
     rm.Insert(reg);
   }
-  rm.set_AllStack(next_random() % 2);
+  rm.set_infinite_stack(next_random() % 2);
 }
 
 static uint grow_randomly(RegMask& rm, uint min_growth = 1,
@@ -1135,14 +1135,14 @@ static uint grow_randomly(RegMask& rm, uint min_growth = 1,
   // Grow between min_growth and max_growth times.
   uint grow = min_growth + (max_growth > 0 ? next_random() % max_growth : 0);
   for (uint i = 0; i < grow; ++i) {
-    uint reg = rm.rm_size_bits();
-    if (reg >= RegMask::rm_size_max_bits()) {
+    uint reg = rm.rm_size_in_bits();
+    if (reg >= RegMask::rm_size_in_bits_max()) {
       // Cannot grow more
       break;
     }
     // Force grow
     rm.Insert(reg);
-    if (!rm.is_AllStack()) {
+    if (!rm.is_infinite_stack()) {
       // Restore
       rm.Remove(reg);
     }

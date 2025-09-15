@@ -42,7 +42,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -10265,7 +10265,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
-  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  // ARMv8.1 LSE versions of the atomic stubs used by AtomicAccess::PlatformXX.
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
   // non-LSE versions are in atomic_aarch64.S.

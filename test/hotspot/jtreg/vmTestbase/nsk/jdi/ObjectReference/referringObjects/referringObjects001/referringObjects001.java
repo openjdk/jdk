@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects001.referringObjects001
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=480
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects001.referringObjects001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

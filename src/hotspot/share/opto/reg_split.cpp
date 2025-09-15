@@ -520,7 +520,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Gather info on which LRG's are spilling, and build maps
   for (bidx = 1; bidx < maxlrg; bidx++) {
     if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
-      assert(!lrgs(bidx).mask().is_AllStack(),"AllStack should color");
+      assert(!lrgs(bidx).mask().is_infinite_stack(), "Infinite stack mask should color");
       lrg2reach[bidx] = spill_cnt;
       spill_cnt++;
       lidxs.append(bidx);
@@ -1037,7 +1037,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // Need special logic to handle bound USES. Insert a split at this
             // bound use if we can't rematerialize the def, or if we need the
             // split to form a misaligned pair.
-            if( !umask.is_AllStack() &&
+            if (!umask.is_infinite_stack() &&
                 (int)umask.Size() <= lrgs(useidx).num_regs() &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
