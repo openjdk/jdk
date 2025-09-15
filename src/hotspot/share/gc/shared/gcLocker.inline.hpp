@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ void GCLocker::enter(JavaThread* current_thread) {
     // Matching the fence in GCLocker::block.
     OrderAccess::fence();
 
-    if (Atomic::load(&_is_gc_request_pending)) {
+    if (AtomicAccess::load(&_is_gc_request_pending)) {
       current_thread->exit_critical();
       // slow-path
       enter_slow(current_thread);
     }
 
-    DEBUG_ONLY(Atomic::add(&_verify_in_cr_count, (uint64_t)1);)
+    DEBUG_ONLY(AtomicAccess::add(&_verify_in_cr_count, (uint64_t)1);)
   } else {
     current_thread->enter_critical();
   }
@@ -55,7 +55,7 @@ void GCLocker::exit(JavaThread* current_thread) {
 
 #ifdef ASSERT
   if (current_thread->in_last_critical()) {
-    Atomic::add(&_verify_in_cr_count, (uint64_t)-1);
+    AtomicAccess::add(&_verify_in_cr_count, (uint64_t)-1);
     // Matching the loadload in GCLocker::block.
     OrderAccess::storestore();
   }
