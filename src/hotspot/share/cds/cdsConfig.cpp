@@ -756,6 +756,11 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  if (is_dumping_dynamic_archive() && AOTClassLinking) {
+    log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
+    FLAG_SET_ERGO(AOTClassLinking, false);
+  }
+
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
     assert(!is_dumping_static_archive(), "cannot be dumping both static and dynamic archives");
 
