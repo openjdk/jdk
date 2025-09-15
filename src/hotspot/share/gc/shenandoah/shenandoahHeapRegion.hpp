@@ -276,10 +276,10 @@ private:
     int volatile* _counter;
   public:
     DirectAllocMutatorCounter(int volatile* counter): _counter(counter) {
-      Atomic::inc(_counter);
+      AtomicAccess::inc(_counter);
     }
     ~DirectAllocMutatorCounter() {
-      Atomic::dec(_counter);
+      AtomicAccess::dec(_counter);
     }
   };
 public:
@@ -449,10 +449,10 @@ public:
   ShenandoahHeapRegion* humongous_start_region() const;
 
   HeapWord* top() const {
-    return Atomic::load(&_top);
+    return AtomicAccess::load(&_top);
   }
   void set_top(HeapWord* v) {
-    Atomic::store(&_top, v);
+    AtomicAccess::store(&_top, v);
   }
 
   HeapWord* new_top() const     { return _new_top; }
@@ -489,14 +489,14 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() const { return Atomic::load(&_age); }
-  CENSUS_NOISE(uint youth() const { return Atomic::load(&_youth); })
+  uint age() const { return AtomicAccess::load(&_age); }
+  CENSUS_NOISE(uint youth() const { return AtomicAccess::load(&_youth); })
 
   void increment_age() {
     const uint current_age = age();
     assert(current_age <= markWord::max_age, "Error");
     if (current_age < markWord::max_age) {
-      const uint old = Atomic::cmpxchg(&_age, current_age, current_age + 1);
+      const uint old = AtomicAccess::cmpxchg(&_age, current_age, current_age + 1);
       assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
@@ -505,14 +505,14 @@ public:
     uint current = age();
     uint old;
     while ((old = current) != 0u &&
-          (current = Atomic::cmpxchg(&_age, old, 0u)) != old &&
+          (current = AtomicAccess::cmpxchg(&_age, old, 0u)) != old &&
            current != 0u) { }
     if (current != 0u) {
-      CENSUS_NOISE(Atomic::add(&_youth, current, memory_order_relaxed);)
+      CENSUS_NOISE(AtomicAccess::add(&_youth, current, memory_order_relaxed);)
     }
   }
 
-  CENSUS_NOISE(void clear_youth() { Atomic::store(&_youth,  0u); })
+  CENSUS_NOISE(void clear_youth() { AtomicAccess::store(&_youth,  0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -541,7 +541,7 @@ public:
   }
 
   inline int direct_alloc_mutators() const {
-    return Atomic::load(&_direct_alloc_mutators);
+    return AtomicAccess::load(&_direct_alloc_mutators);
   }
 
 private:

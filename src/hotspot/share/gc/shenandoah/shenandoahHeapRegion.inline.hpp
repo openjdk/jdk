@@ -183,7 +183,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
 
 bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size) {
   HeapWord* new_top = obj + size;
-  if (Atomic::cmpxchg(&_top, obj, new_top) == obj) {
+  if (AtomicAccess::cmpxchg(&_top, obj, new_top) == obj) {
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
     return true;
@@ -199,13 +199,13 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
       // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
-      Atomic::add(&_tlab_allocs, size);
+      AtomicAccess::add(&_tlab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_gclab:
-      Atomic::add(&_gclab_allocs, size);
+      AtomicAccess::add(&_gclab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_plab:
-      Atomic::add(&_plab_allocs, size);
+      AtomicAccess::add(&_plab_allocs, size);
       break;
     default:
       ShouldNotReachHere();
