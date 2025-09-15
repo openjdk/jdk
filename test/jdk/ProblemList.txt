@@ -499,7 +499,6 @@ java/awt/Dialog/ChoiceModalDialogTest.java 8161475 macosx-all
 java/awt/Dialog/FileDialogUserFilterTest.java 8001142 generic-all
 
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
-java/awt/dnd/DragSourceMotionListenerTest.java 8225131 windows-all
 java/awt/dnd/RejectDragTest.java 7124259 macosx-all
 java/awt/dnd/DnDHTMLToOutlookTest/DnDHTMLToOutlookTest.java 8027424 generic-all
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
