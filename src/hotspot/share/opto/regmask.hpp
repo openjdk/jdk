@@ -170,7 +170,7 @@ class RegMask {
     return (_rm_word[RM_WORD_MAX_INDEX] & (uintptr_t(1) << WORD_BIT_MASK)) != 0;
   }
 
-  void set_infinite() {
+  void set_infinite_stack() {
     _rm_word[RM_WORD_MAX_INDEX] |= (uintptr_t(1) << WORD_BIT_MASK);
   }
 

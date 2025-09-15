@@ -557,7 +557,7 @@ void Matcher::init_first_stack_mask() {
     C->FIRST_STACK_mask().Insert(i);
   }
   // Finally, set the "infinite stack" bit.
-  C->FIRST_STACK_mask().set_infinite();
+  C->FIRST_STACK_mask().set_infinite_stack();
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
   RegMask aligned_stack_mask = C->FIRST_STACK_mask();
@@ -998,7 +998,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1))
     STACK_ONLY_mask.Insert(i);
   // Also set the "infinite stack" bit.
-  STACK_ONLY_mask.set_infinite();
+  STACK_ONLY_mask.set_infinite_stack();
 
   for (i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i, 1)) {
     // Copy the register names over into the shared world.

@@ -152,7 +152,7 @@ TEST_VM(RegMask, is_bound1) {
     rm.Remove(i);
   }
   // The infinite bit does not count as a bound register
-  rm.set_infinite();
+  rm.set_infinite_stack();
   ASSERT_FALSE(rm.is_bound1());
 }
 
