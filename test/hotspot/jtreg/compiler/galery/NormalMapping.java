@@ -72,6 +72,12 @@ import java.util.Arrays;
  * created from 2d height functions, and then converted to normal
  * maps. This allows us to show more "surfaces" without having to
  * store the images for all those cases.
+ *
+ * If you are interested in understanding the components, then look at these:
+ * - computeLight: the normal mapping "shader / kernel".
+ * - generateNormals / computeNormals: computing normals from height functions.
+ * - main: setup and endless-loop that triggers normals to be swapped periodically.
+ * - MyDrawingPanel: drawing all the parts to the screen.
  */
 public class NormalMapping {
     public static Random RANDOM = new Random();
