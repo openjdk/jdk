@@ -347,6 +347,7 @@ final class DateTimePrintContext {
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
+     * @param optional  whether the query is optional, true if the query may be missing
      * @return the result, null if not found and optional is true
      * @throws DateTimeException if the type is not available and the section is not optional
      */
@@ -365,6 +366,7 @@ final class DateTimePrintContext {
      * This will return the value for the specified field.
      *
      * @param field  the field to find, not null
+     * @param optional  whether the field is optional, true if the field may be missing
      * @return the value, null if not found and optional is true
      * @throws DateTimeException if the field is not available and the section is not optional
      */
