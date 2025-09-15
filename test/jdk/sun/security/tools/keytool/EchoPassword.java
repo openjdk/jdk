@@ -48,9 +48,9 @@ public class EchoPassword {
 
     public static void main(String[] args) throws Exception {
 
-        var ks1 = Path.of("8354469.ks1").toAbsolutePath();
-        var ks2 = Path.of("8354469.ks2").toAbsolutePath();
-        var ks3 = Path.of("8354469.ks3").toAbsolutePath();
+        var ks1 = "\"" + Path.of("8354469.ks1").toAbsolutePath() + "\"";
+        var ks2 = "\"" + Path.of("8354469.ks2").toAbsolutePath() + "\"";
+        var ks3 = "\"" + Path.of("8354469.ks3").toAbsolutePath() + "\"";
 
         final String keytool = "\"" + System.getProperty("java.home")
                 + File.separator + "bin" + File.separator + "keytool\"";
