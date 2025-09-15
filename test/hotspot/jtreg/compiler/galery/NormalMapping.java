@@ -39,6 +39,8 @@ import java.awt.geom.Path2D;
 import javax.swing.JPanel;
 import java.awt.Font;
 
+import java.net.URL;
+import java.net.URISyntaxException;
 import java.io.File;
 import java.util.Arrays;
 
@@ -78,10 +80,10 @@ public class NormalMapping {
         }
     }
 
-    public static BufferedImage loadImage(String path) {
+    public static BufferedImage loadImage(URL path) {
         try {
-            return ImageIO.read(new File(path));
-        } catch (IOException e) {
+            return ImageIO.read(new File(path.toURI()));
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException("Could not load: ", e);
         }
     }
@@ -166,7 +168,9 @@ public class NormalMapping {
 
             // Extract normal values from RGB image
             // The loaded image may not have the desired INT_RGB format, so first convert it
-            BufferedImage normalsLoaded = loadImage("normal_map.png");
+            URL path = NormalMapping.class.getResource("normal_map.png");
+            System.out.println("normal_map.png: " + path);
+            BufferedImage normalsLoaded = loadImage(path);
             BufferedImage normals = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
             normals.getGraphics().drawImage(normalsLoaded, 0, 0, null);
             int[] normalsRGB = ((DataBufferInt) normals.getRaster().getDataBuffer()).getData();
