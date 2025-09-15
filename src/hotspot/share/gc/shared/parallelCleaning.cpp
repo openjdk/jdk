@@ -27,9 +27,8 @@
 #include "code/codeCache.hpp"
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/atomic.hpp"
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
