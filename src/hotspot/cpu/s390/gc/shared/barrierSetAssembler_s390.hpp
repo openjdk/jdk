@@ -66,6 +66,8 @@ public:
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg) const;
 #endif // COMPILER2
+
+  static const int PATCHABLE_INSTRUCTION_OFFSET = 3 * 6 + 2;
 };
 
 #ifdef COMPILER2
