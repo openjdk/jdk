@@ -27,8 +27,15 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 
-ShenandoahAgeCensus::ShenandoahAgeCensus() {
+ShenandoahAgeCensus::ShenandoahAgeCensus()
+  : ShenandoahAgeCensus(ShenandoahHeap::heap()->max_workers())
+{
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Only in generational mode");
+}
+
+ShenandoahAgeCensus::ShenandoahAgeCensus(uint max_workers)
+  : _max_workers(max_workers)
+{
   if (ShenandoahGenerationalMinTenuringAge > ShenandoahGenerationalMaxTenuringAge) {
     vm_exit_during_initialization(
       err_msg("ShenandoahGenerationalMinTenuringAge=%zu"
@@ -39,6 +46,9 @@ ShenandoahAgeCensus::ShenandoahAgeCensus() {
   _global_age_table = NEW_C_HEAP_ARRAY(AgeTable*, MAX_SNAPSHOTS, mtGC);
   CENSUS_NOISE(_global_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, MAX_SNAPSHOTS, mtGC);)
   _tenuring_threshold = NEW_C_HEAP_ARRAY(uint, MAX_SNAPSHOTS, mtGC);
+  CENSUS_NOISE(_skipped = 0);
+  NOT_PRODUCT(_counted = 0);
+  NOT_PRODUCT(_total = 0);
 
   for (int i = 0; i < MAX_SNAPSHOTS; i++) {
     // Note that we don't now get perfdata from age_table
@@ -47,11 +57,10 @@ ShenandoahAgeCensus::ShenandoahAgeCensus() {
     // Sentinel value
     _tenuring_threshold[i] = MAX_COHORTS;
   }
-  if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
-    size_t max_workers = ShenandoahHeap::heap()->max_workers();
-    _local_age_table = NEW_C_HEAP_ARRAY(AgeTable*, max_workers, mtGC);
+  if (ShenandoahGenerationalAdaptiveTenuring) {
+    _local_age_table = NEW_C_HEAP_ARRAY(AgeTable*, _max_workers, mtGC);
     CENSUS_NOISE(_local_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, max_workers, mtGC);)
-    for (uint i = 0; i < max_workers; i++) {
+    for (uint i = 0; i < _max_workers; i++) {
       _local_age_table[i] = new AgeTable(false);
       CENSUS_NOISE(_local_noise[i].clear();)
     }
@@ -59,6 +68,22 @@ ShenandoahAgeCensus::ShenandoahAgeCensus() {
     _local_age_table = nullptr;
   }
   _epoch = MAX_SNAPSHOTS - 1;  // see update_epoch()
+}
+
+ShenandoahAgeCensus::~ShenandoahAgeCensus() {
+  for (uint i = 0; i < MAX_SNAPSHOTS; i++) {
+    delete _global_age_table[i];
+  }
+  FREE_C_HEAP_ARRAY(AgeTable*, _global_age_table);
+  FREE_C_HEAP_ARRAY(uint, _tenuring_threshold);
+  CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _global_noise));
+  if (_local_age_table) {
+    for (uint i = 0; i < _max_workers; i++) {
+      delete _local_age_table[i];
+    }
+    FREE_C_HEAP_ARRAY(AgeTable*, _local_age_table);
+    CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _local_noise));
+  }
 }
 
 CENSUS_NOISE(void ShenandoahAgeCensus::add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id) {)
@@ -127,16 +152,15 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop, AgeTable* pv1, AgeTable
   prepare_for_census_update();
   assert(_global_age_table[_epoch]->is_clear(), "Dirty decks");
   CENSUS_NOISE(assert(_global_noise[_epoch].is_clear(), "Dirty decks");)
-  if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+  if (ShenandoahGenerationalAdaptiveTenuring) {
     assert(pv1 == nullptr && pv2 == nullptr, "Error, check caller");
     // Seed cohort 0 with population that may have been missed during
     // regular census.
-    _global_age_table[_epoch]->add((uint)0, age0_pop);
+    _global_age_table[_epoch]->add(0u, age0_pop);
 
-    size_t max_workers = ShenandoahHeap::heap()->max_workers();
     // Merge data from local age tables into the global age table for the epoch,
     // clearing the local tables.
-    for (uint i = 0; i < max_workers; i++) {
+    for (uint i = 0; i < _max_workers; i++) {
       // age stats
       _global_age_table[_epoch]->merge(_local_age_table[i]);
       _local_age_table[i]->clear();   // clear for next census
@@ -173,12 +197,11 @@ void ShenandoahAgeCensus::reset_global() {
 
 // Reset the local age tables, clearing any partial census.
 void ShenandoahAgeCensus::reset_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring || ShenandoahGenerationalCensusAtEvac) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     assert(_local_age_table == nullptr, "Error");
     return;
   }
-  size_t max_workers = ShenandoahHeap::heap()->max_workers();
-  for (uint i = 0; i < max_workers; i++) {
+  for (uint i = 0; i < _max_workers; i++) {
     _local_age_table[i]->clear();
     CENSUS_NOISE(_local_noise[i].clear();)
   }
@@ -200,12 +223,11 @@ bool ShenandoahAgeCensus::is_clear_global() {
 
 // Is local census information clear?
 bool ShenandoahAgeCensus::is_clear_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring || ShenandoahGenerationalCensusAtEvac) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     assert(_local_age_table == nullptr, "Error");
     return true;
   }
-  size_t max_workers = ShenandoahHeap::heap()->max_workers();
-  for (uint i = 0; i < max_workers; i++) {
+  for (uint i = 0; i < _max_workers; i++) {
     bool clear = _local_age_table[i]->is_clear();
     CENSUS_NOISE(clear |= _local_noise[i].is_clear();)
     if (!clear) {
@@ -246,7 +268,7 @@ void ShenandoahAgeCensus::update_tenuring_threshold() {
     _tenuring_threshold[_epoch] = tt;
   }
   print();
-  log_trace(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
+  log_info(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
     (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge);
 }
 
@@ -279,13 +301,14 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
   uint upper_bound = ShenandoahGenerationalMaxTenuringAge;
   const uint prev_tt = previous_tenuring_threshold();
   if (ShenandoahGenerationalCensusIgnoreOlderCohorts && prev_tt > 0) {
-     // We stay below the computed tenuring threshold for the last cycle plus 1,
-     // ignoring the mortality rates of any older cohorts.
-     upper_bound = MIN2(upper_bound, prev_tt + 1);
+     // We stay below the computed tenuring threshold for the last cycle,
+     // ignoring the mortality rates of any older cohorts (which may see
+     // higher mortality rates due to promotions).
+     upper_bound = MIN2(upper_bound, prev_tt);
   }
   upper_bound = MIN2(upper_bound, markWord::max_age);
 
-  const uint lower_bound = MAX2((uint)ShenandoahGenerationalMinTenuringAge, (uint)1);
+  const uint lower_bound = MAX2((uint)ShenandoahGenerationalMinTenuringAge, 1u);
 
   uint tenuring_threshold = upper_bound;
   for (uint i = upper_bound; i >= lower_bound; i--) {
@@ -303,9 +326,9 @@ uint ShenandoahAgeCensus::compute_tenuring_threshold() {
       // cohorts are considered eligible for tenuring when all older
       // cohorts are. We return the next higher age as the tenuring threshold
       // so that we do not prematurely promote objects of this age.
-      assert(tenuring_threshold == i+1 || tenuring_threshold == upper_bound, "Error");
+      assert(tenuring_threshold == i + 1 || tenuring_threshold == upper_bound, "Error");
       assert(tenuring_threshold >= lower_bound && tenuring_threshold <= upper_bound, "Error");
-      return tenuring_threshold;
+      return i + 1;
     }
     // Remember that we passed over this cohort, looking for younger cohorts
     // showing high mortality. We want to tenure cohorts of this age.
@@ -335,6 +358,14 @@ double ShenandoahAgeCensus::mortality_rate(size_t prev_pop, size_t cur_pop) {
 }
 
 void ShenandoahAgeCensus::print() {
+
+  const LogTarget(Debug, gc, age) lt;
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  LogStream ls(lt);
+
   // Print the population vector for the current epoch, and
   // for the previous epoch, as well as the computed mortality
   // ratio for each extant cohort.
@@ -350,33 +381,32 @@ void ShenandoahAgeCensus::print() {
   for (uint i = 1; i < MAX_COHORTS; i++) {
     const size_t prev_pop = prev_pv->sizes[i-1];  // (i-1) OK because i >= 1
     const size_t cur_pop  = cur_pv->sizes[i];
-    double mr = mortality_rate(prev_pop, cur_pop);
+    const double mr = mortality_rate(prev_pop, cur_pop);
     // Suppress printing when everything is zero
     if (prev_pop + cur_pop > 0) {
-      log_info(gc, age)
-        (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
-         i, prev_pop*oopSize, cur_pop*oopSize, mr);
+      ls.print_cr(" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
+         i, prev_pop * oopSize, cur_pop * oopSize, mr);
     }
     total += cur_pop;
     if (i == tt) {
       // Underline the cohort for tenuring threshold (if < MAX_COHORTS)
-      log_info(gc, age)("----------------------------------------------------------------------------");
+      ls.print_cr("----------------------------------------------------------------------------");
     }
   }
-  CENSUS_NOISE(_global_noise[cur_epoch].print(total);)
+  CENSUS_NOISE(_global_noise[cur_epoch].print(ls, total);)
 }
 
 #ifdef SHENANDOAH_CENSUS_NOISE
-void ShenandoahNoiseStats::print(size_t total) {
+void ShenandoahNoiseStats::print(LogStream& ls, const size_t total) {
   if (total > 0) {
-    float f_skipped = (float)skipped/(float)total;
-    float f_aged    = (float)aged/(float)total;
-    float f_clamped = (float)clamped/(float)total;
-    float f_young   = (float)young/(float)total;
-    log_info(gc, age)("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
-                      "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
-                      skipped*oopSize, f_skipped, aged*oopSize, f_aged,
-                      clamped*oopSize, f_clamped, young*oopSize, f_young);
+    const float f_skipped = (float)skipped/(float)total;
+    const float f_aged    = (float)aged/(float)total;
+    const float f_clamped = (float)clamped/(float)total;
+    const float f_young   = (float)young/(float)total;
+    ls.print_cr("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
+                "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
+                skipped*oopSize, f_skipped, aged*oopSize, f_aged,
+                clamped*oopSize, f_clamped, young*oopSize, f_young);
   }
 }
 #endif // SHENANDOAH_CENSUS_NOISE

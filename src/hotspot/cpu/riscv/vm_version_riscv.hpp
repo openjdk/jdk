@@ -85,25 +85,27 @@ class VM_Version : public Abstract_VM_Version {
     }                                    \
   }                                      \
 
-  #define UPDATE_DEFAULT_DEP(flag, dep)    \
-  void update_flag() {                     \
-      assert(enabled(), "Must be.");       \
-      /* dep must be declared before */    \
-      assert((uintptr_t)(this) >           \
-             (uintptr_t)(&dep), "Invalid");\
-      if (FLAG_IS_DEFAULT(flag)) {         \
-        if (dep.enabled()) {               \
-          FLAG_SET_DEFAULT(flag, true);    \
-        } else {                           \
-          FLAG_SET_DEFAULT(flag, false);   \
-        }                                  \
-      } else {                             \
-        /* Sync CPU features with flags */ \
-        if (!flag) {                       \
-          disable_feature();               \
-        }                                  \
-      }                                    \
-  }                                        \
+  #define UPDATE_DEFAULT_DEP(flag, dep)      \
+  void update_flag() {                       \
+      assert(enabled(), "Must be.");         \
+      /* dep must be declared before */      \
+      assert((uintptr_t)(this) >             \
+             (uintptr_t)(&dep), "Invalid");  \
+      if (FLAG_IS_DEFAULT(flag)) {           \
+        if (dep.enabled()) {                 \
+          FLAG_SET_DEFAULT(flag, true);      \
+        } else {                             \
+          FLAG_SET_DEFAULT(flag, false);     \
+          /* Sync CPU features with flags */ \
+          disable_feature();                 \
+        }                                    \
+      } else {                               \
+        /* Sync CPU features with flags */   \
+        if (!flag) {                         \
+          disable_feature();                 \
+        }                                    \
+      }                                      \
+  }                                          \
 
   #define NO_UPDATE_DEFAULT                \
   void update_flag() {}                    \
@@ -247,12 +249,13 @@ class VM_Version : public Abstract_VM_Version {
 
   // Non-extension features
   //
-  #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                               \
-  decl(unaligned_access ,  Unaligned   ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(mvendorid        ,  VendorId    ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(marchid          ,  ArchId      ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(mimpid           ,  ImpId       ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(satp_mode        ,  SATP        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                                   \
+  decl(unaligned_access ,  Unaligned       ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(mvendorid        ,  VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(marchid          ,  ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(mimpid           ,  ImpId           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(satp_mode        ,  SATP            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(zicboz_block_size, "ZicbozBlockSize",  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
 
   #define DECLARE_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)                  \
   struct NAME##RVNonExtFeatureValue : public RVNonExtFeatureValue {                            \

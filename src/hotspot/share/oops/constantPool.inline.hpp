@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
   guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
@@ -41,7 +41,7 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
   assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
 
   Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-  return Atomic::load_acquire(adr);
+  return AtomicAccess::load_acquire(adr);
 }
 
 inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {
