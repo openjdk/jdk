@@ -43,8 +43,12 @@ import jdk.test.lib.Utils;
 import compiler.lib.ir_framework.*;
 
 /**
- * TODO: desc: JTREG version, with IR tests
- * TODO: link to stand-alone
+ * This test is the JTREG version for automatic verification of the stand-alone
+ * {@link NormalMapping}. If you just want to run the demo and play with it,
+ * go look at the documentation in {@link NormalMapping}.
+ * Here, we launch both a visual version that just runs for a few seconds, to see
+ * that there are no crashes, but we don't do any specific verification.
+ * We also have an IR test, that ensures that we get vectorization.
  */
 public class TestNormalMapping {
     public static void main(String[] args) throws InterruptedException {
@@ -102,8 +106,8 @@ public class TestNormalMapping {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    private void testIR1() {
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private void testIR() {
         // This call should inline givne the CompileCommand above.
         state.update();
     }

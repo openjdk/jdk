@@ -45,9 +45,27 @@ import java.io.File;
 import java.util.Arrays;
 
 /**
- * TODO: desc: backing methods and stand-alone-runnable
- * TODO: link to JTREG / IR test
- * TODO: how to run
+ * I presented this demo at the JVMLS 2025 conference, when giving
+ * a talk about Auto-Vectorization in HotSpot, see:
+ *   https://inside.java/2025/08/16/jvmls-hotspot-auto-vectorization/
+ *
+ * This is a stand-alone test that you can run directly with:
+ *   java NormalMapping.java
+ *
+ * If you want to disable the auto-vectorizer, you can run:
+ *   java -XX:-UseSuperWord NormalMapping.java
+ *
+ * On x86, you can also play with the UseAVX flag:
+ *   java -XX:UseAVX=1 NormalMapping.java
+ *
+ * There is a JTREG test that automatically runs this demo,
+ * see {@link TestNormalMapping}.
+ *
+ * My motivation for JVMLS 2025 was to present something that vectorizes
+ * in an "embarassingly parallel" way. It should be something that C2's
+ * SuperWord Auto Vectorizer could already do for many JDK releases,
+ * and also has some visual appeal. I decided to use normal mapping, see:
+ *   https://en.wikipedia.org/wiki/Normal_mapping
  */
 public class NormalMapping {
     public static Random RANDOM = new Random();
@@ -199,10 +217,12 @@ public class NormalMapping {
                 for (int x = 0; x < sizeX; x++) {
                     this.coordsY[y * sizeX + x] = y * (1f / sizeY);
                     int normal = normalsRGB[y * sizeX + x];
+                    // RGB values in range [0 ... 255]
                     int nr = (normal >> 16) & 0xff;
                     int ng = (normal >>  8) & 0xff;
                     int nb = (normal >>  0) & 0xff;
 
+                    // Map range [0..255] -> [-1 .. 1]
                     float nx = ((float)nr) * (1f / 128f) - 1f;
                     float ny = ((float)ng) * (1f / 128f) - 1f;
                     float nz = ((float)nb) * (1f / 128f) - 1f;
@@ -213,7 +233,9 @@ public class NormalMapping {
                 }
             }
 
-            // Double buffered output images, where we render to
+            // Double buffered output images, where we render to.
+            // Without double buffering, we would get some flickering effects,
+            // because we would be concurrently updating the buffer and drawing it.
             this.output   = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
             this.output_2 = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
             this.outputRGB   = ((DataBufferInt) output.getRaster().getDataBuffer()).getData();
@@ -228,20 +250,22 @@ public class NormalMapping {
             float newFPS = 1e9f / (nowTime - lastTime);
             fps = 0.99f * fps + 0.01f * newFPS;
             lastTime = nowTime;
-            //System.out.println("fps: " + fps + " (lum: " + luminosityCorrection + ")");
 
             for (int i = 0; i < lights.length; i++) {
                 lights[i].update();
             }
 
+            // Reset the buffer
             int[] outputArray = ((DataBufferInt) output.getRaster().getDataBuffer()).getData();
             Arrays.fill(outputArray, 0);
 
+            // Add inn the contribution of each light
             for (Light l : lights) {
                 computeLight(l);
             }
             computeLuminosityCorrection();
 
+            // Swap the buffers for double buffering.
             var outputTmp = output;
             output = output_2;
             output_2 = outputTmp;
@@ -260,16 +284,19 @@ public class NormalMapping {
                 float ny = normalsY[i];
                 float nz = normalsZ[i];
 
-                // Compute distance d
+                // Compute distance vector between the light and the pixel
                 float dx = x - l.x;
                 float dy = y - l.y;
-                float dz = 0.2f;
+                float dz = 0.2f; // how much the lights float above the scene
+
+                // Compute the distance (dot product of d with itself)
                 float d2 = dx * dx + dy * dy + dz * dz;
                 float d = (float)Math.sqrt(d2);
                 float d3 = d * d2;
 
                 // Compute dot-product between distance and normal vector
                 float dotProduct = nx * dx + ny * dy + nz * dz;
+
                 // If the dot-product is negative:
                 //   Light on wrong side -> 0
                 // If the dot-product is positive:
@@ -279,6 +306,14 @@ public class NormalMapping {
                 //   to 255, but not over.
                 float luminosity = Math.max(0, dotProduct / d3) * luminosityCorrection;
 
+                // Now we we compute the color values that hopefully end up in the range
+                // [0..255]. If the hack/trick with luminosityCorrection fails, we may
+                // occasionally go out of the range and generate an overflow in the masking.
+                // This can lead to some funky visual artifacts around the lights, but it
+                // is quite rare.
+                //
+                // Feel free to play with the targetExposure below, and see if you can
+                // observe the artefacts.
                 int r = (int)(luminosity * l.r) & 0xff;
                 int g = (int)(luminosity * l.g) & 0xff;
                 int b = (int)(luminosity * l.b) & 0xff;
@@ -287,6 +322,14 @@ public class NormalMapping {
             }
         }
 
+        // This is a bit of a horrible hack, but it mostly works.
+        // Essencially, it tries to solve the "exposure" problem:
+        // It is hard to know how much light a pixel will receive at most, and
+        // we have to convert this value to a byte [0..255] at some point.
+        // If we chose the "exposure" too low, we get a very dark picture
+        // that is not very exciting to look at. If we over-expose, then we
+        // may overflow/clip the range [0..255], leading to unpleasant visual
+        // artifacts.
         public void computeLuminosityCorrection() {
             // Find maximum R, G, and B value.
             float maxR = 0;
@@ -306,7 +349,11 @@ public class NormalMapping {
             float maxC = Math.max(Math.max(maxR, maxG), maxB);
 
             // Correct the maximum value to be 230, so we are safely in range 0..255
-            luminosityCorrection *= 230f / maxC;
+            // Setting it instead to 255 will make the image brighter, but most likely
+            // it will give you some funky artefacts.
+            // Setting it to 100 will make the image darker.
+            float targetExposure = 100f;
+            luminosityCorrection *= targetExposure / maxC;
         }
     }
 
