@@ -83,16 +83,19 @@ public class NormalMapping {
     public static Random RANDOM = new Random();
 
     public static void main(String[] args) {
+        System.out.println("Welcome to the Normal Mapping Demo!");
         // Create an applicateion state with 5 lights.
         State state = new State(5);
 
         // Set up a panel we can draw on, and put it in a window.
+        System.out.println("Setting up Window...");
         MyDrawingPanel panel = new MyDrawingPanel(state);
         JFrame frame = new JFrame("Normal Mapping Demo (Auto Vectorization)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(2000, 1000);
         frame.add(panel);
         frame.setVisible(true);
+        System.out.println("Running Demo...");
 
         try {
             // Tight loop where we redraw the panel as fast as possible.
