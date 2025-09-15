@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
@@ -121,7 +121,6 @@ public:
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
   void set_region_eden(G1HeapRegion* hr) {
-    hr->set_eden();
     hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 
@@ -130,8 +129,8 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_card_rs_length(size_t card_rs_length) {
-    _card_rs_length = card_rs_length;
+  void record_card_rs_length(size_t num_cards) {
+    _card_rs_length = num_cards;
   }
 
   double cur_pause_start_sec() const {
@@ -353,8 +352,8 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
-  uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
+  uint young_list_desired_length() const { return AtomicAccess::load(&_young_list_desired_length); }
+  uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
 
   bool should_allocate_mutator_region() const;
 

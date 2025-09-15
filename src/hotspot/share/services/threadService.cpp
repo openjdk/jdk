@@ -41,7 +41,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -140,7 +140,7 @@ void ThreadService::add_thread(JavaThread* thread, bool daemon) {
 
   _total_threads_count->inc();
   _live_threads_count->inc();
-  Atomic::inc(&_atomic_threads_count);
+  AtomicAccess::inc(&_atomic_threads_count);
   int count = _atomic_threads_count;
 
   if (count > _peak_threads_count->get_value()) {
@@ -149,15 +149,15 @@ void ThreadService::add_thread(JavaThread* thread, bool daemon) {
 
   if (daemon) {
     _daemon_threads_count->inc();
-    Atomic::inc(&_atomic_daemon_threads_count);
+    AtomicAccess::inc(&_atomic_daemon_threads_count);
   }
 }
 
 void ThreadService::decrement_thread_counts(JavaThread* jt, bool daemon) {
-  Atomic::dec(&_atomic_threads_count);
+  AtomicAccess::dec(&_atomic_threads_count);
 
   if (daemon) {
-    Atomic::dec(&_atomic_daemon_threads_count);
+    AtomicAccess::dec(&_atomic_daemon_threads_count);
   }
 }
 
