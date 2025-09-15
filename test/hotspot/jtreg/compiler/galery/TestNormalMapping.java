@@ -31,6 +31,7 @@
 
 /*
  * @test id=visual
+ * @key headful
  * @library /test/lib /
  * @run main compiler.galery.TestNormalMapping visual
  */

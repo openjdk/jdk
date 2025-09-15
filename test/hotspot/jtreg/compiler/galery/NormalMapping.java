@@ -66,6 +66,12 @@ import java.util.Arrays;
  * SuperWord Auto Vectorizer could already do for many JDK releases,
  * and also has some visual appeal. I decided to use normal mapping, see:
  *   https://en.wikipedia.org/wiki/Normal_mapping
+ *
+ * At the conference, I only had the version that loads a normal map
+ * from an image. I now also added some "generated" cases, which are
+ * created from 2d height functions, and then converted to normal
+ * maps. This allows us to show more "surfaces" without having to
+ * store the images for all those cases.
  */
 public class NormalMapping {
     public static Random RANDOM = new Random();
@@ -78,16 +84,21 @@ public class NormalMapping {
         MyDrawingPanel panel = new MyDrawingPanel(state);
         JFrame frame = new JFrame("Normal Mapping Demo (Auto Vectorization)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1000, 1000);
+        frame.setSize(2000, 1000);
         frame.add(panel);
         frame.setVisible(true);
 
         try {
             // Tight loop where we redraw the panel as fast as possible.
+            int count = 0;
             while (true) {
                 Thread.sleep(1);
                 state.update();
                 panel.repaint();
+                if (count++ > 500) {
+                    count = 0;
+                    state.nextNormals();
+                }
             }
         } catch (InterruptedException e) {
             System.out.println("Interrputed, terminating demo.");
@@ -106,7 +117,7 @@ public class NormalMapping {
         String testSrc = System.getProperty("test.src", null);
         System.out.println("System Property test.src: " + testSrc);
         if (testSrc == null) {
-            URL path = NormalMapping.class.getResource("normal_map.png");
+            URL path = NormalMapping.class.getResource(name);
             System.out.println("  Loading via getResource: " + path);
             try {
                 return new File(path.toURI());
@@ -114,7 +125,7 @@ public class NormalMapping {
                 throw new RuntimeException("Could not load: ", e);
             }
         } else {
-            return new File(testSrc + "/normal_map.png");
+            return new File(testSrc + "/" + name);
         }
     }
 
@@ -167,8 +178,13 @@ public class NormalMapping {
     }
 
     public static class State {
-        public Light[] lights;
+        private static final int sizeX = 1000;
+        private static final int sizeY = 1000;
 
+        public Light[] lights;
+        private int nextNormalsId = 0;
+
+        public BufferedImage normals;
         public float[] coordsX;
         public float[] coordsY;
         public float[] normalsX;
@@ -191,9 +207,6 @@ public class NormalMapping {
                 lights[i] = new Light();
             }
 
-            int sizeX = 1000;
-            int sizeY = 1000;
-
             // Coordinates
             this.coordsX = new float[sizeX * sizeY];
             this.coordsY = new float[sizeX * sizeY];
@@ -204,12 +217,50 @@ public class NormalMapping {
                 }
             }
 
+            nextNormals();
+
+            // Double buffered output images, where we render to.
+            // Without double buffering, we would get some flickering effects,
+            // because we would be concurrently updating the buffer and drawing it.
+            this.output   = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
+            this.output_2 = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
+            this.outputRGB   = ((DataBufferInt) output.getRaster().getDataBuffer()).getData();
+            this.outputRGB_2 = ((DataBufferInt) output_2.getRaster().getDataBuffer()).getData();
+
+            // Set up the FPS tracker
+            lastTime = System.nanoTime();
+        }
+
+        public void nextNormals() {
+            switch(nextNormalsId) {
+                case 0 -> setNormals(loadNormals("normal_map.png"));
+                case 1 -> setNormals(generateNormals("heart"));
+                case 2 -> setNormals(generateNormals("hex"));
+                case 3 -> setNormals(generateNormals("cone"));
+                case 4 -> setNormals(generateNormals("ripple"));
+                case 5 -> setNormals(generateNormals("hill"));
+                case 6 -> setNormals(generateNormals("ripple2"));
+                case 7 -> setNormals(generateNormals("cones"));
+                case 8 -> setNormals(generateNormals("spheres"));
+                case 9 -> setNormals(generateNormals("donut"));
+                default -> throw new RuntimeException();
+            }
+            nextNormalsId = (nextNormalsId + 1) % 10;
+        }
+
+        public BufferedImage loadNormals(String name) {
             // Extract normal values from RGB image
             // The loaded image may not have the desired INT_RGB format, so first convert it
-            BufferedImage normalsLoaded = loadImage(getLocalFile("normal_map.png"));
-            BufferedImage normals = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
-            normals.getGraphics().drawImage(normalsLoaded, 0, 0, null);
-            int[] normalsRGB = ((DataBufferInt) normals.getRaster().getDataBuffer()).getData();
+            BufferedImage normalsLoaded = loadImage(getLocalFile(name));
+            BufferedImage buf = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
+            buf.getGraphics().drawImage(normalsLoaded, 0, 0, null);
+            return buf;
+        }
+
+        public void setNormals(BufferedImage buf) {
+            this.normals = buf;
+
+            int[] normalsRGB = ((DataBufferInt) this.normals.getRaster().getDataBuffer()).getData();
             this.normalsX = new float[sizeX * sizeY];
             this.normalsY = new float[sizeX * sizeY];
             this.normalsZ = new float[sizeX * sizeY];
@@ -232,17 +283,112 @@ public class NormalMapping {
                     this.normalsZ[y * sizeX + x] = nz;
                 }
             }
+        }
 
-            // Double buffered output images, where we render to.
-            // Without double buffering, we would get some flickering effects,
-            // because we would be concurrently updating the buffer and drawing it.
-            this.output   = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
-            this.output_2 = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
-            this.outputRGB   = ((DataBufferInt) output.getRaster().getDataBuffer()).getData();
-            this.outputRGB_2 = ((DataBufferInt) output_2.getRaster().getDataBuffer()).getData();
+        interface HeightFunction {
+            // x and y should be in [0..1]
+            public double call(double x, double y);
+        }
 
-            // Set up the FPS tracker
-            lastTime = System.nanoTime();
+        public BufferedImage generateNormals(String name) {
+            System.out.println("  generate normals for: " + name);
+            return computeNormals((double x, double y) -> {
+                // Scale out, so we see a little more
+                x = 10 * (x - 0.5);
+                y = 10 * (y - 0.5);
+
+                // A selection of "height functions":
+                return switch(name) {
+                    case "cone" -> 0.1 * Math.max(0, 2 - Math.sqrt(x * x + y * y));
+                    case "heart" -> {
+                        double heart = Math.abs(Math.pow(x*x + y*y - 1, 3) - x*x * Math.pow(-y, 3));
+                        double decay = Math.exp(-(x*x + y*y));
+                        yield 0.1 * heart * decay;
+                    }
+                    case "hill" ->    0.5 * Math.exp(-(x*x + y*y));
+                    case "ripple" ->  0.01 * Math.sin(x*x + y*y);
+                    case "ripple2" -> 0.3 * Math.sin(x) * Math.sin(y);
+                    case "donut" -> {
+                        double d = Math.sqrt(x * x + y * y) - 2;
+                        double i = 1 - d*d;
+                        yield (i >= 0) ? 0.1 * Math.sqrt(i) : 0;
+                    }
+                    case "hex" -> {
+                        double f = 3.0;
+                        double a = Math.cos(f * x);
+                        double b = Math.cos(f * (-0.5 * x + Math.sqrt(3) / 2.0 * y));
+                        double c = Math.cos(f * (-0.5 * x - Math.sqrt(3) / 2.0 * y));
+                        yield 0.03 * (a + b + c);
+                    }
+                    case "cones" -> {
+                        double scale = 2.0;
+                        double r = 0.8;
+                        double cx = scale * (Math.floor(x / scale) + 0.5);
+                        double cy = scale * (Math.floor(y / scale) + 0.5);
+                        double dx = x - cx;
+                        double dy = y - cy;
+                        double d = Math.sqrt(dx * dx + dy * dy);
+                        yield 0.1 * Math.max(0, 0.8 - d);
+                    }
+                    case "spheres" -> {
+                        double scale = 2.0;
+                        double r = 0.8;
+                        double cx = scale * (Math.floor(x / scale) + 0.5);
+                        double cy = scale * (Math.floor(y / scale) + 0.5);
+                        double dx = x - cx;
+                        double dy = y - cy;
+                        double d2 = dx * dx + dy * dy;
+                        if (d2 <= r * r) {
+                            yield 0.03 * Math.sqrt(r * r - d2);
+                        }
+                        yield 0.0;
+                    }
+                    default -> throw new RuntimeException("not supported: " + name);
+                };
+            });
+        }
+
+        public static BufferedImage computeNormals(HeightFunction fun) {
+            BufferedImage out = new BufferedImage(1000, 1000, BufferedImage.TYPE_INT_RGB);
+            int[] arr = ((DataBufferInt) out.getRaster().getDataBuffer()).getData();
+            int sx = out.getWidth();
+            int sy = out.getHeight();
+
+            double delta = 0.00001;
+            double dxx = 1.0 / sx;
+            double dyy = 1.0 / sy;
+            for (int yy = 0; yy < sy; yy++) {
+                int nStart = sy * yy;
+                for (int xx = 0; xx < sx; xx++) {
+                    double x = xx * dxx;
+                    double y = yy * dyy;
+
+                    // Compute the partial derivatives in x and y direction;
+                    double fdx = fun.call(x + delta, y) - fun.call(x - delta, y);
+                    double fdy = fun.call(x, y + delta) - fun.call(x, y - delta);
+                    // We can compute the normal from the cross product of:
+                    //
+                    //  df/dx  x  df/dy = [2*delta, 0, fdx]  x  [0, 2*delta, fdy]
+                    //                  = [0*fdy - fdx*2*delta, fdx*0 - 2*delta*fdy, 2*delta*2*delta - 0*0]
+                    double nx = -fdx * 2 * delta;
+                    double ny = -2 * delta * fdy;
+                    double nz = 2 * delta * 2 * delta;
+
+                    // normalize
+                    float dist = (float)Math.sqrt(nx * nx + ny * ny + nz * nz);
+                    nx /= dist;
+                    ny /= dist;
+                    nz /= dist;
+
+                    // Now transform [-1..1] -> [0..255]
+                    int r = (int)(nx * 127f + 127f) & 0xff;
+                    int g = (int)(ny * 127f + 127f) & 0xff;
+                    int b = (int)(nz * 127f + 127f) & 0xff;
+                    int c = (r << 16) + (g << 8) + b;
+                    arr[nStart + xx] = c;
+                }
+            }
+            return out;
         }
 
         public void update() {
@@ -382,6 +528,8 @@ public class NormalMapping {
             g2d.setColor(new Color(255, 255, 255));
             g2d.setFont(new Font("Consolas", Font.PLAIN, 30));
             g2d.drawString("FPS: " + (int)Math.floor(state.fps), 0, 30);
+
+            g2d.drawImage(state.normals, 1000, 0, null);
         }
     }
 }
