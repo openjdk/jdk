@@ -2385,6 +2385,7 @@ void BSMAttributeEntries::append(const BSMAttributeEntries& other, ClassLoaderDa
   }
   InsertionIterator iter = start_extension(other, loader_data, CHECK);
   other.copy_into(iter, other.number_of_entries());
+  end_extension(iter, loader_data, CHECK);
 
 }
 
