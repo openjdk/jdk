@@ -89,7 +89,7 @@ public abstract class PKCS11Test {
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
     // The other is "libnss3.so", listed as "nss3".
-    static String nss_library = "softokn3";
+    static String nss_library = System.getProperty("CUSTOM_P11_LIBRARY_NAME", "softokn3");
 
     // NSS versions of each library.  It is simpler to keep nss_version
     // for quick checking for generic testing than many if-else statements.
@@ -197,6 +197,17 @@ public abstract class PKCS11Test {
 
     public static String getBase() throws Exception {
         if (PKCS11_BASE != null) {
+            return PKCS11_BASE;
+        }
+        String customBaseDir = System.getProperty("CUSTOM_P11_CONFIG_BASE_DIR");
+        if (customBaseDir != null) {
+            File base = new File(customBaseDir);
+            if (!base.exists()) {
+                throw new RuntimeException(
+                        "Directory specified by CUSTOM_P11_CONFIG_BASE_DIR does not exist: "
+                                + base.getAbsolutePath());
+            }
+            PKCS11_BASE = base.getAbsolutePath();
             return PKCS11_BASE;
         }
         File cwd = new File(System.getProperty("test.src", ".")).getCanonicalFile();
@@ -454,6 +465,40 @@ public abstract class PKCS11Test {
         System.out.println("testNSS: Completed");
     }
 
+    /**
+     * Prepares the NSS configuration file hierarchy, then returns the
+     * path of the configuration file that should be used to configure
+     * the PKCS11 provider.
+     *
+     * By default, the contents of the directory
+     * "test/jdk/sun/security/pkcs11/nss" are copied to the jtreg
+     * scratch directory ("."), and "./nss/p11-nss.txt" is returned.
+     *
+     * The following system properties modify the default behavior:
+     *
+     * CUSTOM_P11_CONFIG_BASE_DIR: The path of a custom configuration
+     * file hierarchy; overrides the default,
+     * "test/jdk/sun/security/pkcs11".
+     *
+     * CUSTOM_P11_CONFIG_NAME: The name of a custom configuration
+     * file; overrides the default, "p11-nss.txt".  Note that some
+     * test cases set CUSTOM_P11_CONFIG_NAME using -D in jtreg @run
+     * tags; for those test cases, setting this property on the
+     * top-level jtreg command line has no effect.
+     *
+     * CUSTOM_P11_CONFIG: The path of a custom configuration file;
+     * overrides the default "./nss/p11-nss.txt".  This takes
+     * precedence over CUSTOM_P11_CONFIG_NAME.  Tests that hard-code
+     * CUSTOM_P11_CONFIG_NAME in jtreg @run tags may not work
+     * correctly when CUSTOM_P11_CONFIG is set on the top-level jtreg
+     * command line.
+     *
+     * CUSTOM_DB_DIR: The path of a custom database directory;
+     * overrides the default, "./nss/db".
+     *
+     * CUSTOM_P11_LIBRARY_NAME: The name of a custom provider library
+     * to load; overrides the default, "softokn3".
+     */
     public static String getNssConfig() throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
