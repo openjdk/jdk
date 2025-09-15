@@ -26,8 +26,13 @@
  * @bug 8361702
  * @summary C2: assert(is_dominator(compute_early_ctrl(limit, limit_ctrl), pre_end)) failed: node pinned on loop exit test?
  * @requires vm.flavor == "server"
- *
  * @run main/othervm -XX:-BackgroundCompilation -XX:LoopUnrollLimit=100 -XX:-UseLoopPredicate -XX:-UseProfiledLoopPredicate TestSunkRangeFromPreLoopRCE3
+ */
+
+/**
+ * @test
+ * @bug 8361702
+ * @summary C2: assert(is_dominator(compute_early_ctrl(limit, limit_ctrl), pre_end)) failed: node pinned on loop exit test?
  * @run main TestSunkRangeFromPreLoopRCE3
  */
 
