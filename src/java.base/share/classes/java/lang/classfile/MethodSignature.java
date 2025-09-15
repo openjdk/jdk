@@ -25,6 +25,7 @@
 package java.lang.classfile;
 
 import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -38,6 +39,12 @@ import static java.util.Objects.requireNonNull;
 /**
  * Models the generic signature of a method or constructor, as defined by JVMS
  * {@jvms 4.7.9.1}.
+ * <p>
+ * Similar to nominal descriptors from {@link java.lang.constant}, {@code
+ * MethodSignature} can represent generic signatures whose raw signature strings
+ * cannot be represented by {@link Utf8Entry}.  There is no such check for
+ * {@code String} or nominal descriptor arguments passed to static factory
+ * methods in this class.
  *
  * @see Executable
  * @see SignatureAttribute
@@ -145,6 +152,7 @@ public sealed interface MethodSignature
 
     /**
      * Parses a raw method signature string into a {@code MethodSignature}.
+     * The string may be unrepresentable by a {@link Utf8Entry}.
      *
      * @param methodSignature the raw method signature string
      * @return the parsed method signature

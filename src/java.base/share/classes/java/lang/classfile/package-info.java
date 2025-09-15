@@ -250,12 +250,6 @@
  * the convenience method {@code CodeBuilder.invoke}, which in turn behaves
  * as if it calls method {@code CodeBuilder.with}. This composing of method calls on the
  * builder enables the composing of transforms (as described later).
- * <p>
- * Unless otherwise noted, passing a {@code null} argument to a constructor
- * or method of any Class-File API class or interface will cause a {@link
- * NullPointerException} to be thrown. Additionally,
- * invoking a method with an array or collection containing a {@code null} element
- * will cause a {@code NullPointerException}, unless otherwise specified.
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
@@ -280,6 +274,15 @@
  * {@code 65535} is lost when built to a {@link ##u2 u2} item, with
  * the range {@code [0, 65535]}.  In particular, any variable-sized table
  * exceeding its maximum representable size is rejected.
+ * <p>
+ * Unless otherwise noted, passing null or an array or collection that contains
+ * null as an element to a constructor or method of any Class-File API class or
+ * interface will cause a {@link NullPointerException} to be thrown; passing any
+ * string whose {@linkplain Utf8Entry Modified UTF-8} representation exceeds
+ * the limits of {@link ##u2 u2}, any nominal descriptor represented by such a
+ * string, or an array or collection that contains such a string or nominal
+ * descriptor as an element to a constructor or method of any Class-File API
+ * class or interface will cause an {@link IllegalArgumentException} to be thrown.
  * <p>
  * No consistency checks are performed while building or transforming classfiles
  * (except for null and representable arguments checks). All builders and

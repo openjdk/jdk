@@ -26,6 +26,7 @@ package java.lang.classfile;
 
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
@@ -43,6 +44,12 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
+ * <p>
+ * Similar to nominal descriptors from {@link java.lang.constant}, {@code
+ * Signature} can represent type signatures whose raw signature strings cannot
+ * be represented by {@link Utf8Entry}.  There is no such check for {@code
+ * String} or nominal descriptor arguments passed to static factory methods in
+ * this class.
  *
  * @see Type
  * @see SignatureAttribute
@@ -57,7 +64,8 @@ public sealed interface Signature {
     String signatureString();
 
     /**
-     * Parses a Java type signature from a raw string.
+     * Parses a Java type signature from a raw string.  The string may be
+     * unrepresentable by a {@link Utf8Entry}.
      *
      * @param javaTypeSignature raw Java type signature string
      * @return a Java type signature
