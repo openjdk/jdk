@@ -172,7 +172,7 @@ public final class Duration
      * Obtains a {@code Duration} representing a number of standard 24 hour days.
      * <p>
      * The seconds are calculated based on the standard definition of a day,
-     * where each day is 86400 seconds which implies a 24 hour day.
+     * where each day is 86,400 seconds which implies a 24 hour day.
      * The nanosecond in second field is set to zero.
      *
      * @param days  the number of days, positive or negative
@@ -376,7 +376,7 @@ public final class Duration
      *    "PT20.345S" -- parses as "20.345 seconds"
      *    "PT15M"     -- parses as "15 minutes" (where a minute is 60 seconds)
      *    "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
-     *    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86400 seconds)
+     *    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86,400 seconds)
      *    "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
      *    "PT-6H3M"    -- parses as "-6 hours and +3 minutes"
      *    "-PT6H3M"    -- parses as "-6 hours and -3 minutes"
@@ -752,7 +752,7 @@ public final class Duration
     /**
      * Returns a copy of this duration with the specified duration in standard 24 hour days added.
      * <p>
-     * The number of days is multiplied by 86400 to obtain the number of seconds to add.
+     * The number of days is multiplied by 86,400 to obtain the number of seconds to add.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -893,7 +893,7 @@ public final class Duration
     /**
      * Returns a copy of this duration with the specified duration in standard 24 hour days subtracted.
      * <p>
-     * The number of days is multiplied by 86400 to obtain the number of seconds to subtract.
+     * The number of days is multiplied by 86,400 to obtain the number of seconds to subtract.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1165,7 +1165,7 @@ public final class Duration
      * Gets the number of days in this duration.
      * <p>
      * This returns the total number of days in the duration by dividing the
-     * number of seconds by 86400.
+     * number of seconds by 86,400.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1272,7 +1272,7 @@ public final class Duration
      * Extracts the number of days in the duration.
      * <p>
      * This returns the total number of days in the duration by dividing the
-     * number of seconds by 86400.
+     * number of seconds by 86,400.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1478,8 +1478,8 @@ public final class Duration
      * <pre>
      *    "20.345 seconds"                 -- "PT20.345S
      *    "15 minutes" (15 * 60 seconds)   -- "PT15M"
-     *    "10 hours" (10 * 3600 seconds)   -- "PT10H"
-     *    "2 days" (2 * 86400 seconds)     -- "PT48H"
+     *    "10 hours" (10 * 3,600 seconds)  -- "PT10H"
+     *    "2 days" (2 * 86,400 seconds)    -- "PT48H"
      * </pre>
      * Note that multiples of 24 hours are not output as days to avoid confusion
      * with {@code Period}.

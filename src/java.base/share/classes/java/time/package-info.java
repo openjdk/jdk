@@ -168,7 +168,7 @@
  * The "@throws {@link java.lang.NullPointerException}" is not explicitly documented in each method.
  * </p>
  * <p>
- * All calculations should check for numeric overflow and throw either an {@link java.lang.ArithmeticException}
+ * All calculations check for numeric overflow and throw either an {@link java.lang.ArithmeticException}
  * or a {@link java.time.DateTimeException}.
  * </p>
  *
@@ -249,7 +249,7 @@
  * <p>
  * Multiple calendar systems is an awkward addition to the design challenges.
  * The first principle is that most users want the standard ISO calendar system.
- * As such, the main classes are ISO-only. The second principle is that most of those that want a
+ * As such, the main classes are ISO-only. The second principle is that most of those who want a
  * non-ISO calendar system want it for user interaction, thus it is a UI localization issue.
  * As such, date and time objects should be held as ISO objects in the data model and persistent
  * storage, only being converted to and from a local calendar for display.
