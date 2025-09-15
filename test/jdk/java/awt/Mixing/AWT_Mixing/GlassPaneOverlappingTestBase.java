@@ -94,7 +94,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     }
 
     @Override
-    protected boolean isMultiFramesTest(){
+    protected final boolean isMultiFramesTest(){
         return false;
     }
 
