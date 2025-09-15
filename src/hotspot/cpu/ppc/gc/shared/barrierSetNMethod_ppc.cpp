@@ -38,7 +38,7 @@ class NativeNMethodBarrier: public NativeInstruction {
 
   NativeMovRegMem* get_patchable_instruction_handle() const {
     // Endianness is handled by NativeMovRegMem
-    return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address() + 3 * 4);
+    return reinterpret_cast<NativeMovRegMem*>(get_barrier_start_address());
   }
 
 public:
@@ -47,7 +47,7 @@ public:
     return get_patchable_instruction_handle()->offset();
   }
 
-  void release_set_guard_value(int value) {
+  void release_set_guard_value(int value, int bit_mask) {
     // Patching is not atomic.
     // Stale observations of the "armed" state is okay as invoking the barrier stub in that case has no
     // unwanted side effects. Disarming is thus a non-critical operation.
@@ -55,8 +55,37 @@ public:
 
     OrderAccess::release(); // Release modified oops
 
-    // Set the guard value (naming of 'offset' function is misleading).
-    get_patchable_instruction_handle()->set_offset(value);
+    if (bit_mask == ~0) {
+      // Set the guard value (naming of 'offset' function is misleading).
+      get_patchable_instruction_handle()->set_offset(value);
+      return;
+    }
+
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
+
+    NativeMovRegMem* mov = get_patchable_instruction_handle();
+    assert(align_up(mov->instruction_address(), sizeof(uint64_t)) ==
+           align_down(mov->instruction_address(), sizeof(uint64_t)), "instruction not aligned");
+    uint64_t *instr = (uint64_t*)mov->instruction_address();
+    assert(NativeMovRegMem::instruction_size == sizeof(*instr), "must be");
+    union {
+      u_char buf[NativeMovRegMem::instruction_size];
+      uint64_t u64;
+    } new_mov_instr, old_mov_instr;
+    new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
+    while (true) {
+      // Only bits in the mask are changed
+      int old_value = nativeMovRegMem_at(old_mov_instr.buf)->offset();
+      int new_value = value | (old_value & ~bit_mask);
+      if (new_value == old_value) return; // skip icache flush if nothing changed
+      nativeMovRegMem_at(new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
+      // Swap in the new value
+      uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_relaxed);
+      if (v == old_mov_instr.u64) break;
+      old_mov_instr.u64 = v;
+    }
+    ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
   }
 
   void verify() const {
@@ -66,12 +95,6 @@ public:
 
     uint* current_instruction = reinterpret_cast<uint*>(get_barrier_start_address());
 
-    // calculate_address_from_global_toc (compound instruction)
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
-
-    verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
-
     get_patchable_instruction_handle()->verify();
     current_instruction += 2;
 
@@ -79,6 +102,12 @@ public:
 
     // cmpw (mnemonic)
     verify_op_code(current_instruction, Assembler::CMP_OPCODE);
+
+    // calculate_address_from_global_toc (compound instruction)
+    verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
+    verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
+
+    verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
 
     // bnectrl (mnemonic) (weak check; not checking the exact type)
     verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
@@ -117,13 +146,13 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   // Thus, there's nothing to do here.
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(value);
+  barrier->release_set_guard_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {

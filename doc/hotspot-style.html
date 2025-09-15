@@ -50,6 +50,9 @@ id="toc-factoring-and-class-design">Factoring and Class Design</a></li>
 <li><a href="#commenting" id="toc-commenting">Commenting</a></li>
 <li><a href="#macros" id="toc-macros">Macros</a></li>
 <li><a href="#whitespace" id="toc-whitespace">Whitespace</a></li>
+<li><a href="#avoid-implicit-conversions-to-bool"
+id="toc-avoid-implicit-conversions-to-bool">Avoid implicit conversions
+to bool</a></li>
 <li><a href="#miscellaneous"
 id="toc-miscellaneous">Miscellaneous</a></li>
 </ul></li>
@@ -72,28 +75,77 @@ Standard Library</a></li>
 Deduction</a></li>
 <li><a href="#expression-sfinae" id="toc-expression-sfinae">Expression
 SFINAE</a></li>
+<li><a href="#trailing-return-type-syntax-for-functions"
+id="toc-trailing-return-type-syntax-for-functions">Trailing return type
+syntax for functions</a></li>
+<li><a href="#non-type-template-parameter-values"
+id="toc-non-type-template-parameter-values">Non-type template parameter
+values</a></li>
 <li><a href="#enum" id="toc-enum">enum</a></li>
 <li><a href="#alignas" id="toc-alignas">alignas</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
+<li><a href="#inline-variables" id="toc-inline-variables">Inline
+Variables</a></li>
 <li><a href="#initializing-variables-with-static-storage-duration"
 id="toc-initializing-variables-with-static-storage-duration">Initializing
 variables with static storage duration</a></li>
 <li><a href="#uniform-initialization"
 id="toc-uniform-initialization">Uniform Initialization</a></li>
+<li><a href="#mandatory-copy-elision"
+id="toc-mandatory-copy-elision">Mandatory Copy Elision</a></li>
 <li><a href="#local-function-objects"
 id="toc-local-function-objects">Local Function Objects</a></li>
 <li><a href="#inheriting-constructors"
 id="toc-inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#attributes" id="toc-attributes">Attributes</a></li>
 <li><a href="#noexcept" id="toc-noexcept">noexcept</a></li>
+<li><a href="#enhanced-selection-statements"
+id="toc-enhanced-selection-statements">Enhanced selection
+statements</a></li>
+<li><a href="#expression-evaluation-order"
+id="toc-expression-evaluation-order">Expression Evaluation
+Order</a></li>
+<li><a href="#compatibility-with-c11"
+id="toc-compatibility-with-c11">Compatibility with C11</a></li>
 <li><a href="#additional-permitted-features"
 id="toc-additional-permitted-features">Additional Permitted
 Features</a></li>
+</ul></li>
 <li><a href="#excluded-features" id="toc-excluded-features">Excluded
+Features</a>
+<ul>
+<li><a href="#structured-bindings"
+id="toc-structured-bindings">Structured Bindings</a></li>
+<li><a href="#file-system-library" id="toc-file-system-library">File
+System Library</a></li>
+<li><a href="#aggregate-extensions"
+id="toc-aggregate-extensions">Aggregate Extensions</a></li>
+<li><a href="#additional-excluded-features"
+id="toc-additional-excluded-features">Additional Excluded
 Features</a></li>
+</ul></li>
 <li><a href="#undecided-features" id="toc-undecided-features">Undecided
+Features</a>
+<ul>
+<li><a href="#stdoptional"
+id="toc-stdoptional">std::optional&lt;&gt;</a></li>
+<li><a href="#stdbyte" id="toc-stdbyte">std::byte</a></li>
+<li><a href="#string-views" id="toc-string-views">String Views</a></li>
+<li><a href="#substring-and-subsequence-searching"
+id="toc-substring-and-subsequence-searching">Substring and Subsequence
+Searching</a></li>
+<li><a href="#new-and-delete-with-over-aligned-data"
+id="toc-new-and-delete-with-over-aligned-data"><code>new</code> and
+<code>delete</code> with Over-Aligned Data</a></li>
+<li><a href="#stdto_chars-and-stdfrom_chars"
+id="toc-stdto_chars-and-stdfrom_chars"><code>std::to_chars()</code> and
+<code>std::from_chars</code></a></li>
+<li><a href="#stdlaunder"
+id="toc-stdlaunder"><code>std::launder()</code></a></li>
+<li><a href="#additional-undecided-features"
+id="toc-additional-undecided-features">Additional Undecided
 Features</a></li>
 </ul></li>
 </ul>
@@ -418,22 +470,25 @@ adjust new lines horizontally to be consistent with that organization.
 (E.g., trailing backslashes on long macro definitions often
 align.)</p></li>
 </ul>
-<h3 id="miscellaneous">Miscellaneous</h3>
-<ul>
-<li><p>Use the <a href="https://en.cppreference.com/w/cpp/language/raii"
-title="Resource Acquisition Is Initialization">Resource Acquisition Is
-Initialization</a> (RAII) design pattern to manage bracketed critical
-sections. See class <code>ResourceMark</code> for an example.</p></li>
-<li><p>Avoid implicit conversions to <code>bool</code>.</p>
+<h3 id="avoid-implicit-conversions-to-bool">Avoid implicit conversions
+to bool</h3>
 <ul>
 <li>Use <code>bool</code> for boolean values.</li>
 <li>Do not use ints or pointers as (implicit) booleans with
 <code>&amp;&amp;</code>, <code>||</code>, <code>if</code>,
 <code>while</code>. Instead, compare explicitly, i.e.
 <code>if (x != 0)</code> or <code>if (ptr != nullptr)</code>, etc.</li>
-<li>Do not use declarations in <em>condition</em> forms, i.e. don't use
-<code>if (T v = value) { ... }</code>.</li>
-</ul></li>
+<li>Do not use non-boolean declarations in <em>condition</em> forms,
+i.e. don't use <code>if (T v = value) { ... }</code>. But see <a
+href="#enhanced-selection-statements">Enhanced selection
+statements</a>.</li>
+</ul>
+<h3 id="miscellaneous">Miscellaneous</h3>
+<ul>
+<li><p>Use the <a href="https://en.cppreference.com/w/cpp/language/raii"
+title="Resource Acquisition Is Initialization">Resource Acquisition Is
+Initialization</a> (RAII) design pattern to manage bracketed critical
+sections. See class <code>ResourceMark</code> for an example.</p></li>
 <li><p>Use functions from globalDefinitions.hpp and related files when
 performing bitwise operations on integers. Do not code directly as C
 operators, unless they are extremely simple. (Examples:
@@ -445,16 +500,16 @@ default case. It is ok to have an empty default with comment.</p></li>
 </ul>
 <h2 id="use-of-c-features">Use of C++ Features</h2>
 <p>HotSpot was originally written in a subset of the C++98/03 language.
-More recently, support for C++14 is provided, though again, HotSpot only
+More recently, support for C++17 is provided, though again, HotSpot only
 uses a subset. (Backports to JDK versions lacking support for more
 recent Standards must of course stick with the original C++98/03
 subset.)</p>
 <p>This section describes that subset. Features from the C++98/03
 language may be used unless explicitly excluded here. Features from
-C++11 and C++14 may be explicitly permitted or explicitly excluded, and
-discussed accordingly here. There is a third category, undecided
-features, about which HotSpot developers have not yet reached a
-consensus, or perhaps have not discussed at all. Use of these features
+C++11, C++14, and C++17 may be explicitly permitted or explicitly
+excluded, and discussed accordingly here. There is a third category,
+undecided features, about which HotSpot developers have not yet reached
+a consensus, or perhaps have not discussed at all. Use of these features
 is also excluded.</p>
 <p>(The use of some features may not be immediately obvious and may slip
 in anyway, since the compiler will accept them. The code review process
@@ -463,9 +518,9 @@ is the main defense against this.)</p>
 provide more extensive discussion or rationale for limitations. Features
 that don't have their own subsection are listed in omnibus feature
 sections for permitted, excluded, and undecided features.</p>
-<p>Lists of new features for C++11 and C++14, along with links to their
-descriptions, can be found in the online documentation for some of the
-compilers and libraries. The C++14 Standard is the definitive
+<p>Lists of new features for C++11, C++14, and C++17, along with links
+to their descriptions, can be found in the online documentation for some
+of the compilers and libraries. The C++17 Standard is the definitive
 description.</p>
 <ul>
 <li><a href="https://gcc.gnu.org/projects/cxx-status.html">C++ Standards
@@ -662,12 +717,42 @@ href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1984.pdf">n1984</
 For local variables, this can be used to make the code clearer by
 eliminating type information that is obvious or irrelevant. Excessive
 use can make code much harder to understand.</p></li>
-<li><p>Function return type deduction (<a
+<li><p><code>auto</code> for non-type template parameters (<a
+href="http://wg21.link/p0127r2">p0127r2</a>)<br> <code>auto</code> may
+be used as a placeholder for the type of a non-type template parameter.
+The type is deduced from the value provided in a template
+instantiation.</p></li>
+</ul>
+<p><a name="function-return-type-deduction"></a> * Function return type
+deduction (<a
 href="https://isocpp.org/files/papers/N3638.html">n3638</a>)<br> Only
 use if the function body has a very small number of <code>return</code>
-statements, and generally relatively little other code.</p></li>
+statements, and generally relatively little other code.</p>
+<ul>
+<li>Class template argument deduction (<a
+href="http://wg21.link/n3602">n3602</a>, <a
+href="http://wg21.link/p0091r3">p0091r3</a>)<br> The template arguments
+of a class template may be deduced from the arguments to a constructor.
+This is similar to ordinary function argument deduction, though partial
+deduction with only <em>some</em> template arguments explicitly provided
+is not permitted for class template argument deduction. Deduction guides
+may be used to provide additional control over the deduction. As with
+<code>auto</code> variable declarations, excessive use can make code
+harder to understand, because explicit type information is lacking. But
+it can also remove the need to be explicit about types that are either
+obvious, or that are very hard to write. For example, these allow the
+addition of a scope-guard mechanism with nice syntax; something like
+this</li>
+</ul>
+<pre><code>  ScopeGuard guard{[&amp;]{ ... cleanup code ... }};</code></pre>
+<ul>
 <li><p>Also see <a href="#lambdaexpressions">lambda
 expressions</a>.</p></li>
+<li><p><code>decltype(auto)</code> should be avoided, whether for
+variables, for non-type template parameters, or for function return
+types. There are subtle and complex differences between this placeholder
+type and <code>auto</code>. Any use would need very careful
+explanation.</p></li>
 </ul>
 <h3 id="expression-sfinae">Expression SFINAE</h3>
 <p><a href="https://en.cppreference.com/w/cpp/language/sfinae"
@@ -692,6 +777,53 @@ class="uri">https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95468</a><br>
 <a
 href="https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html"
 class="uri">https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html</a></p>
+<h3 id="trailing-return-type-syntax-for-functions">Trailing return type
+syntax for functions</h3>
+<p>A function's return type may be specified after the parameters and
+qualifiers (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">n2541</a>).
+In such a declaration the normal return type is <code>auto</code> and
+the return type is indicated by <code>-&gt;</code> followed by the type.
+Although both use <code>auto</code> in the "normal" leading return type
+position, this differs from <a
+href="#function-return-type-deduction">function return type
+deduction</a>, in that the return type is explicit rather than deduced,
+but specified in a trailing position.</p>
+<p>Use of trailing return types is permitted. However, the normal,
+leading position for the return type is preferred. A trailing return
+type should only be used where it provides some benefit. Such benefits
+usually arise because a trailing return type is in a different scope
+than a leading return type.</p>
+<ul>
+<li><p>If the function identifier is a nested name specifier, then the
+trailing return type occurs in the nested scope. This may permit simpler
+naming in the return type because of the different name lookup
+context.</p></li>
+<li><p>The trailing return type is in the scope of the parameters,
+making their types accessible via <code>decltype</code>. For
+example</p></li>
+</ul>
+<pre><code>template&lt;typename T, typename U&gt; auto add(T t, U u) -&gt; decltype(t + u);</code></pre>
+<p>rather than</p>
+<pre><code>template&lt;typename T, typename U&gt; decltype((*(T*)0) + (*(U*)0)) add(T t, U u);</code></pre>
+<ul>
+<li>Complex calculated leading return types may obscure the normal
+syntactic boundaries, making it more difficult for a reader to find the
+function name and parameters. This is particularly common in cases where
+the return type is being used for <a
+href="https://en.cppreference.com/w/cpp/language/sfinae"
+title="Substitution Failure Is Not An Error">SFINAE</a>. A trailing
+return type may be preferable in such situations.</li>
+</ul>
+<h3 id="non-type-template-parameter-values">Non-type template parameter
+values</h3>
+<p>C++17 extended the arguments permitted for non-type template
+parameters (<a href="http://wg21.link/n4268">n4268</a>). The kinds of
+values (the parameter types) aren't changed. However, the values can now
+be the result of arbitrary constant expressions (with a few restrictions
+on the result), rather than a much more limited and restrictive set of
+expressions. In particular, the argument for a pointer or reference type
+parameter can now be the result of a constexpr function.</p>
 <h3 id="enum">enum</h3>
 <p>Where appropriate, <em>scoped-enums</em> should be used. (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf">n2347</a>)</p>
@@ -805,6 +937,34 @@ differ from what the Java compilers implement.</p>
 "conservative" memory ordering, which may differ from (may be stronger
 than) sequentially consistent. There are algorithms in HotSpot that are
 believed to rely on that ordering.</p>
+<h3 id="inline-variables">Inline Variables</h3>
+<p>Variables with static storage duration may be declared
+<code>inline</code> (<a href="https://wg21.link/p0386r2">p0386r2</a>).
+This has similar effects as for declaring a function inline: it can be
+defined, identically, in multiple translation units, must be defined in
+every translation unit in which it is <a
+href="https://en.cppreference.com/w/cpp/language/definition"
+title="One Definition Rule">ODR used</a>, and the behavior of the
+program is as if there is exactly one variable.</p>
+<p>Declaring a variable inline allows the complete definition to be in a
+header file, rather than having a declaration in a header and the
+definition in a .cpp file. The guidance on <a
+href="#initializing-variables-with-static-storage-duration">initialization</a>
+of such variables still applies. Inline variables with dynamic
+initializations can make initialization order problems worse. The few
+ordering constraints that exist for non-inline variables don't apply, as
+there isn't a single program-designated translation unit containing the
+definition.</p>
+<p>A <code>constexpr</code> static data member is implicitly
+<code>inline</code>. As a consequence, an <a
+href="https://en.cppreference.com/w/cpp/language/definition"
+title="One Definition Rule">ODR use</a> of such a variable doesn't
+require a definition in some .cpp file. (This is a change from
+pre-C++17. Beginning with C++17, such a definition is considered a
+duplicate definition, and is deprecated.)</p>
+<p>Declaring a <code>thread_local</code> variable <code>inline</code> is
+forbidden for HotSpot code. <a href="#thread_local">The use of
+<code>thread_local</code></a> is already heavily restricted.</p>
 <h3
 id="initializing-variables-with-static-storage-duration">Initializing
 variables with static storage duration</h3>
@@ -856,6 +1016,45 @@ initialization</a></li>
 <p>Although related, the use of <code>std::initializer_list</code>
 remains forbidden, as part of the avoidance of the C++ Standard Library
 in HotSpot code.</p>
+<h3 id="mandatory-copy-elision">Mandatory Copy Elision</h3>
+<p><a href="https://en.wikipedia.org/wiki/Copy_elision">Copy elision</a>
+(or <a
+href="https://cn.cppreference.com/w/cpp/language/copy_elision.html">here</a>)
+is a compiler optimization used to avoid potentially expensive copies in
+certain situations. It is critical to making practical the performance
+of return by value or pass by value. It is also unusual in not following
+the as-if rule for optimizations - copy elision can be applied even if
+doing so bypasses side-effects of copying/moving the object. The C++
+standard explicitly permits this.</p>
+<p>However, because it's an optional optimization, the relevant
+copy/move constructor must be available and accessible, in case the
+compiler chooses to not apply the optimization even in a situation where
+permitted.</p>
+<p>C++17 changed some cases of copy elision so that there is never a
+copy/move in these cases (<a
+href="http://wg21.link/p0135r1">p0135r1</a>). The interesting cases
+involve a function that returns an unnamed temporary object, and
+constructors. In such cases the object being initialized from the
+temporary is always direct initialized, with no copy/move ever involved;
+see <a href="https://en.wikipedia.org/wiki/Copy_elision#RVO"
+title="Return Value Optimization">RVO</a> and more specifically <a
+href="https://cn.cppreference.com/w/cpp/language/copy_elision.html"
+title="Unnamed Return Value Optimization">URVO</a>.</p>
+<p>Since this is now standard behavior it can't be avoided in the
+covered situations. This could change the behavior of code that relied
+on side effects by constructors, but that's both uncommon and was
+already problematic because of the previous optional copy elision. But
+HotSpot code can, and should, explicitly take advantage of this newly
+required behavior where it makes sense to do so.</p>
+<p>For example, it may be beneficial to delay construction of the result
+of a function until the return statement, rather than having a local
+variable that is modified into the desired state and then returned.
+(Though <a href="https://en.wikipedia.org/wiki/Copy_elision#NRVO"
+title="Named Return Value Optimization">NRVO</a> may apply in that
+case.)</p>
+<p>It is also now possible to define a factory function for a class that
+is neither movable nor copyable, if it can be written in a way that
+makes use of this feature.</p>
 <h3 id="local-function-objects">Local Function Objects</h3>
 <ul>
 <li>Local function objects, including lambda expressions, may be
@@ -928,6 +1127,13 @@ href="https://en.wikipedia.org/wiki/Partial_application"
 title="Partial Application">partial application</a>. Again here, lambdas
 are typically much simpler and less verbose than function object
 classes.</p>
+<p>A lambda is a constexpr function if either the parameter declaration
+clause is followed by <code>constexpr</code>, or it satisfies the
+requirements for a constexpr function (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0170r1.pdf">p0170r1</a>).
+Thus, using a lambda to package up some computation doesn't incur
+unnecessary overhead or prevent use in a context required to be
+compile-time evaluated (such as an array size).</p>
 <p>Because of these benefits, lambda expressions are permitted in
 HotSpot code, with some restrictions and usage guidance. An anonymous
 lambda is one which is passed directly as an argument. A named lambda is
@@ -975,6 +1181,18 @@ making the captured value unaffected by modifications to the outer
 variable. But this only applies to captured auto variables, not member
 variables, and is inconsistent with referential transparency.</p></li>
 </ul></li>
+<li><p>By-value capture of <code>this</code> (using a capture list like
+<code>[*this]</code> (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0018r3.html">p0018r3</a>))
+is also not permitted. One of the motivating use-cases is when the
+lifetime of the lambda exceeds the lifetime of the object for the
+containing member function. That is, we have an upward lambda that is
+capturing <code>this</code> of the enclosing method. But again, that
+use-case doesn't apply if only downward lambdas are used. Another
+use-case is when we simply want the lambda to be operating on a copy of
+<code>this</code> for some reason. This is sufficiently uncommon that it
+can be handled by manual copying, so readers don't need to understand
+this rare syntax.</p></li>
 <li><p>Non-capturing lambdas (with an empty capture list -
 <code>[]</code>) have limited utility. There are cases where no captures
 are required (pure functions, for example), but if the function is small
@@ -984,14 +1202,15 @@ href="https://isocpp.org/files/papers/N3649.html">N3649</a>) are not
 permitted. Capture initializers inherently increase the complexity of
 the capture list, and provide little benefit over an additional in-scope
 local variable.</p></li>
-</ul>
-<p>The use of <code>mutable</code> lambda expressions is forbidden
+<li><p>The use of <code>mutable</code> lambda expressions is forbidden
 because there don't seem to be many, if any, good use-cases for them in
 HotSpot. A lambda expression needs to be mutable in order to modify a
 by-value captured value. But with only downward lambdas, such usage
 seems likely to be rare and complicated. It is better to use a function
 object class in any such cases that arise, rather than requiring all
-HotSpot developers to understand this relatively obscure feature.</p>
+HotSpot developers to understand this relatively obscure
+feature.</p></li>
+</ul>
 <p>While it is possible to directly invoke an anonymous lambda
 expression, that feature should not be used, as such a form can be
 confusing to readers. Instead, name the lambda and call it by name.</p>
@@ -1109,23 +1328,12 @@ href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm">n2540</
 <p>C++11 provides simple syntax allowing a class to inherit the
 constructors of a base class. Unfortunately there are a number of
 problems with the original specification, and C++17 contains significant
-revisions (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html"
-title="p0136r1">p0136r1</a> opens with a list of 8 Core Issues). Since
-HotSpot doesn't support use of C++17, use of inherited constructors
-could run into those problems. Such uses might also change behavior in a
-future HotSpot update to use C++17 or later, potentially in subtle ways
-that could lead to hard to diagnose problems. Because of this, HotSpot
-code must not use inherited constructors.</p>
-<p>Note that gcc7 provides the <code>-fnew-inheriting-ctors</code>
-option to use the <a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html"
-title="p0136r1">p0136r1</a> semantics. This is enabled by default when
-using C++17 or later. It is also enabled by default for
-<code>fabi-version=11</code> (introduced by gcc7) or higher when using
-C++11/14, as the change is considered a Defect Report that applies to
-those versions. Earlier versions of gcc don't have that option, and
-other supported compilers may not have anything similar.</p>
+revisions (<a href="http:/wg21.link/p0136r1" title="p0136r1">p0136r1</a>
+opens with a list of 8 Core Issues). Although those issues have been
+addressed, the benefits from this feature are small compared to the
+complexity. Because of this, HotSpot code must not use inherited
+constructors.</p>
+<p><a href="http://wg21.link/p0195r0">p0195r0</a></p>
 <h3 id="attributes">Attributes</h3>
 <p>The use of some attributes (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf">n2761</a>)
@@ -1141,9 +1349,17 @@ those cases HotSpot has a preferred location.</p>
 beginning of the function's declaration, rather than between the
 function name and the parameter list.</li>
 </ul>
+<p><a href="http://wg21.link/p0068r0">p0068r0</a> is the initial
+proposal for the attributes added by C++17.)</p>
 <p>Only the following attributes are permitted:</p>
 <ul>
 <li><code>[[noreturn]]</code></li>
+<li><code>[[nodiscard]]</code> (<a
+href="http://wg21.link/p0189r1">p0189r1</a>)</li>
+<li><code>[[maybe_unused]]</code> (<a
+href="http://wg21.link/p0212r1">p0212r1</a>)</li>
+<li><code>[[fallthrough]]</code> (<a
+href="http://wg21.link/p0188">p0188r1</a>)</li>
 </ul>
 <p>The following attributes are expressly forbidden:</p>
 <ul>
@@ -1151,6 +1367,23 @@ function name and the parameter list.</li>
 <code>memory_order_consume</code>.</li>
 <li><code>[[deprecated]]</code> - Not relevant in HotSpot code.</li>
 </ul>
+<p>Direct use of non-standard (and presumably scoped) attributes in
+shared code is also forbidden. Using such would depend on the C++17
+feature that an attribute not recognized by the implementation is
+ignored (<a href="http://wg21.link/p0283r2">p0283r2</a>). If such an
+attribute is needed in shared code, the well-established technique of
+providing an <code>ATTRIBUTE_XXX</code> macro with per-compiler
+definitions (sometimes empty) should be used. Compilers may warn about
+unrecognized attributes (whether by name or by location), in order to
+report typos or misuse. Disabling such warnings globally would not be
+desirable.</p>
+<p>The use of <code>using</code> directives in attribute lists is also
+forbidden. (<a href="http://wg21.link/p0028r0">p0028r0</a>) (<a
+href="http://wg21.link/p0028r4">p0028r4</a>) We don't generally use
+scoped attributes in attribute lists with other attributes. Rather, uses
+of scoped attributes (which are implementation defined) are generally
+hidden behind a portability macro that includes the surrounding
+brackets.</p>
 <h3 id="noexcept">noexcept</h3>
 <p>Use of <code>noexcept</code> exception specifications (<a
 href="http://wg21.link/n3050">n3050</a>) are permitted with restrictions
@@ -1200,9 +1433,72 @@ Standard Library facilities.</p></li>
 functions not declared <code>noexcept</code>. So HotSpot code doesn't
 ever need to check, either with conditional exception specifications or
 with <code>noexcept</code> expressions.</p>
+<p>The exception specification is part of the type of a function (<a
+href="http://wg21.link/p0012r1">p0012r1</a>. This likely has little
+impact on HotSpot code, since the use of <code>noexcept</code> is
+expected to be rare.</p>
 <p>Dynamic exception specifications were deprecated in C++11. C++17
 removed all but <code>throw()</code>, with that remaining a deprecated
 equivalent to <code>noexcept</code>.</p>
+<h3 id="enhanced-selection-statements">Enhanced selection
+statements</h3>
+<p>C++17 modified the <em>condition</em> part of <code>if</code> and
+<code>switch</code> statements, permitting an <em>init-statement</em> to
+be included (<a href="http://wg21.link/p0305r1">p0305r1</a>).</p>
+<p>Use of this feature is permitted. (However, complex uses may
+interfere with readability.) Limiting the scope of a variable involved
+in the condition, while also making the value available to the
+statement's body, can improve readability. The alternative method of
+scope-limiting by introducing a nested scope isn't very popular and is
+rarely used.</p>
+<p>This new syntax is in addition to the <em>condition</em> being a
+declaration with a <em>brace-or-equal-initializer</em>. For an
+<code>if</code> statement this new sytax gains that benefit without
+violating the long-standing guidance against using <a
+href="#avoid-implicit-conversions-to-bool">implicit conversions to
+<code>bool</code></a>, which still stands.</p>
+<p>For example, uses of Unified Logging sometimes explicitly check
+whether a <code>LogTarget</code> is enabled. Instead of</p>
+<pre><code>  LogTarget(...) lt;
+  if (lt.is_enabled()) {
+    LogStream log(lt);
+    ... use log ...
+  }
+  ... lt is accessible but probably not needed here ...</code></pre>
+<p>using this feature one could write</p>
+<pre><code>  if (LogTarget(...) lt; lt.is_enabled()) {
+    LogStream log(lt);
+    ... use log ...
+  }</code></pre>
+<p>C++17 also added compile-time <code>if</code> statements (<a
+href="http://wg21.link/p0292r2">p0292r2</a>). Use of
+<code>if constexpr</code> is permitted. This feature can replace and
+(sometimes vastly) simplify many uses of <a
+href="https://en.cppreference.com/w/cpp/language/sfinae"
+title="Substitution Failure Is Not An Error">SFINAE</a>. The same
+declaration and initialization guidance for the <em>condition</em> part
+apply here as for ordinary <code>if</code> statements.</p>
+<h3 id="expression-evaluation-order">Expression Evaluation Order</h3>
+<p>C++17 tightened up the evaluation order for some kinds of
+subexpressions (<a href="http://wg21.link/p0138r2">p0138r2</a>). Note,
+however, that the Alternate Evaluation Order for Function Calls
+alternative in that paper was adopted, rather than the strict left to
+right order of evaluation for function call arguments that was proposed
+in the main body of the paper.</p>
+<p>The primary purpose of this change seems to be to make certain kinds
+of call chaining well defined. That's not a style widely used in
+HotSpot. In general it is better to continue to avoid questions in this
+area by isolating operations with side effects from other statements. In
+particular, continue to avoid modifying a value in an expression where
+it is also used.</p>
+<h3 id="compatibility-with-c11">Compatibility with C11</h3>
+<p>C++17 refers to C11 rather than C99. This means that C11 libraries
+and functions may be used in HotSpot. There may be limitations because
+of differing levels of compatibility among various compilers and
+versions of those compilers.</p>
+<p>Note that the C parts of the JDK have been built with C11 selected
+for some time (<a
+href="https://bugs.openjdk.org/browse/JDK-8292008">JDK-8292008</a>).</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
@@ -1218,8 +1514,10 @@ href="https://isocpp.org/files/papers/n3778.html">n3778</a>)</p></li>
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2242.pdf">n2242</a>)
 (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2555.pdf">n2555</a>)</p></li>
-<li><p>Static assertions (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1720.html">n1720</a>)</p></li>
+<li><p>Static assertions (<a href="http://wg21.link/n1720">n1720</a>)
+(<a href="http://wg21.link/n3928">n3928</a>)<br> Both the original
+(C++11) two-argument form and the new (C++17) single-argument form are
+permitted.</p></li>
 <li><p><code>decltype</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2343.pdf">n2343</a>)
 (<a
@@ -1261,8 +1559,62 @@ href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930<
 href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
 <li><p>Unrestricted Unions (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf">n2544</a>)</p></li>
+<li><p>Preprocessor Condition <code>__has_include</code> (<a
+href="http://wg21.link/p0061r0">p0061r0</a>) (<a
+href="http://wg21.link/p0061r1">p0061r1</a>)</p></li>
+<li><p>Hexadecimal Floating-Point Literals (<a
+href="http://wg21.link/p0245r1">p0245r1</a>)</p></li>
+<li><p>Construction Rules for <code>enum class</code> Values (<a
+href="http://wg21.link/p0138r2">p0138r2</a>)</p></li>
+<li><p>Allow <code>typename</code> in template template parameter (<a
+href="http://wg21.link/n4051">n4051</a>) — template template parameters
+are barely used (if at all) in HotSpot, but there's no reason to
+artificially disallow this syntactic regularization in any such
+uses.</p></li>
 </ul>
-<h3 id="excluded-features">Excluded Features</h3>
+<h2 id="excluded-features">Excluded Features</h2>
+<h3 id="structured-bindings">Structured Bindings</h3>
+<p>The use of structured bindings <a
+href="http://wg21.link/p0217r3">p0217r3</a> is forbidden. Preferred
+approaches for handling functions with multiple return values
+include</p>
+<ul>
+<li><p>Return a named class/struct intended for that purpose, with named
+and typed members/accessors.</p></li>
+<li><p>Return a value along with out parameters (usually pointers,
+sometimes references).</p></li>
+<li><p>Designate a sentinel "failure" value in the normal return value
+type, with some out of band location for additional information. For
+example, this is the model typically used with <code>errno</code>, where
+a function returns a normal result, or -1 to indicate an error, with
+additional error information in <code>errno</code>.</p></li>
+</ul>
+<p>There is a strong preference for names and explicit types, as opposed
+to offsets and implicit types. For example, there are folks who strongly
+dislike that some of the Standard Library functions return
+<code>std::pair</code> because <code>first</code> and
+<code>second</code> members don't carry any useful information.</p>
+<h3 id="file-system-library">File System Library</h3>
+<p>The use of the File System library is forbidden. HotSpot doesn't do
+very much with files, and already has adequate mechanisms for its needs.
+Rewriting in terms of this new library doesn't provide any obviously
+significant benefits. Having a mix of the existing usage and uses of
+this new library would be confusing.</p>
+<p><a href="http://wg21.link/n4100">n4100</a> <a
+href="http://wg21.link/p0218r0">p0218r0</a> <a
+href="http://wg21.link/p0219r1">p0219r1</a> <a
+href="http://wg21.link/p0317r1">p0317r1</a> <a
+href="http://wg21.link/p0392r0">p0392r0</a> <a
+href="http://wg21.link/p0430r2">p0430r2</a> <a
+href="http://wg21.link/p0492r2">p0492r2</a> <a
+href="http://wg21.link/p1164r1">p1164r1</a></p>
+<h3 id="aggregate-extensions">Aggregate Extensions</h3>
+<p>Aggregates with base classes are forbidden. C++17 allows aggregate
+initialization for classes with base classes (<a
+href="https://wg21.link/p0017r1">p0017r1</a>). HotSpot makes very little
+use of aggregate classes, preferring explicit constructors even for very
+simple classes.</p>
+<h3 id="additional-excluded-features">Additional Excluded Features</h3>
 <ul>
 <li><p>New string and character literals</p>
 <ul>
@@ -1295,22 +1647,239 @@ useful.</p></li>
 operator overloading is used, ensure the semantics conform to the normal
 expected behavior of the operation.</p></li>
 <li><p>Avoid most implicit conversion constructors and (implicit or
-explicit) conversion operators. (Note that conversion to
-<code>bool</code> isn't needed in HotSpot code because of the "no
-implicit boolean" guideline.)</p></li>
+explicit) conversion operators. Conversion to <code>bool</code>
+operators aren't needed because of the <a
+href="#avoid-implicit-conversions-to-bool">no implicit boolean</a>
+guideline.)</p></li>
 <li><p>Avoid <code>goto</code> statements.</p></li>
+<li><p>Attributes for namespaces and enumerators (<a
+href="http://wg21.link/n4266">n4266</a> — The only applicable attribute
+is <a href="#attributes"><code>[[deprecated]]</code></a>, which is
+forbidden.</p></li>
+<li><p>Variadic <code>using</code> declarations (<a
+href="http://wg21.link/p0195r2">p0195r2</a>)</p></li>
+<li><p><code>std::variant&lt;&gt;</code> (<a
+href="http://wg21.link/p0088r3">p0088r3</a>) — Even if more of the C++
+Standard Library is permitted, this class will remain forbidded. Invalid
+accesses are indicated by throwing exceptions.</p></li>
+<li><p><code>std::any</code> (<a
+href="http://wg21.link/p0220r1">p0220r1</a>) — Even if more of the C++
+Standard Library is permitted, this class will remain forbidden. It may
+require allocation, and always uses the standard allocator. It requires
+<a href="https://en.wikipedia.org/wiki/Run-time_type_information"
+title="Runtime Type Information">RTTI</a>.</p></li>
+<li><p><code>std::as_const()</code> (<a
+href="http://wg21.link/p0007r1">p0007r1</a>) — If sufficiently useful,
+HotSpot could add such a function. It would likely be added to
+globalDefinitions.hpp, where there are already some similar small
+utilities.</p></li>
+<li><p><code>std::clamp()</code> (<a
+href="http://wg21.link/p002501">p002501</a>) — This function is already
+provided in globalDefinitions.hpp.</p></li>
+<li><p>Parallel STL Algorithms (<a
+href="http://wg21.link/p0024r2">p0024r2</a>) — Even if more of the C++
+Standard Library is permitted, these will remain forbidden. They are
+built on the standard C++ threading mechanisms. HotSpot doesn't use
+those mechanisms, instead providing and using its own.</p></li>
+<li><p>Cache Line Sizes <a href="http://wg21.link/p0154r1">p0154r1</a> —
+HotSpot has its own mechanisms for this, using values like
+<code>DEFAULT_CACHE_LINE_SIZE</code>. The platform-specific
+implementation of the HotSpot mechanisms might use these library
+functions, but there is no reason to move away from the current
+approach. Quoting from <a href="https://www.cppstd17.com"
+title="C++17: The Complete Guide">JOSUTTIS</a>: "... if you know better,
+use specific values, but using these values is better than any assumed
+fixed size for code supporting multiple platforms."</p></li>
+<li><p><code>register</code> storage class removal <a
+href="http://wg21.link/p0001r1">p0001r1</a> — The <code>register</code>
+storage class has been removed. <code>register</code> is still a
+keyword, so still can't be used for normal purposes. Also, this doesn't
+affect the use of <code>register</code> for gcc-style extended asm code;
+that's a different syntactic element with a different meaning.</p></li>
+<li><p>Value of <code>__cplusplus</code> — Testing whether
+<code>__cplusplus</code> is defined or not is permitted, and indeed
+required. But the value should not need to be examined. The value is
+changed with each revision of the Standard. But we build HotSpot and
+(most of) the rest of the JDK with a specifically selected version of
+the Standard. The value of <code>__cplusplus</code> should be known and
+unchanging until we change the project's build configuration again. So
+examining the value shouldn't ever be necessary.</p></li>
+<li><p>Removal of <code>++</code> for <code>bool</code> (<a
+href="http://wg21.link/p0003r1">p0003r1</a>)</p></li>
+<li><p>Removal of trigraphs (<a
+href="http://wg21.link/n4086">n4086</a>)</p></li>
 </ul>
-<h3 id="undecided-features">Undecided Features</h3>
+<h2 id="undecided-features">Undecided Features</h2>
 <p>This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.</p>
+<p>Some features are undecided (so implicitly forbidden) because we
+don't expect to use them at all. This might be reconsidered if someone
+finds a good use case.</p>
+<p>Some Standard Library features are undecided (so implicitly
+forbidden) because, while this Style Guide forbids the use of such, they
+may be sufficiently useful that we want to permit them anyway. Doing so
+may require some idiomatic mechanism for addressing things like
+<code>assert</code> incompatibility, incompatibility with HotSpot's
+<code>FORBID_C_FUNCTION</code> mechanism, and the like.</p>
+<h3 id="stdoptional">std::optional&lt;&gt;</h3>
+<p>It is undecided whether to permit the use of
+<code>std::optional&lt;&gt;</code> (<a
+href="http://wg21.link/p0220r1">p0220r1</a>). It may be sufficiently
+useful that it should be permitted despite the usual prohibition against
+using Standard Library facilities. Use of the <code>value()</code>
+member function must be forbidden, as it reports an invalid access by
+throwing an exception.</p>
+<h3 id="stdbyte">std::byte</h3>
+<p>It is undecided whether to permit the use of the
+<code>std::byte</code> type (<a
+href="http://wg21.link/p0298r3">p0298r3</a>). It may be sufficiently
+useful that it should be permitted despite the usual prohibition against
+using Standard Library facilities.</p>
+<p>It has been suggested that changing the HotSpot <code>address</code>
+type to use <code>std::byte</code> has some benefits. That is,
+replace</p>
+<pre><code>typedef u_char*       address;
+typedef const u_char* const_address;</code></pre>
+<pre><code>using address       = std::byte*;
+using const_address = const std::byte*;</code></pre>
+<p>in globalDefinitions.hpp.</p>
+<p>A specific benefit that was mentioned is that it might improve the
+horrible way that gdb handles our current definition of the
+<code>address</code> type.</p>
+<pre><code>#include &lt;cstddef&gt;
+
+typedef unsigned char* address;
+typedef std::byte* address_b;
+
+int main() {
+
+  char* mem;
+
+  address addr = (address)mem;
+  address_b addr_b = (address_b)mem;
+
+  return 0;
+}</code></pre>
+<pre><code>(gdb) p addr
+$1 = (address) 0x7ffff7fe4fa0 &lt;dl_main&gt; &quot;\363\017\036\372Uf\017\357\300H\211\345AWI\211\377AVAUATSH\201\354\210\002&quot;
+(gdb) p addr_b
+$2 = (address_b) 0x7ffff7fe4fa0 &lt;dl_main&gt;</code></pre>
+<p>This needs to be explored. Some folks have said they will do so.</p>
+<h3 id="string-views">String Views</h3>
+<p>It is undecided whether to permit the use of
+<code>std::string_view</code> (<a
+href="http://wg21.link/p0220r1">p0220r1</a>).</p>
+<p>HotSpot doesn't use <code>std::string</code>, but uses
+<code>char*</code> strings a lot. Wrapping such in a
+<code>std::string_view</code> to enable the use of various algorithms
+could be useful. But since HotSpot also doesn't permit use of
+<code>&lt;algorithm&gt;</code> and the like, that only gets the limited
+set of algorithms provided by the view class directly.</p>
+<p>There is also the issue of <code>NUL</code> termination; string views
+are not necessarily <code>NUL</code> terminated. Moreover, if one goes
+to the work of making one that is <code>NUL</code> terminated, that
+terminator is included in the size.</p>
+<p>There are other caveats. Permitting use of string views would require
+discussion of those.</p>
+<h3 id="substring-and-subsequence-searching">Substring and Subsequence
+Searching</h3>
+<p>In addition to simple substring searching, the Standard Library now
+includes Boyer-Moore and Boyer-Moore-Horspool searchers, in case someone
+wants to search really large texts. That seems an unlikely use-case for
+HotSpot. See <a href="http://wg21.link/p0220r1">p0220r1</a>.</p>
+<h3 id="new-and-delete-with-over-aligned-data"><code>new</code> and
+<code>delete</code> with Over-Aligned Data</h3>
+<p>It is undecided whether to permit the use of dynamic allocation of
+overaligned types (<a href="http://wg21.link/n3396">n3396</a>).</p>
+<p>HotSpot currently only has a couple of over-aligned types that are
+dynamically allocated. These are handled manually, not going through
+<code>new</code> expressions, as that couldn't work before C++17.</p>
+<p>One of the ways an over-aligned type might arise is by aligning a
+data member. This might be done to avoid destructive interference for
+concurrent accesses. But HotSpot uses a different approach, using
+explicit padding. Again, this is in part because <code>new</code> and
+<code>delete</code> of overaligned types didn't work. But we might
+prefer to continue this approach.</p>
+<p>We would need to add <code>operator new</code> overloads to
+<code>CHeapObj&lt;&gt;</code> and possibly in other places in order to
+support this. However, it has been suggested that implementing it
+(efficiently) on top of NMT might be difficult. Note that
+<code>posix_memalign</code> / <code>_aligned_malloc</code> don't help
+here, because of NMT's use of malloc headers.</p>
+<p>If we don't support it we may want to add <code>operator new</code>
+overloads that are deleted, to prevent attempted uses.</p>
+<p>Alignment usage in non-HotSpot parts of the OpenJDK:</p>
+<ul>
+<li><p><code>alignas</code> used once in harfbuzz, to align a
+variable.</p></li>
+<li><p>libpipewire has <code>#define SPA_ALIGNED</code> macro using gcc
+<code>aligned</code> attribute, but doesn't use it.</p></li>
+<li><p>libsleef has <code>#define ALIGNED</code> macro using gcc
+<code>aligned</code> attribute. It is not used for class or member
+declarations.</p></li>
+</ul>
+<h3 id="stdto_chars-and-stdfrom_chars"><code>std::to_chars()</code> and
+<code>std::from_chars</code></h3>
+<p>It is undecided whether to permit the use of
+<code>std::to_chars()</code> and <code>std::from_chars()</code> (<a
+href="http://wg21.link/p0067r5">p0067r5</a>).</p>
+<p>These functions provide low-level conversions between character
+sequences and numeric values. This seems like a good candidate for use
+in HotSpot, potentially replacing various clumsy or less performant
+alternatives. There is no memory allocation. Parsing failures are
+indicated via error codes rather than exceptions. Various other nice for
+HotSpot properties.</p>
+<p>Note that the published C++17 Standard puts these in
+<code>&lt;utility&gt;</code>, but a defect report moved them to
+<code>&lt;charconv&gt;</code>. This also needs
+<code>&lt;system_error&gt;</code>.</p>
+<p>This would require upgrading the minimum gcc version to 11.1 for
+floating point conversion support. The minimum Visual Studio version is
+already sufficient. The minimum clang version requirement hasn't been
+determined yet.</p>
+<h3 id="stdlaunder"><code>std::launder()</code></h3>
+<p>It is undecided whether to permit the use of
+<code>std::launder()</code> (<a
+href="http://wg21.link/p0137r1">p0137r1</a>).</p>
+<p>Change to permitted if we discover a place where we need it. Or maybe
+we should just permit it, but hope we don't need it.</p>
+<p>Also, C++20 revised the relevant part of Object Lifetime in a way
+that seems more permissive and with less need of laundering. We don't
+know if implementations of prior versions take advantage of the
+difference.</p>
+<p>See Object Lifetime: C++17 6.8/8, C++20 6.7.3/8</p>
+<h3 id="additional-undecided-features">Additional Undecided
+Features</h3>
 <ul>
 <li><p>Trailing return type syntax for functions (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">n2541</a>)</p></li>
 <li><p>Variable templates (<a
-href="https://isocpp.org/files/papers/N3651.pdf">n3651</a>)</p></li>
+href="https://isocpp.org/files/papers/N3651.pdf">n3651</a>, <a
+href="http://wg21.link/p0127r2">p0127r2</a>)</p></li>
 <li><p>Member initializers and aggregates (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html">n3653</a>)</p></li>
 <li><p>Rvalue references and move semantics</p></li>
+<li><p>Shorthand for nested namespaces (<a
+href="http://wg21.link/n4230">n4230</a>) — HotSpot makes very little use
+of namespaces, so this seemingly innocuous feature probably isn't useful
+to us.</p></li>
+<li><p>Direct list initialization with <code>auto</code> (<a
+href="http://wg21.link/n3681">n3681</a>) — This change fixed some issues
+with direct list initialization and <code>auto</code>. But we don't use
+that feature much, if at all. And perhaps shouldn't be using
+it.</p></li>
+<li><p>UTF-8 Character Literals (<a
+href="http://wg21.link/n4267">n4267</a>) — Do we have a use-case for
+this?</p></li>
+<li><p>Fold Expressions (<a href="http://wg21.link/n4295">n4295</a>) —
+Provides a simple way to apply operators to a parameter pack. HotSpot
+doesn't use variadic templates very much. That makes it questionable
+that developers should need to know about this feature. But if someone
+does come up with a good use-case, it's likely that the alternatives are
+significantly worse, because pack manipulation without this can be
+complicated.</p></li>
+<li><p><code>std::invoke&lt;&gt;()</code> (<a
+href="http://wg21.link/n4169">n4169</a>)</p></li>
 </ul>
 </body>
 </html>
