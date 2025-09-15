@@ -33,17 +33,45 @@
 /*
  * @test visual
  * @library /test/lib /
- * @run main/visual compiler.galery.TestNormalMapping visual
+ * @run main compiler.galery.TestNormalMapping visual
  */
 
 package compiler.galery;
+
+import jdk.test.lib.Utils;
 
 /**
  * TODO: desc: JTREG version, with IR tests
  * TODO: link to stand-alone
  */
 public class TestNormalMapping {
-    public static void main(String[] args) {
-        System.out.println("mode: " + args[0]);
+    public static void main(String[] args) throws InterruptedException {
+        String mode = args[0];
+        System.out.println("Running JTREG test in mode: " + mode);
+
+        switch(mode) {
+            case "ir" -> testIR();
+            case "visual" -> testVisual();
+            default -> throw new RuntimeException("Unknown mode: " + mode);
+        }
+    }
+
+    private static void testIR() {
+        System.out.println("Testing with IR rules...");
+    }
+
+    private static void testVisual() throws InterruptedException {
+        System.out.println("Testing with 2d Graphics (visual)...");
+
+        // We will not do anything special here, just launch the application,
+        // tell it to run for 5 seconds, and then timeout after 10 seconds.
+        Thread thread = new Thread() {
+            public void run() {
+                NormalMapping.main(new String[] {"10"});
+            }
+        };
+        thread.setDaemon(true);
+        thread.start();
+        Thread.sleep(Utils.adjustTimeout(15000));
     }
 }
