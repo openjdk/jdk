@@ -131,7 +131,7 @@ import java.util.Objects;
  * The UTC time-scale is a standard approach to bundle up all the additional fractions
  * of a second from UT1 into whole seconds, known as <i>leap-seconds</i>.
  * A leap-second may be added or removed depending on the Earth's rotational changes.
- * As such, UTC permits a day to have 86399 SI seconds or 86401 SI seconds where
+ * As such, UTC permits a day to have 86,399 SI seconds or 86,401 SI seconds where
  * necessary in order to keep the day aligned with the Sun.
  * <p>
  * The modern UTC time-scale was introduced in 1972, introducing the concept of whole leap-seconds.

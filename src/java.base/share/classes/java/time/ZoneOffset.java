@@ -450,7 +450,7 @@ public final class ZoneOffset
     /**
      * Constructor.
      *
-     * @param totalSeconds  the total time-zone offset in seconds, from -64800 to +64800
+     * @param totalSeconds  the total time-zone offset in seconds, from -64,800 to +64,800
      */
     private ZoneOffset(int totalSeconds) {
         this.totalSeconds = totalSeconds;
