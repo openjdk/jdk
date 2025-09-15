@@ -482,8 +482,10 @@ class WindowsFileSystemProvider
                     throw x;
                 }
 
-                if (!attrs.isSymbolicLink())
+                if (!attrs.isSymbolicLink()) {
+                    CloseHandle(h);
                     break;
+                }
 
                 EntryAttributes linkAttr = new EntryAttributes(attrs, h);
                 if (!linkAttrs.add(linkAttr))
