@@ -178,9 +178,9 @@ public:
   }
 };
 
-void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
+void ShenandoahNMethod::assert_same_oops() {
   ShenandoahNMethodOopDetector detector;
-  nm()->oops_do(&detector, allow_dead);
+  nm()->oops_do(&detector);
 
   GrowableArray<oop*>* oops = detector.oops();
 

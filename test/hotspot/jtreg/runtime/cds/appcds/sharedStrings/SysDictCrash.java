@@ -58,7 +58,7 @@ public class SysDictCrash {
         try {
             TestCommon.checkDump(output);
         } catch (java.lang.RuntimeException re) {
-            if (!output.getStdout().contains("UseCompressedOops and UseCompressedClassPointers have been disabled due to")) {
+            if (!output.getStdout().contains("UseCompressedOops disabled due to")) {
                 throw re;
             } else {
                 System.out.println("Shared archive was not created due to UseCompressedOops and UseCompressedClassPointers have been disabled.");

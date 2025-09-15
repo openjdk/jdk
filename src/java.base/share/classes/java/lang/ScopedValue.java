@@ -572,7 +572,7 @@ public final class ScopedValue<T> {
 
     @SuppressWarnings("unchecked")
     private T slowGet() {
-        var value = findBinding();
+        Object value = scopedValueBindings().find(this);
         if (value == Snapshot.NIL) {
             throw new NoSuchElementException("ScopedValue not bound");
         }
@@ -581,32 +581,35 @@ public final class ScopedValue<T> {
     }
 
     /**
-     * {@return {@code true} if this scoped value is bound in the current thread}
+     * Return the value of the scoped value or NIL if not bound.
+     * Consult the cache, and only if the value is not found there
+     * search the list of bindings. Update the cache if the binding
+     * was found.
      */
-    public boolean isBound() {
+    private Object findBinding() {
         Object[] objects = scopedValueCache();
         if (objects != null) {
             int n = (hash & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
             n = ((hash >>> Cache.INDEX_BITS) & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
         }
-        var value = findBinding();
-        boolean result = (value != Snapshot.NIL);
-        if (result)  Cache.put(this, value);
-        return result;
+        Object value = scopedValueBindings().find(this);
+        boolean found = (value != Snapshot.NIL);
+        if (found)  Cache.put(this, value);
+        return value;
     }
 
     /**
-     * Return the value of the scoped value or NIL if not bound.
+     * {@return {@code true} if this scoped value is bound in the current thread}
      */
-    private Object findBinding() {
-        Object value = scopedValueBindings().find(this);
-        return value;
+    public boolean isBound() {
+        Object obj = findBinding();
+        return obj != Snapshot.NIL;
     }
 
     /**

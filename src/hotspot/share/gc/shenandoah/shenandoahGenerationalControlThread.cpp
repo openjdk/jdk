@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2022, Tencent. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,6 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
@@ -61,12 +60,8 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 
 void ShenandoahGenerationalControlThread::run_service() {
 
-  const int64_t wait_ms = ShenandoahPacing ? ShenandoahControlIntervalMin : 0;
   ShenandoahGCRequest request;
   while (!should_terminate()) {
-
-    // This control loop iteration has seen this much allocation.
-    const size_t allocs_seen = reset_allocs_seen();
 
     // Figure out if we have pending requests.
     check_for_request(request);
@@ -77,11 +72,6 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     if (request.cause != GCCause::_no_gc) {
       run_gc_cycle(request);
-    } else {
-      // Report to pacer that we have seen this many words allocated
-      if (ShenandoahPacing && (allocs_seen > 0)) {
-        _heap->pacer()->report_alloc(allocs_seen);
-      }
     }
 
     // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
@@ -90,7 +80,7 @@ void ShenandoahGenerationalControlThread::run_service() {
       MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
       if (_requested_gc_cause == GCCause::_no_gc) {
         set_gc_mode(ml, none);
-        ml.wait(wait_ms);
+        ml.wait();
       }
     }
   }
@@ -250,6 +240,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
+    _heap->print_before_gc();
     switch (gc_mode()) {
       case concurrent_normal: {
         service_concurrent_normal_cycle(request);
@@ -271,6 +262,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
       default:
         ShouldNotReachHere();
     }
+    _heap->print_after_gc();
   }
 
   // If this cycle completed successfully, notify threads waiting for gc
@@ -309,11 +301,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   // Print Metaspace change following GC (if logging is enabled).
   MetaspaceUtils::print_metaspace_change(meta_sizes);
 
-  // GC is over, we are at idle now
-  if (ShenandoahPacing) {
-    _heap->pacer()->setup_for_idle();
-  }
-
   // Check if we have seen a new target for soft max heap size or if a gc was requested.
   // Either of these conditions will attempt to uncommit regions.
   if (ShenandoahUncommit) {
@@ -331,9 +318,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 void ShenandoahGenerationalControlThread::process_phase_timings() const {
   // Commit worker statistics to cycle data
   _heap->phase_timings()->flush_par_workers_to_cycle();
-  if (ShenandoahPacing) {
-    _heap->pacer()->flush_stats_to_cycle();
-  }
 
   ShenandoahEvacuationTracker* evac_tracker = _heap->evac_tracker();
   ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
@@ -347,9 +331,6 @@ void ShenandoahGenerationalControlThread::process_phase_timings() const {
       _heap->phase_timings()->print_cycle_on(&ls);
       evac_tracker->print_evacuations_on(&ls, &evac_stats.workers,
                                               &evac_stats.mutators);
-      if (ShenandoahPacing) {
-        _heap->pacer()->print_cycle_on(&ls);
-      }
     }
   }
 
@@ -397,6 +378,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
   ShenandoahOldGeneration::State original_state = old_generation->state();
 
   TraceCollectorStats tcs(_heap->monitoring_support()->concurrent_collection_counters());
+
+  _heap->increment_total_collections(false);
 
   switch (original_state) {
     case ShenandoahOldGeneration::FILLING: {
@@ -547,6 +530,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   assert(!generation->is_old(), "Old GC takes a different control path");
 
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
+  _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
@@ -614,6 +598,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());
   maybe_set_aging_cycle();
   ShenandoahFullGC gc;
@@ -623,6 +608,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  _heap->increment_total_collections(false);
 
   ShenandoahGCSession session(request.cause, request.generation);
 

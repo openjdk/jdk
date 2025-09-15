@@ -460,6 +460,7 @@ private:
   template<typename FKind> frame new_heap_frame(frame& f, frame& caller);
   inline void set_top_frame_metadata_pd(const frame& hf);
   inline void patch_pd(frame& callee, const frame& caller);
+  inline void patch_pd_unused(intptr_t* sp);
   void adjust_interpreted_frame_unextended_sp(frame& f);
   static inline void prepare_freeze_interpreted_top_frame(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
@@ -783,9 +784,24 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
-  intptr_t* from = _cont_stack_top - frame::metadata_words_at_bottom;
-  intptr_t* to   = chunk_top - frame::metadata_words_at_bottom;
-  copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
+
+  int adjust = frame::metadata_words_at_bottom;
+#if INCLUDE_ASAN && defined(AARCH64)
+  // Reading at offset frame::metadata_words_at_bottom from _cont_stack_top
+  // will accesss memory at the callee frame, which on preemption cases will
+  // be the VM native method being called. The Arm 64-bit ABI doesn't specify
+  // a location where the frame record (returnpc+fp) has to be stored within
+  // a stack frame, and GCC currently chooses to save it at the top of the
+  // frame (lowest address). ASan treats this memory access in the callee as
+  // an overflow access to one of the locals stored in that frame. For these
+  // preemption cases we don't need to read these words anyways so we avoid it.
+  if (_preempt) {
+    adjust = 0;
+  }
+#endif
+  intptr_t* from = _cont_stack_top - adjust;
+  intptr_t* to   = chunk_top - adjust;
+  copy_to_chunk(from, to, cont_size() + adjust);
   // Because we're not patched yet, the chunk is now in a bad state
 
   // patch return pc of the bottom-most frozen frame (now in the chunk)
@@ -816,6 +832,11 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
     address last_pc = _last_frame.pc();
     ContinuationHelper::patch_return_address_at(chunk_top - frame::sender_sp_ret_address_offset(), last_pc);
     chunk->set_pc(last_pc);
+    // For stub/native frames the fp is not used while frozen, and will be constructed
+    // again when thawing the frame (see ThawBase::handle_preempted_continuation). We
+    // patch it with a special bad address to help with debugging, particularly when
+    // inspecting frames and identifying invalid accesses.
+    patch_pd_unused(chunk_top);
   } else {
     chunk->set_pc(ContinuationHelper::return_address_at(
                   _cont_stack_top - frame::sender_sp_ret_address_offset()));
@@ -2484,7 +2505,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
   if (fast_case) {
     // If we thawed in the slow path the runtime stub/native wrapper frame already
     // has the correct fp (see ThawBase::new_stack_frame). On the fast path though,
-    // we copied the original fp at the time of freeze which now will have to be fixed.
+    // we copied the fp patched during freeze, which will now have to be fixed.
     assert(top.is_runtime_frame() || top.is_native_frame(), "");
     int fsize = top.cb()->frame_size();
     patch_pd(top, sp + fsize);

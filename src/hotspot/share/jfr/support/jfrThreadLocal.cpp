@@ -29,6 +29,7 @@
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrOopTraceId.inline.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -75,6 +76,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _non_reentrant_nesting(0),
   _vthread_epoch(0),
+  _generation(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
   _enqueued_requests(false),
@@ -136,17 +138,33 @@ static void send_java_thread_start_event(JavaThread* jt) {
 }
 
 void JfrThreadLocal::on_start(Thread* t) {
-  assign_thread_id(t, t->jfr_thread_local());
+  JfrThreadLocal* const tl = t->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  assign_thread_id(t, tl);
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_checkpoint(t);
-    if (t->is_Java_thread()) {
-      JavaThread *const jt = JavaThread::cast(t);
+    if (!t->is_Java_thread()) {
+      JfrCheckpointManager::write_checkpoint(t);
+      return;
+    }
+    JavaThread* const jt = JavaThread::cast(t);
+    if (jt->thread_state() == _thread_new) {
       JfrCPUTimeThreadSampling::on_javathread_create(jt);
+    } else {
+      assert(jt->thread_state() == _thread_in_vm, "invariant");
+      if (tl->should_write()) {
+        JfrCheckpointManager::write_checkpoint(t);
+      }
       send_java_thread_start_event(jt);
+      if (tl->has_cached_stack_trace()) {
+        tl->clear_cached_stack_trace();
+      }
+      return;
     }
   }
-  if (t->jfr_thread_local()->has_cached_stack_trace()) {
-    t->jfr_thread_local()->clear_cached_stack_trace();
+  if (t->is_Java_thread() && JavaThread::cast(t)->thread_state() == _thread_in_vm) {
+    if (tl->has_cached_stack_trace()) {
+      tl->clear_cached_stack_trace();
+    }
   }
 }
 
@@ -229,13 +247,18 @@ void JfrThreadLocal::on_exit(Thread* t) {
   JfrThreadLocal * const tl = t->jfr_thread_local();
   assert(!tl->is_dead(), "invariant");
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_checkpoint(t);
-  }
-  if (t->is_Java_thread()) {
-    JavaThread* const jt = JavaThread::cast(t);
-    send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
-    JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
-    JfrThreadCPULoadEvent::send_event_for_thread(jt);
+    if (!t->is_Java_thread()) {
+      JfrCheckpointManager::write_checkpoint(t);
+    } else {
+      JavaThread* const jt = JavaThread::cast(t);
+      assert(jt->thread_state() == _thread_in_vm, "invariant");
+      if (tl->should_write()) {
+        JfrCheckpointManager::write_checkpoint(t);
+      }
+      send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
+      JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
+      JfrThreadCPULoadEvent::send_event_for_thread(jt);
+    }
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
 }
@@ -423,6 +446,15 @@ traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const
 u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   return Atomic::load(&jt->jfr_thread_local()->_vthread_epoch);
+}
+
+bool JfrThreadLocal::should_write() const {
+  const u2 current_generation = JfrTraceIdEpoch::epoch_generation();
+  if (Atomic::load(&_generation) != current_generation) {
+    Atomic::store(&_generation, current_generation);
+    return true;
+  }
+  return false;
 }
 
 traceid JfrThreadLocal::thread_id(const Thread* t) {

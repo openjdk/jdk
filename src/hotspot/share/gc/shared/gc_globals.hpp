@@ -304,54 +304,15 @@
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
                                                                             \
-  product(bool, UsePSAdaptiveSurvivorSizePolicy, true,                      \
-          "Use adaptive survivor sizing policies")                          \
-                                                                            \
-  product(bool, UseAdaptiveGenerationSizePolicyAtMinorCollection, true,     \
-          "Use adaptive young-old sizing policies at minor collections")    \
-                                                                            \
-  product(bool, UseAdaptiveGenerationSizePolicyAtMajorCollection, true,     \
-          "Use adaptive young-old sizing policies at major collections")    \
-                                                                            \
-  product(bool, UseAdaptiveSizePolicyWithSystemGC, false,                   \
-          "Include statistics from System.gc() for adaptive size policy")   \
-                                                                            \
-  product(uint, AdaptiveSizeThroughPutPolicy, 0,                            \
-          "Policy for changing generation size for throughput goals")       \
-          range(0, 1)                                                       \
-                                                                            \
-  product(uintx, AdaptiveSizePolicyInitializingSteps, 20,                   \
-          "Number of steps where heuristics is used before data is used")   \
-          range(0, max_uintx)                                               \
-                                                                            \
   develop(uintx, AdaptiveSizePolicyReadyThreshold, 5,                       \
           "Number of collections before the adaptive sizing is started")    \
-                                                                            \
-  product(uintx, AdaptiveSizePolicyOutputInterval, 0,                       \
-          "Collection interval for printing information; zero means never") \
-          range(0, max_uintx)                                               \
-                                                                            \
-  product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
-          "Use adaptive minimum footprint as a goal")                       \
                                                                             \
   product(uint, AdaptiveSizePolicyWeight, 10,                               \
           "Weight given to exponential resizing, between 0 and 100")        \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, AdaptiveTimeWeight,       25,                               \
-          "Weight given to time in adaptive policy, between 0 and 100")     \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uint, PausePadding, 1,                                            \
-          "How much buffer to keep for pause time")                         \
-          range(0, UINT_MAX)                                                \
-                                                                            \
   product(uint, PromotedPadding, 3,                                         \
           "How much buffer to keep for promotion failure")                  \
-          range(0, UINT_MAX)                                                \
-                                                                            \
-  product(uint, SurvivorPadding, 3,                                         \
-          "How much buffer to keep for survivor overflow")                  \
           range(0, UINT_MAX)                                                \
                                                                             \
   product(uint, ThresholdTolerance, 10,                                     \
@@ -368,18 +329,6 @@
                                                                             \
   product(uintx, YoungGenerationSizeSupplementDecay, 8,                     \
           "Decay factor to YoungGenerationSizeSupplement")                  \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uint, TenuredGenerationSizeIncrement, 20,                         \
-          "Adaptive size percentage change in tenured generation")          \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uint, TenuredGenerationSizeSupplement, 80,                        \
-          "Supplement to TenuredGenerationSizeIncrement used at startup")   \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, TenuredGenerationSizeSupplementDecay, 2,                   \
-          "Decay factor to TenuredGenerationSizeIncrement")                 \
           range(1, max_uintx)                                               \
                                                                             \
   product(uintx, MaxGCPauseMillis, max_uintx - 1,                           \
@@ -399,13 +348,6 @@
   product(uintx, AdaptiveSizeDecrementScaleFactor, 4,                       \
           "Adaptive size scale down factor for shrinking")                  \
           range(1, max_uintx)                                               \
-                                                                            \
-  product(bool, UseAdaptiveSizeDecayMajorGCCost, true,                      \
-          "Adaptive size decays the major cost for long major intervals")   \
-                                                                            \
-  product(uintx, AdaptiveSizeMajorGCDecayTimeScale, 10,                     \
-          "Time scale over which major costs decay")                        \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, MinSurvivorRatio, 3,                                       \
           "Minimum ratio of young generation/survivor space size")          \
@@ -601,9 +543,6 @@
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
           range(1, UINT_MAX)                                                \
-                                                                            \
-  develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
-          "Delay between expansion and allocation (in milliseconds)")       \
                                                                             \
   product(uint, GCDrainStackTargetSize, 64,                                 \
           "Number of entries we will try to leave on the stack "            \

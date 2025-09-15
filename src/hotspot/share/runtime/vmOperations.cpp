@@ -291,9 +291,9 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
                           AnyObj::C_HEAP, mtThread,
                           AllocFailStrategy::RETURN_NULL> {};
 
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<int64_t, ObjectMonitorLinkedList*, 1031, AnyObj::C_HEAP, mtThread,
+  typedef HashTable<int64_t, ObjectMonitorLinkedList*, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsDump::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
@@ -326,7 +326,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   }
 
  public:
-  // ResourceHashtable is passed to various functions and populated in
+  // HashTable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
   ObjectMonitorsDump() : _ptrs(new (mtThread) PtrTable), _key_count(0), _om_count(0) {}

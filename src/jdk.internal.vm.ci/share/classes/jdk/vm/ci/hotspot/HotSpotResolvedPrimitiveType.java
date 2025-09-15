@@ -298,6 +298,16 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+        return new ResolvedJavaMethod[0];
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+        return new ResolvedJavaMethod[0];
+    }
+
+    @Override
     public ResolvedJavaMethod[] getDeclaredMethods() {
         return new ResolvedJavaMethod[0];
     }

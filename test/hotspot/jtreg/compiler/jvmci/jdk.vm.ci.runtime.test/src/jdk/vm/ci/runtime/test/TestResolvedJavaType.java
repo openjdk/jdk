@@ -34,6 +34,7 @@
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          java.base/jdk.internal.misc
@@ -104,14 +105,23 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.AnnotationSupport;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 
 /**
  * Tests for {@link ResolvedJavaType}.
  */
 public class TestResolvedJavaType extends TypeUniverse {
     private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
+    private static final HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
 
     public TestResolvedJavaType() {
+    }
+
+    @Test
+    public void getMirrorTest() {
+        for (ResolvedJavaType type : javaTypes) {
+            assertEquals(type.toClassName(), runtime.getMirror(type).getName());
+        }
     }
 
     @Test
@@ -935,6 +945,9 @@ public class TestResolvedJavaType extends TypeUniverse {
         return null;
     }
 
+    /**
+     * Replicates the semantics of jdk.internal.reflect.Reflection#fieldFilterMap.
+     */
     private static boolean isHiddenFromReflection(ResolvedJavaField f) {
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ConstantPool.class)) && f.getName().equals("constantPoolOop")) {
             return true;
@@ -971,7 +984,13 @@ public class TestResolvedJavaType extends TypeUniverse {
                 int reflectFieldIndex = 0;
                 for (int i = 0; i < fields.length; i++) {
                     ResolvedJavaField field = fields[i];
-                    if (field.isInternal() || isHiddenFromReflection(field)) {
+                    var mirror = runtime.getMirror(field);
+                    if (field.isInternal()) {
+                        assertNull(field.toString(), mirror);
+                        continue;
+                    }
+                    assertNotNull(field.toString(), mirror);
+                    if (isHiddenFromReflection(field)) {
                         continue;
                     }
                     Field reflectField = reflectFields.get(reflectFieldIndex++);
@@ -1002,6 +1021,8 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertNotNull(lookupField(actual, f));
             }
             for (ResolvedJavaField rf : actual) {
+                var mirror = runtime.getMirror(rf);
+                assertNotNull(rf.toString(), mirror);
                 if (!isHiddenFromReflection(rf)) {
                     assertEquals(lookupField(expected, rf) != null, !rf.isInternal());
                 }
@@ -1025,6 +1046,28 @@ public class TestResolvedJavaType extends TypeUniverse {
                 expected.add(resolvedMethod);
             }
             Set<ResolvedJavaMethod> actual = new HashSet<>(Arrays.asList(type.getDeclaredMethods()));
+            for (ResolvedJavaMethod method : actual) {
+                assertNotNull(method.toString(), runtime.getMirror(method));
+            }
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void getDeclaredConstructorsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Constructor<?>[] raw = c.getDeclaredConstructors();
+            Set<ResolvedJavaMethod> expected = new HashSet<>();
+            for (Constructor<?> m : raw) {
+                ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(m);
+                assertNotNull(resolvedMethod);
+                expected.add(resolvedMethod);
+            }
+            Set<ResolvedJavaMethod> actual = new HashSet<>(Arrays.asList(type.getDeclaredConstructors()));
+            for (ResolvedJavaMethod method : actual) {
+                assertNotNull(runtime.getMirror(method));
+            }
             assertEquals(expected, actual);
         }
     }
@@ -1067,6 +1110,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         if (clinit != null) {
             assertEquals(0, clinit.getAnnotations().length);
             assertEquals(0, clinit.getDeclaredAnnotations().length);
+            assertNull(runtime.getMirror(clinit));
         }
         return clinit;
     }
@@ -1238,7 +1282,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         "initialize",
         "isPrimitive",
         "newArray",
-        "getDeclaredConstructors",
         "isInitialized",
         "isLinked",
         "getJavaClass",

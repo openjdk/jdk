@@ -463,7 +463,10 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
+  // 2nd argument (emit_event_shutdown) should be set to false
+  // because EventShutdown would be emitted at Threads::destroy_vm().
+  // (one of the callers of before_exit())
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
@@ -472,19 +475,7 @@ void before_exit(JavaThread* thread, bool halt) {
   NativeHeapTrimmer::cleanup();
 
   // Run before exit and then stop concurrent GC threads
-  Universe::heap()->before_exit();
-
-  // Print GC/heap related information.
-  Log(gc, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
-  }
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();

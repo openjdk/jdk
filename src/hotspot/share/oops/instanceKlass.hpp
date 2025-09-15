@@ -764,6 +764,14 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
+  bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
+  void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
+
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
+  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
+  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }

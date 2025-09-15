@@ -711,6 +711,7 @@ void ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
 // if we added current to _entry_list. Once on _entry_list, current
 // stays on-queue until it acquires the lock.
 bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
+  assert(node->TState == ObjectWaiter::TS_RUN, "");
   node->_prev   = nullptr;
   node->TState  = ObjectWaiter::TS_ENTER;
 
@@ -726,6 +727,7 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
     if (try_lock(current) == TryLockResult::Success) {
       assert(!has_successor(current), "invariant");
       assert(has_owner(current), "invariant");
+      node->TState = ObjectWaiter::TS_RUN;
       return true;
     }
   }

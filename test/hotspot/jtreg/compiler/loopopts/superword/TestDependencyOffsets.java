@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,8 +597,7 @@ public class TestDependencyOffsets {
             case "byte"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "char"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
                                                      new CPUMinVectorWidth(ASIMD,      8 )};
-            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
-                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "int"    -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
             case "long"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
             case "float"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
@@ -752,11 +751,13 @@ public class TestDependencyOffsets {
                 // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
                 // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
                 // power of two.
+                // If we have two array references, then we can speculate that they do not alias, and
+                // still produce full vectorization.
                 int infinity = 256; // No vector size is ever larger than this.
                 int maxVectorWidth = infinity; // no constraint by default
                 int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                 int floorPow2Offset = 1 << log2;
-                if (0 < byteOffset && byteOffset < maxVectorWidth) {
+                if (isSingleArray && 0 < byteOffset && byteOffset < maxVectorWidth) {
                     maxVectorWidth = Math.min(maxVectorWidth, floorPow2Offset * type.size);
                     builder.append("    // Vectors must have at most " + floorPow2Offset +
                                    " elements: maxVectorWidth = " + maxVectorWidth +

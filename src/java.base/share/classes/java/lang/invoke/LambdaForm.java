@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -122,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <p>
  * @author John Rose, JSR 292 EG
  */
+@AOTSafeClassInitializer
 class LambdaForm {
     final int arity;
     final int result;
@@ -1032,6 +1034,7 @@ class LambdaForm {
         return false;
     }
 
+    @AOTSafeClassInitializer
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1728,6 +1731,7 @@ class LambdaForm {
     }
 
     /* Placeholder class for identity and constant forms generated ahead of time */
+    @AOTSafeClassInitializer
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

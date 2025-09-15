@@ -222,33 +222,13 @@ public:
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
 
-  // The ScanningOption determines which of the roots
-  // the closure is applied to:
-  // "SO_None" does none;
-  enum ScanningOption {
-    SO_None                =  0x0,
-    SO_AllCodeCache        =  0x8,
-    SO_ScavengeCodeCache   = 0x10
-  };
-
  public:
-  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
-  void process_roots(ScanningOption so,
-                     OopClosure* strong_roots,
-                     CLDClosure* strong_cld_closure,
-                     CLDClosure* weak_cld_closure,
-                     NMethodToOopClosure* code_roots);
-
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 

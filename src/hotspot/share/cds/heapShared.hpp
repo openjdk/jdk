@@ -37,7 +37,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
@@ -202,14 +202,14 @@ public:
 private:
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
-  typedef ResizeableResourceHashtable<oop, CachedOopInfo,
+  typedef ResizeableHashTable<oop, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   class DumpTimeKlassSubGraphInfoTable
-    : public ResourceHashtable<Klass*, KlassSubGraphInfo,
+    : public HashTable<Klass*, KlassSubGraphInfo,
                                137, // prime number
                                AnyObj::C_HEAP,
                                mtClassShared,
@@ -264,7 +264,7 @@ private:
   // !UseCompressedOops only: used to relocate pointers to the archived objects
   static ptrdiff_t _runtime_delta;
 
-  typedef ResizeableResourceHashtable<oop, bool,
+  typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
@@ -468,14 +468,14 @@ private:
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
-  public ResizeableResourceHashtable<oop, bool,
+  public ResizeableHashTable<oop, bool,
                            AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
 {
 public:
   DumpedInternedStrings(unsigned size, unsigned max_size) :
-    ResizeableResourceHashtable<oop, bool,
+    ResizeableHashTable<oop, bool,
                                 AnyObj::C_HEAP,
                                 mtClassShared,
                                 HeapShared::string_oop_hash>(size, max_size) {}

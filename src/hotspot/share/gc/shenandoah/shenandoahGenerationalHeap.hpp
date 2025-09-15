@@ -36,7 +36,6 @@ class ShenandoahGenerationalControlThread;
 class ShenandoahAgeCensus;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
-  void print_tracing_info() const override;
   void stop() override;
 
 public:
@@ -66,8 +65,6 @@ private:
   ShenandoahSharedFlag  _is_aging_cycle;
   // Age census used for adapting tenuring threshold
   ShenandoahAgeCensus* _age_census;
-  // Used primarily to look for failed evacuation attempts.
-  ShenandoahEvacuationTracker*  _evac_tracker;
 
 public:
   void set_aging_cycle(bool cond) {
@@ -83,9 +80,6 @@ public:
     return _age_census;
   }
 
-  ShenandoahEvacuationTracker* evac_tracker() const {
-    return _evac_tracker;
-  }
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.

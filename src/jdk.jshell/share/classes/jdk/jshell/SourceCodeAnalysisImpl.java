@@ -66,6 +66,7 @@ import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
 import jdk.internal.shellsupport.doc.JavadocHelper;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -139,6 +140,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -654,7 +656,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             Trees trees = task.trees();
             SourcePositions sp = trees.getSourcePositions();
             List<Token> tokens = new ArrayList<>();
-            Scanner scanner = ScannerFactory.instance(new Context()).newScanner(wrappedCode, false);
+            Context ctx = new Context();
+            ctx.put(DiagnosticListener.class, (DiagnosticListener) d -> {});
+            Scanner scanner = ScannerFactory.instance(ctx).newScanner(wrappedCode, false);
+            Log.instance(ctx).useSource(cut.getSourceFile());
             scanner.nextToken();
             BiConsumer<Integer, Integer> addKeywordForSpan = (spanStart, spanEnd) -> {
                 int start = codeWrap.wrapIndexToSnippetIndex(spanStart);

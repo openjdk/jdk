@@ -129,6 +129,7 @@ public:
 
     rbtree_const.visit_in_order([&](const RBTreeIntNode* node) {
       nums_seen.at(node->key())++;
+      return true;
     });
     for (int i = 0; i < up_to; i++) {
       EXPECT_EQ(1, nums_seen.at(i));
@@ -210,6 +211,7 @@ public:
 
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         EXPECT_TRUE(false) << "Empty rbtree has no nodes to visit";
+        return true;
       });
 
       // Single-element set
@@ -217,14 +219,21 @@ public:
       int count = 0;
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
 
       count = 0;
       rbtree_const.visit_in_order([&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_in_order([&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
 
       // Add an element outside of the range that should not be visited on the right side and
       // one on the left side.
@@ -233,21 +242,62 @@ public:
       count = 0;
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_range_in_order(0, 100, [&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
 
       count = 0;
       rbtree_const.visit_in_order([&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(3, count);
+      rbtree.visit_in_order([&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(6, count);
 
       count = 0;
       rbtree.upsert(0, 0);
       rbtree_const.visit_range_in_order(0, 0, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_range_in_order(0, 0, [&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
+
+      // Test exiting visit early
+      rbtree.remove_all();
+      for (int i = 0; i < 11; i++) {
+        rbtree.upsert(i, 0);
+      }
+
+      count = 0;
+      rbtree_const.visit_in_order([&](const Node* x) {
+        if (x->key() >= 6) return false;
+        count++;
+        return true;
+      });
+      EXPECT_EQ(6, count);
+
+      count = 0;
+      rbtree_const.visit_range_in_order(6, 10, [&](const Node* x) {
+        if (x->key() >= 6) return false;
+        count++;
+        return true;
+      });
+
+      EXPECT_EQ(0, count);
 
       rbtree.remove_all();
       for (int i = 0; i < 11; i++) {
@@ -258,6 +308,7 @@ public:
       GrowableArray<int> seen;
       rbtree_const.visit_range_in_order(0, 9, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -267,6 +318,7 @@ public:
       seen.clear();
       rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(11, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -276,6 +328,7 @@ public:
       seen.clear();
       rbtree_const.visit_range_in_order(10, 12, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(1, seen.length());
       EXPECT_EQ(10, seen.at(0));
@@ -292,6 +345,7 @@ public:
       GrowableArray<int> seen;
       rbtree_const.visit_range_in_order(9, -1, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -301,6 +355,7 @@ public:
 
       rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -320,9 +375,12 @@ public:
                                       {4, 4}, {6, 6}, {6, 7}, {7, 7}};
 
     for (const int (&test_case)[2] : test_cases) {
-      rbtree.visit_range_in_order(test_case[0], test_case[1], [&](const Node* x) {
-        FAIL() << "Range should not visit nodes";
+      bool visited = false;
+      rbtree.visit_range_in_order(test_case[0], test_case[1], [&](const Node* x) -> bool {
+        visited = true;
+        return true;
       });
+      EXPECT_FALSE(visited);
     }
   }
 
@@ -515,6 +573,7 @@ public:
     // After deleting, values should have remained consistant
     rbtree.visit_in_order([&](const Node* node) {
       EXPECT_EQ(node, node->val());
+      return true;
     });
   }
 

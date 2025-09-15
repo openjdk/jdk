@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8354522
+ * @bug 8354522 8358880
  * @summary Check for cloning interference
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.text=ALL-UNNAMED CloneTest
@@ -92,11 +92,6 @@ public class CloneTest {
 
                 Object data = valFromDigitList(original, "data");
                 if (data != null) {
-                    assertNotSame(data, valFromDigitList(dfClone, "data"));
-                }
-
-                Object tempBuilder = valFromDigitList(original, "tempBuilder");
-                if (tempBuilder != null) {
                     assertNotSame(data, valFromDigitList(dfClone, "data"));
                 }
 

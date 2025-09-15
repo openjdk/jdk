@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8306560
+ * @bug 8306560 8365878
  * @summary Tests for snippets and methods defined in TOOLING.jsh
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -77,6 +77,33 @@ public class ToolingTest extends ReplToolTesting {
                         "Point extends java.lang.Record", // public final class REPL.$JShell$11$Point extends java.lang.Record
                         "SourceFile: \"$JShell$" // SourceFile: "$JShell$11.java"
                 )
+        );
+    }
+
+    @Test
+    public void testDisassembleBuiltinInnerClass() {
+        test(
+            a -> assertCommand(a, "/open TOOLING",
+                        ""),
+            a -> assertCommandUserOutputContains(a, "javap(Base64.Decoder.class)",
+                        "Classfile jrt:/java.base/java/util/Base64$Decoder.class",
+                        "class java.util.Base64$Decoder",
+                        "SourceFile: \"Base64.java\"")
+        );
+    }
+
+    @Test
+    public void testDisassembleAnonymousClass() {
+        test(
+            a -> assertCommand(a, "Object o() {return new ArrayList<>(){ };}", // must be in a method or it won't be anonymous
+                        "|  created method o()"),
+            a -> assertCommand(a, "/open TOOLING",
+                        ""),
+            a -> assertCommandUserOutputContains(a, "javap(o().getClass())",
+                        "Classfile ", // Classfile /.../TOOLING-16063368030094702464.class
+                        " extends java.util.ArrayList<java.lang.Object>", // class REPL.$JShell$22$1 extends java.util.ArrayList<java.lang.Object>
+                        "SourceFile: \"$JShell$" // SourceFile: "$JShell$22.java"
+            )
         );
     }
 }

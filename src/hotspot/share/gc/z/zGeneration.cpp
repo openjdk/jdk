@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -41,6 +40,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -704,7 +704,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   uint last_populated_age = 0;
   size_t last_populated_live = 0;
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
       last_populated_age = untype(age);
@@ -845,10 +845,7 @@ void ZGenerationYoung::mark_start() {
   ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
-  ZAllocator::eden()->retire_pages();
-  for (ZPageAge age : ZPageAgeRangeSurvivor) {
-    ZAllocator::relocation(age)->retire_pages();
-  }
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeYoung);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -1205,7 +1202,7 @@ void ZGenerationOld::mark_start() {
   flip_mark_start();
 
   // Retire allocating pages
-  ZAllocator::old()->retire_pages();
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeOld);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

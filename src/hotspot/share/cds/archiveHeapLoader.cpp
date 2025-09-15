@@ -348,10 +348,10 @@ bool ArchiveHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
 }
 
 class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
-  ResourceHashtable<uintptr_t, bool>* _table;
+  HashTable<uintptr_t, bool>* _table;
 
  public:
-  VerifyLoadedHeapEmbeddedPointers(ResourceHashtable<uintptr_t, bool>* table) : _table(table) {}
+  VerifyLoadedHeapEmbeddedPointers(HashTable<uintptr_t, bool>* table) : _table(table) {}
 
   virtual void do_oop(narrowOop* p) {
     // This should be called before the loaded region is modified, so all the embedded pointers
@@ -411,7 +411,7 @@ void ArchiveHeapLoader::verify_loaded_heap() {
   log_info(aot, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
-  ResourceHashtable<uintptr_t, bool> table;
+  HashTable<uintptr_t, bool> table;
   VerifyLoadedHeapEmbeddedPointers verifier(&table);
   HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
   HeapWord* top    = (HeapWord*)_loaded_heap_top;

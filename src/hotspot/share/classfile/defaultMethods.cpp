@@ -35,13 +35,13 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "oops/method.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -658,13 +658,11 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     if (super->default_methods() != nullptr) {
       for (int i = 0; i < super->default_methods()->length(); ++i) {
         Method* m = super->default_methods()->at(i);
-        // m is a method that would have been a miranda if not for the
-        // default method processing that occurred on behalf of our superclass,
-        // so it's a method we want to re-examine in this new context.  That is,
-        // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
+          // m is a method that we need to re-examine, unless we have a valid concrete
+          // implementation in the current class - see FindMethodsByErasedSig::visit.
           Method* impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static() || impl->is_private()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }

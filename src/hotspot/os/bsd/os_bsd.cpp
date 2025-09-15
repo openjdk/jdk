@@ -1110,7 +1110,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     return result;
   }
-
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -2248,8 +2251,7 @@ int os::open(const char *path, int oflag, int mode) {
   // specifically destined for a subprocess should have the
   // close-on-exec flag set.  If we don't set it, then careless 3rd
   // party native code might fork and exec without closing all
-  // appropriate file descriptors (e.g. as we do in closeDescriptors in
-  // UNIXProcess.c), and this in turn might:
+  // appropriate file descriptors, and this in turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or

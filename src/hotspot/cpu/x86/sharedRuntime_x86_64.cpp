@@ -2133,7 +2133,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // We use the same pc/oopMap repeatedly when we call out
 
   Label native_return;
-  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+  if (method->is_object_wait0()) {
     // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
     __ set_last_Java_frame(rsp, noreg, native_return, rscratch1);
   } else {
@@ -2174,16 +2174,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register swap_reg = rax;  // Must use rax for cmpxchg instruction
   const Register obj_reg  = rbx;  // Will contain the oop
   const Register lock_reg = r13;  // Address of compiler lock object (BasicLock)
-  const Register old_hdr  = r13;  // value of old header at unlock time
 
   Label slow_path_lock;
   Label lock_done;
 
   if (method->is_synchronized()) {
-    Label count_mon;
-
-    const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
-
     // Get the handle (the 2nd argument)
     __ mov(oop_handle_reg, c_rarg1);
 
@@ -2194,47 +2189,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (LockingMode == LM_MONITOR) {
-      __ jmp(slow_path_lock);
-    } else if (LockingMode == LM_LEGACY) {
-      // Load immediate 1 into swap_reg %rax
-      __ movl(swap_reg, 1);
-
-      // Load (object->mark() | 1) into swap_reg %rax
-      __ orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
-
-      // src -> dest iff dest == rax else rax <- dest
-      __ lock();
-      __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ jcc(Assembler::equal, count_mon);
-
-      // Hmm should this move to the slow path code area???
-
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 3) == 0, and
-      //  2) rsp <= mark < mark + os::pagesize()
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - rsp) & (3 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 2 bits clear.
-      // NOTE: the oopMark is in swap_reg %rax as the result of cmpxchg
-
-      __ subptr(swap_reg, rsp);
-      __ andptr(swap_reg, 3 - (int)os::vm_page_size());
-
-      // Save the test result, for recursive case, the result is zero
-      __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
-      __ jcc(Assembler::notEqual, slow_path_lock);
-
-      __ bind(count_mon);
-      __ inc_held_monitor_count();
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
-    }
+    __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -2322,7 +2277,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // change thread state
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
-  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+  if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
     __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
     __ cmpptr(rscratch1, NULL_WORD);
@@ -2354,38 +2309,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (LockingMode == LM_LEGACY) {
-      Label not_recur;
-      // Simple recursive lock?
-      __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), NULL_WORD);
-      __ jcc(Assembler::notEqual, not_recur);
-      __ dec_held_monitor_count();
-      __ jmpb(fast_done);
-      __ bind(not_recur);
-    }
-
     // Must save rax if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    if (LockingMode == LM_MONITOR) {
-      __ jmp(slow_path_unlock);
-    } else if (LockingMode == LM_LEGACY) {
-      // get address of the stack lock
-      __ lea(rax, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      //  get old displaced header
-      __ movptr(old_hdr, Address(rax, 0));
-
-      // Atomic swap old header if oop still contains the stack lock
-      __ lock();
-      __ cmpxchgptr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ jcc(Assembler::notEqual, slow_path_unlock);
-      __ dec_held_monitor_count();
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
-    }
+    __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);

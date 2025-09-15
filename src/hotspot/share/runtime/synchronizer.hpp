@@ -30,7 +30,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 template <typename T> class GrowableArray;
 class LogStream;

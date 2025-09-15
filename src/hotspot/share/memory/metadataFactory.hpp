@@ -30,6 +30,7 @@
 #include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 class MetadataFactory : AllStatic {

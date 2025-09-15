@@ -2809,9 +2809,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as

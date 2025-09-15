@@ -381,7 +381,7 @@ public:
   }
 
   static bool is_compilation_disabled_forever() {
-    return _should_compile_new_jobs == shutdown_compilation;
+    return Atomic::load(&_should_compile_new_jobs) == shutdown_compilation;
   }
 
   static void wait_for_no_active_tasks();

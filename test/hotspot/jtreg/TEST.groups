@@ -542,6 +542,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/dynamicArchive/OldClassInBaseArchive.java \
  -runtime/cds/appcds/dynamicArchive/OldClassVerifierTrouble.java \
  -runtime/cds/appcds/HelloExtTest.java \
+ -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
  -runtime/cds/appcds/javaldr/GCDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
@@ -559,6 +560,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/JvmtiAddPath.java \
  -runtime/cds/appcds/jvmti \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
+ -runtime/cds/appcds/LambdaWithJavaAgent.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/NestHostOldInf.java \

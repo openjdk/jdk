@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1199,8 +1199,10 @@ public final class DateTimeFormatter {
      * When formatting, the instant will always be suffixed by 'Z' to indicate UTC.
      * The second-of-minute is always output.
      * The nano-of-second outputs zero, three, six or nine digits as necessary.
-     * When parsing, the behaviour of {@link DateTimeFormatterBuilder#appendOffsetId()}
-     * will be used to parse the offset, converting the instant to UTC as necessary.
+     * When parsing, the lenient mode behavior of
+     * {@link DateTimeFormatterBuilder#appendOffset(String, String)
+     * appendOffset("+HH", "Z")} will be used to parse the offset,
+     * converting the instant to UTC as necessary.
      * The time to at least the seconds field is required.
      * Fractional seconds from zero to nine are parsed.
      * The localized decimal style is not used.

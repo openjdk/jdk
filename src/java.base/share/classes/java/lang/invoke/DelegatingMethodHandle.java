@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package java.lang.invoke;
 
 import java.util.Arrays;
+
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
@@ -36,6 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * The delegating MH itself can hold extra "intentions" beyond the simple behavior.
  * @author jrose
  */
+@AOTSafeClassInitializer
 /*non-public*/
 abstract sealed class DelegatingMethodHandle extends MethodHandle
     permits MethodHandleImpl.AsVarargsCollector,
@@ -193,5 +197,6 @@ abstract sealed class DelegatingMethodHandle extends MethodHandle
     }
 
     /* Placeholder class for DelegatingMethodHandles generated ahead of time */
+    @AOTSafeClassInitializer
     final class Holder {}
 }

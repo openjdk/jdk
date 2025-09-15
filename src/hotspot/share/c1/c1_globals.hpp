@@ -265,9 +265,6 @@
   develop(bool, BailoutOnExceptionHandlers, false,                          \
           "bailout of compilation for methods with exception handlers")     \
                                                                             \
-  develop(bool, InstallMethods, true,                                       \
-          "Install methods at the end of successful compilations")          \
-                                                                            \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \

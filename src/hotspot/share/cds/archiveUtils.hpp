@@ -30,11 +30,11 @@
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;

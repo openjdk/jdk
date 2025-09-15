@@ -147,215 +147,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   return pc();
 }
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
-                                  Register tmp2Reg, Register tmp3Reg) {
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmpReg;
-  Register tmp = tmp2Reg;
-  Label cont;
-  Label object_has_monitor;
-  Label count, no_count;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr, rscratch2);
-
-  // Load markWord from object into displaced_header.
-  ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, oop);
-    ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-    tst(tmp, KlassFlags::_misc_is_value_based_class);
-    br(Assembler::NE, cont);
-  }
-
-  // Check for existing monitor
-  tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    b(cont);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    orr(tmp, disp_hdr, markWord::unlocked_value);
-
-    // Initialize the box. (Must happen before we update the object mark!)
-    str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-            /*release*/ true, /*weak*/ false, disp_hdr);
-    br(Assembler::EQ, cont);
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
-
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    mov(rscratch1, sp);
-    sub(disp_hdr, disp_hdr, rscratch1);
-    mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    // If condition is true we are cont and hence we can store 0 as the
-    // displaced header in the box, which indicates that it is a recursive lock.
-    ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    b(cont);
-  }
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-
-  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
-  add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
-  cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
-          /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
-
-  // Store a non-null value into the box to avoid looking like a re-entrant
-  // lock. The fast-path monitor unlock code checks for
-  // markWord::monitor_value so use markWord::unused_mark which has the
-  // relevant bit set, and also matches ObjectSynchronizer::enter.
-  mov(tmp, (address)markWord::unused_mark().value());
-  str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-  br(Assembler::EQ, cont); // CAS success means locking succeeded
-
-  cmp(tmp3Reg, rscratch2);
-  br(Assembler::NE, cont); // Check for recursive locking
-
-  // Recursive lock case
-  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1);
-  // flag == EQ still from the cmp above, checking if this is a reentrant lock
-
-  bind(cont);
-  // flag == EQ indicates success
-  // flag == NE indicates failure
-  br(Assembler::NE, no_count);
-
-  bind(count);
-  if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count(rscratch1);
-  }
-
-  bind(no_count);
-}
-
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmpReg,
-                                    Register tmp2Reg) {
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmpReg;
-  Register owner_addr = tmpReg;
-  Register tmp = tmp2Reg;
-  Label cont;
-  Label object_has_monitor;
-  Label count, no_count;
-  Label unlocked;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr);
-
-  if (LockingMode == LM_LEGACY) {
-    // Find the lock address and load the displaced header from the stack.
-    ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // If the displaced header is 0, we have a recursive unlock.
-    cmp(disp_hdr, zr);
-    br(Assembler::EQ, cont);
-  }
-
-  // Handle existing monitor.
-  ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-  tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    b(cont);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
-
-    cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-            /*release*/ true, /*weak*/ false, tmp);
-    b(cont);
-  }
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-  STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-  add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
-  ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-
-  Label notRecursive;
-  cbz(disp_hdr, notRecursive);
-
-  // Recursive lock
-  sub(disp_hdr, disp_hdr, 1u);
-  str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-  cmp(disp_hdr, disp_hdr); // Sets flags for result
-  b(cont);
-
-  bind(notRecursive);
-
-  // Compute owner address.
-  lea(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
-
-  // Set owner to null.
-  // Release to satisfy the JMM
-  stlr(zr, owner_addr);
-  // We need a full fence after clearing owner to avoid stranding.
-  // StoreLoad achieves this.
-  membar(StoreLoad);
-
-  // Check if the entry_list is empty.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::entry_list_offset()));
-  cmp(rscratch1, zr);
-  br(Assembler::EQ, cont);     // If so we are done.
-
-  // Check if there is a successor.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
-  cmp(rscratch1, zr);
-  br(Assembler::NE, unlocked); // If so we are done.
-
-  // Save the monitor pointer in the current thread, so we can try to
-  // reacquire the lock in SharedRuntime::monitor_exit_helper().
-  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
-
-  cmp(zr, rthread); // Set Flag to NE => slow path
-  b(cont);
-
-  bind(unlocked);
-  cmp(zr, zr); // Set Flag to EQ => fast path
-
-  // Intentional fall-through
-
-  bind(cont);
-  // flag == EQ indicates success
-  // flag == NE indicates failure
-  br(Assembler::NE, no_count);
-
-  bind(count);
-  if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count(rscratch1);
-  }
-
-  bind(no_count);
-}
-
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
                                               Register t2, Register t3) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -512,7 +305,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
 void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
                                                 Register t2, Register t3) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
@@ -1778,19 +1570,21 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
 void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
                                            FloatRegister src, BasicType src_bt, bool is_unsigned) {
   if (src_bt == T_BYTE) {
-    if (dst_bt == T_SHORT) {
-      // 4B/8B to 4S/8S
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
-    } else {
-      // 4B to 4I
-      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    // 4B to 4S/4I, 8B to 8S
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_SHORT || dst_bt == T_INT, "unsupported");
+    _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    if (dst_bt == T_INT) {
       _xshll(is_unsigned, dst, T4S, dst, T4H, 0);
     }
   } else if (src_bt == T_SHORT) {
-    // 4S to 4I
-    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    // 2S to 2I/2L, 4S to 4I
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_LONG, "unsupported");
     _xshll(is_unsigned, dst, T4S, src, T4H, 0);
+    if (dst_bt == T_LONG) {
+      _xshll(is_unsigned, dst, T2D, dst, T2S, 0);
+    }
   } else if (src_bt == T_INT) {
     // 2I to 2L
     assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
@@ -1810,18 +1604,21 @@ void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
     assert(dst_bt == T_BYTE, "unsupported");
     xtn(dst, T8B, src, T8H);
   } else if (src_bt == T_INT) {
-    // 4I to 4B/4S
-    assert(src_vlen_in_bytes == 16, "unsupported");
+    // 2I to 2S, 4I to 4B/4S
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
     assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T4H, src, T4S);
     if (dst_bt == T_BYTE) {
       xtn(dst, T8B, dst, T8H);
     }
   } else if (src_bt == T_LONG) {
-    // 2L to 2I
+    // 2L to 2S/2I
     assert(src_vlen_in_bytes == 16, "unsupported");
-    assert(dst_bt == T_INT, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T2S, src, T2D);
+    if (dst_bt == T_SHORT) {
+      xtn(dst, T4H, dst, T4S);
+    }
   } else {
     ShouldNotReachHere();
   }
@@ -2851,5 +2648,126 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
 #endif // ASSERT
   } else {
     add(rfp, sp, framesize - 2 * wordSize);
+  }
+}
+
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using Neon instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
+void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
+                                                     FloatRegister src2, FloatRegister index,
+                                                     FloatRegister tmp, unsigned vector_length_in_bytes) {
+  assert_different_registers(dst, src1, src2, tmp);
+  SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
+
+  if (vector_length_in_bytes == 16) {
+    assert(UseSVE <= 1, "sve must be <= 1");
+    assert(src1->successor() == src2, "Source registers must be ordered");
+    // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
+    tbl(dst, size, src1, 2, index);
+  } else { // vector length == 8
+    assert(UseSVE == 0, "must be Neon only");
+    // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
+    // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
+    // instruction with one vector lookup
+    ins(tmp, D, src1, 0, 0);
+    ins(tmp, D, src2, 1, 0);
+    tbl(dst, size, tmp, 1, index);
+  }
+}
+
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using SVE/SVE2 instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
+void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
+                                                    FloatRegister src2, FloatRegister index,
+                                                    FloatRegister tmp, SIMD_RegVariant T,
+                                                    unsigned vector_length_in_bytes) {
+  assert_different_registers(dst, src1, src2, index, tmp);
+
+  if (vector_length_in_bytes == 8) {
+    // We need to fit both the source vectors (src1, src2) in a single vector register because the
+    // SVE "tbl" instruction is unpredicated and works on the entire vector which can lead to
+    // incorrect results if each source vector is only partially filled. We then use the SVE "tbl"
+    // instruction with one vector lookup
+    assert(UseSVE >= 1, "sve must be >= 1");
+    ins(tmp, D, src1, 0, 0);
+    ins(tmp, D, src2, 1, 0);
+    sve_tbl(dst, T, tmp, index);
+  } else {  // UseSVE == 2 and vector_length_in_bytes > 8
+    // If the vector length is > 8, then use the SVE2 "tbl" instruction with the two vector table.
+    // The assertion - vector_length_in_bytes == MaxVectorSize ensures that this operation
+    // is not executed on machines where vector_length_in_bytes < MaxVectorSize
+    // with the only exception of 8B vector length.
+    assert(UseSVE == 2 && vector_length_in_bytes == MaxVectorSize, "must be");
+    assert(src1->successor() == src2, "Source registers must be ordered");
+    sve_tbl(dst, T, src1, src2, index);
+  }
+}
+
+void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister src1,
+                                                FloatRegister src2, FloatRegister index,
+                                                FloatRegister tmp, BasicType bt,
+                                                unsigned vector_length_in_bytes) {
+
+  assert_different_registers(dst, src1, src2, index, tmp);
+
+  // The cases that can reach this method are -
+  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 2, vector_length_in_bytes >= 8
+  //
+  // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
+  // and UseSVE = 2 with vector_length_in_bytes >= 8
+  //
+  // Neon instructions are generated when UseSVE = 0 with vector_length_in_bytes = 8 or 16 and
+  // UseSVE = 1 with vector_length_in_bytes = 16
+
+  if ((UseSVE == 1 && vector_length_in_bytes == 8) || UseSVE == 2) {
+    SIMD_RegVariant T = elemType_to_regVariant(bt);
+    select_from_two_vectors_sve(dst, src1, src2, index, tmp, T, vector_length_in_bytes);
+    return;
+  }
+
+  // The only BasicTypes that can reach here are T_SHORT, T_BYTE, T_INT and T_FLOAT
+  assert(bt != T_DOUBLE && bt != T_LONG, "unsupported basic type");
+  assert(vector_length_in_bytes <= 16, "length_in_bytes must be <= 16");
+
+  bool isQ = vector_length_in_bytes == 16;
+
+  SIMD_Arrangement size1 = isQ ? T16B : T8B;
+  SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
+
+  // Neon "tbl" instruction only supports byte tables, so we need to look at chunks of
+  // 2B for selecting shorts or chunks of 4B for selecting ints/floats from the table.
+  // The index values in "index" register are in the range of [0, 2 * NUM_ELEM) where NUM_ELEM
+  // is the number of elements that can fit in a vector. For ex. for T_SHORT with 64-bit vector length,
+  // the indices can range from [0, 8).
+  // As an example with 64-bit vector length and T_SHORT type - let index = [2, 5, 1, 0]
+  // Move a constant 0x02 in every byte of tmp - tmp = [0x0202, 0x0202, 0x0202, 0x0202]
+  // Multiply index vector with tmp to yield - dst = [0x0404, 0x0a0a, 0x0202, 0x0000]
+  // Move a constant 0x0100 in every 2B of tmp - tmp = [0x0100, 0x0100, 0x0100, 0x0100]
+  // Add the multiplied result to the vector in tmp to obtain the byte level
+  // offsets - dst = [0x0504, 0x0b0a, 0x0302, 0x0100]
+  // Use these offsets in the "tbl" instruction to select chunks of 2B.
+
+  if (bt == T_BYTE) {
+    select_from_two_vectors_neon(dst, src1, src2, index, tmp, vector_length_in_bytes);
+  } else {
+    int elem_size = (bt == T_SHORT) ? 2 : 4;
+    uint64_t tbl_offset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
+
+    mov(tmp, size1, elem_size);
+    mulv(dst, size2, index, tmp);
+    mov(tmp, size2, tbl_offset);
+    addv(dst, size1, dst, tmp); // "dst" now contains the processed index elements
+                                // to select a set of 2B/4B
+    select_from_two_vectors_neon(dst, src1, src2, dst, tmp, vector_length_in_bytes);
   }
 }
