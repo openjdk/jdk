@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -57,7 +57,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/methodComparator.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -254,7 +254,7 @@ void VM_RedefineClasses::doit() {
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
     // the safepoint to be safer.
-    if (!MetaspaceShared::remap_shared_readonly_as_readwrite()) {
+    if (!AOTMetaspace::remap_shared_readonly_as_readwrite()) {
       log_info(redefine, class, load)("failed to remap shared readonly space to readwrite, private");
       _res = JVMTI_ERROR_INTERNAL;
       _timer_vm_op_doit.stop();
@@ -4537,7 +4537,7 @@ u8 VM_RedefineClasses::next_id() {
   while (true) {
     u8 id = _id_counter;
     u8 next_id = id + 1;
-    u8 result = Atomic::cmpxchg(&_id_counter, id, next_id);
+    u8 result = AtomicAccess::cmpxchg(&_id_counter, id, next_id);
     if (result == id) {
       return next_id;
     }

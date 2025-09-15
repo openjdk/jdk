@@ -174,18 +174,20 @@ private:
 
 #if INCLUDE_CDS
   // Various attributes for shared classes. Should be zero for a non-shared class.
-  u2 _shared_class_flags;
-  enum CDSSharedClassFlags {
+  u2 _aot_class_flags;
+  enum  {
     _in_aot_cache                          = 1 << 0,
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    // This class was not loaded from a classfile in the module image
-    // or classpath.
-    _is_generated_shared_class             = 1 << 5,
-    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
-    _has_aot_initialized_mirror            = 1 << 6,
+    _is_aot_generated_class                = 1 << 5, // this class was not loaded from a classfile in the module image
+                                                     // or classpath, but was generated during AOT cache assembly.
+    _has_aot_initialized_mirror            = 1 << 6, // archived mirror already initialized by AOT cache assembly.
+                                                     // no further need to call <clinit>
+    _has_aot_safe_initializer              = 1 << 7, // has @AOTSafeClassInitializer annotation
+    _is_runtime_setup_required             = 1 << 8, // has a runtimeSetup method to be called when
+                                                     // this class is loaded from AOT cache
   };
 #endif
 
@@ -325,66 +327,84 @@ protected:
   void clear_archived_mirror_index() NOT_CDS_JAVA_HEAP_RETURN;
 
   void set_lambda_proxy_is_available() {
-    CDS_ONLY(_shared_class_flags |= _archived_lambda_proxy_is_available;)
+    CDS_ONLY(_aot_class_flags |= _archived_lambda_proxy_is_available;)
   }
   void clear_lambda_proxy_is_available() {
-    CDS_ONLY(_shared_class_flags &= (u2)(~_archived_lambda_proxy_is_available);)
+    CDS_ONLY(_aot_class_flags &= (u2)(~_archived_lambda_proxy_is_available);)
   }
   bool lambda_proxy_is_available() const {
-    CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _archived_lambda_proxy_is_available) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
+    CDS_ONLY(_aot_class_flags |= _has_value_based_class_annotation;)
   }
   void clear_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags &= (u2)(~_has_value_based_class_annotation);)
+    CDS_ONLY(_aot_class_flags &= (u2)(~_has_value_based_class_annotation);)
   }
   bool has_value_based_class_annotation() const {
-    CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_value_based_class_annotation) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_verified_at_dump_time() {
-    CDS_ONLY(_shared_class_flags |= _verified_at_dump_time;)
+    CDS_ONLY(_aot_class_flags |= _verified_at_dump_time;)
   }
   bool verified_at_dump_time() const {
-    CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _verified_at_dump_time) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_archived_enum_objs() {
-    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+    CDS_ONLY(_aot_class_flags |= _has_archived_enum_objs;)
   }
   bool has_archived_enum_objs() const {
-    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_archived_enum_objs) != 0;)
     NOT_CDS(return false;)
   }
 
-  void set_is_generated_shared_class() {
-    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
+  void set_is_aot_generated_class() {
+    CDS_ONLY(_aot_class_flags |= _is_aot_generated_class;)
   }
-  bool is_generated_shared_class() const {
-    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
+  bool is_aot_generated_class() const {
+    CDS_ONLY(return (_aot_class_flags & _is_aot_generated_class) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_has_aot_initialized_mirror() {
-    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+    CDS_ONLY(_aot_class_flags |= _has_aot_initialized_mirror;)
   }
   bool has_aot_initialized_mirror() const {
-    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
+  void set_has_aot_safe_initializer() {
+    CDS_ONLY(_aot_class_flags |= _has_aot_safe_initializer;)
+  }
+  bool has_aot_safe_initializer() const {
+    CDS_ONLY(return (_aot_class_flags & _has_aot_safe_initializer) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
+  void set_is_runtime_setup_required() {
+    CDS_ONLY(_aot_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_aot_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 
   bool in_aot_cache() const                { // shadows MetaspaceObj::in_aot_cache)()
-    CDS_ONLY(return (_shared_class_flags & _in_aot_cache) != 0;)
+    CDS_ONLY(return (_aot_class_flags & _in_aot_cache) != 0;)
     NOT_CDS(return false;)
   }
 
   void set_in_aot_cache() {
-    CDS_ONLY(_shared_class_flags |= _in_aot_cache;)
+    CDS_ONLY(_aot_class_flags |= _in_aot_cache;)
   }
 
   // Obtain the module or package for this class

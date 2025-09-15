@@ -133,7 +133,7 @@ public:
 
   size_t max_capacity() const override;
 
-  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
 
   // Callback from VM_SerialCollectForAllocation operation.
   // This function does everything necessary/possible to satisfy an
