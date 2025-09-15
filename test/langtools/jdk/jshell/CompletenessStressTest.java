@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,12 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 
 import jdk.jshell.SourceCodeAnalysis;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CompletenessStressTest extends KullaTesting {
     public final static String JDK_ROOT_SRC_PROP = "jdk.root.src";
@@ -99,7 +99,6 @@ public class CompletenessStressTest extends KullaTesting {
         };
     }
 
-    @DataProvider(name = "crawler")
     public Object[][] dataProvider() throws IOException {
         File[] srcDirs = getDirectoriesToTest();
         List<String[]> list = new ArrayList<>();
@@ -121,7 +120,8 @@ public class CompletenessStressTest extends KullaTesting {
         return list.toArray(new String[list.size()][]);
     }
 
-    @Test(dataProvider = "crawler")
+    @ParameterizedTest
+    @MethodSource("dataProvider")
     public void testFile(String fileName) throws IOException {
         File file = getSourceFile(fileName);
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();

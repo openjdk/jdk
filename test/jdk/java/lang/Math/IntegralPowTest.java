@@ -25,7 +25,7 @@
  * @test
  * @bug 8355992
  * @summary Tests for StrictMath.*PowExact and .*unsignedMultiplyExact
- * @run junit IntegralPowTest
+ * @run junit/timeout=480 IntegralPowTest
  */
 
 import org.junit.jupiter.api.Test;

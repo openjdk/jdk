@@ -50,7 +50,7 @@
 #include "prims/jvmtiAgent.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -65,8 +65,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/threadService.hpp"
@@ -89,8 +89,8 @@
 # include <poll.h>
 #endif
 
-# include <signal.h>
 # include <errno.h>
+# include <signal.h>
 
 OSThread*         os::_starting_thread    = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
@@ -459,7 +459,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             char klass_name[256];
             char tmp_sig_name[16];
             const char* sig_name = "UNKNOWN";
-            InstanceKlass::cast(PENDING_EXCEPTION->klass())->
+            PENDING_EXCEPTION->klass()->
               name()->as_klass_external_name(klass_name, 256);
             if (os::exception_name(sig, tmp_sig_name, 16) != nullptr)
               sig_name = tmp_sig_name;
@@ -827,7 +827,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
-    if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
+    if (AtomicAccess::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
       return static_cast<int>(rand);
     }
   }
@@ -1576,12 +1576,12 @@ void os::read_image_release_file() {
       tmp[i] = ' ';
     }
   }
-  Atomic::release_store(&_image_release_file_content, tmp);
+  AtomicAccess::release_store(&_image_release_file_content, tmp);
   fclose(file);
 }
 
 void os::print_image_release_file(outputStream* st) {
-  char* ifrc = Atomic::load_acquire(&_image_release_file_content);
+  char* ifrc = AtomicAccess::load_acquire(&_image_release_file_content);
   if (ifrc != nullptr) {
     st->print_cr("%s", ifrc);
   } else {
@@ -2346,7 +2346,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
       // avoid overflow if the last page abuts the end of the address range.
       last = align_down(static_cast<char*>(end) - 1, pd_page_size);
       for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
-        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        AtomicAccess::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
         if (cur >= last) break;
       }
     }

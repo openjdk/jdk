@@ -35,7 +35,6 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
-#include "interpreter/bytecode.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
@@ -62,13 +61,12 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/escapeBarrier.hpp"
-#include "runtime/fieldDescriptor.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -91,8 +89,8 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
@@ -137,7 +135,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
 
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
-  Atomic::store(&nm->_deoptimization_status, status);
+  AtomicAccess::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
@@ -1121,7 +1119,7 @@ public:
   static BoxCache<PrimitiveType, CacheType, BoxType>* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BoxCache<PrimitiveType, CacheType, BoxType>* s = new BoxCache<PrimitiveType, CacheType, BoxType>(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1184,7 +1182,7 @@ public:
   static BooleanBoxCache* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BooleanBoxCache* s = new BooleanBoxCache(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1476,7 +1474,7 @@ public:
 
 // Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
 static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   if (super != nullptr) {
     get_reassigned_fields(super, fields, is_jvmci);
   }
@@ -1647,26 +1645,17 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
         if (exec_mode == Unpack_none) {
-          if (LockingMode == LM_LEGACY && mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
-            // With exec_mode == Unpack_none obj may be thread local and locked in
-            // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
-            markWord dmw = mark.displaced_mark_helper();
-            mark.locker()->set_displaced_header(markWord::encode((BasicLock*) nullptr));
-            obj->set_mark(dmw);
-          }
           if (mark.has_monitor()) {
             // defer relocking if the deoptee thread is currently waiting for obj
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              if (LockingMode == LM_LEGACY) {
-                mon_info->lock()->set_displaced_header(markWord::unused_mark());
-              } else if (UseObjectMonitorTable) {
+              if (UseObjectMonitorTable) {
                 mon_info->lock()->clear_object_monitor_cache();
               }
 #ifdef ASSERT
               else {
-                assert(LockingMode == LM_MONITOR || !UseObjectMonitorTable, "must be");
+                assert(!UseObjectMonitorTable, "must be");
                 mon_info->lock()->set_bad_metadata_deopt();
               }
 #endif
@@ -1676,29 +1665,24 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           }
         }
         BasicLock* lock = mon_info->lock();
-        if (LockingMode == LM_LIGHTWEIGHT) {
-          // We have lost information about the correct state of the lock stack.
-          // Entering may create an invalid lock stack. Inflate the lock if it
-          // was fast_locked to restore the valid lock stack.
-          if (UseObjectMonitorTable) {
-            // UseObjectMonitorTable expects the BasicLock cache to be either a
-            // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
-            // to nullptr.
-            lock->clear_object_monitor_cache();
-          }
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                                deoptee_thread, thread);
-          }
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
-          assert(obj->mark().has_monitor(), "must be");
-          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
-        } else {
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
+        // We have lost information about the correct state of the lock stack.
+        // Entering may create an invalid lock stack. Inflate the lock if it
+        // was fast_locked to restore the valid lock stack.
+        if (UseObjectMonitorTable) {
+          // UseObjectMonitorTable expects the BasicLock cache to be either a
+          // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
+          // to nullptr.
+          lock->clear_object_monitor_cache();
         }
+        ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
+        if (deoptee_thread->lock_stack().contains(obj())) {
+            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                              deoptee_thread, thread);
+        }
+        assert(mon_info->owner()->is_locked(), "object must be locked now");
+        assert(obj->mark().has_monitor(), "must be");
+        assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
@@ -1987,7 +1971,7 @@ class DeoptActionSerializer : public JfrSerializer {
 
 static void register_serializers() {
   static int critical_section = 0;
-  if (1 == critical_section || Atomic::cmpxchg(&critical_section, 0, 1) == 1) {
+  if (1 == critical_section || AtomicAccess::cmpxchg(&critical_section, 0, 1) == 1) {
     return;
   }
   JfrSerializer::register_serializer(TYPE_DEOPTIMIZATIONREASON, true, new DeoptReasonSerializer());

@@ -23,12 +23,12 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -78,7 +78,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -561,7 +561,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
   if (methods != nullptr && methods != Universe::the_empty_method_array() &&
-      !methods->is_shared()) {
+      !methods->in_aot_cache()) {
     for (int i = 0; i < methods->length(); i++) {
       Method* method = methods->at(i);
       if (method == nullptr) continue;  // maybe null if error processing
@@ -585,21 +585,21 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
     // check that the interfaces don't come from super class
     Array<InstanceKlass*>* sti = (super_klass == nullptr) ? nullptr :
                     super_klass->transitive_interfaces();
-    if (ti != sti && ti != nullptr && !ti->is_shared()) {
+    if (ti != sti && ti != nullptr && !ti->in_aot_cache()) {
       MetadataFactory::free_array<InstanceKlass*>(loader_data, ti);
     }
   }
 
   // local interfaces can be empty
   if (local_interfaces != Universe::the_empty_instance_klass_array() &&
-      local_interfaces != nullptr && !local_interfaces->is_shared()) {
+      local_interfaces != nullptr && !local_interfaces->in_aot_cache()) {
     MetadataFactory::free_array<InstanceKlass*>(loader_data, local_interfaces);
   }
 }
 
 void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
                                                  Array<RecordComponent*>* record_components) {
-  if (record_components != nullptr && !record_components->is_shared()) {
+  if (record_components != nullptr && !record_components->in_aot_cache()) {
     for (int i = 0; i < record_components->length(); i++) {
       RecordComponent* record_component = record_components->at(i);
       MetadataFactory::free_metadata(loader_data, record_component);
@@ -643,7 +643,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   if (method_ordering() != nullptr &&
       method_ordering() != Universe::the_empty_int_array() &&
-      !method_ordering()->is_shared()) {
+      !method_ordering()->in_aot_cache()) {
     MetadataFactory::free_array<int>(loader_data, method_ordering());
   }
   set_method_ordering(nullptr);
@@ -651,7 +651,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // default methods can be empty
   if (default_methods() != nullptr &&
       default_methods() != Universe::the_empty_method_array() &&
-      !default_methods()->is_shared()) {
+      !default_methods()->in_aot_cache()) {
     MetadataFactory::free_array<Method*>(loader_data, default_methods());
   }
   // Do NOT deallocate the default methods, they are owned by superinterfaces.
@@ -659,7 +659,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // default methods vtable indices can be empty
   if (default_vtable_indices() != nullptr &&
-      !default_vtable_indices()->is_shared()) {
+      !default_vtable_indices()->in_aot_cache()) {
     MetadataFactory::free_array<int>(loader_data, default_vtable_indices());
   }
   set_default_vtable_indices(nullptr);
@@ -672,26 +672,26 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
       secondary_supers() != Universe::the_empty_klass_array() &&
       // see comments in compute_secondary_supers about the following cast
       (address)(secondary_supers()) != (address)(transitive_interfaces()) &&
-      !secondary_supers()->is_shared()) {
+      !secondary_supers()->in_aot_cache()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
   set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
-  deallocate_interfaces(loader_data, java_super(), local_interfaces(), transitive_interfaces());
+  deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
-  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->is_shared()) {
+  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->in_aot_cache()) {
     MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
   set_fieldinfo_stream(nullptr);
 
-  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->is_shared()) {
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->in_aot_cache()) {
     MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
   }
   set_fieldinfo_search_table(nullptr);
 
-  if (fields_status() != nullptr && !fields_status()->is_shared()) {
+  if (fields_status() != nullptr && !fields_status()->in_aot_cache()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
   }
   set_fields_status(nullptr);
@@ -700,7 +700,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // delete it, yet.  The new class's previous version will point to this.
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
-    if (!constants()->is_shared()) {
+    if (!constants()->in_aot_cache()) {
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -711,27 +711,27 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   if (inner_classes() != nullptr &&
       inner_classes() != Universe::the_empty_short_array() &&
-      !inner_classes()->is_shared()) {
+      !inner_classes()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
   }
   set_inner_classes(nullptr);
 
   if (nest_members() != nullptr &&
       nest_members() != Universe::the_empty_short_array() &&
-      !nest_members()->is_shared()) {
+      !nest_members()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, nest_members());
   }
   set_nest_members(nullptr);
 
   if (permitted_subclasses() != nullptr &&
       permitted_subclasses() != Universe::the_empty_short_array() &&
-      !permitted_subclasses()->is_shared()) {
+      !permitted_subclasses()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, permitted_subclasses());
   }
   set_permitted_subclasses(nullptr);
 
   // We should deallocate the Annotations instance if it's not in shared spaces.
-  if (annotations() != nullptr && !annotations()->is_shared()) {
+  if (annotations() != nullptr && !annotations()->in_aot_cache()) {
     MetadataFactory::free_metadata(loader_data, annotations());
   }
   set_annotations(nullptr);
@@ -748,7 +748,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 bool InstanceKlass::is_record() const {
   return _record_components != nullptr &&
          is_final() &&
-         java_super() == vmClasses::Record_klass();
+         super() == vmClasses::Record_klass();
 }
 
 bool InstanceKlass::is_sealed() const {
@@ -763,9 +763,9 @@ bool InstanceKlass::is_sealed() const {
 // sealing conditions: it merely checks for a super of Enum.
 // This is sufficient for recognizing well-formed enums.
 bool InstanceKlass::is_enum_subclass() const {
-  InstanceKlass* s = java_super();
+  InstanceKlass* s = super();
   return (s == vmClasses::Enum_klass() ||
-          (s != nullptr && s->java_super() == vmClasses::Enum_klass()));
+          (s != nullptr && s->super() == vmClasses::Enum_klass()));
 }
 
 bool InstanceKlass::should_be_initialized() const {
@@ -829,7 +829,7 @@ void InstanceKlass::initialize(TRAPS) {
 void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const {
   assert(has_aot_initialized_mirror(), "must be");
 
-  InstanceKlass* s = java_super();
+  InstanceKlass* s = super();
   if (s != nullptr) {
     DEBUG_ONLY(ResourceMark rm);
     assert(s->is_initialized(), "super class %s of aot-inited class %s must have been initialized",
@@ -942,7 +942,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   JavaThread* jt = THREAD;
 
   // link super class before linking this class
-  InstanceKlass* super_klass = java_super();
+  InstanceKlass* super_klass = super();
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
@@ -994,7 +994,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
     if (!is_linked()) {
       if (!is_rewritten()) {
-        if (is_shared()) {
+        if (in_aot_cache()) {
           assert(!verified_at_dump_time(), "must be");
         }
         {
@@ -1013,7 +1013,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
         // also sets rewritten
         rewrite_class(CHECK_false);
-      } else if (is_shared()) {
+      } else if (in_aot_cache()) {
         SystemDictionaryShared::check_verification_constraints(this, CHECK_false);
       }
 
@@ -1031,7 +1031,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 2) the class is loaded by built-in class loader but failed to add archived loader constraints or
       // 3) the class was not verified during dump time
       bool need_init_table = true;
-      if (is_shared() && verified_at_dump_time() &&
+      if (in_aot_cache() && verified_at_dump_time() &&
           SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
@@ -1073,7 +1073,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 void InstanceKlass::rewrite_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (is_rewritten()) {
-    assert(is_shared(), "rewriting an unshared class?");
+    assert(in_aot_cache(), "rewriting an unshared class?");
     return;
   }
   Rewriter::rewrite(this, CHECK);
@@ -1413,7 +1413,7 @@ InstanceKlass* InstanceKlass::implementor() const {
     return nullptr;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    InstanceKlass* ikls = Atomic::load_acquire(ik);
+    InstanceKlass* ikls = AtomicAccess::load_acquire(ik);
     if (ikls != nullptr && !ikls->is_loader_alive()) {
       return nullptr;  // don't return unloaded class
     } else {
@@ -1429,7 +1429,7 @@ void InstanceKlass::set_implementor(InstanceKlass* ik) {
   InstanceKlass* volatile* addr = adr_implementor();
   assert(addr != nullptr, "null addr");
   if (addr != nullptr) {
-    Atomic::release_store(addr, ik);
+    AtomicAccess::release_store(addr, ik);
   }
 }
 
@@ -1465,7 +1465,7 @@ void InstanceKlass::add_implementor(InstanceKlass* ik) {
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  InstanceKlass* super_ik = ik->java_super();
+  InstanceKlass* super_ik = ik->super();
   if (super_ik != nullptr && super_ik->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
@@ -1685,7 +1685,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     AOTClassInitializer::call_runtime_setup(THREAD, this);
     return;
   } else if (has_archived_enum_objs()) {
-    assert(is_shared(), "must be");
+    assert(in_aot_cache(), "must be");
     bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
       return;
@@ -1759,11 +1759,11 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Lazily create the _oop_map_cache at first request.
   // Load_acquire is needed to safely get instance published with CAS by another thread.
-  OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
+  OopMapCache* oop_map_cache = AtomicAccess::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
     // Try to install new instance atomically.
     oop_map_cache = new OopMapCache();
-    OopMapCache* other = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    OopMapCache* other = AtomicAccess::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
     if (other != nullptr) {
       // Someone else managed to install before us, ditch local copy and use the existing one.
       delete oop_map_cache;
@@ -1831,7 +1831,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd)
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { InstanceKlass* supr = java_super();
+  { InstanceKlass* supr = super();
     if (supr != nullptr) return supr->find_field(name, sig, fd);
   }
   // 4) otherwise field lookup fails
@@ -1851,7 +1851,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { InstanceKlass* supr = java_super();
+  { InstanceKlass* supr = super();
     if (supr != nullptr) return supr->find_field(name, sig, is_static, fd);
   }
   // 4) otherwise field lookup fails
@@ -1876,7 +1876,7 @@ bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDesc
     if (klass->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
   return false;
 }
@@ -1919,7 +1919,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = java_super();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
@@ -1936,7 +1936,7 @@ static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = java_super();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
@@ -2241,7 +2241,7 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
     if (method != nullptr) {
       return method;
     }
-    klass = klass->java_super();
+    klass = klass->super();
     overpass_local_mode = OverpassLookupMode::skip;   // Always ignore overpass methods in superclasses
   }
   return nullptr;
@@ -2256,7 +2256,7 @@ bool InstanceKlass::has_redefined_this_or_super() const {
     if (klass->has_been_redefined()) {
       return true;
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
   return false;
 }
@@ -2330,7 +2330,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
-    if (ik->is_shared()) buf[i++] = 'S';
+    if (ik->in_aot_cache()) buf[i++] = 'S';
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);
@@ -2390,7 +2390,7 @@ jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, in
     assert(method != nullptr, "old and but not obsolete, so should exist");
   }
   jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-  Atomic::release_store(&jmeths[idnum + 1], new_id);
+  AtomicAccess::release_store(&jmeths[idnum + 1], new_id);
   return new_id;
 }
 
@@ -2405,11 +2405,11 @@ static jmethodID* create_jmethod_id_cache(size_t size) {
 
 // When reading outside a lock, use this.
 jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return Atomic::load_acquire(&_methods_jmethod_ids);
+  return AtomicAccess::load_acquire(&_methods_jmethod_ids);
 }
 
 void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+  AtomicAccess::release_store(&_methods_jmethod_ids, jmeths);
 }
 
 // Lookup or create a jmethodID.
@@ -2448,7 +2448,7 @@ jmethodID InstanceKlass::get_jmethod_id(Method* method) {
     }
   }
 
-  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+  jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
   if (id == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
     id = jmeths[idnum + 1];
@@ -2497,11 +2497,11 @@ void InstanceKlass::make_methods_jmethod_ids() {
     Method* m = methods()->at(index);
     int idnum = m->method_idnum();
     assert(!m->is_old(), "should not have old methods or I'm confused");
-    jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+    jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
     if (!m->is_overpass() &&  // skip overpasses
         id == nullptr) {
       id = Method::make_jmethod_id(class_loader_data(), m);
-      Atomic::release_store(&jmeths[idnum + 1], id);
+      AtomicAccess::release_store(&jmeths[idnum + 1], id);
     }
   }
 }
@@ -2554,10 +2554,10 @@ void InstanceKlass::clean_implementors_list() {
       // Use load_acquire due to competing with inserts
       InstanceKlass* volatile* iklass = adr_implementor();
       assert(iklass != nullptr, "Klass must not be null");
-      InstanceKlass* impl = Atomic::load_acquire(iklass);
+      InstanceKlass* impl = AtomicAccess::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
+        if (AtomicAccess::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;
@@ -2763,7 +2763,7 @@ void InstanceKlass::init_shared_package_entry() {
     }
   } else if (CDSConfig::is_dumping_dynamic_archive() &&
              CDSConfig::is_using_full_module_graph() &&
-             MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
+             AOTMetaspace::in_aot_cache(_package_entry)) {
     // _package_entry is an archived package in the base archive. Leave it as is.
   } else {
     _package_entry = nullptr;
@@ -2839,21 +2839,23 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
-// Check if a class or any of its supertypes has a version older than 50.
-// CDS will not perform verification of old classes during dump time because
-// without changing the old verifier, the verification constraint cannot be
-// retrieved during dump time.
-// Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+  if (AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
   }
-  if (major_version() < 50 /*JAVA_6_VERSION*/) {
+
+  if (CDSConfig::is_preserving_verification_constraints()) {
+    return true;
+  }
+
+  if (CDSConfig::is_old_class_for_verifier(this)) {
+    // The old verifier does not save verification constraints, so at run time
+    // SystemDictionaryShared::check_verification_constraints() will not work for this class.
     return false;
   }
-  if (java_super() != nullptr && !java_super()->can_be_verified_at_dumptime()) {
+  if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
     return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
@@ -3081,14 +3083,14 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
   // not needed for shared class since CDS does not archive prohibited classes.
-  if (!is_shared()) {
+  if (!in_aot_cache()) {
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  if (is_shared() && _package_entry != nullptr) {
+  if (in_aot_cache() && _package_entry != nullptr) {
     if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
-      assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
+      assert(AOTMetaspace::in_aot_cache(_package_entry), "must be");
       return;
     } else {
       _package_entry = nullptr;
@@ -3970,8 +3972,8 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       info_stream.print(" source: %s", class_loader->klass()->external_name());
     }
   } else {
-    assert(this->is_shared(), "must be");
-    if (MetaspaceShared::is_shared_dynamic((void*)this)) {
+    assert(this->in_aot_cache(), "must be");
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)this)) {
       info_stream.print(" source: shared objects file (top)");
     } else {
       info_stream.print(" source: shared objects file");
@@ -3985,7 +3987,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(java_super()));
+                       p2i(this),  p2i(super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -4254,12 +4256,12 @@ void JNIid::verify(InstanceKlass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
-  bool good_state = is_shared() ? (_init_state <= state)
+  bool good_state = in_aot_cache() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  Atomic::release_store(&_init_state, state);
+  AtomicAccess::release_store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI
@@ -4355,7 +4357,7 @@ void InstanceKlass::purge_previous_version_list() {
       assert(pvcp->pool_holder() != nullptr, "Constant pool with no holder");
       guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
       live_count++;
-      if (pvcp->is_shared()) {
+      if (pvcp->in_aot_cache()) {
         // Shared previous versions can never be removed so no cleaning is needed.
         log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is shared", p2i(pv_node));
       } else {
@@ -4467,7 +4469,7 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
   assert(scratch_class->previous_versions() == nullptr, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class);
-  if (cp_ref->is_shared()) {
+  if (cp_ref->in_aot_cache()) {
     log_trace(redefine, class, iklass, add) ("scratch class added; class is shared");
   } else {
     //  We only set clean_previous_versions flag for processing during class

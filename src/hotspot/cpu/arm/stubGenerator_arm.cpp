@@ -421,7 +421,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
- // As per atomic.hpp the Atomic read-modify-write operations must be logically implemented as:
+ // As per atomicAccess.hpp the atomic read-modify-write operations must be
+ // logically implemented as:
  //  <fence>; <op>; <membar StoreLoad|StoreStore>
  // But for load-linked/store-conditional based systems a fence here simply means
  // no load/store can be reordered with respect to the initial load-linked, so we have:
@@ -440,7 +441,7 @@ class StubGenerator: public StubCodeGenerator {
   // be removed in the future.
 
   // Implementation of atomic_add(jint add_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint add_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint add_value)
   //
   // Arguments :
   //
@@ -492,7 +493,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_xchg(jint exchange_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint exchange_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint exchange_value)
   //
   // Arguments :
   //
@@ -542,7 +543,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_cmpxchg(jint exchange_value, volatile jint *dest, jint compare_value)
-  // used by Atomic::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
+  // used by AtomicAccess::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
   //
   // Arguments :
   //
@@ -582,7 +583,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
+  // Support for jlong AtomicAccess::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
   // reordered before by a wrapper to (jlong compare_value, jlong exchange_value, volatile jlong *dest)
   //
   // Arguments :
