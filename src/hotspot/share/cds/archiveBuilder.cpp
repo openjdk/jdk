@@ -937,12 +937,12 @@ void ArchiveBuilder::make_klasses_shareable() {
         ADD_COUNT(num_enum_klasses);
       }
 
-      if (!ik->can_be_verified_at_dumptime()) {
+      if (CDSConfig::is_old_class_for_verifier(ik)) {
         ADD_COUNT(num_old_klasses);
         old = " old";
       }
 
-      if (ik->is_generated_shared_class()) {
+      if (ik->is_aot_generated_class()) {
         generated = " generated";
       }
       if (aotlinked) {

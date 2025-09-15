@@ -220,6 +220,13 @@ class G1CollectionSet {
                          size_t offset,
                          size_t length,
                          uint worker_id) const;
+
+  // Adds the given group to the optional groups list (_optional_groups)
+  // and updates all related bookkeeping.
+  void add_optional_group(G1CSetCandidateGroup* group,
+                          uint& num_optional_regions,
+                          double& predicted_optional_time_ms,
+                          double predicted_time_ms);
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
