@@ -40,8 +40,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 

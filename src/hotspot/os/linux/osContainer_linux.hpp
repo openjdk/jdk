@@ -25,10 +25,10 @@
 #ifndef OS_LINUX_OSCONTAINER_LINUX_HPP
 #define OS_LINUX_OSCONTAINER_LINUX_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "memory/allStatic.hpp"
 
 #define OSCONTAINER_ERROR (-2)
 

@@ -702,10 +702,10 @@ static void printbc(Method *m, intptr_t bcx) {
   if (m->validate_bci_from_bcp((address)bcx) < 0
       || !m->contains((address)bcx)) {
     name = "???";
-    snprintf(buf, sizeof buf, "(bad)");
+    os::snprintf_checked(buf, sizeof buf, "(bad)");
   } else {
     int bci = m->bci_from((address)bcx);
-    snprintf(buf, sizeof buf, "%d", bci);
+    os::snprintf_checked(buf, sizeof buf, "%d", bci);
     name = Bytecodes::name(m->code_at(bci));
   }
   ResourceMark rm;
