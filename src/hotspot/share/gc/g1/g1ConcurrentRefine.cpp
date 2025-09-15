@@ -338,7 +338,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
   assert_current_thread_is_primary_refinement_thread();
   size_t num_cards = _dcqs.num_cards();
   size_t mutator_threshold = SIZE_MAX;
-  uint old_wanted = Atomic::load(&_threads_wanted);
+  uint old_wanted = AtomicAccess::load(&_threads_wanted);
 
   _threads_needed.update(old_wanted,
                          available_bytes,
@@ -360,7 +360,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
     // worse.
     mutator_threshold = _pending_cards_target;
   }
-  Atomic::store(&_threads_wanted, new_wanted);
+  AtomicAccess::store(&_threads_wanted, new_wanted);
   _dcqs.set_mutator_refinement_threshold(mutator_threshold);
   log_debug(gc, refine)("Concurrent refinement: wanted %u, cards: %zu, "
                         "predicted: %zu, time: %1.2fms",
@@ -374,7 +374,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
     if (!_thread_control.activate(i)) {
       // Failed to allocate and activate thread.  Stop trying to activate, and
       // instead use mutator threads to make up the gap.
-      Atomic::store(&_threads_wanted, i);
+      AtomicAccess::store(&_threads_wanted, i);
       _dcqs.set_mutator_refinement_threshold(_pending_cards_target);
       break;
     }
@@ -384,9 +384,9 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
 void G1ConcurrentRefine::reduce_threads_wanted() {
   assert_current_thread_is_primary_refinement_thread();
   if (!_needs_adjust) {         // Defer if adjustment request is active.
-    uint wanted = Atomic::load(&_threads_wanted);
+    uint wanted = AtomicAccess::load(&_threads_wanted);
     if (wanted > 0) {
-      Atomic::store(&_threads_wanted, --wanted);
+      AtomicAccess::store(&_threads_wanted, --wanted);
     }
     // If very little time remains until GC, enable mutator refinement.  If
     // the target has been reached, this keeps the number of pending cards on
@@ -398,7 +398,7 @@ void G1ConcurrentRefine::reduce_threads_wanted() {
 }
 
 bool G1ConcurrentRefine::is_thread_wanted(uint worker_id) const {
-  return worker_id < Atomic::load(&_threads_wanted);
+  return worker_id < AtomicAccess::load(&_threads_wanted);
 }
 
 bool G1ConcurrentRefine::is_thread_adjustment_needed() const {
