@@ -681,7 +681,7 @@ int VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, con
   BSMAttributeEntry* new_bsme =
     _bsmae_iter.reserve_new_entry(new_ref_i, old_bsme->argument_count());
   for (int i = 0; i < new_bsme->argument_count(); i++) {
-    u2 old_arg_ref_i = old_bsme->argument_index(i);
+    u2 old_arg_ref_i = old_bsme->argument(i);
     u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
                                                      merge_cp_length_p);
     new_bsme->set_argument(i, new_arg_ref_i);

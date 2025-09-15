@@ -99,6 +99,7 @@ class BSMAttributeEntry {
 
   // Returns number of u2s written
   inline size_t copy_into(u2* data, size_t size) const;
+  void copy_args_into(BSMAttributeEntry* entry) const;
 
 public:
   // Offsets for SA
@@ -114,7 +115,7 @@ public:
   int argument_count() const {
     return _argument_count;
   }
-  int argument_index(int n) const {
+  int argument(int n) const {
     assert(checked_cast<u2>(n) < _argument_count, "oob");
     return argument_indexes()[n];
   }
@@ -160,14 +161,8 @@ private:
   Array<u4>* _offsets;
   Array<u2>* _bootstrap_methods;
 
-  // Copy self into a different offsets and bsm array.
-  // Allows limiting the number of entries copied via num_entries.
-  // Use the optional arguments to adjust where in the offsets and array to start putting in the entries.
-  void copy_into(Array<u4>* new_offsets, Array<u2>* new_array, int num_entries,
-                 int initial_offset_index = 0,
-                 int initial_offset = 0) const;
   // Copy the first num_entries into iter
-  void copy_into(InsertionIterator iter, int num_entries) const;
+  void copy_into(InsertionIterator& iter, int num_entries) const;
 
 public:
   BSMAttributeEntries() : _offsets(nullptr), _bootstrap_methods(nullptr) {}
@@ -692,7 +687,7 @@ class ConstantPool : public Metadata {
     int bsmai = bootstrap_methods_attribute_index(cp_index);
     BSMAttributeEntry* bsme = bsm_attribute_entry(bsmai);
     assert((uint)j < (uint)bsme->argument_count(), "oob");
-    return bsm_attribute_entry(bsmai)->argument_index(j);
+    return bsm_attribute_entry(bsmai)->argument(j);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,

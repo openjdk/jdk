@@ -1841,8 +1841,8 @@ bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle
   }
 
   for (int j = 0; j < argc; j++) {
-    cp_entry_index1 = bsmae1->argument_index(j);
-    cp_entry_index2 = bsmae2->argument_index(j);
+    cp_entry_index1 = bsmae1->argument(j);
+    cp_entry_index2 = bsmae2->argument(j);
     match = compare_entry_to(cp_entry_index1, cp2, cp_entry_index2);
     if (!match) {
       return false;
@@ -2342,22 +2342,13 @@ void BSMAttributeEntries::deallocate_contents(ClassLoaderData* loader_data) {
   this->_bootstrap_methods = nullptr;
 }
 
-void BSMAttributeEntries::copy_into(Array<u4>* new_offsets, Array<u2>* new_array,
-                                    int num_entries, int initial_offset_index, int initial_array_offset) const {
-  assert(num_entries + initial_offset_index <= new_offsets->length(), "must");
-  u2* data = new_array->data();
+void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) const {
+  assert(num_entries + iter._cur_offset <= iter.insert_into->_offsets->length(), "must");
   for (int i = 0; i < num_entries; i++) {
-    int offset_index = i + initial_offset_index;
-    int array_offset = initial_array_offset + _offsets->at(i);
-    new_offsets->at_put(offset_index, array_offset);
     const BSMAttributeEntry* bsmae = entry(i);
-    bsmae->copy_into(&data[array_offset], new_array->length() - array_offset);
+    BSMAttributeEntry* bsmae_new = iter.reserve_new_entry(i, bsmae->argument_count());
+    bsmae->copy_args_into(bsmae_new);
   }
-}
-
-void BSMAttributeEntries::copy_into(InsertionIterator iter, int num_entries) const {
-  copy_into(iter.insert_into->_offsets, iter.insert_into->_bootstrap_methods,
-            num_entries, iter._cur_offset, iter._cur_array);
 }
 
 BSMAttributeEntries::InsertionIterator BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
@@ -2367,21 +2358,24 @@ BSMAttributeEntries::InsertionIterator BSMAttributeEntries::start_extension(cons
 BSMAttributeEntries::InsertionIterator
 BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
                                    ClassLoaderData* loader_data, TRAPS) {
-  InsertionIterator ii(this, this->number_of_entries(), this->array_length());
+  InsertionIterator extension_iterator(this, this->number_of_entries(), this->array_length());
   int new_number_of_entries = this->number_of_entries() + number_of_entries;
   int new_array_length = this->array_length() + array_length;
   int invalid_index = new_array_length;
+
   Array<u4>* new_offsets =
     MetadataFactory::new_array<u4>(loader_data, new_number_of_entries, invalid_index, CHECK_(InsertionIterator()));
   Array<u2>* new_array = MetadataFactory::new_array<u2>(loader_data, new_array_length, CHECK_(InsertionIterator()));
-
-  // Copy over all the old BSMAEntry's and their respective offsets
-  copy_into(new_offsets, new_array, this->number_of_entries());
+  { // Copy over all the old BSMAEntry's and their respective offsets
+    BSMAttributeEntries carrier(new_offsets, new_array);
+    InsertionIterator copy_iter(&carrier);
+    copy_into(copy_iter, this->number_of_entries());
+  }
   // Replace content
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
-  return ii;
+  return extension_iterator;
 }
 
 
@@ -2411,7 +2405,11 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
       MetadataFactory::new_array<u4>(loader_data, iter._cur_offset, 0, CHECK);
   Array<u2>* new_array =
     MetadataFactory::new_array<u2>(loader_data, iter._cur_array, CHECK);
-
+  { // Copy over the constructed BSMAEntry's
+    BSMAttributeEntries carrier(new_offsets, new_array);
+    InsertionIterator copy_iter(&carrier);
+    copy_into(copy_iter, iter._cur_offset);
+  }
   copy_into(new_offsets, new_array, iter._cur_offset);
 
   deallocate_contents(loader_data);

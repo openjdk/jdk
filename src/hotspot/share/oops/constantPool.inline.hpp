@@ -114,5 +114,12 @@ inline size_t BSMAttributeEntry::copy_into(u2* data, size_t size) const {
   return total_u2s_needed;
 }
 
+void BSMAttributeEntry::copy_args_into(BSMAttributeEntry* entry) const {
+  assert(entry->argument_count() == this->argument_count(), "must be same");
+  for (int i = 0; i < argument_count(); i++) {
+    entry->set_argument(i, this->argument(i));
+  }
+}
+
 
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP
