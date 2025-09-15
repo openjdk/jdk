@@ -1045,7 +1045,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 rb = fiveTo(-exponent).multiply(compactVal);
                 scl = -exponent;
             } else { //  (exponent > 0)
-                rb = BigInteger.ONE.shiftLeft(exponent).multiply(compactVal);
+                rb = BigInteger.valueOf(compactVal).shiftLeft(exponent);
             }
             compactVal = compactValFor(rb);
         }
