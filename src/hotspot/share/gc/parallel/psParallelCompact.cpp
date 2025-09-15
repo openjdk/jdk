@@ -1383,9 +1383,7 @@ public:
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    if (nworkers > 1) {
-      Threads::change_thread_claim_token();
-    }
+    Threads::change_thread_claim_token();
   }
 
   ~PSAdjustTask() {
