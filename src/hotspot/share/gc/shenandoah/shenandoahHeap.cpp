@@ -1436,24 +1436,29 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
 
-  oop humongous_obj = cast_to_oop(start->bottom());
-  size_t size = humongous_obj->size();
-  size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+  // Cannot access humongous_obj->size() in case class has been unloaded
+  size_t required_regions = 1;
+  size_t region_count = num_regions();
+  for (size_t index = start->index() + 1; index < region_count; index++) {
+    ShenandoahHeapRegion* region = get_region(index);
+    if (region->is_humongous_continuation()) {
+      required_regions++;
+    } else {
+      break;
+    }
+  }
+
   size_t index = start->index() + required_regions - 1;
-
   assert(!start->has_live(), "liveness must be zero");
-
+  // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
+  // as it expects that every region belongs to a humongous region starting with a humongous start region.
   for(size_t i = 0; i < required_regions; i++) {
-    // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
-    // as it expects that every region belongs to a humongous region starting with a humongous start region.
     ShenandoahHeapRegion* region = get_region(index --);
-
     assert(region->is_humongous(), "expect correct humongous start or continuation");
     assert(!region->is_cset(), "Humongous region should not be in collection set");
-
     region->make_trash_immediate();
   }
   return required_regions;
