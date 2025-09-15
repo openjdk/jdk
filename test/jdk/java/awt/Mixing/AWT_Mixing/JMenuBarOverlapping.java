@@ -22,7 +22,6 @@
  */
 
 
-import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
@@ -30,12 +29,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
