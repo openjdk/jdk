@@ -93,7 +93,7 @@ public class StressNativeSignal {
         private final CountDownLatch threadStarted = new CountDownLatch(1);
 
         public ServerSocketThread() throws IOException {
-            socket = new ServerSocket(1122);
+            socket = new ServerSocket(0);
         }
 
         public void run() {
@@ -139,7 +139,7 @@ public class StressNativeSignal {
         public UDPThread() throws IOException {
             channel = DatagramChannel.open();
             channel.setOption(StandardSocketOptions.SO_RCVBUF, 6553600);
-            channel.bind(new InetSocketAddress(19870));
+            channel.bind(new InetSocketAddress(0));
         }
 
         @Override
@@ -176,7 +176,7 @@ public class StressNativeSignal {
                 threadStarted.await();
             } catch (InterruptedException z) {
                 z.printStackTrace(System.err);
-                // ignore;
+                // ignore
             }
         }
     }
