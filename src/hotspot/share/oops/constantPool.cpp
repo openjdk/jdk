@@ -2346,7 +2346,7 @@ void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) co
   assert(num_entries + iter._cur_offset <= iter.insert_into->_offsets->length(), "must");
   for (int i = 0; i < num_entries; i++) {
     const BSMAttributeEntry* bsmae = entry(i);
-    BSMAttributeEntry* bsmae_new = iter.reserve_new_entry(i, bsmae->argument_count());
+    BSMAttributeEntry* bsmae_new = iter.reserve_new_entry(bsmae->bootstrap_method_index(), bsmae->argument_count());
     bsmae->copy_args_into(bsmae_new);
   }
 }
