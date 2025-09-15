@@ -278,6 +278,8 @@ static markWord make_prototype(const Klass* kls) {
   markWord prototype = markWord::prototype();
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
+    // With compact object headers, the narrow Klass ID is part of the mark word.
+    // We therefore seed the mark word with the narrow Klass ID.
     precond(CompressedKlassPointers::is_encodable(kls));
     const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
