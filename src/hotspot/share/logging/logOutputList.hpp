@@ -90,15 +90,15 @@ class LogOutputList {
   void set_output_level(LogOutput* output, LogLevelType level);
 
   void set_output_level_configured_by_user() {
-    Atomic::release_store(&_output_level_configured_by_user, true);
+    AtomicAccess::release_store(&_output_level_configured_by_user, true);
   }
 
   void set_output_level_not_configured_by_user() {
-    Atomic::release_store(&_output_level_configured_by_user, false);
+    AtomicAccess::release_store(&_output_level_configured_by_user, false);
   }
 
   bool is_output_level_configured_by_user() const {
-    return Atomic::load_acquire(&_output_level_configured_by_user);
+    return AtomicAccess::load_acquire(&_output_level_configured_by_user);
   }
 
   // Removes all outputs. Equivalent of set_output_level(out, Off)
