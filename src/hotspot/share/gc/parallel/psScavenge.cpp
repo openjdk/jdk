@@ -127,7 +127,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       pm->process_popped_location_depth(task, true);
-      pm->drain_stacks_depth(true);
+      pm->drain_stacks(true);
     } else {
       if (terminator.offer_termination()) {
         break;
