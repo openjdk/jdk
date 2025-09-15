@@ -119,7 +119,7 @@ class VM_Version : public Abstract_VM_Version {
       _cpu_feature_index(cpu_feature_index) {
     }
     bool enabled() {
-      return RVExtFeatures::current()->supports_feature(_cpu_feature_index);
+      return RVExtFeatures::current()->support_feature(_cpu_feature_index);
     }
     void enable_feature(int64_t value = 0) {
       RVFeatureValue::enable_feature(value);
@@ -295,7 +295,7 @@ private:
       return (1ULL << features_bitmap_element_shift_count()) - 1;
     }
 
-    static int index(RVFeatureIndex feature) {
+    static int element_index(RVFeatureIndex feature) {
       int idx = feature >> features_bitmap_element_shift_count();
       assert(idx < features_bitmap_element_count(), "Features array index out of bounds");
       return idx;
@@ -323,19 +323,19 @@ private:
 
     void set_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
-      int idx = index(f);
+      int idx = element_index(f);
       _features_bitmap[idx] |= bit_mask(f);
     }
 
     void clear_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
-      int idx = index(f);
+      int idx = element_index(f);
       _features_bitmap[idx] &= ~bit_mask(f);
     }
 
-    bool supports_feature(uint32_t feature) {
+    bool support_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
-      int idx = index(f);
+      int idx = element_index(f);
       return (_features_bitmap[idx] & bit_mask(f)) != 0;
     }
   };
