@@ -136,7 +136,7 @@ import jdk.internal.util.DateTimeHelper;
  * For Overlaps, the general strategy is that if the local date-time falls in the
  * middle of an Overlap, then the previous offset will be retained. If there is no
  * previous offset, or the previous offset is invalid, then the earlier offset is
- * used, typically "summer" time.. Two additional methods,
+ * used, typically "summer" time. Two additional methods,
  * {@link #withEarlierOffsetAtOverlap()} and {@link #withLaterOffsetAtOverlap()},
  * help manage the case of an overlap.
  * <p>

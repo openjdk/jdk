@@ -187,7 +187,7 @@ public final class Duration
      * Obtains a {@code Duration} representing a number of standard hours.
      * <p>
      * The seconds are calculated based on the standard definition of an hour,
-     * where each hour is 3600 seconds.
+     * where each hour is 3,600 seconds.
      * The nanosecond in second field is set to zero.
      *
      * @param hours  the number of hours, positive or negative
@@ -375,7 +375,7 @@ public final class Duration
      * <pre>
      *    "PT20.345S" -- parses as "20.345 seconds"
      *    "PT15M"     -- parses as "15 minutes" (where a minute is 60 seconds)
-     *    "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
+     *    "PT10H"     -- parses as "10 hours" (where an hour is 3,600 seconds)
      *    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86,400 seconds)
      *    "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
      *    "PT-6H3M"    -- parses as "-6 hours and +3 minutes"
@@ -909,7 +909,7 @@ public final class Duration
     /**
      * Returns a copy of this duration with the specified duration in hours subtracted.
      * <p>
-     * The number of hours is multiplied by 3600 to obtain the number of seconds to subtract.
+     * The number of hours is multiplied by 3,600 to obtain the number of seconds to subtract.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -924,7 +924,7 @@ public final class Duration
     /**
      * Returns a copy of this duration with the specified duration in minutes subtracted.
      * <p>
-     * The number of hours is multiplied by 60 to obtain the number of seconds to subtract.
+     * The number of minutes is multiplied by 60 to obtain the number of seconds to subtract.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1180,7 +1180,7 @@ public final class Duration
      * Gets the number of hours in this duration.
      * <p>
      * This returns the total number of hours in the duration by dividing the
-     * number of seconds by 3600.
+     * number of seconds by 3,600.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1476,7 +1476,7 @@ public final class Duration
      * <p>
      * Examples:
      * <pre>
-     *    "20.345 seconds"                 -- "PT20.345S
+     *    "20.345 seconds"                 -- "PT20.345S"
      *    "15 minutes" (15 * 60 seconds)   -- "PT15M"
      *    "10 hours" (10 * 3,600 seconds)  -- "PT10H"
      *    "2 days" (2 * 86,400 seconds)    -- "PT48H"
