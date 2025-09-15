@@ -270,6 +270,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareEQMaskNotByte() {
@@ -285,6 +286,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareNEMaskNotByte() {
@@ -300,6 +302,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareLTMaskNotByte() {
@@ -315,6 +318,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareGTMaskNotByte() {
@@ -330,6 +334,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareLEMaskNotByte() {
@@ -345,6 +350,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareGEMaskNotByte() {
@@ -360,6 +366,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareULTMaskNotByte() {
@@ -375,6 +382,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareUGTMaskNotByte() {
@@ -390,6 +398,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareULEMaskNotByte() {
@@ -405,6 +414,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareUGEMaskNotByte() {
@@ -421,6 +431,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareEQMaskNotShort() {
@@ -438,6 +449,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareNEMaskNotShort() {
@@ -455,6 +467,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareLTMaskNotShort() {
@@ -472,6 +485,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareGTMaskNotShort() {
@@ -489,6 +503,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareLEMaskNotShort() {
@@ -506,6 +521,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareGEMaskNotShort() {
@@ -523,6 +539,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareULTMaskNotShort() {
@@ -540,6 +557,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareUGTMaskNotShort() {
@@ -557,6 +575,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareULEMaskNotShort() {
@@ -574,6 +593,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" })
     public static void testCompareUGEMaskNotShort() {
@@ -592,6 +612,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareEQMaskNotInt() {
@@ -609,6 +630,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareNEMaskNotInt() {
@@ -626,6 +648,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareLTMaskNotInt() {
@@ -643,6 +666,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareGTMaskNotInt() {
@@ -660,6 +684,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareLEMaskNotInt() {
@@ -677,6 +702,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareGEMaskNotInt() {
@@ -694,6 +720,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareULTMaskNotInt() {
@@ -711,6 +738,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareUGTMaskNotInt() {
@@ -728,6 +756,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareULEMaskNotInt() {
@@ -745,6 +774,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 4" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareUGEMaskNotInt() {
@@ -763,6 +793,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareEQMaskNotLong() {
@@ -778,6 +809,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareNEMaskNotLong() {
@@ -793,6 +825,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareLTMaskNotLong() {
@@ -808,6 +841,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareGTMaskNotLong() {
@@ -823,6 +857,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareLEMaskNotLong() {
@@ -838,6 +873,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareGEMaskNotLong() {
@@ -853,6 +889,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareULTMaskNotLong() {
@@ -868,6 +905,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareUGTMaskNotLong() {
@@ -883,6 +921,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareULEMaskNotLong() {
@@ -898,6 +937,7 @@ public class VectorMaskCompareNotTest {
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" })
     public static void testCompareUGEMaskNotLong() {
