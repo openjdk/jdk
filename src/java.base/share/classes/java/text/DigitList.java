@@ -155,13 +155,13 @@ final class DigitList implements Cloneable {
     /**
      * Appends a digit to the list, extending the list when necessary.
      */
-    public void append(char digit) {
+    public void append(byte digit) {
         if (count == digits.length) {
             byte[] data = new byte[ArraysSupport.newLength(count, 1, count)];
             System.arraycopy(digits, 0, data, 0, count);
             digits = data;
         }
-        digits[count++] = (byte) digit;
+        digits[count++] = digit;
     }
 
     /**

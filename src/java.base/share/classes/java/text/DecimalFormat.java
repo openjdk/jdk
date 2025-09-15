@@ -2593,14 +2593,14 @@ public class DecimalFormat extends NumberFormat {
                     } else {
                         ++digitCount;
                         if (!sawDecimal || !isParseIntegerOnly()) {
-                            digits.append((char)(digit + '0'));
+                            digits.append((byte) (digit + '0'));
                         }
                     }
                 } else if (digit > 0 && digit <= 9) { // [sic] digit==0 handled above
                     sawDigit = true;
                     ++digitCount;
                     if (!sawDecimal || !isParseIntegerOnly()) {
-                        digits.append((char) (digit + '0'));
+                        digits.append((byte) (digit + '0'));
                     }
 
                     // Cancel out backup setting (see grouping handler below)
