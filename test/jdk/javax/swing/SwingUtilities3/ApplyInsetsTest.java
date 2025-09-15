@@ -31,10 +31,10 @@ import com.sun.java.swing.SwingUtilities3;
  * @bug 8365379
  * @summary Verify SwingUtilities3 insets return correct result independent of initial values
  * @modules java.desktop/com.sun.java.swing
- * @run main bug8365379
+ * @run main ApplyInsetsTest
  */
 
-public class bug8365379 {
+public class ApplyInsetsTest {
     public static void main(String[] args) {
         Rectangle rect = new Rectangle(10, 20, 60, 60);
         Insets insets = new Insets(5, 10, 15, 20);

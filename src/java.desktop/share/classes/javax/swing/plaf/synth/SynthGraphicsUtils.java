@@ -555,10 +555,7 @@ public class SynthGraphicsUtils {
 
     static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
         if (insets != null) {
-            Insets newInsets = new Insets(insets.top, (leftToRight ? insets.left : insets.right),
-                                          insets.bottom, (leftToRight ? insets.right : insets.left));
-
-            SwingUtilities3.applyInsets(rect, newInsets);
+            SwingUtilities3.applyInsets(rect, insets, leftToRight);
         }
     }
 

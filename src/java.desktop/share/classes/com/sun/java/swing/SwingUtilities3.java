@@ -147,7 +147,13 @@ public class SwingUtilities3 {
 
     public static void applyInsets(Rectangle rect, Insets insets) {
         if (insets != null) {
-            rect.x += insets.left;
+            applyInsets(rect, insets, ture);
+        }
+    }
+
+    public static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
+        if (insets != null) {
+            rect.x += leftToRight ? insets.left : insets.right;
             rect.y += insets.top;
             rect.width -= (insets.left + insets.right);
             rect.height -= (insets.top + insets.bottom);
