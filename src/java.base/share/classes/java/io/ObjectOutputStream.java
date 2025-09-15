@@ -1899,12 +1899,12 @@ public class ObjectOutputStream
         private void writeUTFInternal(String str, boolean writeHeader) throws IOException {
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
-            int utflen = utfLen(str, countNonZeroAscii);
-            if (utflen <= 0xFFFF) {
+            long utflen = utfLen(str, countNonZeroAscii);
+            if (utflen <= 0xFFFFL) {
                 if(writeHeader) {
                     writeByte(TC_STRING);
                 }
-                writeShort(utflen);
+                writeShort((int)utflen);
             } else {
                 if(writeHeader) {
                     writeByte(TC_LONGSTRING);
