@@ -179,9 +179,14 @@ public final class String
     /**
      * Cache if the hash has been calculated enabling us to avoid recalculating
      * this.
+     *
+     * Possible values :
+     *     0x00 => uncomputed
+     *     0x01 => non-zero
+     *     0xFF => zero
      */
     @Stable
-    private boolean hashComputed; // Default to false;
+    private byte hashState;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
@@ -266,7 +271,7 @@ public final class String
         this.value = original.value;
         this.coder = original.coder;
         this.hash = original.hash;
-        this.hashComputed = original.hashComputed;
+        this.hashState = original.hashState;
     }
 
     /**
@@ -2552,11 +2557,11 @@ public final class String
      */
     public int hashCode() {
         int h = hash;
-        if (!hashComputed) {
+        if (hashState == 0x00) {
             h = isLatin1() ? StringLatin1.hashCode(value)
                            : StringUTF16.hashCode(value);
             hash = h;
-            hashComputed = true;
+            hashState = (h == 0 ? 0xFF : 0x01);
         }
         return h;
     }
