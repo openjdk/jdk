@@ -317,12 +317,14 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.HIGHLIGHT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.HIGHLIGHT_JS), true);
         }
 
-        // If a stylesheet file is not specified, copy the default stylesheet
-        // and replace newline with platform-specific newline.
+        // If a stylesheet file is not specified, copy the default stylesheet,
+        // replace newline with platform-specific newline,
+        // and remove the reference to fonts if --no-fonts is used.
         if (options.stylesheetFile().isEmpty()) {
-            copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
+            copyStylesheet(options);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.DOWN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.DOWN_SVG), true);
         copyResource(DocPaths.LEFT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LEFT_SVG), true);
         copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
@@ -463,18 +465,13 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyResource(DocPath sourcePath, DocPath targetPath, boolean replaceNewLine)
             throws DocletException {
-        DocPath resourcePath = DocPaths.RESOURCES.resolve(sourcePath);
-        // Resolve resources against doclets.formats.html package
-        URL resourceURL = HtmlConfiguration.class.getResource(resourcePath.getPath());
-        if (resourceURL == null) {
-            throw new ResourceIOException(sourcePath, new FileNotFoundException(resourcePath.getPath()));
-        }
+        ReadableResource resource = resolveResource(sourcePath);
         DocFile f = DocFile.createFileForOutput(configuration, targetPath);
 
         if (sourcePath.getPath().toLowerCase(Locale.ROOT).endsWith(".template")) {
-            f.copyResource(resourcePath, resourceURL, configuration.docResources);
+            f.copyResource(resource.path(), resource.url(), configuration.docResources);
         } else {
-            f.copyResource(resourcePath, resourceURL, replaceNewLine);
+            f.copyResource(resource.path(), resource.url(), replaceNewLine);
         }
     }
 
@@ -503,6 +500,23 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
+    private void copyStylesheet(HtmlOptions options) throws DocletException {
+        ReadableResource resource = resolveResource(DocPaths.STYLESHEET);
+        var targetPath = DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET);
+        DocFile f = DocFile.createFileForOutput(configuration, targetPath);
+
+        if (options.noFonts()) {
+            f.copyResource(resource.path(), resource.url(), line -> {
+                if (line.startsWith("@import url('fonts")) {
+                    return null; // remove the line
+                }
+                return line;
+            });
+        } else {
+            f.copyResource(resource.path(), resource.url(), true);
+        }
+    }
+
     private void copyFile(String filename, DocPath targetPath) throws DocFileIOException {
         if (filename.isEmpty()) {
             return;
@@ -518,5 +532,18 @@ public class HtmlDoclet extends AbstractDoclet {
         messages.notice("doclet.Copying_File_0_To_File_1",
                 fromfile.getPath(), path.getPath());
         toFile.copyFile(fromfile);
+    }
+
+    private ReadableResource resolveResource(DocPath sourcePath) throws ResourceIOException {
+        DocPath resolvedPath = DocPaths.RESOURCES.resolve(sourcePath);
+        // Resolve resources against doclets.formats.html package
+        URL resourceURL = HtmlConfiguration.class.getResource(resolvedPath.getPath());
+        if (resourceURL == null) {
+            throw new ResourceIOException(sourcePath, new FileNotFoundException(resolvedPath.getPath()));
+        }
+        return new ReadableResource(resolvedPath, resourceURL);
+    }
+
+    private record ReadableResource(DocPath path, URL url) {
     }
 }

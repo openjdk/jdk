@@ -89,6 +89,11 @@
   product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
           "Print an annotated memory map at exit")                      \
                                                                         \
+  develop(intx, CompileTaskTimeout, 0,                                  \
+          "Set the timeout for compile tasks' CPU time in milliseconds."\
+          " 0 = no timeout (default)")                                  \
+          range(0,1000000)                                              \
+                                                                        \
 // end of RUNTIME_OS_FLAGS
 
 //
