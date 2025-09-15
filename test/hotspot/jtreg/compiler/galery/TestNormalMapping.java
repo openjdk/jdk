@@ -22,7 +22,7 @@
  */
 
 /*
- * @test ir
+ * @test id=ir
  * @bug 8324751
  * @summary Visual example of auto vectorization: normal mapping
  * @library /test/lib /
@@ -31,7 +31,7 @@
 // TODO: fix bug id above
 
 /*
- * @test visual
+ * @test id=visual
  * @library /test/lib /
  * @run main compiler.galery.TestNormalMapping visual
  */
@@ -39,6 +39,8 @@
 package compiler.galery;
 
 import jdk.test.lib.Utils;
+
+import compiler.lib.ir_framework.*;
 
 /**
  * TODO: desc: JTREG version, with IR tests
@@ -50,17 +52,21 @@ public class TestNormalMapping {
         System.out.println("Running JTREG test in mode: " + mode);
 
         switch(mode) {
-            case "ir" -> testIR();
-            case "visual" -> testVisual();
+            case "ir" -> runIR();
+            case "visual" -> runVisual();
             default -> throw new RuntimeException("Unknown mode: " + mode);
         }
     }
 
-    private static void testIR() {
+    private static void runIR() {
         System.out.println("Testing with IR rules...");
+        String src = System.getProperty("test.src", null);
+        if (src == null) { throw new RuntimeException("Could not find test.src property."); }
+        TestFramework.runWithFlags("-Dtest.src=" + src,
+                                   "-XX:CompileCommand=inline,compiler.galery.NormalMapping$State::update");
     }
 
-    private static void testVisual() throws InterruptedException {
+    private static void runVisual() throws InterruptedException {
         System.out.println("Testing with 2d Graphics (visual)...");
 
         // We will not do anything special here, just launch the application,
@@ -75,5 +81,30 @@ public class TestNormalMapping {
         Thread.sleep(Utils.adjustTimeout(10000)); // let demo run for 10 seconds
         thread.interrupt();
         Thread.sleep(Utils.adjustTimeout(1000)); // allow demo 1 second for shutdown
+    }
+
+    // ---------------------- For the IR testing part only --------------------------------
+    NormalMapping.State state = new NormalMapping.State(5);
+
+    @Test
+    @Warmup(1000)
+    @IR(counts = {IRNode.REPLICATE_I, "> 0",
+                  IRNode.REPLICATE_F, "> 0",
+                  IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.SUB_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.MUL_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.ADD_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.SQRT_VF,         IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.MAX_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.AND_VI,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.LSHIFT_VI,       IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    private void testIR1() {
+        // This call should inline givne the CompileCommand above.
+        state.update();
     }
 }

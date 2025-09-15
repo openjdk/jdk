@@ -80,10 +80,30 @@ public class NormalMapping {
         }
     }
 
-    public static BufferedImage loadImage(URL path) {
+    public static File getLocalFile(String name) {
+        // If we are in JTREG IR testing mode, we have to get the path via system property,
+        // if it is run in stand-alone that property is not available, and we can load
+        // via getResource.
+        System.out.println("Loading file: " + name);
+        String testSrc = System.getProperty("test.src", null);
+        System.out.println("System Property test.src: " + testSrc);
+        if (testSrc == null) {
+            URL path = NormalMapping.class.getResource("normal_map.png");
+            System.out.println("  Loading via getResource: " + path);
+            try {
+                return new File(path.toURI());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Could not load: ", e);
+            }
+        } else {
+            return new File(testSrc + "/normal_map.png");
+        }
+    }
+
+    public static BufferedImage loadImage(File file) {
         try {
-            return ImageIO.read(new File(path.toURI()));
-        } catch (IOException | URISyntaxException e) {
+            return ImageIO.read(file);
+        } catch (IOException e) {
             throw new RuntimeException("Could not load: ", e);
         }
     }
@@ -168,9 +188,7 @@ public class NormalMapping {
 
             // Extract normal values from RGB image
             // The loaded image may not have the desired INT_RGB format, so first convert it
-            URL path = NormalMapping.class.getResource("normal_map.png");
-            System.out.println("normal_map.png: " + path);
-            BufferedImage normalsLoaded = loadImage(path);
+            BufferedImage normalsLoaded = loadImage(getLocalFile("normal_map.png"));
             BufferedImage normals = new BufferedImage(sizeX, sizeY, BufferedImage.TYPE_INT_RGB);
             normals.getGraphics().drawImage(normalsLoaded, 0, 0, null);
             int[] normalsRGB = ((DataBufferInt) normals.getRaster().getDataBuffer()).getData();
