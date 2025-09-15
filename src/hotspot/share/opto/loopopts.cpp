@@ -230,8 +230,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("Split %d %s through %d Phi in %d %s",
-               n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
+    tty->print_cr("Split %d %s through %d Phi in %d %s",
+                  n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
   }
 #endif // !PRODUCT
 

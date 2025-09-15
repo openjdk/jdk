@@ -25,10 +25,10 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -889,10 +889,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {
@@ -1294,21 +1294,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 }
 #endif // INCLUDE_JVMTI
 
-JavaThread *Threads::owning_thread_from_stacklock(ThreadsList * t_list, address basicLock) {
-  assert(LockingMode == LM_LEGACY, "Not with new lightweight locking");
-
-  JavaThread* the_owner = nullptr;
-  for (JavaThread* q : *t_list) {
-    if (q->is_lock_owned(basicLock)) {
-      the_owner = q;
-      break;
-    }
-  }
-  return the_owner;
-}
-
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
   for (JavaThread* q : *t_list) {
     // Need to start processing before accessing oops in the thread.
     StackWatermark* watermark = StackWatermarkSet::get(q, StackWatermarkKind::gc);
@@ -1325,12 +1311,7 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
   if (monitor->has_anonymous_owner()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return owning_thread_from_object(t_list, monitor->object());
-    } else {
-      assert(LockingMode == LM_LEGACY, "invariant");
-      return owning_thread_from_stacklock(t_list, (address)monitor->stack_locker());
-    }
+    return owning_thread_from_object(t_list, monitor->object());
   } else {
     JavaThread* the_owner = nullptr;
     for (JavaThread* q : *t_list) {

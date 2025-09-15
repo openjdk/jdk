@@ -66,7 +66,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1079,7 +1079,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(ik != nullptr, "sanity");
   assert(ik->in_aot_cache(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
-  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
+  assert(AtomicAccess::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -2001,7 +2001,7 @@ void SystemDictionary::restore_archived_method_handle_intrinsics() {
 }
 
 void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
-  Array<Method*>* list = MetaspaceShared::archived_method_handle_intrinsics();
+  Array<Method*>* list = AOTMetaspace::archived_method_handle_intrinsics();
   for (int i = 0; i < list->length(); i++) {
     methodHandle m(THREAD, list->at(i));
     Method::restore_archived_method_handle_intrinsic(m, CHECK);
