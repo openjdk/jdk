@@ -2557,11 +2557,11 @@ public final class String
      */
     public int hashCode() {
         int h = hash;
-        if (hashState == 0x00) {
+        if (hashState == (byte) 0x00) {
             h = isLatin1() ? StringLatin1.hashCode(value)
                            : StringUTF16.hashCode(value);
             hash = h;
-            hashState = (h == 0 ? 0xFF : 0x01);
+            hashState = (h == 0 ? (byte) 0xFF : (byte) 0x01);
         }
         return h;
     }
