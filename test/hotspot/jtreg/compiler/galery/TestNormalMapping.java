@@ -64,14 +64,16 @@ public class TestNormalMapping {
         System.out.println("Testing with 2d Graphics (visual)...");
 
         // We will not do anything special here, just launch the application,
-        // tell it to run for 5 seconds, and then timeout after 10 seconds.
+        // tell it to run for 10 second, interrupt it and let it shut down.
         Thread thread = new Thread() {
             public void run() {
-                NormalMapping.main(new String[] {"10"});
+                NormalMapping.main(null);
             }
         };
         thread.setDaemon(true);
         thread.start();
-        Thread.sleep(Utils.adjustTimeout(15000));
+        Thread.sleep(Utils.adjustTimeout(10000)); // let demo run for 10 seconds
+        thread.interrupt();
+        Thread.sleep(Utils.adjustTimeout(1000)); // allow demo 1 second for shutdown
     }
 }

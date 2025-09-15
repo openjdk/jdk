@@ -53,17 +53,6 @@ public class NormalMapping {
     public static Random RANDOM = new Random();
 
     public static void main(String[] args) {
-        long timeout = System.nanoTime() + 1_000_000_000_000L;
-        if (args.length > 0) {
-            try {
-                int sec = Integer.parseInt(args[0]);
-                timeout = System.nanoTime() + sec * 1_000_000_000L;
-                System.out.println("Demo timoeout seconds: " + sec);
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("Failed on parsing seconds: ", e);
-            }
-        }
-
         // Create an applicateion state with 5 lights.
         State state = new State(5);
 
@@ -78,25 +67,16 @@ public class NormalMapping {
         try {
             // Tight loop where we redraw the panel as fast as possible.
             while (true) {
-                sleep(1);
+                Thread.sleep(1);
                 state.update();
                 panel.repaint();
-                if (timeout < System.nanoTime()) {
-                    System.out.println("Reached timeout of demo.");
-                    break;
-                }
             }
+        } catch (InterruptedException e) {
+            System.out.println("Interrputed, terminating demo.");
         } finally {
+            System.out.println("Shut down demo.");
             frame.setVisible(false);
             frame.dispose();
-        }
-    }
-
-    public static void sleep(int t) {
-        try {
-            Thread.sleep(t);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Sleep interrupted.");
         }
     }
 
