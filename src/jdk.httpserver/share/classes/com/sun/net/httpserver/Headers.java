@@ -119,16 +119,35 @@ public class Headers implements Map<String,List<String>> {
         if (len == 0) {
             return key;
         }
-        char[] b = key.toCharArray();
-        if (b[0] >= 'a' && b[0] <= 'z') {
-            b[0] = (char)(b[0] - ('a' - 'A'));
-        } else if (b[0] == '\r' || b[0] == '\n')
+        int i = 0;
+        char c = key.charAt(i);
+        if (c == '\r' || c == '\n')
             throw new IllegalArgumentException("illegal character in key");
+        if(c >= 'a' && c <= 'z') {
+            // start with lowercase
+        } else {
+            i++;
+            for(; i < len; i++) {
+                c = key.charAt(i);
+                if (c == '\r' || c == '\n')
+                    throw new IllegalArgumentException("illegal character in key");
+                else if(c >= 'A' && c <='Z') {
+                    break;
+                }
+            }
+        }
+        if(i == len) return key;
 
-        for (int i=1; i<len; i++) {
-            if (b[i] >= 'A' && b[i] <= 'Z') {
-                b[i] = (char) (b[i] + ('a' - 'A'));
-            } else if (b[i] == '\r' || b[i] == '\n')
+        char[] b = key.toCharArray();
+        if(i == 0) {
+            b[0] = (char)(b[0] - ('a' - 'A'));
+            i++;
+        }
+        for (; i < len; i++) {
+            c = b[i];
+            if(c >= 'A' && c <= 'Z') {
+                b[i] = (char) (c + ('a'-'A'));
+            } else if (c == '\r' || c == '\n')
                 throw new IllegalArgumentException("illegal character in key");
         }
         return new String(b);
