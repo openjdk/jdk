@@ -438,11 +438,11 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
         existing_map->fd = lib_fd;
         existing_map->offset = lib_php->p_offset;
-        if (!is_extended_memsz) {
-          existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
-        } else {
+        if (is_extended_memsz) {
           // The offset in the core dump is aligned down to page_size.
           // We should trust the core dump in this case.
+        } else {
+          existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
         }
       }
     }
