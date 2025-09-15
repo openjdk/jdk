@@ -420,16 +420,12 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         // Coredump stores value of p_memsz elf field
         // rounded up to page boundary.
 
-        if ((existing_map->memsz != page_size) &&
-            (existing_map->fd != lib_fd) &&
-            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
-
-          if (ROUNDUP(existing_map->memsz, page_size) ==
-                ROUNDUP(lib_php->p_memsz + (lib_php->p_offset & (page_size - 1)), page_size)) {
-            // Not an error: the offset in the core dump is aligned down to page_size.
-            // We should trust the core dump in this case.
-            continue;
-          }
+        size_t aligned_map_memsz = ROUNDUP(existing_map->memsz, page_size);
+        bool is_extended_memsz = aligned_map_memsz == ROUNDUP(lib_php->p_memsz + (lib_php->p_offset & (page_size - 1)), page_size);
+        if (!is_extended_memsz &&
+            existing_map->memsz != page_size &&
+            existing_map->fd != lib_fd &&
+            aligned_map_memsz != ROUNDUP(lib_php->p_memsz, page_size)) {
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
@@ -442,7 +438,12 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
         existing_map->fd = lib_fd;
         existing_map->offset = lib_php->p_offset;
-        existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
+        if (!is_extended_memsz) {
+          existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
+        } else {
+          // The offset in the core dump is aligned down to page_size.
+          // We should trust the core dump in this case.
+        }
       }
     }
 
