@@ -67,7 +67,8 @@ public class TestNormalMapping {
         String src = System.getProperty("test.src", null);
         if (src == null) { throw new RuntimeException("Could not find test.src property."); }
         TestFramework.runWithFlags("-Dtest.src=" + src,
-                                   "-XX:CompileCommand=inline,compiler.gallery.NormalMapping$State::update");
+                                   "-XX:CompileCommand=inline,compiler.gallery.NormalMapping$State::update",
+                                   "-XX:CompileCommand=inline,compiler.gallery.NormalMapping$State::computeLight");
     }
 
     private static void runVisual() throws InterruptedException {
