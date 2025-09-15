@@ -1832,19 +1832,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         "no exact representable decimal result.");
 
             BigInteger quot = qr[0];
-            // Equalize multiplicities of 2 and 5
-            int powsOf10;
-            if (powsOf2 < powsOf5) {
-                powsOf10 = powsOf5;
-                quot = quot.shiftLeft(powsOf5 - powsOf2);
-            } else {
-                powsOf10 = powsOf2;
-                quot = quot.multiply(fiveTo(powsOf2 - powsOf5));
-            }
+            int powsOf10 = Math.max(powsOf2, powsOf5);
+            if (powsOf10 == 0)
+                return new BigDecimal(quot, preferredScale);
 
-            return powsOf10 == 0
-                    ? new BigDecimal(quot, preferredScale)
-                    : createAndStripZerosToMatchScale(quot, preferredScale + powsOf10, preferredScale);
+            // Equalize multiplicities of 2 and 5
+            quot = powsOf10 == powsOf5
+                    ? quot.shiftLeft(powsOf10 - powsOf2)
+                    : quot.multiply(fiveTo(powsOf10 - powsOf5));
+
+            return createAndStripZerosToMatchScale(quot, preferredScale + powsOf10, preferredScale);
         }
     }
 
