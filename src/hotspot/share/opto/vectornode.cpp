@@ -2345,7 +2345,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   }
   if (in1->Opcode() != Op_VectorMaskCmp ||
       in1->outcnt() != 1 ||
-      !(in1->as_VectorMaskCmp())->predicate_can_be_negated() ||
+      !in1->as_VectorMaskCmp()->predicate_can_be_negated() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
   }
@@ -2376,10 +2376,10 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
-  if (res == nullptr) {
-    res = VectorNode::Ideal(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
   }
-  return res;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorBlendNode::Identity(PhaseGVN* phase) {

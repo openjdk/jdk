@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.*;
 
 import jdk.incubator.vector.*;
+import java.lang.invoke.*;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
@@ -35,35 +36,43 @@ import java.util.Random;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(jvmArgs = { "--add-modules=jdk.incubator.vector" })
-public class MaskCompareNotBenchmark {
+@Fork(value = 2, jvmArgs = { "--add-modules=jdk.incubator.vector" })
+public abstract class MaskCompareNotBenchmark {
     @Param({"4096"})
-    private int ARRAYLEN;
+    protected int ARRAYLEN;
+
+    // Abstract method to get comparison operator from subclasses
+    protected abstract String getComparisonOperatorName();
+
+    // To get compile-time constants for comparison operation
+    static final MutableCallSite MUTABLE_COMPARISON_CONSTANT = new MutableCallSite(MethodType.methodType(VectorOperators.Comparison.class));
+    static final MethodHandle MUTABLE_COMPARISON_CONSTANT_HANDLE = MUTABLE_COMPARISON_CONSTANT.dynamicInvoker();
+
     private static Random r = new Random();
 
-    private static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
-    private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
-    private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
-    private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
-    private static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
-    private static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
+    protected static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
+    protected static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
+    protected static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
+    protected static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
+    protected static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
+    protected static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
 
-    boolean[] mr;
-    byte[] ba;
-    byte[] bb;
-    short[] sa;
-    short[] sb;
-    int[] ia;
-    int[] ib;
-    long[] la;
-    long[] lb;
-    float[] fa;
-    float[] fb;
-    double[] da;
-    double[] db;
+    protected boolean[] mr;
+    protected byte[] ba;
+    protected byte[] bb;
+    protected short[] sa;
+    protected short[] sb;
+    protected int[] ia;
+    protected int[] ib;
+    protected long[] la;
+    protected long[] lb;
+    protected float[] fa;
+    protected float[] fb;
+    protected double[] da;
+    protected double[] db;
 
     @Setup
-    public void init() {
+    public void init() throws Throwable {
         mr = new boolean[ARRAYLEN];
         ba = new byte[ARRAYLEN];
         bb = new byte[ARRAYLEN];
@@ -93,285 +102,119 @@ public class MaskCompareNotBenchmark {
             da[i] = r.nextDouble();
             db[i] = r.nextDouble();
         }
+
+        VectorOperators.Comparison comparisonOp = getComparisonOperator(getComparisonOperatorName());
+        MethodHandle constant = MethodHandles.constant(VectorOperators.Comparison.class, comparisonOp);
+        MUTABLE_COMPARISON_CONSTANT.setTarget(constant);
     }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotByte(VectorOperators.Comparison op) {
-        ByteVector bv = ByteVector.fromArray(B_SPECIES, bb, 0);
-        for (int j = 0; j < ARRAYLEN; j += B_SPECIES.length()) {
-            ByteVector av = ByteVector.fromArray(B_SPECIES, ba, j);
-            VectorMask<Byte> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
+    private static VectorOperators.Comparison getComparisonOperator(String op) {
+        switch (op) {
+            case "EQ": return VectorOperators.EQ;
+            case "NE": return VectorOperators.NE;
+            case "LT": return VectorOperators.LT;
+            case "LE": return VectorOperators.LE;
+            case "GT": return VectorOperators.GT;
+            case "GE": return VectorOperators.GE;
+            case "ULT": return VectorOperators.ULT;
+            case "ULE": return VectorOperators.ULE;
+            case "UGT": return VectorOperators.UGT;
+            case "UGE": return VectorOperators.UGE;
+            default: throw new IllegalArgumentException("Unknown comparison operator: " + op);
         }
     }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotShort(VectorOperators.Comparison op) {
-        ShortVector bv = ShortVector.fromArray(S_SPECIES, sb, 0);
-        for (int j = 0; j < ARRAYLEN; j += S_SPECIES.length()) {
-            ShortVector av = ShortVector.fromArray(S_SPECIES, sa, j);
-            VectorMask<Short> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
+    protected VectorOperators.Comparison comparison_con() throws Throwable {
+        return (VectorOperators.Comparison) MUTABLE_COMPARISON_CONSTANT_HANDLE.invokeExact();
+    }
+
+    // Subclasses with different comparison operators
+    public static class IntegerComparisons extends MaskCompareNotBenchmark {
+        @Param({"EQ", "NE", "LT", "LE", "GT", "GE", "ULT", "ULE", "UGT", "UGE"})
+        public String COMPARISON_OP;
+
+        @Override
+        protected String getComparisonOperatorName() {
+            return COMPARISON_OP;
+        }
+
+        @Benchmark
+        public void testCompareMaskNotByte() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            ByteVector bv = ByteVector.fromArray(B_SPECIES, bb, 0);
+            for (int j = 0; j < ARRAYLEN; j += B_SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(B_SPECIES, ba, j);
+                VectorMask<Byte> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
+        }
+
+        @Benchmark
+        public void testCompareMaskNotShort() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            ShortVector bv = ShortVector.fromArray(S_SPECIES, sb, 0);
+            for (int j = 0; j < ARRAYLEN; j += S_SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(S_SPECIES, sa, j);
+                VectorMask<Short> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
+        }
+
+        @Benchmark
+        public void testCompareMaskNotInt() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+            for (int j = 0; j < ARRAYLEN; j += I_SPECIES.length()) {
+                IntVector av = IntVector.fromArray(I_SPECIES, ia, j);
+                VectorMask<Integer> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
+        }
+
+        @Benchmark
+        public void testCompareMaskNotLong() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+            for (int j = 0; j < ARRAYLEN; j += L_SPECIES.length()) {
+                LongVector av = LongVector.fromArray(L_SPECIES, la, j);
+                VectorMask<Long> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
         }
     }
 
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotInt(VectorOperators.Comparison op) {
-        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
-        for (int j = 0; j < ARRAYLEN; j += I_SPECIES.length()) {
-            IntVector av = IntVector.fromArray(I_SPECIES, ia, j);
-            VectorMask<Integer> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
+    public static class FloatingPointComparisons extends MaskCompareNotBenchmark {
+        // "ULT", "ULE", "UGT", "UGE" are not supported for floating point types
+        @Param({"EQ", "NE", "LT", "LE", "GT", "GE"})
+        public String COMPARISON_OP;
+
+        @Override
+        protected String getComparisonOperatorName() {
+            return COMPARISON_OP;
         }
-    }
 
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotLong(VectorOperators.Comparison op) {
-        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
-        for (int j = 0; j < ARRAYLEN; j += L_SPECIES.length()) {
-            LongVector av = LongVector.fromArray(L_SPECIES, la, j);
-            VectorMask<Long> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
+        @Benchmark
+        public void testCompareMaskNotFloat() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            FloatVector bv = FloatVector.fromArray(F_SPECIES, fb, 0);
+            for (int j = 0; j < ARRAYLEN; j += F_SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(F_SPECIES, fa, j);
+                VectorMask<Float> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
         }
-    }
 
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotFloat(VectorOperators.Comparison op) {
-        FloatVector bv = FloatVector.fromArray(F_SPECIES, fb, 0);
-        for (int j = 0; j < ARRAYLEN; j += F_SPECIES.length()) {
-            FloatVector av = FloatVector.fromArray(F_SPECIES, fa, j);
-            VectorMask<Float> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
+        @Benchmark
+        public void testCompareMaskNotDouble() throws Throwable {
+            VectorOperators.Comparison op = comparison_con();
+            DoubleVector bv = DoubleVector.fromArray(D_SPECIES, db, 0);
+            for (int j = 0; j < ARRAYLEN; j += D_SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, j);
+                VectorMask<Double> m = av.compare(op, bv).not();
+                m.intoArray(mr, j);
+            }
         }
-    }
-
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private void testCompareMaskNotDouble(VectorOperators.Comparison op) {
-        DoubleVector bv = DoubleVector.fromArray(D_SPECIES, db, 0);
-        for (int j = 0; j < ARRAYLEN; j += D_SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, j);
-            VectorMask<Double> m = av.compare(op, bv).not();
-            m.intoArray(mr, j);
-        }
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.NE);
-    }
-
-    @Benchmark
-    public void testCompareLTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.LT);
-    }
-
-    @Benchmark
-    public void testCompareGTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.GT);
-    }
-
-    @Benchmark
-    public void testCompareLEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.LE);
-    }
-
-    @Benchmark
-    public void testCompareGEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.GE);
-    }
-
-    @Benchmark
-    public void testCompareULTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.ULT);
-    }
-
-    @Benchmark
-    public void testCompareUGTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.UGT);
-    }
-
-    @Benchmark
-    public void testCompareULEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.ULE);
-    }
-
-    @Benchmark
-    public void testCompareUGEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.UGE);
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.NE);
-    }
-
-    @Benchmark
-    public void testCompareLTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.LT);
-    }
-
-    @Benchmark
-    public void testCompareGTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.GT);
-    }
-
-    @Benchmark
-    public void testCompareLEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.LE);
-    }
-
-    @Benchmark
-    public void testCompareGEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.GE);
-    }
-
-    @Benchmark
-    public void testCompareULTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.ULT);
-    }
-
-    @Benchmark
-    public void testCompareUGTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.UGT);
-    }
-
-    @Benchmark
-    public void testCompareULEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.ULE);
-    }
-
-    @Benchmark
-    public void testCompareUGEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.UGE);
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.NE);
-    }
-
-    @Benchmark
-    public void testCompareLTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.LT);
-    }
-
-    @Benchmark
-    public void testCompareGTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.GT);
-    }
-
-    @Benchmark
-    public void testCompareLEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.LE);
-    }
-
-    @Benchmark
-    public void testCompareGEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.GE);
-    }
-
-    @Benchmark
-    public void testCompareULTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.ULT);
-    }
-
-    @Benchmark
-    public void testCompareUGTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.UGT);
-    }
-
-    @Benchmark
-    public void testCompareULEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.ULE);
-    }
-
-    @Benchmark
-    public void testCompareUGEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.UGE);
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.NE);
-    }
-
-    @Benchmark
-    public void testCompareLTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.LT);
-    }
-
-    @Benchmark
-    public void testCompareGTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.GT);
-    }
-
-    @Benchmark
-    public void testCompareLEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.LE);
-    }
-
-    @Benchmark
-    public void testCompareGEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.GE);
-    }
-
-    @Benchmark
-    public void testCompareULTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.ULT);
-    }
-
-    @Benchmark
-    public void testCompareUGTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.UGT);
-    }
-
-    @Benchmark
-    public void testCompareULEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.ULE);
-    }
-
-    @Benchmark
-    public void testCompareUGEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.UGE);
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotFloat() {
-        testCompareMaskNotFloat(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotFloat() {
-        testCompareMaskNotFloat(VectorOperators.NE);
-    }
-
-    @Benchmark
-    public void testCompareEQMaskNotDouble() {
-        testCompareMaskNotDouble(VectorOperators.EQ);
-    }
-
-    @Benchmark
-    public void testCompareNEMaskNotDouble() {
-        testCompareMaskNotDouble(VectorOperators.NE);
     }
 }
