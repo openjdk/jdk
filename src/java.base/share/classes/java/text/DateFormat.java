@@ -101,8 +101,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </blockquote>
  *
  * <p>If the specified locale contains "ca" (calendar), "rg" (region override),
- * and/or "tz" (timezone) <a href="../util/Locale.html#def_locale_extension">Unicode
- * extensions</a>, the calendar, the country and/or the time zone for formatting
+ * and/or "tz" (timezone) {@linkplain Locale##def_locale_extension Unicode
+ * extensions}, the calendar, the country and/or the time zone for formatting
  * are overridden. If both "ca" and "rg" are specified, the calendar from the "ca"
  * extension supersedes the implicit one from the "rg" extension.
  *

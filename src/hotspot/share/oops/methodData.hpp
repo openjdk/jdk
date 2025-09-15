@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
@@ -181,7 +181,7 @@ public:
   }
 
   u1 flags() const {
-    return Atomic::load_acquire(&_header._struct._flags);
+    return AtomicAccess::load_acquire(&_header._struct._flags);
   }
 
   u2 bci() const {
@@ -214,7 +214,7 @@ public:
         // already set.
         return false;
       }
-    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
+    } while (compare_value != AtomicAccess::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
     return true;
   }
 
@@ -229,7 +229,7 @@ public:
         return false;
       }
       exchange_value = compare_value & ~bit;
-    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
+    } while (compare_value != AtomicAccess::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
     return true;
   }
 

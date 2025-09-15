@@ -403,7 +403,7 @@ ZRemsetTableIterator::ZRemsetTableIterator(ZRemembered* remembered, bool previou
 
   // This iterator uses the "found old" optimization.
 bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
-  BitMap::idx_t prev = Atomic::load(&_claimed);
+  BitMap::idx_t prev = AtomicAccess::load(&_claimed);
 
   for (;;) {
     if (prev == _bm->size()) {
@@ -412,11 +412,11 @@ bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
 
     const BitMap::idx_t page_index = _bm->find_first_set_bit(_claimed);
     if (page_index == _bm->size()) {
-      Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+      AtomicAccess::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
       return false;
     }
 
-    const BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+    const BitMap::idx_t res = AtomicAccess::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
     if (res != prev) {
       // Someone else claimed
       prev = res;

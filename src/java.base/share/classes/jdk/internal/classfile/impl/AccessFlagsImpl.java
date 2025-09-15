@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public final class AccessFlagsImpl extends AbstractElement
     private final int flagsMask;
     private Set<AccessFlag> flags;
 
-    public  AccessFlagsImpl(AccessFlag.Location location, AccessFlag... flags) {
+    public AccessFlagsImpl(AccessFlag.Location location, AccessFlag... flags) {
         this.location = location;
         this.flagsMask = Util.flagsToBits(location, flags);
         this.flags = Set.of(flags);
@@ -43,7 +43,7 @@ public final class AccessFlagsImpl extends AbstractElement
 
     public AccessFlagsImpl(AccessFlag.Location location, int mask) {
         this.location = location;
-        this.flagsMask = mask;
+        this.flagsMask = Util.checkFlags(mask);
     }
 
     @Override

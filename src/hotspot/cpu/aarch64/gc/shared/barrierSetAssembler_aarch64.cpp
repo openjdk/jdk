@@ -275,7 +275,7 @@ address BarrierSetAssembler::patching_epoch_addr() {
 }
 
 void BarrierSetAssembler::increment_patching_epoch() {
-  Atomic::inc(&_patching_epoch);
+  AtomicAccess::inc(&_patching_epoch);
 }
 
 void BarrierSetAssembler::clear_patching_epoch() {
@@ -331,13 +331,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
   } else {
-    assert(patching_type == NMethodPatchingType::conc_data_patch, "must be");
-    // Subsequent loads of oops must occur after load of guard value.
-    // BarrierSetNMethod::disarm sets guard with release semantics.
-    __ membar(__ LoadLoad);
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
-    __ ldrw(rscratch2, thread_disarmed_addr);
-    __ cmpw(rscratch1, rscratch2);
+    ShouldNotReachHere();
   }
   __ br(condition, barrier_target);
 

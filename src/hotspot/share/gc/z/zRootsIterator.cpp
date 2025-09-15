@@ -29,7 +29,7 @@
 #include "gc/z/zStat.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
@@ -91,10 +91,10 @@ public:
 template <typename Iterator>
 template <typename ClosureType>
 void ZParallelApply<Iterator>::apply(ClosureType* cl) {
-  if (!Atomic::load(&_completed)) {
+  if (!AtomicAccess::load(&_completed)) {
     _iter.apply(cl);
-    if (!Atomic::load(&_completed)) {
-      Atomic::store(&_completed, true);
+    if (!AtomicAccess::load(&_completed)) {
+      AtomicAccess::store(&_completed, true);
     }
   }
 }
@@ -120,7 +120,7 @@ void ZCLDsIteratorAll::apply(CLDClosure* cl) {
 }
 
 uint ZJavaThreadsIterator::claim() {
-  return Atomic::fetch_then_add(&_claimed, 1u);
+  return AtomicAccess::fetch_then_add(&_claimed, 1u);
 }
 
 void ZJavaThreadsIterator::apply(ThreadClosure* cl) {

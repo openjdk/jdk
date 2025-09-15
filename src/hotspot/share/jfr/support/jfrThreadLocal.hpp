@@ -30,7 +30,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 #ifdef LINUX
@@ -169,11 +169,11 @@ class JfrThreadLocal {
 
 
   int sample_state() const {
-    return Atomic::load_acquire(&_sample_state);
+    return AtomicAccess::load_acquire(&_sample_state);
   }
 
   void set_sample_state(int state) {
-    Atomic::release_store(&_sample_state, state);
+    AtomicAccess::release_store(&_sample_state, state);
   }
 
   Monitor* sample_monitor() {
@@ -209,14 +209,14 @@ class JfrThreadLocal {
   }
 
   bool has_enqueued_requests() const {
-    return Atomic::load_acquire(&_enqueued_requests);
+    return AtomicAccess::load_acquire(&_enqueued_requests);
   }
 
   void enqueue_request() {
     assert_lock_strong(sample_monitor());
     assert(sample_state() == JAVA_SAMPLE, "invariant");
     if (_sample_request_queue.append(_sample_request) == 0) {
-      Atomic::release_store(&_enqueued_requests, true);
+      AtomicAccess::release_store(&_enqueued_requests, true);
     }
     set_sample_state(NO_SAMPLE);
   }
@@ -226,7 +226,7 @@ class JfrThreadLocal {
     assert(has_enqueued_requests(), "invariant");
     assert(_sample_request_queue.is_nonempty(), "invariant");
     _sample_request_queue.clear();
-    Atomic::release_store(&_enqueued_requests, false);
+    AtomicAccess::release_store(&_enqueued_requests, false);
   }
 
   bool has_native_sample_request() const {

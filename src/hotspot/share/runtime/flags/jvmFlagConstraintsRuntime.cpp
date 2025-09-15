@@ -23,8 +23,8 @@
  */
 
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"

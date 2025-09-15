@@ -841,6 +841,13 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
+  public native void busyWait(int cpuTimeMs);
+
+  // returns true if supported, false if not
+  public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
+
+  public native long cpuSamplerOutOfStackWalkingIterations();
+
   public native void pinObject(Object o);
 
   public native void unpinObject(Object o);

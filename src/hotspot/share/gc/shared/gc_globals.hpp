@@ -484,11 +484,6 @@
           "OS specific low limit for heap base address")                    \
           constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
                                                                             \
-  product(size_t, PretenureSizeThreshold, 0,                                \
-          "Maximum size in bytes of objects allocated in DefNew "           \
-          "generation; zero means no maximum")                              \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \
           range(1, max_uintx-2)                                             \

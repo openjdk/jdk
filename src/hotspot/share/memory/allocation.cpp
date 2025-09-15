@@ -22,7 +22,6 @@
  *
  */
 
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
@@ -66,8 +65,8 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
-void* MetaspaceObj::_shared_metaspace_base = nullptr;
-void* MetaspaceObj::_shared_metaspace_top  = nullptr;
+void* MetaspaceObj::_aot_metaspace_base = nullptr;
+void* MetaspaceObj::_aot_metaspace_top  = nullptr;
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,

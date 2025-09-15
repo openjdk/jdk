@@ -76,7 +76,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
       }
       jfs.next();
     }
-    ik = (const InstanceKlass*)ik->super();
+    ik = ik->super();
   }
   *modifiers = 0;
   return nullptr;

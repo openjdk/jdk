@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline oop jdk_internal_vm_Continuation::scope(oop continuation) {
   return continuation->obj_field(_scope_offset);
@@ -154,23 +154,23 @@ inline void jdk_internal_vm_StackChunk::set_bottom(oop chunk, int value) {
 }
 
 inline uint8_t jdk_internal_vm_StackChunk::flags(oop chunk) {
-  return Atomic::load(chunk->field_addr<uint8_t>(_flags_offset));
+  return AtomicAccess::load(chunk->field_addr<uint8_t>(_flags_offset));
 }
 
 inline void jdk_internal_vm_StackChunk::set_flags(oop chunk, uint8_t value) {
-  Atomic::store(chunk->field_addr<uint8_t>(_flags_offset), value);
+  AtomicAccess::store(chunk->field_addr<uint8_t>(_flags_offset), value);
 }
 
 inline uint8_t jdk_internal_vm_StackChunk::flags_acquire(oop chunk) {
-  return Atomic::load_acquire(chunk->field_addr<uint8_t>(_flags_offset));
+  return AtomicAccess::load_acquire(chunk->field_addr<uint8_t>(_flags_offset));
 }
 
 inline void jdk_internal_vm_StackChunk::release_set_flags(oop chunk, uint8_t value) {
-  Atomic::release_store(chunk->field_addr<uint8_t>(_flags_offset), value);
+  AtomicAccess::release_store(chunk->field_addr<uint8_t>(_flags_offset), value);
 }
 
 inline bool jdk_internal_vm_StackChunk::try_set_flags(oop chunk, uint8_t expected_value, uint8_t new_value) {
-  return Atomic::cmpxchg(chunk->field_addr<uint8_t>(_flags_offset), expected_value, new_value) == expected_value;
+  return AtomicAccess::cmpxchg(chunk->field_addr<uint8_t>(_flags_offset), expected_value, new_value) == expected_value;
 }
 
 inline int jdk_internal_vm_StackChunk::maxThawingSize(oop chunk) {
@@ -187,11 +187,11 @@ inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value)
 
 // lockStackSize is read concurrently by GC threads so we use Atomic.
 inline uint8_t jdk_internal_vm_StackChunk::lockStackSize(oop chunk) {
-  return Atomic::load(chunk->field_addr<uint8_t>(_lockStackSize_offset));
+  return AtomicAccess::load(chunk->field_addr<uint8_t>(_lockStackSize_offset));
 }
 
 inline void jdk_internal_vm_StackChunk::set_lockStackSize(oop chunk, uint8_t value) {
-  Atomic::store(chunk->field_addr<uint8_t>(_lockStackSize_offset), value);
+  AtomicAccess::store(chunk->field_addr<uint8_t>(_lockStackSize_offset), value);
 }
 
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP

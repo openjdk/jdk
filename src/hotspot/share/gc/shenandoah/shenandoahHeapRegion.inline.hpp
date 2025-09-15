@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest &req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
@@ -138,15 +138,15 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = Atomic::add(&_live_data, s, memory_order_relaxed);
+  size_t new_live_data = AtomicAccess::add(&_live_data, s, memory_order_relaxed);
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
-  Atomic::store(&_live_data, (size_t)0);
+  AtomicAccess::store(&_live_data, (size_t)0);
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return Atomic::load(&_live_data);
+  return AtomicAccess::load(&_live_data);
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
@@ -178,14 +178,14 @@ inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
 }
 
 inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
-  HeapWord* watermark = Atomic::load_acquire(&_update_watermark);
+  HeapWord* watermark = AtomicAccess::load_acquire(&_update_watermark);
   assert(bottom() <= watermark && watermark <= top(), "within bounds");
   return watermark;
 }
 
 inline void ShenandoahHeapRegion::set_update_watermark(HeapWord* w) {
   assert(bottom() <= w && w <= top(), "within bounds");
-  Atomic::release_store(&_update_watermark, w);
+  AtomicAccess::release_store(&_update_watermark, w);
 }
 
 // Fast version that avoids synchronization, only to be used at safepoints.

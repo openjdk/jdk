@@ -62,10 +62,10 @@ import sun.security.x509.X500Name;
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm CertChecking false SunX509
- * @run main/othervm CertChecking true SunX509
- * @run main/othervm CertChecking false PKIX
- * @run main/othervm CertChecking true PKIX
+ * @run main/othervm/timeout=480 CertChecking false SunX509
+ * @run main/othervm/timeout=480 CertChecking true SunX509
+ * @run main/othervm/timeout=480 CertChecking false PKIX
+ * @run main/othervm/timeout=480 CertChecking true PKIX
  */
 
 /*

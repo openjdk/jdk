@@ -1431,6 +1431,9 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
   void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
 
+  // Helper routine processing the slow path of NaN when converting float to float16
+  void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
+
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {

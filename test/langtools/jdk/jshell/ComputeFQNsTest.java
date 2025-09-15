@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng ComputeFQNsTest
+ * @run junit ComputeFQNsTest
  */
 
 import java.io.Writer;
@@ -41,15 +41,16 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ComputeFQNsTest extends KullaTesting {
 
     private final Compiler compiler = new Compiler();
     private final Path outDir = Paths.get("ComputeFQNsTest");
 
+    @Test
     public void testAddImport() throws Exception {
         compiler.compile(outDir, "package test1; public class FQNTestClass { }", "package test2; public class FQNTestClass { }");
         String jarName = "test.jar";
@@ -77,7 +78,8 @@ public class ComputeFQNsTest extends KullaTesting {
         assertInferredFQNs("class X { ArrayList", "ArrayList".length(), false, "java.util.ArrayList");
     }
 
-    @Test(enabled = false) //TODO 8161165
+    @Test //TODO 8161165
+    @Disabled
     public void testSuspendIndexing() throws Throwable {
         compiler.compile(outDir, "package test; public class FQNTest { }");
         String jarName = "test.jar";
@@ -127,8 +129,8 @@ public class ComputeFQNsTest extends KullaTesting {
 
         QualifiedNames candidates = getAnalysis().listQualifiedNames(code, code.length());
 
-        assertEquals(candidates.getNames(), Arrays.asList(), "Input: " + code + ", candidates=" + candidates.getNames());
-        assertEquals(candidates.isUpToDate(), false, "Input: " + code + ", up-to-date=" + candidates.isUpToDate());
+        assertEquals(Arrays.asList(), candidates.getNames(), "Input: " + code + ", candidates=" + candidates.getNames());
+        assertEquals(false, candidates.isUpToDate(), "Input: " + code + ", up-to-date=" + candidates.isUpToDate());
 
         Files.delete(continueMarkFile);
 
@@ -136,7 +138,7 @@ public class ComputeFQNsTest extends KullaTesting {
 
         candidates = getAnalysis().listQualifiedNames(code, code.length());
 
-        assertEquals(candidates.getNames(), Arrays.asList("test.FQNTest"), "Input: " + code + ", candidates=" + candidates.getNames());
+        assertEquals(Arrays.asList("test.FQNTest"), candidates.getNames(), "Input: " + code + ", candidates=" + candidates.getNames());
         assertEquals(true, candidates.isUpToDate(), "Input: " + code + ", up-to-date=" + candidates.isUpToDate());
     }
 

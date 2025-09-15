@@ -794,8 +794,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // Create the pipeline class description
 
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
 
   fprintf(fp_cpp, "const Pipeline_Use_Element Pipeline_Use::elaborated_elements[%d] = {\n", _pipeline->_rescount);
   for (int i1 = 0; i1 < _pipeline->_rescount; i1++) {
@@ -895,12 +895,11 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "(uint)stage_%s", _pipeline->_stages.name(maxWriteStage));
     else
       fprintf(fp_cpp, "((uint)stage_%s)+%d", _pipeline->_stages.name(maxWriteStage), maxMoreInstrs);
-    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s, %s,\n",
+    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s,\n",
       paramcount,
       pipeclass->hasFixedLatency() ? "true" : "false",
       pipeclass->fixedLatency(),
       pipeclass->InstructionCount(),
-      pipeclass->hasBranchDelay() ? "true" : "false",
       pipeclass->hasMultipleBundles() ? "true" : "false",
       pipeclass->forceSerialization() ? "true" : "false",
       pipeclass->mayHaveNoCode() ? "true" : "false" );
@@ -977,34 +976,12 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   }
   fprintf(fp_cpp, "}\n\n");
 
-  // Output the list of nop nodes
-  fprintf(fp_cpp, "// Descriptions for emitting different functional unit nops\n");
-  const char *nop;
-  int nopcnt = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; nopcnt++ );
-
-  fprintf(fp_cpp, "void Bundle::initialize_nops(MachNode * nop_list[%d]) {\n", nopcnt);
-  int i = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; i++ ) {
-    fprintf(fp_cpp, "  nop_list[%d] = (MachNode *) new %sNode();\n", i, nop);
-  }
-  fprintf(fp_cpp, "};\n\n");
   fprintf(fp_cpp, "#ifndef PRODUCT\n");
   fprintf(fp_cpp, "void Bundle::dump(outputStream *st) const {\n");
-  fprintf(fp_cpp, "  static const char * bundle_flags[] = {\n");
-  fprintf(fp_cpp, "    \"\",\n");
-  fprintf(fp_cpp, "    \"use nop delay\",\n");
-  fprintf(fp_cpp, "    \"use unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"use conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in all conditional delays\",\n");
-  fprintf(fp_cpp, "  };\n\n");
-
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
   // Don't add compound resources to the list of resource names
   const char* resource;
-  i = 0;
+  int i = 0;
   for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != nullptr;) {
     if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
@@ -1015,12 +992,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // See if the same string is in the table
   fprintf(fp_cpp, "  bool needs_comma = false;\n\n");
-  fprintf(fp_cpp, "  if (_flags) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s\", bundle_flags[_flags]);\n");
-  fprintf(fp_cpp, "    needs_comma = true;\n");
-  fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  if (instr_count()) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s%%d instr%%s\", needs_comma ? \", \" : \"\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
+  fprintf(fp_cpp, "    st->print(\"%%d instr%%s\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
   fprintf(fp_cpp, "    needs_comma = true;\n");
   fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  uint r = resources_used();\n");

@@ -216,7 +216,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
+    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
         return result;
@@ -357,7 +357,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       assert(target_gen == YOUNG_GENERATION, "Error");
       // We record this census only when simulating pre-adaptive tenuring behavior, or
       // when we have been asked to record the census at evacuation rather than at mark
-      if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+      if (!ShenandoahGenerationalAdaptiveTenuring) {
         evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
       }
     }

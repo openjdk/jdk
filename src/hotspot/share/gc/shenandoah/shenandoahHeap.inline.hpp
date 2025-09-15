@@ -48,7 +48,7 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -60,7 +60,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -74,15 +74,15 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  Atomic::store(&_gc_no_progress_count, (size_t) 0);
+  AtomicAccess::store(&_gc_no_progress_count, (size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
-  Atomic::inc(&_gc_no_progress_count);
+  AtomicAccess::inc(&_gc_no_progress_count);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
-  return Atomic::load(&_gc_no_progress_count);
+  return AtomicAccess::load(&_gc_no_progress_count);
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
@@ -197,38 +197,38 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, update, memory_order_release);
+  AtomicAccess::cmpxchg(addr, compare, update, memory_order_release);
 }
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, compare, u, memory_order_release);
+  AtomicAccess::cmpxchg(addr, compare, u, memory_order_release);
 }
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, c, u, memory_order_release);
+  AtomicAccess::cmpxchg(addr, c, u, memory_order_release);
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  return (oop) Atomic::cmpxchg(addr, compare, update, memory_order_release) == compare;
+  return (oop) AtomicAccess::cmpxchg(addr, compare, update, memory_order_release) == compare;
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  return (narrowOop) Atomic::cmpxchg(addr, compare, u, memory_order_release) == compare;
+  return (narrowOop) AtomicAccess::cmpxchg(addr, compare, u, memory_order_release) == compare;
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
   narrowOop u = CompressedOops::encode(update);
-  return CompressedOops::decode(Atomic::cmpxchg(addr, c, u, memory_order_release)) == compare;
+  return CompressedOops::decode(AtomicAccess::cmpxchg(addr, c, u, memory_order_release)) == compare;
 }
 
 // The memory ordering discussion above does not apply for methods that store nulls:
@@ -237,18 +237,18 @@ inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr,
 
 inline void ShenandoahHeap::atomic_clear_oop(oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, oop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, compare, oop(), memory_order_relaxed);
 }
 
 inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop cmp = CompressedOops::encode(compare);
-  Atomic::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
 }
 
 inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
@@ -312,11 +312,6 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   // For all these reasons, we take the conservative approach and not attempt
   // to increase the age when the header is displaced.
   markWord w = obj->mark();
-  // The mark-word has been copied from the original object. It can not be
-  // inflating, because inflation can not be interrupted by a safepoint,
-  // and after a safepoint, a Java thread would first have to successfully
-  // evacuate the object before it could inflate the monitor.
-  assert(!w.is_being_inflated() || LockingMode == LM_LIGHTWEIGHT, "must not inflate monitor before evacuation of object succeeds");
   // It is possible that we have copied the object after another thread has
   // already successfully completed evacuation. While harmless (we would never
   // publish our copy), don't even attempt to modify the age when that
@@ -334,7 +329,6 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
   if (UseObjectMonitorTable) {
-    assert(LockingMode == LM_LIGHTWEIGHT, "Must use LW locking, too");
     assert(w.age() <= markWord::max_age, "Impossible!");
     return w.age();
   }
@@ -429,11 +423,11 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 #ifdef ASSERT
   assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
 #endif
-  Atomic::store(_affiliations + r->index(), (uint8_t) new_affiliation);
+  AtomicAccess::store(_affiliations + r->index(), (uint8_t) new_affiliation);
 }
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
-  return (ShenandoahAffiliation) Atomic::load(_affiliations + index);
+  return (ShenandoahAffiliation) AtomicAccess::load(_affiliations + index);
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {

@@ -34,9 +34,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_PARALLELGC
-#include "gc/parallel/objectStartArray.hpp"
-#endif
 
 uint CardTable::_card_shift = 0;
 uint CardTable::_card_size = 0;

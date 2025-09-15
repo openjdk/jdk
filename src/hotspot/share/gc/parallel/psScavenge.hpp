@@ -100,15 +100,6 @@ class PSScavenge: AllStatic {
   // Return true iff a young-gc is completed without promotion-failure.
   static bool invoke(bool clear_soft_refs);
 
-  template <class T> static inline bool should_scavenge(T* p);
-
-  // These call should_scavenge() above and, if it returns true, also check that
-  // the object was not newly copied into to_space.  The version with the bool
-  // argument is a convenience wrapper that fetches the to_space pointer from
-  // the heap and calls the other version (if the arg is true).
-  template <class T> static inline bool should_scavenge(T* p, MutableSpace* to_space);
-  template <class T> static inline bool should_scavenge(T* p, bool check_to_space);
-
   // Is an object in the young generation
   // This assumes that the 'o' is in the heap,
   // so it only checks one side of the complete predicate.

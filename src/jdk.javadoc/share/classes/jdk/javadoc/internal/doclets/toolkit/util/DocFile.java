@@ -35,6 +35,7 @@ import java.io.Writer;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.MissingResourceException;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -188,7 +189,7 @@ public abstract class DocFile {
      */
     public void copyResource(DocPath resource, URL url, boolean replaceNewLine)
             throws DocFileIOException, ResourceIOException {
-        copyResource(resource, url, replaceNewLine, null);
+        copyResource(resource, url, replaceNewLine, UnaryOperator.identity());
     }
 
     /**
@@ -202,11 +203,27 @@ public abstract class DocFile {
      * @throws ResourceIOException if there is a problem while reading the resource
      */
     public void copyResource(DocPath resource, URL url, Resources resources) throws DocFileIOException, ResourceIOException {
-        copyResource(resource, url, true, resources);
+        copyResource(resource, url, resources == null ? UnaryOperator.identity() : line -> localize(line, resources));
     }
 
-    private void copyResource(DocPath resource, URL url, boolean replaceNewLine, Resources resources)
-                throws DocFileIOException, ResourceIOException {
+    /**
+     * Copy the contents of a resource file to this file while transforming and filtering its lines.
+     *
+     * @param resource the path of the resource
+     * @param url the URL of the resource
+     * @param lineTransformer the transforming function that is called for each line; may return
+     * {@code null} to remove a line.
+     *
+     * @throws DocFileIOException if there is a problem while writing the copy
+     * @throws ResourceIOException if there is a problem while reading the resource
+     */
+    public void copyResource(DocPath resource, URL url, UnaryOperator<String> lineTransformer)
+            throws DocFileIOException, ResourceIOException {
+        copyResource(resource, url, true, lineTransformer);
+    }
+
+    private void copyResource(DocPath resource, URL url, boolean replaceNewLine, UnaryOperator<String> lineTransformer)
+            throws ResourceIOException, DocFileIOException {
         try {
             InputStream in = url.openStream();
 
@@ -216,8 +233,11 @@ public abstract class DocFile {
                         try (Writer writer = openWriter()) {
                             String line;
                             while ((line = readResourceLine(resource, reader)) != null) {
-                                write(this, writer, resources == null ? line : localize(line, resources));
-                                write(this, writer, PLATFORM_LINE_SEPARATOR);
+                                String transformedLine = lineTransformer.apply(line);
+                                if (transformedLine != null) {
+                                    write(this, writer, transformedLine);
+                                    write(this, writer, PLATFORM_LINE_SEPARATOR);
+                                }
                             }
                         } catch (IOException e) {
                             throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);

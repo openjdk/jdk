@@ -50,12 +50,15 @@ class JfrCPUTimeTraceQueue {
   static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
 
   JfrCPUTimeSampleRequest* _data;
-  u4 _capacity;
+  volatile u4 _capacity;
   // next unfilled index
   volatile u4 _head;
 
   volatile u4 _lost_samples;
+  volatile u4 _lost_samples_due_to_queue_full;
 
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
@@ -81,12 +84,17 @@ public:
 
   void increment_lost_samples();
 
+  void increment_lost_samples_due_to_queue_full();
+
   // returns the previous lost samples count
   u4 get_and_reset_lost_samples();
 
-  void resize(u4 capacity);
+  u4 get_and_reset_lost_samples_due_to_queue_full();
 
-  void resize_for_period(u4 period_millis);
+  void resize_if_needed();
+
+  // init the queue capacity
+  void init();
 
   void clear();
 
@@ -130,6 +138,10 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();
+
+  DEBUG_ONLY(static void set_out_of_stack_walking_enabled(bool runnable);)
+
+  DEBUG_ONLY(static u8 out_of_stack_walking_iterations();)
 };
 
 #else
@@ -150,6 +162,8 @@ private:
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
+  DEBUG_ONLY(static void set_out_of_stack_walking_enabled(bool runnable));
+  DEBUG_ONLY(static u8 out_of_stack_walking_iterations();)
 };
 
 #endif // defined(LINUX)

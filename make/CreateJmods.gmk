@@ -257,6 +257,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     WARN := Creating $(INTERIM_MSG)$(JMOD_FILE), \
     DEPS := $(DEPS), \
     OUTPUT_FILE := $(JMODS_DIR)/$(JMOD_FILE), \
+    WORKING_DIR := $(WORKSPACE_ROOT), \
     SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     COMMAND := $(JMOD) $(JMOD_SMALL_FLAGS) create --module-version $(VERSION_SHORT) \

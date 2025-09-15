@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,9 @@ final class Poly1305 {
 
             processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
             processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
-            buf.position(offset + blockMultipleLength);
+            // Advance the buffer position to account for processing on
+            // the underlying array.
+            buf.position(buf.position() + blockMultipleLength);
         } else {
             while (blockMultipleLength >= BLOCK_LENGTH) {
                 processBlock(buf, BLOCK_LENGTH);

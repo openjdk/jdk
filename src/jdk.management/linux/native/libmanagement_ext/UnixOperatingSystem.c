@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ static int get_jvmticks(ticks *pticks) {
     uint64_t userTicks;
     uint64_t systemTicks;
 
-    if (read_ticks("/proc/self/stat", &userTicks, &systemTicks) < 0) {
+    if (read_ticks("/proc/self/stat", &userTicks, &systemTicks) != 2) {
         return -1;
     }
 

@@ -181,12 +181,13 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz) {
+  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * CacheLineSize);
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
@@ -493,8 +494,8 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
   _initialized = true;
 }
 

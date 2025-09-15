@@ -465,7 +465,7 @@ public sealed interface CodeBuilder
      * @param slot the local variable slot
      * @return this builder
      * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID
-     *         void} or {@code slot} is out of range
+     *         void} or {@code slot} is not {@link java.lang.classfile##u2 u2}
      * @see LoadInstruction
      */
     default CodeBuilder loadLocal(TypeKind tk, int slot) {
@@ -479,7 +479,8 @@ public sealed interface CodeBuilder
      * @param slot the local variable slot
      * @return this builder
      * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID
-     *         void} or {@code slot} is out of range
+     *         void} or {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see StoreInstruction
      */
     default CodeBuilder storeLocal(TypeKind tk, int slot) {
@@ -811,6 +812,8 @@ public sealed interface CodeBuilder
      *
      * @param line the line number
      * @return this builder
+     * @throws IllegalArgumentException if {@code line} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see LineNumber
      */
     default CodeBuilder lineNumber(int line) {
@@ -907,6 +910,8 @@ public sealed interface CodeBuilder
      * @param characterRangeEnd the encoded end of the character range region (exclusive)
      * @param flags the flags word, indicating the kind of range
      * @return this builder
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see CharacterRange
      */
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
@@ -926,7 +931,8 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see LocalVariable
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
@@ -946,7 +952,8 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see LocalVariable
      */
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
@@ -974,7 +981,8 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see LocalVariableType
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
@@ -999,7 +1007,8 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see LocalVariableType
      */
     default CodeBuilder localVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) {
@@ -1058,7 +1067,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#ALOAD
      * @see #loadLocal
      * @see LoadInstruction
@@ -1128,7 +1138,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#ASTORE
      * @see #storeLocal
      * @see StoreInstruction
@@ -1384,7 +1395,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#DLOAD
      * @see #loadLocal(TypeKind, int)
      * @see LoadInstruction
@@ -1449,7 +1461,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#DSTORE
      * @see #storeLocal(TypeKind, int)
      * @see StoreInstruction
@@ -1696,7 +1709,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#FLOAD
      * @see #loadLocal(TypeKind, int)
      * @see LoadInstruction
@@ -1761,7 +1775,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#FSTORE
      * @see #storeLocal(TypeKind, int)
      * @see StoreInstruction
@@ -2387,13 +2402,15 @@ public sealed interface CodeBuilder
      * variable by a constant.
      * <p>
      * This may also generate {@link Opcode#IINC_W wide iinc} instructions if
-     * {@code slot} exceeds {@code 255} or {@code val} exceeds the range of
-     * {@link TypeKind#BYTE byte}.
+     * {@code slot} exceeds the limit of {@link java.lang.classfile##u1 u1} or
+     * {@code val} exceeds the range of {@link TypeKind#BYTE byte}.
      *
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} or {@code val} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2} or {@code val} is out of range of
+     *         {@link TypeKind#SHORT short}
      * @see Opcode#IINC
      * @see IncrementInstruction
      */
@@ -2410,7 +2427,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#ILOAD
      * @see #loadLocal(TypeKind, int)
      * @see LoadInstruction
@@ -2763,7 +2781,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#ISTORE
      * @see #storeLocal(TypeKind, int)
      * @see StoreInstruction
@@ -3001,7 +3020,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#LLOAD
      * @see #loadLocal(TypeKind, int)
      * @see LoadInstruction
@@ -3103,7 +3123,8 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
-     * @throws IllegalArgumentException if {@code slot} is out of range
+     * @throws IllegalArgumentException if {@code slot} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see Opcode#LSTORE
      * @see #storeLocal(TypeKind, int)
      * @see StoreInstruction

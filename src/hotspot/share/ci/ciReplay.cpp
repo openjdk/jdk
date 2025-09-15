@@ -1572,7 +1572,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
 
   do {
     if (!ik->has_nonstatic_fields()) {
-      ik = ik->java_super();
+      ik = ik->super();
       continue;
     }
 
@@ -1591,7 +1591,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
       }
     }
 
-    ik = ik->java_super();
+    ik = ik->super();
   } while (ik != nullptr);
   return nullptr;
 }

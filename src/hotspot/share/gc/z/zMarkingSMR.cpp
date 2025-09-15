@@ -24,7 +24,7 @@
 #include "gc/z/zMarkingSMR.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 ZMarkingSMR::ZMarkingSMR()
   : _worker_states(),
@@ -70,7 +70,7 @@ void ZMarkingSMR::free_node(ZMarkStackListNode* node) {
   ZArray<ZMarkStackListNode*>* const scanned_hazards = &local_state->_scanned_hazards;
 
   for (ZWorkerState* remote_state; iter.next(&remote_state);) {
-    ZMarkStackListNode* const hazard = Atomic::load(&remote_state->_hazard_ptr);
+    ZMarkStackListNode* const hazard = AtomicAccess::load(&remote_state->_hazard_ptr);
 
     if (hazard != nullptr) {
       scanned_hazards->append(hazard);

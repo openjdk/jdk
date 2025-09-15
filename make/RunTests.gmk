@@ -509,7 +509,7 @@ define SetupRunGtestTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(CD) $$($1_TEST_SUPPORT_DIR) && \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
 	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
@@ -520,7 +520,7 @@ define SetupRunGtestTestBody
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
 
@@ -644,7 +644,7 @@ define SetupRunMicroTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, \
 	    $$(CD) $$(TEST_IMAGE_DIR) && \
 	    $$(FIXPATH) $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
 	        -jar $$($1_MICRO_BENCHMARKS_JAR) \
@@ -655,7 +655,7 @@ define SetupRunMicroTestBody
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/micro.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/micro.txt
 
@@ -758,34 +758,34 @@ define SetupAOTBody
         ifeq ($$($1_TRAINING), onestep)
 
 	  $$(call LogWarn, AOT: Create AOT cache $$($1_AOT_JDK_CACHE) in one step with flags: $$($1_VM_OPTIONS)) \
-	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
 	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
 	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error -Xlog:aot*=error  \
+	          -Xlog:class+load$$(COMMA)aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error -Xlog:aot*=error  \
 	          -XX:AOTMode=record -XX:AOTCacheOutput=$$($1_AOT_JDK_CACHE) \
 	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
-	  ))
+	  )
 
         else
 
 	  $$(call LogWarn, AOT: Create cache configuration) \
-	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
 	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
 	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error -Xlog:aot*=error \
+	          -Xlog:class+load$$(COMMA)aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error -Xlog:aot*=error \
 	          -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
 	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
-	  ))
+	  )
 
 	  $$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
-	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	          $$($1_VM_OPTIONS) -Xlog:aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
+	          $$($1_VM_OPTIONS) -Xlog:aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
 	          -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
 	          -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
-	  ))
+	  )
 
         endif
 
@@ -946,7 +946,8 @@ define SetupRunJtregTestBody
   JTREG_ALL_OPTIONS := $$(JTREG_JAVA_OPTIONS) $$(JTREG_VM_OPTIONS)
 
   JTREG_AUTO_PROBLEM_LISTS :=
-  JTREG_AUTO_TIMEOUT_FACTOR := 4
+  # Please reach consensus before changing this. It was not easy changing it to a `1`.
+  JTREG_AUTO_TIMEOUT_FACTOR := 1
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-Xcomp.txt
@@ -1084,9 +1085,9 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
 	    $$($1_TEST_TMP_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
             $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
 
@@ -1203,12 +1204,12 @@ define SetupRunSpecialTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, \
 	    $$($1_TEST_COMMAND_LINE) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/test-output.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
+	)
 
   # We can not parse the various "special" tests.
   parse-test-$1: run-test-$1

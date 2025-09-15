@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package gc;
 /* @test TestObjectAlignmentCardSize.java
  * @summary Test to check correct handling of ObjectAlignmentInBytes and GCCardSizeInBytes combinations
  * @requires vm.gc != "Z"
+ * @requires vm.bits == "64"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver gc.TestObjectAlignmentCardSize

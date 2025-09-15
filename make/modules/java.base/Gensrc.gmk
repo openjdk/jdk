@@ -26,6 +26,8 @@
 ################################################################################
 
 include GensrcCommon.gmk
+include GensrcProperties.gmk
+include GensrcStreamPreProcessing.gmk
 
 include gensrc/GensrcBuffer.gmk
 include gensrc/GensrcCharacterData.gmk
@@ -70,8 +72,6 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 TARGETS += $(CLDR_GEN_DONE)
 
 ################################################################################
-
-include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
     SRC_DIRS := $(MODULE_SRC)/share/classes/sun/launcher/resources, \

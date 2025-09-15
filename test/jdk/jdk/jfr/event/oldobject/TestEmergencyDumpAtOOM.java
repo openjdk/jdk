@@ -44,7 +44,7 @@ import jdk.test.lib.process.ProcessTools;
 * @requires vm.flagless
 * @requires vm.hasJFR
 * @library /test/lib
-* @run main/othervm jdk.jfr.event.oldobject.TestEmergencyDumpAtOOM
+* @run main/othervm/timeout=480 jdk.jfr.event.oldobject.TestEmergencyDumpAtOOM
 */
 public class TestEmergencyDumpAtOOM {
 

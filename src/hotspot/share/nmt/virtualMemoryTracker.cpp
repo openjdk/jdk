@@ -24,9 +24,8 @@
 
 #include "logging/log.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
-#include "nmt/regionsTree.hpp"
 #include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
@@ -36,7 +35,7 @@ VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    size_t old_sz = AtomicAccess::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
     if (old_sz == peak_sz) {
       break;
     } else {

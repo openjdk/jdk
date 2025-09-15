@@ -79,8 +79,8 @@ const ZGeneration* ZPage::generation() const {
 }
 
 void ZPage::reset_seqnum() {
-  Atomic::store(&_seqnum, generation()->seqnum());
-  Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+  AtomicAccess::store(&_seqnum, generation()->seqnum());
+  AtomicAccess::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
 void ZPage::remset_alloc() {

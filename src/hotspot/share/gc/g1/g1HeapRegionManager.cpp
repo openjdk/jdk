@@ -34,7 +34,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -726,7 +726,7 @@ bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
 
 bool G1HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
-  uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
+  uint old_val = AtomicAccess::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
   return old_val == Unclaimed;
 }
 

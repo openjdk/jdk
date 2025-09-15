@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -34,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -75,9 +77,9 @@
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -448,7 +450,7 @@ void before_exit(JavaThread* thread, bool halt) {
   ClassListWriter::write_resolved_constants();
 
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    MetaspaceShared::preload_and_dump(thread);
+    AOTMetaspace::preload_and_dump(thread);
   }
 #endif
 
@@ -502,6 +504,12 @@ void before_exit(JavaThread* thread, bool halt) {
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
+
+  #if INCLUDE_CDS
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
+  }
+  #endif
 
   print_statistics();
 

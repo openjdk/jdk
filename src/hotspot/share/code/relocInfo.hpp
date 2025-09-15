@@ -186,8 +186,7 @@ class nmethod;
 //   relative offset.  (Both n and l are relative to the call's first byte.)
 //
 //   The limit l of the search is exclusive.  However, if it points within
-//   the call (e.g., offset zero), it is adjusted to point after the call and
-//   any associated machine-specific delay slot.
+//   the call (e.g., offset zero), it is adjusted to point after the call.
 //
 //   Since the offsets could be as wide as 32-bits, these conventions
 //   put no restrictions whatever upon code reorganization.
@@ -1109,7 +1108,6 @@ class virtual_call_Relocation : public CallRelocation {
   // data is packed as scaled offsets in "2_ints" format:  [f l] or [Ff Ll]
   // oop_limit is set to 0 if the limit falls somewhere within the call.
   // When unpacking, a zero oop_limit is taken to refer to the end of the call.
-  // (This has the effect of bringing in the call's delay slot on SPARC.)
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 

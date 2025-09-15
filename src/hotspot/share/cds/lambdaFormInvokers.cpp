@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -53,6 +53,7 @@
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
 Array<u4>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+static bool _stop_appending = false;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -71,7 +72,12 @@ static bool should_be_archived(char* line) {
 #undef NUM_FILTER
 
 void LambdaFormInvokers::append(char* line) {
+  // This function can be called by concurrent Java threads, even after
+  // LambdaFormInvokers::regenerate_holder_classes() has been called.
   MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
+  if (_stop_appending) {
+    return;
+  }
   if (_lambdaform_lines == nullptr) {
     _lambdaform_lines = new GrowableArrayCHeap<char*, mtClassShared>(150);
   }
@@ -112,12 +118,6 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  PrintLambdaFormMessage plm;
-  if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
-    log_info(aot)("Nothing to regenerate for holder classes");
-    return;
-  }
-
   ResourceMark rm(THREAD);
 
   // Filter out AOT tooling classes like java.lang.invoke.GenerateJLIClassesHelper, etc.
@@ -127,18 +127,27 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != nullptr, "jdk/internal/misc/CDS must exist!");
 
+  assert(CDSConfig::current_thread_is_dumper(), "not supposed to be called from other threads");
+  {
+    // Stop other threads from recording into _lambdaform_lines.
+    MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
+    _stop_appending = true;
+  }
+
+  PrintLambdaFormMessage plm;
+  if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
+    log_info(aot)("Nothing to regenerate for lambda form holder classes");
+    return;
+  }
+
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines;
-  {
-    MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
-    list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
-    for (int i = 0; i < len; i++) {
-      Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
-      list_lines->obj_at_put(i, h_line());
-    }
-  } // Before calling into java, release vm lock.
-  //
+  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
+  for (int i = 0; i < len; i++) {
+    Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
+    list_lines->obj_at_put(i, h_line());
+  }
+
   // Object[] CDS.generateLambdaFormHolderClasses(String[] lines)
   // the returned Object[] layout:
   //   name, byte[], name, byte[] ....
@@ -179,12 +188,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
       Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
       assert(klass != nullptr, "must already be loaded");
-      if (!klass->is_shared() && klass->shared_classpath_index() < 0) {
+      if (!klass->in_aot_cache() && klass->shared_classpath_index() < 0) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
         // See SystemDictionaryShared::find_builtin_class().
-        klass->set_is_generated_shared_class();
+        klass->set_is_aot_generated_class();
       }
     } else {
       int len = h_bytes->length();
@@ -219,11 +228,11 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->add_to_hierarchy(THREAD);
 
   // new class not linked yet.
-  MetaspaceShared::try_link_class(THREAD, result);
+  AOTMetaspace::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
-  result->set_is_generated_shared_class();
-  if (!klass->is_shared()) {
+  result->set_is_aot_generated_class();
+  if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
@@ -232,6 +241,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
 }
 
 void LambdaFormInvokers::dump_static_archive_invokers() {
+  assert(SafepointSynchronize::is_at_safepoint(), "no concurrent update to _lambdaform_lines");
   if (_lambdaform_lines != nullptr && _lambdaform_lines->length() > 0) {
     int count = 0;
     int len   = _lambdaform_lines->length();

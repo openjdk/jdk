@@ -1,0 +1,94 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeFileStart.gmk
+
+################################################################################
+
+include Execute.gmk
+include UtilsForTests.gmk
+
+THIS_FILE := $(TOPDIR)/test/make/TestExecute.gmk
+DEPS := $(THIS_FILE) \
+    $(TOPDIR)/make/common/MakeBase.gmk \
+    #
+
+OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/execute
+$(call MakeDir, $(OUTPUT_DIR))
+
+################################################################################
+# Test SetupExecute
+
+$(eval $(call SetupExecute, EXEC_1, \
+    INFO := Testing that SetupExecute runs from SUPPORT_DIR, \
+    OUTPUT_DIR := $(OUTPUT_DIR)/exec_1, \
+    SUPPORT_DIR := $(OUTPUT_DIR)/exec_1/support, \
+    COMMAND := $(ECHO) "Generating junk file" > ./junkfile, \
+))
+
+run-test1: $(EXEC_1)
+	test -f $(OUTPUT_DIR)/exec_1/support/junkfile
+
+$(eval $(call SetupExecute, EXEC_2, \
+    INFO := Testing that SetupExecute runs from SUPPORT_DIR, \
+    OUTPUT_DIR := $(OUTPUT_DIR)/exec_2, \
+    SUPPORT_DIR := $(OUTPUT_DIR)/exec_2/support, \
+    WORKING_DIR := $(OUTPUT_DIR)/exec_2/special, \
+    COMMAND := $(ECHO) "Generating special file" > ./specialfile, \
+))
+
+run-test2: $(EXEC_2)
+	test -f $(OUTPUT_DIR)/exec_2/special/specialfile
+
+$(eval $(call SetupExecute, EXEC_3, \
+    INFO := Testing that SetupExecute with DRYRUN does nothing, \
+    OUTPUT_DIR := $(OUTPUT_DIR)/exec_3, \
+    DRYRUN := true, \
+    COMMAND := $(ECHO) "This should not happen" > $(OUTPUT_DIR)/exec_3/dryrunfile, \
+))
+
+run-test3: $(EXEC_3)
+	test ! -f $(OUTPUT_DIR)/exec_3/dryrunfile
+
+$(eval $(call SetupExecute, EXEC_4, \
+    INFO := Testing that SetupExecute with DRYRUN does nothing but touches output file, \
+    OUTPUT_FILE := $(OUTPUT_DIR)/exec_4/output, \
+    DRYRUN := true, \
+    COMMAND := $(ECHO) "This should not happen" > $(OUTPUT_DIR)/exec_4/dryrunfile, \
+))
+
+run-test4: $(EXEC_4)
+	test ! -f $(OUTPUT_DIR)/exec_4/dryrunfile
+	test -f $(OUTPUT_DIR)/exec_4/output
+
+TEST_TARGETS += run-test1 run-test2 run-test3 run-test4
+
+.PHONY: run-test1 run-test2 run-test3 run-test4
+
+################################################################################
+
+all: $(TEST_TARGETS)
+
+################################################################################
+
+include MakeFileEnd.gmk

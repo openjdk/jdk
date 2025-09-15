@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -1049,14 +1050,22 @@ public abstract class ClassLoader {
 
         protectionDomain = preDefineClass(name, protectionDomain);
         String source = defineClassSourceLocation(protectionDomain);
-        Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
-        postDefineClass(c, protectionDomain);
-        return c;
+
+        SharedSecrets.getJavaNioAccess().acquireSession(b);
+        try {
+            Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
+            postDefineClass(c, protectionDomain);
+            return c;
+        } finally {
+            SharedSecrets.getJavaNioAccess().releaseSession(b);
+        }
     }
 
     static native Class<?> defineClass1(ClassLoader loader, String name, byte[] b, int off, int len,
                                         ProtectionDomain pd, String source);
 
+    // Warning: Before calling this method, the provided ByteBuffer must be guarded
+    //          via JavaNioAccess::(acquire|release)Session
     static native Class<?> defineClass2(ClassLoader loader, String name, java.nio.ByteBuffer b,
                                         int off, int len, ProtectionDomain pd,
                                         String source);

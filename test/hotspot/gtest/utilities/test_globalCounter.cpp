@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "threadHelper.inline.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -44,14 +44,14 @@ TEST_VM(GlobalCounter, critical_section) {
     wrt_start.signal();
     while (!rt_exit) {
       GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(current);
-      volatile TestData* read_test = Atomic::load_acquire(_test);
-      long value = Atomic::load_acquire(&read_test->test_value);
+      volatile TestData* read_test = AtomicAccess::load_acquire(_test);
+      long value = AtomicAccess::load_acquire(&read_test->test_value);
       ASSERT_EQ(value, good_value);
       GlobalCounter::critical_section_end(current, cs_context);
       {
         GlobalCounter::CriticalSection cs(current);
-        volatile TestData* test = Atomic::load_acquire(_test);
-        long value = Atomic::load_acquire(&test->test_value);
+        volatile TestData* test = AtomicAccess::load_acquire(_test);
+        long value = AtomicAccess::load_acquire(&test->test_value);
         ASSERT_EQ(value, good_value);
       }
     }
@@ -61,7 +61,7 @@ TEST_VM(GlobalCounter, critical_section) {
 
   TestData* tmp = new TestData();
   tmp->test_value = good_value;
-  Atomic::release_store(&test, tmp);
+  AtomicAccess::release_store(&test, tmp);
   rt_exit = false;
   ttg.doit();
   int nw = number_of_readers;
@@ -74,7 +74,7 @@ TEST_VM(GlobalCounter, critical_section) {
     volatile TestData* free_tmp = test;
     tmp = new TestData();
     tmp->test_value = good_value;
-    Atomic::release_store(&test, tmp);
+    AtomicAccess::release_store(&test, tmp);
     GlobalCounter::write_synchronize();
     free_tmp->test_value = bad_value;
     delete free_tmp;

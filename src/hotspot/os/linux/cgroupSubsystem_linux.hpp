@@ -25,12 +25,12 @@
 #ifndef CGROUP_SUBSYSTEM_LINUX_HPP
 #define CGROUP_SUBSYSTEM_LINUX_HPP
 
-#include "memory/allocation.hpp"
-#include "runtime/os.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "osContainer_linux.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "osContainer_linux.hpp"
 
 // Shared cgroups code (used by cgroup version 1 and version 2)
 

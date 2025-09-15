@@ -78,8 +78,8 @@ public sealed interface ModuleResolutionAttribute
         permits BoundAttribute.BoundModuleResolutionAttribute, UnboundAttribute.UnboundModuleResolutionAttribute {
 
     /**
-     * {@return the module resolution flags}  It is in the range of unsigned
-     * short, {@code [0, 0xFFFF]}.
+     * {@return the module resolution flags}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      * <p>
      * The value of the resolution_flags item is a mask of flags used to denote
      * properties of module resolution. The flags are as follows:
@@ -99,6 +99,8 @@ public sealed interface ModuleResolutionAttribute
      * {@return a {@code ModuleResolution} attribute}
      *
      * @param resolutionFlags the resolution flags
+     * @throws IllegalArgumentException if {@code resolutionFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleResolutionAttribute of(int resolutionFlags) {
         return new UnboundAttribute.UnboundModuleResolutionAttribute(resolutionFlags);

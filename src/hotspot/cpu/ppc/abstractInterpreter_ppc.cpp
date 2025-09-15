@@ -100,7 +100,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 //   It is also guaranteed to be walkable even though it is in a skeletal state
 //
 // is_top_frame == true:
-//   We're processing the *oldest* interpreter frame!
+//   We're processing the *youngest* interpreter frame on top of stack!
 //
 // pop_frame_extra_args:
 //   If this is != 0 we are returning to a deoptimized frame by popping
@@ -131,8 +131,9 @@ void AbstractInterpreter::layout_activation(Method* method,
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
     assert(locals_base <= caller->interpreter_frame_expression_stack(), "bad placement");
-    const int caller_abi_bytesize = (is_bottom_frame ? frame::top_ijava_frame_abi_size : frame::parent_ijava_frame_abi_size);
-    intptr_t* l2 = caller->sp() + method->max_locals() - 1 + (caller_abi_bytesize / Interpreter::stackElementSize);
+    // If the bottom frame's caller was thawed then it has frame::java_abi (aka parent_ijava_frame_abi).
+    // With an ordinary i2c call it would keep the larger frame::top_ijava_frame_abi
+    intptr_t* l2 = caller->sp() + method->max_locals() - 1 + (frame::parent_ijava_frame_abi_size / Interpreter::stackElementSize);
     assert(locals_base >= l2, "bad placement");
   }
 #endif

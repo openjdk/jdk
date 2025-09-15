@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 bool G1FullCollector::is_compacting(oop obj) const {
   return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));
@@ -63,11 +63,11 @@ void G1FullCollector::update_from_skip_compacting_to_compacting(uint region_idx)
 }
 
 void G1FullCollector::set_compaction_top(G1HeapRegion* r, HeapWord* value) {
-  Atomic::store(&_compaction_tops[r->hrm_index()], value);
+  AtomicAccess::store(&_compaction_tops[r->hrm_index()], value);
 }
 
 HeapWord* G1FullCollector::compaction_top(G1HeapRegion* r) const {
-  return Atomic::load(&_compaction_tops[r->hrm_index()]);
+  return AtomicAccess::load(&_compaction_tops[r->hrm_index()]);
 }
 
 void G1FullCollector::set_has_compaction_targets() {

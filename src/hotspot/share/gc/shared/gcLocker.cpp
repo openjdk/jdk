@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -84,11 +84,11 @@ bool GCLocker::is_active() {
 void GCLocker::block() {
   // _lock is held from the beginning of block() to the end of of unblock().
   _lock->lock();
-  assert(Atomic::load(&_is_gc_request_pending) == false, "precondition");
+  assert(AtomicAccess::load(&_is_gc_request_pending) == false, "precondition");
 
   GCLockerTimingDebugLogger logger("Thread blocked to start GC.");
 
-  Atomic::store(&_is_gc_request_pending, true);
+  AtomicAccess::store(&_is_gc_request_pending, true);
 
   // The _is_gc_request_pending and _jni_active_critical (inside
   // in_critical_atomic()) variables form a Dekker duality. On the GC side, the
@@ -112,14 +112,14 @@ void GCLocker::block() {
 #ifdef ASSERT
   // Matching the storestore in GCLocker::exit.
   OrderAccess::loadload();
-  assert(Atomic::load(&_verify_in_cr_count) == 0, "inv");
+  assert(AtomicAccess::load(&_verify_in_cr_count) == 0, "inv");
 #endif
 }
 
 void GCLocker::unblock() {
-  assert(Atomic::load(&_is_gc_request_pending) == true, "precondition");
+  assert(AtomicAccess::load(&_is_gc_request_pending) == true, "precondition");
 
-  Atomic::store(&_is_gc_request_pending, false);
+  AtomicAccess::store(&_is_gc_request_pending, false);
   _lock->unlock();
 }
 
@@ -139,7 +139,7 @@ void GCLocker::enter_slow(JavaThread* current_thread) {
     // Same as fast path.
     OrderAccess::fence();
 
-    if (!Atomic::load(&_is_gc_request_pending)) {
+    if (!AtomicAccess::load(&_is_gc_request_pending)) {
       return;
     }
 

@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8298420
+ * @bug 8298420 8365288
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
@@ -78,7 +78,9 @@ public class PEMDecoderTest {
         System.out.println("Decoder test rsapub PEM asking X509EKS.class returned:");
         testClass(PEMData.rsapub, X509EncodedKeySpec.class, true);
         System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
-        testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false);
+        testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false, ClassCastException.class);
+        System.out.println("Decoder test rsapriv PEM asking other EKS returned:");
+        testClass(PEMData.rsapriv, XEKS.class, false, ClassCastException.class);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
         testClass(PEMData.rsaCert, X509EncodedKeySpec.class, false);
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
@@ -484,6 +486,19 @@ public class PEMDecoderTest {
         }
     }
 
+    static void testClass(PEMData.Entry entry, Class clazz, boolean pass,
+        Class ec) throws RuntimeException {
+        try {
+            testClass(entry, clazz);
+        } catch (Exception e) {
+            if (ec.isInstance(e)) {
+                System.out.println("PASS");
+                return;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
     // Run test with a given Entry
     static void testDERCheck(PEMData.Entry entry) {
         if (entry.name().equals("rsaOpenSSL") ||  // PKCS1 data
@@ -571,6 +586,17 @@ public class PEMDecoderTest {
         } catch (Exception e) {
             System.out.println("FAIL: " + entry.name());
             throw new AssertionError(e);
+        }
+    }
+
+    class XEKS extends EncodedKeySpec {
+        public XEKS(byte[] encodedKey) {
+            super(encodedKey);
+        }
+
+        @Override
+        public String getFormat() {
+            return "";
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ExpectedDiagnostic toolbox.ToolBox Compiler
- * @run testng ErrorTranslationTest
+ * @run junit ErrorTranslationTest
  */
 
 import java.nio.file.Path;
@@ -41,15 +41,15 @@ import java.util.function.Consumer;
 
 import javax.tools.Diagnostic;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
-@Test
 public class ErrorTranslationTest extends ReplToolTesting {
 
-    @Test(enabled = false) // TODO 8080353
+    @Test // TODO 8080353
+    @Disabled
     public void testErrors() {
         test(
                 a -> assertDiagnostic(a, "abstract void f();", newExpectedDiagnostic(0, 8, 0, -1, -1, Diagnostic.Kind.ERROR)),
@@ -60,6 +60,7 @@ public class ErrorTranslationTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testlvtiErrors() {
         test(
                 a -> assertDiagnostic(a, "var broken = () -> {};", newExpectedDiagnostic(0, 22, 0, -1, -1, Diagnostic.Kind.ERROR)),
@@ -67,13 +68,15 @@ public class ErrorTranslationTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testExceptionErrors() {
         test(
                 a -> assertDiagnostic(a, "try { } catch (IllegalStateException | java.io.IOException ex) { }", newExpectedDiagnostic(39, 58, -1, -1, -1, Diagnostic.Kind.ERROR))
         );
     }
 
-    @Test(enabled = false) // TODO 8132147
+    @Test // TODO 8132147
+    @Disabled
     public void stressTest() {
         Compiler compiler = new Compiler();
         Path oome = compiler.getPath("OOME.repl");
@@ -115,11 +118,11 @@ public class ErrorTranslationTest extends ReplToolTesting {
                 throw new AssertionError("Not enough lines: " + s);
             }
             String kind = getKind(expectedDiagnostic.getKind());
-            assertEquals(lines[0], kind);
+            assertEquals(kind, lines[0]);
             boolean found = false;
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].endsWith(expectedSource)) {
-                    assertEquals(lines[i + 1], expectedMarkingLine, "Input: " + expectedSource + ", marking line: ");
+                    assertEquals(expectedMarkingLine, lines[i + 1], "Input: " + expectedSource + ", marking line: ");
                     found = true;
                 }
             }
@@ -146,6 +149,7 @@ public class ErrorTranslationTest extends ReplToolTesting {
         return sb.toString();
     }
 
+    @Test
     public String getKind(Diagnostic.Kind kind) {
         switch (kind) {
             case WARNING:

@@ -209,7 +209,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
       HeapShared::debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
 
     if (log_is_enabled(Info, aot, ref)) {

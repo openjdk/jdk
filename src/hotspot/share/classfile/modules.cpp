@@ -23,9 +23,9 @@
 */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -601,21 +601,21 @@ void Modules::ArchivedProperty::runtime_check() const {
   bool disable = false;
   if (runtime_value == nullptr) {
     if (_archived_value != nullptr) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
       disable = true;
     }
   } else {
     if (_archived_value == nullptr) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
       disable = true;
     } else if (strcmp(runtime_value, _archived_value) != 0) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
       disable = true;
     }
   }
 
   if (disable) {
-    MetaspaceShared::report_loading_error("Disabling optimized module handling");
+    AOTMetaspace::report_loading_error("Disabling optimized module handling");
     CDSConfig::stop_using_optimized_module_handling();
   }
 }

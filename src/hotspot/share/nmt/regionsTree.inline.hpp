@@ -25,6 +25,7 @@
 #define SHARE_NMT_REGIONSTREE_INLINE_HPP
 
 #include "nmt/regionsTree.hpp"
+
 #include "nmt/virtualMemoryTracker.hpp"
 
 template<typename F>

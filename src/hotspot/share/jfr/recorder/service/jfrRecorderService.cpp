@@ -46,7 +46,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -67,7 +67,7 @@ class JfrRotationLock : public StackObj {
   bool _recursive;
 
   static bool acquire(Thread* thread) {
-    if (Atomic::cmpxchg(&_lock, 0, 1) == 0) {
+    if (AtomicAccess::cmpxchg(&_lock, 0, 1) == 0) {
       assert(_owner_thread == nullptr, "invariant");
       _owner_thread = thread;
       return true;

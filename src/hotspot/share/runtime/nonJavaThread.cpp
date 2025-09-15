@@ -25,7 +25,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "jvm_io.h"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -54,7 +54,7 @@ NonJavaThread::List NonJavaThread::_the_list;
 
 NonJavaThread::Iterator::Iterator() :
   _protect_enter(_the_list._protect.enter()),
-  _current(Atomic::load_acquire(&_the_list._head))
+  _current(AtomicAccess::load_acquire(&_the_list._head))
 {}
 
 NonJavaThread::Iterator::~Iterator() {
@@ -63,7 +63,7 @@ NonJavaThread::Iterator::~Iterator() {
 
 void NonJavaThread::Iterator::step() {
   assert(!end(), "precondition");
-  _current = Atomic::load_acquire(&_current->_next);
+  _current = AtomicAccess::load_acquire(&_current->_next);
 }
 
 NonJavaThread::NonJavaThread() : Thread(), _next(nullptr) {
@@ -76,8 +76,8 @@ void NonJavaThread::add_to_the_list() {
   MutexLocker ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
   // Initialize BarrierSet-related data before adding to list.
   BarrierSet::barrier_set()->on_thread_attach(this);
-  Atomic::release_store(&_next, _the_list._head);
-  Atomic::release_store(&_the_list._head, this);
+  AtomicAccess::release_store(&_next, _the_list._head);
+  AtomicAccess::release_store(&_the_list._head, this);
 }
 
 void NonJavaThread::remove_from_the_list() {

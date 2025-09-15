@@ -28,7 +28,7 @@
 #include "utilities/concurrentHashTable.hpp"
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -63,7 +63,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Node::next() const
 {
-  return Atomic::load_acquire(&_next);
+  return AtomicAccess::load_acquire(&_next);
 }
 
 // Bucket
@@ -72,7 +72,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Bucket::first_raw() const
 {
-  return Atomic::load_acquire(&_first);
+  return AtomicAccess::load_acquire(&_first);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -84,7 +84,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   // Due to this assert this methods is not static.
   assert(is_locked(), "Must be locked.");
   Node** tmp = (Node**)dst;
-  Atomic::release_store(tmp, clear_set_state(node, *dst));
+  AtomicAccess::release_store(tmp, clear_set_state(node, *dst));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -93,7 +93,7 @@ ConcurrentHashTable<CONFIG, MT>::
   Bucket::first() const
 {
   // We strip the states bit before returning the ptr.
-  return clear_state(Atomic::load_acquire(&_first));
+  return clear_state(AtomicAccess::load_acquire(&_first));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -150,7 +150,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (is_locked()) {
     return false;
   }
-  if (Atomic::cmpxchg(&_first, expect, node) == expect) {
+  if (AtomicAccess::cmpxchg(&_first, expect, node) == expect) {
     return true;
   }
   return false;
@@ -165,7 +165,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (Atomic::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
+  if (AtomicAccess::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
     return true;
   }
   return false;
@@ -178,7 +178,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(is_locked(), "Must be locked.");
   assert(!have_redirect(),
          "Unlocking a bucket after it has reached terminal state.");
-  Atomic::release_store(&_first, clear_state(first()));
+  AtomicAccess::release_store(&_first, clear_state(first()));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -186,7 +186,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   Bucket::redirect()
 {
   assert(is_locked(), "Must be locked.");
-  Atomic::release_store(&_first, set_state(_first, STATE_REDIRECT_BIT));
+  AtomicAccess::release_store(&_first, set_state(_first, STATE_REDIRECT_BIT));
 }
 
 // InternalTable
@@ -222,8 +222,8 @@ inline ConcurrentHashTable<CONFIG, MT>::
       _cs_context(GlobalCounter::critical_section_begin(_thread))
 {
   // This version is published now.
-  if (Atomic::load_acquire(&_cht->_invisible_epoch) != nullptr) {
-    Atomic::release_store_fence(&_cht->_invisible_epoch, (Thread*)nullptr);
+  if (AtomicAccess::load_acquire(&_cht->_invisible_epoch) != nullptr) {
+    AtomicAccess::release_store_fence(&_cht->_invisible_epoch, (Thread*)nullptr);
   }
 }
 
@@ -294,13 +294,13 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(_resize_lock_owner == thread, "Re-size lock not held");
   OrderAccess::fence(); // Prevent below load from floating up.
   // If no reader saw this version we can skip write_synchronize.
-  if (Atomic::load_acquire(&_invisible_epoch) == thread) {
+  if (AtomicAccess::load_acquire(&_invisible_epoch) == thread) {
     return;
   }
   assert(_invisible_epoch == nullptr, "Two thread doing bulk operations");
   // We set this/next version that we are synchronizing for to not published.
   // A reader will zero this flag if it reads this/next version.
-  Atomic::release_store(&_invisible_epoch, thread);
+  AtomicAccess::release_store(&_invisible_epoch, thread);
   GlobalCounter::write_synchronize();
 }
 
@@ -379,7 +379,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::InternalTable*
 ConcurrentHashTable<CONFIG, MT>::
   get_table() const
 {
-  return Atomic::load_acquire(&_table);
+  return AtomicAccess::load_acquire(&_table);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -387,7 +387,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::InternalTable*
 ConcurrentHashTable<CONFIG, MT>::
   get_new_table() const
 {
-  return Atomic::load_acquire(&_new_table);
+  return AtomicAccess::load_acquire(&_new_table);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -397,7 +397,7 @@ ConcurrentHashTable<CONFIG, MT>::
 {
   InternalTable* old_table = _table;
   // Publish the new table.
-  Atomic::release_store(&_table, _new_table);
+  AtomicAccess::release_store(&_table, _new_table);
   // All must see this.
   GlobalCounter::write_synchronize();
   // _new_table not read any more.
@@ -797,7 +797,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   // Create and publish a new table
   InternalTable* table = new InternalTable(log2_size);
   _size_limit_reached = (log2_size == _log2_size_limit);
-  Atomic::release_store(&_table, table);
+  AtomicAccess::release_store(&_table, table);
 }
 
 template <typename CONFIG, MemTag MT>

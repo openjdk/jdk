@@ -25,10 +25,10 @@
 #ifndef CGROUP_V1_SUBSYSTEM_LINUX_HPP
 #define CGROUP_V1_SUBSYSTEM_LINUX_HPP
 
-#include "runtime/os.hpp"
-#include "memory/allocation.hpp"
 #include "cgroupSubsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 
 // Cgroups version 1 specific implementation
 

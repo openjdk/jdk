@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
@@ -57,12 +57,12 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   void clear_fcc();
 
   G1CardSet* card_set() {
-    assert(is_added_to_cset_group(), "pre-condition");
+    assert(has_cset_group(), "pre-condition");
     return cset_group()->card_set();
   }
 
   const G1CardSet* card_set() const {
-    assert(is_added_to_cset_group(), "pre-condition");
+    assert(has_cset_group(), "pre-condition");
     return cset_group()->card_set();
   }
 
@@ -71,7 +71,7 @@ public:
   ~G1HeapRegionRemSet();
 
   bool cardset_is_empty() const {
-    return !is_added_to_cset_group() || card_set()->is_empty();
+    return !has_cset_group() || card_set()->is_empty();
   }
 
   void install_cset_group(G1CSetCandidateGroup* cset_group) {
@@ -83,7 +83,7 @@ public:
 
   void uninstall_cset_group();
 
-  bool is_added_to_cset_group() const {
+  bool has_cset_group() const {
     return _cset_group != nullptr;
   }
 
@@ -96,7 +96,7 @@ public:
   }
 
   uint cset_group_id() const {
-    assert(is_added_to_cset_group(), "pre-condition");
+    assert(has_cset_group(), "pre-condition");
     return cset_group()->group_id();
   }
 
@@ -118,7 +118,7 @@ public:
   inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
 
   size_t occupied() {
-    assert(is_added_to_cset_group(), "pre-condition");
+    assert(has_cset_group(), "pre-condition");
     return card_set()->occupied();
   }
 

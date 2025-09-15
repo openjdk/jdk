@@ -27,11 +27,11 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "nmt/memTag.hpp"
-#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/rbTree.inline.hpp"
+
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -50,11 +50,10 @@ public:
 
   class PositionComparator {
   public:
-    static int cmp(position a, position b) {
-      if (a < b) return -1;
-      if (a == b) return 0;
-      if (a > b) return 1;
-      ShouldNotReachHere();
+    static RBTreeOrdering cmp(position a, position b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 

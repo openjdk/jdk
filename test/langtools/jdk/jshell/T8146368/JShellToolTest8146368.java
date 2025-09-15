@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib /jdk/jshell
  * @build ReplToolTesting
- * @run testng/othervm -Duser.language=ja JShellToolTest8146368
+ * @run junit/othervm -Duser.language=ja JShellToolTest8146368
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JShellToolTest8146368 extends ReplToolTesting {
+    @Test
     public void test() {
         test(
                 a -> assertCommand(a, "class A extends B {}", "|  created class A, however, it cannot be referenced until class B is declared\n"),

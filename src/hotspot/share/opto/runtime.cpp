@@ -61,7 +61,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -2206,7 +2206,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     c->set_next(nullptr);
     head = _named_counters;
     c->set_next(head);
-  } while (Atomic::cmpxchg(&_named_counters, head, c) != head);
+  } while (AtomicAccess::cmpxchg(&_named_counters, head, c) != head);
   return c;
 }
 

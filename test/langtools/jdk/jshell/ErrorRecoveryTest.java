@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ExpectedDiagnostic toolbox.ToolBox Compiler
- * @run testng ErrorRecoveryTest
+ * @run junit ErrorRecoveryTest
  */
 
-import org.testng.annotations.Test;
 import static jdk.jshell.Snippet.Status.NONEXISTENT;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.REJECTED;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ErrorRecoveryTest extends KullaTesting {
 
+    @Test
     public void testExceptionErrors() {
         assertEval("import java.lang.annotation.Repeatable;");
         assertEval("""
@@ -51,6 +51,7 @@ public class ErrorRecoveryTest extends KullaTesting {
                    ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null));
     }
 
+    @Test
     public void testBrokenName() {
         assertEval("int strictfp = 0;",
                    DiagCheck.DIAG_ERROR,
@@ -58,6 +59,7 @@ public class ErrorRecoveryTest extends KullaTesting {
                    ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
     }
 
+    @Test
     public void testBooleanPatternExpression() {
         assertEval("Number n = 0;");
         assertEval("if (!n instanceof Integer i) {}",
@@ -67,6 +69,7 @@ public class ErrorRecoveryTest extends KullaTesting {
     }
 
     //JDK-8332230:
+    @Test
     public void testAnnotationsd() {
         assertEval("k=aa:a.@a",
                    DiagCheck.DIAG_ERROR,

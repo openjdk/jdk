@@ -54,7 +54,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -778,9 +778,6 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
     _monitorenter_slowcase_cnt++;
   }
 #endif
-  if (LockingMode == LM_MONITOR) {
-    lock->set_obj(obj);
-  }
   assert(obj == lock->obj(), "must match");
   SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
 JRT_END
