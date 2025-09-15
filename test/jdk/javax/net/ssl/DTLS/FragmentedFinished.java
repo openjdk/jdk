@@ -61,7 +61,7 @@ public class FragmentedFinished extends DTLSOverDatagram {
     DatagramPacket createHandshakePacket(byte[] ba, SocketAddress socketAddr) {
         if (ba.length < 30) { // detect ChangeCipherSpec
             // Reduce the maximumPacketSize to force fragmentation
-            // of the Finished message for JDK-8367133
+            // of the Finished message
             SSLParameters params = serverSSLEngine.getSSLParameters();
             params.setMaximumPacketSize(53);
             serverSSLEngine.setSSLParameters(params);
