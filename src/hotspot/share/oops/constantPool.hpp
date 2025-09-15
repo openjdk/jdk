@@ -97,8 +97,6 @@ class BSMAttributeEntry {
   BSMAttributeEntry() = delete;
   NONCOPYABLE(BSMAttributeEntry);
 
-  // Returns number of u2s written
-  inline size_t copy_into(u2* data, size_t size) const;
   void copy_args_into(BSMAttributeEntry* entry) const;
 
 public:

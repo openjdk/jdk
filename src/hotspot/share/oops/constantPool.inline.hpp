@@ -103,17 +103,6 @@ inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_en
   return e;
 }
 
-inline size_t BSMAttributeEntry::copy_into(u2* data, size_t size) const {
-  size_t total_u2s_needed = 1 + 1 + argument_count();
-  assert(size >= total_u2s_needed, "doesn't fit");
-  data[_bsmi_offset] = _bootstrap_method_index;
-  data[_argc_offset] = _argument_count;
-  for (int i = 0; i < argument_count(); i++) {
-    data[_argv_offset + i] = argument_indexes()[i];
-  }
-  return total_u2s_needed;
-}
-
 void BSMAttributeEntry::copy_args_into(BSMAttributeEntry* entry) const {
   assert(entry->argument_count() == this->argument_count(), "must be same");
   for (int i = 0; i < argument_count(); i++) {
