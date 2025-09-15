@@ -30,7 +30,7 @@ import jdk.internal.util.DecimalDigits;
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8366224
  * @summary Test DecimalDigits.appendPair method with LATIN1 and UTF16 encoding
  * @modules java.base/jdk.internal.util
  * @run testng test.jdk.internal.util.DecimalDigitsTest
