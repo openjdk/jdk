@@ -350,6 +350,42 @@ Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pa
     return rv;
 }
 
+/**
+ * Returns the value of the registry key HKEY_CURRENT_USER\Network\<drive>,
+ * which contains the UNC path to which "drive" is mapped. If there is no
+ * such registry key, or an error occurs, then NULL is returned.
+ */
+JNIEXPORT jstring JNICALL
+Java_java_io_WinNTFileSystem_queryUNCPath0(JNIEnv* env, jclass this,
+    jchar drive)
+{
+    WCHAR subKey[10];
+    swprintf(subKey, 10, L"Network\\%c", drive);
+
+    HKEY hKey;
+    LSTATUS errorCode = RegOpenKeyExW(HKEY_CURRENT_USER,
+                                      subKey, 0, KEY_READ, &hKey);
+
+    jstring remotePath = NULL;
+    if (errorCode == ERROR_SUCCESS) {
+        DWORD type;
+        BYTE data[MAX_PATH_LENGTH + 1];
+        DWORD size = sizeof(data);
+
+        errorCode = RegQueryValueExW(hKey, L"RemotePath", NULL, &type,
+                                     (LPBYTE)&data, &size);
+
+        if (errorCode == ERROR_SUCCESS && type == REG_SZ) {
+            jsize len = (jsize)wcslen((WCHAR*)data);
+            remotePath = (*env)->NewString(env, (const jchar*)&data, len);
+        }
+    }
+
+    RegCloseKey(hKey);
+
+    return remotePath;
+}
+
 /* -- Attribute accessors -- */
 
 /* Check whether or not the file name in "path" is a Windows reserved

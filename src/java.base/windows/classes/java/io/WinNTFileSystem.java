@@ -460,6 +460,8 @@ final class WinNTFileSystem extends FileSystem {
 
     }
 
+    private static final long HKEY_CURRENT_USER =0x80000001L;
+
     @Override
     public String canonicalize(String path) throws IOException {
         assert !path.startsWith(LONG_PATH_PREFIX);
@@ -486,6 +488,28 @@ final class WinNTFileSystem extends FileSystem {
         String finalPath = null;
         try {
             finalPath = getFinalPath(canonicalPath);
+
+            // if getFinalPath converted a drive letter to a UNC-style path,
+            // then obtain the mapping for the drive and replace it in the
+            // final path with the original drive letter
+            if (finalPath.charAt(0) == '\\' &&
+                finalPath.charAt(1) == '\\' &&
+                isLetter(canonicalPath.charAt(0)) &&
+                canonicalPath.charAt(1) == ':' &&
+                canonicalPath.charAt(2) == '\\') {
+                char driveLetter = canonicalPath.charAt(0);
+                String uncPath = queryUNCPath(driveLetter);
+                int uncLen = uncPath.length();
+                if (uncPath != null &&
+                    finalPath.substring(0, uncLen).equalsIgnoreCase(uncPath)) {
+                    int fpLen = finalPath.length();
+                    StringBuilder sb = new StringBuilder(fpLen - uncLen + 2);
+                    sb.append(driveLetter);
+                    sb.append(':');
+                    sb.append(finalPath, uncLen, fpLen);
+                    finalPath = sb.toString();
+                }
+            }
         } catch (IOException ignored) {
             finalPath = canonicalPath;
         }
@@ -502,6 +526,11 @@ final class WinNTFileSystem extends FileSystem {
     private native String getFinalPath0(String path)
             throws IOException;
 
+    private String queryUNCPath(char drive) {
+        return queryUNCPath0(drive);
+    }
+
+    private native String queryUNCPath0(char drive);
 
     /* -- Attribute accessors -- */
 
