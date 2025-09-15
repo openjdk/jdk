@@ -197,7 +197,7 @@ public:
 
   // Extend to have the space for both this BSMAEntries and other's.
   // Does not copy in the other's BSMAEntrys, that must be done via the InsertionIterator.
-  // This starts an insertion iterator.
+  // This starts an insertion iterator. Any call to start_extension must have a matching end_exntesion call.
   InsertionIterator start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
   // Extend the BSMAEntries with an additional number_of_entries with a total data_size.
   InsertionIterator start_extension(int number_of_entries, int data_size, ClassLoaderData* loader_data, TRAPS);
