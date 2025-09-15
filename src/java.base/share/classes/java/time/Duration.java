@@ -477,7 +477,7 @@ public final class Duration
      * {@link ChronoField#NANO_OF_SECOND NANO_OF_SECOND} field should be supported.
      * <p>
      * The result of this method can be a negative duration if the end is before the start.
-     * To guarantee to obtain a positive duration call {@link #abs()} on the result.
+     * To guarantee a positive or zero duration call {@link #abs()} on the result.
      *
      * @param startInclusive  the start instant, inclusive, not null
      * @param endExclusive  the end instant, exclusive, not null
@@ -1075,9 +1075,9 @@ public final class Duration
     }
 
     /**
-     * Returns a copy of this duration with a positive length.
+     * Returns a copy of this duration with a positive or zero length.
      * <p>
-     * This method returns a positive duration by effectively removing the sign from any negative total length.
+     * This method returns a positive or zero duration by effectively removing the sign from any negative total length.
      * For example, {@code PT-1.3S} will be returned as {@code PT1.3S}.
      * <p>
      * This instance is immutable and unaffected by this method call.
