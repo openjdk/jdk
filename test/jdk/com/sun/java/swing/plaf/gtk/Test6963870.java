@@ -25,9 +25,11 @@
  * @test
  * @bug 6963870
  * @key headful
- * @requires os.family == "linux"
  * @summary Tests that GTKPainter.ListTableFocusBorder.getBorderInsets()
  *          doesn't return null
+ * @requires (os.family != "windows" & os.family != "mac")
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main Test6963870
  */
 
@@ -35,6 +37,8 @@ import java.awt.Insets;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+
+import jtreg.SkippedException;
 
 public class Test6963870 implements Runnable {
 
@@ -61,7 +65,11 @@ public class Test6963870 implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        } catch (Exception e) {
+            throw new SkippedException("GTKLookAndFeel isn't supported", e);
+        }
 
         SwingUtilities.invokeAndWait(new Test6963870());
     }

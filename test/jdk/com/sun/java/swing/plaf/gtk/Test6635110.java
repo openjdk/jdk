@@ -25,8 +25,10 @@
  * @test
  * @bug 6635110
  * @key headful
- * @requires os.family == "linux"
  * @summary GTK icons should not throw NPE when called by non-GTK UI
+ * @requires (os.family != "windows" & os.family != "mac")
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main Test6635110
 */
 
@@ -39,6 +41,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicMenuUI;
 import javax.swing.plaf.basic.BasicToolBarUI;
+
+import jtreg.SkippedException;
 
 
 public class Test6635110 implements Runnable {
@@ -65,7 +69,11 @@ public class Test6635110 implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        } catch (Exception e) {
+            throw new SkippedException("GTKLookAndFeel isn't supported", e);
+        }
 
         SwingUtilities.invokeAndWait(new Test6635110());
     }

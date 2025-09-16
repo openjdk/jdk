@@ -25,16 +25,25 @@
  * @test
  * @bug 4928019
  * @key headful
- * @requires os.family == "linux"
  * @summary Makes sure all the basic classes can be created with GTK.
+ * @requires (os.family != "windows" & os.family != "mac")
+ * @library /test/lib
+ * @build jtreg.SkippedException
+ * @run main bug4928019
  */
 
 import javax.swing.*;
 import javax.swing.plaf.basic.*;
 
+import jtreg.SkippedException;
+
 public class bug4928019 {
     public static void main(String[] args) throws Throwable {
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        } catch (Exception e) {
+            throw new SkippedException("GTKLookAndFeel isn't supported", e);
+        }
 
         new JButton() {
             public void updateUI() {
