@@ -785,7 +785,7 @@ void AOTMetaspace::link_all_loaded_classes(JavaThread* current) {
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       if (may_be_eagerly_linked(ik)) {
         has_linked |= try_link_class(current, ik);
       }
@@ -812,7 +812,7 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
   }
@@ -1296,7 +1296,7 @@ void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   } else if (CDSConfig::new_aot_flags_used()) {
     vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
   } else {
-    vm_exit_during_initialization("Unable to use shared archive.", nullptr);
+    vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
 }
 
@@ -1424,6 +1424,7 @@ FileMapInfo* AOTMetaspace::open_static_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
+    log_info(cds)("Opening of static archive %s failed", static_archive);
     return nullptr;
   }
   return mapinfo;

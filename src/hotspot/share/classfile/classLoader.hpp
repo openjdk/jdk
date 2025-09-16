@@ -212,7 +212,7 @@ class ClassLoader: AllStatic {
   //    Note: boot loader append path does not support named modules.
   static ClassPathEntry* volatile _first_append_entry_list;
   static ClassPathEntry* first_append_entry() {
-    return Atomic::load_acquire(&_first_append_entry_list);
+    return AtomicAccess::load_acquire(&_first_append_entry_list);
   }
 
   // Last entry in linked list of appended ClassPathEntry instances

@@ -58,7 +58,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -881,8 +881,8 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
   JavaThread* THREAD = current; // For exception macros.
-  Klass* k = vmClasses::StackOverflowError_klass();
-  oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
+  InstanceKlass* k = vmClasses::StackOverflowError_klass();
+  oop exception_oop = k->allocate_instance(CHECK);
   if (delayed) {
     java_lang_Throwable::set_message(exception_oop,
                                      Universe::delayed_stack_overflow_error_message());
@@ -896,7 +896,7 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   // bindings.
   current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
-  Atomic::inc(&Exceptions::_stack_overflow_errors);
+  AtomicAccess::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(current, exception);
 }
 
@@ -1376,7 +1376,7 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
   uint *addr = (is_optimized) ? (&_resolve_opt_virtual_ctr) :
                  (is_virtual) ? (&_resolve_virtual_ctr) :
                                 (&_resolve_static_ctr);
-  Atomic::inc(addr);
+  AtomicAccess::inc(addr);
 
   if (TraceCallFixup) {
     ResourceMark rm(current);
@@ -1602,7 +1602,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   methodHandle callee_method(current, call_info.selected_method());
 
 #ifndef PRODUCT
-  Atomic::inc(&_ic_miss_ctr);
+  AtomicAccess::inc(&_ic_miss_ctr);
 
   // Statistics & Tracing
   if (TraceCallFixup) {
@@ -1728,7 +1728,7 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
 
 
 #ifndef PRODUCT
-  Atomic::inc(&_wrong_method_ctr);
+  AtomicAccess::inc(&_wrong_method_ctr);
 
   if (TraceCallFixup) {
     ResourceMark rm(current);
