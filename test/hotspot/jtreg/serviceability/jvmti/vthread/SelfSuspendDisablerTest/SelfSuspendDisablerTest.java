@@ -86,12 +86,13 @@ public class SelfSuspendDisablerTest {
         });
         Thread t3 = Thread.ofVirtual().factory().newThread(() -> {
             testJvmtiThreadState(Thread.currentThread(), RUNNABLE);
-            while(!isSuspended(t1) && !isSuspended(t2)) {
+            while(!isSuspended(t1) || !isSuspended(t2)) {
               Thread.yield();
             }
             Thread.yield(); // provoke unmount
 
             testJvmtiThreadState(t1, SUSPENDED);
+            testJvmtiThreadState(t2, SUSPENDED);
 
             resume(t1);
             resume(t2);
