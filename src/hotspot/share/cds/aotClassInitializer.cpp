@@ -54,6 +54,11 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 
   if (!ik->is_initialized() && !ik->is_being_initialized()) {
+    if (ik->has_aot_safe_initializer()) {
+      ResourceMark rm;
+      log_info(aot, init)("Class %s is annotated with @AOTSafeClassInitializer but has not been initialized",
+                          ik->external_name());
+    }
     return false;
   }
 
