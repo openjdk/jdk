@@ -357,7 +357,7 @@ public final class ImageReader implements AutoCloseable {
             // Unlike findNode(), this method makes only one lookup in the
             // underlying jimage, but can only reliably return resource nodes.
             if (moduleName.indexOf('/') >= 0) {
-                return null;
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
             }
             String nodeName = MODULES_ROOT + "/" + moduleName + "/" + resourcePath;
             // Synchronize as tightly as possible to reduce locking contention.
@@ -376,13 +376,18 @@ public final class ImageReader implements AutoCloseable {
             }
         }
 
-        /** Returns whether a resource exists in the given module. */
+        /**
+         * Returns whether a resource exists in the given module.
+         *
+         * <p>This method is expected to be called frequently for resources
+         * which do not exist in the given module (e.g. as part of classpath
+         * search). As such, it skips checking the nodes cache and only checks
+         * for an entry in the jimage file, as this is faster if the resource
+         * is not present. This also means it doesn't need synchronization.
+         */
         boolean containsResource(String moduleName, String resourcePath) {
-            // This method is tuned for cases where resources are likely to NOT
-            // exist, so it skips checking the nodes cache and only checks for
-            // an ImageLocation. This also means it doesn't need synchronization.
             if (moduleName.indexOf('/') >= 0) {
-                return false;
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
             }
             // If the given module name is 'modules', then 'isResource()'
             // returns false to prevent false positives.
