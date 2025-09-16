@@ -199,12 +199,10 @@ public final class SSLLogger {
     }
 
     private static void help() {
-        System.err.println();
-        System.err.printf("%-16s %s%n", "help",
+        System.err.printf("%n%-16s %s%n", "help",
                 "print this help message and exit");
-        System.err.printf("%-16s %s%n", "expand",
+        System.err.printf("%-16s %s%n%n", "expand",
                 "expanded (less compact) output format");
-        System.err.println();
         System.err.printf("%-16s %s%n", "all", "turn on all debugging");
         System.err.printf("%-16s %s%n", "ssl", "turn on ssl debugging");
         System.err.println();
@@ -214,15 +212,15 @@ public final class SSLLogger {
         System.err.printf("    %-14s %s%n", "handshake",
                 "print each handshake message");
         System.err.printf("      %-12s   %s%n", "verbose",
-                "-verbose handshake message printing (widens handshake)");
+                "verbose handshake message printing (widens handshake)");
         System.err.printf("    %-14s %s%n", "keymanager",
                 "print key manager tracing");
         System.err.printf("    %-14s %s%n", "record",
                 "enable per-record tracing");
         System.err.printf("      %-12s   %s%n", "packet",
-                "-print raw SSL/TLS packets (widens record)");
+                "print raw SSL/TLS packets (widens record)");
         System.err.printf("      %-12s   %s%n", "plaintext",
-                "-hex dump of record plaintext (widens record)");
+                "hex dump of record plaintext (widens record)");
         System.err.printf("    %-14s %s%n", "respmgr",
                 "print OCSP response tracing");
         System.err.printf("    %-14s %s%n", "session",
@@ -233,7 +231,10 @@ public final class SSLLogger {
                 "print SSLContext tracing");
         System.err.printf("    %-14s %s%n", "trustmanager",
                 "print trust manager tracing");
-        System.err.println();
+        System.err.printf("%nAdding valid filter options to \"ssl\" will log" +
+                " messages to include%njust those filtered categories.%n");
+        System.err.printf("%nIf \"ssl\" is specified by itself," +
+                " all non-widening filters are enabled.%n%n");
         System.exit(0);
     }
 
