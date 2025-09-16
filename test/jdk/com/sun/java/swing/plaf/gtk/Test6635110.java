@@ -63,7 +63,7 @@ public class Test6635110 implements Runnable {
         paint(tb);
     }
 
-    void paint(Component c) {
+    private void paint(Component c) {
         c.setSize(WIDTH, HEIGHT);
         c.paint(IMAGE.getGraphics());
     }

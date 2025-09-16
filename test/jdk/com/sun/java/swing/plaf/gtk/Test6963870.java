@@ -42,7 +42,7 @@ import jtreg.SkippedException;
 
 public class Test6963870 implements Runnable {
 
-    final static String[] UI_NAMES = {
+    static final String[] UI_NAMES = {
         "List.focusCellHighlightBorder",
         "List.focusSelectedCellHighlightBorder",
         "List.noFocusBorder",
@@ -50,6 +50,7 @@ public class Test6963870 implements Runnable {
         "Table.focusSelectedCellHighlightBorder",
     };
 
+    @Override
     public void run() {
         for (String uiName: UI_NAMES) {
             test(uiName);
