@@ -98,7 +98,7 @@ void ArchDesc::buildMachRegisterNumbers(FILE *fp_hpp) {
   }
 
   fprintf(fp_hpp, "\n// Size of register-mask in ints\n");
-  fprintf(fp_hpp, "#define RM_SIZE %d\n", RegisterForm::RegMask_Size());
+  fprintf(fp_hpp, "#define RM_SIZE_IN_INTS %d\n", RegisterForm::RegMask_Size());
   fprintf(fp_hpp, "// Unroll factor for loops over the data in a RegMask\n");
   fprintf(fp_hpp, "#define FORALL_BODY ");
   int len = RegisterForm::RegMask_Size();
@@ -935,8 +935,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     _pipeline->_variableSizeInstrs ? 1 : 0);
   fprintf(fp_hpp, "    _fixed_size_instructions = %d,\n",
     _pipeline->_variableSizeInstrs ? 0 : 1);
-  fprintf(fp_hpp, "    _branch_has_delay_slot = %d,\n",
-    _pipeline->_branchHasDelaySlot ? 1 : 0);
   fprintf(fp_hpp, "    _max_instrs_per_bundle = %d,\n",
     _pipeline->_maxInstrsPerBundle);
   fprintf(fp_hpp, "    _max_bundles_per_cycle = %d,\n",
@@ -983,7 +981,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  const unsigned char                   _fixed_latency;\n");
   fprintf(fp_hpp, "  const unsigned char                   _instruction_count;\n");
   fprintf(fp_hpp, "  const bool                            _has_fixed_latency;\n");
-  fprintf(fp_hpp, "  const bool                            _has_branch_delay;\n");
   fprintf(fp_hpp, "  const bool                            _has_multiple_bundles;\n");
   fprintf(fp_hpp, "  const bool                            _force_serialization;\n");
   fprintf(fp_hpp, "  const bool                            _may_have_no_code;\n");
@@ -998,7 +995,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "           bool                            has_fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            instruction_count,\n");
-  fprintf(fp_hpp, "           bool                            has_branch_delay,\n");
   fprintf(fp_hpp, "           bool                            has_multiple_bundles,\n");
   fprintf(fp_hpp, "           bool                            force_serialization,\n");
   fprintf(fp_hpp, "           bool                            may_have_no_code,\n");
@@ -1011,7 +1007,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  , _fixed_latency(fixed_latency)\n");
   fprintf(fp_hpp, "  , _instruction_count(instruction_count)\n");
   fprintf(fp_hpp, "  , _has_fixed_latency(has_fixed_latency)\n");
-  fprintf(fp_hpp, "  , _has_branch_delay(has_branch_delay)\n");
   fprintf(fp_hpp, "  , _has_multiple_bundles(has_multiple_bundles)\n");
   fprintf(fp_hpp, "  , _force_serialization(force_serialization)\n");
   fprintf(fp_hpp, "  , _may_have_no_code(may_have_no_code)\n");
@@ -1046,8 +1041,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "    return (_resource_use._count); }\n\n");
   fprintf(fp_hpp, "  uint instructionCount() const {\n");
   fprintf(fp_hpp, "    return (_instruction_count); }\n\n");
-  fprintf(fp_hpp, "  bool hasBranchDelay() const {\n");
-  fprintf(fp_hpp, "    return (_has_branch_delay); }\n\n");
   fprintf(fp_hpp, "  bool hasMultipleBundles() const {\n");
   fprintf(fp_hpp, "    return (_has_multiple_bundles); }\n\n");
   fprintf(fp_hpp, "  bool forceSerialization() const {\n");
@@ -1071,56 +1064,19 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   uint rshift = rescount;
 
   fprintf(fp_hpp, "protected:\n");
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _unused_delay                   = 0x%x,\n", 0);
-  fprintf(fp_hpp, "    _use_nop_delay                  = 0x%x,\n", 1);
-  fprintf(fp_hpp, "    _use_unconditional_delay        = 0x%x,\n", 2);
-  fprintf(fp_hpp, "    _use_conditional_delay          = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_conditional_delay      = 0x%x,\n", 4);
-  fprintf(fp_hpp, "    _used_in_unconditional_delay    = 0x%x,\n", 5);
-  fprintf(fp_hpp, "    _used_in_all_conditional_delays = 0x%x,\n", 6);
-  fprintf(fp_hpp, "\n");
-  fprintf(fp_hpp, "    _use_delay                      = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_delay                  = 0x%x\n",  4);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  uint _flags          : 3,\n");
-  fprintf(fp_hpp, "       _starts_bundle  : 1,\n");
+  fprintf(fp_hpp, "  uint _starts_bundle  : 1,\n");
   fprintf(fp_hpp, "       _instr_count    : %d,\n",   mshift);
   fprintf(fp_hpp, "       _resources_used : %d;\n",   rshift);
   fprintf(fp_hpp, "public:\n");
-  fprintf(fp_hpp, "  Bundle() : _flags(_unused_delay), _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
+  fprintf(fp_hpp, "  Bundle() : _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
   fprintf(fp_hpp, "  void set_instr_count(uint i) { _instr_count  = i; }\n");
   fprintf(fp_hpp, "  void set_resources_used(uint i) { _resources_used   = i; }\n");
-  fprintf(fp_hpp, "  void clear_usage() { _flags = _unused_delay; }\n");
   fprintf(fp_hpp, "  void set_starts_bundle() { _starts_bundle = true; }\n");
 
-  fprintf(fp_hpp, "  uint flags() const { return (_flags); }\n");
   fprintf(fp_hpp, "  uint instr_count() const { return (_instr_count); }\n");
   fprintf(fp_hpp, "  uint resources_used() const { return (_resources_used); }\n");
   fprintf(fp_hpp, "  bool starts_bundle() const { return (_starts_bundle != 0); }\n");
 
-  fprintf(fp_hpp, "  void set_use_nop_delay() { _flags = _use_nop_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_unconditional_delay() { _flags = _use_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_conditional_delay() { _flags = _use_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_unconditional_delay() { _flags = _used_in_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_conditional_delay() { _flags = _used_in_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_all_conditional_delays() { _flags = _used_in_all_conditional_delays; }\n");
-
-  fprintf(fp_hpp, "  bool use_nop_delay() { return (_flags == _use_nop_delay); }\n");
-  fprintf(fp_hpp, "  bool use_unconditional_delay() { return (_flags == _use_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool use_conditional_delay() { return (_flags == _use_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_unconditional_delay() { return (_flags == _used_in_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_conditional_delay() { return (_flags == _used_in_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_all_conditional_delays() { return (_flags == _used_in_all_conditional_delays); }\n");
-  fprintf(fp_hpp, "  bool use_delay() { return ((_flags & _use_delay) != 0); }\n");
-  fprintf(fp_hpp, "  bool used_in_delay() { return ((_flags & _used_in_delay) != 0); }\n\n");
-
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _nop_count = %d\n",
-    _pipeline->_nopcnt);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  static void initialize_nops(MachNode *nop_list[%d]);\n\n",
-    _pipeline->_nopcnt);
   fprintf(fp_hpp, "#ifndef PRODUCT\n");
   fprintf(fp_hpp, "  void dump(outputStream *st = tty) const;\n");
   fprintf(fp_hpp, "#endif\n");

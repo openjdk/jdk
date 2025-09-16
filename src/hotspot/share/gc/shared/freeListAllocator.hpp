@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 
@@ -66,11 +66,11 @@ class FreeListAllocator {
 
     FreeNode() : _next (nullptr) { }
 
-    FreeNode* next() { return Atomic::load(&_next); }
+    FreeNode* next() { return AtomicAccess::load(&_next); }
 
     FreeNode* volatile* next_addr() { return &_next; }
 
-    void set_next(FreeNode* next) { Atomic::store(&_next, next); }
+    void set_next(FreeNode* next) { AtomicAccess::store(&_next, next); }
   };
 
   struct NodeList {
