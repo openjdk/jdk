@@ -93,7 +93,7 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
 // and reference processing (during remarking) to determine
-// if a particular object is alive. It is primarily used
+// if a particular object is alive. It is primarilfy used
 // to determine if referents of discovered reference objects
 // are alive. An instance is also embedded into the
 // reference processor as the _is_alive_non_header field

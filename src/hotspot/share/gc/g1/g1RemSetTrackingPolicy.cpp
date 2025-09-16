@@ -75,7 +75,8 @@ bool G1RemSetTrackingPolicy::update_old_before_rebuild(G1HeapRegion* r) {
 
   bool selected_for_rebuild = false;
 
-  if (G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
+  if (!G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
+      G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
       !r->rem_set()->is_tracked()) {
     r->rem_set()->set_state_updating();
     selected_for_rebuild = true;
