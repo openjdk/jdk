@@ -73,16 +73,19 @@ import java.util.Arrays;
  * If you are interested in understanding the components, then look at these:
  * - computeLight: the normal mapping "shader / kernel".
  * - generateNormals / computeNormals: computing normals from height functions.
+ * - nextNormals: add you own normal map png or height function.
  * - main: setup and endless-loop that triggers normals to be swapped periodically.
  * - MyDrawingPanel: drawing all the parts to the screen.
  */
 public class NormalMapping {
     public static Random RANDOM = new Random();
 
+    // Increasing this number will make the demo slower.
+    public static final int NUMBER_OF_LIGHTS = 5;
+
     public static void main(String[] args) {
         System.out.println("Welcome to the Normal Mapping Demo!");
-        // Create an applicateion state with 5 lights.
-        State state = new State(5);
+        State state = new State(NUMBER_OF_LIGHTS);
 
         // Set up a panel we can draw on, and put it in a window.
         System.out.println("Setting up Window...");
@@ -143,6 +146,10 @@ public class NormalMapping {
         }
     }
 
+    /**
+     * This class represents the lights that are located on the normal map,
+     * move around randomyl, and shine their color of light on the scene.
+     */
     public static class Light {
         public float x = 0.5f;
         public float y = 0.5f;
@@ -183,16 +190,22 @@ public class NormalMapping {
         }
     }
 
+    /**
+     * This class manages the state of the demo, including the lights,
+     * arrays passed in and out of the normal map computation, as well
+     * as the image buffers and FPS tracking.
+     */
     public static class State {
         private static final int sizeX = 1000;
         private static final int sizeY = 1000;
 
         public Light[] lights;
-        private int nextNormalsId = 0;
 
-        public BufferedImage normals;
         public float[] coordsX;
         public float[] coordsY;
+
+        private int nextNormalsId = 0;
+        public BufferedImage normals;
         public float[] normalsX;
         public float[] normalsY;
         public float[] normalsZ;
