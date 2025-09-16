@@ -269,7 +269,7 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
+  static void initialize_mirror_fields(InstanceKlass* ik, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
   static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
  public:
@@ -293,8 +293,10 @@ class java_lang_Class : AllStatic {
 
   static void fixup_module_field(Klass* k, Handle module);
 
-  // Conversion
+  // Conversion -- java_class must not be null. The return value is null only if java_class is a primitive type.
   static Klass* as_Klass(oop java_class);
+  static InstanceKlass* as_InstanceKlass(oop java_class);
+
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
@@ -1895,11 +1897,11 @@ class InjectedField {
   const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
-  const bool           may_be_java;
+  const bool may_be_java;
 
 
-  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
-  Symbol* name() const      { return lookup_symbol(name_index); }
+  InstanceKlass* klass() const { return vmClasses::klass_at(klass_id); }
+  Symbol* name() const { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 
   int compute_offset();
