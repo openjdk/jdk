@@ -39,7 +39,7 @@
   nonstatic_field(OSThread,                      _thread_id,                                      pid_t)                             \
   nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)
 
-#define VM_TYPES_OS(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c2_toplevel_type) \
+#define VM_TYPES_OS(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
                                                                           \
   /**********************/                                                \
   /* Posix Thread IDs   */                                                \

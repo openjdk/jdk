@@ -105,7 +105,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER2
-#include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
 #endif // COMPILER2
 
@@ -674,7 +673,6 @@
                                                                                                                                      \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
   nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
-  c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
@@ -843,8 +841,7 @@
                  declare_toplevel_type,                                   \
                  declare_oop_type,                                        \
                  declare_integer_type,                                    \
-                 declare_unsigned_integer_type,                           \
-                 declare_c2_toplevel_type)                                \
+                 declare_unsigned_integer_type)                           \
                                                                           \
   /*************************************************************/         \
   /* Java primitive types -- required by the SA implementation */         \
@@ -1163,7 +1160,6 @@
   /* CI */                                                                \
   /*********************/                                                 \
                                                                           \
-  declare_c2_toplevel_type(Compile)                                       \
   declare_toplevel_type(ciEnv)                                            \
   declare_toplevel_type(ciBaseObject)                                     \
   declare_type(ciMetadata, ciBaseObject)                                  \
@@ -1898,14 +1894,6 @@
 // VMTypeEntry build-specific macros
 //
 
-#ifdef COMPILER2
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#else
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#endif /* COMPILER2 */
-
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -1950,22 +1938,19 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
            GENERATE_OOP_VM_TYPE_ENTRY,
            GENERATE_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_OS(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
               GENERATE_OOP_VM_TYPE_ENTRY,
               GENERATE_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
                GENERATE_OOP_VM_TYPE_ENTRY,
                GENERATE_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
@@ -2075,16 +2060,14 @@ void VMStructs::init() {
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY)
+           CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
 
   VM_TYPES_CPU(CHECK_VM_TYPE_ENTRY,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY)
+               CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0

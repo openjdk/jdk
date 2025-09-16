@@ -39,7 +39,7 @@
   /******************************/                                                                                                   \
   volatile_nonstatic_field(JavaFrameAnchor,     _last_Java_fp,                                    intptr_t*)
 
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c2_toplevel_type)
+#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant)
 
