@@ -29,7 +29,7 @@
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
 
-#define VM_STRUCTS_OS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field) \
+#define VM_STRUCTS_OS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
                                                                                                                                      \
   /******************************/                                                                                                   \
   /* Threads (NOTE: incomplete) */                                                                                                   \

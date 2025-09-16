@@ -148,7 +148,6 @@
                    volatile_static_field,                                                                                            \
                    unchecked_nonstatic_field,                                                                                        \
                    volatile_nonstatic_field,                                                                                         \
-                   c2_nonstatic_field,                                                                                               \
                    nonproduct_nonstatic_field)                                                                                       \
                                                                                                                                      \
   /*************/                                                                                                                    \
@@ -1869,24 +1868,6 @@
 # define ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT(a, b, c)
 #endif /* PRODUCT */
 
-// Generate and check a nonstatic field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
-#else
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)
-#endif /* COMPILER2 */
-
-// Generate but do not check a static field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#else
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#endif /* COMPILER2 */
-
 //--------------------------------------------------------------------------------
 // VMTypeEntry build-specific macros
 //
@@ -1904,23 +1885,20 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
+             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
 
   VM_STRUCTS_OS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_STATIC_VM_STRUCT_ENTRY,
                 GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
+                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
+                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
