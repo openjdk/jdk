@@ -68,11 +68,15 @@ public final class MenuItemAcceleratorColor {
             "should match that of the menu item itself in regular and " +
             "selected states.\n" +
             "\n" +
-            "Verify that the second menu item renders with green and " +
-            "that the color changes to red when selected.\n" +
+            "Verify that the second menu item renders its accelerator " +
+            "with green and that the color changes to red when selected.\n" +
             "\n" +
-            "Verify that the third menu item renders with magenta and " +
-            "yellow correspondingly.\n" +
+            "Verify that the third menu item renders its accelerator " +
+            "with magenta and yellow correspondingly.\n" +
+            "\n" +
+            "Verify that only the fifth menu item renders its accelerator " +
+            "with blue; both the fourth and sixth should render their " +
+            "accelerator with a shade of gray.\n" +
             "\n" +
             "If the above conditions are satisfied, press the Pass button; " +
             "otherwise, press the Fail button.";
@@ -84,8 +88,8 @@ public final class MenuItemAcceleratorColor {
 
         PassFailJFrame.builder()
                       .instructions(INSTRUCTIONS)
-                      .rows(17)
-                      .columns(50)
+                      .rows(20)
+                      .columns(60)
                       .testUI(MenuItemAcceleratorColor::createUI)
                       .build()
                       .awaitAndCheck();
