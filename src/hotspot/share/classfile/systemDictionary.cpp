@@ -66,7 +66,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1079,7 +1079,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(ik != nullptr, "sanity");
   assert(ik->in_aot_cache(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
-  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
+  assert(AtomicAccess::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1277,10 +1277,10 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = result.get_oop();
 
-    // Primitive classes return null since forName() can not be
+    // Primitive classes return null since forName() cannot be
     // used to obtain any of the Class objects representing primitives or void
     if ((obj != nullptr) && !(java_lang_Class::is_primitive(obj))) {
-      InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+      InstanceKlass* k = java_lang_Class::as_InstanceKlass(obj);
       // For user defined Java class loaders, check that the name returned is
       // the same as that requested.  This check is done for the bootstrap
       // loader when parsing the class file.
