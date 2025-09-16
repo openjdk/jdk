@@ -146,7 +146,7 @@ public class SwingUtilities3 {
     }
 
     public static void applyInsets(Rectangle rect, Insets insets) {
-            applyInsets(rect, insets, true);
+        applyInsets(rect, insets, true);
     }
 
     public static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {

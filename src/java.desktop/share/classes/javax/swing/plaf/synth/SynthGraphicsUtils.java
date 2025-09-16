@@ -554,9 +554,7 @@ public class SynthGraphicsUtils {
      }
 
     static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
-        if (insets != null) {
-            SwingUtilities3.applyInsets(rect, insets, leftToRight);
-        }
+        SwingUtilities3.applyInsets(rect, insets, leftToRight);
     }
 
     static void paint(SynthContext context, SynthContext accContext, Graphics g,
