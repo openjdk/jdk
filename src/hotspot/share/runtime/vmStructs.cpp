@@ -667,7 +667,7 @@
      static_field(VMRegImpl,                   stack0,                                        VMReg)                                 \
                                                                                                                                      \
   /**************/                                                                                                                   \
-  /* CI */                                                                                                                           \
+  /* CI (NOTE: these fields should not be removed, they can be used by external tools) */                                            \
   /************/                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
