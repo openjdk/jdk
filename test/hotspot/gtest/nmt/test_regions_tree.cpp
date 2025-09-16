@@ -99,11 +99,11 @@ TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
 TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  VMATree::SummaryDiff diff;
-  rt.reserve_mapping(1000, 50, rd, diff);
-  rt.reserve_mapping(1200, 50, rd, diff);
-  rt.reserve_mapping(1300, 50, rd, diff);
-  rt.reserve_mapping(1400, 50, rd, diff);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
   ReservedMemoryRegion rmr;
   rmr = rt.find_reserved_region((address)1205);
   EXPECT_EQ(rmr.base(), (address)1200);
@@ -118,11 +118,11 @@ TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
 TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  VMATree::SummaryDiff diff;
-  rt.reserve_mapping(1000, 50, rd, diff);
-  rt.reserve_mapping(1200, 50, rd, diff);
-  rt.reserve_mapping(1300, 50, rd, diff);
-  rt.reserve_mapping(1400, 50, rd, diff);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
 
   rt.visit_reserved_regions([&](const ReservedMemoryRegion& rgn) {
     EXPECT_EQ(((size_t)rgn.base()) % 100, 0UL);
@@ -134,16 +134,16 @@ TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
 TEST_VM_F(NMTRegionsTreeTest, VisitCommittedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  VMATree::SummaryDiff diff;
-  rt.reserve_mapping(1000, 50, rd, diff);
-  rt.reserve_mapping(1200, 50, rd, diff);
-  rt.reserve_mapping(1300, 50, rd, diff);
-  rt.reserve_mapping(1400, 50, rd, diff);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
 
-  rt.commit_region((address)1010, 5UL, ncs, diff);
-  rt.commit_region((address)1020, 5UL, ncs, diff);
-  rt.commit_region((address)1030, 5UL, ncs, diff);
-  rt.commit_region((address)1040, 5UL, ncs, diff);
+  rt.commit_region((address)1010, 5UL, ncs, not_used);
+  rt.commit_region((address)1020, 5UL, ncs, not_used);
+  rt.commit_region((address)1030, 5UL, ncs, not_used);
+  rt.commit_region((address)1040, 5UL, ncs, not_used);
   ReservedMemoryRegion rmr((address)1000, 50);
   size_t count = 0;
   rt.visit_committed_regions(rmr, [&](CommittedMemoryRegion& crgn) {

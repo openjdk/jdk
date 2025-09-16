@@ -92,15 +92,15 @@ public:
   // Adjacent reservations are merged if the properties match.
   void adjacent_2_nodes(const VMATree::RegionData& rd) {
     Tree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd, diff);
+      tree.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree));
 
     // Reserving the exact same space again should result in still having only 2 nodes
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd, diff);
+      tree.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree));
 
@@ -112,7 +112,7 @@ public:
     //        ...
     // 0--100
     for (int i = 9; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 100, rd, diff);
+      tree2.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree2));
   }
@@ -120,17 +120,17 @@ public:
   // After removing all ranges we should be left with an entirely empty tree
   void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
     Tree tree;
-    VMATree::SummaryDiff diff;
-    tree.reserve_mapping(0, 100 * 10, rd, diff);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 0; i < 10; i++) {
-      tree.release_mapping(i * 100, 100, diff);
+      tree.release_mapping(i * 100, 100, not_used);
     }
     EXPECT_EQ(nullptr, rbtree_root(tree));
 
     // Other way around
-    tree.reserve_mapping(0, 100 * 10, rd, diff);
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 9; i >= 0; i--) {
-      tree.release_mapping(i * 100, 100, diff);
+      tree.release_mapping(i * 100, 100, not_used);
     }
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
@@ -138,10 +138,10 @@ public:
   // Committing in a whole reserved range results in 2 nodes
   void commit_whole(const VMATree::RegionData& rd) {
     Tree tree;
-    VMATree::SummaryDiff diff;
-    tree.reserve_mapping(0, 100 * 10, rd, diff);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 0; i < 10; i++) {
-      tree.commit_mapping(i * 100, 100, rd, diff);
+      tree.commit_mapping(i * 100, 100, rd, not_used);
     }
     rbtree(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
@@ -156,9 +156,9 @@ public:
   // Committing in middle of reservation ends with a sequence of 4 nodes
   void commit_middle(const VMATree::RegionData& rd) {
     Tree tree;
-    VMATree::SummaryDiff diff;
-    tree.reserve_mapping(0, 100, rd, diff);
-    tree.commit_mapping(50, 25, rd, diff);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100, rd, not_used);
+    tree.commit_mapping(50, 25, rd, not_used);
 
     size_t found[16];
     size_t wanted[4] = {0, 50, 75, 100};
@@ -346,9 +346,9 @@ public:
 TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
-  VMATree::SummaryDiff diff;
+  VMATree::SummaryDiff not_used;
   for (int i = 99; i >= 0; i--) {
-    tree.reserve_mapping(i * 100, 101, rd, diff);
+    tree.reserve_mapping(i * 100, 101, rd, not_used);
   }
   EXPECT_EQ(2, count_nodes(tree));
 }
@@ -356,9 +356,9 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
-  VMATree::SummaryDiff diff;
-  tree.reserve_mapping(100, 100, rd, diff);
-  tree.reserve_mapping(100, 100, rd, diff);
+  VMATree::SummaryDiff not_used;
+  tree.reserve_mapping(100, 100, rd, not_used);
+  tree.reserve_mapping(100, 100, rd, not_used);
   EXPECT_EQ(2, count_nodes(tree));
   VMATree::VMARBTree::Range r = tree.tree().find_enclosing_range(110);
   EXPECT_EQ(100, (int)(r.end->key() - r.start->key()));
@@ -366,16 +366,16 @@ TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
 
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   Tree tree;
-  VMATree::SummaryDiff diff;
+  VMATree::SummaryDiff not_used;
   VMATree::RegionData rd_Test_cs0(si[0], mtTest);
   VMATree::RegionData rd_None_cs1(si[1], mtNone);
-  tree.reserve_mapping(0, 100, rd_Test_cs0, diff);
+  tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
   // reserve:   0---------------------100
   // commit:        20**********70
   // uncommit:          30--40
   // post-cond: 0---20**30--40**70----100
-  tree.commit_mapping(20, 50, rd_None_cs1, diff, true);
-  tree.uncommit_mapping(30, 10, rd_None_cs1, diff);
+  tree.commit_mapping(20, 50, rd_None_cs1, not_used, true);
+  tree.uncommit_mapping(30, 10, rd_None_cs1, not_used);
   tree.visit_in_order([&](const TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
@@ -402,11 +402,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should not merge
     Tree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
-    tree.reserve_mapping(0, 100, rd_Test_cs0, diff);
-    tree.reserve_mapping(100, 100, rd_NMT_cs1, diff);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
+    tree.reserve_mapping(100, 100, rd_NMT_cs1, not_used);
 
     EXPECT_EQ(3, count_nodes(tree));
     int found_nodes = 0;
@@ -414,11 +414,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Reserving after commit should overwrite commit
     Tree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
-    tree.commit_mapping(50, 50, rd_NMT_cs1, diff);
-    tree.reserve_mapping(0, 100, rd_Test_cs0, diff);
+    tree.commit_mapping(50, 50, rd_NMT_cs1, not_used);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
     rbtree(tree).visit_in_order([&](const TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0UL) {
@@ -432,22 +432,22 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
     VMATree::RegionData rd_None_cs0{si[0], mtNone};
-    tree.reserve_mapping(0, 100, rd_Test_cs0, diff);
-    tree.reserve_mapping(0, 50, rd_NMT_cs1, diff);
-    tree.reserve_mapping(50, 50, rd_None_cs0, diff);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
+    tree.reserve_mapping(0, 50, rd_NMT_cs1, not_used);
+    tree.reserve_mapping(50, 50, rd_None_cs0, not_used);
 
     EXPECT_EQ(3, count_nodes(tree));
   }
   { // One big reserve + release leaves an empty tree
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     Tree tree;
-    VMATree::SummaryDiff diff;
-    tree.reserve_mapping(0, 500000, rd_NMT_cs0, diff);
-    tree.release_mapping(0, 500000, diff);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 500000, rd_NMT_cs0, not_used);
+    tree.release_mapping(0, 500000, not_used);
 
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
@@ -457,9 +457,9 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     VMATree::RegionData rd_Test_cs1{si[1], mtTest};
     Tree tree;
-    VMATree::SummaryDiff diff;
-    tree.reserve_mapping(0, 100, rd_NMT_cs0, diff);
-    tree.commit_mapping(0, 100, rd_Test_cs1, diff);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100, rd_NMT_cs0, not_used);
+    tree.commit_mapping(0, 100, rd_Test_cs1, not_used);
     rbtree(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.reserved_regiondata().mem_tag);
@@ -473,11 +473,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
-    tree.reserve_mapping(0, 0, rd_NMT_cs0, diff);
+    tree.reserve_mapping(0, 0, rd_NMT_cs0, not_used);
     EXPECT_EQ(nullptr, rbtree_root(tree));
-    tree.commit_mapping(0, 0, rd_NMT_cs0, diff);
+    tree.commit_mapping(0, 0, rd_NMT_cs0, not_used);
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
 }
@@ -533,9 +533,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {500, 600, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
 
-    tree.reserve_mapping(0, 600, rd, diff);
+    tree.reserve_mapping(0, 600, rd, not_used);
 
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
@@ -554,7 +554,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {575, 600, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
 
     // 0---------------------------------------------------600
     //        100****225
@@ -563,11 +563,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     // 0------100****225---------550***560---565***575-----600
     // 0------100****225---500---550***560---565***575-----600
     // <-------mtGC---------><-----------mtClassShared------->
-    tree.reserve_mapping(0, 600, rd, diff);
+    tree.reserve_mapping(0, 600, rd, not_used);
     // The committed areas
-    tree.commit_mapping(100, 125, rd, diff);
-    tree.commit_mapping(550, 10, rd, diff);
-    tree.commit_mapping(565, 10, rd, diff);
+    tree.commit_mapping(100, 125, rd, not_used);
+    tree.commit_mapping(550, 10, rd, not_used);
+    tree.commit_mapping(565, 10, rd, not_used);
     // OK, set tag
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
@@ -579,11 +579,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {0, 200, mtGC, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si, mtGC);
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 100, gc, diff);
-    tree.reserve_mapping(100, 100, compiler, diff);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(0, 200, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -596,11 +596,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {100, 200, mtGC, si2, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si1, mtGC);
     Tree::RegionData compiler(si2, mtCompiler);
-    tree.reserve_mapping(0, 100, gc, diff);
-    tree.reserve_mapping(100, 100, compiler, diff);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(0, 200, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -612,9 +612,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {150, 200, mtCompiler, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 200, compiler, diff);
+    tree.reserve_mapping(0, 200, compiler, not_used);
     tree.set_tag(100, 50, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -626,11 +626,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {125, 200, mtCompiler, si, State::Reserved},
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si, mtGC);
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 100, gc, diff);
-    tree.reserve_mapping(100, 100, compiler, diff);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(75, 50, mtClass);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -643,10 +643,10 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {80, 100, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(0, 50, class_shared, diff);
-    tree.reserve_mapping(75, 25, class_shared, diff);
+    tree.reserve_mapping(0, 50, class_shared, not_used);
+    tree.reserve_mapping(75, 25, class_shared, not_used);
     tree.set_tag(0, 80, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -656,9 +656,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {10, 20, mtCompiler, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(10, 10, class_shared, diff);
+    tree.reserve_mapping(10, 10, class_shared, not_used);
     tree.set_tag(0, 100, mtCompiler);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -672,11 +672,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {99, 100,   mtGC, si, State::Reserved}
     };
     VMATree tree;
-    VMATree::SummaryDiff diff;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(0, 100, class_shared, diff);
-    tree.release_mapping(1, 49, diff);
-    tree.release_mapping(75, 24, diff);
+    tree.reserve_mapping(0, 100, class_shared, not_used);
+    tree.release_mapping(1, 49, not_used);
+    tree.release_mapping(75, 24, not_used);
     tree.set_tag(0, 100, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
