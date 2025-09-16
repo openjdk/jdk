@@ -141,6 +141,9 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
             // to create archive successfully which is not expected.
             throw new jtreg.SkippedException("Test skipped on Windows");
         }
+        if (Platform.isRoot()) {
+            throw new jtreg.SkippedException("Test skipped when executed by root user.");
+        }
         runTest(JCmdTestFileSafety::test);
     }
 }
