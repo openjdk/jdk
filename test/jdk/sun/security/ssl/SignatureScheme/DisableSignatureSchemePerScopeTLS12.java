@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8349583
+ * @bug 8349583 8365820
  * @summary Add mechanism to disable signature schemes based on their TLS scope.
  *          This test only covers TLS 1.2.
  * @library /javax/net/ssl/templates
