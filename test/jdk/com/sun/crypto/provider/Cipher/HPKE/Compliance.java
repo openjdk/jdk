@@ -143,6 +143,7 @@ public class Compliance {
         Asserts.assertTrue(spec.withAuthKey(kp.getPrivate()).withPsk(psk, psk_id).toString().contains("mode_auth_psk}"));
 
         var c1 = Cipher.getInstance("HPKE");
+
         Asserts.assertThrows(NoSuchAlgorithmException.class, () -> Cipher.getInstance("HPKE/None/NoPadding"));
 
         // Still at BEGIN, not initialized
@@ -158,6 +159,9 @@ public class Compliance {
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1]));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0));
+
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), spec);
+        var encap = c1.getIV();
 
         // Does not support WRAP and UNWRAP mode
         Asserts.assertThrows(UnsupportedOperationException.class,
@@ -184,6 +188,9 @@ public class Compliance {
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c1.init(Cipher.DECRYPT_MODE, kp.getPublic(),
                         spec.withEncapsulation(new byte[32])));
+        // Cannot provide key encap msg to sender
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), spec.withEncapsulation(encap)));
         // Must provide key encap msg to recipient
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.DECRYPT_MODE, kp.getPrivate(), spec));
@@ -220,6 +227,15 @@ public class Compliance {
                 spec.withInfo(info).withPsk(psk, psk_id).withAuthKey(kp2.getPrivate()),
                 spec.withInfo(info).withPsk(psk, psk_id).withAuthKey(kp2.getPublic()));
 
+        // wrong keys
+        var kpRSA = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        var kpEC = KeyPairGenerator.getInstance("EC").generateKeyPair();
+
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kpRSA.getPublic(), spec));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kpEC.getPublic(), spec));
+
         // mod_auth, wrong key type
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
@@ -227,6 +243,12 @@ public class Compliance {
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                         spec.withAuthKey(kp2.getPrivate())));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
+                        spec.withAuthKey(kpRSA.getPrivate())));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
+                        spec.withAuthKey(kpEC.getPrivate())));
     }
 
     static void checkEncryptDecrypt(KeyPair kp, HPKEParameterSpec ps,

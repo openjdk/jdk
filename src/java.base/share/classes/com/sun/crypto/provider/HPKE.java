@@ -394,12 +394,13 @@ public class HPKE extends CipherSpi {
                     throw new InvalidAlgorithmParameterException(
                             "Must not provide key encapsulation message on sender side");
                 }
-                checkMatch(pk, params.kem_id());
+                checkMatch(false, pk, params.kem_id());
                 KEM.Encapsulated enc;
                 if (p.authKey() == null) {
                     var e = kem().newEncapsulator(pk, rand);
                     enc = e.encapsulate();
                 } else if (p.authKey() instanceof PrivateKey skS) {
+                    checkMatch(true, skS, params.kem_id());
                     // AuthEncap not public KEM API but it's internally supported
                     var e = new DHKEM().engineNewAuthEncapsulator(pk, skS, null, rand);
                     enc = e.engineEncapsulate(0, e.engineSecretSize(), "Generic");
@@ -413,7 +414,7 @@ public class HPKE extends CipherSpi {
                 if (!(key instanceof PrivateKey sk)) {
                     throw new InvalidKeyException("Cannot decrypt with public key");
                 }
-                checkMatch(sk, params.kem_id());
+                checkMatch(false, sk, params.kem_id());
                 try {
                     var encap = p.encapsulation();
                     if (encap == null) {
@@ -424,6 +425,7 @@ public class HPKE extends CipherSpi {
                         var d = kem().newDecapsulator(sk);
                         shared_secret = d.decapsulate(encap);
                     } else if (p.authKey() instanceof PublicKey pkS) {
+                        checkMatch(true, pkS, params.kem_id());
                         // AuthDecap not public KEM API but it's internally supported
                         var d = new DHKEM().engineNewAuthDecapsulator(sk, pkS, null);
                         shared_secret = d.engineDecapsulate(
@@ -445,7 +447,7 @@ public class HPKE extends CipherSpi {
                     params.psk_id());
         }
 
-        private static void checkMatch(AsymmetricKey k, int kem_id)
+        private static void checkMatch(boolean inSpec, AsymmetricKey k, int kem_id)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             var p = k.getParams();
             if (p instanceof ECParameterSpec ecp) {
@@ -469,8 +471,12 @@ public class HPKE extends CipherSpi {
                             name + " does not match " + kem_id);
                 }
             } else {
-                throw new InvalidKeyException(
-                        k.getClass() + " does not match " + kem_id);
+                var msg = k.getClass() + " does not match " + kem_id;
+                if (inSpec) {
+                    throw new InvalidAlgorithmParameterException(msg);
+                } else {
+                    throw new InvalidKeyException(msg);
+                }
             }
         }
 

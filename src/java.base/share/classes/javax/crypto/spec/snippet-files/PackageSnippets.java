@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 class PackageSnippets {
     public static void main(String[] args) throws Exception {
@@ -45,7 +46,7 @@ class PackageSnippets {
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
                         HPKEParameterSpec.KDF_HKDF_SHA256,
                         HPKEParameterSpec.AEAD_AES_128_GCM)
-                .withInfo("app_info".getBytes(StandardCharsets.UTF_8));
+                .withInfo(HexFormat.of().parseHex("010203040506"));
         senderCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
         // Retrieve the key encapsulation message (from the KEM step) from
@@ -60,7 +61,7 @@ class PackageSnippets {
                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
                         HPKEParameterSpec.KDF_HKDF_SHA256,
                         HPKEParameterSpec.AEAD_AES_128_GCM)
-                .withInfo("app_info".getBytes(StandardCharsets.UTF_8))
+                .withInfo(HexFormat.of().parseHex("010203040506"))
                 .withEncapsulation(kemEncap);
         recipientCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
 

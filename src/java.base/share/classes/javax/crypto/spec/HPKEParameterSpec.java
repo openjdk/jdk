@@ -56,13 +56,13 @@ import java.util.Objects;
  * An {@code HPKEParameterSpec} object must be provided at HPKE
  * {@linkplain Cipher#init(int, Key, AlgorithmParameterSpec) cipher initialization}.
  * <p>
- * The {@link #of(int, int, int)} static method creates an {@code HPKEParameterSpec}
- * instance with the specified KEM, KDF, and AEAD algorithm identifiers.
+ * The {@link #of(int, int, int)} static method returns an {@code HPKEParameterSpec}
+ * object with the specified KEM, KDF, and AEAD algorithm identifiers.
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
  * "AEAD algorithm identifiers" refer to their respective numeric values
  * (specifically, {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as
  * defined in <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
- * of RFC 9180 and the
+ * of RFC 9180 and maintained on the
  * <a href="https://www.iana.org/assignments/hpke/hpke.xhtml">IANA HPKE page</a>.
  * <p>
  * Once an {@code HPKEParameterSpec} object is created, additional methods
@@ -88,7 +88,7 @@ import java.util.Objects;
  * <li>
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient
- * so that the recipient can recover this shared secret. On the sender side,
+ * so that the recipient can recover the shared secret. On the sender side,
  * after the cipher is initialized, the key encapsulation message can be
  * retrieved using the {@link Cipher#getIV()} method. On the recipient side,
  * this message must be supplied as part of an {@code HPKEParameterSpec}
@@ -101,20 +101,20 @@ import java.util.Objects;
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5">Section 5</a>
  * of RFC 9180.
  * <p>
- * If an HPKE cipher is initialized without parameters, an
- * {@code InvalidKeyException} is thrown.
+ * If an HPKE cipher is {@linkplain Cipher#init(int, Key) initialized without
+ * parameters}, an {@code InvalidKeyException} is thrown.
  * <p>
  * At HPKE cipher initialization, if no HPKE implementation supports the
  * provided key type, an {@code InvalidKeyException} is thrown. If the provided
  * {@code HPKEParameterSpec} is not accepted by any HPKE implementation,
- * an {@code InvalidAlgorithmParameterException} is thrown by the
- * {@code init} method. The following are cases of invalid parameters:
+ * an {@code InvalidAlgorithmParameterException} is thrown. For example:
  * <ul>
  * <li> An algorithm identifier is unsupported or does not match the provided key type.
- * <li> The key encapsulation message is not provided on the recipient side.
+ * <li> A key encapsulation message is provided on the sender side.
+ * <li> A key encapsulation message is not provided on the recipient side.
  * <li> An attempt to use {@code withAuthKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code withAuthKey(key)} is made but {@code mode_auth}
- *      or {@code mode_auth_psk} is not supported by the KEM used.
+ *      or {@code mode_auth_psk} is not supported by the KEM algorithm used.
  * </ul>
  * After initialization, both the sender and recipient can process multiple
  * messages in sequence with repeated {@code doFinal} calls, optionally preceded
@@ -150,74 +150,62 @@ import java.util.Objects;
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
     /**
-     * KEM algorithm identifier for DHKEM(P-256, HKDF-SHA256) as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     * KEM algorithm identifier for DHKEM(P-256, HKDF-SHA256) as defined in RFC 9180.
      */
     public static final int KEM_DHKEM_P_256_HKDF_SHA256 = 0x10;
 
     /**
-     * KEM algorithm identifier for DHKEM(P-384, HKDF-SHA384) as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     * KEM algorithm identifier for DHKEM(P-384, HKDF-SHA384) as defined in RFC 9180.
      */
     public static final int KEM_DHKEM_P_384_HKDF_SHA384 = 0x11;
 
     /**
-     * KEM algorithm identifier for DHKEM(P-521, HKDF-SHA512) as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     * KEM algorithm identifier for DHKEM(P-521, HKDF-SHA512) as defined in RFC 9180.
      */
     public static final int KEM_DHKEM_P_521_HKDF_SHA512 = 0x12;
 
     /**
-     * KEM algorithm identifier for DHKEM(X25519, HKDF-SHA256) as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     * KEM algorithm identifier for DHKEM(X25519, HKDF-SHA256) as defined in RFC 9180.
      */
     public static final int KEM_DHKEM_X25519_HKDF_SHA256 = 0x20;
 
     /**
-     * KEM algorithm identifier for DHKEM(X448, HKDF-SHA512) as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     * KEM algorithm identifier for DHKEM(X448, HKDF-SHA512) as defined in RFC 9180.
      */
     public static final int KEM_DHKEM_X448_HKDF_SHA512 = 0x21;
 
     /**
-     * KDF algorithm identifier for HKDF-SHA256 as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     * KDF algorithm identifier for HKDF-SHA256 as defined in RFC 9180.
      */
     public static final int KDF_HKDF_SHA256 = 0x1;
 
     /**
-     * KDF algorithm identifier for HKDF-SHA384 as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     * KDF algorithm identifier for HKDF-SHA384 as defined in RFC 9180.
      */
     public static final int KDF_HKDF_SHA384 = 0x2;
 
     /**
-     * KDF algorithm identifier for HKDF-SHA512 as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     * KDF algorithm identifier for HKDF-SHA512 as defined in RFC 9180.
      */
     public static final int KDF_HKDF_SHA512 = 0x3;
 
     /**
-     * AEAD algorithm identifier for AES-128-GCM as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     * AEAD algorithm identifier for AES-128-GCM as defined in RFC 9180.
      */
     public static final int AEAD_AES_128_GCM = 0x1;
 
     /**
-     * AEAD algorithm identifier for AES-256-GCM as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     * AEAD algorithm identifier for AES-256-GCM as defined in RFC 9180.
      */
     public static final int AEAD_AES_256_GCM = 0x2;
 
     /**
-     * AEAD algorithm identifier for ChaCha20Poly1305 as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     * AEAD algorithm identifier for ChaCha20Poly1305 as defined in RFC 9180.
      */
     public static final int AEAD_CHACHA20_POLY1305 = 0x3;
 
     /**
-     * AEAD algorithm identifier for Export-only as defined in
-     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     * AEAD algorithm identifier for Export-only as defined in RFC 9180.
      */
     public static final int EXPORT_ONLY = 0xffff;
 
@@ -349,7 +337,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * Creates a new {@code HPKEParameterSpec} object with the specified
      * authentication key value.
      * <p>
-     * Note: this method does not check whether the KEM supports
+     * Note: this method does not check whether the KEM algorithm supports
      * {@code mode_auth} or {@code mode_auth_psk}. If the resulting object is
      * used to initialize an HPKE cipher with an unsupported mode, an
      * {@code InvalidAlgorithmParameterException} will be thrown at that time.
