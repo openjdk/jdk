@@ -67,7 +67,6 @@ public class OldClassAndRedefineClass {
         out = TestCommon.exec(
                 appJar,
                 "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+AllowArchivingWithJavaAgent",
                 "-XX:+WhiteBoxAPI",
                 "-Xlog:cds,class+load",
                 agentCmdArg,
