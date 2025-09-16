@@ -486,9 +486,11 @@ public final class PassFailJFrame {
                           long testTimeOut,
                           int rows, int columns)
             throws InterruptedException, InvocationTargetException {
-        invokeOnEDT(() -> createUI(title, instructions,
-                                   testTimeOut,
-                                   rows, columns));
+        invokeOnEDT(() -> createUI(builder().title(title)
+                                            .instructions(instructions)
+                                            .testTimeOut(testTimeOut)
+                                            .rows(rows)
+                                            .columns(columns)));
     }
 
     /**
@@ -584,39 +586,13 @@ public final class PassFailJFrame {
         }
     }
 
-    private static void createUI(String title, String instructions,
-                                 long testTimeOut, int rows, int columns) {
-        frame = new JFrame(title);
-        frame.setLayout(new BorderLayout());
-
-        frame.addWindowListener(windowClosingHandler);
-
-        frame.add(createInstructionUIPanel(instructions,
-                                           testTimeOut,
-                                           rows, columns,
-                                           null,
-                                           false,
-                                           false, 0),
-                  BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        addTestWindow(frame);
-    }
-
     private static void createUI(Builder builder) {
         frame = new JFrame(builder.title);
         frame.setLayout(new BorderLayout());
 
         frame.addWindowListener(windowClosingHandler);
 
-        JComponent instructionUI =
-                createInstructionUIPanel(builder.instructions,
-                                         builder.testTimeOut,
-                                         builder.rows, builder.columns,
-                                         builder.hyperlinkListener,
-                                         builder.screenCapture,
-                                         builder.addLogArea,
-                                         builder.logAreaRows);
+        JComponent instructionUI = createInstructionUIPanel(builder);
         if (builder.splitUI) {
             JSplitPane splitPane = new JSplitPane(
                     builder.splitUIOrientation,
@@ -632,24 +608,23 @@ public final class PassFailJFrame {
         addTestWindow(frame);
     }
 
-    private static JComponent createInstructionUIPanel(String instructions,
-                                                       long testTimeOut,
-                                                       int rows, int columns,
-                                                       HyperlinkListener hyperlinkListener,
-                                                       boolean enableScreenCapture,
-                                                       boolean addLogArea,
-                                                       int logAreaRows) {
+    private static JComponent createInstructionUIPanel(final Builder builder) {
         JPanel main = new JPanel(new BorderLayout());
         main.setBorder(createFrameBorder());
 
-        timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
+        timeoutHandlerPanel = new TimeoutHandlerPanel(builder.testTimeOut);
         main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
-        JTextComponent text = instructions.startsWith("<html>")
-                              ? configureHTML(instructions, rows, columns)
-                              : configurePlainText(instructions, rows, columns);
-        if (hyperlinkListener != null && text instanceof JEditorPane ep) {
-            ep.addHyperlinkListener(hyperlinkListener);
+        JTextComponent text = builder.instructions.startsWith("<html>")
+                              ? configureHTML(builder.instructions,
+                                              builder.rows,
+                                              builder.columns)
+                              : configurePlainText(builder.instructions,
+                                                   builder.rows,
+                                                   builder.columns);
+        if (builder.hyperlinkListener != null
+            && text instanceof JEditorPane ep) {
+            ep.addHyperlinkListener(builder.hyperlinkListener);
         }
         text.setEditable(false);
         text.setBorder(createTextBorder());
@@ -678,12 +653,12 @@ public final class PassFailJFrame {
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
-        if (enableScreenCapture) {
+        if (builder.screenCapture) {
             buttonsPanel.add(createCapturePanel());
         }
 
-        if (addLogArea) {
-            logArea = new JTextArea(logAreaRows, columns);
+        if (builder.addLogArea) {
+            logArea = new JTextArea(builder.logAreaRows, builder.columns);
             logArea.setEditable(false);
             logArea.setBorder(createTextBorder());
 
