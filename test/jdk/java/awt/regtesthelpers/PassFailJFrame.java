@@ -486,11 +486,11 @@ public final class PassFailJFrame {
                           long testTimeOut,
                           int rows, int columns)
             throws InterruptedException, InvocationTargetException {
-        invokeOnEDT(() -> createUI(builder().title(title)
-                                            .instructions(instructions)
-                                            .testTimeOut(testTimeOut)
-                                            .rows(rows)
-                                            .columns(columns)));
+        this(builder().title(title)
+                      .instructions(instructions)
+                      .testTimeOut(testTimeOut)
+                      .rows(rows)
+                      .columns(columns));
     }
 
     /**
@@ -505,6 +505,7 @@ public final class PassFailJFrame {
      */
     private PassFailJFrame(final Builder builder)
             throws InterruptedException, InvocationTargetException {
+        builder.validate();
         invokeOnEDT(() -> createUI(builder));
 
         if (!builder.splitUI && builder.panelCreator != null) {
@@ -1818,7 +1819,6 @@ public final class PassFailJFrame {
         public PassFailJFrame build() throws InterruptedException,
                 InvocationTargetException {
             try {
-                validate();
                 return new PassFailJFrame(this);
             } catch (final Throwable t) {
                 // Dispose of all the windows, including those that may not
