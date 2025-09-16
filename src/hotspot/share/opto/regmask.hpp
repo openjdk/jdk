@@ -167,7 +167,8 @@ class RegMask {
   bool _read_only = false;
 #endif
 
-  // Current total register mask size in machine words
+  // Current *total* register mask size in machine words (both static and
+  // dynamic parts)
   unsigned int _rm_size_in_words;
 
   // We support offsetting register masks to present different views of the
@@ -196,9 +197,9 @@ class RegMask {
   // (with _offset = 0, for a made-up platform with 10 registers and 4-bit
   // words) that has been extended with two additional words to represent more
   // stack locations:
-  //                                                   _hwm=3
-  //                         _lwm=1          RM_SIZE_IN_INTS=3       _rm_size_in_words=5
-  //                       |                       |                        |
+  //
+  //                         _lwm=1   RM_SIZE_IN_WORDS=3 _hwm=3      _rm_size_in_words=5
+  //                            |                  |      |                 |
   //            r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 s0 s1   s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 ...
   // Content:  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] as  as  as
   //   Index: [0]         [1]         [2]           [0]         [1]
@@ -212,8 +213,8 @@ class RegMask {
   //
   // In this example, registers {r5, r6} and stack locations {s0, s2, s3, s5}
   // are included in the register mask. Depending on the value of
-  // _infinite_stack (denoted with as), {s10, s11, ...} are all included (as =
-  // 1) or excluded (as = 0). Note that all registers/stack locations under _lwm
+  // _infinite_stack (denoted with as), {s10, s11, ...} are all included (as=1)
+  // or excluded (as=0). Note that all registers/stack locations under _lwm
   // and over _hwm are excluded. The exception is {s10, s11, ...}, where the
   // value is decided solely by _infinite_stack, regardless of the value of
   // _hwm.
@@ -226,9 +227,8 @@ class RegMask {
   // the above register mask looks like after clearing, setting _infinite_stack
   // to true, and successfully rolling over:
   //
-  //                                                                                _hwm=4
-  //              _lwm=0                             RM_SIZE_IN_INTS=3                    _rm_size_in_words=5
-  //           |                                              |                               |
+  //              _lwm=0                             RM_SIZE_IN_WORDS=3              _hwm=4  _rm_size_in_words=5
+  //                 |                                        |                        |      |
   //            s10 s11 s12 s13 s14 s15 s16 s17 s18 s19 s20 s21  s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 ...
   // Content:  [1   1   1   1  |1   1   1   1  |1   1   1   1 ] [1   1   1   1  |1   1   1   1]  1   1   1
   //   Index: [0]             [1]             [2]              [0]             [1]
@@ -238,7 +238,7 @@ class RegMask {
   //                                _rm_word                             _rm_word_ext
   //          \_______________________________________________________________________________/
   //                                                  |
-  //                                  _rm_size_in_words = _offset = 5
+  //                                  _rm_size_in_words=_offset=5
 
   // Access word i in the register mask.
   const uintptr_t& rm_word(unsigned int i) const {
@@ -258,7 +258,7 @@ class RegMask {
     return const_cast<uintptr_t&>(const_cast<const RegMask*>(this)->rm_word(i));
   }
 
-  // The maximum word index
+  // The current maximum word index
   unsigned int rm_word_max_index() const {
     return _rm_size_in_words - 1U;
   }
@@ -328,6 +328,7 @@ class RegMask {
     assert(valid_watermarks(), "post-condition");
   }
 
+  // Make the watermarks as tight as possible.
   void trim_watermarks() {
     if (_hwm < _lwm) {
       return;
@@ -831,14 +832,19 @@ private:
 
 public:
 
-  // Used to publically expose RM_SIZE_IN_WORDS for testing purposes.
+  // ----------------------------------------------------------------------
+  // The methods below are only for testing purposes (see test_regmask.cpp)
+  // ----------------------------------------------------------------------
+
   unsigned int static basic_rm_size_in_words() {
     return RM_SIZE_IN_WORDS;
   }
 
+  // Also used for testing.
   unsigned int static rm_size_in_bits_max() {
     return RM_SIZE_IN_WORDS_MAX * BitsPerWord;
   }
+
   bool equals(const RegMask& rm) const {
     assert(_offset == rm._offset, "offset mismatch");
     if (_infinite_stack != rm._infinite_stack) {
@@ -866,9 +872,15 @@ public:
     }
     return true;
   }
+
   void set_offset(unsigned int offset) {
     _offset = offset;
   }
+
+  // ----------------------
+  // End of testing methods
+  // ----------------------
+
   void print() const { dump(); }
   void dump(outputStream *st = tty) const; // Print a mask
   void dump_hex(outputStream* st = tty) const; // Print a mask (raw hex)
