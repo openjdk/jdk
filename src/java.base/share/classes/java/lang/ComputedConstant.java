@@ -250,7 +250,7 @@ public sealed interface ComputedConstant<T>
     boolean equals(Object obj);
 
     /**
-     * {@return he hash code of this constant}
+     * {@return the hash code of this constant}
      *
      * @throws NullPointerException if the computing function returns {@code null}
      * @throws RuntimeException if an exception is thrown while executing the
@@ -264,7 +264,8 @@ public sealed interface ComputedConstant<T>
      * {@return a new computed constant to be computed later using the provided
      *          {@code computingFunction}}
      *
-     * @param computingFunction in the form of a Supplier used to compute the constant
+     * @param computingFunction in the form of a Supplier to be used to compute
+     *                          the constant
      * @param <T>               type of the constant
      *
      */
