@@ -34,10 +34,9 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules jdk.incubator.vector
  * @library /test/lib
  *
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=quiet
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+StressIncrementalInlining -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestVectorMathLib::test*
- *                   -XX:+StressIncrementalInlining
- *                       compiler.vectorapi.TestVectorMathLib
+ *                   compiler.vectorapi.TestVectorMathLib
  */
 
 public class TestVectorMathLib {
