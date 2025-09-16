@@ -600,7 +600,7 @@ protected:
     StdCpuid24MainLeafEax std_cpuid24_eax;
     StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
-    // cpuid function 0x29
+    // cpuid function 0x29 APX Advanced Performance Extensions Leaf
     // eax = 0x29, ecx = 0
     StdCpuidEax29Ecx0 std_cpuid29_ebx;
 
@@ -774,9 +774,9 @@ public:
     _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { 
+  static void set_apx_cpuFeatures() {
     _features.set_feature(CPU_APX_F);
-    _features.set_feature(CPU_APX_NCI_NDD_NF); 
+    _features.set_feature(CPU_APX_NCI_NDD_NF);
   }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);

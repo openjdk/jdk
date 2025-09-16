@@ -326,7 +326,7 @@ public class AMD64 extends Architecture {
 
     @Override
     public List<Register> getAvailableValueRegisters() {
-        if (features.contains(CPUFeature.APX_F)) { //TODO: what change?
+        if (features.contains(CPUFeature.APX_F)) {
             if (features.contains(CPUFeature.AVX512F)) {
                 return valueRegistersAVX512AndAPX;
             } else {

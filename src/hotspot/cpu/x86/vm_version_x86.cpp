@@ -1029,13 +1029,6 @@ void VM_Version::get_processor_features() {
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
   bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_apx_nci_ndd_nf() && supports_avx512vl();
-  if (supports_apx_nci_ndd_nf()) {
-    warning("APX_NCI_NDD_NF feature is detected");
-  }
-  else {
-    warning("APX_NCI_NDD_NF feature is NOT detected");
-  }
-  
   if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
@@ -2932,7 +2925,7 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
     vm_features.set_feature(CPU_POPCNT);
   if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
       xem_xcr0_eax.bits.apx_f != 0 &&
-      std_cpuid29_ebx.bits.apx_nci_ndd_nf !=0) {
+      std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0) {
     vm_features.set_feature(CPU_APX_F);
     vm_features.set_feature(CPU_APX_NCI_NDD_NF);
   }
