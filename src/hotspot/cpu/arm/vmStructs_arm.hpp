@@ -30,13 +30,13 @@
 // referenced by vmStructs.cpp.
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field) \
-                                                                                                                                                           \
-  /******************************/                                                                                                                         \
-  /* JavaCallWrapper            */                                                                                                                         \
-  /******************************/                                                                                                                         \
-  /******************************/                                                                                                                         \
-  /* JavaFrameAnchor            */                                                                                                                         \
-  /******************************/                                                                                                                         \
+                                                                                                                                     \
+  /******************************/                                                                                                   \
+  /* JavaCallWrapper            */                                                                                                   \
+  /******************************/                                                                                                   \
+  /******************************/                                                                                                   \
+  /* JavaFrameAnchor            */                                                                                                   \
+  /******************************/                                                                                                   \
   volatile_nonstatic_field(JavaFrameAnchor,     _last_Java_fp,                                    intptr_t*)
 
 #define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c2_toplevel_type)
