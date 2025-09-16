@@ -460,7 +460,7 @@ final class WinNTFileSystem extends FileSystem {
 
     }
 
-    private static final long HKEY_CURRENT_USER =0x80000001L;
+    private static final long HKEY_CURRENT_USER = 0x80000001L;
 
     @Override
     public String canonicalize(String path) throws IOException {
