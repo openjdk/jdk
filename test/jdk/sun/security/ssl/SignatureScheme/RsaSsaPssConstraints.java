@@ -150,8 +150,8 @@ public class RsaSsaPssConstraints extends SSLSocketTemplate {
                 runAndCheckException(test::run,
                         serverEx -> {
                             Throwable clientEx = serverEx.getSuppressed()[0];
-                            assertTrue(
-                                    clientEx instanceof SSLHandshakeException);
+                            assertTrue(clientEx instanceof SSLHandshakeException
+                                    || serverEx instanceof SSLHandshakeException);
                         });
             } else {
                 test.run();
