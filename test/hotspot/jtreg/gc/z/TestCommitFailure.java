@@ -24,6 +24,14 @@
 package gc.z;
 
 /*
+ * @test id=Normal
+ * @requires vm.gc.Z & vm.debug
+ * @summary Test ZGC graceful failure when a commit fails
+ * @library / /test/lib
+ * @run driver gc.z.TestCommitFailure
+ */
+
+/*
  * @test id=ZFakeNUMA
  * @requires vm.gc.Z & vm.debug
  * @library / /test/lib
@@ -98,7 +106,6 @@ public class TestCommitFailure {
         ProcessTools.executeTestJava(arguments)
                 .outputTo(System.out)
                 .errorTo(System.out)
-                .shouldContain("Forced to lower max Java heap size")
                 .shouldHaveExitValue(0);
     }
 }

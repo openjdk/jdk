@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -800,6 +800,7 @@ public class JavacElements implements Elements {
                 yield msym.module_info.classfile;
             }
             case TYP -> ((ClassSymbol) sym).classfile;
+            case ERR -> null;
             default -> sym.enclClass().classfile;
         };
     }

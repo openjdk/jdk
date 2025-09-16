@@ -25,10 +25,10 @@
 
 #include "asm/macroAssembler.hpp"
 #include "cds/aotCacheAccess.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
@@ -96,7 +96,7 @@ static void report_store_failure() {
 // where we set number of compiler threads for AOT assembly phase.
 //
 // 3. We determine presence of AOT code in AOT Cache in
-// MetaspaceShared::open_static_archive() which is calles
+// AOTMetaspace::open_static_archive() which is calles
 // after compilationPolicy_init() but before codeCache_init().
 //
 // 4. AOTCodeCache::initialize() is called during universe_init()
@@ -165,7 +165,7 @@ uint AOTCodeCache::max_aot_code_size() {
   return _max_aot_code_size;
 }
 
-// It is called from MetaspaceShared::initialize_shared_spaces()
+// It is called from AOTMetaspace::initialize_shared_spaces()
 // which is called from universe_init().
 // At this point all AOT class linking seetings are finilized
 // and AOT cache is open so we can map AOT code region.

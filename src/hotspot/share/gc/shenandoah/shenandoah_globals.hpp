@@ -70,10 +70,6 @@
           "many consecutive young-gen collections have been "               \
           "completed following the preceding old-gen collection.")          \
                                                                             \
-  product(bool, ShenandoahGenerationalCensusAtEvac, false, EXPERIMENTAL,    \
-          "(Generational mode only) Object age census at evacuation, "      \
-          "rather than during marking.")                                    \
-                                                                            \
   product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
           "(Generational mode only) Dynamically adapt tenuring age.")       \
                                                                             \
@@ -141,10 +137,12 @@
           "GC heuristics to use. This fine-tunes the GC mode selected, "    \
           "by choosing when to start the GC, how much to process on each "  \
           "cycle, and what other features to automatically enable. "        \
-          "Possible values are:"                                            \
+          "When -XX:ShenandoahGCMode is generational, the only supported "  \
+          "option is the default, adaptive. Possible values are:"           \
           " adaptive - adapt to maintain the given amount of free heap "    \
           "at all times, even during the GC cycle;"                         \
-          " static -  trigger GC when free heap falls below the threshold;" \
+          " static - trigger GC when free heap falls below a specified "    \
+          "threshold;"                                                      \
           " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \

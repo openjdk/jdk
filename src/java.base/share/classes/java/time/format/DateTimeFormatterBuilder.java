@@ -205,7 +205,7 @@ public final class DateTimeFormatterBuilder {
      * for the requested dateStyle and/or timeStyle.
      * <p>
      * If the locale contains the "rg" (region override)
-     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the formatting pattern is overridden with the one appropriate for the region.
      *
      * @param dateStyle  the FormatStyle for the date, null for time-only pattern
@@ -235,7 +235,7 @@ public final class DateTimeFormatterBuilder {
      * for the requested template.
      * <p>
      * If the locale contains the "rg" (region override)
-     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the formatting pattern is overridden with the one appropriate for the region.
      * <p>
      * Refer to {@link #appendLocalized(String)} for the detail of {@code requestedTemplate}
