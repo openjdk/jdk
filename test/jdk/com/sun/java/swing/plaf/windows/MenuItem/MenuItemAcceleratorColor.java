@@ -110,7 +110,7 @@ public final class MenuItemAcceleratorColor {
         JFrame frame = new JFrame("Accelerator colors in Windows L&F");
         frame.setJMenuBar(createMenuBar());
         frame.add(content, BorderLayout.CENTER);
-        frame.setSize(300, 220);
+        frame.setSize(350, 370);
         return frame;
     }
 
@@ -140,6 +140,32 @@ public final class MenuItemAcceleratorColor {
         UIManager.put("MenuItem.acceleratorForeground", acceleratorForeground);
         UIManager.put("MenuItem.acceleratorSelectionForeground", acceleratorSelectionForeground);
 
+
+        // Disabled foreground
+        JMenuItem fourth = new JMenuItem("Fourth menu item");
+        fourth.setEnabled(false);
+        fourth.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                                                     InputEvent.CTRL_DOWN_MASK));
+
+        Color disabledForeground = UIManager.getColor("MenuItem.disabledForeground");
+        UIManager.put("MenuItem.disabledForeground", Color.BLUE);
+
+        JMenuItem fifth = new JMenuItem("Fifth menu item");
+        fifth.setEnabled(false);
+        fifth.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                                                    InputEvent.CTRL_DOWN_MASK
+                                                    | InputEvent.SHIFT_DOWN_MASK));
+
+        // Restore disabled foreground
+        UIManager.put("MenuItem.disabledForeground", disabledForeground);
+
+        JMenuItem sixth = new JMenuItem("Sixth menu item");
+        sixth.setEnabled(false);
+        sixth.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X,
+                                                    InputEvent.CTRL_DOWN_MASK
+                                                    | InputEvent.ALT_DOWN_MASK));
+
+
         JMenuItem quit = new JMenuItem("Quit");
         quit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q,
                                                    InputEvent.CTRL_DOWN_MASK));
@@ -148,6 +174,11 @@ public final class MenuItemAcceleratorColor {
         menu.add(first);
         menu.add(second);
         menu.add(third);
+        menu.addSeparator();
+        menu.add(fourth);
+        menu.add(fifth);
+        menu.add(sixth);
+        menu.addSeparator();
         menu.add(quit);
 
         JMenuBar menuBar = new JMenuBar();
