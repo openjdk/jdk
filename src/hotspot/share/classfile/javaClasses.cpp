@@ -79,7 +79,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/threadSMR.hpp"
@@ -3741,20 +3741,17 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   return element();
 }
 
-int reflect_ConstantPool::_oop_offset;
-
-#define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "constantPoolOop", object_signature, false)
+int reflect_ConstantPool::_vmholder_offset;
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
-  // The field is called ConstantPool* in the sun.reflect.ConstantPool class.
-  CONSTANTPOOL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  // The field is injected and called Object vmholder in the jdk.internal.reflect.ConstantPool class.
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
-  CONSTANTPOOL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -3907,13 +3904,15 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
-  reflect->obj_field_put(_oop_offset, mirror);
+  reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-  oop mirror = reflect->obj_field(_oop_offset);
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
+  oop mirror = reflect->obj_field(_vmholder_offset);
   InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror);
 
   // Get the constant pool back from the klass.  Since class redefinition
@@ -5554,5 +5553,4 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }
