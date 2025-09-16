@@ -54,7 +54,7 @@ public class ApplyInsetsTest {
         SwingUtilities3.applyInsets(rect, insets, false);
         if (!rect.equals(expected)) {
             throw new RuntimeException("Right to left test failed: expected " + expected +
-                                        " but got " + rect);
+                                       " but got " + rect);
         }
 
         System.out.println("Test passed.");
