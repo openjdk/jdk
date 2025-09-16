@@ -154,7 +154,6 @@ import static jdk.jshell.TreeDissector.printType;
 import static java.util.stream.Collectors.joining;
 
 import javax.lang.model.type.IntersectionType;
-import jdk.internal.jshell.debug.InternalDebugControl;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
