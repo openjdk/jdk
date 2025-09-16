@@ -1245,7 +1245,7 @@ private:
         // turning on use_forward_table for the region.
         OrderAccess::fence();
         _sh->collection_set()->switch_to_forward_table(r);
-        /*
+
         if (_concurrent) {
           // We need to bring mutator threads to a safepoint, otherwise
           // they might see use_forward_table=false and then end up trying
@@ -1254,7 +1254,17 @@ private:
           _sh->rendezvous_threads("Switch to Forward Table");
         }
         r->zap_to_fwd_table();
-        */
+        {
+          class SetupFillerWords {
+          public:
+            static void do_object(oop obj) {
+              auto* loc = cast_from_oop<HeapWord*>(obj);
+              CollectedHeap::fill_with_object(loc, CollectedHeap::min_fill_size());
+            }
+          } cl;
+          HeapWord* limit = MIN2(r->forwarding_table_start(), r->top());
+          _sh->marked_object_iterate(r, &cl, limit);
+        }
       }
     }
   }

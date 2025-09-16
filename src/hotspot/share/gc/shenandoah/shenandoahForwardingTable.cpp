@@ -160,14 +160,14 @@ void ShenandoahForwardingTable::enter_forwarding(HeapWord* original, HeapWord* f
   uint64_t index = hash % _num_entries;
   log_develop_trace(gc)("Finding slot, start at index: " UINT64_FORMAT ", for original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(original), p2i(forwardee));
   HeapWord* region_base = _region->bottom();
-  //ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
   while (table[index].is_used() /*|| table[index].is_marked(ctx)*/) {
 #ifndef PRODUCT
     if (table[index].is_marked(ShenandoahHeap::heap()->marking_context())) {
       assert(!table[index].is_original(region_base, original), "marked location must not look like the original entry");
     }
-#endif
+    ShenandoahMarkingContext* ctx = ShenandoahHeap::heap()->marking_context();
     log_develop_trace(gc)("Collision on" UINT64_FORMAT ": is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, BOOL_TO_STR(table[index].is_marked(ctx)), p2i(table[index].original(region_base)), p2i(table[index].forwardee()));
+#endif
     index = (index + 1) % _num_entries;
     assert(index != hash % _num_entries, "must find a usable slot, _num_entries: %lu, actual forwardings: %lu, live_words: %lu", _num_entries, _num_actual_forwardings, _num_live_words);
   }
@@ -181,9 +181,9 @@ void ShenandoahForwardingTable::enter_forwarding(HeapWord* original, HeapWord* f
 template<class Entry>
 void ShenandoahForwardingTable::log_stats() const {
 #ifndef PRODUCT
-  log_info(gc)("Forwarding table load factor: %f", (float)(_num_actual_forwardings + _num_live_words) / (float) (_num_entries));
-  log_info(gc)("Forwarding table size: %lu (== %lu bytes)", _num_entries, sizeof(Entry) * _num_entries);
-  log_info(gc)("Forwarding table expected: %lu, actual: %lu, live words: %lu", _num_expected_forwardings, _num_actual_forwardings, _num_live_words);
+  log_debug(gc)("Forwarding table load factor: %f", (float)(_num_actual_forwardings + _num_live_words) / (float) (_num_entries));
+  log_debug(gc)("Forwarding table size: %lu (== %lu bytes)", _num_entries, sizeof(Entry) * _num_entries);
+  log_debug(gc)("Forwarding table expected: %lu, actual: %lu, live words: %lu", _num_expected_forwardings, _num_actual_forwardings, _num_live_words);
 #endif
 }
 
@@ -192,7 +192,7 @@ void ShenandoahForwardingTable::fill_forwardings() {
   class FillForwardingsClosure {
     ShenandoahForwardingTable& _table;
   public:
-    FillForwardingsClosure(ShenandoahForwardingTable& t) : _table(t) {}
+    explicit FillForwardingsClosure(ShenandoahForwardingTable& t) : _table(t) {}
     void do_object(oop obj) {
       HeapWord* original = cast_from_oop<HeapWord*>(obj);
       HeapWord* forwardee = cast_from_oop<HeapWord*>(ShenandoahForwarding::get_forwardee_raw(obj));

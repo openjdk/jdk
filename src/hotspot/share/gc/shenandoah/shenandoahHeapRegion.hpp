@@ -503,6 +503,10 @@ public:
     _fwd_table.zap_region();
   }
 
+  HeapWord* forwarding_table_start() const {
+    return _fwd_table.start();
+  }
+
   oop forwardee_compact(oop obj) const;
 
   oop forwardee_wide(oop obj) const;

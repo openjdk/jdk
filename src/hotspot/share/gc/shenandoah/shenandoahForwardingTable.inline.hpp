@@ -86,7 +86,7 @@ HeapWord* ShenandoahForwardingTable::forwardee(HeapWord* const original) const {
  while (/*table[index].is_marked(ctx) ||*/ !table[index].is_original(region_base, original)) {
   log_develop_trace(gc)("Collision on " UINT64_FORMAT ": " PTR_FORMAT ": is_marked: %s, original: " PTR_FORMAT ", forwardee: " PTR_FORMAT, index, p2i(&table[index]), BOOL_TO_STR(table[index].is_marked(ShenandoahHeap::heap()->marking_context())), p2i(table[index].original(region_base)), p2i(table[index].forwardee()));
   index = (index + 1) % _num_entries;
-  assert(index != hash_val % _num_entries, "must find a usable slot, original: " PTR_FORMAT, p2i(original));
+  assert(index != hash_val % _num_entries, "must find a usable slot, original: " PTR_FORMAT ", num-entries: %lu, num-expected-forwardings: %lu, num-actual-forwardings: %lu", p2i(original), _num_entries, _num_expected_forwardings, _num_actual_forwardings);
  }
  assert(table[index].original(region_base) == original, "must have found original object");
  assert(table[index].forwardee() != nullptr, "must have found a forwarding");

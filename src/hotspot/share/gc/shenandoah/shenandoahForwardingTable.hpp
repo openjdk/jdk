@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDINGTABLE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDINGTABLE_HPP
 
+#include "gc/shared/fullGCForwarding.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegion;
@@ -130,6 +131,10 @@ public:
   static void initialize_globals();
 
   bool build(size_t num_forwardings);
+
+  HeapWord* start() const {
+    return reinterpret_cast<HeapWord*>(_table);
+  }
 
   template<class Entry>
   HeapWord* forwardee(HeapWord* orginal) const;
