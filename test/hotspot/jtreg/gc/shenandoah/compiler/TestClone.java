@@ -331,8 +331,30 @@
   *                   -XX:-UseCompressedOops
   *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
   *                   -XX:+ShenandoahVerify
-  *                   -Xlog:gc*=info:file=/home/ysr/gc_ysr.log
-  *                   -XX:+ShowMessageBoxOnError -XX:+UseCompactObjectHeaders
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -Xint
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:-TieredCompilation
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:TieredStopAtLevel=1
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:TieredStopAtLevel=4
   *                   TestClone
   */
 

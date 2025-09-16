@@ -79,18 +79,10 @@ public:
   }
 
   // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", which are required to be non-null. In other
-  // words, we look for a marked address in the range [addr, limit). If there is no
-  // such bit, returns "limit".
+  // "addr", and before "limit", if "limit" is non-null.  If there is no
+  // such bit, returns "limit" if that is non-null, or else "endWord()".
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         HeapWord* limit) const;
-
-  // Return the address corresponding to the last marked bit before
-  // "addr" but at or after "limit", which are required to be non-null.
-  // In other words, we look for a marked address in the range [limit, addr).
-  // If there is no such bit, returns "addr".
-  inline HeapWord* get_last_marked_addr(HeapWord* limit,
-                                        const HeapWord* addr) const;
 
   void print_on(outputStream* st, const char* prefix) const;
 
