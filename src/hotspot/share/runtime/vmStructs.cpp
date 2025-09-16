@@ -1161,9 +1161,6 @@
   /*********************/                                                 \
                                                                           \
   declare_toplevel_type(ciEnv)                                            \
-  declare_toplevel_type(ciBaseObject)                                     \
-  declare_type(ciMetadata, ciBaseObject)                                  \
-  declare_type(ciMethod, ciMetadata)                                      \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \
