@@ -1665,7 +1665,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
     }
   }
@@ -3148,7 +3148,10 @@ uint VM_Version::cores_per_cpu() {
       result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
     }
   } else if (is_amd_family()) {
-    result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    result = _cpuid_info.ext_cpuid8_ecx.bits.threads_per_cpu + 1;
+    if (cpu_family() >= 0x17) { // Zen or later
+      result /= _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+    }
   } else if (is_zx()) {
     bool supports_topology = supports_processor_topology();
     if (supports_topology) {
