@@ -1051,6 +1051,7 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_AVX512BW);
       _features.clear_feature(CPU_AVX512VL);
       _features.clear_feature(CPU_APX_F);
+      _features.clear_feature(CPU_APX_NCI_NDD_NF);
       _features.clear_feature(CPU_AVX512DQ);
       _features.clear_feature(CPU_AVX512_VNNI);
       _features.clear_feature(CPU_AVX512_VAES);
