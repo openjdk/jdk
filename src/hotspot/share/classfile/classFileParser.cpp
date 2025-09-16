@@ -3322,9 +3322,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   // pool if there is an error.
   BSMAttributeEntries::InsertionIterator iter =
     cp->bsm_entries().start_extension(num_bootstrap_methods,
-                                    bootstrap_methods_u2_len,
-                                    _loader_data,
-                                    CHECK);
+                                      bootstrap_methods_u2_len,
+                                      _loader_data,
+                                      CHECK);
 
   for (int i = 0; i < num_bootstrap_methods; i++) {
     cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
@@ -3335,7 +3335,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
        cp->tag_at(bootstrap_method_ref).is_method_handle(),
        "bootstrap_method_index %u has bad constant type in class file %s",
        bootstrap_method_ref,
-                       CHECK);
+       CHECK);
     cfs->guarantee_more(sizeof(u2) * num_bootstrap_arguments, CHECK); // argv[argc]
 
     BSMAttributeEntry* entry = iter.reserve_new_entry(bootstrap_method_ref, num_bootstrap_arguments);

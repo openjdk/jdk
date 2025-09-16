@@ -50,7 +50,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/array.hpp"
-#include "oops/constantPool.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -1610,13 +1609,15 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
 ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
-  return bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
-                                     CHECK_(BSMAttributeEntries::InsertionIterator()));
+  InsertionIterator iter =
+      bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
+                                    CHECK_(BSMAttributeEntries::InsertionIterator()));
+  return iter;
 }
 
 
 void ConstantPool::end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS) {
-  bsm_entries().end_extension(iter, pool_holder()->class_loader_data(), CHECK);
+  bsm_entries().end_extension(iter, pool_holder()->class_loader_data(), THREAD);
 }
 
 
@@ -1624,8 +1625,8 @@ void ConstantPool::copy_bsm_entries(const constantPoolHandle& from_cp,
                                  const constantPoolHandle& to_cp,
                                  TRAPS) {
   to_cp->bsm_entries().append(from_cp->bsm_entries(),
-                            to_cp->pool_holder()->class_loader_data(),
-                            CHECK);
+                              to_cp->pool_holder()->class_loader_data(),
+                              THREAD);
 }
 
 
@@ -1656,7 +1657,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
       break;
     }
   }
-  copy_bsm_entries(from_cp, to_cp, CHECK);
+  copy_bsm_entries(from_cp, to_cp, THREAD);
 
 } // end copy_cp_to_impl()
 
@@ -1827,9 +1828,9 @@ int ConstantPool::find_matching_entry(int pattern_i,
 bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle& cp2, int idx2) {
   const BSMAttributeEntry* const bsmae1 = bsm_attribute_entry(idx1);
   const BSMAttributeEntry* const bsmae2 = cp2->bsm_attribute_entry(idx2);
-  int cp_entry_index1 = bsmae1->bootstrap_method_index();
-  int cp_entry_index2 = bsmae2->bootstrap_method_index();
-  bool match = compare_entry_to(cp_entry_index1, cp2, cp_entry_index2);
+  int k1 = bsmae1->bootstrap_method_index();
+  int k2 = bsmae2->bootstrap_method_index();
+  bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
@@ -1841,9 +1842,9 @@ bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle
   }
 
   for (int j = 0; j < argc; j++) {
-    cp_entry_index1 = bsmae1->argument(j);
-    cp_entry_index2 = bsmae2->argument(j);
-    match = compare_entry_to(cp_entry_index1, cp2, cp_entry_index2);
+    k1 = bsmae1->argument(j);
+    k2 = bsmae2->argument(j);
+    match = compare_entry_to(k1, cp2, k2);
     if (!match) {
       return false;
     }
@@ -1856,7 +1857,7 @@ bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle
 // this constant pool's bootstrap specifier data at pattern_i index.
 // Return the index of a matching bootstrap attribute record or (-1) if there is no match.
 int ConstantPool::find_matching_bsm_entry(int pattern_i,
-                    const constantPoolHandle& search_cp, int offset_limit) {
+                                          const constantPoolHandle& search_cp, int offset_limit) {
   for (int i = 0; i < offset_limit; i++) {
     bool found = compare_bootstrap_entry_to(pattern_i, search_cp, i);
     if (found) {
@@ -2345,14 +2346,15 @@ void BSMAttributeEntries::deallocate_contents(ClassLoaderData* loader_data) {
 void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) const {
   assert(num_entries + iter._cur_offset <= iter.insert_into->_offsets->length(), "must");
   for (int i = 0; i < num_entries; i++) {
-    const BSMAttributeEntry* bsmae = entry(i);
-    BSMAttributeEntry* bsmae_new = iter.reserve_new_entry(bsmae->bootstrap_method_index(), bsmae->argument_count());
-    bsmae->copy_args_into(bsmae_new);
+    const BSMAttributeEntry* e = entry(i);
+    BSMAttributeEntry* e_new = iter.reserve_new_entry(e->bootstrap_method_index(), e->argument_count());
+    e->copy_args_into(e_new);
   }
 }
 
 BSMAttributeEntries::InsertionIterator BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
-  return start_extension(other.number_of_entries(), other.array_length(), loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(), loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+  return iter;
 }
 
 BSMAttributeEntries::InsertionIterator
@@ -2385,12 +2387,11 @@ void BSMAttributeEntries::append(const BSMAttributeEntries& other, ClassLoaderDa
   }
   InsertionIterator iter = start_extension(other, loader_data, CHECK);
   other.copy_into(iter, other.number_of_entries());
-  end_extension(iter, loader_data, CHECK);
+  end_extension(iter, loader_data, THREAD);
 
 }
 
-void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data,
-                                      TRAPS) {
+void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS) {
   assert(iter.insert_into == this, "must be");
   assert(iter._cur_offset <= this->_offsets->length(), "must be");
   assert(iter._cur_array <= this->_bootstrap_methods->length(), "must be");

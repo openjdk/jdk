@@ -165,8 +165,8 @@ private:
 public:
   BSMAttributeEntries() : _offsets(nullptr), _bootstrap_methods(nullptr) {}
   BSMAttributeEntries(Array<u4>* offsets, Array<u2>* bootstrap_methods)
-  : _offsets(offsets),
-    _bootstrap_methods(bootstrap_methods) {}
+    : _offsets(offsets),
+      _bootstrap_methods(bootstrap_methods) {}
 
   bool is_empty() const {
     return _offsets == nullptr && _bootstrap_methods == nullptr;
@@ -197,11 +197,11 @@ public:
 
   // Extend to have the space for both this BSMAEntries and other's.
   // Does not copy in the other's BSMAEntrys, that must be done via the InsertionIterator.
-  // This starts an insertion iterator. Any call to start_extension must have a matching end_exntesion call.
+  // This starts an insertion iterator. Any call to start_extension must have a matching end_extension call.
   InsertionIterator start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
   // Extend the BSMAEntries with an additional number_of_entries with a total data_size.
   InsertionIterator start_extension(int number_of_entries, int data_size, ClassLoaderData* loader_data, TRAPS);
-  // Reallocates the underlying memory to fit the limits of the InsertionITerator precisely.
+  // Reallocates the underlying memory to fit the limits of the InsertionIterator precisely.
   // This ends an insertion iteration. The memory is truncated to fit exactly the data used.
   void end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS);
   // Append all of the BSMAEs in other into this.

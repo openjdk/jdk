@@ -390,8 +390,8 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 //  }
 void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   write_attribute_name_index("BootstrapMethods");
-  u4 length = sizeof(u2) + // num_bootstrap_methods
-              // The rest of it
+  u4 length = sizeof(u2) + // Size of num_bootstrap_methods
+              // The rest of the data for the attribute is exactly the u2s in the data array.
               sizeof(u2) * cpool()->bsm_entries().array_length();
   write_u4(length);
 
