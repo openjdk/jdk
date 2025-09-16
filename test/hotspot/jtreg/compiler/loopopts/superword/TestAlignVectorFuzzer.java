@@ -30,6 +30,18 @@
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:LoopUnrollLimit=250
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
+ */
+
+/*
+ * @test id=CompileOnly
+ * @bug 8253191
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @key randomness
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
