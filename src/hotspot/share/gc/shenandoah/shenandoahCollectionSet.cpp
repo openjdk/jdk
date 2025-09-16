@@ -27,12 +27,13 @@
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
@@ -98,7 +99,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   if (r->is_young()) {
     _young_bytes_to_evacuate += live;
     _young_available_bytes_collected += free;
-    if (ShenandoahHeap::heap()->mode()->is_generational() && r->age() >= ShenandoahGenerationalHeap::heap()->age_census()->tenuring_threshold()) {
+    if (ShenandoahHeap::heap()->mode()->is_generational() && ShenandoahGenerationalHeap::heap()->is_tenurable(r)) {
       _young_bytes_to_promote += live;
     }
   } else if (r->is_old()) {
@@ -149,11 +150,11 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
   // before hitting the (potentially contended) atomic index.
 
   size_t max = _heap->num_regions();
-  size_t old = Atomic::load(&_current_index);
+  size_t old = AtomicAccess::load(&_current_index);
 
   for (size_t index = old; index < max; index++) {
     if (is_in(index)) {
-      size_t cur = Atomic::cmpxchg(&_current_index, old, index + 1, memory_order_relaxed);
+      size_t cur = AtomicAccess::cmpxchg(&_current_index, old, index + 1, memory_order_relaxed);
       assert(cur >= old, "Always move forward");
       if (cur == old) {
         // Successfully moved the claim index, this is our region.

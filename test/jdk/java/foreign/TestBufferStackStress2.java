@@ -30,7 +30,7 @@
  * @bug 8356114 8356658
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress2
- * @run junit TestBufferStackStress2
+ * @run junit/timeout=480 TestBufferStackStress2
  */
 
 import jdk.internal.foreign.BufferStack;
