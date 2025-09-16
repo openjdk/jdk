@@ -58,9 +58,6 @@ class SuspendResumeManager {
   bool suspend_with_handshake(bool register_vthread_SR);
 
   void set_suspended(bool to, bool register_vthread_SR);
-  void self_suspend(bool register_vthread_SR, JavaThread *current);
-
-
 
   bool is_suspended() {
     return AtomicAccess::load(&_suspended);
