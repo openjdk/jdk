@@ -26,6 +26,8 @@
 #define SHARE_UTILITIES_NONBLOCKINGQUEUE_HPP
 
 #include "memory/padded.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/atomicNextAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 
@@ -33,8 +35,9 @@
 // It has inner padding of one cache line between its two internal pointers.
 //
 // The queue is internally represented by a linked list of elements, with
-// the link to the next element provided by a member of each element.
-// Access to this member is provided by the next_ptr function.
+// the link to the next element provided by a member of each element. The
+// type of this list entry member must be either (1) Atomic<T*>, or
+// (2) T* volatile. The next_access template parameter provides access to it.
 //
 // The queue has a special pseudo-element that marks the end of the list.
 // Each queue has its own unique special element.  A pointer to this element
@@ -55,17 +58,19 @@
 //
 // \tparam T is the class of the elements in the queue.
 //
-// \tparam next_ptr is a function pointer.  Applying this function to
+// \tparam next_access is a function pointer.  Applying this function to
 // an object of type T must return a pointer to the list entry member
 // of the object associated with the NonblockingQueue type.
-template<typename T, T* volatile* (*next_ptr)(T&)>
+template<typename T, auto next_access>
 class NonblockingQueue {
-  T* volatile _head;
+  Atomic<T*> _head;
   // Padding of one cache line to avoid false sharing.
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(T*));
-  T* volatile _tail;
+  Atomic<T*> _tail;
 
   NONCOPYABLE(NonblockingQueue);
+
+  using NextAccess = AtomicNextAccess<T, next_access>;
 
   // Return the entry following node in the list used by the
   // specialized NonblockingQueue class.
