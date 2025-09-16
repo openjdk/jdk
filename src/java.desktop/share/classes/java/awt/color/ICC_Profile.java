@@ -1561,7 +1561,7 @@ public sealed class ICC_Profile implements Serializable
                 case "CS_LINEAR_RGB" -> getInstance(ColorSpace.CS_LINEAR_RGB);
                 case null, default -> getInstance(data);
             };
-        } catch (IllegalArgumentException | ClassCastException e) {
+        } catch (ClassCastException | IllegalArgumentException e) {
             throw new InvalidObjectException("Invalid ICC Profile Data", e);
         }
     }
