@@ -1478,43 +1478,53 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * create a message authentication code (MAC)
      */
     private byte[] calculateMac(char[] passwd, byte[] data)
-        throws IOException
+        throws IOException, NoSuchAlgorithmException
     {
         final byte[] mData;
         final AlgorithmParameterSpec params;
-        final String macString;
         final String algName;
         final MacData macData;
+        final String kdfHmac;
+        boolean writePBMAC1 = false;
 
-        if (macAlgorithm.equals("PBMAC1")) {
-                params = new PBEParameterSpec(getSalt(), macIterationCount);
-                if (defaultMacAlgorithm().equals("HmacPBESHA512")) {
-                    macString = "PBEWithHmacSHA512";
-                } else {
-                    macString = "PBEWithHmacSHA256";
-                }
-                algName = "PBMAC1";
+        if (macAlgorithm.equals("PBMAC1") ||
+                defaultMacAlgorithm().contains("PBEWith")) {
+            if (defaultMacAlgorithm().equals("PBEWithHmacSHA512")) {
+                kdfHmac = "HmacSHA512";
+            } else if (defaultMacAlgorithm().equals("PBEWithHmacSHA256")) {
+                kdfHmac = "HmacSHA256";
+            } else {
+                // Use value currently associated with this keystore.
+                kdfHmac = pbmac1Hmac;
+            }
+            algName = "PBMAC1";
+            writePBMAC1 = true;
         } else {
-                params = new PBEParameterSpec(getSalt(), macIterationCount);
-                macString = macAlgorithm;
-                algName = macAlgorithm.substring(7);
+            algName = macAlgorithm.substring(7);
+            kdfHmac = macAlgorithm;
         }
 
-        try {
-            SecretKey key = getPBEKey(passwd);
-            Mac m = Mac.getInstance(macString);
+        params = new PBEParameterSpec(getSalt(), macIterationCount);
 
+        var skf = SecretKeyFactory.getInstance(kdfHmac.equals("HmacSHA512") ?
+                "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
+        try {
+            SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(passwd,
+                    ((PBEParameterSpec)params).getSalt(), macIterationCount,
+                    kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8));
+
+            Mac m = Mac.getInstance(kdfHmac);
             try {
-                m.init(key, params);
+                m.init(pbeKey);
             } finally {
-                destroyPBEKey(key);
+                destroyPBEKey(pbeKey);
             }
             m.update(data);
             byte[] macResult = m.doFinal();
 
             // encode as MacData
-            macData = new MacData(algName, macResult, params,
-                    defaultMacAlgorithm().replace("PBE", ""),
+            macData = new MacData(algName, macResult, params, writePBMAC1,
+                    kdfHmac, kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8,
                     extraSalt, extraIterationCount);
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(macData.getEncoded());
@@ -1936,14 +1946,30 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private void processMacData(AlgorithmParameterSpec params,
             MacData macData, char[] password, byte[] data, String macAlgorithm)
             throws  Exception {
-        Mac m = Mac.getInstance(macAlgorithm);
+        String kdfHmac;
+
+        if (macAlgorithm.equals("PBEWithHmacSHA256")) {
+            kdfHmac = "HmacSHA256";
+        } else if (macAlgorithm.equals("PBEWithHmacSHA512")) {
+            kdfHmac = "HmacSHA512";
+        } else {
+            kdfHmac = macAlgorithm;
+        }
+
+        var skf = SecretKeyFactory.getInstance(
+                macAlgorithm.contains("HmacSHA512") ?
+                "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
 
         RetryWithZero.run(pass -> {
-            SecretKey key = getPBEKey(pass);
+            SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(pass,
+                    ((PBEParameterSpec)params).getSalt(),
+                    ((PBEParameterSpec)params).getIterationCount(),
+                    kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8));
+            Mac m = Mac.getInstance(kdfHmac);
             try {
-                m.init(key, params);
+                m.init(pbeKey);
             } finally {
-                destroyPBEKey(key);
+                destroyPBEKey(pbeKey);
             }
             m.update(data);
             byte[] macResult = m.doFinal();
@@ -2174,31 +2200,27 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         byte[] salt = macData.getSalt();
 
                         pbmac1KdfHmac = macData.getKdfHmac();
-
+                        pbmac1Hmac = pbmac1KdfHmac;
+                        macIterationCount = ic;
+                        macAlgorithm = algName;
+                        macSaltLength = salt.length;
+                        extraSalt = macData.getExtraSalt();
+                        extraIterationCount = macData.getExtraIterations();
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
                                 "PBEWith" + pbmac1KdfHmac);
-
-                        macAlgorithm = algName;
-                        macIterationCount = macData.getIterations();
-                        // store salt length in macData
-                        macSaltLength = salt.length;
-                        extraSalt = macData.getExtraSalt();
-                        extraIterationCount = macData.getExtraIterations();
                     } else {
 
                         // Change SHA-1 to SHA1
                         algName = algName.replace("-", "");
-
                         macAlgorithm = "HmacPBE" + algName;
+                        macIterationCount = ic;
 
                         PBEParameterSpec params =
                                 new PBEParameterSpec(macData.getSalt(), ic);
                         processMacData(params, macData, password, authSafeData,
                                 macAlgorithm);
-
-                        macIterationCount = ic;
                     }
                 } catch (Exception e) {
                     throw new IOException("Integrity check failed: " + e, e);

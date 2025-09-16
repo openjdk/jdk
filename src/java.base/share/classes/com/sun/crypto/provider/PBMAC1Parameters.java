@@ -57,43 +57,13 @@ import sun.security.util.*;
  *
  * -- PBKDF2
  *
- * PBKDF2Algorithms ALGORITHM-IDENTIFIER ::=
- *   { {PBKDF2-params IDENTIFIED BY id-PBKDF2}, ...}
- *
- * id-PBKDF2 OBJECT IDENTIFIER ::= {pkcs-5 12}
- *
- * PBKDF2-params ::= SEQUENCE {
- *     salt CHOICE {
- *       specified OCTET STRING,
- *       otherSource AlgorithmIdentifier {{PBKDF2-SaltSources}}
- *     },
- *     iterationCount INTEGER (1..MAX),
- *     keyLength INTEGER (1..MAX) OPTIONAL,
- *     prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
- * }
- *
- * PBKDF2-SaltSources ALGORITHM-IDENTIFIER ::= { ... }
- *
- * PBKDF2-PRFs ALGORITHM-IDENTIFIER ::= {
- *     {NULL IDENTIFIED BY id-hmacWithSHA1} |
- *     {NULL IDENTIFIED BY id-hmacWithSHA224} |
- *     {NULL IDENTIFIED BY id-hmacWithSHA256} |
- *     {NULL IDENTIFIED BY id-hmacWithSHA384} |
- *     {NULL IDENTIFIED BY id-hmacWithSHA512}, ... }
- *
- * algid-hmacWithSHA1 AlgorithmIdentifier {{PBKDF2-PRFs}} ::=
- *     {algorithm id-hmacWithSHA1, parameters NULL : NULL}
- *
- * id-hmacWithSHA1 OBJECT IDENTIFIER ::= {digestAlgorithm 7}
+ * {@link PBKDF2Parameters}
  *
  * </pre>
  *
  * @since 26
  */
 abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
-
-    private static final ObjectIdentifier pkcs5PBKDF2_OID =
-            ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 
     // the PBMAC1 algorithm name
     private String pbmac1AlgorithmName = null;
@@ -136,38 +106,32 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
                 + "expected length not 2");
         }
         ObjectIdentifier OID = Info[1].data.getOID();
-            KnownOIDs o = KnownOIDs.findMatch(OID.toString());
-            if (o == null || (!o.stdName().equals("HmacSHA1") &&
-                    !o.stdName().equals("HmacSHA224") &&
-                    !o.stdName().equals("HmacSHA256") &&
-                    !o.stdName().equals("HmacSHA384") &&
-                    !o.stdName().equals("HmacSHA512") &&
-                    !o.stdName().equals("HmacSHA512/224") &&
-                    !o.stdName().equals("HmacSHA512/256"))) {
-                throw new IOException("PBMAC1 parameter parsing error: "
-                        + "expecting the object identifier for a HmacSHA key "
-                        + "derivation function");
-            }
+        KnownOIDs o = KnownOIDs.findMatch(OID.toString());
+        if (o == null || (!o.stdName().equals("HmacSHA1") &&
+                !o.stdName().equals("HmacSHA224") &&
+                !o.stdName().equals("HmacSHA256") &&
+                !o.stdName().equals("HmacSHA384") &&
+                !o.stdName().equals("HmacSHA512") &&
+                !o.stdName().equals("HmacSHA512/224") &&
+                !o.stdName().equals("HmacSHA512/256"))) {
+            throw new IOException("PBMAC1 parameter parsing error: "
+                    + "expecting the object identifier for a HmacSHA key "
+                    + "derivation function");
+        }
         // Hmac function used to compute the MAC
         String hmacAlgo = o.stdName();
 
         DerValue kdf = pBMAC1_params.data.getDerValue();
-        var kdfParams = new PBKDF2Parameters();
-        String kdfAlgo = kdfParams.init(kdf);
+        var kdfParams = new PBKDF2Parameters(kdf);
+        String kdfAlgo = kdfParams.getKdfAlgo();
         salt = kdfParams.getSalt();
         iCount = kdfParams.getIterationCount();
 
-        // Key length must be present. It is not currently used.
+        // Key length must be present even though it is not used.
         keyLength = kdfParams.getKeyLength();
         if (keyLength == -1) {
             throw new IOException("PBMAC1 parameter parsing "
                     + "error: missing keyLength field");
-        }
-        // Key length SHOULD be the same size as HMAC function output size.
-        if ((kdfAlgo.contains("256") && keyLength != 256) ||
-            (kdfAlgo.contains("512") && keyLength != 512)) {
-            throw new IOException("PBMAC1 parameter parsing "
-                    + "error: keyLength not Hmac output length ");
         }
 
         pbmac1AlgorithmName = "PBMAC1With" + kdfAlgo + "And" + hmacAlgo;
@@ -198,7 +162,8 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         DerOutputStream pBMAC1_params = new DerOutputStream();
 
         DerOutputStream keyDerivationFunc = new DerOutputStream();
-        keyDerivationFunc.putOID(pkcs5PBKDF2_OID);
+        keyDerivationFunc.putOID(
+                sun.security.util.PBKDF2Parameters.pkcs5PBKDF2_OID);
 
         DerOutputStream pBKDF2_params = new DerOutputStream();
         pBKDF2_params.putOctetString(salt); // choice: 'specified OCTET STRING'

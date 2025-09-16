@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,9 @@ abstract class PBMAC1Core extends HmacCore {
         char[] passwdChars;
         byte[] salt = null;
         int iCount = 0;
-        int keyLength = blockLength;
-        if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
+        if (key instanceof javax.crypto.interfaces.PBEKey) {
+            javax.crypto.interfaces.PBEKey pbeKey =
+                (javax.crypto.interfaces.PBEKey) key;
             passwdChars = pbeKey.getPassword();
             salt = pbeKey.getSalt(); // maybe null if unspecified
             iCount = pbeKey.getIterationCount(); // maybe 0 if unspecified
@@ -137,10 +138,11 @@ abstract class PBMAC1Core extends HmacCore {
                     throw new InvalidAlgorithmParameterException
                             ("PBEParameterSpec required for salt and iteration count");
                 }
-            } else if (!(params instanceof PBEParameterSpec pbeParams)) {
+            } else if (!(params instanceof PBEParameterSpec)) {
                 throw new InvalidAlgorithmParameterException
                         ("PBEParameterSpec type required");
             } else {
+                PBEParameterSpec pbeParams = (PBEParameterSpec) params;
                 // make sure the parameter values are consistent
                 if (salt != null) {
                     if (!Arrays.equals(salt, pbeParams.getSalt())) {
@@ -158,22 +160,7 @@ abstract class PBMAC1Core extends HmacCore {
                 } else {
                     iCount = pbeParams.getIterationCount();
                 }
-
-                // Infer key length from algorithm name.
-                // The PBEParameterSpec doesn't contain a key length.
-                if (kdfAlgo.equals("HmacSHA512")) {
-                    keyLength = 512;
-                } else if (kdfAlgo.equals("HmacSHA256")) {
-                    keyLength = 256;
-                }
-/*
-                } else {
-                        throw new InvalidAlgorithmParameterException
-                                ("Unsupported Mac algorithm");
-                }
-*/
             }
-
             // For security purpose, we need to enforce a minimum length
             // for salt; just require the minimum salt length to be 8-byte
             // which is what PKCS#5 recommends and openssl does.
@@ -186,7 +173,7 @@ abstract class PBMAC1Core extends HmacCore {
                         ("IterationCount must be a positive number");
             }
 
-            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
+            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, blockLength);
             // password char[] was cloned in PBEKeySpec constructor,
             // so we can zero it out here
         } finally {
