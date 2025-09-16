@@ -89,6 +89,8 @@
 #define   RISCV_HWPROBE_MISALIGNED_UNSUPPORTED  (4 << 0)
 #define   RISCV_HWPROBE_MISALIGNED_MASK         (7 << 0)
 
+#define RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE 6
+
 #ifndef NR_riscv_hwprobe
 #ifndef NR_arch_specific_syscall
 #define NR_arch_specific_syscall 244
@@ -114,7 +116,8 @@ static struct riscv_hwprobe query[] = {{RISCV_HWPROBE_KEY_MVENDORID, 0},
                                        {RISCV_HWPROBE_KEY_MIMPID,    0},
                                        {RISCV_HWPROBE_KEY_BASE_BEHAVIOR, 0},
                                        {RISCV_HWPROBE_KEY_IMA_EXT_0,     0},
-                                       {RISCV_HWPROBE_KEY_CPUPERF_0,     0}};
+                                       {RISCV_HWPROBE_KEY_CPUPERF_0,     0},
+                                       {RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE, 0}};
 
 bool RiscvHwprobe::probe_features() {
   assert(!rw_hwprobe_completed, "Called twice.");
@@ -188,6 +191,9 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zbs.enable_feature();
   }
 #ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
+    VM_Version::ext_Zicboz.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
     VM_Version::ext_Zbkb.enable_feature();
   }
@@ -243,5 +249,8 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);
+  }
+  if (is_valid(RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE)) {
+    VM_Version::zicboz_block_size.enable_feature(query[RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE].value);
   }
 }

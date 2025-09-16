@@ -127,7 +127,7 @@ class SharedClassLoadingMark {
     assert(THREAD != nullptr, "Current thread is nullptr");
     assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
-      if (_klass->is_shared()) {
+      if (_klass->in_aot_cache()) {
         _klass->set_shared_loading_failed();
       }
     }
@@ -146,7 +146,7 @@ class SystemDictionaryShared: public SystemDictionary {
   };
 
 private:
-
+  class ExclusionCheckCandidates;
   static DumpTimeSharedClassTable* _dumptime_table;
 
   static ArchiveInfo _static_archive;
@@ -175,13 +175,26 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static bool is_jfr_event_class(InstanceKlass *k);
-  static bool check_for_exclusion_impl(InstanceKlass* k);
+  static bool should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info);
+
+  // exclusion checks
+  static void check_exclusion_for_self_and_dependencies(InstanceKlass *k);
+  static bool check_self_exclusion(InstanceKlass* k);
+  static bool check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
+  static bool check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name);
+  static bool is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type);
+  static bool is_excluded_verification_constraint(InstanceKlass* k, Symbol* constraint_class_name);
+  static Klass* find_verification_constraint_bottom_class(InstanceKlass* k, Symbol* constraint_class_name);
+
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
-  static void copy_verification_constraints_from_preimage(InstanceKlass* klass);
+  static void copy_verification_info_from_preimage(InstanceKlass* klass);
   static void copy_linking_constraints_from_preimage(InstanceKlass* klass);
+
+  template<typename Function>
+  static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
@@ -239,6 +252,7 @@ public:
                   Symbol* from_name, bool from_field_is_protected,
                   bool from_is_array, bool from_is_object,
                   bool* skip_assignability_check);
+  static void add_old_verification_constraint(Thread* current, InstanceKlass* k, Symbol* name);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
   static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);
@@ -258,7 +272,6 @@ public:
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }
 
   static bool should_be_excluded(Klass* k);
-  static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
@@ -297,7 +310,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::is_shared((const MetaspaceObj*)ptr), "must be");
+    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);
