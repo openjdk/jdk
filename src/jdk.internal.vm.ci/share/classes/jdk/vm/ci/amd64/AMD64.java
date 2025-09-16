@@ -284,6 +284,7 @@ public class AMD64 extends Architecture {
         AVX512_IFMA,
         AVX_IFMA,
         APX_F,
+        APX_NCI_NDD_NF,
         SHA512,
         AVX512_FP16,
         AVX10_1,
@@ -325,7 +326,7 @@ public class AMD64 extends Architecture {
 
     @Override
     public List<Register> getAvailableValueRegisters() {
-        if (features.contains(CPUFeature.APX_F)) {
+        if (features.contains(CPUFeature.APX_F)) { //TODO: what change?
             if (features.contains(CPUFeature.AVX512F)) {
                 return valueRegistersAVX512AndAPX;
             } else {

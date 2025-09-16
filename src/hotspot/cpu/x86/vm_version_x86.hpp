@@ -306,6 +306,14 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union StdCpuidEax29Ecx0 {
+    uint32_t value;
+    struct {
+      uint32_t  apx_nci_ndd_nf  : 1,
+                                : 31;
+    } bits;
+  };
+
   union StdCpuid24MainLeafEax {
     uint32_t value;
     struct {
@@ -441,12 +449,13 @@ protected:
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
     decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
     decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
-    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
+    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions(APX)*/ \
     decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
     decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */
+    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */ \
+    decl(APX_NCI_NDD_NF,    "apx_nci_ndd_nf",    66) /* Intel APX New Conditional Instructions(NCI), New Data Destination(NDD) and No Flags(NF)*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -591,6 +600,10 @@ protected:
     StdCpuid24MainLeafEax std_cpuid24_eax;
     StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
+    // cpuid function 0x29
+    // eax = 0x29, ecx = 0
+    StdCpuidEax29Ecx0 std_cpuid29_ebx;
+
     // cpuid function 0xB (processor topology)
     // ecx = 0
     uint32_t     tpl_cpuidB0_eax;
@@ -711,6 +724,7 @@ public:
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
+  static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
@@ -760,7 +774,10 @@ public:
     _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { _features.set_feature(CPU_APX_F); }
+  static void set_apx_cpuFeatures() { 
+    _features.set_feature(CPU_APX_F);
+    _features.set_feature(CPU_APX_NCI_NDD_NF); 
+  }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);
     _features.set_feature(CPU_BMI2);
@@ -864,6 +881,7 @@ public:
   static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
   static bool supports_apx_f()        { return _features.supports_feature(CPU_APX_F); }
+  static bool supports_apx_nci_ndd_nf()  { return _features.supports_feature(CPU_APX_NCI_NDD_NF); }
   static bool supports_avxonly()      { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()          { return _features.supports_feature(CPU_SHA); }
   static bool supports_fma()          { return _features.supports_feature(CPU_FMA) && supports_avx(); }

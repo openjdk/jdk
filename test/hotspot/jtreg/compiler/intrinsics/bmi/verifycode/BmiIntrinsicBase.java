@@ -111,7 +111,7 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
     protected void checkEmittedCode(Executable executable) {
         final byte[] nativeCode = NMethod.get(executable, false).insts;
         final byte[] matchInstrPattern = (((BmiTestCase) testCase).getTestCaseX64() && Platform.isX64()) ? ((BmiTestCase_x64) testCase).getInstrPattern_x64() : ((BmiTestCase) testCase).getInstrPattern();
-        boolean use_apx = CPUInfo.hasFeature("apx_f");
+        boolean use_apx = CPUInfo.hasFeature("apx_f"); // TODO
         if (!((BmiTestCase) testCase).verifyPositive(nativeCode, use_apx)) {
             throw new AssertionError(testCase.name() + " " + "CPU instructions expected not found in nativeCode: " + Utils.toHexString(nativeCode) + " ---- Expected instrPattern: " +
             Utils.toHexString(matchInstrPattern));
