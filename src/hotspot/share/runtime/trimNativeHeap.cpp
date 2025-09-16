@@ -163,15 +163,11 @@ class NativeHeapTrimmerThread : public NamedThread {
 public:
 
   NativeHeapTrimmerThread() :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
+    _lock(new PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
     _stop(false),
     _suspend_count(0),
     _num_trims_performed(0)
   {
-    if (_lock == nullptr) {
-        vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
-                              "Failed to allocate NativeHeapTrimmer_lock");
-    }
     set_name("Native Heap Trimmer");
     if (os::create_thread(this, os::vm_thread)) {
       os::start_thread(this);
