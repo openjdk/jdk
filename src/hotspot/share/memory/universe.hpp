@@ -305,7 +305,6 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
-  // Run heap before exit (stop concurrent GC threads, log GC/heap exit information)
   static void before_exit();
 
   DEBUG_ONLY(static bool is_stw_gc_active();)

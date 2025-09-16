@@ -476,6 +476,9 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
+  // Run before exit and then stop concurrent GC threads
+  Universe::before_exit();
+
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
   }
@@ -508,7 +511,6 @@ void before_exit(JavaThread* thread, bool halt) {
   }
   #endif
 
-  Universe::before_exit();
   print_statistics();
 
   { MutexLocker ml(BeforeExit_lock);
