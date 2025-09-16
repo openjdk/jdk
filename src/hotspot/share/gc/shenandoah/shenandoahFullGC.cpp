@@ -939,7 +939,7 @@ private:
 public:
   ShenandoahPostCompactClosure() : _heap(ShenandoahHeap::heap()),
                                    _is_generational(_heap->mode()->is_generational()),
-                                   _mark_context(_heap->complete_marking_context()),
+                                   _mark_context(_heap->marking_context()),
                                    _young_regions(0),
                                    _young_usage(0),
                                    _young_humongous_waste(0),

@@ -142,11 +142,11 @@ inline void ShenandoahHeapRegion::clear_live_data() {
 }
 
 inline size_t ShenandoahHeapRegion::get_marked_data_bytes() const {
-  return Atomic::load(&_live_data) * HeapWordSize;
+  return AtomicAccess::load(&_live_data) * HeapWordSize;
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->complete_marking_context();
+  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->marking_context();
   HeapWord* tams = ctx->top_at_mark_start(this);
   size_t words_above_tams = pointer_delta(top(), tams);
   return AtomicAccess::load(&_live_data) + words_above_tams;
@@ -157,7 +157,7 @@ inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
 }
 
 inline bool ShenandoahHeapRegion::has_marked() const {
-  return Atomic::load(&_live_data) != 0;
+  return AtomicAccess::load(&_live_data) != 0;
 }
 
 inline bool ShenandoahHeapRegion::has_live() const {
@@ -178,7 +178,7 @@ inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
   assert(used_before_promote >= get_marked_data_bytes(),
          "Live Data must be a subset of used before promotion live: %zu used: %zu",
          get_marked_data_bytes(), used_before_promote);
-  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->complete_marking_context();
+  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->marking_context();
   HeapWord* tams = ctx->top_at_mark_start(this);
   size_t bytes_allocated_during_mark = pointer_delta(get_top_before_promote(), tams) * HeapWordSize;
   size_t result = used_before_promote - (get_marked_data_bytes() + bytes_allocated_during_mark);
