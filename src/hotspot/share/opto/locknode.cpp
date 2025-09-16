@@ -40,19 +40,20 @@ const RegMask &BoxLockNode::out_RegMask() const {
 uint BoxLockNode::size_of() const { return sizeof(*this); }
 
 BoxLockNode::BoxLockNode(int slot)
-    : Node(Compile::current()->root()), _slot(slot),
+    : Node(Compile::current()->root()),
+      _slot(slot),
       // In debug mode, signal that the register mask is constant.
       _inmask(OptoReg::stack2reg(_slot),
               Compile::current()->comp_arena()
               DEBUG_ONLY(COMMA /*read_only*/ true)),
       _kind(BoxLockNode::Regular) {
+  init_class_id(Class_BoxLock);
+  init_flags(Flag_rematerialize);
   if (_slot > BoxLockNode_SLOT_LIMIT) {
     Compile::current()->record_method_not_compilable(
         "reached BoxLockNode slot limit");
     return;
   }
-  init_class_id(Class_BoxLock);
-  init_flags(Flag_rematerialize);
 }
 
 uint BoxLockNode::hash() const {

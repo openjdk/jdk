@@ -170,9 +170,9 @@ int RegisterForm::words_for_regs() {
 // Compute RegMask size
 int RegisterForm::RegMask_Size() {
   // The array of Register Mask bits should be large enough to cover all the
-  // machine registers and usually all parameters that need to be passed on the
-  // stack (stack registers) up to some interesting limit. On Intel, the limit
-  // is something like 90+ parameters.
+  // machine registers, as well as a certain number of parameters that need to
+  // be passed on the stack (stack registers). The number of parameters that can
+  // fit in the mask should be dimensioned to cover most common cases.
   // - Add a few (3 words == 96 bits) for incoming & outgoing arguments to
   //   calls.
   // - Round up to the next doubleword size.

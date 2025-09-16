@@ -755,7 +755,8 @@ public:
 class MachProjNode : public ProjNode {
 public:
   MachProjNode(Node* multi, uint con, const RegMask& out, uint ideal_reg)
-      : ProjNode(multi, con), _rout(out, Compile::current()->comp_arena()),
+      : ProjNode(multi, con),
+        _rout(out, Compile::current()->comp_arena()),
         _ideal_reg(ideal_reg) {
     init_class_id(Class_MachProj);
   }

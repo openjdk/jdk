@@ -678,9 +678,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
             int n_regs = RegMask::num_registers(def_ideal_reg, lrgs(_lrg_map.live_range_id(def)));
             for (int l = 1; l < n_regs; l++) {
               OptoReg::Name ureg_lo = OptoReg::add(ureg,-l);
-              bool is_reg = OptoReg::is_reg(ureg_lo);
               bool is_adjacent = lrgs(useidx).mask().Member(ureg_lo);
-              assert(is_adjacent || is_reg,
+              assert(is_adjacent || OptoReg::is_reg(ureg_lo),
                      "only registers can be non-adjacent");
               if (!value[ureg_lo] && is_adjacent) { // Nearly always adjacent
                 value.map(ureg_lo,valdef); // record improved reaching-def info
@@ -763,9 +762,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // If the value occupies a register pair, record same info
         // in both registers.
         OptoReg::Name nreg_lo = OptoReg::add(nreg,-1);
-        bool is_reg = OptoReg::is_reg(nreg_lo);
         bool is_adjacent = lrgs(lidx).mask().Member(nreg_lo);
-        assert(is_adjacent || is_reg, "only registers can be non-adjacent");
+        assert(is_adjacent || OptoReg::is_reg(nreg_lo), "only registers can be non-adjacent");
         if (!is_adjacent) { // Nearly always adjacent
           // Sparc occasionally has non-adjacent pairs.
           // Find the actual other value

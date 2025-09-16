@@ -116,10 +116,12 @@ class RegMask {
   STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
 
   union {
-    // Array of Register Mask bits.  This array is large enough to cover all
-    // the machine registers and usually all parameters that need to be passed
-    // on the stack (stack registers) up to some interesting limit. On Intel,
-    // the limit is something like 90+ parameters.
+    // Array of Register Mask bits. The array should be
+    // large enough to cover all the machine registers, as well as a certain
+    // number of parameters that need to be passed on the stack (stack
+    // registers). The number of parameters that can fit in the mask should be
+    // dimensioned to cover most common cases. We handle the uncommon cases by
+    // extending register masks dynamically (see below).
 
     // Viewed as an array of 32-bit words
     int _rm_int[RM_SIZE_IN_INTS];
@@ -150,6 +152,9 @@ class RegMask {
   // GrowableArray here.
   uintptr_t* _rm_word_ext = nullptr;
 
+  // Where to extend the register mask
+  Arena* _arena;
+
 #ifdef ASSERT
   // Register masks may get shallowly copied without the use of constructors,
   // for example as part of `Node::clone`. This is problematic when dealing with
@@ -171,12 +176,6 @@ class RegMask {
   // dynamic parts)
   unsigned int _rm_size_in_words;
 
-  // We support offsetting register masks to present different views of the
-  // register space, mainly for use in PhaseChaitin::Select. The _offset
-  // variable indicates how many words we offset with. We consider all
-  // registers before the offset to not be included in the register mask.
-  unsigned int _offset;
-
   // If _infinite_stack = true, we consider all registers beyond what the register
   // mask can currently represent to be included. If _infinite_stack = false, we
   // consider the registers not included.
@@ -194,14 +193,14 @@ class RegMask {
   unsigned int _hwm;
 
   // The following diagram illustrates the internal representation of a RegMask
-  // (with _offset = 0, for a made-up platform with 10 registers and 4-bit
+  // (for a made-up platform with 10 registers and 4-bit
   // words) that has been extended with two additional words to represent more
   // stack locations:
   //
   //                         _lwm=1   RM_SIZE_IN_WORDS=3 _hwm=3      _rm_size_in_words=5
   //                            |                  |      |                 |
   //            r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 s0 s1   s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 ...
-  // Content:  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] as  as  as
+  // Content:  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] is  is  is
   //   Index: [0]         [1]         [2]           [0]         [1]
   //
   //          \____________________________________/ \______________________/
@@ -213,11 +212,20 @@ class RegMask {
   //
   // In this example, registers {r5, r6} and stack locations {s0, s2, s3, s5}
   // are included in the register mask. Depending on the value of
-  // _infinite_stack (denoted with as), {s10, s11, ...} are all included (as=1)
-  // or excluded (as=0). Note that all registers/stack locations under _lwm
+  // _infinite_stack (denoted with is), {s10, s11, ...} are all included (is=1)
+  // or excluded (is=0). Note that all registers/stack locations under _lwm
   // and over _hwm are excluded. The exception is {s10, s11, ...}, where the
   // value is decided solely by _infinite_stack, regardless of the value of
   // _hwm.
+
+  // We support offsetting/shifting register masks to explicitly represent stack
+  // slots that originally are implicitly represented by _infinite_stack=true.
+  // The main use is in PhaseChaitin::Select, when selecting stack slots for
+  // spilled values. The _offset variable indicates how many words we offset
+  // with. We consider all registers before the offset to not be included in the
+  // register mask.
+  //
+  unsigned int _offset;
   //
   // The only operation that may update the _offset attribute is
   // RegMask::rollover(). This operation requires the register mask to be
@@ -263,11 +271,8 @@ class RegMask {
     return _rm_size_in_words - 1U;
   }
 
-  // Where to extend the register mask
-  Arena* _arena;
-
   // Grow the register mask to ensure it can fit at least min_size words.
-  void grow(unsigned int min_size, bool init = true) {
+  void grow(unsigned int min_size, bool initialize_by_infinite_stack = true) {
     if (min_size > _rm_size_in_words) {
       assert(min_size <= RM_SIZE_IN_WORDS_MAX, "unexpected register mask growth");
       assert(_arena != nullptr, "register mask not growable");
@@ -282,9 +287,9 @@ class RegMask {
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
         _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
-                                         old_ext_size, new_ext_size);
+                                           old_ext_size, new_ext_size);
       }
-      if (init) {
+      if (initialize_by_infinite_stack) {
         int fill = 0;
         if (is_infinite_stack()) {
           fill = 0xFF;
@@ -411,7 +416,7 @@ public:
       FORALL_BODY
 #   undef BODY
       bool infinite_stack)
-      : _rm_size_in_words(RM_SIZE_IN_WORDS), _offset(0), _infinite_stack(infinite_stack), _arena(nullptr) {
+      : _arena(nullptr), _rm_size_in_words(RM_SIZE_IN_WORDS), _infinite_stack(infinite_stack), _offset(0) {
 #if defined(VM_LITTLE_ENDIAN) || !defined(_LP64)
 #   define BODY(I) _rm_int[I] = a##I;
 #else
@@ -432,9 +437,9 @@ public:
   }
 
   // Construct an empty mask
-  RegMask(Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
-      : _rm_word() DEBUG_ONLY(COMMA _read_only(read_only)), _rm_size_in_words(RM_SIZE_IN_WORDS),
-        _offset(0), _infinite_stack(false), _lwm(RM_WORD_MAX_INDEX), _hwm(0), _arena(arena) {
+  explicit RegMask(Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
+      : _rm_word() DEBUG_ONLY(COMMA _arena(arena)), _read_only(read_only),
+        _rm_size_in_words(RM_SIZE_IN_WORDS), _infinite_stack(false), _lwm(RM_WORD_MAX_INDEX), _hwm(0), _offset(0) {
     assert(valid_watermarks(), "post-condition");
   }
   RegMask() : RegMask(nullptr) {
@@ -447,21 +452,27 @@ public:
       : RegMask(arena DEBUG_ONLY(COMMA read_only)) {
     Insert(reg);
   }
-  RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
+  explicit RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
-  // Deep copying
+  // ----------------------------------------
+  // Deep copying constructors and assignment
+  // ----------------------------------------
+
   RegMask(const RegMask& rm, Arena* arena)
-      : _rm_size_in_words(RM_SIZE_IN_WORDS), _offset(rm._offset), _arena(arena) {
+      : _arena(arena), _rm_size_in_words(RM_SIZE_IN_WORDS), _offset(rm._offset) {
     copy(rm);
   }
 
   RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
-  // Deep copying
   RegMask& operator=(const RegMask& rm) {
     copy(rm);
     return *this;
   }
+
+  // ----------------
+  // End deep copying
+  // ----------------
 
   bool Member(OptoReg::Name reg) const {
     reg = reg - offset_bits();
@@ -840,7 +851,6 @@ public:
     return RM_SIZE_IN_WORDS;
   }
 
-  // Also used for testing.
   unsigned int static rm_size_in_bits_max() {
     return RM_SIZE_IN_WORDS_MAX * BitsPerWord;
   }

@@ -962,7 +962,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   if( idealreg2regmask[Op_RegI] ) return; // One time only init
 
   OptoReg::c_frame_pointer = c_frame_pointer();
-  c_frame_ptr_mask = c_frame_pointer();
+  c_frame_ptr_mask = RegMask(c_frame_pointer());
 #ifdef _LP64
   // pointers are twice as big
   c_frame_ptr_mask.Insert(OptoReg::add(c_frame_pointer(),1));
