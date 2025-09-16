@@ -57,7 +57,7 @@ class KlassCleaningTask : public StackObj {
   ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
 
 public:
-  KlassCleaningTask();
+  KlassCleaningTask() : _klass_iterator() { }
 
   void work();
 };

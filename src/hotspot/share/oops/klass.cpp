@@ -613,8 +613,7 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
-// The log parameter is for clean_weak_klass_links to report unlinked classes.
-Klass* Klass::subklass(bool log) const {
+Klass* Klass::subklass() const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
   for (Klass* chain = Atomic::load_acquire(&_subklass);
@@ -625,11 +624,6 @@ Klass* Klass::subklass(bool log) const {
   {
     if (chain->is_loader_alive()) {
       return chain;
-    } else if (log) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
-      }
     }
   }
   return nullptr;
@@ -700,15 +694,20 @@ void Klass::append_to_sibling_list() {
   DEBUG_ONLY(verify();)
 }
 
-void Klass::clean_subklass() {
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+void Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
     Klass* subklass = Atomic::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
       return;
     }
+    if (log && log_is_enabled(Trace, class, unload)) {
+      ResourceMark rm;
+      log_trace(class, unload)("unlinking class (subclass): %s", subklass->external_name());
+    }
     // Try to fix _subklass until it points at something not dead.
-    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling(log));
   }
 }
 
@@ -727,8 +726,8 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass(true);
-    current->clean_subklass();
+    Klass* sub = current->subklass();
+    current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }

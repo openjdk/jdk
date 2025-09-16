@@ -298,7 +298,7 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass(bool log = false) const;
+  Klass* subklass() const;
   Klass* next_sibling(bool log = false) const;
 
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
@@ -741,7 +741,7 @@ public:
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
 
-  void clean_subklass();
+  void clean_subklass(bool log = false);
 
   // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
