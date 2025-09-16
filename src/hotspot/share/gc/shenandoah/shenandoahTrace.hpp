@@ -32,6 +32,8 @@ class ShenandoahCollectionSet;
 
 class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
 public:
+  ShenandoahTracer() : GCTracer(Shenandoah) {}
+
   static void report_evacuation_info(const ShenandoahCollectionSet* cset,
     size_t free_regions, size_t regions_promoted_humongous, size_t regions_promoted_regular,
     size_t regular_promoted_garbage, size_t regular_promoted_free, size_t regions_immediate,
