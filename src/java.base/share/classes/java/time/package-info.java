@@ -65,7 +65,7 @@
  * The main API for dates, times, instants, and durations.
  * </p>
  * <p>
- * The classes defined here represent the principle date-time concepts,
+ * The classes defined here represent the principal date-time concepts,
  * including instants, durations, dates, times, time-zones and periods.
  * They are based on the ISO calendar system, which is the <i>de facto</i> world
  * calendar following the proleptic Gregorian rules.
@@ -150,7 +150,7 @@
  * </p>
  * <p>
  * {@link java.time.OffsetTime} stores a time and offset from UTC without a date.
- * This stores a date like '11:30+01:00'.
+ * This stores a time like '11:30+01:00'.
  * The {@link java.time.ZoneOffset ZoneOffset} is of the form '+01:00'.
  * </p>
  * <p>
