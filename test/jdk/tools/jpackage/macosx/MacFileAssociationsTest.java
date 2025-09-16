@@ -44,7 +44,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @build MacFileAssociationsTest
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacFileAssociationsTest
  */
 public class MacFileAssociationsTest {

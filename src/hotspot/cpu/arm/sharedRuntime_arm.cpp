@@ -1139,41 +1139,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime lock fast");
-      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                          0x7 /* savemask */, slow_lock);
+    log_trace(fastlock)("SharedRuntime lock fast");
+    __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                        0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
-    } else if (LockingMode == LM_LEGACY) {
-      const Register mark = tmp;
-      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-      // That would be acceptable as either CAS or slow case path is taken in that case
-
-      __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-      __ tst(mark, markWord::unlocked_value);
-      __ b(fast_lock, ne);
-
-      // Check for recursive lock
-      // See comments in InterpreterMacroAssembler::lock_object for
-      // explanations on the fast recursive locking check.
-      // Check independently the low bits and the distance to SP
-      // -1- test low 2 bits
-      __ movs(Rtemp, AsmOperand(mark, lsl, 30));
-      // -2- test (hdr - SP) if the low two bits are 0
-      __ sub(Rtemp, mark, SP, eq);
-      __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-      // If still 'eq' then recursive locking OK
-      // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
-      __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ b(lock_done, eq);
-      __ b(slow_lock);
-
-      __ bind(fast_lock);
-      __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-
-      __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-    }
     __ bind(lock_done);
   }
 
@@ -1226,21 +1195,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime unlock fast");
-      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                            7 /* savemask */, slow_unlock);
-      // Fall through
-    } else if (LockingMode == LM_LEGACY) {
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(sync_obj, Address(sync_handle));
+    log_trace(fastlock)("SharedRuntime unlock fast");
+    __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                          7 /* savemask */, slow_unlock);
+    // Fall through
 
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ cbz(R2, unlock_done);
-
-      __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
-    }
     __ bind(unlock_done);
   }
 

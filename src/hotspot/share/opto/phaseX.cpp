@@ -780,7 +780,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump_bfs(100,nullptr,"#");
+    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -1670,6 +1670,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found (linux x64 only?) with:
     //   serviceability/sa/ClhsdbThreadContext.java
     //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    //   Note: The -XX:LockingMode option is not available anymore.
     case Op_StrEquals:
       return false;
 

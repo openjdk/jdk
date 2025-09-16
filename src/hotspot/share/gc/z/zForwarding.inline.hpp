@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries)
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
+    _partition_id(page->single_partition_id()),
     _from_age(page->age()),
     _to_age(to_age),
     _claimed(false),
@@ -100,6 +101,10 @@ inline size_t ZForwarding::size() const {
 
 inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
+}
+
+inline uint32_t ZForwarding::partition_id() const {
+  return _partition_id;
 }
 
 inline bool ZForwarding::is_promotion() const {
