@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -129,7 +130,7 @@ public class ImageReaderTest {
             "modfoo:com/foo/Alpha.class",
             "modbar:com/bar/One.class",
     })
-    public void testResourceNodes_present(String modName, String resPath) throws IOException {
+    public void testResource_present(String modName, String resPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
             assertNotNull(reader.findResourceNode(modName, resPath));
             assertTrue(reader.containsResource(modName, resPath));
@@ -140,7 +141,6 @@ public class ImageReaderTest {
         }
     }
 
-    // Important to ensure we cannot be fooled.
     @ParameterizedTest
     @CsvSource(delimiter = ':', value = {
             // Absolute resource names are not allowed.
@@ -154,14 +154,10 @@ public class ImageReaderTest {
             // JImage entries exist for these, but they are not resources.
             "modules:modfoo/com/foo/Alpha.class",
             "packages:com.foo/modfoo",
-            // Don't permit module names to contain paths.
-            "modfoo/com/bar:One.class",
-            "modfoo/com:bar/One.class",
-            "modules/modfoo/com:foo/Alpha.class",
-            // Or module names/paths to be empty.
+            // Empty module names/paths do not find resources.
             "'':modfoo/com/foo/Alpha.class",
             "modfoo:''"})
-    public void testFindResourceNode_absent(String modName, String resPath) throws IOException {
+    public void testResource_absent(String modName, String resPath) throws IOException {
         try (ImageReader reader = ImageReader.open(image)) {
             assertNull(reader.findResourceNode(modName, resPath));
             assertFalse(reader.containsResource(modName, resPath));
@@ -171,6 +167,20 @@ public class ImageReaderTest {
             String canonicalNodeName = "/modules/" + modName + "/" + resPath;
             Node node = reader.findNode(canonicalNodeName);
             assertTrue(node == null || !node.isResource());
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = ':', value = {
+            // Don't permit module names to contain paths.
+            "modfoo/com/bar:One.class",
+            "modfoo/com:bar/One.class",
+            "modules/modfoo/com:foo/Alpha.class",
+    })
+    public void testResource_invalid(String modName, String resPath) throws IOException {
+        try (ImageReader reader = ImageReader.open(image)) {
+            assertThrows(IllegalArgumentException.class, () -> reader.containsResource(modName, resPath));
+            assertThrows(IllegalArgumentException.class, () -> reader.findResourceNode(modName, resPath));
         }
     }
 
