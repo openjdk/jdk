@@ -439,7 +439,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
 
     if (reserved.is_reserved()) {
       if (reserved.base() >= aligned_heap_base_min_address &&
-          size <= (uintptr_t)(upper_bound - reserved.base())) {
+          size <= (uint64_t)(upper_bound - reserved.base())) {
         // Got a successful reservation.
         return reserved;
       }
@@ -548,7 +548,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
-  uintptr_t aligned_heap_base_min_address = align_up(MAX2(HeapBaseMinAddress, alignment), alignment);
+  uint64_t aligned_heap_base_min_address = align_up(MAX2(HeapBaseMinAddress, alignment), alignment);
   size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > OopEncodingHeapMax) ?
     noaccess_prefix_size : 0;
 
@@ -580,16 +580,16 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
     if (aligned_heap_base_min_address + size <= UnscaledOopHeapMax) {
 
       // Calc address range within we try to attach (range of possible start addresses).
-      uintptr_t const highest_start = align_down(UnscaledOopHeapMax - size, attach_point_alignment);
-      uintptr_t const lowest_start  = align_up(aligned_heap_base_min_address, attach_point_alignment);
-      assert(lowest_start < highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT ,
+      uint64_t const highest_start = align_down(UnscaledOopHeapMax - size, attach_point_alignment);
+      uint64_t const lowest_start  = align_up(aligned_heap_base_min_address, attach_point_alignment);
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT ,
                                           lowest_start, highest_start);
       reserved = try_reserve_range((char*)highest_start, (char*)lowest_start, attach_point_alignment,
                                    (char*)aligned_heap_base_min_address, (char*)UnscaledOopHeapMax, size, alignment, page_size);
     }
 
     // zerobased: Attempt to allocate in the lower 32G.
-    uintptr_t zerobased_max = OopEncodingHeapMax;
+    uint64_t zerobased_max = OopEncodingHeapMax;
 
     // Give it several tries from top of range to bottom.
     if (aligned_heap_base_min_address + size <= zerobased_max && // Zerobased theoretical possible.
@@ -600,16 +600,16 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
       release(reserved);
 
       // Calc address range within we try to attach (range of possible start addresses).
-      uintptr_t const highest_start = align_down(zerobased_max - size, attach_point_alignment);
+      uint64_t const highest_start = align_down(zerobased_max - size, attach_point_alignment);
       // Need to be careful about size being guaranteed to be less
       // than UnscaledOopHeapMax due to type constraints.
-      uintptr_t lowest_start = aligned_heap_base_min_address;
+      uint64_t lowest_start = aligned_heap_base_min_address;
       uint64_t unscaled_end = UnscaledOopHeapMax - size;
       if (unscaled_end < UnscaledOopHeapMax) { // unscaled_end wrapped if size is large
         lowest_start = MAX2(lowest_start, unscaled_end);
       }
       lowest_start = align_up(lowest_start, attach_point_alignment);
-      assert(lowest_start < highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
                                           lowest_start, highest_start);
       reserved = try_reserve_range((char*)highest_start, (char*)lowest_start, attach_point_alignment,
                                    (char*)aligned_heap_base_min_address, (char*)zerobased_max, size, alignment, page_size);
@@ -632,7 +632,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
       release(reserved);
 
       char* const attach_point = addresses[i];
-      assert((uintptr_t)attach_point >= aligned_heap_base_min_address, "Flag support broken");
+      assert((uint64_t)attach_point >= aligned_heap_base_min_address, "Flag support broken");
       reserved = try_reserve_memory(size + noaccess_prefix, alignment, page_size, attach_point);
       i++;
     }
