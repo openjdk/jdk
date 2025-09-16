@@ -499,10 +499,10 @@ final class WinNTFileSystem extends FileSystem {
                 canonicalPath.charAt(2) == '\\') {
                 char driveLetter = canonicalPath.charAt(0);
                 String uncPath = queryUNCPath(driveLetter);
-                int uncLen = uncPath.length();
                 if (uncPath != null &&
-                    finalPath.substring(0, uncLen).equalsIgnoreCase(uncPath)) {
+                    finalPath.substring(0, uncPath.length()).equalsIgnoreCase(uncPath)) {
                     int fpLen = finalPath.length();
+                    int uncLen = uncPath.length();
                     StringBuilder sb = new StringBuilder(fpLen - uncLen + 2);
                     sb.append(driveLetter);
                     sb.append(':');
