@@ -63,7 +63,7 @@ public class SetEchoCharTest4 extends Frame implements ActionListener {
         tf3.setEchoChar('#');
         addStuff();
         b.addActionListener(this);
-        setSize (300,150);
+        setSize (300, 150);
     }
 
     private void addStuff() {
