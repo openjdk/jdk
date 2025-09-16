@@ -114,13 +114,13 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
-  C->igv_printer()->set_cg(congraph);
+  NOT_PRODUCT(C->igv_printer()->set_cg(congraph);)
   // Perform escape analysis
   if (congraph->compute_escape()) {
     // There are non escaping objects.
     C->set_congraph(congraph);
   }
-  C->igv_printer()->set_cg(nullptr);
+  NOT_PRODUCT(C->igv_printer()->set_cg(nullptr);)
   // Cleanup.
   if (oop_null->outcnt() == 0) {
     igvn->hash_delete(oop_null);
@@ -283,7 +283,7 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
-  C->igv_printer()->print_graph("EA: 1. Initial Connection Graph");
+  NOT_PRODUCT(C->igv_printer()->print_graph("EA: 1. Initial Connection Graph");)
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -316,7 +316,7 @@ bool ConnectionGraph::compute_escape() {
         found_nsr_alloc = true;
       }
     }
-    C->igv_printer()->print_graph("EA: 3. Propagate NSR Iter");
+    NOT_PRODUCT(C->igv_printer()->print_graph("EA: 3. Propagate NSR Iter");)
   }
 
   // Propagate NSR (Not Scalar Replaceable) state.
@@ -392,7 +392,7 @@ bool ConnectionGraph::compute_escape() {
   }
 #endif
 
-  C->igv_printer()->print_graph("EA: 4. After Graph Optimization");
+  NOT_PRODUCT(C->igv_printer()->print_graph("EA: 4. After Graph Optimization");)
 
   // 5. Separate memory graph for scalar replaceable allcations.
   bool has_scalar_replaceable_candidates = (alloc_worklist.length() > 0);
@@ -2447,7 +2447,7 @@ bool ConnectionGraph::complete_connection_graph(
       new_edges = 0; // Bailout
     }
 
-    _compile->igv_printer()->print_graph("EA: 2. Complete Connection Graph Iter");
+    NOT_PRODUCT(_compile->igv_printer()->print_graph("EA: 2. Complete Connection Graph Iter");)
   } while (new_edges > 0);
 
   build_time.stop();
@@ -3135,7 +3135,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               // objects.
               revisit_reducible_phi_status(jobj, reducible_merges);
               found_nsr_alloc = true;
-              _compile->igv_printer()->print_graph("EA: 3. Propagate NSR Iter");
+              NOT_PRODUCT(_compile->igv_printer()->print_graph("EA: 3. Propagate NSR Iter");)
               break;
             }
           }
@@ -4362,7 +4362,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  see the comment in find_second_addp().)
   //
   while (alloc_worklist.length() != 0) {
-    _compile->igv_printer()->print_graph("EA: 5. Split Unique Types Iter");
+    NOT_PRODUCT(_compile->igv_printer()->print_graph("EA: 5. Split Unique Types Iter");)
     Node *n = alloc_worklist.pop();
     uint ni = n->_idx;
     if (n->is_Call()) {
