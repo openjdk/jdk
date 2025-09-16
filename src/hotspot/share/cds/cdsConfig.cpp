@@ -757,6 +757,7 @@ void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   if (is_dumping_dynamic_archive() && AOTClassLinking) {
+    assert(FLAG_IS_CMDLINE(AOTClassLinking), "should not be set ergonomically");
     log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
     FLAG_SET_ERGO(AOTClassLinking, false);
   }
