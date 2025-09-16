@@ -1071,7 +1071,7 @@ void VM_Version::get_processor_features() {
   }
 
     // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_apx_nci_ndd_nf() && supports_avx512vl();
   if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
@@ -1079,6 +1079,7 @@ void VM_Version::get_processor_features() {
 
   if (!UseAPX) {
     _features.clear_feature(CPU_APX_F);
+    _features.clear_feature(CPU_APX_NCI_NDD_NF);
   }
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
