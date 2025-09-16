@@ -553,10 +553,6 @@ public class SynthGraphicsUtils {
          return result;
      }
 
-    static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
-        SwingUtilities3.applyInsets(rect, insets, leftToRight);
-    }
-
     static void paint(SynthContext context, SynthContext accContext, Graphics g,
                Icon checkIcon, Icon arrowIcon, String acceleratorDelimiter,
                int defaultTextIconGap, String propertyPrefix) {
@@ -566,7 +562,7 @@ public class SynthGraphicsUtils {
 
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
         boolean leftToRight = SynthLookAndFeel.isLeftToRight(mi);
-        applyInsets(viewRect, mi.getInsets(), leftToRight);
+        SwingUtilities3.applyInsets(viewRect, mi.getInsets(), leftToRight);
 
         SynthMenuItemLayoutHelper lh = new SynthMenuItemLayoutHelper(
                 context, accContext, mi, checkIcon, arrowIcon, viewRect,
