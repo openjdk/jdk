@@ -30,7 +30,7 @@
  */
 
 /*
- * @notest id=no-vmcontinuations
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
  * @compile SelfSuspendDisablerTest.java
