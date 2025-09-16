@@ -28,7 +28,7 @@
  *
  * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations.
  *          Require compressed oops because not doing so increases memory usage.
- * @requires (vm.compMode == "Xmixed") & vm.opt.final.UseCompressedOops
+ * @requires (vm.compMode == "Xmixed") & (vm.bits == 32 | vm.opt.final.UseCompressedOops)
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME
