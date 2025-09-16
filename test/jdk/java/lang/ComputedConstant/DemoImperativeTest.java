@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Demo of an imperative stable value
+ * @summary Demo of an imperative stable value based on a computed constant
  * @enablePreview
  * @run junit DemoImperativeTest
  */
@@ -30,7 +30,6 @@
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,10 +78,6 @@ final class DemoImperativeTest {
         assertTrue(stableValue.isSet());
         assertEquals(42, stableValue.get());
         assertEquals(42, stableValue.orElse(13));
-    }
-
-    interface ExtendedImperativeStableValue<T> extends ImperativeStableValue<T> {
-        T orElseSet(Supplier<? extends T> underlying);
     }
 
 }

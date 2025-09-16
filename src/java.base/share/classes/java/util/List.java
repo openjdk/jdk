@@ -1196,26 +1196,26 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * {@return a new on-demand-computed list with the provided {@code size}}
+     * {@return a new on-demand computed list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
      * with the provided {@code size}. The list's elements are computed on demand via the
-     * provided {@code mapper} when they are first accessed
+     * provided {@code computingFunction} when they are first accessed
      * (e.g., via {@linkplain List#get(int) List::get}).
      * <p>
-     * The provided {@code mapper} function is guaranteed to be successfully invoked
-     * at most once per list index, even in a multi-threaded environment. Competing
-     * threads accessing an element already under computation will block until an element
-     * is computed or an exception is thrown by the computing thread.
+     * The provided computing function is guaranteed to be successfully
+     * invoked at most once per list index, even in a multi-threaded environment.
+     * Competing threads accessing an element already under computation will block until
+     * an element is computed or an exception is thrown by the computing thread.
      * <p>
-     * If invoking the provided {@code mapper} function throws an exception, it
-     * is rethrown to the initial caller and no value for the element is recorded.
+     * If invoking the provided computing function throws an exception, it is rethrown
+     * to the initial caller and no value for the element is recorded.
      * <p>
-     * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
-     * will be thrown. Hence, just like other unmodifiable lists created via the
-     * {@code List::of} factories, a computed list cannot contain {@code null}
-     * elements. Clients that want to use nullable values can wrap elements into
-     * an {@linkplain Optional} holder.
+     * If the provided computing function returns {@code null},
+     * a {@linkplain NullPointerException} will be thrown. Hence, just like other
+     * unmodifiable lists created via the {@code List::of} factories, a computed list
+     * cannot contain {@code null} elements. Clients that want to use nullable values can
+     * wrap elements into an {@linkplain Optional} holder.
      * <p>
      * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
      * of the returned list are also computed on demand.
@@ -1227,13 +1227,19 @@ public interface List<E> extends SequencedCollection<E> {
      * {@linkplain Collection##optional-operation optional operations} in the
      * {@linkplain List} interface.
      * <p>
-     * If the provided {@code mapper} recursively calls the returned computed list for the
-     * same index, an {@linkplain IllegalStateException} will be thrown.
+     * If the provided computing function recursively calls itself or the returned
+     * computed list for the same index, an {@linkplain IllegalStateException}
+     * will be thrown.
+     * <p>
+     * The returned computed list strongly references its computing
+     * function used to compute elements only so long as there are uncomputed elements
+     * after which the computing function is not strongly referenced
+     * anymore and may be collected.
      *
-     * @param size   the size of the returned computed list
-     * @param mapper to invoke whenever an element is first accessed
-     *               (may not return {@code null})
-     * @param <E>    the type of elements in the returned list
+     * @param size              the size of the returned computed list
+     * @param computingFunction to invoke whenever an element is first accessed
+     *                          (may not return {@code null})
+     * @param <E>               the type of elements in the returned list
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      *
      * @see ComputedConstant
@@ -1241,11 +1247,11 @@ public interface List<E> extends SequencedCollection<E> {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
     static <E> List<E> ofComputed(int size,
-                                  IntFunction<? extends E> mapper) {
+                                  IntFunction<? extends E> computingFunction) {
         Utils.checkNonNegativeArgument(size, "size");
-        Objects.requireNonNull(mapper);
-        // A lazy stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return ComputedCollections.ofComputedList(size, mapper);
+        Objects.requireNonNull(computingFunction);
+        // A computed list is not Serializable, so we cannot return `List.of()` if `size == 0`
+        return ComputedCollections.ofComputedList(size, computingFunction);
     }
 
 }

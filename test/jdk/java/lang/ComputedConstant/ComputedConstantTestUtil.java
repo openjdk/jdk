@@ -28,9 +28,9 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-final class StableTestUtil {
+final class ComputedConstantTestUtil {
 
-    private StableTestUtil() {}
+    private ComputedConstantTestUtil() {}
 
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>

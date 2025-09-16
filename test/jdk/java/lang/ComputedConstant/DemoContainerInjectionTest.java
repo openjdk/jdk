@@ -24,7 +24,6 @@
 /* @test
  * @summary Basic tests for dependency injection
  * @enablePreview
- * @modules java.base/jdk.internal.lang.stable
  * @run junit DemoContainerInjectionTest
  */
 

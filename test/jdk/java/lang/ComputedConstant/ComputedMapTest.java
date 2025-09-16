@@ -22,8 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for ComputedMap methods
- * @modules java.base/jdk.internal.lang.stable
+ * @summary Basic tests for computed map methods
  * @enablePreview
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedMapTest
  */
@@ -119,7 +118,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void get(Set<Value> set) {
-        StableTestUtil.CountingFunction<Value, Integer> cf = new StableTestUtil.CountingFunction<>(MAPPER);
+        ComputedConstantTestUtil.CountingFunction<Value, Integer> cf = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
         var lazy = Map.ofComputed(set, cf);
         int cnt = 1;
         for (Value v : set) {
@@ -134,7 +133,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void exception(Set<Value> set) {
-        StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(_ -> {
+        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
         var cached = Map.ofComputed(set, cif);
@@ -421,61 +420,61 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void functionHolder(Set<Value> set) {
-        StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
+        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        Object holder = StableTestUtil.functionHolder(f1);
+        Object holder = ComputedConstantTestUtil.functionHolder(f1);
 
         int i = 0;
         for (Value key : set) {
-            assertEquals(set.size() - i, StableTestUtil.functionHolderCounter(holder));
-            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
+            assertEquals(set.size() - i, ComputedConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
             int v = f1.get(key);
             int v2 = f1.get(key);
             i++;
         }
-        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
-        assertNull(StableTestUtil.functionHolderFunction(holder));
+        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
+        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void functionHolderViaEntrySet(Set<Value> set) {
-        StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
+        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        Object holder = StableTestUtil.functionHolder(f1);
+        Object holder = ComputedConstantTestUtil.functionHolder(f1);
 
         int i = 0;
         for (Map.Entry<Value, Integer> e : f1.entrySet()) {
-            assertEquals(set.size() - i, StableTestUtil.functionHolderCounter(holder));
-            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
+            assertEquals(set.size() - i, ComputedConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
             int v = e.getValue();
             int v2 = e.getValue();
             i++;
         }
-        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
-        assertNull(StableTestUtil.functionHolderFunction(holder));
+        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
+        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void underlyingRefViaEntrySetForEach(Set<Value> set) {
-        StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
+        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
         Map<Value, Integer> f1 = Map.ofComputed(set, cif);
 
-        Object holder = StableTestUtil.functionHolder(f1);
+        Object holder = ComputedConstantTestUtil.functionHolder(f1);
 
         final AtomicInteger i = new AtomicInteger();
         f1.entrySet().forEach(e -> {
-            assertEquals(set.size() - i.get(), StableTestUtil.functionHolderCounter(holder));
-            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
+            assertEquals(set.size() - i.get(), ComputedConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
             Integer val = e.getValue();
             Integer val2 = e.getValue();
             i.incrementAndGet();
         });
-        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
-        assertNull(StableTestUtil.functionHolderFunction(holder));
+        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
+        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
     }
 
     @Test

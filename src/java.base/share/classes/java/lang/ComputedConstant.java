@@ -39,24 +39,21 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A computed constant is a deferred constant to be computed at a later time by an
- * underlying supplier.
+ * A computed constant is a deferred shallowly immutable constant to be computed at
+ * a later time by an underlying computing function.
  * <p>
  * A computed constant is created using the factory method
  * {@linkplain ComputedConstant#of(Supplier)}. When created, the computed constant is
  * <em>unset</em>, which means the constant is not yet set. The constant, of type
  * {@code T}, can then be <em>set</em> (and retrieved) by calling
- * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an
- * <em>underlying supplier</em> will be invoked which would compute the constant. The
- * underlying supplier is provided at construction. Once set, the constant
- * can <em>never change</em> and can be retrieved over and over again by subsequent
- * {@linkplain #get() get} invocations.
+ * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an underlying
+ * <em>computing function</em> will be invoked which would compute
+ * the constant. The computing function is provided at construction. Once set,
+ * the constant can <em>never change</em> and can be retrieved over and over again
+ * by subsequent {@linkplain #get() get} invocations.
  * <p>
  * Consider the following example where a computed constant field "{@code logger}" is a
- * shallowly immutable holder of a constant of type {@code Logger} and that is initially
- * created as <em>unset</em>, which means the constant is not set. Later in the example,
- * the constant of the "{@code logger}" field is computed and retrieved via the provided
- * lambda:
+ * shallowly immutable holder of a constant of type {@code Logger}:
  *
  * {@snippet lang = java:
  * public class Component {
@@ -74,13 +71,13 @@ import java.util.function.Supplier;
  *}
  * <p>
  * Initially, the computed constant is <em>unset</em>, until {@code logger.get()}
- * evaluates the underlying supplier, and sets the constant to the result; the result is
- * then returned to the client. Hence, {@linkplain #get()} guarantees that a
- * computer constant is <em>set</em> before it returns, baring any exceptions.
+ * evaluates the computing function, and sets the constant to the result;
+ * the result is then returned to the client. Hence, {@linkplain #get()} guarantees that
+ * a computer constant is <em>set</em> before it returns, baring any exceptions.
  * <p>
  * Furthermore, {@linkplain #get()} guarantees that, out several threads trying to invoke
- * the provided supplier simultaneously, only one is ever evaluated. This property is
- * crucial as evaluation of the underlying supplier may have side effects, for example,
+ * the computing function simultaneously, only one is ever evaluated. This property is
+ * crucial as evaluation of the computing function may have side effects, for example,
  * the call above to {@code Logger.create()} may result in storage resources being
  * prepared.
  *
@@ -90,6 +87,7 @@ import java.util.function.Supplier;
  * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by computed constants:
+ *
  * {@snippet lang = java:
  * public final class DependencyUtil {
  *
@@ -122,10 +120,9 @@ import java.util.function.Supplier;
  * created. Upon such a creation, a dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
  * <p>
- * If the underlying supplier returns {@code null},
- * a {@linkplain NullPointerException} is thrown. Hence, a computed constant
- * can never be {@code null}. Clients that want to use a nullable constant
- * can wrap the value into an {@linkplain Optional} holder.
+ * If the computing function returns {@code null}, a {@linkplain NullPointerException}
+ * is thrown. Hence, a computed constant can never be {@code null}. Clients that want to
+ * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A computed constant is guaranteed to be set at most once. If competing
@@ -135,38 +132,46 @@ import java.util.function.Supplier;
  * invoke any computation.
  * <p>
  * The at-most-once write operation on a computed constant that succeeds
- * (i.e., via an initial {@linkplain #get()} operation)
+ * (e.g., via an initial {@linkplain #get()} operation)
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * any other successful read operation (e.g. {@linkplain #get()}).
- * A successful read operation can be either:
+ * any other read operation (e.g. {@linkplain #get()}).
+ * A write operation can be initiated via invoking either:
  * <ul>
- *     <li>a {@link #get()}, or</li>
- *     <li>an {@link #isSet()}</li>
+ *     <li>{@link #get()};</li>
+ *     <li>{@link #hashCode()}, or</li>
+ *     <li>{@link #equals(Object)} where the other object is a computed constant.</li>
+ * </ul>
+ * A read operation can be either:
+ * <ul>
+ *     <li>a {@link #get()};</li>
+ *     <li>an {@link #isSet()};</li>
+ *     <li>a {@link #hashCode()}, or</li>
+ *     <li>a {@link #equals(Object)} where the other object is a computed constant.</li>
  * </ul>
  * <p>
- * Invocations of the underlying supplier via {@link #get()} form a total order of zero or
- * more exceptional invocations followed by zero (if the constant was already set) or one
- * successful invocation of the underlying supplier.
+ * Invocations of the computing function (via any of the write-initiating operations
+ * like {@link #get()}) form a total order of zero or more exceptional invocations
+ * followed by zero or one successful invocation of the computing function.
  *
  * <h2 id="performance">Performance</h2>
- * As a computed constant can never change after it has been set, a JVM
+ * As a computed constant can never change after it has been set. Therefore, a JVM
  * implementation may, for a set computed constant, elide all future reads of that
  * computed constant, and instead directly use any constant that it has previously
  * observed. This is true if the reference to the computed constant is a VM constant
  * (e.g. in cases where the computed constant itself is stored in a
  * {@code static final} field) or forms a trusted chain to such a VM constant via
- * zero or more layers of a {@linkplain Record record} fields or final fields
+ * one or more layers of a {@linkplain Record record} fields or final fields
  * in hidden classes.
  *
  * @implSpec Except for {@linkplain #equals(Object) equals(obj)} parameters; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote As objects can be set via computed constants but never removed, this can be
+ * @implNote As an object can be set via computed constants but never removed, this can be
  *           a source of an unintended memory leak. A computed constant is
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
  *           Be advised that reachable computed constants will hold their constants until
- *           the computed constant itself is collected.
+ *           the computed constants themselves are collected.
  *           <p>
  *           A {@code ComputedConstant} that has a type parameter {@code T} that is an
  *           array type (of arbitrary rank) will only allow the JVM to treat the
@@ -178,10 +183,10 @@ import java.util.function.Supplier;
  *           <p>
  *           A {@code ComputedConstant} is not {@link Serializable}.
  *           <p>
- *           Computed constants strongly references its underlying
- *           supplier used to compute values so long as no constant is computed,
- *           after which the underlying function is not strongly referenced
- *           anymore and may be collected.
+ *           Computed constants strongly references its underlying computing function
+ *           used to compute values so long as no constant is computed, after which
+ *           the computing function is not strongly referenced anymore and may be
+ *           collected.
  *           <p>
  *           A computed constant is free to synchronize on itself. Hence, care must be
  *           taken when directly or indirectly synchronizing on a computed constant.
@@ -206,11 +211,11 @@ public sealed interface ComputedConstant<T>
 
     /**
      * {@return the set constant. If not set, first computes and sets the constant using
-     *          the underlying supplier}
+     *          the computing function}
      *
-     * @throws RuntimeException if the computed constant's underlying supplier throws a
-     *         RuntimeException
-     * @throws Error if the computed constant's underlying supplier throws an Error
+     * @throws NullPointerException if the computing function returns {@code null}
+     * @throws RuntimeException if an exception is thrown while executing the
+     *         computing function
      */
     T get();
 
@@ -223,31 +228,45 @@ public sealed interface ComputedConstant<T>
     // Object methods
 
     /**
-     * {@return {@code true} if {@code this == obj}, {@code false} otherwise}
+     * Indicates whether some other object is "equal to" this computed constant.
+     * The other object is considered equal if:
+     * <ul>
+     * <li>it is also a {@code ComputedConstant} and;
+     * <li>the constant values obtained via {@linkplain #get()} are "equal to"
+     * each other via {@code equals()}.
+     * </ul>
      *
-     * @param obj to check for equality
+     * @param obj an object to be tested for equality
+     * @throws NullPointerException if the computing function returns {@code null}
+     * @throws RuntimeException if an exception is thrown while executing the
+     *         computing function
+     * @return {@code true} if the other object is "equal to" this object
+     *         otherwise {@code false}
      */
     boolean equals(Object obj);
 
     /**
-     * {@return the {@linkplain System#identityHashCode(Object) identity hash code} of
-     *          {@code this} object}
+     * {@return he hash code of this constant}
+     *
+     * @throws NullPointerException if the computing function returns {@code null}
+     * @throws RuntimeException if an exception is thrown while executing the
+     *         computing function
      */
     int hashCode();
 
     // Factories
 
     /**
-     * {@return a new computed constant to be computed using the provided
-     *          {@code underlying} supplier}
+     * {@return a new computed constant to be computed later using the provided
+     *          {@code computingFunction}}
      *
-     * @param underlying supplier used to compute the constant
-     * @param <T>        type of the constant
+     * @param computingFunction in the form of a Supplier used to compute the constant
+     * @param <T>               type of the constant
      *
      */
-    static <T> ComputedConstant<T> of(Supplier<? extends T> underlying) {
-        Objects.requireNonNull(underlying);
-        return ComputedConstantImpl.ofComputed(underlying);
+    static <T> ComputedConstant<T> of(Supplier<? extends T> computingFunction) {
+        Objects.requireNonNull(computingFunction);
+        return ComputedConstantImpl.ofComputed(computingFunction);
     }
 
 }

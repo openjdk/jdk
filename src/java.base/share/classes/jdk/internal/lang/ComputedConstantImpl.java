@@ -110,8 +110,16 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         return getAcquire() != null;
     }
 
-    // The methods `equals()` and `hashCode()` should be based on identity.
-    // We will get that for free as we directly extend Object
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ComputedConstant<?> that
+                && this.get().equals(that.get());
+    }
+
+    @Override
+    public int hashCode() {
+        return get().hashCode();
+    }
 
     @Override
     public String toString() {

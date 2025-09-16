@@ -22,12 +22,11 @@
  */
 
 /* @test
- * @summary Basic tests for making sure StableValue publishes values safely
+ * @summary Basic tests for making sure ComputedConstant publishes values safely
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.lang
  * @enablePreview
- * @compile StableTestUtil.java
- * @run junit StableValuesSafePublicationTest
+ * @run junit ComputedConstantSafePublicationTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -46,24 +45,24 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableValuesSafePublicationTest {
+final class ComputedConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final AtomicReference<ComputedConstant<Holder>[]> STABLES = new AtomicReference<>();
+    private static final AtomicReference<ComputedConstant<Holder>[]> CONSTANTS = new AtomicReference<>();
 
-    static ComputedConstant<Holder>[] stables() {
+    static ComputedConstant<Holder>[] constants() {
         @SuppressWarnings("unchecked")
-        ComputedConstant<Holder>[] stables = (ComputedConstant<Holder>[]) new ComputedConstant[SIZE];
+        ComputedConstant<Holder>[] constants = (ComputedConstant<Holder>[]) new ComputedConstant[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = ComputedConstant.of(Holder::new);
+            constants[i] = ComputedConstant.of(Holder::new);
         }
-        return stables;
+        return constants;
     }
 
     static final class Holder {
         // These are non-final fields but should be seen
-        // fully initialized thanks to the HB properties of StableValue.
+        // fully initialized thanks to the HB properties of ComputedConstants.
         int a, b, c, d, e;
 
         Holder() {
@@ -74,15 +73,15 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final ComputedConstant<Holder>[] stables = STABLES.get();
+        final ComputedConstant<Holder>[] constants = CONSTANTS.get();
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                ComputedConstant<Holder> s = stables[i];
+                ComputedConstant<Holder> s = constants[i];
                 Holder h;
-                // Wait until the StableValue has a holder value
+                // Wait until the ComputedConstant has a holder value
                 while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
                 int a = h.a;
                 int b = h.b;
@@ -96,14 +95,14 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final ComputedConstant<Holder>[] stables = STABLES.get();
+        final ComputedConstant<Holder>[] constants = CONSTANTS.get();
 
         @Override
         public void run() {
             ComputedConstant<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
-                s = stables[i];
+                s = constants[i];
                 s.get();
                 deadlineNs += 1000;
                 while (System.nanoTime() < deadlineNs) {
@@ -115,7 +114,7 @@ final class StableValuesSafePublicationTest {
 
     @Test
     void mainTest() {
-        STABLES.set(stables());
+        CONSTANTS.set(constants());
 
         List<Consumer> consumers = IntStream.range(0, THREADS)
                 .mapToObj(_ -> new Consumer())
@@ -169,11 +168,11 @@ final class StableValuesSafePublicationTest {
                     }
                     if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
-                                Stream.of(STABLES.get())
+                                Stream.of(CONSTANTS.get())
                                         .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
-                        fail("Giving up! Set stables seen by a new thread: " + nonNulls);
+                        fail("Giving up! Set computed constants seen by a new thread: " + nonNulls);
                     }
                 }
             }

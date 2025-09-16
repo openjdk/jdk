@@ -1750,27 +1750,27 @@ public interface Map<K, V> {
     }
 
     /**
-     * {@return a new on-demand-computed map with the provided {@code keys}}
+     * {@return a new on-demand computed map with the provided {@code keys}}
      * <p>
      * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
      * keys are known at construction. The map's values are computed on demand via the
-     * provided {@code mapper} when they are first accessed
+     * provided {@code computingFunction} when they are first accessed
      * (e.g., via {@linkplain Map#get(Object) Map::get}).
      * <p>
-     * The provided {@code mapper} function is guaranteed to be successfully invoked
+     * The provided computing function is guaranteed to be successfully invoked
      * at most once per key, even in a multi-threaded environment. Competing
      * threads accessing a value already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If invoking the provided {@code mapper} function throws an exception, it
+     * If invoking the provided computing function throws an exception, it
      * is rethrown to the initial caller and no value associated with the provided key
      * is recorded.
      * <p>
-     * If the provided {@code mapper} returns {@code null}, a {@linkplain NullPointerException}
-     * will be thrown. Hence, just like other unmodifiable maps created via the
-     * {@code Map::of} factories, a computed map cannot contain {@code null} values. Clients
-     * that want to use nullable values can wrap values into an {@linkplain Optional}
-     * holder.
+     * If the provided computing function returns {@code null},
+     * a {@linkplain NullPointerException} will be thrown. Hence, just like other
+     * unmodifiable maps created via the {@code Map::of} factories, a computed map
+     * cannot contain {@code null} values. Clients that want to use nullable values can
+     * wrap values into an {@linkplain Optional} holder.
      * <p>
      * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
      * also computed on demand.
@@ -1779,34 +1779,39 @@ public interface Map<K, V> {
      * {@linkplain Collection##optional-operations optional operations} in the
      * {@linkplain Map} interface.
      * <p>
-     * If the provided {@code mapper} recursively calls the returned computed map for
-     * the same key, an {@linkplain IllegalStateException} will be thrown.
+     * If the provided computing function recursively calls itself or
+     * the returned computed map for the same key, an {@linkplain IllegalStateException}
+     * will be thrown.
+     * <p>
+     * The returned computed map strongly references its underlying
+     * computing function used to compute values only so long as there are
+     * uncomputed values after which the underlying function is not strongly referenced
+     * anymore and may be collected.
      *
-     * @param keys   the (non-null) keys in the returned computed map
-     * @param mapper to invoke whenever an associated value is first accessed
-     *               (may return {@code null})
-     * @param <K>    the type of keys maintained by the returned map
-     * @param <V>    the type of mapped values in the returned map
-     * @throws NullPointerException if the provided set of {@code inputs} contains a
-     *                              {@code null} element.
+     * @param keys              the (non-null) keys in the returned computed map
+     * @param computingFunction to invoke whenever an associated value is first accessed
+     * @param <K>               the type of keys maintained by the returned map
+     * @param <V>               the type of mapped values in the returned map
+     * @throws NullPointerException if the provided set of {@code keys} is {@code null}
+     *         or if the set of {@code keys} contains a {@code null} element.
      *
      * @see ComputedConstant
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
     static <K, V> Map<K, V> ofComputed(Set<? extends K> keys,
-                                       Function<? super K, ? extends V> mapper) {
+                                       Function<? super K, ? extends V> computingFunction) {
         // Protect against TOC-TOU attacks.
         // Also, implicit null check of `keys` and all its elements
         final Set<K> keyCopies = Set.copyOf(keys);
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(computingFunction);
         if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
             @SuppressWarnings("unchecked")
-            var enumMap = (Map<K, V>) ComputedCollections.ofComputedMapWithEnumKeys(keyCopies, mapper);
+            var enumMap = (Map<K, V>) ComputedCollections.ofComputedMapWithEnumKeys(keyCopies, computingFunction);
             return enumMap;
         } else {
-            // A lazy stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-            return ComputedCollections.ofComputedMap(keyCopies, mapper);
+            // A computed map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
+            return ComputedCollections.ofComputedMap(keyCopies, computingFunction);
         }
     }
 

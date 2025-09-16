@@ -90,7 +90,7 @@ final class TrustedFieldTypeTest {
     }
 
     @Test
-    void updateStableValueContentVia_j_i_m_Unsafe() {
+    void updateComputedConstantContentVia_j_i_m_Unsafe() {
         ComputedConstant<Integer> computedConstant = ComputedConstant.of(SUPPLIER);
         computedConstant.get();
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
@@ -105,7 +105,7 @@ final class TrustedFieldTypeTest {
     }
 
     @Test
-    void updateStableValueContentViaSetAccessible() throws NoSuchFieldException, IllegalAccessException {
+    void updateComputedConstantContentViaSetAccessible() throws NoSuchFieldException, IllegalAccessException {
 
         if (Boolean.getBoolean("opens")) {
             // Unfortunately, add-opens allows direct access to the `value` field

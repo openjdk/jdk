@@ -22,8 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for ComputedList methods
- * @modules java.base/jdk.internal.lang.stable
+ * @summary Basic tests for computed list methods
  * @enablePreview
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedListTest
  */
@@ -77,7 +76,7 @@ final class ComputedListTest {
 
     @Test
     void get() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
+        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(IDENTITY);
         var lazy = List.ofComputed(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
@@ -89,7 +88,7 @@ final class ComputedListTest {
 
     @Test
     void getException() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(_ -> {
+        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
         var lazy = List.ofComputed(SIZE, cif);
@@ -278,9 +277,9 @@ final class ComputedListTest {
     }
 
     // This test makes sure successive view operations retains the property
-    // of being a Stable view.
+    // of being a computed view.
     @Test
-    void viewsStable() {
+    void viewsComputed() {
         viewOperations().forEach(op0 -> {
             viewOperations().forEach( op1 -> {
                 viewOperations().forEach(op2 -> {
@@ -403,18 +402,18 @@ final class ComputedListTest {
 
     @Test
     void functionHolder() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
+        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(IDENTITY);
         List<Integer> f1 = List.ofComputed(SIZE, cif);
 
-        Object holder = StableTestUtil.functionHolder(f1);
+        Object holder = ComputedConstantTestUtil.functionHolder(f1);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(SIZE - i, StableTestUtil.functionHolderCounter(holder));
-            assertSame(cif, StableTestUtil.functionHolderFunction(holder));
+            assertEquals(SIZE - i, ComputedConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
             int v = f1.get(i);
             int v2 = f1.get(i);
         }
-        assertEquals(0, StableTestUtil.functionHolderCounter(holder));
-        assertNull(StableTestUtil.functionHolderFunction(holder));
+        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
+        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
     }
 
     // Support constructs

@@ -55,7 +55,7 @@ final class ComputedConstantTest {
     @ParameterizedTest
     @MethodSource("factories")
     void basic(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var cached = factory.apply(cs);
         assertEquals(".unset", cached.toString());
         assertEquals(SUPPLIER.get(), cached.get());
@@ -68,7 +68,7 @@ final class ComputedConstantTest {
     @ParameterizedTest
     @MethodSource("factories")
     void exception(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
         var cached = factory.apply(cs);
@@ -81,105 +81,110 @@ final class ComputedConstantTest {
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void orElse(ComputedConstant<Integer> stable) {
-        assertNull(stable.orElse(null));
-        stable.get();
-        assertEquals(VALUE, stable.orElse(null));
+    void orElse(ComputedConstant<Integer> constant) {
+        assertNull(constant.orElse(null));
+        constant.get();
+        assertEquals(VALUE, constant.orElse(null));
     }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void get(ComputedConstant<Integer> stable) {
-        assertEquals(VALUE, stable.get());
+    void get(ComputedConstant<Integer> constant) {
+        assertEquals(VALUE, constant.get());
     }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void isSet(ComputedConstant<Integer> stable) {
-        assertFalse(stable.isSet());
-        stable.get();
-        assertTrue(stable.isSet());
+    void isSet(ComputedConstant<Integer> constant) {
+        assertFalse(constant.isSet());
+        constant.get();
+        assertTrue(constant.isSet());
    }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void testHashCode(ComputedConstant<Integer> stable) {
-        // Should be Object::hashCode
-        assertEquals(System.identityHashCode(stable), stable.hashCode());
-        stable.get();
-        assertEquals(System.identityHashCode(stable), stable.hashCode());
+    void testHashCode(ComputedConstant<Integer> constant) {
+        ComputedConstant<Integer> c1 = ComputedConstant.of(SUPPLIER);
+        assertEquals(c1.hashCode(), constant.hashCode());
+        constant.get();
+        assertEquals(c1.hashCode(), constant.hashCode());
+        c1.get();
+        assertEquals(c1.hashCode(), constant.hashCode());
+        ComputedConstant<Integer> different = ComputedConstant.of(() -> 13);
+        assertNotEquals(different.hashCode(), constant.hashCode());
     }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void testEquals(ComputedConstant<Integer> s0) {
-        assertNotEquals(null, s0);
+    void testEquals(ComputedConstant<Integer> c0) {
+        assertNotEquals(null, c0);
         ComputedConstant<Integer> s1 = ComputedConstant.of(SUPPLIER);
-        assertNotEquals(s0, s1); // Identity based
-        s0.get();
+        assertEquals(c0, s1);
+        c0.get();
+        assertEquals(c0, s1);
         s1.get();
-        assertNotEquals(s0, s1);
-        assertNotEquals("a", s0);
+        assertEquals(c0, s1);
+        ComputedConstant<Integer> different = ComputedConstant.of(() -> 13);
+        assertNotEquals(different, c0);
+        assertNotEquals("a", c0);
     }
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void toStringUnset(ComputedConstant<Integer> stable) {
-        assertEquals(".unset", stable.toString());
-        stable.get();
-        assertEquals(Integer.toString(VALUE), stable.toString());
+    void toStringUnset(ComputedConstant<Integer> constant) {
+        assertEquals(".unset", constant.toString());
+        constant.get();
+        assertEquals(Integer.toString(VALUE), constant.toString());
     }
 
     @Test
-    void toStringCircuslar() {
+    void toStringCircular() {
         AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
-        ComputedConstant<ComputedConstant<?>> stable = ComputedConstant.of(ref::get);
-        ref.set(stable);
-        stable.get();
-        String toString = assertDoesNotThrow(stable::toString);
+        ComputedConstant<ComputedConstant<?>> constant = ComputedConstant.of(ref::get);
+        ref.set(constant);
+        constant.get();
+        String toString = assertDoesNotThrow(constant::toString);
         assertEquals("(this ComputedConstant)", toString);
-        assertDoesNotThrow(stable::hashCode);
-        assertDoesNotThrow((() -> stable.equals(stable)));
     }
 
     @Test
     void recursiveCall() {
         AtomicReference<ComputedConstant<Integer>> ref = new AtomicReference<>();
-        ComputedConstant<Integer> stable = ComputedConstant.of(() -> ref.get().get());
-        ComputedConstant<Integer> stable2 = ComputedConstant.of(stable);
-        ref.set(stable2);
-        assertThrows(IllegalStateException.class, stable::get);
+        ComputedConstant<Integer> constant = ComputedConstant.of(() -> ref.get().get());
+        ComputedConstant<Integer> constant1 = ComputedConstant.of(constant);
+        ref.set(constant1);
+        assertThrows(IllegalStateException.class, constant::get);
     }
 
     @ParameterizedTest
     @MethodSource("factories")
     void underlying(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var f1 = factory.apply(cs);
 
-        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        Supplier<?> underlyingBefore = ComputedConstantTestUtil.underlying(f1);
         assertSame(cs, underlyingBefore);
         int v = f1.get();
-        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        Supplier<?> underlyingAfter = ComputedConstantTestUtil.underlying(f1);
         assertNull(underlyingAfter);
     }
 
     @ParameterizedTest
     @MethodSource("factories")
     void functionHolderException(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
         var f1 = factory.apply(cs);
 
-        Supplier<?> underlyingBefore = StableTestUtil.underlying(f1);
+        Supplier<?> underlyingBefore = ComputedConstantTestUtil.underlying(f1);
         assertSame(cs, underlyingBefore);
         try {
             int v = f1.get();
         } catch (UnsupportedOperationException _) {
             // Expected
         }
-        Supplier<?> underlyingAfter = StableTestUtil.underlying(f1);
+        Supplier<?> underlyingAfter = ComputedConstantTestUtil.underlying(f1);
         assertSame(cs, underlyingAfter);
     }
 
