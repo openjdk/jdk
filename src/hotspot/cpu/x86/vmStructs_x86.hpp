@@ -29,13 +29,13 @@
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
 
-#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor,         _last_Java_fp,                  intptr_t*)               \
               static_field(VM_Version,              _features,                      VM_Version::VM_Features) \
            nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)                \
               static_field(VM_Version::VM_Features, _features_bitmap_size,          int)
 
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
+#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c2_toplevel_type) \
   declare_toplevel_type(VM_Version::VM_Features)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \

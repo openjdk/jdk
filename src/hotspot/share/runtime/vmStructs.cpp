@@ -80,6 +80,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "opto/compile.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
@@ -148,6 +149,7 @@
                    volatile_static_field,                                                                                            \
                    unchecked_nonstatic_field,                                                                                        \
                    volatile_nonstatic_field,                                                                                         \
+                   c2_nonstatic_field,                                                                                               \
                    nonproduct_nonstatic_field)                                                                                       \
                                                                                                                                      \
   /*************/                                                                                                                    \
@@ -666,6 +668,14 @@
      static_field(VMRegImpl,                   regName[0],                                    const char*)                           \
      static_field(VMRegImpl,                   stack0,                                        VMReg)                                 \
                                                                                                                                      \
+  /**************/                                                                                                                   \
+  /* CI */                                                                                                                           \
+  /************/                                                                                                                     \
+                                                                                                                                     \
+  nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
+  nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
+  c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
+                                                                                                                                     \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
@@ -833,7 +843,8 @@
                  declare_toplevel_type,                                   \
                  declare_oop_type,                                        \
                  declare_integer_type,                                    \
-                 declare_unsigned_integer_type)                           \
+                 declare_unsigned_integer_type,                           \
+                 declare_c2_toplevel_type)                                \
                                                                           \
   /*************************************************************/         \
   /* Java primitive types -- required by the SA implementation */         \
@@ -1147,6 +1158,16 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
+                                                                          \
+  /*********************/                                                 \
+  /* CI */                                                                \
+  /*********************/                                                 \
+                                                                          \
+  declare_c2_toplevel_type(Compile)                                       \
+  declare_toplevel_type(ciEnv)                                            \
+  declare_toplevel_type(ciBaseObject)                                     \
+  declare_type(ciMetadata, ciBaseObject)                                  \
+  declare_type(ciMethod, ciMetadata)                                      \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \
@@ -1855,6 +1876,36 @@
 # define ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT(a, b, c)
 #endif /* PRODUCT */
 
+// Generate and check a nonstatic field in C2 builds
+#ifdef COMPILER2
+# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
+# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
+# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
+#else
+# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
+# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
+# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)
+#endif /* COMPILER2 */
+
+// Generate but do not check a static field in C2 builds
+#ifdef COMPILER2
+# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
+#else
+# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
+#endif /* COMPILER2 */
+
+//--------------------------------------------------------------------------------
+// VMTypeEntry build-specific macros
+//
+
+#ifdef COMPILER2
+# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
+# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
+#else
+# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
+# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
+#endif /* COMPILER2 */
+
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -1868,20 +1919,23 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+             GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
 
   VM_STRUCTS_OS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_STATIC_VM_STRUCT_ENTRY,
                 GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                 GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
@@ -1896,19 +1950,22 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
            GENERATE_OOP_VM_TYPE_ENTRY,
            GENERATE_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
+           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
+           GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
   VM_TYPES_OS(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
               GENERATE_OOP_VM_TYPE_ENTRY,
               GENERATE_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
+              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
+              GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
                GENERATE_OOP_VM_TYPE_ENTRY,
                GENERATE_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
+               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
+               GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
@@ -2004,26 +2061,30 @@ void VMStructs::init() {
              CHECK_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              CHECK_NO_OP,
              CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+             CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_STATIC_VM_STRUCT_ENTRY,
                  CHECK_NO_OP,
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                 CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_TYPES(CHECK_VM_TYPE_ENTRY,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
+           CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
+           CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
 
   VM_TYPES_CPU(CHECK_VM_TYPE_ENTRY,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
+               CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
+               CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0
@@ -2047,6 +2108,7 @@ void VMStructs::init() {
              CHECK_NO_OP,
              CHECK_NO_OP,
              CHECK_NO_OP,
+             CHECK_NO_OP,
              CHECK_NO_OP)
 
   VM_STRUCTS(CHECK_NO_OP,
@@ -2054,13 +2116,15 @@ void VMStructs::init() {
              ENSURE_FIELD_TYPE_PRESENT,
              CHECK_NO_OP,
              ENSURE_FIELD_TYPE_PRESENT,
-             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
+             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
+             ENSURE_C2_FIELD_TYPE_PRESENT)
 
   VM_STRUCTS_CPU(ENSURE_FIELD_TYPE_PRESENT,
                  ENSURE_FIELD_TYPE_PRESENT,
                  CHECK_NO_OP,
                  ENSURE_FIELD_TYPE_PRESENT,
-                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
+                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
+                 ENSURE_C2_FIELD_TYPE_PRESENT)
 #endif // !_WINDOWS
 }
 

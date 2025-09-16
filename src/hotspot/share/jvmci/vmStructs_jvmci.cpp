@@ -1016,7 +1016,7 @@
 
 #ifdef AARCH64
 
-#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field) \
   static_field(VM_Version, _zva_length, int)                            \
   static_field(StubRoutines::aarch64, _count_positives, address)        \
   static_field(StubRoutines::aarch64, _count_positives_long, address)   \
@@ -1030,7 +1030,7 @@
 
 #ifdef X86
 
-#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
   static_field(VM_Version,                     _features,                      VM_Version::VM_Features) \
                                                                                                         \
@@ -1053,7 +1053,7 @@
  * Dummy defines for architectures that don't use these.
  */
 #ifndef VM_STRUCTS_CPU
-#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field)
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field)
 #endif
 
 #ifndef VM_INT_CONSTANTS_CPU
@@ -1088,7 +1088,8 @@ VMStructEntry JVMCIVMStructs::localHotSpotVMStructs[] = {
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                 GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
 #if INCLUDE_G1GC
   VM_STRUCTS_JVMCI_G1GC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
@@ -1196,7 +1197,8 @@ void JVMCIVMStructs::init() {
                  CHECK_STATIC_VM_STRUCT_ENTRY,
                  CHECK_NO_OP,
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
+                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                 CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY)
 
 #if INCLUDE_G1GC
   VM_STRUCTS_JVMCI_G1GC(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
