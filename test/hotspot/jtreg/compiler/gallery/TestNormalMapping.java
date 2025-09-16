@@ -26,7 +26,7 @@
  * @bug 8367657
  * @summary Visual example of auto vectorization: normal mapping.
  * @library /test/lib /
- * @run main compiler.gallery.TestNormalMapping ir
+ * @run driver compiler.gallery.TestNormalMapping ir
  */
 
 /*

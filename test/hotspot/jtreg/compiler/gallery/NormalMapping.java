@@ -29,13 +29,10 @@ import javax.swing.JFrame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
 import java.util.Random;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Path2D;
 import javax.swing.JPanel;
 import java.awt.Font;
 
@@ -90,7 +87,7 @@ public class NormalMapping {
         // Set up a panel we can draw on, and put it in a window.
         System.out.println("Setting up Window...");
         MyDrawingPanel panel = new MyDrawingPanel(state);
-        JFrame frame = new JFrame("Normal Mapping Demo (Auto Vectorization)");
+        JFrame frame = new JFrame("Normal Mapping Demo (Auto-Vectorization)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(2000, 1000);
         frame.add(panel);
@@ -166,8 +163,8 @@ public class NormalMapping {
             // Random acceleration with dampening.
             dx *= 0.99;
             dy *= 0.99;
-            dx += RANDOM.nextFloat() * 0.001 - 0.0005;;
-            dy += RANDOM.nextFloat() * 0.001 - 0.0005;;
+            dx += RANDOM.nextFloat() * 0.001 - 0.0005;
+            dy += RANDOM.nextFloat() * 0.001 - 0.0005;
             x += dx;
             y += dy;
 
@@ -241,7 +238,7 @@ public class NormalMapping {
         }
 
         public void nextNormals() {
-            switch(nextNormalsId) {
+            switch (nextNormalsId) {
                 case 0 -> setNormals(loadNormals("normal_map.png"));
                 case 1 -> setNormals(generateNormals("heart"));
                 case 2 -> setNormals(generateNormals("hex"));
@@ -296,7 +293,7 @@ public class NormalMapping {
 
         interface HeightFunction {
             // x and y should be in [0..1]
-            public double call(double x, double y);
+            double call(double x, double y);
         }
 
         public BufferedImage generateNormals(String name) {
@@ -307,15 +304,15 @@ public class NormalMapping {
                 y = 10 * (y - 0.5);
 
                 // A selection of "height functions":
-                return switch(name) {
+                return switch (name) {
                     case "cone" -> 0.1 * Math.max(0, 2 - Math.sqrt(x * x + y * y));
                     case "heart" -> {
-                        double heart = Math.abs(Math.pow(x*x + y*y - 1, 3) - x*x * Math.pow(-y, 3));
-                        double decay = Math.exp(-(x*x + y*y));
+                        double heart = Math.abs(Math.pow(x * x + y * y - 1, 3) - x * x * Math.pow(-y, 3));
+                        double decay = Math.exp(-(x * x + y * y));
                         yield 0.1 * heart * decay;
                     }
-                    case "hill" ->    0.5 * Math.exp(-(x*x + y*y));
-                    case "ripple" ->  0.01 * Math.sin(x*x + y*y);
+                    case "hill" ->    0.5 * Math.exp(-(x * x + y * y));
+                    case "ripple" ->  0.01 * Math.sin(x * x + y * y);
                     case "ripple2" -> 0.3 * Math.sin(x) * Math.sin(y);
                     case "donut" -> {
                         double d = Math.sqrt(x * x + y * y) - 2;
@@ -406,15 +403,15 @@ public class NormalMapping {
             fps = 0.99f * fps + 0.01f * newFPS;
             lastTime = nowTime;
 
-            for (int i = 0; i < lights.length; i++) {
-                lights[i].update();
+            for (Light light : lights) {
+                light.update();
             }
 
             // Reset the buffer
             int[] outputArray = ((DataBufferInt) output.getRaster().getDataBuffer()).getData();
             Arrays.fill(outputArray, 0);
 
-            // Add inn the contribution of each light
+            // Add in the contribution of each light
             for (Light l : lights) {
                 computeLight(l);
             }
@@ -460,7 +457,7 @@ public class NormalMapping {
                 //   to 255, but not over.
                 float luminosity = Math.max(0, dotProduct / d3) * luminosityCorrection;
 
-                // Now we we compute the color values that hopefully end up in the range
+                // Now we compute the color values that hopefully end up in the range
                 // [0..255]. If the hack/trick with luminosityCorrection fails, we may
                 // occasionally go out of the range and generate an overflow in the masking.
                 // This can lead to some funky visual artifacts around the lights, but it
@@ -477,7 +474,7 @@ public class NormalMapping {
         }
 
         // This is a bit of a horrible hack, but it mostly works.
-        // Essencially, it tries to solve the "exposure" problem:
+        // Essentially, it tries to solve the "exposure" problem:
         // It is hard to know how much light a pixel will receive at most, and
         // we have to convert this value to a byte [0..255] at some point.
         // If we chose the "exposure" too low, we get a very dark picture
