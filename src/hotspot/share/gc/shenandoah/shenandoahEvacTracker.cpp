@@ -123,12 +123,14 @@ void ShenandoahEvacuationTracker::print_global_on(outputStream* st) {
 void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
                                                        ShenandoahEvacuationStats* workers,
                                                        ShenandoahEvacuationStats* mutators) {
-  st->print_cr("Workers: ");
-  workers->print_on(st);
-  st->cr();
-  st->print_cr("Mutators: ");
-  mutators->print_on(st);
-  st->cr();
+  if (ShenandoahEvacTracking) {
+    st->print_cr("Workers: ");
+    workers->print_on(st);
+    st->cr();
+    st->print_cr("Mutators: ");
+    mutators->print_on(st);
+    st->cr();
+  }
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
