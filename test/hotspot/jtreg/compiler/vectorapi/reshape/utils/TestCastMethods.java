@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,11 +127,17 @@ public class TestCastMethods {
         // from S 64
             // to X 64
             makePair(SSPEC64, BSPEC64),
+            makePair(SSPEC64, ISPEC64),
+            makePair(SSPEC64, ISPEC64, true),
+            makePair(SSPEC64, FSPEC64),
             // to X 128
             makePair(SSPEC64, BSPEC128),
             makePair(SSPEC64, ISPEC128),
             makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC64, LSPEC128),
+            makePair(SSPEC64, LSPEC128, true),
             makePair(SSPEC64, FSPEC128),
+            makePair(SSPEC64, DSPEC128),
             // to X 256
             makePair(SSPEC64, BSPEC256),
             makePair(SSPEC64, ISPEC256),
@@ -156,7 +162,10 @@ public class TestCastMethods {
             makePair(SSPEC128, BSPEC128),
             makePair(SSPEC128, ISPEC128),
             makePair(SSPEC128, ISPEC128, true),
+            makePair(SSPEC128, LSPEC128),
+            makePair(SSPEC128, LSPEC128, true),
             makePair(SSPEC128, FSPEC128),
+            makePair(SSPEC128, DSPEC128),
             // to X 256
             makePair(SSPEC128, BSPEC256),
             makePair(SSPEC128, ISPEC256),
@@ -228,6 +237,7 @@ public class TestCastMethods {
         // ====== from I ======
         // from I 64
             // to X 64
+            makePair(ISPEC64, SSPEC64),
             makePair(ISPEC64, FSPEC64),
             // to X 128
             makePair(ISPEC64, LSPEC128),
@@ -299,10 +309,12 @@ public class TestCastMethods {
         // ====== from L ======
         // from L 128
             // to X 64
+            makePair(LSPEC128, SSPEC64),
             makePair(LSPEC128, ISPEC64),
             makePair(LSPEC128, FSPEC64),
             makePair(LSPEC128, DSPEC64),
             // to X 128
+            makePair(LSPEC128, SSPEC128),
             makePair(LSPEC128, ISPEC128),
             makePair(LSPEC128, FSPEC128),
             makePair(LSPEC128, DSPEC128),
@@ -369,6 +381,7 @@ public class TestCastMethods {
         // ====== from F ======
         // from F 64
             // to X 64
+            makePair(FSPEC64, SSPEC64),
             makePair(FSPEC64, ISPEC64),
             // to X 128
             makePair(FSPEC64, ISPEC128),
@@ -433,10 +446,12 @@ public class TestCastMethods {
         // ====== from D ======
         // from D 128
             // to X 64
+            makePair(DSPEC128, SSPEC64),
             makePair(DSPEC128, ISPEC64),
             makePair(DSPEC128, LSPEC64),
             makePair(DSPEC128, FSPEC64),
             // to X 128
+            makePair(DSPEC128, SSPEC128),
             makePair(DSPEC128, ISPEC128),
             makePair(DSPEC128, LSPEC128),
             makePair(DSPEC128, FSPEC128),
@@ -634,18 +649,25 @@ public class TestCastMethods {
             makePair(SSPEC128, BSPEC64),
             makePair(SSPEC256, BSPEC128),
             makePair(SSPEC512, BSPEC256),
+            makePair(SSPEC64, ISPEC64),
             makePair(SSPEC64, ISPEC128),
             makePair(SSPEC128, ISPEC256),
             makePair(SSPEC256, ISPEC512),
+            makePair(SSPEC64, LSPEC128),
             makePair(SSPEC64, LSPEC256),
+            makePair(SSPEC128, LSPEC128),
             makePair(SSPEC128, LSPEC512),
+            makePair(SSPEC64, FSPEC64),
             makePair(SSPEC64, FSPEC128),
             makePair(SSPEC128, FSPEC256),
             makePair(SSPEC256, FSPEC512),
+            makePair(SSPEC64, DSPEC128),
             makePair(SSPEC64, DSPEC256),
+            makePair(SSPEC128, DSPEC128),
             makePair(SSPEC128, DSPEC512),
             makePair(ISPEC256, BSPEC64),
             makePair(ISPEC512, BSPEC128),
+            makePair(ISPEC64,  SSPEC64),
             makePair(ISPEC128, SSPEC64),
             makePair(ISPEC256, SSPEC128),
             makePair(ISPEC512, SSPEC256),
@@ -660,7 +682,9 @@ public class TestCastMethods {
             makePair(ISPEC128, DSPEC256),
             makePair(ISPEC256, DSPEC512),
             makePair(LSPEC512, BSPEC64),
+            makePair(LSPEC128, SSPEC64),
             makePair(LSPEC256, SSPEC64),
+            makePair(LSPEC128, SSPEC128),
             makePair(LSPEC512, SSPEC128),
             makePair(LSPEC128, ISPEC64),
             makePair(LSPEC256, ISPEC128),
@@ -673,6 +697,7 @@ public class TestCastMethods {
             makePair(LSPEC512, DSPEC512),
             makePair(FSPEC256, BSPEC64),
             makePair(FSPEC512, BSPEC128),
+            makePair(FSPEC64,  SSPEC64),
             makePair(FSPEC128, SSPEC64),
             makePair(FSPEC256, SSPEC128),
             makePair(FSPEC512, SSPEC256),
@@ -687,7 +712,9 @@ public class TestCastMethods {
             makePair(FSPEC128, DSPEC256),
             makePair(FSPEC256, DSPEC512),
             makePair(DSPEC512, BSPEC64),
+            makePair(DSPEC128, SSPEC64),
             makePair(DSPEC256, SSPEC64),
+            makePair(DSPEC128, SSPEC128),
             makePair(DSPEC512, SSPEC128),
             makePair(DSPEC128, ISPEC64),
             makePair(DSPEC256, ISPEC128),
@@ -736,14 +763,17 @@ public class TestCastMethods {
             makePair(BSPEC512, LSPEC256, true),
             makePair(BSPEC512, LSPEC512, true),
 
+            makePair(SSPEC64, ISPEC64, true),
             makePair(SSPEC64, ISPEC128, true),
             makePair(SSPEC64, ISPEC256, true),
             makePair(SSPEC64, ISPEC512, true),
+            makePair(SSPEC64, LSPEC128, true),
             makePair(SSPEC64, LSPEC256, true),
             makePair(SSPEC64, LSPEC512, true),
             makePair(SSPEC128, ISPEC128, true),
             makePair(SSPEC128, ISPEC256, true),
             makePair(SSPEC128, ISPEC512, true),
+            makePair(SSPEC128, LSPEC128, true),
             makePair(SSPEC128, LSPEC256, true),
             makePair(SSPEC128, LSPEC512, true),
             makePair(SSPEC256, ISPEC128, true),
@@ -774,23 +804,35 @@ public class TestCastMethods {
             makePair(BSPEC64, FSPEC128),
             makePair(SSPEC64, BSPEC64),
             makePair(SSPEC128, BSPEC64),
+            makePair(SSPEC64, ISPEC64),
             makePair(SSPEC64, ISPEC128),
+            makePair(SSPEC64,  LSPEC128),
+            makePair(SSPEC128, LSPEC128),
+            makePair(SSPEC64, FSPEC64),
             makePair(SSPEC64, FSPEC128),
+            makePair(SSPEC64,  DSPEC128),
+            makePair(SSPEC128, DSPEC128),
             makePair(ISPEC128, BSPEC64),
             makePair(ISPEC128, SSPEC64),
-            makePair(ISPEC64, LSPEC128),
+            makePair(ISPEC64,  SSPEC64),
+            makePair(ISPEC64,  LSPEC128),
             makePair(ISPEC64, FSPEC64),
             makePair(ISPEC128, FSPEC128),
             makePair(ISPEC64, DSPEC128),
+            makePair(LSPEC128, SSPEC64),
+            makePair(LSPEC128, SSPEC128),
             makePair(LSPEC128, ISPEC64),
             makePair(LSPEC128, FSPEC64),
             makePair(LSPEC128, DSPEC128),
             makePair(FSPEC128, BSPEC64),
+            makePair(FSPEC64, SSPEC64),
             makePair(FSPEC128, SSPEC64),
             makePair(FSPEC64, ISPEC64),
             makePair(FSPEC128, ISPEC128),
             makePair(FSPEC64, LSPEC128),
             makePair(FSPEC64, DSPEC128),
+            makePair(DSPEC128, SSPEC64),
+            makePair(DSPEC128, SSPEC128),
             makePair(DSPEC128, ISPEC64),
             makePair(DSPEC128, LSPEC128),
             makePair(DSPEC128, FSPEC64),
@@ -801,8 +843,11 @@ public class TestCastMethods {
             makePair(BSPEC128, SSPEC64, true),
             makePair(BSPEC128, SSPEC128, true),
             makePair(BSPEC128, ISPEC128, true),
+            makePair(SSPEC64, ISPEC64, true),
             makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC64, LSPEC128, true),
             makePair(SSPEC128, ISPEC128, true),
+            makePair(SSPEC128, LSPEC128, true),
             makePair(ISPEC64, LSPEC128, true)
     );
 }

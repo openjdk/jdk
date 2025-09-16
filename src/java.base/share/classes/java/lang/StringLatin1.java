@@ -54,6 +54,10 @@ final class StringLatin1 {
         return cp >=0 && cp <= 0xff;
     }
 
+    public static byte coderFromChar(char cp) {
+        return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
+    }
+
     public static int length(byte[] value) {
         return value.length;
     }
@@ -709,6 +713,21 @@ final class StringLatin1 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
+    }
+
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
+        value[i + 4] = (byte)c5;
+    }
+
     public static void putChar(byte[] val, int index, int c) {
         //assert (canEncode(c));
         val[index] = (byte)(c);
@@ -740,10 +759,6 @@ final class StringLatin1 {
         }
         return new String(Arrays.copyOfRange(val, index, index + len),
                           LATIN1);
-    }
-
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index, end, (byte)0);
     }
 
     // inflatedCopy byte[] -> char[]

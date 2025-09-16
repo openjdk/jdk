@@ -1,4 +1,4 @@
-File-Date: 2024-11-19
+File-Date: 2025-05-15
 %%
 Type: language
 Subtag: aa
@@ -5950,6 +5950,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: bql
+Description: Karian
 Description: Bilakura
 Added: 2009-07-29
 %%
@@ -9083,6 +9084,7 @@ Scope: collection
 %%
 Type: language
 Subtag: daz
+Description: Moi-Wadea
 Description: Dao
 Added: 2009-07-29
 %%
@@ -9290,6 +9292,8 @@ Type: language
 Subtag: dek
 Description: Dek
 Added: 2009-07-29
+Deprecated: 2024-12-12
+Preferred-Value: sqm
 %%
 Type: language
 Subtag: del
@@ -14082,6 +14086,12 @@ Added: 2009-07-29
 Macrolanguage: hmn
 %%
 Type: language
+Subtag: hnm
+Description: Hainanese
+Added: 2024-12-12
+Macrolanguage: zh
+%%
+Type: language
 Subtag: hnn
 Description: Hanunoo
 Added: 2009-07-29
@@ -16421,6 +16431,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: kci
+Description: Ngyian
 Description: Kamantan
 Added: 2009-07-29
 %%
@@ -21081,6 +21092,12 @@ Description: Laua
 Added: 2009-07-29
 %%
 Type: language
+Subtag: luh
+Description: Leizhou Chinese
+Added: 2024-12-12
+Macrolanguage: zh
+%%
+Type: language
 Subtag: lui
 Description: Luiseno
 Added: 2005-10-16
@@ -22850,6 +22867,8 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: mmi
+Description: Hember Avu
+Description: Amben
 Description: Musar
 Added: 2009-07-29
 %%
@@ -25197,8 +25216,9 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: new
-Description: Newari
 Description: Nepal Bhasa
+Description: Newar
+Description: Newari
 Added: 2005-10-16
 %%
 Type: language
@@ -26641,6 +26661,8 @@ Type: language
 Subtag: nte
 Description: Nathembo
 Added: 2009-07-29
+Deprecated: 2024-12-12
+Preferred-Value: eko
 %%
 Type: language
 Subtag: ntg
@@ -27183,6 +27205,12 @@ Type: language
 Subtag: oac
 Description: Oroch
 Added: 2009-07-29
+%%
+Type: language
+Subtag: oak
+Description: Noakhali
+Description: Noakhailla
+Added: 2025-05-14
 %%
 Type: language
 Subtag: oar
@@ -32145,6 +32173,12 @@ Type: language
 Subtag: sjb
 Description: Sajau Basap
 Added: 2009-07-29
+%%
+Type: language
+Subtag: sjc
+Description: Shaojiang Chinese
+Added: 2024-12-12
+Macrolanguage: zh
 %%
 Type: language
 Subtag: sjd
@@ -41302,6 +41336,11 @@ Description: Aluo
 Added: 2009-07-29
 %%
 Type: language
+Subtag: ynb
+Description: Yamben
+Added: 2025-02-06
+%%
+Type: language
 Subtag: ynd
 Description: Yandruwandha
 Added: 2009-07-29
@@ -43616,6 +43655,14 @@ Preferred-Value: hks
 Prefix: sgn
 %%
 Type: extlang
+Subtag: hnm
+Description: Hainanese
+Added: 2024-12-12
+Preferred-Value: hnm
+Prefix: zh
+Macrolanguage: zh
+%%
+Type: extlang
 Subtag: hos
 Description: Ho Chi Minh City Sign Language
 Added: 2009-07-29
@@ -43956,6 +44003,14 @@ Added: 2010-03-11
 Preferred-Value: ltg
 Prefix: lv
 Macrolanguage: lv
+%%
+Type: extlang
+Subtag: luh
+Description: Leizhou Chinese
+Added: 2024-12-12
+Preferred-Value: luh
+Prefix: zh
+Macrolanguage: zh
 %%
 Type: extlang
 Subtag: lvs
@@ -44391,6 +44446,14 @@ Added: 2009-07-29
 Preferred-Value: shu
 Prefix: ar
 Macrolanguage: ar
+%%
+Type: extlang
+Subtag: sjc
+Description: Shaojiang Chinese
+Added: 2024-12-12
+Preferred-Value: sjc
+Prefix: zh
+Macrolanguage: zh
 %%
 Type: extlang
 Subtag: slf
@@ -44844,6 +44907,11 @@ Description: Bangla
 Added: 2005-10-16
 %%
 Type: script
+Subtag: Berf
+Description: Beria Erfe
+Added: 2025-02-06
+%%
+Type: script
 Subtag: Bhks
 Description: Bhaiksuki
 Added: 2015-07-24
@@ -45130,6 +45198,12 @@ Type: script
 Subtag: Hmnp
 Description: Nyiakeng Puachue Hmong
 Added: 2017-08-13
+%%
+Type: script
+Subtag: Hntl
+Description: Han (Traditional variant) with Latin (alias for Hant +
+  Latn)
+Added: 2025-05-14
 %%
 Type: script
 Subtag: Hrkt
@@ -45634,6 +45708,12 @@ Type: script
 Subtag: Saur
 Description: Saurashtra
 Added: 2006-07-21
+%%
+Type: script
+Subtag: Seal
+Description: Seal
+Description: Small Seal
+Added: 2025-05-14
 %%
 Type: script
 Subtag: Sgnw
@@ -47919,6 +47999,12 @@ Comments: Written standard developed by Romanilha in 1853 and used by
   dóu Po, Escolo Gaston Febus, and others
 %%
 Type: variant
+Subtag: hanoi
+Description: The Hà Nội variant of Vietnamese
+Added: 2025-03-10
+Prefix: vi
+%%
+Type: variant
 Subtag: hepburn
 Description: Hepburn romanization
 Added: 2009-10-01
@@ -47947,6 +48033,12 @@ Description: Standard H-system orthographic fallback for spelling
   Esperanto
 Added: 2017-03-14
 Prefix: eo
+%%
+Type: variant
+Subtag: huett
+Description: The Huế (province Thừa Thiên) variant of Vietnamese
+Added: 2025-03-10
+Prefix: vi
 %%
 Type: variant
 Subtag: ijekavsk
@@ -48024,6 +48116,13 @@ Prefix: sa
 Comments: Preferred tag is cls
 %%
 Type: variant
+Subtag: leidentr
+Description: Ancient Egyptian in Leiden Unified Transliteration
+Added: 2025-02-06
+Prefix: egy
+Comments: Recommended by the International Association of Egyptologists
+%%
+Type: variant
 Subtag: lemosin
 Description: Limousin
 Added: 2018-04-22
@@ -48066,6 +48165,19 @@ Added: 2010-10-10
 Prefix: ru
 Comments: Russian orthography as established by the 1917/1918
   orthographic reforms
+%%
+Type: variant
+Subtag: mdcegyp
+Description: Ancient Egyptian hieroglyphs encoded in Manuel de Codage
+Added: 2025-02-06
+Prefix: egy
+%%
+Type: variant
+Subtag: mdctrans
+Description: Ancient Egyptian transliteration encoded in Manuel de
+  Codage
+Added: 2025-02-06
+Prefix: egy
 %%
 Type: variant
 Subtag: metelko
@@ -48253,6 +48365,12 @@ Description: Rumantsch Grischun
 Added: 2010-06-29
 Prefix: rm
 Comments: Supraregional Romansh written standard
+%%
+Type: variant
+Subtag: saigon
+Description: The Sài Gòn variant of Vietnamese
+Added: 2025-03-10
+Prefix: vi
 %%
 Type: variant
 Subtag: scotland

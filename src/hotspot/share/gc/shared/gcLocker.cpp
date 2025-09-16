@@ -25,15 +25,15 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "utilities/spinYield.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/ticks.hpp"
 
 // GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
@@ -65,8 +65,8 @@ volatile bool GCLocker::_is_gc_request_pending;
 DEBUG_ONLY(uint64_t GCLocker::_verify_in_cr_count;)
 
 void GCLocker::initialize() {
-  assert(Heap_lock != nullptr, "inv");
-  _lock = Heap_lock;
+  assert(JNICritical_lock != nullptr, "inv");
+  _lock = JNICritical_lock;
   _is_gc_request_pending = false;
 
   DEBUG_ONLY(_verify_in_cr_count = 0;)
@@ -82,12 +82,13 @@ bool GCLocker::is_active() {
 }
 
 void GCLocker::block() {
-  assert(_lock->is_locked(), "precondition");
-  assert(Atomic::load(&_is_gc_request_pending) == false, "precondition");
+  // _lock is held from the beginning of block() to the end of of unblock().
+  _lock->lock();
+  assert(AtomicAccess::load(&_is_gc_request_pending) == false, "precondition");
 
   GCLockerTimingDebugLogger logger("Thread blocked to start GC.");
 
-  Atomic::store(&_is_gc_request_pending, true);
+  AtomicAccess::store(&_is_gc_request_pending, true);
 
   // The _is_gc_request_pending and _jni_active_critical (inside
   // in_critical_atomic()) variables form a Dekker duality. On the GC side, the
@@ -111,15 +112,15 @@ void GCLocker::block() {
 #ifdef ASSERT
   // Matching the storestore in GCLocker::exit.
   OrderAccess::loadload();
-  assert(Atomic::load(&_verify_in_cr_count) == 0, "inv");
+  assert(AtomicAccess::load(&_verify_in_cr_count) == 0, "inv");
 #endif
 }
 
 void GCLocker::unblock() {
-  assert(_lock->is_locked(), "precondition");
-  assert(Atomic::load(&_is_gc_request_pending) == true, "precondition");
+  assert(AtomicAccess::load(&_is_gc_request_pending) == true, "precondition");
 
-  Atomic::store(&_is_gc_request_pending, false);
+  AtomicAccess::store(&_is_gc_request_pending, false);
+  _lock->unlock();
 }
 
 void GCLocker::enter_slow(JavaThread* current_thread) {
@@ -138,7 +139,7 @@ void GCLocker::enter_slow(JavaThread* current_thread) {
     // Same as fast path.
     OrderAccess::fence();
 
-    if (!Atomic::load(&_is_gc_request_pending)) {
+    if (!AtomicAccess::load(&_is_gc_request_pending)) {
       return;
     }
 

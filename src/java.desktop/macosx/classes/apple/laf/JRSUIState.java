@@ -90,10 +90,10 @@ public class JRSUIState {
 
     @Override
     public int hashCode() {
-        return (int)(encodedState ^ (encodedState >>> 32)) ^ getClass().hashCode();
+        return Long.hashCode(encodedState) ^ getClass().hashCode();
     }
 
-    public static class AnimationFrameState extends JRSUIState {
+    public static final class AnimationFrameState extends JRSUIState {
         final int animationFrame;
         int derivedAnimationFrame;
 
@@ -183,12 +183,11 @@ public class JRSUIState {
 
         @Override
         public int hashCode() {
-            final long bits = Double.doubleToRawLongBits(value);
-            return super.hashCode() ^ (int)bits ^ (int)(bits >>> 32);
+            return super.hashCode() ^ Double.hashCode(value);
         }
     }
 
-    public static class TitleBarHeightState extends ValueState {
+    public static final class TitleBarHeightState extends ValueState {
         TitleBarHeightState(final long encodedState, final double value) {
             super(encodedState, value);
         }
@@ -205,7 +204,7 @@ public class JRSUIState {
         }
     }
 
-    public static class ScrollBarState extends ValueState {
+    public static final class ScrollBarState extends ValueState {
         final double thumbProportion;
         double derivedThumbProportion;
         final double thumbStart;
@@ -258,7 +257,7 @@ public class JRSUIState {
         @Override
         public int hashCode() {
             final long bits = Double.doubleToRawLongBits(thumbProportion) ^ Double.doubleToRawLongBits(thumbStart);
-            return super.hashCode() ^ (int)bits ^ (int)(bits >>> 32);
+            return super.hashCode() ^ Long.hashCode(bits);
         }
     }
 }

@@ -43,7 +43,6 @@ class LIR_Op;
 class ciType;
 class ValueType;
 class LIR_OpVisitState;
-class FpuStackSim;
 
 //---------------------------------------------------------------------
 //                 LIR Operands
@@ -236,9 +235,8 @@ class LIR_Opr {
     , virtual_bits   = 1
     , is_xmm_bits    = 1
     , last_use_bits  = 1
-    , is_fpu_stack_offset_bits = 1        // used in assertion checking on x86 for FPU stack slot allocation
     , non_data_bits  = kind_bits + type_bits + size_bits + destroys_bits + virtual_bits
-                       + is_xmm_bits + last_use_bits + is_fpu_stack_offset_bits
+                       + is_xmm_bits + last_use_bits
     , data_bits      = BitsPerInt - non_data_bits
     , reg_bits       = data_bits / 2      // for two registers in one value encoding
   };
@@ -249,8 +247,7 @@ class LIR_Opr {
     , size_shift     = type_shift     + type_bits
     , destroys_shift = size_shift     + size_bits
     , last_use_shift = destroys_shift + destroys_bits
-    , is_fpu_stack_offset_shift = last_use_shift + last_use_bits
-    , virtual_shift  = is_fpu_stack_offset_shift + is_fpu_stack_offset_bits
+    , virtual_shift = last_use_shift + last_use_bits
     , is_xmm_shift   = virtual_shift + virtual_bits
     , data_shift     = is_xmm_shift + is_xmm_bits
     , reg1_shift = data_shift
@@ -268,12 +265,11 @@ class LIR_Opr {
     , type_mask      = right_n_bits(type_bits) << type_shift
     , size_mask      = right_n_bits(size_bits) << size_shift
     , last_use_mask  = right_n_bits(last_use_bits) << last_use_shift
-    , is_fpu_stack_offset_mask = right_n_bits(is_fpu_stack_offset_bits) << is_fpu_stack_offset_shift
     , virtual_mask   = right_n_bits(virtual_bits) << virtual_shift
     , is_xmm_mask    = right_n_bits(is_xmm_bits) << is_xmm_shift
     , pointer_mask   = right_n_bits(pointer_bits)
     , lower_reg_mask = right_n_bits(reg_bits)
-    , no_type_mask   = (int)(~(type_mask | last_use_mask | is_fpu_stack_offset_mask))
+    , no_type_mask   = (int)(~(type_mask | last_use_mask))
   };
 
   uint32_t data() const                          { return (uint32_t)value() >> data_shift; }
@@ -426,9 +422,7 @@ class LIR_Opr {
   BasicType type_register() const  { assert(is_register() || is_stack(), "type check"); return as_BasicType(type_field_valid());  }
 
   bool is_last_use() const         { assert(is_register(), "only works for registers"); return (value() & last_use_mask) != 0; }
-  bool is_fpu_stack_offset() const { assert(is_register(), "only works for registers"); return (value() & is_fpu_stack_offset_mask) != 0; }
   LIR_Opr make_last_use()          { assert(is_register(), "only works for registers"); return (LIR_Opr)(value() | last_use_mask); }
-  LIR_Opr make_fpu_stack_offset()  { assert(is_register(), "only works for registers"); return (LIR_Opr)(value() | is_fpu_stack_offset_mask); }
 
 
   int single_stack_ix() const  { assert(is_single_stack() && !is_virtual(), "type check"); return (int)data(); }
@@ -885,7 +879,6 @@ class      LIR_OpConvert;
 class      LIR_OpAllocObj;
 class      LIR_OpReturn;
 class    LIR_Op2;
-class    LIR_OpDelay;
 class    LIR_Op3;
 class      LIR_OpAllocArray;
 class    LIR_Op4;
@@ -912,7 +905,6 @@ enum LIR_Code {
       , lir_nop
       , lir_std_entry
       , lir_osr_entry
-      , lir_fpop_raw
       , lir_breakpoint
       , lir_rtcall
       , lir_membar
@@ -926,8 +918,6 @@ enum LIR_Code {
       , lir_on_spin_wait
   , end_op0
   , begin_op1
-      , lir_fxch
-      , lir_fld
       , lir_push
       , lir_pop
       , lir_null_check
@@ -994,9 +984,6 @@ enum LIR_Code {
     , lir_lock
     , lir_unlock
   , end_opLock
-  , begin_delay_slot
-    , lir_delay_slot
-  , end_delay_slot
   , begin_opTypeCheck
     , lir_instanceof
     , lir_checkcast
@@ -1070,7 +1057,6 @@ class LIR_Op: public CompilationResourceObj {
   unsigned short _flags;
   CodeEmitInfo* _info;
   int           _id;     // value id for register allocation
-  int           _fpu_pop_count;
   Instruction*  _source; // for debugging
 
   static void print_condition(outputStream* out, LIR_Condition cond) PRODUCT_RETURN;
@@ -1090,7 +1076,6 @@ class LIR_Op: public CompilationResourceObj {
     , _flags(0)
     , _info(nullptr)
     , _id(-1)
-    , _fpu_pop_count(0)
     , _source(nullptr) {}
 
   LIR_Op(LIR_Code code, LIR_Opr result, CodeEmitInfo* info)
@@ -1104,7 +1089,6 @@ class LIR_Op: public CompilationResourceObj {
     , _flags(0)
     , _info(info)
     , _id(-1)
-    , _fpu_pop_count(0)
     , _source(nullptr) {}
 
   CodeEmitInfo* info() const                  { return _info;   }
@@ -1125,11 +1109,6 @@ class LIR_Op: public CompilationResourceObj {
   int id()             const                  { return _id;     }
   void set_id(int id)                         { _id = id; }
 
-  // FPU stack simulation helpers -- only used on Intel
-  void set_fpu_pop_count(int count)           { assert(count >= 0 && count <= 1, "currently only 0 and 1 are valid"); _fpu_pop_count = count; }
-  int  fpu_pop_count() const                  { return _fpu_pop_count; }
-  bool pop_fpu_stack()                        { return _fpu_pop_count > 0; }
-
   Instruction* source() const                 { return _source; }
   void set_source(Instruction* ins)           { _source = ins; }
 
@@ -1141,7 +1120,6 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpCall* as_OpCall() { return nullptr; }
   virtual LIR_OpJavaCall* as_OpJavaCall() { return nullptr; }
   virtual LIR_OpLabel* as_OpLabel() { return nullptr; }
-  virtual LIR_OpDelay* as_OpDelay() { return nullptr; }
   virtual LIR_OpLock* as_OpLock() { return nullptr; }
   virtual LIR_OpAllocArray* as_OpAllocArray() { return nullptr; }
   virtual LIR_OpAllocObj* as_OpAllocObj() { return nullptr; }
@@ -1299,6 +1277,8 @@ public:
   int flags() const                              { return _flags; }
   ciArrayKlass* expected_type() const            { return _expected_type; }
   ArrayCopyStub* stub() const                    { return _stub; }
+  static int get_initial_copy_flags()            { return LIR_OpArrayCopy::unaligned |
+                                                          LIR_OpArrayCopy::overlapping; }
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpArrayCopy* as_OpArrayCopy() { return this; }
@@ -1899,25 +1879,6 @@ class LIR_OpLoadKlass: public LIR_Op {
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return this; }
   virtual void emit_code(LIR_Assembler* masm);
   void print_instr(outputStream* out) const PRODUCT_RETURN;
-};
-
-class LIR_OpDelay: public LIR_Op {
- friend class LIR_OpVisitState;
-
- private:
-  LIR_Op* _op;
-
- public:
-  LIR_OpDelay(LIR_Op* op, CodeEmitInfo* info):
-    LIR_Op(lir_delay_slot, LIR_OprFact::illegalOpr, info),
-    _op(op) {
-    assert(op->code() == lir_nop, "should be filling with nops");
-  }
-  virtual void emit_code(LIR_Assembler* masm);
-  virtual LIR_OpDelay* as_OpDelay() { return this; }
-  void print_instr(outputStream* out) const PRODUCT_RETURN;
-  LIR_Op* delay_op() const { return _op; }
-  CodeEmitInfo* call_info() const { return info(); }
 };
 
 #ifdef ASSERT

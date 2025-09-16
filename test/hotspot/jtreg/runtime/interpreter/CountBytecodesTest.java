@@ -26,10 +26,11 @@
  * @test
  * @bug 8350642
  * @requires vm.debug & vm.bits == "64"
+ * @requires vm.flagless
  * @summary Test the output for CountBytecodes and validate that the counter
  *          does not overflow for more than 2^32 bytecodes counted.
  * @library /test/lib
- * @run main/othervm/timeout=300 CountBytecodesTest
+ * @run driver/timeout=300 CountBytecodesTest
  */
 
 import java.util.regex.Matcher;
@@ -61,7 +62,7 @@ public class CountBytecodesTest {
                 // while maintaining execution of more than 2^32 bytecodes.
             }
         } else {
-            OutputAnalyzer output = ProcessTools.executeTestJava("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
             output.shouldHaveExitValue(0);
 
             // Output format: [BytecodeCounter::counter_value = 38676232802]

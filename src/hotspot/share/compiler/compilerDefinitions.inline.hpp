@@ -26,6 +26,7 @@
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
 #include "compiler/compilerDefinitions.hpp"
+
 #include "compiler/compiler_globals.hpp"
 #include "runtime/arguments.hpp"
 
@@ -128,6 +129,19 @@ inline bool CompilerConfig::is_c1_profiling() {
 
 inline bool CompilerConfig::is_c2_or_jvmci_compiler_enabled() {
   return is_c2_enabled() || is_jvmci_compiler_enabled();
+}
+
+// Return type of most optimizing compiler which is used
+inline CompilerType CompilerConfig::compiler_type() {
+  CompilerType compiler_type = CompilerType::compiler_none; // Interpreter only
+  if (CompilerConfig::is_c2_enabled()) {
+    compiler_type = CompilerType::compiler_c2;
+  } else if (CompilerConfig::is_jvmci_compiler_enabled()) {
+    compiler_type = CompilerType::compiler_jvmci;
+  } else if (CompilerConfig::is_c1_enabled()) {
+    compiler_type = CompilerType::compiler_c1;
+  }
+  return compiler_type;
 }
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP

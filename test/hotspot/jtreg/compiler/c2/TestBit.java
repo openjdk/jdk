@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @library /test/lib /
  *
  * @requires vm.flagless
- * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64le" | os.arch == "riscv64"
+ * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"
  * @requires vm.debug == true & vm.compiler2.enabled
  *
  * @run driver compiler.c2.TestBit

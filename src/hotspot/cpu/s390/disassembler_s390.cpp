@@ -62,7 +62,7 @@ address Disassembler::decode_instruction0(address here, outputStream * st, addre
 
   if (Assembler::is_z_nop((long)instruction_2bytes)) {
 #if 1
-    st->print("nop     ");  // fill up to operand column, leads to better code comment alignment
+    st->print("nop     ");  // fill up to operand column, leads to better code comment alignment
     next = here + 2;
 #else
     // Compact disassembler output. Does not work the easy way.
@@ -76,7 +76,7 @@ address Disassembler::decode_instruction0(address here, outputStream * st, addre
       instruction_2bytes   = *(uint16_t*)(here+2*n_nops);
     }
     if (n_nops <= 4) { // do not group few subsequent nops
-      st->print("nop     ");  // fill up to operand column, leads to better code comment alignment
+      st->print("nop     ");  // fill up to operand column, leads to better code comment alignment
       next = here + 2;
     } else {
       st->print("nop     count=%d", n_nops);

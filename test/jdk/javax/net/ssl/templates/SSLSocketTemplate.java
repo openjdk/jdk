@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
     /*
      * What's the server address?  null means binding to the wildcard.
      */
-    protected volatile InetAddress serverAddress = null;
+    protected volatile InetAddress serverAddress = InetAddress.getLoopbackAddress();
 
     /*
      * Define the server side of the test.
@@ -177,13 +177,8 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         // kick start the server side service
         SSLContext context = createServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
-        InetAddress serverAddress = this.serverAddress;
-        SSLServerSocket sslServerSocket = serverAddress == null ?
-                (SSLServerSocket)sslssf.createServerSocket(serverPort)
-                : (SSLServerSocket)sslssf.createServerSocket();
-        if (serverAddress != null) {
-            sslServerSocket.bind(new InetSocketAddress(serverAddress, serverPort));
-        }
+        SSLServerSocket sslServerSocket = (SSLServerSocket)sslssf.createServerSocket(
+                serverPort, 0, serverAddress);
         configureServerSocket(sslServerSocket);
         serverPort = sslServerSocket.getLocalPort();
 
@@ -245,7 +240,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         //
         // The server side takes care of the issue if the server cannot
         // get started in 90 seconds.  The client side would just ignore
-        // the test case if the serer is not ready.
+        // the test case if the server is not ready.
         boolean serverIsReady =
                 serverCondition.await(90L, TimeUnit.SECONDS);
         if (!serverIsReady) {
@@ -271,10 +266,8 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         try (SSLSocket sslSocket = (SSLSocket)sslsf.createSocket()) {
             try {
                 configureClientSocket(sslSocket);
-                InetAddress serverAddress = this.serverAddress;
-                InetSocketAddress connectAddress = serverAddress == null
-                        ? new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort)
-                        : new InetSocketAddress(serverAddress, serverPort);
+                InetSocketAddress connectAddress = new InetSocketAddress(serverAddress,
+                        serverPort);
                 sslSocket.connect(connectAddress, 15000);
             } catch (IOException ioe) {
                 // The server side may be impacted by naughty test cases or
@@ -378,7 +371,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
          * Check various exception conditions.
          */
         if ((local != null) && (remote != null)) {
-            // If both failed, return the curthread's exception.
+            // If both failed, return the current thread's exception.
             local.addSuppressed(remote);
             exception = local;
         } else if (local != null) {

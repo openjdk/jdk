@@ -43,7 +43,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
@@ -51,8 +50,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread),
@@ -169,7 +168,7 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
   }
 }
 
-void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
+void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame_count) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
   HandleMark hm(current);
@@ -204,8 +203,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
-    }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+    } else if (thread()->osthread()->get_state() == OBJECT_WAIT &&
+        // If this is a carrier thread with mounted virtual thread this is reported for the virtual thread.
+        (is_virtual || !thread()->is_vthread_mounted())) {
       // We are waiting on an Object monitor but Object.wait() isn't the
       // top-frame, so we should be waiting on a Class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ final class SettingsManager {
         for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
             EventConfiguration ec = JVMSupport.getConfiguration(eventClass);
             if (ec != null ) {
-                PlatformEventType eventType = ec.getPlatformEventType();
+                PlatformEventType eventType = ec.platformEventType();
                 if (eventType.isMarkedForInstrumentation()) {
                     classes.add(eventClass);
                     eventType.markForInstrumentation(false);
@@ -194,7 +194,7 @@ final class SettingsManager {
             String key = entry.getKey();
             String value = entry.getValue();
             int index = key.indexOf("#");
-            if (index > 1 && index < key.length() - 2) {
+            if (index > 0 && index < key.length() - 1) {
                 String eventName = key.substring(0, index);
                 eventName = Utils.upgradeLegacyJDKEvent(eventName);
                 InternalSetting s = internals.get(eventName);

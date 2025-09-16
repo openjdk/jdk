@@ -106,7 +106,7 @@ Prefer having checks inside test code.
 
 Not only does having test logic outside, e.g. verification method,
 depending on asserts in product code contradict with several items
-above but also decreases test’s readability and stability. It is much
+above but also decreases test's readability and stability. It is much
 easier to understand that a test is testing when all testing logic is
 located inside a test or nearby in shared test libraries. As a rule of
 thumb, the closer a check to a test, the better.
@@ -119,7 +119,7 @@ Prefer `EXPECT` over `ASSERT` if possible.
 
 This is related to the [informativeness](#informativeness) property of
 tests, information for other checks can help to better localize a
-defect’s root-cause. One should use `ASSERT` if it is impossible to
+defect's root-cause. One should use `ASSERT` if it is impossible to
 continue test execution or if it does not make much sense. Later in
 the text, `EXPECT` forms will be used to refer to both
 `ASSERT/EXPECT`.
@@ -160,7 +160,7 @@ value of the difference between `v1` and `v2` is not greater than `eps`.
 
 Use string special macros for C strings comparisons.
 
-`EXPECT_EQ` just compares pointers’ values, which is hardly what one
+`EXPECT_EQ` just compares pointers' values, which is hardly what one
 wants comparing C strings. GoogleTest provides `EXPECT_STREQ` and
 `EXPECT_STRNE` macros to compare C string contents. There are also
 case-insensitive versions `EXPECT_STRCASEEQ`, `EXPECT_STRCASENE`.
@@ -226,7 +226,7 @@ subsystem, etc.
 
 This naming scheme helps to find tests, filter them and simplifies
 test failure analysis. For example, class `Foo` - test group `Foo`,
-compiler logging subsystem - test group `CompilerLogging`, G1 GC — test
+compiler logging subsystem - test group `CompilerLogging`, G1 GC - test
 group `G1GC`, and so forth.
 
 ### Filename
@@ -287,7 +287,7 @@ Fixture classes should be named after tested classes, subsystems, etc
 
 All test purpose friends should have either `Test` or `Testable` suffix.
 
-It greatly simplifies understanding of friendship’s purpose and allows
+It greatly simplifies understanding of friendship's purpose and allows
 statically check that private members are not exposed unexpectedly.
 Having `FooTest` as a friend of `Foo` without any comments will be
 understood as a necessary evil to get testability.
@@ -397,7 +397,7 @@ and filter out inapplicable tests.
 Restore changed flags.
 
 It is quite common for tests to configure JVM in a certain way
-changing flags’ values. GoogleTest provides two ways to set up
+changing flags' values. GoogleTest provides two ways to set up
 environment before a test and restore it afterward: using either
 constructor and destructor or `SetUp` and `TearDown` functions. Both ways
 require to use a test fixture class, which sometimes is too wordy. The
@@ -406,7 +406,7 @@ be used in such cases to restore/set values.
 
 Caveats:
 
-* Changing a flag’s value could break the invariants between flags' values and hence could lead to unexpected/unsupported JVM state.
+* Changing a flag's value could break the invariants between flags' values and hence could lead to unexpected/unsupported JVM state.
 
 * `FLAG_SET_*` macros can change more than one flag (in order to
 maintain invariants) so it is hard to predict what flags will be

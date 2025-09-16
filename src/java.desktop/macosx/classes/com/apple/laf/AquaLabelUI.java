@@ -39,23 +39,26 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
-public class AquaLabelUI extends BasicLabelUI {
+public final class AquaLabelUI extends BasicLabelUI {
     private static final RecyclableSingleton<AquaLabelUI> aquaLabelUI = new RecyclableSingletonFromDefaultConstructor<AquaLabelUI>(AquaLabelUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
         return aquaLabelUI.get();
     }
 
+    @Override
     protected void installListeners(final JLabel c) {
         super.installListeners(c);
         AquaUtilControlSize.addSizePropertyListener(c);
     }
 
+    @Override
     protected void uninstallListeners(final JLabel c) {
         AquaUtilControlSize.removeSizePropertyListener(c);
         super.uninstallListeners(c);
     }
 
+    @Override
     protected void paintEnabledText(final JLabel l, final Graphics g, final String s, final int textX, final int textY) {
         int mnemIndex = l.getDisplayedMnemonicIndex();
         if (MnemonicHandler.isMnemonicHidden()) {
@@ -73,6 +76,7 @@ public class AquaLabelUI extends BasicLabelUI {
      * @see #paint
      * @see #paintEnabledText
      */
+    @Override
     protected void paintDisabledText(final JLabel l, final Graphics g, final String s, final int textX, final int textY) {
         int accChar = l.getDisplayedMnemonicIndex();
         if (MnemonicHandler.isMnemonicHidden()) {

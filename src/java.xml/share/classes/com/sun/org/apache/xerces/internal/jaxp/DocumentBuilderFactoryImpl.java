@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,7 +22,6 @@ package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -30,8 +29,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
-import jdk.xml.internal.JdkProperty;
+
+import jdk.xml.internal.JdkXmlConfig;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -39,7 +41,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: Nov 2024
+ * @LastModified: May 2025
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -54,8 +56,15 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     private boolean fSecureProcess = true;
 
     // used to verify attributes
-    XMLSecurityManager fSecurityManager = new XMLSecurityManager(true);
-    XMLSecurityPropertyManager fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+    XMLSecurityManager fSecurityManager;
+    XMLSecurityPropertyManager fSecurityPropertyMgr;
+
+    public DocumentBuilderFactoryImpl() {
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        // security (property) managers updated with current system properties
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+    }
 
     /**
      * Creates a new instance of a {@link javax.xml.parsers.DocumentBuilder}
@@ -114,20 +123,13 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
             attributes = new HashMap<>();
         }
 
-        //check if the property is managed by security manager
-        String pName;
-        if ((pName = fSecurityManager.find(name)) != null) {
-            // as the qName is deprecated, let the manager decide whether the
-            // value shall be changed
-            fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value);
-            attributes.put(pName, fSecurityManager.getLimitAsString(pName));
+        if (JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, value)) {
+            // necessary as DocumentBuilder recreate property manager
+            // remove this line once that's changed
+            attributes.put(name, value);
             // no need to create a DocumentBuilderImpl
             return;
-        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
-            attributes.put(pName, value);
-            return;
         }
-
         attributes.put(name, value);
 
         // Test the attribute name by possibly throwing an exception
@@ -146,13 +148,10 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     public Object getAttribute(String name)
         throws IllegalArgumentException
     {
-
         //check if the property is managed by security manager
-        String pName;
-        if ((pName = fSecurityManager.find(name)) != null) {
-            return fSecurityManager.getLimitAsString(pName);
-        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
-            return attributes.get(pName);
+        String value;
+        if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+            return value;
         }
 
         // See if it's in the attributes Map

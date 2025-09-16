@@ -25,18 +25,19 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -137,7 +138,9 @@ public class Arguments {
     // CLIOptions is public for DeployParamsTest
     public enum CLIOptions {
         PACKAGE_TYPE("type", "t", OptionCategories.PROPERTY, () -> {
-            context().deployParams.setTargetFormat(popArg());
+            var type = popArg();
+            context().deployParams.setTargetFormat(type);
+            setOptionValue("type", type);
         }),
 
         INPUT ("input", "i", OptionCategories.PROPERTY, () -> {
@@ -346,16 +349,13 @@ public class Arguments {
 
         WIN_UPDATE_URL ("win-update-url", OptionCategories.PLATFORM_WIN),
 
-        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-menu", true);
-        }),
+        WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-menu")),
 
         WIN_MENU_GROUP ("win-menu-group", OptionCategories.PLATFORM_WIN),
 
-        WIN_SHORTCUT_HINT ("win-shortcut",
-                OptionCategories.PLATFORM_WIN, () -> {
-            setOptionValue("win-shortcut", true);
-        }),
+        WIN_SHORTCUT_HINT ("win-shortcut", OptionCategories.PLATFORM_WIN,
+                createArgumentWithOptionalValueAction("win-shortcut")),
 
         WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
                 OptionCategories.PLATFORM_WIN, () -> {
@@ -394,10 +394,8 @@ public class Arguments {
         LINUX_PACKAGE_DEPENDENCIES ("linux-package-deps",
                 OptionCategories.PLATFORM_LINUX),
 
-        LINUX_SHORTCUT_HINT ("linux-shortcut",
-                OptionCategories.PLATFORM_LINUX, () -> {
-            setOptionValue("linux-shortcut", true);
-        }),
+        LINUX_SHORTCUT_HINT ("linux-shortcut", OptionCategories.PLATFORM_LINUX,
+                createArgumentWithOptionalValueAction("linux-shortcut")),
 
         LINUX_MENU_GROUP ("linux-menu-group", OptionCategories.PLATFORM_LINUX);
 
@@ -476,8 +474,31 @@ public class Arguments {
             context().pos++;
         }
 
+        private static void prevArg() {
+            Objects.checkIndex(context().pos, context().argList.size());
+            context().pos--;
+        }
+
         private static boolean hasNextArg() {
             return context().pos < context().argList.size();
+        }
+
+        private static Runnable createArgumentWithOptionalValueAction(String option) {
+            Objects.requireNonNull(option);
+            return () -> {
+                nextArg();
+                if (hasNextArg()) {
+                    var value = getArg();
+                    if (value.startsWith("-")) {
+                        prevArg();
+                        setOptionValue(option, true);
+                    } else {
+                        setOptionValue(option, value);
+                    }
+                } else {
+                    setOptionValue(option, true);
+                }
+            };
         }
     }
 
@@ -551,16 +572,13 @@ public class Arguments {
             generateBundle(bp.getBundleParamsAsMap());
             return true;
         } catch (Exception e) {
-            if (Log.isVerbose()) {
-                Log.verbose(e);
-            } else {
-                String msg1 = e.getMessage();
-                Log.fatalError(msg1);
-                if (e.getCause() != null && e.getCause() != e) {
-                    String msg2 = e.getCause().getMessage();
-                    if (msg2 != null && !msg1.contains(msg2)) {
-                        Log.fatalError(msg2);
-                    }
+            Log.verbose(e);
+            String msg1 = e.getMessage();
+            Log.fatalError(msg1);
+            if (e.getCause() != null && e.getCause() != e) {
+                String msg2 = e.getCause().getMessage();
+                if (msg2 != null && !msg1.contains(msg2)) {
+                    Log.fatalError(msg2);
                 }
             }
             return false;

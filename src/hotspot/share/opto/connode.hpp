@@ -46,6 +46,10 @@ public:
   virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
   virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
 
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) {
+    return Node::Ideal(phase, can_reshape);
+  }
+
   // Polymorphic factory method:
   static ConNode* make(const Type *t);
 };

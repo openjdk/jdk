@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,8 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.XSettings;
 import sun.awt.datatransfer.DataTransferer;
+import sun.awt.screencast.ScreencastHelper;
+import sun.awt.screencast.XdgDesktopPortal;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
 import sun.font.FontConfigManager;
@@ -1521,16 +1523,21 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         awtLock();
         try {
             if (numberOfButtons == 0) {
-                numberOfButtons = getNumberOfButtonsImpl();
-                numberOfButtons = (numberOfButtons > MAX_BUTTONS_SUPPORTED)? MAX_BUTTONS_SUPPORTED : numberOfButtons;
-                //4th and 5th buttons are for wheel and shouldn't be reported as buttons.
-                //If we have more than 3 physical buttons and a wheel, we report N-2 buttons.
-                //If we have 3 physical buttons and a wheel, we report 3 buttons.
-                //If we have 1,2,3 physical buttons, we report it as is i.e. 1,2 or 3 respectively.
-                if (numberOfButtons >=5) {
-                    numberOfButtons -= 2;
-                } else if (numberOfButtons == 4 || numberOfButtons ==5){
+                if (XdgDesktopPortal.isRemoteDesktop()
+                        && ScreencastHelper.isAvailable()) {
                     numberOfButtons = 3;
+                } else {
+                    numberOfButtons = getNumberOfButtonsImpl();
+                    numberOfButtons = (numberOfButtons > MAX_BUTTONS_SUPPORTED) ? MAX_BUTTONS_SUPPORTED : numberOfButtons;
+                    //4th and 5th buttons are for wheel and shouldn't be reported as buttons.
+                    //If we have more than 3 physical buttons and a wheel, we report N-2 buttons.
+                    //If we have 3 physical buttons and a wheel, we report 3 buttons.
+                    //If we have 1,2,3 physical buttons, we report it as is i.e. 1,2 or 3 respectively.
+                    if (numberOfButtons >= 5) {
+                        numberOfButtons -= 2;
+                    } else if (numberOfButtons == 4 || numberOfButtons == 5) {
+                        numberOfButtons = 3;
+                    }
                 }
             }
             //Assume don't have to re-query the number again and again.

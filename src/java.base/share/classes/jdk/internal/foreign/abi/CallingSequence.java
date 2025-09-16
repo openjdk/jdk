@@ -185,9 +185,7 @@ public class CallingSequence {
     }
 
     public int capturedStateMask() {
-        return linkerOptions.capturedCallState()
-                .mapToInt(CapturableState::mask)
-                .reduce(0, (a, b) -> a | b);
+        return linkerOptions.capturedCallStateMask();
     }
 
     public boolean needsTransition() {

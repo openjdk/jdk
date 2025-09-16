@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,25 @@
 class Thread;
 
 class SuspendedThreadTaskContext {
-public:
-  SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
-  Thread* thread() const { return _thread; }
-  void* ucontext() const { return _ucontext; }
-private:
+ private:
   Thread* _thread;
   void* _ucontext;
+ public:
+  SuspendedThreadTaskContext(Thread* thread, void* ucontext) : _thread(thread), _ucontext(ucontext) {}
+  Thread* thread() const { return _thread; }
+  void* ucontext() const { return _ucontext; }
 };
 
 class SuspendedThreadTask {
-public:
-  SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-  void run();
-  virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-protected:
-  ~SuspendedThreadTask() {}
-private:
-  void internal_do_task();
+ private:
   Thread* _thread;
-  bool _done;
+  void internal_do_task();
+ protected:
+  ~SuspendedThreadTask() {}
+ public:
+  SuspendedThreadTask(Thread* thread) : _thread(thread) {}
+  void run() { internal_do_task(); }
+  virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
 };
 
 #endif // SHARE_RUNTIME_SUSPENDEDTHREADTASK_HPP

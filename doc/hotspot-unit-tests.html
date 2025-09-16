@@ -189,7 +189,7 @@ wants to find) and design tests using those models.</p>
 <p>Prefer having checks inside test code.</p>
 <p>Not only does having test logic outside, e.g. verification method,
 depending on asserts in product code contradict with several items above
-but also decreases test’s readability and stability. It is much easier
+but also decreases test's readability and stability. It is much easier
 to understand that a test is testing when all testing logic is located
 inside a test or nearby in shared test libraries. As a rule of thumb,
 the closer a check to a test, the better.</p>
@@ -198,7 +198,7 @@ the closer a check to a test, the better.</p>
 <p>Prefer <code>EXPECT</code> over <code>ASSERT</code> if possible.</p>
 <p>This is related to the <a href="#informativeness">informativeness</a>
 property of tests, information for other checks can help to better
-localize a defect’s root-cause. One should use <code>ASSERT</code> if it
+localize a defect's root-cause. One should use <code>ASSERT</code> if it
 is impossible to continue test execution or if it does not make much
 sense. Later in the text, <code>EXPECT</code> forms will be used to
 refer to both <code>ASSERT/EXPECT</code>.</p>
@@ -235,7 +235,7 @@ which checks that the absolute value of the difference between
 <code>eps</code>.</p>
 <h3 id="c-string-comparison">C string comparison</h3>
 <p>Use string special macros for C strings comparisons.</p>
-<p><code>EXPECT_EQ</code> just compares pointers’ values, which is
+<p><code>EXPECT_EQ</code> just compares pointers' values, which is
 hardly what one wants comparing C strings. GoogleTest provides
 <code>EXPECT_STREQ</code> and <code>EXPECT_STRNE</code> macros to
 compare C string contents. There are also case-insensitive versions
@@ -293,7 +293,7 @@ subsystem, etc.</p>
 <p>This naming scheme helps to find tests, filter them and simplifies
 test failure analysis. For example, class <code>Foo</code> - test group
 <code>Foo</code>, compiler logging subsystem - test group
-<code>CompilerLogging</code>, G1 GC — test group <code>G1GC</code>, and
+<code>CompilerLogging</code>, G1 GC - test group <code>G1GC</code>, and
 so forth.</p>
 <h3 id="filename">Filename</h3>
 <p>A test file must have <code>test_</code> prefix and <code>.cpp</code>
@@ -345,7 +345,7 @@ name starts or ends with an underscore are enough to be safe.</p>
 <h3 id="friend-classes">Friend classes</h3>
 <p>All test purpose friends should have either <code>Test</code> or
 <code>Testable</code> suffix.</p>
-<p>It greatly simplifies understanding of friendship’s purpose and
+<p>It greatly simplifies understanding of friendship's purpose and
 allows statically check that private members are not exposed
 unexpectedly. Having <code>FooTest</code> as a friend of
 <code>Foo</code> without any comments will be understood as a necessary
@@ -435,7 +435,7 @@ inapplicable tests.</p>
 <h3 id="flag-restoring">Flag restoring</h3>
 <p>Restore changed flags.</p>
 <p>It is quite common for tests to configure JVM in a certain way
-changing flags’ values. GoogleTest provides two ways to set up
+changing flags' values. GoogleTest provides two ways to set up
 environment before a test and restore it afterward: using either
 constructor and destructor or <code>SetUp</code> and
 <code>TearDown</code> functions. Both ways require to use a test fixture
@@ -444,7 +444,7 @@ class, which sometimes is too wordy. The simpler facilities like
 be used in such cases to restore/set values.</p>
 <p>Caveats:</p>
 <ul>
-<li><p>Changing a flag’s value could break the invariants between flags'
+<li><p>Changing a flag's value could break the invariants between flags'
 values and hence could lead to unexpected/unsupported JVM
 state.</p></li>
 <li><p><code>FLAG_SET_*</code> macros can change more than one flag (in

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar product reduction optimizations : float test
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.ProdRed_Float
+ * @run driver/timeout=480 compiler.loopopts.superword.ProdRed_Float
  */
 
 package compiler.loopopts.superword;
@@ -86,6 +86,10 @@ public class ProdRed_Float {
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
+    // There is no efficient way to implement strict-ordered version on riscv64.
+    @IR(applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"SuperWordReductions", "true"},
+        failOn = {IRNode.MUL_REDUCTION_VF})
     public static float prodReductionImplement(float[] a, float[] b, float total) {
         for (int i = 0; i < a.length; i++) {
             total *= a[i] - b[i];

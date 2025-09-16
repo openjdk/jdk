@@ -38,7 +38,7 @@ import sun.awt.OverrideNativeWindowHandle;
 import sun.swing.JLightweightFrame;
 import sun.swing.SwingAccessor;
 
-public class LWLightweightFramePeer extends LWWindowPeer implements OverrideNativeWindowHandle {
+public final class LWLightweightFramePeer extends LWWindowPeer implements OverrideNativeWindowHandle {
 
     public LWLightweightFramePeer(LightweightFrame target,
                                   PlatformComponent platformComponent,

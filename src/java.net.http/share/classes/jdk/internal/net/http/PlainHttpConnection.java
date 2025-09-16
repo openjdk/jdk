@@ -36,12 +36,10 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
-import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -57,15 +55,8 @@ class PlainHttpConnection extends HttpConnection {
     private volatile boolean connected;
     private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
-    private volatile int unsuccessfulAttempts;
     private final ReentrantLock stateLock = new ReentrantLock();
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
-
-    // Indicates whether a connection attempt has succeeded or should be retried.
-    // If the attempt failed, and shouldn't be retried, there will be an exception
-    // instead.
-    private enum ConnectState { SUCCESS, RETRY }
-
 
     /**
      * Returns a ConnectTimerEvent iff there is a connect timeout duration,
@@ -115,10 +106,10 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     final class ConnectEvent extends AsyncEvent {
-        private final CompletableFuture<ConnectState> cf;
+        private final CompletableFuture<Void> cf;
         private final Exchange<?> exchange;
 
-        ConnectEvent(CompletableFuture<ConnectState> cf, Exchange<?> exchange) {
+        ConnectEvent(CompletableFuture<Void> cf, Exchange<?> exchange) {
             this.cf = cf;
             this.exchange = exchange;
         }
@@ -147,15 +138,10 @@ class PlainHttpConnection extends HttpConnection {
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
                 if (connectionOpened()) {
                     // complete async since the event runs on the SelectorManager thread
-                    cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                    if (debug.on()) debug.log("%s has been connected asynchronously", label());
+                    cf.completeAsync(() -> null, client().theExecutor());
                 } else throw new ConnectException("Connection closed");
             } catch (Throwable e) {
-                if (canRetryConnect(e)) {
-                    unsuccessfulAttempts++;
-                    // complete async since the event runs on the SelectorManager thread
-                    cf.completeAsync(() -> ConnectState.RETRY, client().theExecutor());
-                    return;
-                }
                 Throwable t = getError(Utils.toConnectException(e));
                 // complete async since the event runs on the SelectorManager thread
                 client().theExecutor().execute( () -> cf.completeExceptionally(t));
@@ -174,7 +160,7 @@ class PlainHttpConnection extends HttpConnection {
 
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
-        CompletableFuture<ConnectState> cf = new MinimalFuture<>();
+        CompletableFuture<Void> cf = new MinimalFuture<>();
         try {
             assert !connected : "Already connected";
             assert !chan.isBlocking() : "Unexpected blocking channel";
@@ -212,7 +198,8 @@ class PlainHttpConnection extends HttpConnection {
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
                 if (connectionOpened()) {
-                    cf.complete(ConnectState.SUCCESS);
+                    if (debug.on()) debug.log("%s has been connected", label());
+                    cf.complete(null);
                 } else throw getError(new ConnectException("connection closed"));
             } else {
                 if (debug.on()) debug.log("registering connect event");
@@ -232,8 +219,7 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("Failed to close channel after unsuccessful connect");
             }
         }
-        return cf.handle((r,t) -> checkRetryConnect(r, t, exchange))
-                .thenCompose(Function.identity());
+        return cf;
     }
 
     boolean connectionOpened() {
@@ -252,42 +238,6 @@ class PlainHttpConnection extends HttpConnection {
             stateLock.unlock();
         }
         return !closed;
-    }
-
-    /**
-     * On some platforms, a ConnectEvent may be raised and a ConnectionException
-     * may occur with the message "Connection timed out: no further information"
-     * before our actual connection timeout has expired. In this case, this
-     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)}
-     * and we will retry once again.
-     * @param connect indicates whether the connection was successful or should be retried
-     * @param failed the failure if the connection failed
-     * @param exchange the exchange
-     * @return a completable future that will take care of retrying the connection if needed.
-     */
-    private CompletableFuture<Void> checkRetryConnect(ConnectState connect, Throwable failed, Exchange<?> exchange) {
-        // first check if the connection failed
-        if (failed != null) return MinimalFuture.failedFuture(failed);
-        // then check if the connection should be retried
-        if (connect == ConnectState.RETRY) {
-            int attempts = unsuccessfulAttempts;
-            assert attempts <= 1;
-            if (debug.on())
-                debug.log("Retrying connect after %d attempts", attempts);
-            return connectAsync(exchange);
-        }
-        // Otherwise, the connection was successful;
-        assert connect == ConnectState.SUCCESS;
-        return MinimalFuture.completedFuture(null);
-    }
-
-    private boolean canRetryConnect(Throwable e) {
-        if (!MultiExchange.RETRY_CONNECT) return false;
-        if (!(e instanceof ConnectException)) return false;
-        if (unsuccessfulAttempts > 0) return false;
-        ConnectTimerEvent timer = connectTimerEvent;
-        if (timer == null) return true;
-        return timer.deadline().isAfter(TimeSource.now());
     }
 
     @Override
@@ -310,8 +260,9 @@ class PlainHttpConnection extends HttpConnection {
         return tube;
     }
 
-    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client) {
-        super(addr, client);
+    PlainHttpConnection(Origin originServer, InetSocketAddress addr, HttpClientImpl client,
+                        String label) {
+        super(originServer, addr, client, label);
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
@@ -335,7 +286,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
             // wrap the channel in a Tube for async reading and writing
-            tube = new SocketTube(client(), chan, Utils::getBuffer);
+            tube = new SocketTube(client(), chan, Utils::getBuffer, label);
         } catch (IOException e) {
             throw new InternalError(e);
         }

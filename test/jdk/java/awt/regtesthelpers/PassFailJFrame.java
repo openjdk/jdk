@@ -72,6 +72,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -98,7 +99,8 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * tester. The instructions can be either plain text or HTML. If the
  * text of the instructions starts with {@code "<html>"}, the
  * instructions are displayed as HTML, as supported by Swing, which
- * provides richer formatting options.
+ * provides richer formatting options. To handle navigating links in the
+ * instructions, call {@link Builder#hyperlinkListener} to install a listener.
  * <p>
  * The instructions are displayed in a text component with word-wrapping
  * so that there's no horizontal scroll bar. If the text doesn't fit, a
@@ -149,6 +151,17 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * <p>
  * Before returning from {@code awaitAndCheck}, the framework disposes of
  * all the windows and frames.
+ *
+ * <p id="forcePassAndFail">
+ * For semi-automatic tests, use {@code forcePass} or
+ * {@code forceFail} methods to forcibly pass or fail the test
+ * when it's determined that the required conditions are already met
+ * or cannot be met correspondingly.
+ * These methods release {@code awaitAndCheck}, and
+ * the test will complete successfully or fail.
+ * <p>
+ * Refer to examples of using these methods in the description of the
+ * {@link #forcePass() forcePass} and {@link #forceFail() forceFail} methods.
  *
  * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
@@ -581,6 +594,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
+                                           null,
                                            false,
                                            false, 0),
                   BorderLayout.CENTER);
@@ -599,6 +613,7 @@ public final class PassFailJFrame {
                 createInstructionUIPanel(builder.instructions,
                                          builder.testTimeOut,
                                          builder.rows, builder.columns,
+                                         builder.hyperlinkListener,
                                          builder.screenCapture,
                                          builder.addLogArea,
                                          builder.logAreaRows);
@@ -620,6 +635,7 @@ public final class PassFailJFrame {
     private static JComponent createInstructionUIPanel(String instructions,
                                                        long testTimeOut,
                                                        int rows, int columns,
+                                                       HyperlinkListener hyperlinkListener,
                                                        boolean enableScreenCapture,
                                                        boolean addLogArea,
                                                        int logAreaRows) {
@@ -632,6 +648,9 @@ public final class PassFailJFrame {
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
+        if (hyperlinkListener != null && text instanceof JEditorPane ep) {
+            ep.addHyperlinkListener(hyperlinkListener);
+        }
         text.setEditable(false);
         text.setBorder(createTextBorder());
         text.setCaretPosition(0);
@@ -705,7 +724,7 @@ public final class PassFailJFrame {
         // Reduce the list default margins
         styles.addRule("ol, ul { margin-left-ltr: 30; margin-left-rtl: 30 }");
         // Make the size of code (and other elements) the same as other text
-        styles.addRule("code, kbd, samp, pre { font-size: inherit }");
+        styles.addRule("code, kbd, samp, pre { font-size: inherit; background: #DDD; }");
 
         return text;
     }
@@ -1294,28 +1313,50 @@ public final class PassFailJFrame {
 
     /**
      * Forcibly pass the test.
-     * <p>The sample usage:
-     * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
-     * </code></pre>
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
+     * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
         latch.countDown();
     }
 
     /**
-     *  Forcibly fail the test.
+     * Forcibly fail the test.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/0844745e7bd954a96441365f8010741ec1c29dbf/test/jdk/javax/swing/JScrollPane/AcceleratedWheelScrolling/HorizScrollers.java#L180">{@code
+     * HorizScrollers.java}</a>
      */
     public static void forceFail() {
         forceFail("forceFail called");
     }
 
     /**
-     *  Forcibly fail the test and provide a reason.
+     * Forcibly fail the test and provide a reason.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b075aa289dbb9cb80f6937b3349c8d4769/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L86">{@code
+     * SaveFileNameOverrideTest.java}</a>
      *
      * @param reason the reason why the test is failed
      */
@@ -1365,6 +1406,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
+        private HyperlinkListener hyperlinkListener;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1442,6 +1484,18 @@ public final class PassFailJFrame {
          */
         public Builder columns(int columns) {
             this.columns = columns;
+            return this;
+        }
+
+        /**
+         * Sets a {@link HyperlinkListener} for navigating links inside
+         * the instructions pane.
+         *
+         * @param hyperlinkListener the listener
+         * @return this builder
+         */
+        public Builder hyperlinkListener(HyperlinkListener hyperlinkListener) {
+            this.hyperlinkListener = hyperlinkListener;
             return this;
         }
 

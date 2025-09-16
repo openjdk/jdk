@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ public class Block implements Cluster {
     protected final InputBlock inputBlock;
     private Rectangle bounds;
     private final Diagram diagram;
+    private List<Integer> liveRangeIds;
+    int liveRangeSeparation = -1;
 
     public Block(InputBlock inputBlock, Diagram diagram) {
         this.inputBlock = inputBlock;
@@ -70,6 +72,11 @@ public class Block implements Cluster {
         return vertices;
     }
 
+    public int getLiveRangeSeparation() {
+        assert liveRangeSeparation > 0;
+        return liveRangeSeparation;
+    }
+
     public void setBounds(Rectangle r) {
         this.bounds = r;
     }
@@ -89,6 +96,19 @@ public class Block implements Cluster {
     @Override
     public Rectangle getBounds() {
         return bounds;
+    }
+
+    public List<Integer> getLiveRangeIds() {
+        return liveRangeIds;
+    }
+
+    public void setLiveRangeIds(List<Integer> liveRangeIds) {
+        this.liveRangeIds = liveRangeIds;
+        int extraDigits = 0;
+        if (!liveRangeIds.isEmpty()) {
+            extraDigits = (int)java.lang.Math.log10(Collections.max(liveRangeIds));
+        }
+        liveRangeSeparation = 20 + extraDigits * 7;
     }
 
     public int compareTo(Cluster o) {

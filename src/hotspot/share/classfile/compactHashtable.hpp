@@ -241,6 +241,7 @@ template <
   bool (*EQUALS)(V value, K key, int len)
   >
 class CompactHashtable : public SimpleCompactHashtable {
+  friend class VMStructs;
 
   V decode(u4 offset) const {
     return DECODE(_base_address, offset);
@@ -282,7 +283,15 @@ public:
   }
 
   template <class ITER>
-  inline void iterate(ITER* iter) const {
+  inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
+
+  template<typename Function>
+  inline void iterate(const Function& function) const { // lambda enabled API
+    iterate(const_cast<Function&>(function));
+  }
+
+  template<typename Function>
+  inline void iterate(Function& function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
       u4 bucket_info = _buckets[i];
       u4 bucket_offset = BUCKET_OFFSET(bucket_info);
@@ -290,11 +299,11 @@ public:
       u4* entry = _entries + bucket_offset;
 
       if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
-        iter->do_value(decode(entry[0]));
+        function(decode(entry[0]));
       } else {
-        u4*entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
+        u4* entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
         while (entry < entry_max) {
-          iter->do_value(decode(entry[1]));
+          function(decode(entry[1]));
           entry += 2;
         }
       }

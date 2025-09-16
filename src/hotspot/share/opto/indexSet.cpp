@@ -121,7 +121,7 @@ IndexSet::BitBlock *IndexSet::alloc_block_containing(uint element) {
 // Add a BitBlock to the free list.
 
 void IndexSet::free_block(uint i) {
-  debug_only(check_watch("free block", i));
+  DEBUG_ONLY(check_watch("free block", i));
   assert(i < _max_blocks, "block index too large");
   BitBlock *block = _blocks[i];
   assert(block != &_empty_block, "cannot free the empty block");
@@ -178,7 +178,7 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
       LRG &lrg = ifg->lrgs(element);
       if (mask.overlap(lrg.mask())) {
         insert(element);
-        if (!lrg.mask().is_AllStack()) {
+        if (!lrg.mask().is_infinite_stack()) {
           reg_degree += lrg1.compute_degree(lrg);
           if (reg_degree >= fail_degree) return reg_degree;
         } else {
@@ -198,7 +198,7 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
       LRG &lrg = ifg->lrgs(element);
       if (mask.overlap(lrg.mask())) {
         if (insert(element)) {
-          if (!lrg.mask().is_AllStack()) {
+          if (!lrg.mask().is_infinite_stack()) {
             reg_degree += lrg2.compute_degree(lrg);
             if (reg_degree >= fail_degree) return reg_degree;
           } else {

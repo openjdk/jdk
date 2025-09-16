@@ -56,7 +56,9 @@ import java.util.List;
  *
  * <p>Method {@code submit} extends base method {@link
  * Executor#execute(Runnable)} by creating and returning a {@link Future}
- * that can be used to cancel execution and/or wait for completion.
+ * that can be used to cancel execution and/or wait for completion;
+ * also reporting exceptions that would otherwise be uncaught
+ * using method {@code execute}.
  * Methods {@code invokeAny} and {@code invokeAll} perform the most
  * commonly useful forms of bulk execution, executing a collection of
  * tasks and then waiting for at least one, or all, to

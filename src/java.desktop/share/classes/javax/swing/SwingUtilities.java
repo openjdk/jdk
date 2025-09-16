@@ -27,8 +27,6 @@ package javax.swing;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
-import java.applet.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.dnd.DropTarget;
@@ -416,7 +414,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointToScreen(Point p,Component c) {
             Rectangle b;
             int x,y;
@@ -425,8 +422,7 @@ public class SwingUtilities implements SwingConstants
                 if(c instanceof JComponent) {
                     x = c.getX();
                     y = c.getY();
-                } else if(c instanceof java.applet.Applet ||
-                          c instanceof java.awt.Window) {
+                } else if(c instanceof java.awt.Window) {
                     try {
                         Point pp = c.getLocationOnScreen();
                         x = pp.x;
@@ -443,7 +439,7 @@ public class SwingUtilities implements SwingConstants
                 p.x += x;
                 p.y += y;
 
-                if(c instanceof java.awt.Window || c instanceof java.applet.Applet)
+                if(c instanceof java.awt.Window)
                     break;
                 c = c.getParent();
             } while(c != null);
@@ -456,7 +452,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointFromScreen(Point p,Component c) {
         Rectangle b;
         int x,y;
@@ -465,8 +460,7 @@ public class SwingUtilities implements SwingConstants
             if(c instanceof JComponent) {
                 x = c.getX();
                 y = c.getY();
-            }  else if(c instanceof java.applet.Applet ||
-                       c instanceof java.awt.Window) {
+            }  else if (c instanceof java.awt.Window) {
                 try {
                     Point pp = c.getLocationOnScreen();
                     x = pp.x;
@@ -483,7 +477,7 @@ public class SwingUtilities implements SwingConstants
             p.x -= x;
             p.y -= y;
 
-            if(c instanceof java.awt.Window || c instanceof java.applet.Applet)
+            if(c instanceof java.awt.Window)
                 break;
             c = c.getParent();
         } while(c != null);
@@ -1655,20 +1649,15 @@ public class SwingUtilities implements SwingConstants
      * Returns the root component for the current component tree.
      *
      * @param c the component
-     * @return the first ancestor of c that's a Window or the last Applet ancestor
+     * @return the first ancestor of c that's a Window
      */
-    @SuppressWarnings("removal")
     public static Component getRoot(Component c) {
-        Component applet = null;
         for(Component p = c; p != null; p = p.getParent()) {
             if (p instanceof Window) {
                 return p;
             }
-            if (p instanceof Applet) {
-                applet = p;
-            }
         }
-        return applet;
+        return null;
     }
 
     static JComponent getPaintingOrigin(JComponent c) {
@@ -1698,7 +1687,6 @@ public class SwingUtilities implements SwingConstants
      * @return true if a binding has found and processed
      * @since 1.4
      */
-    @SuppressWarnings("removal")
     public static boolean processKeyBindings(KeyEvent event) {
         if (event != null) {
             if (event.isConsumed()) {
@@ -1718,9 +1706,8 @@ public class SwingUtilities implements SwingConstants
                     return ((JComponent)component).processKeyBindings(
                                                    event, pressed);
                 }
-                if ((component instanceof Applet) ||
-                    (component instanceof Window)) {
-                    // No JComponents, if Window or Applet parent, process
+                if (component instanceof Window) {
+                    // No JComponents, if Window parent, process
                     // WHEN_IN_FOCUSED_WINDOW bindings.
                     return JComponent.processKeyBindingsForAllComponents(
                                   event, (Container)component, pressed);
@@ -2202,8 +2189,7 @@ public class SwingUtilities implements SwingConstants
      * CellRendererPane}.
      * <p>
      * The component hierarchy must be displayable up to the toplevel component
-     * (either a {@code Frame} or an {@code Applet} object.) Otherwise this
-     * method returns {@code null}.
+     * (a {@code Frame}). Otherwise this method returns {@code null}.
      * <p>
      * If the {@code visibleOnly} argument is {@code true}, the found validate
      * root and all its parents up to the toplevel component must also be
@@ -2214,7 +2200,6 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.Component#isVisible()
      * @since 1.7
      */
-    @SuppressWarnings("removal")
     static Container getValidateRoot(Container c, boolean visibleOnly) {
         Container root = null;
 
@@ -2237,7 +2222,7 @@ public class SwingUtilities implements SwingConstants
             if (!c.isDisplayable() || (visibleOnly && !c.isVisible())) {
                 return null;
             }
-            if (c instanceof Window || c instanceof Applet) {
+            if (c instanceof Window) {
                 return root;
             }
         }

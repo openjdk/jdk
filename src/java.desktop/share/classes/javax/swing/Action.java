@@ -263,7 +263,7 @@ public interface Action extends ActionListener {
      * commonly used to specify a mnemonic.  For example:
      * <code>myAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A)</code>
      * sets the mnemonic of <code>myAction</code> to 'a', while
-     * <code>myAction.putValue(Action.MNEMONIC_KEY, KeyEvent.getExtendedKeyCodeForChar('\u0444'))</code>
+     * <code>myAction.putValue(Action.MNEMONIC_KEY, KeyEvent.getExtendedKeyCodeForChar('ф'))</code>
      * sets the mnemonic of <code>myAction</code> to Cyrillic letter "Ef".
      *
      * @since 1.3

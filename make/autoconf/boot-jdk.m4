@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -180,11 +180,13 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 [
-  UTIL_LOOKUP_PROGS(JAVAC_CHECK, javac, , NOFIXPATH)
-  UTIL_LOOKUP_PROGS(JAVA_CHECK, java, , NOFIXPATH)
-  BINARY="$JAVAC_CHECK"
-  if test "x$JAVAC_CHECK" = x; then
-    BINARY="$JAVA_CHECK"
+  UTIL_LOOKUP_PROGS(JAVAC_CHECK, javac)
+  UTIL_GET_EXECUTABLE(JAVAC_CHECK) # Will setup JAVAC_CHECK_EXECUTABLE
+  UTIL_LOOKUP_PROGS(JAVA_CHECK, java)
+  UTIL_GET_EXECUTABLE(JAVA_CHECK) # Will setup JAVA_CHECK_EXECUTABLE
+  BINARY="$JAVAC_CHECK_EXECUTABLE"
+  if test "x$JAVAC_CHECK_EXECUTABLE" = x; then
+    BINARY="$JAVA_CHECK_EXECUTABLE"
   fi
   if test "x$BINARY" != x; then
     # So there is a java(c) binary, it might be part of a JDK.
@@ -393,11 +395,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
-  OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
+  OLDEST_BOOT_JDK_VERSION=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
       | $TR " " "\n" | $SORT -n | $HEAD -n1`
-  # -Xlint:-options is added to avoid "warning: [options] system modules path not set in conjunction with -source"
-  BOOT_JDK_SOURCETARGET="-source $OLDEST_BOOT_JDK -target $OLDEST_BOOT_JDK -Xlint:-options"
-  AC_SUBST(BOOT_JDK_SOURCETARGET)
+  AC_SUBST(OLDEST_BOOT_JDK_VERSION)
 
   # Check if the boot jdk is 32 or 64 bit
   if $JAVA -version 2>&1 | $GREP -q "64-Bit"; then

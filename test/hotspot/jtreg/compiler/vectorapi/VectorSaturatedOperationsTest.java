@@ -166,7 +166,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void sadd_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -189,7 +189,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void sadd_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -212,7 +212,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void sadd_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -235,7 +235,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void sadd_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -260,7 +260,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 " , "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void suadd_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -285,7 +285,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VS, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void suadd_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -310,7 +310,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void suadd_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -335,7 +335,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VL, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void suadd_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -358,7 +358,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_SUB_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void ssub_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -381,7 +381,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void ssub_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -404,7 +404,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_SUB_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VI, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void ssub_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -427,7 +427,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void ssub_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -452,7 +452,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VB, " >0 " , "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void susub_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -477,7 +477,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void susub_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -502,7 +502,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VI, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void susub_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -527,7 +527,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @Warmup(value = 10000)
     public void susub_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -550,7 +550,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.VECTOR_BLEND_B, " >0 "}, applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(failOn = IRNode.VECTOR_BLEND_B, applyIfCPUFeature = {"sve2", "true"})
     @Warmup(value = 10000)
@@ -576,7 +576,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.VECTOR_BLEND_S, " >0 "}, applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(failOn = IRNode.VECTOR_BLEND_S, applyIfCPUFeature = {"sve2", "true"})
     @Warmup(value = 10000)
@@ -604,7 +604,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.VECTOR_BLEND_I, " >0 "}, applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(failOn = IRNode.VECTOR_BLEND_I, applyIfCPUFeature = {"sve2", "true"})
     @Warmup(value = 10000)
@@ -632,7 +632,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.VECTOR_BLEND_L, " >0 "}, applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(failOn = IRNode.VECTOR_BLEND_L, applyIfCPUFeature = {"sve2", "true"})
     @Warmup(value = 10000)

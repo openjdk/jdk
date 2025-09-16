@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <sys/xattr.h>
+#endif
+
+#if defined(_AIX)
+#include <sys/ea.h>
 #endif
 
 /* For POSIX-compliant getpwuid_r */
@@ -339,22 +343,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*) openat;
-    my_fstatat_func = (fstatat_func*) fstatat;
-#else
-    // Make sure we link to the 64-bit version of the functions
-    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
-    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
-#endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "open64at");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "stat64at");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #elif defined(_ALLBSD_SOURCE)
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
     my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
+    // Make sure we link to the 64-bit version of the functions
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
 
@@ -387,11 +390,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports extended attributes */
 
-#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_)
+#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_) || defined(_AIX)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
     return capabilities;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
+#if defined(__linux__)
+    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -728,7 +741,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     }
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd,
     jlong pathAddress, jint flag, jobject attrs)
 {
@@ -748,23 +761,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
+            return 0;
         } else {
-            throwUnixException(env, errno);
+            return errno;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
 
     if (my_fstatat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
-        return;
+        return ENOTSUP;
     }
     RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
+        return 0;
+    } else {
+        return errno;
     }
 }
 
@@ -788,6 +801,19 @@ Java_sun_nio_fs_UnixNativeDispatcher_fchmod0(JNIEnv* env, jclass this, jint file
     int err;
 
     RESTARTABLE(fchmod((int)filedes, (mode_t)mode), err);
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodat0(JNIEnv* env, jclass this,
+    jint fd, jlong pathAddress, jint mode, jint flag)
+{
+    int err;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    RESTARTABLE(fchmodat((int)fd, path, (mode_t)mode, (int)flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }
@@ -1381,6 +1407,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     res = fgetxattr(fd, name, value, valueLen);
 #elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fgetea(fd, name, value, valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1402,6 +1430,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
     res = fsetxattr(fd, name, value, valueLen, 0);
 #elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fsetea(fd, name, value, valueLen, 0);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1421,6 +1451,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
     res = fremovexattr(fd, name);
 #elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
+#elif defined(_AIX)
+    res = fremoveea(fd, name);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1440,6 +1472,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     res = flistxattr(fd, list, (size_t)size);
 #elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
+#elif defined(_AIX)
+    res = flistea(fd, list, (size_t)size);
 #else
     throwUnixException(env, ENOTSUP);
 #endif

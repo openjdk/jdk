@@ -133,7 +133,7 @@ void HandleMark::initialize(Thread* thread) {
   _hwm   = _area->_hwm;
   _max   = _area->_max;
   _size_in_bytes = _area->_size_in_bytes;
-  debug_only(_area->_handle_mark_nesting++);
+  DEBUG_ONLY(_area->_handle_mark_nesting++);
   assert(_area->_handle_mark_nesting > 0, "must stack allocate HandleMarks");
 
   // Link this in the thread

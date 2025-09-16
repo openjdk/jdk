@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 6182630
  * @summary Method with parameter bound to raw type avoids unchecked warning
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  * @compile/ref=T6182630.out -XDrawDiagnostics -Xlint:unchecked T6182630.java
  */
 

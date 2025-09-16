@@ -24,10 +24,10 @@
 #ifndef SHARE_GC_SHARED_GCLOGPRECIOUS_HPP
 #define SHARE_GC_SHARED_GCLOGPRECIOUS_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class Mutex;
 class stringStream;

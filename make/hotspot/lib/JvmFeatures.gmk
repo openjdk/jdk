@@ -125,9 +125,11 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
+      aotCodeCache.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      systemDictionaryShared.cpp
+      systemDictionaryShared.cpp \
+      trainingData.cpp
   JVM_EXCLUDE_PATTERNS += cds/
 endif
 

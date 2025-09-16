@@ -61,7 +61,14 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
       bundle-suffix:
+        required: false
+        type: string
+      static-suffix:
         required: false
         type: string
 
@@ -136,6 +143,7 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
@@ -143,3 +151,5 @@ jobs:
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
           bundle-suffix: ${{ inputs.bundle-suffix }}
+          static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}

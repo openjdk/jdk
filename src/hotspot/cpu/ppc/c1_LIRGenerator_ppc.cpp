@@ -714,14 +714,12 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     }
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict: {
-      if (VM_Version::has_fsqrt()) {
-        assert(x->number_of_arguments() == 1, "wrong type");
-        LIRItem value(x->argument_at(0), this);
-        value.load_item();
-        LIR_Opr dst = rlock_result(x);
-        __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
-        break;
-      } // else fallthru
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
+      break;
     }
     case vmIntrinsics::_dsin:   // fall through
     case vmIntrinsics::_dcos:   // fall through
@@ -733,10 +731,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 
       address runtime_entry = nullptr;
       switch (x->id()) {
-        case vmIntrinsics::_dsqrt:
-        case vmIntrinsics::_dsqrt_strict:
-          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
-          break;
         case vmIntrinsics::_dsin:
           runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
           break;
@@ -819,78 +813,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
 void LIRGenerator::do_Convert(Convert* x) {
-  if (!VM_Version::has_mtfprd()) {
-    switch (x->op()) {
-
-      // int -> float: force spill
-      case Bytecodes::_l2f: {
-        if (!VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-          // fcfid+frsp needs fixup code to avoid rounding incompatibility.
-          address entry = CAST_FROM_FN_PTR(address, SharedRuntime::l2f);
-          LIR_Opr result = call_runtime(x->value(), entry, x->type(), nullptr);
-          set_result(x, result);
-          return;
-        } // else fallthru
-      }
-      case Bytecodes::_l2d: {
-        LIRItem value(x->value(), this);
-        LIR_Opr reg = rlock_result(x);
-        value.load_item();
-        LIR_Opr tmp = force_to_spill(value.result(), T_DOUBLE);
-        __ convert(x->op(), tmp, reg);
-        return;
-      }
-      case Bytecodes::_i2f:
-      case Bytecodes::_i2d: {
-        LIRItem value(x->value(), this);
-        LIR_Opr reg = rlock_result(x);
-        value.load_item();
-        // Convert i2l first.
-        LIR_Opr tmp1 = new_register(T_LONG);
-        __ convert(Bytecodes::_i2l, value.result(), tmp1);
-        LIR_Opr tmp2 = force_to_spill(tmp1, T_DOUBLE);
-        __ convert(x->op(), tmp2, reg);
-        return;
-      }
-
-      // float -> int: result will be stored
-      case Bytecodes::_f2l:
-      case Bytecodes::_d2l: {
-        LIRItem value(x->value(), this);
-        LIR_Opr reg = rlock_result(x);
-        value.set_destroys_register(); // USE_KILL
-        value.load_item();
-        set_vreg_flag(reg, must_start_in_memory);
-        __ convert(x->op(), value.result(), reg);
-        return;
-      }
-      case Bytecodes::_f2i:
-      case Bytecodes::_d2i: {
-        LIRItem value(x->value(), this);
-        LIR_Opr reg = rlock_result(x);
-        value.set_destroys_register(); // USE_KILL
-        value.load_item();
-        // Convert l2i afterwards.
-        LIR_Opr tmp1 = new_register(T_LONG);
-        set_vreg_flag(tmp1, must_start_in_memory);
-        __ convert(x->op(), value.result(), tmp1);
-        __ convert(Bytecodes::_l2i, tmp1, reg);
-        return;
-      }
-
-      // Within same category: just register conversions.
-      case Bytecodes::_i2b:
-      case Bytecodes::_i2c:
-      case Bytecodes::_i2s:
-      case Bytecodes::_i2l:
-      case Bytecodes::_l2i:
-      case Bytecodes::_f2d:
-      case Bytecodes::_d2f:
-        break;
-
-      default: ShouldNotReachHere();
-    }
-  }
 
   // Register conversion.
   LIRItem value(x->value(), this);
@@ -1054,7 +976,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   const LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(StubId::c1_new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1089,7 +1011,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
 
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id,
+    stub = new SimpleExceptionStub(StubId::c1_throw_incompatible_class_change_error_id,
                                    LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
@@ -1097,7 +1019,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(StubId::c1_throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   // Following registers are used by slow_subtype_check:
   LIR_Opr tmp1 = FrameMap::R4_oop_opr; // super_klass
@@ -1131,7 +1053,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
 
 // Intrinsic for Class::isInstance
 address LIRGenerator::isInstance_entry() {
-  return Runtime1::entry_for(C1StubId::is_instance_of_id);
+  return Runtime1::entry_for(StubId::c1_is_instance_of_id);
 }
 
 

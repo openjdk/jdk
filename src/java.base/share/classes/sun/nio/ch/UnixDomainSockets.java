@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.NetPermission;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.UnsupportedAddressTypeException;
@@ -51,9 +50,6 @@ class UnixDomainSockets {
     private static final boolean supported;
 
     private static final String tempDir = UnixDomainSocketsUtil.getTempDir();
-
-    private static final NetPermission accessUnixDomainSocket =
-            new NetPermission("accessUnixDomainSocket");
 
     static boolean isSupported() {
         return supported;

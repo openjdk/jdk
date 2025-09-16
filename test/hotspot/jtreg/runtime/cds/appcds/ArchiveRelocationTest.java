@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,13 @@ public class ArchiveRelocationTest {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
         String maybeRelocation = "-XX:ArchiveRelocationMode=0";
-        String runRelocArg  = run_reloc  ? "-showversion" : maybeRelocation;
-        String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
+        String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
+        String runRelocArg  = run_reloc  ? alwaysRelocation : maybeRelocation;
+        String logArg = "-Xlog:cds=debug,cds+reloc=debug,aot+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
+        String relocMsg1 = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
+        String relocMsg2 = "Try to map archive(s) at an alternative address";
 
         OutputAnalyzer out = TestCommon.dump(appJar,
                                              TestCommon.list(mainClass),
@@ -75,8 +78,10 @@ public class ArchiveRelocationTest {
         TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain("ArchiveRelocationMode == 1: always map archive(s) at an alternative address")
-                              .shouldContain("Try to map archive(s) at an alternative address");
+                        if (!output.contains(relocMsg1) && !output.contains(relocMsg2)) {
+                            throw new RuntimeException("Relocation messages \"" + relocMsg1 +
+                                "\" and \"" + relocMsg2 + "\" are missing from the output");
+                        }
                     } else {
                         output.shouldContain("ArchiveRelocationMode: 0");
                     }

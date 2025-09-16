@@ -48,6 +48,7 @@ class MockRandomnessSource implements RandomnessSource {
     private final Queue<Bounded<Integer>> boundedIntegerQueue = new ArrayDeque<>();
     private final Queue<Bounded<Double>> boundedDoubleQueue = new ArrayDeque<>();
     private final Queue<Bounded<Float>> boundedFloatQueue = new ArrayDeque<>();
+    private final Queue<Bounded<Short>> boundedFloat16Queue = new ArrayDeque<>();
 
     private <T> T dequeueBounded(Queue<Bounded<T>> queue, T lo, T hi) {
         Bounded<T> bounded = queue.remove();
@@ -91,6 +92,11 @@ class MockRandomnessSource implements RandomnessSource {
         return this;
     }
 
+    public MockRandomnessSource enqueueFloat16(short lo, short hi, short value) {
+        boundedFloat16Queue.add(new Bounded<>(lo, hi, value));
+        return this;
+    }
+
     public MockRandomnessSource checkEmpty() {
         checkQueueEmpty(unboundedLongQueue, "unbounded longs");
         checkQueueEmpty(unboundedIntegerQueue, "unbounded integers");
@@ -98,6 +104,7 @@ class MockRandomnessSource implements RandomnessSource {
         checkQueueEmpty(boundedIntegerQueue, "bounded integers");
         checkQueueEmpty(boundedDoubleQueue, "bounded doubles");
         checkQueueEmpty(boundedFloatQueue, "bounded floats");
+        checkQueueEmpty(boundedFloat16Queue, "bounded float16s");
         return this;
     }
 
@@ -129,5 +136,10 @@ class MockRandomnessSource implements RandomnessSource {
     @Override
     public float nextFloat(float lo, float hi) {
         return dequeueBounded(boundedFloatQueue, lo, hi);
+    }
+
+    @Override
+    public short nextFloat16(short lo, short hi) {
+        return dequeueBounded(boundedFloat16Queue, lo, hi);
     }
 }

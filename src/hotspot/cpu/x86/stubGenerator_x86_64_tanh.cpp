@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,7 +46,7 @@
 //                      for |x| in [23/64,3*2^7)
 // e^{-2*|x|}=2^{-k-f}*2^{-r} ~ 2^{-k}*(Tn+Dn)*(1+p)=(T0+D0)*(1+p)
 //
-// For |x| in [2^{-4},2^5):
+// For |x| in [2^{-4},22):
 //         2^{-r}-1 ~ p=c1*r+c2*r^2+..+c5*r^5
 //      Let R=1/(1+T0+p*T0), truncated to 35 significant bits
 //  R=1/(1+T0+D0+p*(T0+D0))*(1+eps), |eps|<2^{-33}
@@ -66,11 +66,11 @@
 //
 // For |x|<2^{-64}:  x is returned
 //
-// For |x|>=2^32: return +/-1
+// For |x|>=22: return +/-1
 //
 // Special cases:
 //  tanh(NaN) = quiet NaN, and raise invalid exception
-//  tanh(INF) = that INF
+//  tanh(+/-INF) = +/-1
 //  tanh(+/-0) = +/-0
 //
 /******************************************************************************/
@@ -302,7 +302,7 @@ ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTanh() {
-  StubGenStubId stub_id = StubGenStubId::dtanh_id;
+  StubId stub_id = StubId::stubgen_dtanh_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -324,6 +324,12 @@ address StubGenerator::generate_libmTanh() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   __ bind(B1_2);
+  __ pextrw(rcx, xmm0, 3);
+  __ movl(rdx, 32768);
+  __ andl(rdx, rcx);
+  __ andl(rcx, 32767);
+  __ cmpl(rcx, 16438);
+  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_2_0_1); // Branch only if |x| >= 22
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
   __ xorpd(xmm4, xmm4);
   __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
@@ -331,16 +337,12 @@ address StubGenerator::generate_libmTanh() {
   __ movl(rax, 32768);
   __ pinsrw(xmm4, rax, 3);
   __ movsd(xmm6,  ExternalAddress(Shifter), r11 /*rscratch*/);
-  __ pextrw(rcx, xmm0, 3);
   __ andpd(xmm3, xmm0);
   __ andnpd(xmm4, xmm0);
   __ pshufd(xmm5, xmm4, 68);
-  __ movl(rdx, 32768);
-  __ andl(rdx, rcx);
-  __ andl(rcx, 32767);
   __ subl(rcx, 16304);
-  __ cmpl(rcx, 144);
-  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_0_0_1);
+  __ cmpl(rcx, 134);
+  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_0_0_1); // Branch only if |x| is not in [2^{-4},22)
   __ subsd(xmm4, xmm3);
   __ mulsd(xmm3, xmm1);
   __ mulsd(xmm2, xmm5);
@@ -427,8 +429,8 @@ address StubGenerator::generate_libmTanh() {
 
   __ bind(L_2TAG_PACKET_0_0_1);
   __ addl(rcx, 960);
-  __ cmpl(rcx, 1104);
-  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_1_0_1);
+  __ cmpl(rcx, 1094);
+  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_1_0_1); // Branch only if |x| not in [2^{-64}, 2^{-4})
   __ movdqu(xmm2, ExternalAddress(pv), r11 /*rscratch*/);
   __ pshufd(xmm1, xmm0, 68);
   __ movdqu(xmm3, ExternalAddress(pv + 16), r11 /*rscratch*/);
@@ -449,11 +451,8 @@ address StubGenerator::generate_libmTanh() {
   __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_1_0_1);
-  __ addl(rcx, 15344);
-  __ cmpl(rcx, 16448);
-  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_2_0_1);
   __ cmpl(rcx, 16);
-  __ jcc(Assembler::below, L_2TAG_PACKET_3_0_1);
+  __ jcc(Assembler::below, L_2TAG_PACKET_3_0_1); // Branch only if |x| is denormalized
   __ xorpd(xmm2, xmm2);
   __ movl(rax, 17392);
   __ pinsrw(xmm2, rax, 3);
@@ -468,7 +467,7 @@ address StubGenerator::generate_libmTanh() {
 
   __ bind(L_2TAG_PACKET_2_0_1);
   __ cmpl(rcx, 32752);
-  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_4_0_1);
+  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_4_0_1); // Branch only if |x| is INF or NaN
   __ xorpd(xmm2, xmm2);
   __ movl(rcx, 15344);
   __ pinsrw(xmm2, rcx, 3);
@@ -489,7 +488,7 @@ address StubGenerator::generate_libmTanh() {
   __ movdl(rcx, xmm2);
   __ orl(rcx, rax);
   __ cmpl(rcx, 0);
-  __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
+  __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1); // Branch only if |x| is not NaN
   __ addsd(xmm0, xmm0);
 
   __ bind(B1_4);

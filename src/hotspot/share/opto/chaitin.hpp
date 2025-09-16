@@ -48,7 +48,7 @@ class PhaseChaitin;
 // Live-RanGe structure.
 class LRG : public ResourceObj {
 public:
-  static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
+  static const uint INFINITE_STACK_SIZE = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
 
   double _cost;                 // 2 for loads/1 for stores times block freq
@@ -82,15 +82,15 @@ public:
   // set makes it not valid.
   void set_degree( uint degree ) {
     _eff_degree = degree;
-    debug_only(_degree_valid = 1;)
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    DEBUG_ONLY(_degree_valid = 1;)
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Made a change that hammered degree
-  void invalid_degree() { debug_only(_degree_valid=0;) }
+  void invalid_degree() { DEBUG_ONLY(_degree_valid=0;) }
   // Incrementally modify degree.  If it was correct, it should remain correct
   void inc_degree( uint mod ) {
     _eff_degree += mod;
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Compute the degree between 2 live ranges
   int compute_degree( LRG &l ) const;
@@ -105,9 +105,9 @@ private:
   RegMask _mask;                // Allowed registers for this LRG
   uint _mask_size;              // cache of _mask.Size();
 public:
-  int compute_mask_size() const { return _mask.is_AllStack() ? AllStack_size : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.Size(); }
   void set_mask_size( int size ) {
-    assert((size == (int)AllStack_size) || (size == (int)_mask.Size()), "");
+    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.Size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;
@@ -128,15 +128,15 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; debug_only(_msize_valid=0;)}
-  void AND( const RegMask &rm ) { _mask.AND(rm); debug_only(_msize_valid=0;)}
-  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); debug_only(_msize_valid=0;)}
-  void Clear()   { _mask.Clear()  ; debug_only(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); debug_only(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
+  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
 
-  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  debug_only(_msize_valid=0;) }
-  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
-  void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
+  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void clear_to_sets()  { _mask.clear_to_sets(_num_regs); DEBUG_ONLY(_msize_valid=0;) }
 
 private:
   // Number of registers this live range uses when it colors
@@ -245,6 +245,9 @@ class PhaseIFG : public Phase {
 
   // Live range structure goes here
   LRG *_lrgs;                   // Array of LRG structures
+
+  // Keep track of number of edges to allow bailing out on very large IFGs
+  uint _edges;
 
 public:
   // Largest live-range number

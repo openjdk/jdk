@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
 class ShenandoahYoungGeneration : public ShenandoahGeneration {
 private:
@@ -34,7 +34,7 @@ private:
   ShenandoahYoungHeuristics* _young_heuristics;
 
 public:
-  ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t max_soft_capacity);
+  ShenandoahYoungGeneration(uint max_queues, size_t max_capacity);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
