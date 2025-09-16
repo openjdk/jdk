@@ -1868,10 +1868,6 @@
 # define ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT(a, b, c)
 #endif /* PRODUCT */
 
-//--------------------------------------------------------------------------------
-// VMTypeEntry build-specific macros
-//
-
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
