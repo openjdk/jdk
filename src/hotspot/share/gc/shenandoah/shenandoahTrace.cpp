@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"
 
