@@ -24,7 +24,6 @@
 
 
 #include "gc/g1/g1ParallelCleaning.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -60,10 +59,6 @@ G1ParallelCleaningTask::G1ParallelCleaningTask(uint num_workers,
   _klass_cleaning_task() {
 }
 
-G1ParallelCleaningTask::~G1ParallelCleaningTask() {
-  log_debug(gc)("Parallel Cleaning %u klasses %u clds processed", _klass_cleaning_task._processed, _klass_cleaning_task._num_clds_processed);
-}
-
 // The parallel work done by all worker threads.
 void G1ParallelCleaningTask::work(uint worker_id) {
   // Clean JVMCI metadata handles.
@@ -77,6 +72,6 @@ void G1ParallelCleaningTask::work(uint worker_id) {
   // The weak metadata in klass doesn't need to be
   // processed if there was no unloading.
   if (_unloading_occurred) {
-    _klass_cleaning_task.work(worker_id);
+    _klass_cleaning_task.work();
   }
 }

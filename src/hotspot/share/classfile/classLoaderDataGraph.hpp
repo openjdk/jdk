@@ -140,12 +140,11 @@ public:
   }
 };
 
-// An iterator that distributes Klasses to parallel worker threads.
+// An iterator that distributes Klasses to parallel worker threads based on CLDs.
 class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
-public:
-  uint _cmpxchgfail;
   ClassLoaderData* volatile _cld;
 
+public:
   ClassLoaderDataGraphKlassIteratorAtomic();
 
   ClassLoaderData* next();

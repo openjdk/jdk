@@ -490,7 +490,7 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
 }
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
-    :_cmpxchgfail(0), _cld(nullptr) {
+    : _cld(nullptr) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   _cld = ClassLoaderDataGraph::_head;
 }
@@ -506,7 +506,6 @@ ClassLoaderData* ClassLoaderDataGraphKlassIteratorAtomic::next() {
     if ((old = Atomic::cmpxchg(&_cld, cur, next)) == cur) {
       return cur;
     }
-    Atomic::inc(&_cmpxchgfail);
     cur = old;
   }
 }

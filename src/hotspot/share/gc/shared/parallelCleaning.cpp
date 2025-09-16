@@ -72,7 +72,6 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
 }
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
-  jlong start = os::elapsed_counter();
   // The first nmethods is claimed by the first worker.
   if (worker_id == 0 && _first_nmethod != nullptr) {
     _first_nmethod->do_unloading(_unloading_occurred);
@@ -82,63 +81,38 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
   int num_claimed_nmethods;
   nmethod* claimed_nmethods[MaxClaimNmethods];
 
-  jlong clean = 0;
   while (true) {
     claim_nmethods(claimed_nmethods, &num_claimed_nmethods);
 
     if (num_claimed_nmethods == 0) {
       break;
     }
-    jlong clean_start = os::elapsed_counter();
+
     for (int i = 0; i < num_claimed_nmethods; i++) {
       claimed_nmethods[i]->do_unloading(_unloading_occurred);
     }
-    clean += os::elapsed_counter() - clean_start;
   }
-  log_debug(gc)("CodeCleaning %d (%u): clean %.2fms total %.2fms", worker_id, worker_id == 0, TimeHelper::counter_to_millis(clean), TimeHelper::counter_to_millis(os::elapsed_counter() - start));
 }
 
 KlassCleaningTask::KlassCleaningTask() :
-  _klass_iterator(), _processed(0), _num_clds_processed(0) {
+  _klass_iterator() {
 }
 
-KlassCleaningTask::~KlassCleaningTask() {
-    log_debug(gc)("KlassCleaningTask cmpxchg-fail %u", _klass_iterator._cmpxchgfail);
-}
-
-void KlassCleaningTask::work(uint worker_id) {
-  jlong start = os::elapsed_counter();
-  jlong clean =0;
-  bool clean_tree = false;
-
-  uint num_processed = 0;
-  uint num_ik = 0;
-  uint num_clds_processed = 0;
-
+void KlassCleaningTask::work() {
   for (ClassLoaderData* cur = _klass_iterator.next(); cur != nullptr; cur = _klass_iterator.next()) {
-      jlong start_clean = os::elapsed_counter();
-    num_clds_processed++;
-
-    guarantee(cur->is_alive(), "must be?");
 
     for (Klass* klass = cur->klasses(); klass != nullptr; klass = klass->next_link()) {
       klass->clean_subklass();
+
       Klass* sibling = klass->next_sibling(true);
       klass->set_next_sibling(sibling);
 
       if (klass->is_instance_klass()) {
         Klass::clean_weak_instanceklass_links(InstanceKlass::cast(klass));
-        num_ik++;
       }
 
-      guarantee(klass->subklass(false) == nullptr || klass->subklass(false)->is_loader_alive(), "must be");
-      guarantee(klass->next_sibling(false) == nullptr || klass->next_sibling(false)->is_loader_alive(), "must be");
-      num_processed++;
+      assert(klass->subklass(false) == nullptr || klass->subklass(false)->is_loader_alive(), "must be");
+      assert(klass->next_sibling(false) == nullptr || klass->next_sibling(false)->is_loader_alive(), "must be");
     }
-    clean += os::elapsed_counter() - start_clean;
   }
-  Atomic::add(&_num_clds_processed, num_clds_processed);
-  Atomic::add(&_processed, num_processed);
-  
-  log_debug(gc)("KlassCleaningTask %u (%d): processed %u clds %u ik %u clean %.2fms total %.2fms", worker_id, clean_tree, num_processed, num_clds_processed, num_ik, TimeHelper::counter_to_millis(clean), TimeHelper::counter_to_millis(os::elapsed_counter() - start));
 }

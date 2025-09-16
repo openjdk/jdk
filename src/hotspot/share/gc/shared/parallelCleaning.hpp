@@ -58,12 +58,8 @@ class KlassCleaningTask : public StackObj {
 
 public:
   KlassCleaningTask();
-  ~KlassCleaningTask();
 
-  uint _processed;
-  uint _num_clds_processed;
-
-  void work(uint worker_id);
+  void work();
 };
 
 #endif // SHARE_GC_SHARED_PARALLELCLEANING_HPP
