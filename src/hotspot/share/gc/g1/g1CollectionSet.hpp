@@ -271,7 +271,7 @@ public:
 
   // Incremental collection set support
 
-  // Start incremental building for the next mutator phase. 
+  // Start a new collection set for the next mutator phase.
   void start();
   // Start a new collection set increment, continuing the incremental building.
   void continue_incremental_building();
