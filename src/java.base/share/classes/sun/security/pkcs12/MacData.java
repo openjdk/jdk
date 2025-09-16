@@ -30,6 +30,7 @@ import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.spec.PBEParameterSpec;
@@ -47,8 +48,8 @@ import sun.security.x509.AlgorithmId;
 
 class MacData {
 
-    private String digestAlgorithmName;
-    private AlgorithmParameters digestAlgorithmParams;
+    private final String digestAlgorithmName;
+    private final AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
     private byte[] macSalt;
     private byte[] extraSalt;
@@ -57,7 +58,7 @@ class MacData {
     private String kdfHmac;
     private String Hmac;
     private int keyLength;
-    private boolean pbmac1Keystore = false;;
+    private boolean pbmac1Keystore = false;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
@@ -104,6 +105,11 @@ class MacData {
             macSalt = pbeSpec.getSalt();
             String ps = digestAlgorithmParams.toString();
             kdfHmac = getKdfHmac(ps);
+            if (!(kdfHmac.equals("HmacSHA512") ||
+                    kdfHmac.equals("HmacSHA256"))) {
+                throw new IllegalArgumentException("unsupported PBMAC1 Hmac");
+            }
+
             Hmac = kdfHmac;
         }
 
@@ -198,14 +204,6 @@ class MacData {
         return kdfHmac;
     }
 
-    String getHmac() {
-        return Hmac;
-    }
-
-    int getKeyLength() {
-        return keyLength;
-    }
-
     byte[] getExtraSalt() {
         return extraSalt;
     }
@@ -271,11 +269,7 @@ class MacData {
             tmp2.write(DerValue.tag_Sequence, tmp1);
             tmp2.putOctetString(digest);
             tmp0.write(DerValue.tag_Sequence, tmp2);
-            if (extraSalt != null) {
-                tmp0.putOctetString(extraSalt);
-            } else {
-                tmp0.putOctetString(not_used);
-            }
+            tmp0.putOctetString(Objects.requireNonNullElse(extraSalt, not_used));
             if (extraIterations != -1) {
                 tmp0.putInteger(extraIterations);
             } else {

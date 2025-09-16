@@ -26,10 +26,6 @@
 package sun.security.util;
 
 import java.io.IOException;
-import java.security.AlgorithmParametersSpi;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 
 /**
  * This class implements the parameter set used with password-based
@@ -77,22 +73,19 @@ final public class PBKDF2Parameters {
     public static final ObjectIdentifier pkcs5PBKDF2_OID =
             ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 
-    private String prf = null;
+    private final byte[] salt;
 
-    private byte[] salt = null;
+    private final int iterationCount;
 
-    private int iterationCount = 0;
+    // keyLength in bits, or -1 if not present
+    private int keyLength = -1;
 
     // the pseudorandom function (default is HmacSHA1)
     private ObjectIdentifier kdfAlgo_OID =
             ObjectIdentifier.of(KnownOIDs.HmacSHA1);
 
-    // keyLength (in bits)
-    private int keyLength = -1;
+    private String kdfAlgo = "HmacSHA1";
 
-    private String kdfAlgo;
-
-    @SuppressWarnings("deprecation")
     public PBKDF2Parameters(DerValue keyDerivationFunc) throws IOException {
 
         if (!pkcs5PBKDF2_OID.equals(keyDerivationFunc.data.getOID())) {
@@ -126,7 +119,6 @@ final public class PBKDF2Parameters {
         }
 
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
-        ///String kdfAlgo;
         var prfDer = pBKDF2_params.data.getOptional(DerValue.tag_Sequence);
         if (prfDer.isPresent()) {
             DerValue prf = prfDer.get();
@@ -146,10 +138,7 @@ final public class PBKDF2Parameters {
             kdfAlgo = o.stdName();
             prf.data.getOptional(DerValue.tag_Null);
             prf.data.atEnd();
-        } else {
-            kdfAlgo = "HmacSHA1";
         }
-        //return kdfAlgo;
     }
 
     /**

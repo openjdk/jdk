@@ -81,8 +81,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     private int keyLength = -1;
 
     protected void engineInit(AlgorithmParameterSpec paramSpec)
-        throws InvalidParameterSpecException
-    {
+        throws InvalidParameterSpecException {
         if (!(paramSpec instanceof PBEParameterSpec)) {
             throw new InvalidParameterSpecException
                     ("Inappropriate parameter specification");
