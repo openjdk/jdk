@@ -89,7 +89,7 @@ void SuspendResumeManager::self_suspend(bool register_vthread_SR, JavaThread *cu
   MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
   if (register_vthread_SR) {
     assert(_target->is_vthread_mounted(), "sanity check");
-      JvmtiVTSuspender::register_vthread_suspend(id);
+    JvmtiVTSuspender::register_vthread_suspend(id);
   }
 #endif
   AtomicAccess::store(&_suspended, true);
