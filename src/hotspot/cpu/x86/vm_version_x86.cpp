@@ -1665,7 +1665,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
     }
   }
