@@ -319,6 +319,10 @@ public final class Security {
             public Properties getInitialProperties() {
                 return initialSecurityProperties;
             }
+            @Override
+            public Properties getCurrentProperties() {
+                return (Properties) props.clone();
+            }
         });
     }
 
@@ -793,6 +797,12 @@ public final class Security {
             InvalidAlgorithmParameterException {
         return GetInstance.getInstance
             (type, getSpiClass(type), algorithm, params, provider).toArray();
+    }
+
+    static Properties getAllSecurityPropertiesReadOnly() {
+        Properties copy = new Properties();
+        copy.putAll(props);
+        return copy;
     }
 
     /**

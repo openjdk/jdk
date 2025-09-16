@@ -41,12 +41,14 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.IncompleteAnnotationException;
 import java.nio.charset.StandardCharsets;
+import java.security.Security;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.List;
+
 
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
@@ -79,6 +81,16 @@ public class VMSupport {
     }
 
     /**
+     * Writes the given security properties list to a byte array and returns it. The stream written
+     * to the byte array is ISO 8859-1 encoded.
+     */
+    private static byte[] serializeSecurityPropertiesToByteArray(Properties p) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
+        p.store(out, null);
+        return out.toByteArray();
+    }
+
+    /**
      * @return a Properties object containing only the entries in {@code p}
      *          whose key and value are both Strings
      */
@@ -96,6 +108,11 @@ public class VMSupport {
 
     public static byte[] serializePropertiesToByteArray() throws IOException {
         return serializePropertiesToByteArray(onlyStrings(System.getProperties()));
+    }
+
+    public static byte[] serializeSecurityPropertiesToByteArray() throws IOException {
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getCurrentProperties();
+        return serializeSecurityPropertiesToByteArray(onlyStrings(p));
     }
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
