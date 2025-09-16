@@ -804,7 +804,19 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
   AOTClassInitializer::init_test_class(CHECK);
 
   if (CDSConfig::is_dumping_final_static_archive()) {
+    // - Load and link all classes used in the training run. Of these
+    //   classes, eagerly initialize the ones marked with @AOTInitialize.
+    // - Perform per-class optimization such as AOT-resolution of
+    //   constant pool entries that were resolved during the training run.
     FinalImageRecipes::apply_recipes(CHECK);
+
+    // Because the AOT assembly phase does not run the exact code as in the
+    // training run (e.g., we use different lambda form invoker classes;
+    // generated lambda form classes are not recorded in FinalImageRecipes),
+    // the recipes do not cover all classes that have been loaded so far. As
+    // a result, we might have some unlinked classes at this point. Since we
+    // require cached classes to be linked, all such classes will be linked
+    // by the following step.
   }
 
   link_all_loaded_classes(THREAD);
