@@ -31,6 +31,8 @@
  * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA
  * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA des-cbc-md5
  * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA des-cbc-crc
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA des3-cbc-sha1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA rc4-hmac
  */
 
 import jdk.test.lib.Asserts;
@@ -48,11 +50,11 @@ import java.nio.file.StandardCopyOption;
 
 public class KvnoNA {
 
-    static void prepareKtabs(boolean testDES) throws Exception {
+    static void prepareKtabs(String etype) throws Exception {
 
         // Setup a temporary krb5.conf so we can generate ktab files
-        // using the preferred etypes.
-        if (testDES) {
+        // using the preferred etype.
+        if (etype != null && etype.startsWith("dec")) {
             // When DES is used, we always write des-cbc-crc keys.
             // They should also be used by des-cbc-md5.
             Files.writeString(Path.of("temp.conf"), """
@@ -60,6 +62,12 @@ public class KvnoNA {
                     permitted_enctypes=des-cbc-crc
                     allow_weak_crypto = true
                     """);
+        } else if (etype != null) {
+            Files.writeString(Path.of("temp.conf"), String.format("""
+                    [libdefaults]
+                    permitted_enctypes=%s
+                    allow_weak_crypto = true
+                    """, etype));
         } else {
             Files.writeString(Path.of("temp.conf"), """
                     [libdefaults]
@@ -95,14 +103,10 @@ public class KvnoNA {
 
     public static void main(String[] args) throws Exception {
 
-        OneKDC kdc;
-        if (args.length > 0) { // DES ones
-            prepareKtabs(true);
-            kdc = new OneKDC(args[0]);
-        } else {
-            prepareKtabs(false);
-            kdc = new OneKDC(null);
-        }
+        String etype = args.length > 0 ? args[0] : null;
+
+        prepareKtabs(etype);
+        OneKDC kdc = new OneKDC(etype);
         kdc.writeJAASConf();
 
         // Use backend as server because its isInitiator is false,
