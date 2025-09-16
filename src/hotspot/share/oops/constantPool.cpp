@@ -1609,9 +1609,9 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
 ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
-  InsertionIterator iter =
-      bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
-                                    CHECK_(BSMAttributeEntries::InsertionIterator()));
+  BSMAttributeEntries::InsertionIterator iter =
+    bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
+                                  CHECK_(BSMAttributeEntries::InsertionIterator()));
   return iter;
 }
 
