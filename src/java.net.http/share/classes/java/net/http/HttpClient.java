@@ -170,7 +170,16 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * a request can depend on multiple factors. In the case of HTTP/2, it may depend
  * on an initial upgrade to succeed (when using a plain connection), or on HTTP/2
  * being successfully negotiated during the Transport Layer Security (TLS) handshake.
- * Other constraints may also affect the selection of protocol version.
+ *
+ * <p> If {@linkplain Version#HTTP_2 HTTP/2} is selected over a clear
+ * connection, and no HTTP/2 connection to the
+ * <a href="https://www.rfc-editor.org/rfc/rfc6454.html#section-4">origin server</a>
+ * already exists, the client will create a new connection and attempt an upgrade
+ * from HTTP/1.1 to HTTP/2.
+ * If the upgrade succeeds, then the response to this request will use HTTP/2.
+ * If the upgrade fails, then the response will be handled using HTTP/1.1.
+ *
+ * <p> Other constraints may also affect the selection of protocol version.
  * For example, if HTTP/2 is requested through a proxy, and if the implementation
  * does not support this mode, then HTTP/1.1 may be used.
  * <p>
@@ -373,20 +382,11 @@ public abstract class HttpClient implements AutoCloseable {
          * building}, then newly built clients will prefer {@linkplain
          * Version#HTTP_2 HTTP/2}.
          *
-         * <p> If set to {@linkplain Version#HTTP_2 HTTP/2}, then each request
-         * will attempt to upgrade to HTTP/2. If the upgrade succeeds, then the
-         * response to this request will use HTTP/2 and all subsequent requests
-         * and responses to the same
-         * <a href="https://tools.ietf.org/html/rfc6454#section-4">origin server</a>
-         * will use HTTP/2. If the upgrade fails, then the response will be
-         * handled using HTTP/1.1.
-         * <br>
-         * If set to {@linkplain Version#HTTP_3 HTTP/3}, the version {@linkplain
-         * HttpClient##ProtocolVersionSelection may be downgraded to HTTP/2 or
-         * HTTP/1.1}, if an HTTP/3 connection can't be established with the origin
-         * server.
+         * <p>If a request doesn't have a preferred version, then
+         * the effective preferred version for the request is the
+         * client's preferred version.</p>
          *
-         * @implNote Other constraints may also affect the {@linkplain
+         * @implNote Some constraints may also affect the {@linkplain
          * HttpClient##ProtocolVersionSelection selection of the actual protocol version}.
          *
          * @param version the requested HTTP protocol version
