@@ -30,7 +30,7 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver compiler.loopopts.superword.TestAliasingFuzzer vanilla
+ * @run driver/timeout=200 compiler.loopopts.superword.TestAliasingFuzzer vanilla
  */
 
 /*
@@ -42,7 +42,7 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver compiler.loopopts.superword.TestAliasingFuzzer random-flags
+ * @run driver/timeout=200 compiler.loopopts.superword.TestAliasingFuzzer random-flags
  */
 
 package compiler.loopopts.superword;

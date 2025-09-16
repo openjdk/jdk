@@ -357,7 +357,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       assert(target_gen == YOUNG_GENERATION, "Error");
       // We record this census only when simulating pre-adaptive tenuring behavior, or
       // when we have been asked to record the census at evacuation rather than at mark
-      if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+      if (!ShenandoahGenerationalAdaptiveTenuring) {
         evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
       }
     }
