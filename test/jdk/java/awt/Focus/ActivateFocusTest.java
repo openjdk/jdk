@@ -54,7 +54,8 @@ public class ActivateFocusTest {
             Thread.sleep(1000);
             boolean testFailed = false;
             for (int i = 0; i < NUM_FRAMES; i++) {
-                testFailed = (af[i].lw.focusCounter > 1);
+                testFailed |= (af[i].lw.focusCounter > 1);
+                System.out.println("testFailed " + testFailed);
             }
             if (testFailed) {
                 throw new RuntimeException("TEST FAILED - focus is gained more than one time");
