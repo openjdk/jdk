@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "suspendResume_posix.hpp"
 
 /* try to switch state from state "from" to state "to"
@@ -31,7 +31,7 @@
 SuspendResume::State SuspendResume::switch_state(SuspendResume::State from,
                                                  SuspendResume::State to)
 {
-  SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
+  SuspendResume::State result = AtomicAccess::cmpxchg(&_state, from, to);
   if (result == from) {
     // success
     return to;

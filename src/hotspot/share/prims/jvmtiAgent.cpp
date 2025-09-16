@@ -31,7 +31,7 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -83,7 +83,7 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _xrun(false) {}
 
 JvmtiAgent* JvmtiAgent::next() const {
-  return Atomic::load_acquire(&_next);
+  return AtomicAccess::load_acquire(&_next);
 }
 
 const char* JvmtiAgent::name() const {
