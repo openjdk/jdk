@@ -661,7 +661,8 @@ public:
   // we expect that the marking context isn't available and the crossing maps are valid.
   // Note that crossing maps may be invalid following class unloading and before dead
   // or unloaded objects have been coalesced and filled (updating the crossing maps).
-  HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx) const;
+  HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx,
+                               HeapWord* tams, const size_t last_relevant_card_index) const;
 };
 
 // ShenandoahScanRemembered is a concrete class representing the

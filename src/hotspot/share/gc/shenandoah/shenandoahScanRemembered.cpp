@@ -232,7 +232,8 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
 // we expect that the marking context isn't available and the crossing maps are valid.
 // Note that crossing maps may be invalid following class unloading and before dead
 // or unloaded objects have been coalesced and filled (updating the crossing maps).
-HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx) const {
+HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx,
+                                                    HeapWord* tams, const size_t last_relevant_card_index) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
   ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
@@ -245,10 +246,9 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
 
-  // if marking context is valid, we use the marking bit map to find the
-  // first marked object that intersects with this card, and if no such
-  // object exists, we return null
-  if (ctx != nullptr) {
+  // if marking context is valid and we are below tams, we use the marking bit map to find the first marked object that
+  // intersects with this card, and if no such object exists, we return null
+  if ((ctx != nullptr) && (left < tams)) {
     if (ctx->is_marked(left)) {
       oop obj = cast_to_oop(left);
       assert(oopDesc::is_oop(obj), "Should be an object");
@@ -282,10 +282,10 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     return next;
   }
 
-  assert(ctx == nullptr, "Should have returned above");
+  assert((ctx == nullptr) || (left >= tams), "Should have returned above");
 
-  // The following code assumes that the region has only parsable objects
-  assert(ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(),
+  // The following code assumes that all data in region at or above left holds parsable objects
+  assert((left >= tams) || ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(),
          "The code that follows expects a parsable heap");
   if (starts_object(card_index) && get_first_start(card_index) == 0) {
     // This card contains a co-initial object; a fortiori, it covers
@@ -310,6 +310,32 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   size_t offset = get_last_start(cur_index);
   // can avoid call via card size arithmetic below instead
   HeapWord* p = _rs->addr_for_card_index(cur_index) + offset;
+  if ((ctx != nullptr) && (p < tams)) {
+    if (ctx->is_marked(p)) {
+      oop obj = cast_to_oop(p);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+      assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
+      assert(p + obj->size() > left, "This object should span start of card");
+      return p;
+    } else {
+      // Object that spans start of card is dead, so should not be scanned
+      assert((ctx == nullptr) || (left + get_first_start(card_index) >= tams), "Should have handled this case above");
+      if (starts_object(card_index)) {
+        return left + get_first_start(card_index);
+      } else {
+        // Spanning object is dead and this card does not start an object, so the start object is in some card that follows
+        size_t following_card_index = card_index;
+        do {
+          following_card_index++;
+          if (following_card_index > last_relevant_card_index) {
+            return nullptr;
+          }
+        } while (!starts_object(following_card_index));
+        return _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+      }
+    }
+  }
+
   // Recall that we already dealt with the co-initial object case above
   assert(p < left, "obj should start before left");
   // While it is safe to ask an object its size in the loop that

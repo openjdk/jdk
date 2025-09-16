@@ -102,7 +102,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
   // tams and ctx below are for old generation marking. As such, young gen roots must
   // consider everything above tams, since it doesn't represent a TAMS for young gen's
   // SATB marking.
-  const HeapWord* tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
+  HeapWord* const tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
 
   NOT_PRODUCT(ShenandoahCardStats stats(whole_cards, card_stats(worker_id));)
 
@@ -174,7 +174,14 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // This is always the case for large object arrays, which are typically more
       // common.
       assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
-      HeapWord* p = _scc->first_object_start(dirty_l, ctx);
+      HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, dirty_r);
+      if (p == nullptr) {
+        // There are no live objects to be scanned in this dirty range.  cur_index identifies first card in this
+        // uninteresting dirty range.  At top of next loop iteration, we will either end the looop
+        // (because cur_index < start_card_index) or we will begin the search for a range of clean cards.
+        continue;
+      }
+
       oop obj = cast_to_oop(p);
       assert(oopDesc::is_oop(obj), "Not an object");
       assert(ctx==nullptr || ctx->is_marked(obj), "Error");
