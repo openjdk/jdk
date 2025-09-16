@@ -488,8 +488,10 @@ class WindowsFileSystemProvider
                 }
 
                 EntryAttributes linkAttr = new EntryAttributes(attrs, h);
-                if (!linkAttrs.add(linkAttr))
+                if (!linkAttrs.add(linkAttr)) {
+                    CloseHandle(h);
                     throw new FileSystemLoopException(path.toString());
+                }
 
                 lastLinkAttributes = linkAttr;
 
@@ -497,11 +499,13 @@ class WindowsFileSystemProvider
                 path = WindowsPath.parse(path.getFileSystem(), target);
             }
         } catch (IOException|WindowsException e) {
+            // only close the last link's handle in case of error
             if (lastLinkAttributes != null) {
                 CloseHandle(lastLinkAttributes.handle());
                 throw e;
             }
         } finally {
+            // close all but the last link's handle
             linkAttrs.remove(lastLinkAttributes);
             for (EntryAttributes la : linkAttrs)
                 CloseHandle(la.handle());
@@ -568,11 +572,11 @@ class WindowsFileSystemProvider
                 WindowsFileAttributes attrs = attrs1.attrs();
                 EntryAttributes attrs2 = null;
                 try {
-                     attrs2 = realPathAttributes(file2);
-                     if (attrs2 == null)
-                         attrs2 = lastLinkAttributes(file2);
-                     if (attrs2 != null)
-                         return attrs1.equals(attrs2);
+                    attrs2 = realPathAttributes(file2);
+                    if (attrs2 == null)
+                        attrs2 = lastLinkAttributes(file2);
+                    if (attrs2 != null)
+                        return attrs1.equals(attrs2);
                 } catch (WindowsException y) {
                     y.rethrowAsIOException(file2);
                 } finally {
