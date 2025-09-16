@@ -2236,16 +2236,14 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
     LIR_Opr data_offset_reg = new_pointer_register();
-    LIR_Opr tmp_reg = new_pointer_register();
 
     __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
     for (int i = 0; i < len; i++) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, i + lo_key);
-      __ move(data_offset_reg, tmp_reg);
       __ cmove(lir_cond_equal,
+               data_offset_reg,
                LIR_OprFact::intptrConst(count_offset),
-               tmp_reg,
                data_offset_reg, T_INT);
     }
 
@@ -2294,16 +2292,14 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
     LIR_Opr data_offset_reg = new_pointer_register();
-    LIR_Opr tmp_reg = new_pointer_register();
 
     __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
     for (int i = 0; i < len; i++) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, x->key_at(i));
-      __ move(data_offset_reg, tmp_reg);
       __ cmove(lir_cond_equal,
+               data_offset_reg,
                LIR_OprFact::intptrConst(count_offset),
-               tmp_reg,
                data_offset_reg, T_INT);
     }
 
