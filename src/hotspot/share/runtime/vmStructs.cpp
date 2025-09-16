@@ -80,7 +80,6 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "opto/compile.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
@@ -106,6 +105,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER2
+#include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
 #endif // COMPILER2
 
