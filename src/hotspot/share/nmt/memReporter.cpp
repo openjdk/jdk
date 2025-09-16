@@ -419,7 +419,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(reserved_rgn);
+  bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*reserved_rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());

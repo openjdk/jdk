@@ -58,7 +58,7 @@ void RegionsTree::print_on(outputStream* st) {
 }
 #endif
 
-size_t RegionsTree::committed_size(ReservedMemoryRegion& rgn) {
+size_t RegionsTree::committed_size(const ReservedMemoryRegion& rgn) {
   size_t result = 0;
   visit_committed_regions(rgn, [&](CommittedMemoryRegion& crgn) {
     result += crgn.size();
