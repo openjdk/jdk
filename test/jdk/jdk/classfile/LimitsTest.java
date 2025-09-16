@@ -53,10 +53,13 @@ import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
@@ -479,5 +482,45 @@ class LimitsTest {
     void testStringLengthOverLimit(String st) {
         assertThrows(IllegalArgumentException.class, () -> TemporaryConstantPool.INSTANCE.utf8Entry(st));
         assertThrows(IllegalArgumentException.class, () -> ConstantPoolBuilder.of().utf8Entry(st));
+    }
+
+    static Stream<ConstantPoolBuilder> pools() {
+        return Stream.of(ConstantPoolBuilder.of(), TemporaryConstantPool.INSTANCE);
+    }
+
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testSingleReferenceNominalDescriptorOverLimit(ConstantPoolBuilder cpb) {
+        var fittingName = "A" + "a".repeat(65532); // fits "enveloped" L ;
+        var borderName = "B" + "b".repeat(65534); // fits only "not enveloped"
+        var overflowName = "C" + "b".repeat(65535); // nothing fits
+
+        var fittingClassDesc = ClassDesc.of(fittingName);
+        var borderClassDesc = ClassDesc.of(borderName);
+        var overflowClassDesc = ClassDesc.of(overflowName);
+        cpb.classEntry(fittingClassDesc);
+        cpb.utf8Entry(fittingClassDesc);
+        cpb.classEntry(borderClassDesc);
+        assertThrows(IllegalArgumentException.class, () -> cpb.utf8Entry(borderClassDesc));
+        assertThrows(IllegalArgumentException.class, () -> cpb.classEntry(overflowClassDesc));
+        assertThrows(IllegalArgumentException.class, () -> cpb.utf8Entry(overflowClassDesc));
+
+        cpb.packageEntry(PackageDesc.of(borderName));
+        assertThrows(IllegalArgumentException.class, () -> cpb.packageEntry(PackageDesc.of(overflowName)));
+        cpb.moduleEntry(ModuleDesc.of(borderName));
+        assertThrows(IllegalArgumentException.class, () -> cpb.moduleEntry(ModuleDesc.of(overflowName)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testMethodTypeDescOverLimit(ConstantPoolBuilder cpb) {
+        var borderReturnMtd = MethodTypeDesc.of(ClassDesc.of("R" + "r".repeat(65530)));
+        var overflowReturnMtd = MethodTypeDesc.of(ClassDesc.of("R" + "r".repeat(65531)));
+        var borderParamMtd = MethodTypeDesc.of(CD_void, ClassDesc.of("P" + "p".repeat(65529)));
+        var overflowParamMtd = MethodTypeDesc.of(CD_void, ClassDesc.of("P" + "p".repeat(65530)));
+        cpb.utf8Entry(borderParamMtd);
+        cpb.utf8Entry(borderReturnMtd);
+        assertThrows(IllegalArgumentException.class, () -> cpb.utf8Entry(overflowReturnMtd));
+        assertThrows(IllegalArgumentException.class, () -> cpb.utf8Entry(overflowParamMtd));
     }
 }
