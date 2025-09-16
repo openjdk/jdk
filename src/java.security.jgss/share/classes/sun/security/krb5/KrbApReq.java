@@ -282,9 +282,9 @@ public class KrbApReq {
         byte[] bytes;
         try {
             bytes = apReqMessg.ticket.encPart.decrypt(dkey, KeyUsage.KU_TICKET);
-        } catch (KrbCryptoException ke) {
-            // When etypeEngine.decrypt fails inside EncryptedData::decrypt,
-            // and the key kvno does not match, throw a different exception.
+        } catch (KrbException ke) {
+            // When EncryptedData::decrypt and the key kvno does not match,
+            // throw a different exception.
             if (!EncryptionKey.versionMatches(dkey.getKeyVersionNumber(), kvno)) {
                 var ke2 = new KrbApErrException(Krb5.KRB_AP_ERR_BADKEYVER);
                 ke2.initCause(ke);

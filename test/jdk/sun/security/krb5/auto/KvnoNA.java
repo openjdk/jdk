@@ -29,74 +29,118 @@
  * @compile -XDignore.symbol.file KvnoNA.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA des-cbc-md5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KvnoNA des-cbc-crc
  */
 
 import jdk.test.lib.Asserts;
 import org.ietf.jgss.GSSException;
 import sun.security.jgss.GSSUtil;
+import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.Krb5;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
 public class KvnoNA {
 
-    public static void main(String[] args)
-            throws Exception {
+    static void prepareKtabs(boolean testDES) throws Exception {
 
-        OneKDC kdc = new OneKDC(null);
+        // Setup a temporary krb5.conf so we can generate ktab files
+        // using the preferred etypes.
+        if (testDES) {
+            // When DES is used, we always write des-cbc-crc keys.
+            // They should also be used by des-cbc-md5.
+            Files.writeString(Path.of("temp.conf"), """
+                    [libdefaults]
+                    permitted_enctypes=des-cbc-crc
+                    allow_weak_crypto = true
+                    """);
+        } else {
+            Files.writeString(Path.of("temp.conf"), """
+                    [libdefaults]
+                    """);
+        }
+
+        System.setProperty("java.security.krb5.conf", "temp.conf");
+        Config.refresh();
+
+        PrincipalName p = new PrincipalName(
+                OneKDC.BACKEND + "@" + OneKDC.REALM, PrincipalName.KRB_NT_SRV_HST);
+
+        // Case 1, kvno 2 has the same password
+        KeyTab ktab = KeyTab.create("good2");
+        ktab.addEntry(p, "pass2".toCharArray(), 2, true);
+        ktab.save();
+
+        // Case 2, kvno 2 has a different password
+        ktab = KeyTab.create("bad2");
+        ktab.addEntry(p, "pass3".toCharArray(), 2, true);
+        ktab.save();
+
+        // Case 3 (7197159), No kvno 2, kvno 3 has the same password
+        ktab = KeyTab.create("good3");
+        ktab.addEntry(p, "pass2".toCharArray(), 3, true);
+        ktab.save();
+
+        // Case 4 (8367344), No kvno 2, kvno 3 has a different password
+        ktab = KeyTab.create("bad3");
+        ktab.addEntry(p, "pass3".toCharArray(), 3, true);
+        ktab.save();
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        OneKDC kdc;
+        if (args.length > 0) { // DES ones
+            prepareKtabs(true);
+            kdc = new OneKDC(args[0]);
+        } else {
+            prepareKtabs(false);
+            kdc = new OneKDC(null);
+        }
         kdc.writeJAASConf();
 
         // Use backend as server because its isInitiator is false,
         // therefore no login failure. In KDC, kvno is 2.
         kdc.addPrincipal(OneKDC.BACKEND, "pass2".toCharArray());
 
-        // Rewrite a keytab which might contain different keys from KDC
-        KeyTab ktab = KeyTab.create(OneKDC.KTAB);
-        PrincipalName p = new PrincipalName(
-                OneKDC.BACKEND + "@" + OneKDC.REALM, PrincipalName.KRB_NT_SRV_HST);
-        ktab.addEntry(p, "pass1".toCharArray(), 1, true);
+        // Case1, succeed
+        check("good2");
 
-        // Usual case, kvno 2 has the same password
-        ktab.addEntry(p, "pass2".toCharArray(), 2, true);
-        ktab.save();
-        check();
+        // Case 2, fails but without KRB_AP_ERR_BADKEYVER
+        Asserts.assertTrue(!(Asserts.assertThrows(GSSException.class, () -> check("bad2"))
+                .getCause() instanceof KrbException ke)
+                || ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER);
 
-        // Usual case, kvno 2 has a different password
-        ktab.deleteEntries(p, -1, 2);
-        ktab.addEntry(p, "pass3".toCharArray(), 2, true);
-        ktab.save();
-        Asserts.assertTrue(
-                Asserts.assertThrows(GSSException.class, KvnoNA::check)
-                                .getMessage().contains("Checksum failed"));
+        // Case 3, succeed
+        check("good3");
 
-        // 7197159: No kvno 2, kvno 3 has the same password
-        ktab.deleteEntries(p, -1, 2);
-        ktab.addEntry(p, "pass2".toCharArray(), 3, true);
-        ktab.save();
-        check();
-
-        // 8367344: No kvno 2, kvno 3 has a different password
-        ktab.deleteEntries(p, -1, 3);
-        ktab.addEntry(p, "pass3".toCharArray(), 3, true);
-        ktab.save();
-        Asserts.assertTrue(Asserts.assertThrows(GSSException.class, KvnoNA::check)
+        // Case 4, fails with KRB_AP_ERR_BADKEYVER
+        Asserts.assertTrue(Asserts.assertThrows(GSSException.class, () -> check("bad3"))
                 .getCause() instanceof KrbException ke
                 && ke.returnCode() == Krb5.KRB_AP_ERR_BADKEYVER);
     }
 
-    static void check() throws Exception {
-        Context c, s;
+    static void check(String ktab) throws Exception {
+        Files.copy(Path.of(ktab), Path.of(OneKDC.KTAB),
+                StandardCopyOption.REPLACE_EXISTING);
 
-        c = Context.fromUserPass("dummy", "bogus".toCharArray(), false);
-        s = Context.fromJAAS("backend");
+        Context c = Context.fromUserPass("dummy", "bogus".toCharArray(), false);
+        Context s = Context.fromJAAS("backend");
 
-        c.startAsClient(OneKDC.BACKEND, GSSUtil.GSS_KRB5_MECH_OID);
-        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+        try {
+            c.startAsClient(OneKDC.BACKEND, GSSUtil.GSS_KRB5_MECH_OID);
+            s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
-        Context.handshake(c, s);
-
-        s.dispose();
-        c.dispose();
+            Context.handshake(c, s);
+        } finally {
+            s.dispose();
+            c.dispose();
+        }
     }
 }
