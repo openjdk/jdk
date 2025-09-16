@@ -81,6 +81,16 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
   AtomicAccess::store(&_suspended, is_suspend);
 }
 
+void SuspendResumeManager::set_suspended_with_id(int64_t id, bool register_vthread_SR) {
+#if INCLUDE_JVMTI
+  if (register_vthread_SR) {
+    assert(_target->is_vthread_mounted(), "sanity check");
+    JvmtiVTSuspender::register_vthread_suspend(id);
+  }
+#endif
+  AtomicAccess::store(&_suspended, true);
+}
+
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {
   JVMTI_ONLY(assert(!_target->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
@@ -91,13 +101,7 @@ bool SuspendResumeManager::suspend(bool register_vthread_SR) {
     int64_t id = java_lang_Thread::thread_id(_target->vthread());
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
-#if INCLUDE_JVMTI
-    if (register_vthread_SR) {
-      assert(_target->is_vthread_mounted(), "sanity check");
-      JvmtiVTSuspender::register_vthread_suspend(id);
-    }
-#endif
-    AtomicAccess::store(&_suspended, true);
+    set_suspended_with_id(id, register_vthread_SR);
     do_owner_suspend();
     return true;
   }
