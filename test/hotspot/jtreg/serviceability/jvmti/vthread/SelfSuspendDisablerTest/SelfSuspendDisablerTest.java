@@ -94,6 +94,7 @@ public class SelfSuspendDisablerTest {
             testJvmtiThreadState(t1, SUSPENDED);
 
             resume(t1);
+            resume(t2);
 
             suspendAllVirtualThreads();
         });
