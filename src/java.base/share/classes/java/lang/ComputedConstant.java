@@ -44,11 +44,11 @@ import java.util.function.Supplier;
  * <p>
  * A computed constant is created using the factory method
  * {@linkplain ComputedConstant#of(Supplier)}. When created, the computed constant is
- * <em>unset</em>, which means the constant is not yet set. The constant, of type
- * {@code T}, can then be <em>set</em> (and retrieved) by calling
+ * <em>not initialized</em>, which means the constant is not yet set. The constant,
+ * of type {@code T}, can then be <em>initialized</em> (and retrieved) by calling
  * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an underlying
  * <em>computing function</em> will be invoked which would compute
- * the constant. The computing function is provided at construction. Once set,
+ * the constant. The computing function is provided at construction. Once initialized,
  * the constant can <em>never change</em> and can be retrieved over and over again
  * by subsequent {@linkplain #get() get} invocations.
  * <p>
@@ -58,7 +58,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public class Component {
  *
- *    // Creates a new unset computed constant
+ *    // Creates a new uninitialized computed constant
  *    // @link substring="of" target="#of" :
  *    private final ComputedConstant<Logger> logger =
  *            ComputedConstant.of( () -> Logger.create(Component.class) );
@@ -70,10 +70,10 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * Initially, the computed constant is <em>unset</em>, until {@code logger.get()}
- * evaluates the computing function, and sets the constant to the result;
+ * Initially, the computed constant is <em>not initialized</em>, until {@code logger.get()}
+ * evaluates the computing function, and initializes the constant to the result;
  * the result is then returned to the client. Hence, {@linkplain #get()} guarantees that
- * a computer constant is <em>set</em> before it returns, baring any exceptions.
+ * a computer constant is <em>initialized</em> before it returns, baring any exceptions.
  * <p>
  * Furthermore, {@linkplain #get()} guarantees that, out several threads trying to invoke
  * the computing function simultaneously, only one is ever evaluated. This property is
@@ -125,11 +125,11 @@ import java.util.function.Supplier;
  * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
- * A computed constant is guaranteed to be set at most once. If competing
- * threads are racing to set a computed constant, only one update computes, while
- * the other updates are blocked until the constant is set, whereafter the other updates
- * observes the computed constant is set and leave the constant unchanged and will never
- * invoke any computation.
+ * A computed constant is guaranteed to be initialized at most once. If competing
+ * threads are racing to initialize a computed constant, only one update computes, while
+ * the other updates are blocked until the constant is initialized, whereafter the other
+ * updates observes the computed constant is initialized and leave the constant unchanged
+ * and will never invoke any computation.
  * <p>
  * The at-most-once write operation on a computed constant that succeeds
  * (e.g., via an initial {@linkplain #get()} operation)
@@ -144,7 +144,7 @@ import java.util.function.Supplier;
  * A read operation can be either:
  * <ul>
  *     <li>a {@link #get()};</li>
- *     <li>an {@link #isSet()};</li>
+ *     <li>an {@link #isInitialized()};</li>
  *     <li>a {@link #hashCode()}, or</li>
  *     <li>a {@link #equals(Object)} where the other object is a computed constant.</li>
  * </ul>
@@ -154,9 +154,9 @@ import java.util.function.Supplier;
  * followed by zero or one successful invocation of the computing function.
  *
  * <h2 id="performance">Performance</h2>
- * As a computed constant can never change after it has been set. Therefore, a JVM
- * implementation may, for a set computed constant, elide all future reads of that
- * computed constant, and instead directly use any constant that it has previously
+ * As a computed constant can never change after it has been initialized. Therefore,
+ * a JVM implementation may, for an initialized computed constant, elide all future reads
+ * of that computed constant, and instead directly use any constant that it has previously
  * observed. This is true if the reference to the computed constant is a VM constant
  * (e.g. in cases where the computed constant itself is stored in a
  * {@code static final} field) or forms a trusted chain to such a VM constant via
@@ -167,8 +167,9 @@ import java.util.function.Supplier;
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote As an object can be set via computed constants but never removed, this can be
- *           a source of an unintended memory leak. A computed constant is
+ * @implNote As a computed constant can be initialized with an object but it is not
+ *           possible to ever remove the object, this can be a source of an unintended
+ *           memory leak. A computed constant is
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
  *           Be advised that reachable computed constants will hold their constants until
  *           the computed constants themselves are collected.
@@ -184,9 +185,9 @@ import java.util.function.Supplier;
  *           A {@code ComputedConstant} is not {@link Serializable}.
  *           <p>
  *           Computed constants strongly references its underlying computing function
- *           used to compute values so long as no constant is computed, after which
- *           the computing function is not strongly referenced anymore and may be
- *           collected.
+ *           used to compute values so long as the computed constant is not
+ *           initialized, after which the computing function is no longer strongly
+ *           referenced and may be collected.
  *           <p>
  *           A computed constant is free to synchronize on itself. Hence, care must be
  *           taken when directly or indirectly synchronizing on a computed constant.
@@ -203,15 +204,18 @@ public sealed interface ComputedConstant<T>
         permits ComputedConstantImpl {
 
     /**
-     * {@return the constant if set, otherwise, returns {@code other}}
+     * {@return the constant if initialized, otherwise, returns {@code other}}
      *
-     * @param other value to return if the constant is not set
+     * @param other value to return if the constant is not initialized
      */
     T orElse(T other);
 
     /**
-     * {@return the set constant. If not set, first computes and sets the constant using
-     *          the computing function}
+     * {@return the initialized constant. If not initialized, first computes and
+     *          initializes the constant using the computing function}
+     * <p>
+     * After this method returns successfully, the constant is guaranteed to be
+     * initialized.
      *
      * @throws NullPointerException if the computing function returns {@code null}
      * @throws RuntimeException if an exception is thrown while executing the
@@ -220,9 +224,9 @@ public sealed interface ComputedConstant<T>
     T get();
 
     /**
-     * {@return {@code true} if the contents is set, {@code false} otherwise}
+     * {@return {@code true} if the constant is initialized, {@code false} otherwise}
      */
-    boolean isSet();
+    boolean isInitialized();
 
 
     // Object methods

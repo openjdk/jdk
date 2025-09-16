@@ -106,7 +106,7 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
 
     @ForceInline
     @Override
-    public boolean isSet() {
+    public boolean isInitialized() {
         return getAcquire() != null;
     }
 

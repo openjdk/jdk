@@ -63,7 +63,7 @@ final class DemoImperativeTest {
         }
 
         @Override public T       orElse(T other) { return underlying.orElse(other); }
-        @Override public boolean isSet() { return underlying.isSet(); }
+        @Override public boolean isSet() { return underlying.isInitialized(); }
         @Override public T       get() { return underlying.get(); }
 
     }

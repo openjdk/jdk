@@ -95,10 +95,10 @@ final class ComputedConstantTest {
 
     @ParameterizedTest
     @MethodSource("computedConstants")
-    void isSet(ComputedConstant<Integer> constant) {
-        assertFalse(constant.isSet());
+    void isInitialized(ComputedConstant<Integer> constant) {
+        assertFalse(constant.isInitialized());
         constant.get();
-        assertTrue(constant.isSet());
+        assertTrue(constant.isInitialized());
    }
 
     @ParameterizedTest
