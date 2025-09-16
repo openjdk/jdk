@@ -26,7 +26,6 @@
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -187,22 +186,14 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 
-  ShenandoahEvacuationInformation evacInfo;
-  evacInfo.set_collection_set_regions(collection_set->count());
-  evacInfo.set_collection_set_used_before(collection_set->used());
-  evacInfo.set_collection_set_used_after(collection_set->live());
-  evacInfo.set_collected_old(collection_set->get_old_bytes_reserved_for_evacuation());
-  evacInfo.set_collected_promoted(collection_set->get_young_bytes_to_be_promoted());
-  evacInfo.set_collected_young(collection_set->get_young_bytes_reserved_for_evacuation());
-  evacInfo.set_regions_promoted_humongous(humongous_regions_promoted);
-  evacInfo.set_regions_promoted_regular(regular_regions_promoted_in_place);
-  evacInfo.set_regular_promoted_garbage(regular_regions_promoted_garbage);
-  evacInfo.set_regular_promoted_free(regular_regions_promoted_free);
-  evacInfo.set_regions_immediate(immediate_regions);
-  evacInfo.set_immediate_size(immediate_garbage);
-  evacInfo.set_free_regions(free_regions);
-
-  ShenandoahTracer().report_evacuation_info(&evacInfo);
+  ShenandoahTracer::report_evacuation_info(collection_set,
+                                           free_regions,
+                                           humongous_regions_promoted,
+                                           regular_regions_promoted_in_place,
+                                           regular_regions_promoted_garbage,
+                                           regular_regions_promoted_free,
+                                           immediate_regions,
+                                           immediate_garbage);
 }
 
 
