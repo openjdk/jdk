@@ -423,8 +423,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         size_t aligned_map_memsz = ROUNDUP(existing_map->memsz, page_size);
         // The lib offset may be aligned down, so lib_php->p_memsz > existing_map->memsz
         bool offset_aligned_down = aligned_map_memsz == ROUNDUP(lib_php->p_memsz + (lib_php->p_offset & (page_size - 1)), page_size);
-        if (!offset_aligned_down &&
-            (existing_map->memsz != page_size) &&
+        if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
             (aligned_map_memsz != ROUNDUP(lib_php->p_memsz, page_size)) &&
             !offset_aligned_down) {
