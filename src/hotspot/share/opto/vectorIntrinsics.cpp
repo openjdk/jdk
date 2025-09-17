@@ -1280,7 +1280,7 @@ Node* LibraryCallKit::gen_vector_gather_load(Node* addr, Node* indexes0, Node* i
   }
   // Merge the second gather result with the first one.
   const TypeVect* merge_vt = TypeVect::make(T_SHORT, index_vt->length() * 2);
-  Node* merge1 = gvn().transform(new VectorConcatenateNode(vgather, vgather1, merge_vt));
+  Node* merge1 = gvn().transform(new VectorConcatenateAndNarrowNode(vgather, vgather1, merge_vt));
 
   // If two gather-loads are enough, return the merged result.
   if (indexes2 == nullptr) {
@@ -1313,9 +1313,9 @@ Node* LibraryCallKit::gen_vector_gather_load(Node* addr, Node* indexes0, Node* i
                                                         index_vt, indexes3, elem_bt));
   }
   // Merge the third and fourth gather results.
-  Node* merge2 = gvn().transform(new VectorConcatenateNode(vgather2, vgather3, merge_vt));
+  Node* merge2 = gvn().transform(new VectorConcatenateAndNarrowNode(vgather2, vgather3, merge_vt));
   // Merge the two merged results.
-  return gvn().transform(new VectorConcatenateNode(merge1, merge2, vt));
+  return gvn().transform(new VectorConcatenateAndNarrowNode(merge1, merge2, vt));
 }
 
 //
@@ -1418,8 +1418,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
   }
 
-  bool needs_vector_index = Matcher::gather_scatter_needs_vector_index(elem_bt);
-  if (needs_vector_index) {
+  bool needs_index_address = Matcher::gather_scatter_requires_index_in_address(elem_bt);
+  if (!needs_index_address) {
     // Check that the vector holding indices is supported by architecture
     if (!arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
@@ -1431,7 +1431,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     // Check more ops that are necessary to finish the whole subword gather with vector indexes.
     if (!is_scatter && gvn().type(argument(10)) != TypePtr::NULL_PTR) {
       assert(is_subword_type(elem_bt), "Only subword gather operation accepts multiple indexes");
-      if (!arch_supports_vector(Op_VectorConcatenate, idx_num_elem, T_INT, VecMaskNotUsed)) {
+      if (!arch_supports_vector(Op_VectorConcatenateAndNarrow, idx_num_elem, T_INT, VecMaskNotUsed)) {
         log_if_needed("  ** not supported: op=gather/merge vlen=%d etype=%s is_masked_op=%d",
                       num_elem, type2name(elem_bt), is_masked_op ? 1 : 0);
         return false; // not supported
@@ -1452,7 +1452,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   SavedState old_state(this);
 
   Node* addr = nullptr;
-  if (needs_vector_index) {
+  if (!needs_index_address) {
     addr = make_unsafe_address(base, offset, elem_bt, true);
   } else {
     assert(is_subword_type(elem_bt), "Only subword gather operation supports non-vector indexes");
@@ -1485,7 +1485,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   // Get the indexes for gather/scatter.
   Node* indexes = nullptr;
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  if (!needs_vector_index) {
+  if (needs_index_address) {
     Node* indexMap = argument(16);
     Node* indexM   = argument(17);
     indexes = array_element_address(indexMap, indexM, T_INT);
@@ -1501,7 +1501,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   Node* indexes1 = nullptr;
   Node* indexes2 = nullptr;
   Node* indexes3 = nullptr;
-  if (!is_scatter && needs_vector_index) {
+  if (!is_scatter && !needs_index_address) {
     // Get the second index vector if it is not nullptr.
     Node* idx1 = argument(10);
     if (gvn().type(idx1) != TypePtr::NULL_PTR) {

@@ -1115,11 +1115,18 @@ class LoadVectorNode : public LoadNode {
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
-// Load Vector from memory via index map
+// Load Vector from memory via index map. The index map is usually a vector of indices
+// that has the same vector type as the node's bottom type. For non-subword types, it must
+// be. However, for subword types, the basic type of index is int. Hence, the index map
+// can be either a vector with int elements or an address which saves the int indices.
 class LoadVectorGatherNode : public LoadVectorNode {
  private:
   // The basic type of memory, which might be different with the vector element type
   // when it is a subword type loading.
+  //
+  // For example, when it is a byte type loading, the memory basic type is T_BYTE while
+  // the vector element type of this node is T_INT, if the indices input has a vector
+  // type.
   BasicType _mem_bt;
 
  public:
@@ -1188,8 +1195,8 @@ class StoreVectorNode : public StoreNode {
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
-// Store Vector into memory via index map
-
+// Store Vector into memory via index map. The index map is usually a vector of indices
+// that has the same vector type as the node's bottom type.
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
@@ -1254,10 +1261,17 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
+// The index map is usually a vector of indices that has the same vector type as the node's
+// bottom type. For non-subword types, it must be. However, for subword types, the basic type
+// of index is int. Hence, the index map can be either a vector with int elements or an address
+// which saves the int indices.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  private:
   // The basic type of memory, which might be different with the vector element type when it
   // is a subword type loading.
+  //
+  // For example, when it is a byte type loading, the memory basic type is T_BYTE while
+  // the vector element type of this node is T_INT, if the indices input has a vector type.
   BasicType _mem_bt;
 
  public:
@@ -1766,10 +1780,13 @@ class VectorRearrangeNode : public VectorNode {
 // e.g. vec1 = [0d 0c 0b 0a], vec2 = [0h 0g 0f 0e]
 //      dst = [h g f e d c b a]
 //
-class VectorConcatenateNode : public VectorNode {
+class VectorConcatenateAndNarrowNode : public VectorNode {
  public:
-  VectorConcatenateNode(Node* vec1, Node* vec2, const TypeVect* vt)
+  VectorConcatenateAndNarrowNode(Node* vec1, Node* vec2, const TypeVect* vt)
     : VectorNode(vec1, vec2, vt) {
+    assert(Type::equals(vec1->bottom_type(), vec2->bottom_type()), "must be same vector type");
+    assert(vec1->bottom_type()->is_vect()->length_in_bytes() ==
+           vt->length_in_bytes(), "vector length mismatch");
     assert(type2aelembytes(vec1->bottom_type()->is_vect()->element_basic_type()) ==
            type2aelembytes(vt->element_basic_type()) * 2, "must be half size");
   }

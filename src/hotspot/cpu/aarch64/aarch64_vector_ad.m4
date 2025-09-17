@@ -3472,9 +3472,9 @@ EXTRACT_FP(F, fmovs, 4, S, 2)
 // DOUBLE
 EXTRACT_FP(D, fmovd, 2, D, 3)
 
-// ---------------------------- VectorConcatenate ------------------------------
+// ------------------------- VectorConcatenateAndNarrow ------------------------
 instruct vconcatenate(vReg dst, vReg src1, vReg src2) %{
-  match(Set dst (VectorConcatenate src1 src2));
+  match(Set dst (VectorConcatenateAndNarrow src1 src2));
   format %{ "vconcatenate $dst, $src1, $src2" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);

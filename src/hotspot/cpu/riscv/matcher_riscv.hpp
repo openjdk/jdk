@@ -163,9 +163,11 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
-  // Return true if vector gather-load/scatter-store needs vector index as input.
-  static bool gather_scatter_needs_vector_index(BasicType bt) {
-    return !is_subword_type(bt);
+  // Return true if this CPU requires the index input saved in an array address
+  // for vector gather-load/scatter-store operations. Otherwise, return false if
+  // the index input should be saved in a vector register.
+  static bool gather_scatter_requires_index_in_address(BasicType bt) {
+    return false;
   }
 
   // Some architecture needs a helper to check for alltrue vector
