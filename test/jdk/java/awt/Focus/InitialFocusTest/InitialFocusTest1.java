@@ -22,6 +22,7 @@
  */
 
 import java.awt.Button;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.event.FocusEvent;
@@ -39,27 +40,36 @@ public class InitialFocusTest1 extends Frame implements FocusListener {
     Button button1 = new Button("Button1");
     Button button2 = new Button("Button2");
     private static volatile Object focused;
+    private static InitialFocusTest1 app;
 
     public static void main(final String[] args) throws Exception {
-        InitialFocusTest1 app = new InitialFocusTest1();
         try {
-            app.setSize(200, 200);
-            app.setLocationRelativeTo(null);
-            app.setLayout(new FlowLayout());
+            EventQueue.invokeAndWait(() -> {
+                app = new InitialFocusTest1();
+                app.setLayout(new FlowLayout());
 
-            app.button1.addFocusListener(app);
-            app.button2.addFocusListener(app);
-            app.add(app.button1);
-            app.add(app.button2);
-            app.setVisible(true);
-            app.button2.requestFocus();
+                app.button1.addFocusListener(app);
+                app.button2.addFocusListener(app);
+                app.add(app.button1);
+                app.add(app.button2);
+
+                app.setSize(200, 200);
+                app.setLocationRelativeTo(null);
+                app.setVisible(true);
+            });
+            Thread.sleep(1000);
+            EventQueue.invokeAndWait(() -> {
+                app.button2.requestFocus();
+            });
             // wait for the very very last focus event
-            Thread.sleep(10000);
+            Thread.sleep(1000);
             if (app.button2 != focused) {
                 throw new RuntimeException("Wrong focus owner: " + focused);
             }
         } finally {
-            app.dispose();
+            EventQueue.invokeAndWait(() -> {
+                app.dispose();
+            });
         }
     }
 
