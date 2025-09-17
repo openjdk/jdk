@@ -357,7 +357,6 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   // 4. Every allocation under TAMS updates the object start array.
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-  assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
 #ifdef ASSERT
 #define WALK_FORWARD_IN_BLOCK_START true
 #else
