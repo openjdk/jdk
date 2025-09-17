@@ -123,29 +123,29 @@ public class Headers implements Map<String,List<String>> {
         char c = key.charAt(i);
         if (c == '\r' || c == '\n')
             throw new IllegalArgumentException("illegal character in key");
-        if(c >= 'a' && c <= 'z') {
+        if (c >= 'a' && c <= 'z') {
             // start with lowercase
         } else {
             i++;
-            for(; i < len; i++) {
+            for (; i < len; i++) {
                 c = key.charAt(i);
                 if (c == '\r' || c == '\n')
                     throw new IllegalArgumentException("illegal character in key");
-                else if(c >= 'A' && c <='Z') {
+                else if (c >= 'A' && c <='Z') {
                     break;
                 }
             }
         }
-        if(i == len) return key;
+        if (i == len) return key;
 
         char[] b = key.toCharArray();
-        if(i == 0) {
+        if (i == 0) {
             b[0] = (char)(b[0] - ('a' - 'A'));
             i++;
         }
         for (; i < len; i++) {
             c = b[i];
-            if(c >= 'A' && c <= 'Z') {
+            if (c >= 'A' && c <= 'Z') {
                 b[i] = (char) (c + ('a'-'A'));
             } else if (c == '\r' || c == '\n')
                 throw new IllegalArgumentException("illegal character in key");
