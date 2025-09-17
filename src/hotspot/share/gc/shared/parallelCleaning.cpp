@@ -95,7 +95,7 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
 }
 
 void KlassCleaningTask::work() {
-  for (ClassLoaderData* cur = _klass_iterator.next(); cur != nullptr; cur = _klass_iterator.next()) {
+  for (ClassLoaderData* cur = _cld_iterator.next(); cur != nullptr; cur = _cld_iterator.next()) {
       class CleanKlasses : public KlassClosure {
       public:
 

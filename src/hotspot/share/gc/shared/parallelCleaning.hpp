@@ -54,10 +54,10 @@ public:
 
 // Cleans out the Klass tree from stale data.
 class KlassCleaningTask : public StackObj {
-  ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
+  ClassLoaderDataGraphIteratorAtomic _cld_iterator;
 
 public:
-  KlassCleaningTask() : _klass_iterator() { }
+  KlassCleaningTask() : _cld_iterator() { }
 
   void work();
 };

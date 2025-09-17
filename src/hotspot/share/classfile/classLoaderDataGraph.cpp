@@ -489,13 +489,13 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
   }
 }
 
-ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
+ClassLoaderDataGraphIteratorAtomic::ClassLoaderDataGraphIteratorAtomic()
     : _cld(nullptr) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   _cld = AtomicAccess::load_acquire(&ClassLoaderDataGraph::_head);
 }
 
-ClassLoaderData* ClassLoaderDataGraphKlassIteratorAtomic::next() {
+ClassLoaderData* ClassLoaderDataGraphIteratorAtomic::next() {
   ClassLoaderData* cur = AtomicAccess::load(&_cld);
   for (;;) {
     if (cur == nullptr) {

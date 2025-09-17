@@ -34,7 +34,7 @@
 
 class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderData;
-  friend class ClassLoaderDataGraphKlassIteratorAtomic;
+  friend class ClassLoaderDataGraphIteratorAtomic;
   friend class VMStructs;
  private:
   class ClassLoaderDataGraphIterator;
@@ -141,11 +141,11 @@ public:
 };
 
 // An iterator that distributes Klasses to parallel worker threads based on CLDs.
-class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
+class ClassLoaderDataGraphIteratorAtomic : public StackObj {
   ClassLoaderData* volatile _cld;
 
 public:
-  ClassLoaderDataGraphKlassIteratorAtomic();
+  ClassLoaderDataGraphIteratorAtomic();
 
   ClassLoaderData* next();
 };
