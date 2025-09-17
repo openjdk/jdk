@@ -97,17 +97,18 @@ bool SuspendResumeManager::suspend(bool register_vthread_SR) {
   if (_target == self) {
     // If target is the current thread we can bypass the handshake machinery
     // and just suspend directly.
-    // All required data should be loaded before state is set to _thread_blocked.
+    // The vthread() oop must only be accessed before state is set to _thread_blocked.
     int64_t id = java_lang_Thread::thread_id(_target->vthread());
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
     set_suspended_with_id(id, register_vthread_SR);
     do_owner_suspend();
     return true;
+  } else {
+    SuspendThreadHandshakeClosure st(register_vthread_SR);
+    Handshake::execute(&st, _target);
+    return st.did_suspend();
   }
-  SuspendThreadHandshakeClosure st(register_vthread_SR);
-  Handshake::execute(&st, _target);
-  return st.did_suspend();
 }
 
 bool SuspendResumeManager::resume(bool register_vthread_SR) {

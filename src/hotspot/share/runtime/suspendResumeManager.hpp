@@ -58,6 +58,8 @@ class SuspendResumeManager {
   bool suspend_with_handshake(bool register_vthread_SR);
 
   void set_suspended(bool to, bool register_vthread_SR);
+
+  // The specific 'set_suspended' implementation for self suspend.
   void set_suspended_with_id(int64_t id, bool register_vthread_SR);
 
   bool is_suspended() {
