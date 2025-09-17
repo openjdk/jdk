@@ -39,8 +39,8 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A lazy constant is a deferred shallowly immutable constant to be computed at
- * a later time by an underlying computing function.
+ * A lazy constant is a deferred, shallowly immutable constant to be computed at
+ * a later time via an underlying computing function.
  * <p>
  * A lazy constant is created using the factory method
  * {@linkplain LazyConstant#of(Supplier)}. When created, the lazy constant is
@@ -59,8 +59,8 @@ import java.util.function.Supplier;
  * public class Component {
  *
  *    // Creates a new uninitialized lazy constant
- *    // @link substring="of" target="#of" :
  *    private final LazyConstant<Logger> logger =
+ *            // @link substring="of" target="#of" :
  *            LazyConstant.of( () -> Logger.create(Component.class) );
  *
  *    public void process() {
@@ -80,6 +80,10 @@ import java.util.function.Supplier;
  * crucial as evaluation of the computing function may have side effects, for example,
  * the call above to {@code Logger.create()} may result in storage resources being
  * prepared.
+ * <p>
+ * If the computing function returns {@code null}, a {@linkplain NullPointerException}
+ * is thrown. Hence, a lazy constant can never be {@code null}. Clients that want to
+ * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  *
  * <h2 id="composition">Composing lazy constants</h2>
  * A lazy constant can depend on other computed constants, forming a dependency graph
@@ -103,8 +107,8 @@ import java.util.function.Supplier;
  *         }
  *     }
  *
- *     private static final LazyConstant<Foo> FOO = LazyConstant.of(Foo::new);
- *     private static final LazyConstant<Bar> BAR = LazyConstant.of(() -> new Bar(FOO.get()));
+ *     private static final LazyConstant<Foo> FOO = LazyConstant.of( Foo::new );
+ *     private static final LazyConstant<Bar> BAR = LazyConstant.of( () -> new Bar(FOO.get()) );
  *
  *     public static Foo foo() {
  *         return FOO.get();
@@ -119,10 +123,6 @@ import java.util.function.Supplier;
  * Calling {@code BAR.get()} will create the {@code Bar} singleton if it is not already
  * created. Upon such a creation, a dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
- * <p>
- * If the computing function returns {@code null}, a {@linkplain NullPointerException}
- * is thrown. Hence, a lazy constant can never be {@code null}. Clients that want to
- * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A lazy constant is guaranteed to be initialized at most once. If competing
@@ -167,12 +167,12 @@ import java.util.function.Supplier;
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote As a lazy constant can be initialized with an object but it is not
- *           possible to ever remove the object, this can be a source of an unintended
- *           memory leak. A lazy constant is
- *           {@linkplain java.lang.ref##reachability strongly reachable}.
- *           Be advised that reachable lazy constants will hold their constants until
- *           the lazy constants themselves are collected.
+ * @implNote As a lazy constant can be initialized with an object but, it is not
+ *           possible to ever remove that object, this can be a source of an unintended
+ *           memory leak. In other words, a lazy constant
+ *           {@linkplain java.lang.ref##reachability strongly references} the object
+ *           it was initialized with. Hence, a lazy constant will hold the object it
+ *           was initialized with until the lazy constant itself is collected (if ever).
  *           <p>
  *           A {@code LazyConstant} that has a type parameter {@code T} that is an
  *           array type (of arbitrary rank) will only allow the JVM to treat the
@@ -261,7 +261,7 @@ public sealed interface LazyConstant<T>
     // Factories
 
     /**
-     * {@return a new lazy constant to be computed later using the provided
+     * {@return a new lazy constant to be computed later via the provided
      *          {@code computingFunction}}
      *
      * @param computingFunction in the form of a Supplier to be used to compute
