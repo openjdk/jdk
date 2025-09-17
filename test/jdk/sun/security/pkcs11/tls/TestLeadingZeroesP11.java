@@ -87,6 +87,26 @@ public class TestLeadingZeroesP11 extends PKCS11Test {
             throw new Exception("First byte is not zero as expected");
         }
 
+        // generate generic shared secret
+        aliceKeyAgree.init(alicePrivKey);
+        aliceKeyAgree.doPhase(bobPubKey, true);
+        byte[] genericSecret =
+                aliceKeyAgree.generateSecret("Generic").getEncoded();
+        System.out.println("generic secret:\n" + HEX.formatHex(genericSecret));
+
+        // verify that leading zero is present
+        if (genericSecret.length != 128) {
+            throw new Exception("Unexpected generic secret length");
+        }
+        if (genericSecret[0] != 0) {
+            throw new Exception("First byte is not zero as expected");
+        }
+        for (int i = 0; i < genericSecret.length; i++) {
+            if (genericSecret[i] != sharedSecret[i]) {
+                throw new Exception("Shared secrets differ");
+            }
+        }
+
         // now, test TLS premaster secret
         aliceKeyAgree.init(alicePrivKey);
         aliceKeyAgree.doPhase(bobPubKey, true);
