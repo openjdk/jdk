@@ -353,7 +353,6 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
                     throw new IOException(e);
                 }
 
-                // X509Key x = X509Key.parse(pubKeyEncoded);
                 DerOutputStream pubOut = new DerOutputStream();
                 pubOut.putUnalignedBitString(x.getKey());
                 out.writeImplicit(
