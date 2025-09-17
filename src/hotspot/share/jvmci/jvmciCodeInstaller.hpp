@@ -140,6 +140,8 @@ class HotSpotCompiledCodeStream : public ResourceObj {
 #undef checked_read
 };
 
+// Helper class that gathers context information to determine
+// whether a method call needs to be bound at the call site.
 class CallSiteBindingContext {
   public:
     int bci;
