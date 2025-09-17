@@ -175,7 +175,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // common.
       assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
       HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, dirty_r);
-      if (p == nullptr) {
+      if ((p == nullptr) || (p >= right)) {
         // There are no live objects to be scanned in this dirty range.  cur_index identifies first card in this
         // uninteresting dirty range.  At top of next loop iteration, we will either end the looop
         // (because cur_index < start_card_index) or we will begin the search for a range of clean cards.
@@ -183,7 +183,8 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       }
 
       oop obj = cast_to_oop(p);
-      assert(oopDesc::is_oop(obj), "Not an object");
+      assert(oopDesc::is_oop(obj), "Not an object at " PTR_FORMAT ", left: " PTR_FORMAT ", right: " PTR_FORMAT,
+             p2i(p), p2i(left), p2i(right));
       assert(ctx==nullptr || ctx->is_marked(obj), "Error");
 
       // PREFIX: The object that straddles into this range of dirty cards
