@@ -55,7 +55,7 @@ public class TestNormalMapping {
         String mode = args[0];
         System.out.println("Running JTREG test in mode: " + mode);
 
-        switch(mode) {
+        switch (mode) {
             case "ir" -> runIR();
             case "visual" -> runVisual();
             default -> throw new RuntimeException("Unknown mode: " + mode);
