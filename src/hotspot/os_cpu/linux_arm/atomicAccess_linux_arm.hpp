@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
-#define OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
+#ifndef OS_CPU_LINUX_ARM_ATOMICACCESS_LINUX_ARM_HPP
+#define OS_CPU_LINUX_ARM_ATOMICACCESS_LINUX_ARM_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
-// Implementation of class atomic
+// Implementation of class AtomicAccess
 
 class ARMAtomicFuncs : AllStatic {
 public:
@@ -178,4 +178,4 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, dest, compare_value, exchange_value);
 }
 
-#endif // OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
+#endif // OS_CPU_LINUX_ARM_ATOMICACCESS_LINUX_ARM_HPP

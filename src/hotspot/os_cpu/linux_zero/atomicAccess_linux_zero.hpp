@@ -23,12 +23,12 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
-#define OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
+#ifndef OS_CPU_LINUX_ZERO_ATOMICACCESS_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_ATOMICACCESS_LINUX_ZERO_HPP
 
 #include "orderAccess_linux_zero.hpp"
 
-// Implementation of class atomic
+// Implementation of class AtomicAccess
 
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
@@ -149,4 +149,4 @@ inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
   __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }
 
-#endif // OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
+#endif // OS_CPU_LINUX_ZERO_ATOMICACCESS_LINUX_ZERO_HPP

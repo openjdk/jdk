@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
-#define OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
+#ifndef OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
 
 #include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
@@ -345,4 +345,4 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
   T operator()(const volatile T* p) const { T t = *p; OrderAccess::acquire(); return t; }
 };
 
-#endif // OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP
+#endif // OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
