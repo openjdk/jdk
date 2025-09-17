@@ -1826,8 +1826,8 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  const BSMAttributeEntry* const bsmae1 = bsm_attribute_entry(idx1);
-  const BSMAttributeEntry* const bsmae2 = cp2->bsm_attribute_entry(idx2);
+  const BSMAttributeEntry* const e1 = bsm_attribute_entry(idx1);
+  const BSMAttributeEntry* const e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = bsmae1->bootstrap_method_index();
   int k2 = bsmae2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
