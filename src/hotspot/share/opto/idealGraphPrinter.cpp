@@ -258,12 +258,12 @@ void IdealGraphPrinter::print_prop(const char *name, const char *val) {
 
 void IdealGraphPrinter::print_prop_record(const IdealGraphPrintRecord rec[], int size) {
   for ( int i = 0; i < size; i++ ) {
-    if (rec[i].cond != 0) {
-      if (rec[i].string_value != nullptr) {
-        print_prop(rec[i].name, rec[i].string_value);
+    if (rec[i]._cond != 0) {
+      if (rec[i]._svalue != nullptr) {
+        print_prop(rec[i]._name, rec[i]._svalue);
       }
       else {
-        print_prop(rec[i].name, rec[i].int_value);
+        print_prop(rec[i]._name, rec[i]._ivalue);
       }
     }
   }
@@ -521,16 +521,16 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
     const jushort flags = node->flags();
     const IdealGraphPrintRecord rec[] = {
-        {flags & Node::Flag_is_Copy, "is_copy", "true"},
-        {flags & Node::Flag_rematerialize, "rematerialize", "true"},
-        {flags & Node::Flag_needs_anti_dependence_check, "needs_anti_dependence_check", "true"},
-        {flags & Node::Flag_is_macro, "is_macro", "true"},
-        {flags & Node::Flag_is_Con, "is_con", "true"},
-        {flags & Node::Flag_is_cisc_alternate, "is_cisc_alternate", "true"},
-        {flags & Node::Flag_is_dead_loop_safe, "is_dead_loop_safe", "true"},
-        {flags & Node::Flag_may_be_short_branch, "may_be_short_branch", "true"},
-        {flags & Node::Flag_has_call, "has_call", "true"},
-        {flags & Node::Flag_has_swapped_edges, "has_swapped_edges", "true"}
+        {((flags & Node::Flag_is_Copy) != 0), "is_copy", "true"},
+        {((flags & Node::Flag_rematerialize) != 0), "rematerialize", "true"},
+        {((flags & Node::Flag_needs_anti_dependence_check) != 0), "needs_anti_dependence_check", "true"},
+        {((flags & Node::Flag_is_macro) != 0), "is_macro", "true"},
+        {((flags & Node::Flag_is_Con) != 0), "is_con", "true"},
+        {((flags & Node::Flag_is_cisc_alternate) != 0), "is_cisc_alternate", "true"},
+        {((flags & Node::Flag_is_dead_loop_safe) != 0), "is_dead_loop_safe", "true"},
+        {((flags & Node::Flag_may_be_short_branch) != 0), "may_be_short_branch","true"},
+        {((flags & Node::Flag_has_call) != 0), "has_call", "true"},
+        {((flags & Node::Flag_has_swapped_edges) != 0), "has_swapped_edges", "true"}
       };
     print_prop_record(rec,(sizeof(rec)/sizeof(IdealGraphPrintRecord)));
 
@@ -1081,30 +1081,30 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       IdealGraphPrintRecord rec[] = {
           {1, "mask", buffer},
           {1, "mask_size", nullptr, lrg.mask_size()},
-          {(int)lrg._degree_valid, "degree", nullptr, lrg.degree()},
+          {((lrg._degree_valid != 0)), "degree", nullptr, lrg.degree()},
           {1, "num_regs", nullptr, lrg.num_regs()},
           {1, "reg_pressure", nullptr, lrg.reg_pressure()},
-          {1, "cost", nullptr, (int)lrg._cost},
-          {1, "area", nullptr, (int)lrg._area},
-          {1, "score", nullptr, (int)lrg.score()},
-          {(int)lrg._risk_bias, "risk_bias", nullptr, (int)lrg._risk_bias},
-          {(int)lrg._copy_bias, "copy_bias", nullptr, (int)lrg._copy_bias},
+          {1, "cost", nullptr, (int) lrg._cost},
+          {1, "area", nullptr, (int) lrg._area},
+          {1, "score", nullptr, (int) lrg.score()},
+          {(lrg._risk_bias != 0), "risk_bias", nullptr, (int) lrg._risk_bias},
+          {(lrg._copy_bias != 0), "copy_bias", nullptr, (int) lrg._copy_bias},
           {lrg.is_singledef(), "is_singledef", TRUE_VALUE},
           {lrg.is_multidef(), "is_multidef", TRUE_VALUE},
-          {(int)lrg._is_oop, "is_oop", TRUE_VALUE},
-          {(int)lrg._is_float, "is_float", TRUE_VALUE},
-          {(int)lrg._is_vector, "is_vector", TRUE_VALUE},
-          {(int)lrg._is_predicate, "is_predicate", TRUE_VALUE},
-          {lrg._is_scalable, "is_scalable", TRUE_VALUE},
-          {lrg._was_spilled1, "was_spilled1", TRUE_VALUE},
-          {lrg._was_spilled2, "was_spilled2", TRUE_VALUE},
-          {lrg._direct_conflict, "direct_conflict", TRUE_VALUE},
-          {lrg._fat_proj, "fat_proj", TRUE_VALUE},
-          {lrg._was_lo, "_was_lo", TRUE_VALUE},
-          {lrg._has_copy, "has_copy", TRUE_VALUE},
-          {lrg._at_risk, "at_risk", TRUE_VALUE},
-          {lrg._must_spill, "must_spill", TRUE_VALUE},
-          {lrg._is_bound, "is_bound", TRUE_VALUE},
+          {(lrg._is_oop != 0), "is_oop", TRUE_VALUE},
+          {(lrg._is_float != 0), "is_float", TRUE_VALUE},
+          {(lrg._is_vector != 0), "is_vector", TRUE_VALUE},
+          {(lrg._is_predicate != 0), "is_predicate", TRUE_VALUE},
+          {(lrg._is_scalable != 0), "is_scalable", TRUE_VALUE},
+          {(lrg._was_spilled1 != 0), "was_spilled1", TRUE_VALUE},
+          {(lrg._was_spilled2 != 0), "was_spilled2", TRUE_VALUE},
+          {(lrg._direct_conflict != 0), "direct_conflict", TRUE_VALUE},
+          {(lrg._fat_proj != 0), "fat_proj", TRUE_VALUE},
+          {(lrg._was_lo != 0), "_was_lo", TRUE_VALUE},
+          {(lrg._has_copy != 0), "has_copy", TRUE_VALUE},
+          {(lrg._at_risk != 0), "at_risk", TRUE_VALUE},
+          {(lrg._must_spill != 0), "must_spill", TRUE_VALUE},
+          {(lrg._is_bound != 0), "is_bound", TRUE_VALUE},
           {lrg._msize_valid && lrg._degree_valid && lrg.lo_degree(), "trivial", TRUE_VALUE}
         };
       print_prop_record(rec, (sizeof(rec)/sizeof(IdealGraphPrintRecord)));

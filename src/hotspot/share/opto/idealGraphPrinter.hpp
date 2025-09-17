@@ -115,7 +115,12 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   Compile *C;
   double _max_freq;
   bool _append;
-  struct IdealGraphPrintRecord { int cond; const char *name; const char *string_value = nullptr; int int_value = -1;};
+  struct IdealGraphPrintRecord {
+    bool _cond;
+    const char *_name;
+    const char *_svalue = nullptr;
+    int _ivalue = -1;
+  };
 
   // Walk the native stack and print relevant C2 frames as IGV properties (if
   // graph_name == nullptr) or the graph name based on the highest C2 frame (if
