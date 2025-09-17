@@ -211,6 +211,8 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 // - With memory phi. Chain of memory operations inside the loop.
 void VLoopMemorySlices::find_memory_slices() {
   Compile* C = _vloop.phase()->C;
+  // We iterate over the body, which is topologically sorted. Hence, if there is a phi
+  // in a slice, we will find it first, and the loads and stres afterwards.
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     if (n->is_memory_phi()) {

@@ -27,7 +27,6 @@
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
-#include "utilities/debug.hpp"
 
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:

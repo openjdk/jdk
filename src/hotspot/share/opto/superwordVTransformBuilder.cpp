@@ -140,7 +140,7 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
       init_req_with_scalar(n, vtn, MemNode::Address);
       init_req_with_scalar(n, vtn, MemNode::ValueIn);
       add_memory_dependencies_of_node_to_vtnode(n, vtn, vtn_memory_dependencies);
-    } else if (n->isa_CountedLoop()) {
+    } else if (n->is_CountedLoop()) {
       // Avoid self-loop, it only creates unnecessary issues in scheduling.
       init_req_with_scalar(n, vtn, LoopNode::EntryControl);
       init_req_with_scalar(n, vtn, LoopNode::LoopBackControl);
