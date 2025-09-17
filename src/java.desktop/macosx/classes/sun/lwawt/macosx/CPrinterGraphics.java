@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,11 @@ public final class CPrinterGraphics extends ProxyGraphics2D {
     }
 
     @Override
+    public CPrinterJob getPrinterJob() {
+        return (CPrinterJob) super.getPrinterJob();
+    }
+
+    @Override
     public boolean drawImage(Image img, int x, int y,
                  Color bgcolor,
                  ImageObserver observer) {
@@ -74,5 +79,17 @@ public final class CPrinterGraphics extends ProxyGraphics2D {
         // a problem with CPrinterSurfaceData (and the decision method,
         // needToCopyBgColorImage, is private instead of protected!)
         return getDelegate().drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+    }
+
+    @Override
+    public void drawString(String str, int x, int y) {
+        str = getPrinterJob().removeControlChars(str);
+        super.drawString(str, x, y);
+    }
+
+    @Override
+    public void drawString(String str, float x, float y) {
+        str = getPrinterJob().removeControlChars(str);
+        super.drawString(str, x, y);
     }
 }

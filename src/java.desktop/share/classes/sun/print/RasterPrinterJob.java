@@ -2476,7 +2476,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * This is a utility method used by subclasses to remove them so we
      * don't have to worry about platform or font specific handling of them.
      */
-    protected String removeControlChars(String s) {
+    public String removeControlChars(String s) {
         char[] in_chars = s.toCharArray();
         int len = in_chars.length;
         char[] out_chars = new char[len];
