@@ -21,12 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8367376
-   @summary DesktopProperty never reset pending status to process new updates
-   @modules java.desktop/sun.swing.plaf
-   @run main Test8367376
-*/
+/*
+ * @test
+ * @bug 8367376
+ * @summary DesktopProperty never reset pending status to process new updates
+ * @modules java.desktop/sun.swing.plaf
+ * @run main Test8367376
+ */
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
