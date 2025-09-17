@@ -76,7 +76,7 @@ char* quote_argument(char* arg) {
             *write_pos++ = *read_pos++;
             backslashes = 0;
         } else {
-            // Backslashes not preceeding a quote is copied without escaping
+            // Backslashes not preceeding a quote are copied without escaping
             for (int i = 0; i < backslashes; i++) {
                 *write_pos++ = '\\';
             }
