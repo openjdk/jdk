@@ -373,7 +373,7 @@ address ArchiveBuilder::reserve_buffer() {
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
     // As zero is allowed for _requested_static_archive_bottom, use integer arithmetic to avoid UB pointer arithmetic.
     _requested_static_archive_top = (address)((uintptr_t)_requested_static_archive_bottom + static_archive_size);
-    my_archive_requested_bottom = align_up(_requested_static_archive_top, MetaspaceShared::core_region_alignment());
+    my_archive_requested_bottom = align_up(_requested_static_archive_top, AOTMetaspace::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
   }
