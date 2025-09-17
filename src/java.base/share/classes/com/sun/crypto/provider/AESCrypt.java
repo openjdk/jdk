@@ -124,7 +124,7 @@ public final class AESCrypt extends SymmetricCipher {
             {(byte)0x17, (byte)0x2B, (byte)0x04, (byte)0x7E, (byte)0xBA, (byte)0x77, (byte)0xD6, (byte)0x26, (byte)0xE1, (byte)0x69, (byte)0x14, (byte)0x63, (byte)0x55, (byte)0x21, (byte)0x0C, (byte)0x7D}
     };
 
-    private static final int[] T0 = new int[] {
+    private static final int[] T0 = {
             0xC66363A5, 0xF87C7C84, 0xEE777799, 0xF67B7B8D, 0xFFF2F20D, 0xD66B6BBD,
             0xDE6F6FB1, 0x91C5C554, 0x60303050, 0x02010103, 0xCE6767A9, 0x562B2B7D,
             0xE7FEFE19, 0xB5D7D762, 0x4DABABE6, 0xEC76769A, 0x8FCACA45, 0x1F82829D,
@@ -170,7 +170,7 @@ public final class AESCrypt extends SymmetricCipher {
             0x7BB0B0CB, 0xA85454FC, 0x6DBBBBD6, 0x2C16163A,
     };
 
-    private static final int[] T1 = new int[] {
+    private static final int[] T1 = {
             0xA5C66363, 0x84F87C7C, 0x99EE7777, 0x8DF67B7B, 0x0DFFF2F2, 0xBDD66B6B,
             0xB1DE6F6F, 0x5491C5C5, 0x50603030, 0x03020101, 0xA9CE6767, 0x7D562B2B,
             0x19E7FEFE, 0x62B5D7D7, 0xE64DABAB, 0x9AEC7676, 0x458FCACA, 0x9D1F8282,
@@ -216,7 +216,7 @@ public final class AESCrypt extends SymmetricCipher {
             0xCB7BB0B0, 0xFCA85454, 0xD66DBBBB, 0x3A2C1616,
     };
 
-    private static final int[] T2 = new int[] {
+    private static final int[] T2 = {
             0x63A5C663, 0x7C84F87C, 0x7799EE77, 0x7B8DF67B, 0xF20DFFF2, 0x6BBDD66B,
             0x6FB1DE6F, 0xC55491C5, 0x30506030, 0x01030201, 0x67A9CE67, 0x2B7D562B,
             0xFE19E7FE, 0xD762B5D7, 0xABE64DAB, 0x769AEC76, 0xCA458FCA, 0x829D1F82,
@@ -262,7 +262,7 @@ public final class AESCrypt extends SymmetricCipher {
             0xB0CB7BB0, 0x54FCA854, 0xBBD66DBB, 0x163A2C16,
     };
 
-    private static final int[] T3 = new int[] {
+    private static final int[] T3 = {
             0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF, 0x6B6BBDD6,
             0x6F6FB1DE, 0xC5C55491, 0x30305060, 0x01010302, 0x6767A9CE, 0x2B2B7D56,
             0xFEFE19E7, 0xD7D762B5, 0xABABE64D, 0x76769AEC, 0xCACA458F, 0x82829D1F,
@@ -308,7 +308,7 @@ public final class AESCrypt extends SymmetricCipher {
             0xB0B0CB7B, 0x5454FCA8, 0xBBBBD66D, 0x16163A2C,
     };
 
-    private static final int[] TI0 = new int[] {
+    private static final int[] TI0 = {
             0x51F4A750, 0x7E416553, 0x1A17A4C3, 0x3A275E96, 0x3BAB6BCB, 0x1F9D45F1,
             0xACFA58AB, 0x4BE30393, 0x2030FA55, 0xAD766DF6, 0x88CC7691, 0xF5024C25,
             0x4FE5D7FC, 0xC52ACBD7, 0x26354480, 0xB562A38F, 0xDEB15A49, 0x25BA1B67,
@@ -354,7 +354,7 @@ public final class AESCrypt extends SymmetricCipher {
             0x7BCB8461, 0xD532B670, 0x486C5C74, 0xD0B85742,
     };
 
-    private static final int[] TI1 = new int[] {
+    private static final int[] TI1 = {
             0x5051F4A7, 0x537E4165, 0xC31A17A4, 0x963A275E, 0xCB3BAB6B, 0xF11F9D45,
             0xABACFA58, 0x934BE303, 0x552030FA, 0xF6AD766D, 0x9188CC76, 0x25F5024C,
             0xFC4FE5D7, 0xD7C52ACB, 0x80263544, 0x8FB562A3, 0x49DEB15A, 0x6725BA1B,
@@ -400,7 +400,7 @@ public final class AESCrypt extends SymmetricCipher {
             0x617BCB84, 0x70D532B6, 0x74486C5C, 0x42D0B857,
     };
 
-    private static final int[] TI2 = new int[] {
+    private static final int[] TI2 = {
             0xA75051F4, 0x65537E41, 0xA4C31A17, 0x5E963A27, 0x6BCB3BAB, 0x45F11F9D,
             0x58ABACFA, 0x03934BE3, 0xFA552030, 0x6DF6AD76, 0x769188CC, 0x4C25F502,
             0xD7FC4FE5, 0xCBD7C52A, 0x44802635, 0xA38FB562, 0x5A49DEB1, 0x1B6725BA,
@@ -446,7 +446,7 @@ public final class AESCrypt extends SymmetricCipher {
             0x84617BCB, 0xB670D532, 0x5C74486C, 0x5742D0B8,
     };
 
-    private static final int[] TI3 = new int[] {
+    private static final int[] TI3 = {
             0xF4A75051, 0x4165537E, 0x17A4C31A, 0x275E963A, 0xAB6BCB3B, 0x9D45F11F,
             0xFA58ABAC, 0xE303934B, 0x30FA5520, 0x766DF6AD, 0xCC769188, 0x024C25F5,
             0xE5D7FC4F, 0x2ACBD7C5, 0x35448026, 0x62A38FB5, 0xB15A49DE, 0xBA1B6725,
@@ -492,7 +492,7 @@ public final class AESCrypt extends SymmetricCipher {
             0xCB84617B, 0x32B670D5, 0x6C5C7448, 0xB85742D0,
     };
 
-    private static final int[] TI4 = new int[] {
+    private static final int[] TI4 = {
             0x52525252, 0x09090909, 0x6A6A6A6A, 0xD5D5D5D5, 0x30303030, 0x36363636,
             0xA5A5A5A5, 0x38383838, 0xBFBFBFBF, 0x40404040, 0xA3A3A3A3, 0x9E9E9E9E,
             0x81818181, 0xF3F3F3F3, 0xD7D7D7D7, 0xFBFBFBFB, 0x7C7C7C7C, 0xE3E3E3E3,
@@ -988,9 +988,8 @@ public final class AESCrypt extends SymmetricCipher {
      *
      * @return the processed word of the block.
      */
-    private int round(int[] state, int idx, int k) {
+    private static final int round(int[] state, int idx, int ek) {
         int len = WB;
-        int ek = expandedKey[((k + 1) * len) + idx];
 
         // Utilize lookup tables for the three transformations to
         // help mitigate against timing attacks.
@@ -1011,9 +1010,8 @@ public final class AESCrypt extends SymmetricCipher {
      *
      * @return the processed word of the block.
      */
-    private int invRound(int[] state, int idx, int k) {
+    private static final int invRound(int[] state, int idx, int iek) {
         int len = WB;
-        int iek = invExpandedKey[(k + 2) * len + idx];
 
         // Utilize lookup tables for the three transformations to
         // help mitigate against timing attacks.
@@ -1057,7 +1055,7 @@ public final class AESCrypt extends SymmetricCipher {
      */
     private int invLastRound(int[] state, int idx) {
         int len = WB;
-        int ek = invExpandedKey[idx];
+        int iek = invExpandedKey[idx];
 
         // Can only use byte instead of int array, but decreases performance by
         // 0.4%.  No lookup table yields a 0.7% decrease.
@@ -1066,7 +1064,7 @@ public final class AESCrypt extends SymmetricCipher {
         int a2 = TI4[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
         int a3 = TI4[state[(idx + 1) % len] & 0xFF] & 0xFF;
         // Add columns and round key
-        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
+        return a0 ^ a1 ^ a2 ^ a3 ^ iek;
     }
 
     /**
@@ -1080,88 +1078,89 @@ public final class AESCrypt extends SymmetricCipher {
     private void encryptJava(byte[] p, int po, byte[] c, int co) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
+        int w = 4;
 
         initState(ti, p, po);
         addRoundKey(ti, expandedKey, 0);
 
-        a0 = round(ti, 0, 0);
-        a1 = round(ti, 1, 0);
-        a2 = round(ti, 2, 0);
-        a3 = round(ti, 3, 0);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 1);
-        a1 = round(ti, 1, 1);
-        a2 = round(ti, 2, 1);
-        a3 = round(ti, 3, 1);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 2);
-        a1 = round(ti, 1, 2);
-        a2 = round(ti, 2, 2);
-        a3 = round(ti, 3, 2);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 3);
-        a1 = round(ti, 1, 3);
-        a2 = round(ti, 2, 3);
-        a3 = round(ti, 3, 3);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 4);
-        a1 = round(ti, 1, 4);
-        a2 = round(ti, 2, 4);
-        a3 = round(ti, 3, 4);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 5);
-        a1 = round(ti, 1, 5);
-        a2 = round(ti, 2, 5);
-        a3 = round(ti, 3, 5);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 6);
-        a1 = round(ti, 1, 6);
-        a2 = round(ti, 2, 6);
-        a3 = round(ti, 3, 6);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 7);
-        a1 = round(ti, 1, 7);
-        a2 = round(ti, 2, 7);
-        a3 = round(ti, 3, 7);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, 8);
-        a1 = round(ti, 1, 8);
-        a2 = round(ti, 2, 8);
-        a3 = round(ti, 3, 8);
+        a0 = round(ti, 0, expandedKey[w++]);
+        a1 = round(ti, 1, expandedKey[w++]);
+        a2 = round(ti, 2, expandedKey[w++]);
+        a3 = round(ti, 3, expandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = round(ti, 0, 9);
-            a1 = round(ti, 1, 9);
-            a2 = round(ti, 2, 9);
-            a3 = round(ti, 3, 9);
+            a0 = round(ti, 0, expandedKey[w++]);
+            a1 = round(ti, 1, expandedKey[w++]);
+            a2 = round(ti, 2, expandedKey[w++]);
+            a3 = round(ti, 3, expandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = round(ti, 0, 10);
-            a1 = round(ti, 1, 10);
-            a2 = round(ti, 2, 10);
-            a3 = round(ti, 3, 10);
+            a0 = round(ti, 0, expandedKey[w++]);
+            a1 = round(ti, 1, expandedKey[w++]);
+            a2 = round(ti, 2, expandedKey[w++]);
+            a3 = round(ti, 3, expandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = round(ti, 0, 11);
-            a1 = round(ti, 1, 11);
-            a2 = round(ti, 2, 11);
-            a3 = round(ti, 3, 11);
+            a0 = round(ti, 0, expandedKey[w++]);
+            a1 = round(ti, 1, expandedKey[w++]);
+            a2 = round(ti, 2, expandedKey[w++]);
+            a3 = round(ti, 3, expandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = round(ti, 0, 12);
-            a1 = round(ti, 1, 12);
-            a2 = round(ti, 2, 12);
-            a3 = round(ti, 3, 12);
+            a0 = round(ti, 0, expandedKey[w++]);
+            a1 = round(ti, 1, expandedKey[w++]);
+            a2 = round(ti, 2, expandedKey[w++]);
+            a3 = round(ti, 3, expandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         a0 = lastRound(ti, 0);
@@ -1183,88 +1182,89 @@ public final class AESCrypt extends SymmetricCipher {
     private void decryptJava(byte[] c, int co, byte[] p, int po) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
+        int w = 8;
 
         initState(ti, c, co);
         addRoundKey(ti, invExpandedKey, WB);
 
-        a0 = invRound(ti, 0, 0);
-        a1 = invRound(ti, 1, 0);
-        a2 = invRound(ti, 2, 0);
-        a3 = invRound(ti, 3, 0);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 1);
-        a1 = invRound(ti, 1, 1);
-        a2 = invRound(ti, 2, 1);
-        a3 = invRound(ti, 3, 1);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 2);
-        a1 = invRound(ti, 1, 2);
-        a2 = invRound(ti, 2, 2);
-        a3 = invRound(ti, 3, 2);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 3);
-        a1 = invRound(ti, 1, 3);
-        a2 = invRound(ti, 2, 3);
-        a3 = invRound(ti, 3, 3);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 4);
-        a1 = invRound(ti, 1, 4);
-        a2 = invRound(ti, 2, 4);
-        a3 = invRound(ti, 3, 4);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 5);
-        a1 = invRound(ti, 1, 5);
-        a2 = invRound(ti, 2, 5);
-        a3 = invRound(ti, 3, 5);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 6);
-        a1 = invRound(ti, 1, 6);
-        a2 = invRound(ti, 2, 6);
-        a3 = invRound(ti, 3, 6);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 7);
-        a1 = invRound(ti, 1, 7);
-        a2 = invRound(ti, 2, 7);
-        a3 = invRound(ti, 3, 7);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, 8);
-        a1 = invRound(ti, 1, 8);
-        a2 = invRound(ti, 2, 8);
-        a3 = invRound(ti, 3, 8);
+        a0 = invRound(ti, 0, invExpandedKey[w++]);
+        a1 = invRound(ti, 1, invExpandedKey[w++]);
+        a2 = invRound(ti, 2, invExpandedKey[w++]);
+        a3 = invRound(ti, 3, invExpandedKey[w++]);
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = invRound(ti, 0, 9);
-            a1 = invRound(ti, 1, 9);
-            a2 = invRound(ti, 2, 9);
-            a3 = invRound(ti, 3, 9);
+            a0 = invRound(ti, 0, invExpandedKey[w++]);
+            a1 = invRound(ti, 1, invExpandedKey[w++]);
+            a2 = invRound(ti, 2, invExpandedKey[w++]);
+            a3 = invRound(ti, 3, invExpandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = invRound(ti, 0, 10);
-            a1 = invRound(ti, 1, 10);
-            a2 = invRound(ti, 2, 10);
-            a3 = invRound(ti, 3, 10);
+            a0 = invRound(ti, 0, invExpandedKey[w++]);
+            a1 = invRound(ti, 1, invExpandedKey[w++]);
+            a2 = invRound(ti, 2, invExpandedKey[w++]);
+            a3 = invRound(ti, 3, invExpandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = invRound(ti, 0, 11);
-            a1 = invRound(ti, 1, 11);
-            a2 = invRound(ti, 2, 11);
-            a3 = invRound(ti, 3, 11);
+            a0 = invRound(ti, 0, invExpandedKey[w++]);
+            a1 = invRound(ti, 1, invExpandedKey[w++]);
+            a2 = invRound(ti, 2, invExpandedKey[w++]);
+            a3 = invRound(ti, 3, invExpandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = invRound(ti, 0, 12);
-            a1 = invRound(ti, 1, 12);
-            a2 = invRound(ti, 2, 12);
-            a3 = invRound(ti, 3, 12);
+            a0 = invRound(ti, 0, invExpandedKey[w++]);
+            a1 = invRound(ti, 1, invExpandedKey[w++]);
+            a2 = invRound(ti, 2, invExpandedKey[w++]);
+            a3 = invRound(ti, 3, invExpandedKey[w++]);
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         a0 = invLastRound(ti, 0);
