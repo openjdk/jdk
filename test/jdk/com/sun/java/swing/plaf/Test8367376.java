@@ -134,8 +134,8 @@ public class Test8367376 extends JFrame {
         keepAliveLatch.await();
     }
 
-    static int panelUpdateUIctr;
-    static int observedExpectedExceptionCtr;
+    static int panelUpdateUICounter;
+    static int observedExpectedExceptionCounter;
 
     Test8367376() {
         JButton button = new JButton("button");
