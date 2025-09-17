@@ -37,11 +37,25 @@ import java.util.Arrays;
  * - control: alignment, 4k-aliasing
  * - OptimizeFill
  * - fill: with constant 0, and with some other arbitrary constant/non-constant.
- * - See if -XX:-VectorBulkOperationsArray makes a difference
  * - Impact of CompactObjectHeaders
  * - Object array? Which primitives?
  * - -XX:SuperWordAutomaticAlignment=0
+ * - Limit unroll factor
  * - Investigate performance on various platforms.
+ * - Compare to Graal?
+ *
+ * TODO:: how to run the test:
+ * make test TEST="micro:vm.compiler.VectorBulkOperationsArray.fill_var.*" CONF=linux-x64 TEST_VM_OPTS="-XX:+OptimizeFill -XX:UseAVX=2" MICRO="OPTIONS=-prof perfasm -p NUM_ACCESS_ELEMENTS=10000"
+ * make test TEST="micro:vm.compiler.VectorBulkOperationsArray.copy_byte.*" CONF=linux-x64 TEST_VM_OPTS="-XX:+OptimizeFill -XX:UseAVX=2" MICRO="FORK=3;OPTIONS=-prof perfasm -p NUM_ACCESS_ELEMENTS=10000"
+ * make test TEST="micro:vm.compiler.VectorBulkOperationsArray.copy_byte.*" CONF=linux-x64 TEST_VM_OPTS="-XX:+OptimizeFill -XX:UseAVX=3 -XX:LoopMaxUnroll=64" MICRO="FORK=3;OPTIONS=-prof perfasm -p NUM_ACCESS_ELEMENTS=10000"
+ *
+ * TODO: observations
+ * - Arrays.fill is sensitive to OptimizeFill, loop version not. That's a little strange, would have expected it to get replaced by stub.
+ *   They do use different vector instructions though on AVX512, but same vector length. Maybe it is also the loops of auto-vec that
+ *   are more complicated. And more unrolling, maybe too much? Ok, but then if I go to AVX2 it all looks way different, maybe just an artifact.
+ * - Similar effect with copy_byte. Wow. There is a lot to be gained here probably.
+ * - It also seems that -XX:LoopMaxUnroll=64 is not really repected. I think I've seen this before. It only seems to work before SuperWord, but not after.
+ *   Right, but -XX:LoopMaxUnroll=32 is respected ... before SuperWord but then still super-unrolled. Fail.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
