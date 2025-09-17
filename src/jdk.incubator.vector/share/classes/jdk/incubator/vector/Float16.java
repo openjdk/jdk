@@ -890,7 +890,9 @@ public final class Float16
      * is {@code true} if and only if the argument is not
      * {@code null} and is a {@code Float16} object that
      * represents a {@code Float16} that has the same value as the
-     * {@code double} represented by this object.
+     * {@code Float16} represented by this object.
+     * {@linkplain Double##repEquivalence Representation
+     * equivalence} is used to compare the {@code Float16} values.
      *
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
@@ -987,6 +989,13 @@ public final class Float16
 
     /**
      * Compares the two specified {@code Float16} values.
+     *
+     * @apiNote
+     * One idiom to implement {@linkplain Double##repEquivalence
+     * representation equivalence} on {@code Float16} values is
+     * {@snippet lang="java" :
+     * Float16.compare(a, b) == 0
+     * }
      *
      * @param   f1        the first {@code Float16} to compare
      * @param   f2        the second {@code Float16} to compare
