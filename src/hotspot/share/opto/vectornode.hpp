@@ -1013,6 +1013,7 @@ class XorVNode : public VectorNode {
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------XorReductionVNode--------------------------------------
@@ -1676,6 +1677,7 @@ class VectorMaskCmpNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && _predicate == ((VectorMaskCmpNode&)n)._predicate;
   }
+  bool predicate_can_be_negated();
   BoolTest::mask get_predicate() { return _predicate; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

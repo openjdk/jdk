@@ -2295,6 +2295,11 @@ public class IRNode {
         vectorNode(VECTOR_MASK_CMP_D, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+    }
+
     public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
         vectorNode(VECTOR_CAST_B2S, "VectorCastB2X", TYPE_SHORT);
@@ -2703,6 +2708,11 @@ public class IRNode {
     public static final String XOR_VL = VECTOR_PREFIX + "XOR_VL" + POSTFIX;
     static {
         vectorNode(XOR_VL, "XorV", TYPE_LONG);
+    }
+
+    public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(XOR_V, "XorV");
     }
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
