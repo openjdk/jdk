@@ -61,8 +61,8 @@ import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import static java.lang.Thread.State.*;
 
@@ -209,7 +209,7 @@ class StructuredTaskScopeTest {
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testForkAfterJoin1(ThreadFactory factory) throws Exception {
+    void testForkAfterJoinCompleted1(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
                 cf -> cf.withThreadFactory(factory))) {
             scope.join();
@@ -222,7 +222,7 @@ class StructuredTaskScopeTest {
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testForkAfterJoin2(ThreadFactory factory) throws Exception {
+    void testForkAfterJoinCompleted2(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
                 cf -> cf.withThreadFactory(factory))) {
             scope.fork(() -> "foo");
@@ -232,22 +232,40 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test fork after join throws.
+     * Test fork after join interrupted.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testForkAfterJoinThrows(ThreadFactory factory) throws Exception {
+    void testForkAfterJoinInterrupted(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
                 cf -> cf.withThreadFactory(factory))) {
-            var latch = new CountDownLatch(1);
             var subtask1 = scope.fork(() -> {
-                latch.await();
+                Thread.sleep(Duration.ofDays(1));
                 return "foo";
             });
 
             // join throws
             Thread.currentThread().interrupt();
             assertThrows(InterruptedException.class, scope::join);
+
+            // fork should throw
+            assertThrows(IllegalStateException.class, () -> scope.fork(() -> "bar"));
+        }
+    }
+
+    /**
+     * Test fork after join timeout.
+     */
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkAfterJoinTimeout(ThreadFactory factory) throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
+                cf -> cf.withThreadFactory(factory)
+                        .withTimeout(Duration.ofMillis(100)))) {
+            awaitCancelled(scope);
+
+            // join throws
+            assertThrows(TimeoutException.class, scope::join);
 
             // fork should throw
             assertThrows(IllegalStateException.class, () -> scope.fork(() -> "bar"));
@@ -296,9 +314,11 @@ class StructuredTaskScopeTest {
     /**
      * Test fork after task scope is closed.
      */
-    @Test
-    void testForkAfterClose() {
-        try (var scope = StructuredTaskScope.open(Joiner.awaitAll())) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkAfterClose(ThreadFactory factory) {
+        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
+                cf -> cf.withThreadFactory(factory))) {
             scope.close();
             assertThrows(IllegalStateException.class, () -> scope.fork(() -> null));
         }
@@ -382,7 +402,34 @@ class StructuredTaskScopeTest {
      * Test join after join completed with a timeout.
      */
     @Test
-    void testJoinAfterJoin3() throws Exception {
+    void testJoinAfterJoinInterrupted() throws Exception {
+        try (var scope = StructuredTaskScope.open()) {
+            var latch = new CountDownLatch(1);
+            var subtask = scope.fork(() -> {
+                latch.await();
+                return "foo";
+            });
+
+            // join throws InterruptedException
+            Thread.currentThread().interrupt();
+            assertThrows(InterruptedException.class, scope::join);
+
+            latch.countDown();
+
+            // retry join to get result
+            scope.join();
+            assertEquals("foo", subtask.get());
+
+            // retry after otbaining result
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
+     * Test join after join completed with a timeout.
+     */
+    @Test
+    void testJoinAfterJoinTimeout() throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow(),
                 cf -> cf.withTimeout(Duration.ofMillis(100)))) {
             // wait for scope to be cancelled by timeout
@@ -393,6 +440,35 @@ class StructuredTaskScopeTest {
             for (int i = 0 ; i < 3; i++) {
                 assertThrows(IllegalStateException.class, scope::join);
             }
+        }
+    }
+
+    /**
+     * Test join invoked from Joiner.onTimeout.
+     */
+    @Test
+    void testJoinInOnTimeout() throws Exception {
+        Thread owner = Thread.currentThread();
+        var scopeRef = new AtomicReference<StructuredTaskScope<?, ?>>();
+
+        var joiner = new Joiner<String, Void>() {
+            @Override
+            public void onTimeout() {
+                assertTrue(Thread.currentThread() == owner);
+                var scope = scopeRef.get();
+                assertThrows(IllegalStateException.class, scope::join);
+            }
+            @Override
+            public Void result() {
+                return null;
+            }
+        };
+
+        try (var scope = StructuredTaskScope.open(joiner,
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            awaitCancelled(scope);
+            scopeRef.set(scope);
+            scope.join();  // invokes onTimeout
         }
     }
 
@@ -434,7 +510,7 @@ class StructuredTaskScopeTest {
                 cf -> cf.withThreadFactory(factory))) {
 
             Subtask<String> subtask = scope.fork(() -> {
-                Thread.sleep(60_000);
+                Thread.sleep(Duration.ofDays(1));
                 return "foo";
             });
 
@@ -457,10 +533,8 @@ class StructuredTaskScopeTest {
     void testInterruptJoin2(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.awaitAll(),
                 cf -> cf.withThreadFactory(factory))) {
-
-            var latch = new CountDownLatch(1);
             Subtask<String> subtask = scope.fork(() -> {
-                Thread.sleep(60_000);
+                Thread.sleep(Duration.ofDays(1));
                 return "foo";
             });
 
@@ -966,6 +1040,66 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiner.onTimeout invoked by owner thread when timeout expires.
+     */
+    @Test
+    void testOnTimeoutInvoked() throws Exception {
+        var scopeRef = new AtomicReference<StructuredTaskScope<?, ?>>();
+        Thread owner = Thread.currentThread();
+        var invokeCount = new AtomicInteger();
+        var joiner = new Joiner<String, Void>() {
+            @Override
+            public void onTimeout() {
+                assertTrue(Thread.currentThread() == owner);
+                assertTrue(scopeRef.get().isCancelled());
+                invokeCount.incrementAndGet();
+            }
+            @Override
+            public Void result() {
+                return null;
+            }
+        };
+        try (var scope = StructuredTaskScope.open(joiner,
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            scopeRef.set(scope);
+            scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return null;
+            });
+            scope.join();
+            assertEquals(1, invokeCount.get());
+        }
+    }
+
+    /**
+     * Test Joiner.onTimeout throwing an excepiton.
+     */
+    @Test
+    void testOnTimeoutThrows() throws Exception {
+        var joiner = new Joiner<String, Void>() {
+            @Override
+            public void onTimeout() {
+                throw new FooException();
+            }
+            @Override
+            public Void result() {
+                return null;
+            }
+        };
+        try (var scope = StructuredTaskScope.open(joiner,
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            // wait for scope to be cancelled by timeout
+            awaitCancelled(scope);
+
+            // join should throw FooException on first usage
+            assertThrows(FooException.class, scope::join);
+
+            // retry after onTimeout fails
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
      * Test toString.
      */
     @Test
@@ -1157,6 +1291,25 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiner.allSuccessfulOrThrow() with a timeout.
+     */
+    @Test
+    void testAllSuccessfulOrThrow4() throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow(),
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            scope.fork(() -> "foo");
+            scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return "bar";
+            });
+            assertThrows(TimeoutException.class, scope::join);
+
+            // retry after join throws TimeoutException
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
      * Test Joiner.anySuccessfulResultOrThrow() with no subtasks.
      */
     @Test
@@ -1230,6 +1383,25 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiner.allSuccessfulOrThrow() with a timeout.
+     */
+    @Test
+    void anySuccessfulResultOrThrow6() throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.<String>anySuccessfulResultOrThrow(),
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            scope.fork(() -> { throw new FooException(); });
+            scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return "bar";
+            });
+            assertThrows(TimeoutException.class, scope::join);
+
+            // retry after join throws TimeoutException
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
      * Test Joiner.awaitAllSuccessfulOrThrow() with no subtasks.
      */
     @Test
@@ -1277,6 +1449,25 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiner.awaitAllSuccessfulOrThrow() with a timeout.
+     */
+    @Test
+    void testAwaitSuccessfulOrThrow4() throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.<String>awaitAllSuccessfulOrThrow(),
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            scope.fork(() -> "foo");
+            scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return "bar";
+            });
+            assertThrows(TimeoutException.class, scope::join);
+
+            // retry after join throws TimeoutException
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
      * Test Joiner.awaitAll() with no subtasks.
      */
     @Test
@@ -1319,6 +1510,25 @@ class StructuredTaskScopeTest {
             assertNull(result);
             assertEquals("foo", subtask1.get());
             assertTrue(subtask2.exception() instanceof FooException);
+        }
+    }
+
+    /**
+     * Test Joiner.awaitAll() with a timeout.
+     */
+    @Test
+    void testAwaitAll4() throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.<String>awaitAll(),
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            scope.fork(() -> "foo");
+            scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return "bar";
+            });
+            assertThrows(TimeoutException.class, scope::join);
+
+            // retry after join throws TimeoutException
+            assertThrows(IllegalStateException.class, scope::join);
         }
     }
 
@@ -1438,6 +1648,33 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiner.allUntil(Predicate) with a timeout.
+     */
+    @Test
+    void testAllUntil6() throws Exception {
+        try (var scope = StructuredTaskScope.open(Joiner.<String>allUntil(s -> false),
+                cf -> cf.withTimeout(Duration.ofMillis(100)))) {
+            var subtask1 = scope.fork(() -> "foo");
+            var subtask2 = scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return "bar";
+            });
+
+            // TimeoutException should not be thrown
+            var subtasks = scope.join().toList();
+
+            // stream should have two elements, subtask1 may or may not have completed
+            assertEquals(2, subtasks.size());
+            assertSame(subtask1, subtasks.get(0));
+            assertSame(subtask2, subtasks.get(1));
+            assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
+
+            // retry after join throws TimeoutException
+            assertThrows(IllegalStateException.class, scope::join);
+        }
+    }
+
+    /**
      * Test Joiner default methods.
      */
     @Test
@@ -1461,6 +1698,7 @@ class StructuredTaskScopeTest {
             assertFalse(joiner.onFork(subtask2));
             assertFalse(joiner.onComplete(subtask1));
             assertThrows(IllegalArgumentException.class, () -> joiner.onComplete(subtask2));
+            assertThrows(TimeoutException.class, joiner::onTimeout);
         }
     }
 
@@ -1523,7 +1761,7 @@ class StructuredTaskScopeTest {
      */
     @Test
     void testConfigMethods() throws Exception {
-        Function<Configuration, Configuration> testConfig = cf -> {
+        UnaryOperator<Configuration> configOperator = cf -> {
             var name = "duke";
             var threadFactory = Thread.ofPlatform().factory();
             var timeout = Duration.ofSeconds(10);
@@ -1548,7 +1786,7 @@ class StructuredTaskScopeTest {
 
             return cf;
         };
-        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(), testConfig)) {
+        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(), configOperator)) {
             // do nothing
         }
     }

@@ -28,7 +28,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import jdk.internal.misc.ThreadFlock;
 import jdk.internal.invoke.MhUtil;
 
@@ -76,10 +76,10 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
      * default configuration.
      */
     static <T, R> StructuredTaskScope<T, R> open(Joiner<? super T, ? extends R> joiner,
-                                                 Function<Configuration, Configuration> configFunction) {
+                                                 UnaryOperator<Configuration> configOperator) {
         Objects.requireNonNull(joiner);
 
-        var config = (ConfigImpl) configFunction.apply(ConfigImpl.defaultConfig());
+        var config = (ConfigImpl) configOperator.apply(ConfigImpl.defaultConfig());
         var scope = new StructuredTaskScopeImpl<T, R>(joiner, config.threadFactory(), config.name());
 
         // schedule timeout
@@ -109,21 +109,11 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     }
 
     /**
-     * Throws IllegalStateException if already joined or scope is closed.
-     */
-    private void ensureNotJoined() {
-        assert Thread.currentThread() == flock.owner();
-        if (state > ST_FORKED) {
-            throw new IllegalStateException("Already joined or scope is closed");
-        }
-    }
-
-    /**
      * Throws IllegalStateException if invoked by the owner thread and the owner thread
      * has not joined.
      */
     private void ensureJoinedIfOwner() {
-        if (Thread.currentThread() == flock.owner() && state <= ST_JOIN_STARTED) {
+        if (Thread.currentThread() == flock.owner() && state < ST_JOIN_STARTED) {
             throw new IllegalStateException("join not called");
         }
     }
@@ -195,7 +185,9 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     public <U extends T> Subtask<U> fork(Callable<? extends U> task) {
         Objects.requireNonNull(task);
         ensureOwner();
-        ensureNotJoined();
+        if (state > ST_FORKED) {
+            throw new IllegalStateException("join already called or scope is closed");
+        }
 
         var subtask = new SubtaskImpl<U>(this, task);
 
@@ -234,7 +226,9 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     @Override
     public R join() throws InterruptedException {
         ensureOwner();
-        ensureNotJoined();
+        if (state >= ST_JOIN_COMPLETED) {
+            throw new IllegalStateException("Already joined or scope is closed");
+        }
 
         // join started
         state = ST_JOIN_STARTED;
@@ -242,14 +236,16 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
         // wait for all subtasks, the scope to be cancelled, or interrupt
         flock.awaitAll();
 
-        // throw if timeout expired
-        if (timeoutExpired) {
-            throw new TimeoutException();
-        }
-        cancelTimeout();
-
-        // all subtasks completed or cancelled
+        // all subtasks completed or scope cancelled
         state = ST_JOIN_COMPLETED;
+
+        // invoke joiner onTimeout if timeout expired
+        if (timeoutExpired) {
+            cancel();  // ensure cancelled before calling onTimeout
+            joiner.onTimeout();
+        } else {
+            cancelTimeout();
+        }
 
         // invoke joiner to get result
         try {
