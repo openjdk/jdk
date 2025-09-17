@@ -449,13 +449,12 @@ protected:
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
     decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
     decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
-    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions(APX)*/ \
+    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
     decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
     decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */ \
-    decl(APX_NCI_NDD_NF,    "apx_nci_ndd_nf",    66) /* Intel APX New Conditional Instructions(NCI), New Data Destination(NDD) and No Flags(NF)*/
+    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -776,7 +775,6 @@ public:
   }
   static void set_apx_cpuFeatures() {
     _features.set_feature(CPU_APX_F);
-    _features.set_feature(CPU_APX_NCI_NDD_NF);
   }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);
@@ -881,7 +879,6 @@ public:
   static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
   static bool supports_apx_f()        { return _features.supports_feature(CPU_APX_F); }
-  static bool supports_apx_nci_ndd_nf()  { return _features.supports_feature(CPU_APX_NCI_NDD_NF); }
   static bool supports_avxonly()      { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()          { return _features.supports_feature(CPU_SHA); }
   static bool supports_fma()          { return _features.supports_feature(CPU_FMA) && supports_avx(); }

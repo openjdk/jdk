@@ -1021,7 +1021,6 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_AVX512_BITALG);
     _features.clear_feature(CPU_AVX512_IFMA);
     _features.clear_feature(CPU_APX_F);
-    _features.clear_feature(CPU_APX_NCI_NDD_NF);
     _features.clear_feature(CPU_AVX512_FP16);
     _features.clear_feature(CPU_AVX10_1);
     _features.clear_feature(CPU_AVX10_2);
@@ -1051,7 +1050,6 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_AVX512BW);
       _features.clear_feature(CPU_AVX512VL);
       _features.clear_feature(CPU_APX_F);
-      _features.clear_feature(CPU_APX_NCI_NDD_NF);
       _features.clear_feature(CPU_AVX512DQ);
       _features.clear_feature(CPU_AVX512_VNNI);
       _features.clear_feature(CPU_AVX512_VAES);
@@ -1072,7 +1070,7 @@ void VM_Version::get_processor_features() {
   }
 
     // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_apx_nci_ndd_nf() && supports_avx512vl();
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
   if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
@@ -1080,7 +1078,6 @@ void VM_Version::get_processor_features() {
 
   if (!UseAPX) {
     _features.clear_feature(CPU_APX_F);
-    _features.clear_feature(CPU_APX_NCI_NDD_NF);
   }
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
@@ -2930,7 +2927,6 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
       xem_xcr0_eax.bits.apx_f != 0 &&
       std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0) {
     vm_features.set_feature(CPU_APX_F);
-    vm_features.set_feature(CPU_APX_NCI_NDD_NF);
   }
   if (std_cpuid1_ecx.bits.avx != 0 &&
       std_cpuid1_ecx.bits.osxsave != 0 &&
