@@ -213,7 +213,6 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t
     bm_word_t cword = (map(index) ^ flip) << shift;
     // After this shift, the highest order bits correspond to r_index.
 
-    // With 64-bit words, 
     // We give special handling if either of the two most significant bits (Weak or Strong) is set.  With 64-bit
     // words, the mask of interest is 0xc000_0000_0000_0000.  Symbolically, this constant is represented by:
     const bm_word_t first_object_mask = ((bm_word_t) 0x3) << (BitsPerWord - 2);

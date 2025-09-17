@@ -120,7 +120,6 @@ private:
   // comments should clarify the ranges examined to find the bit, and what value is returned
   // in case searched bit is not found
   //   rename flip template parameter as match_one_bit (false means match_zero bit)
-  
 
 #endif
 

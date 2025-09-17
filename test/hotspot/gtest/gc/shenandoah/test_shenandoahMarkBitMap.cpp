@@ -192,7 +192,7 @@ public:
 
     mbm.clear_range_large(heap_descriptor);
     verify_bitmap_is_empty((HeapWord*) my_heap_memory, heap_size_words, &mbm);
-  
+
     HeapWord* weakly_marked_addresses[] = {
       (HeapWord*) &my_heap_memory[13],
       (HeapWord*) &my_heap_memory[14],
@@ -277,7 +277,7 @@ public:
       MarkBitMapAssertTrue(upgraded);
     }
     verify_bitmap_is_strongly_marked(&mbm, upgraded_weakly_marked_addresses, upgraded_weakly_marked_objects);
- 
+
     HeapWord* all_marked_addresses[] = {
       (HeapWord*) &my_heap_memory[8],        /* strongly marked */
       (HeapWord*) &my_heap_memory[13],       /* weakly marked */
