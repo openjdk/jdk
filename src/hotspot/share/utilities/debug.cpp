@@ -657,6 +657,8 @@ void help() {
   tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
   tty->print_cr("  findm(intptr_t pc) - finds Method*");
   tty->print_cr("  find(intptr_t x)   - finds & prints nmethod/stub/bytecode/oop based on pointer into it");
+
+#ifndef PRODUCT
   tty->print_cr("  pns(void* sp, void* fp, void* pc)  - print native (i.e. mixed) stack trace. E.g.");
   tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64 or");
   tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86 or");
@@ -666,6 +668,8 @@ void help() {
   tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
+#endif
+
   tty->print_cr("class metadata.");
   tty->print_cr("  findclass(name_pattern, flags)");
   tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
