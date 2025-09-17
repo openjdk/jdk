@@ -2470,11 +2470,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
         g.setPaint(Color.black);
     }
 
-    /* On-screen drawString renders most control chars as the missing glyph
-     * and have the non-zero advance of that glyph.
-     * Exceptions are \t, \n and \r which are considered zero-width.
-     * This is a utility method used by subclasses to remove them so we
-     * don't have to worry about platform or font specific handling of them.
+    /**
+     * Removes ignorable whitespace from the specified text, so that there
+     * is no need for platform-specific or font-specific custom whitespace
+     * handling, and so that these characters are not treated like control
+     * characters which are printed as the missing glyph.
+     *
+     * @param s the text to process
+     * @return the input text, with ignorable whitespace (if any) removed
      */
     public String removeControlChars(String s) {
         char[] in_chars = s.toCharArray();
