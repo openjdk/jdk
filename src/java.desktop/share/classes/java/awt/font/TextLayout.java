@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,6 @@ public final class TextLayout implements Cloneable {
      */
     private boolean cacheIsValid = false;
 
-
     // This value is obtained from an attribute, and constrained to the
     // interval [0,1].  If 0, the layout cannot be justified.
     private float justifyRatio;
@@ -367,6 +366,7 @@ public final class TextLayout implements Cloneable {
      *       device resolution, and attributes such as antialiasing.  This
      *       parameter does not specify a translation between the
      *       {@code TextLayout} and user space.
+     * @throws IllegalArgumentException if any of the parameters are null.
      */
     public TextLayout(String string, Font font, FontRenderContext frc) {
 
@@ -378,8 +378,8 @@ public final class TextLayout implements Cloneable {
             throw new IllegalArgumentException("Null string passed to TextLayout constructor.");
         }
 
-        if (string.length() == 0) {
-            throw new IllegalArgumentException("Zero length string passed to TextLayout constructor.");
+        if (frc == null) {
+            throw new IllegalArgumentException("Null font render context passed to TextLayout constructor.");
         }
 
         Map<? extends Attribute, ?> attributes = null;
@@ -415,6 +415,7 @@ public final class TextLayout implements Cloneable {
      *       device resolution, and attributes such as antialiasing.  This
      *       parameter does not specify a translation between the
      *       {@code TextLayout} and user space.
+     * @throws IllegalArgumentException if any of the parameters are null.
      */
     public TextLayout(String string, Map<? extends Attribute,?> attributes,
                       FontRenderContext frc)
@@ -427,8 +428,8 @@ public final class TextLayout implements Cloneable {
             throw new IllegalArgumentException("Null map passed to TextLayout constructor.");
         }
 
-        if (string.length() == 0) {
-            throw new IllegalArgumentException("Zero length string passed to TextLayout constructor.");
+        if (frc == null) {
+            throw new IllegalArgumentException("Null font render context passed to TextLayout constructor.");
         }
 
         char[] text = string.toCharArray();
@@ -499,6 +500,7 @@ public final class TextLayout implements Cloneable {
      *       device resolution, and attributes such as antialiasing.  This
      *       parameter does not specify a translation between the
      *       {@code TextLayout} and user space.
+     * @throws IllegalArgumentException if any of the parameters are null.
      */
     public TextLayout(AttributedCharacterIterator text, FontRenderContext frc) {
 
@@ -506,14 +508,13 @@ public final class TextLayout implements Cloneable {
             throw new IllegalArgumentException("Null iterator passed to TextLayout constructor.");
         }
 
-        int start = text.getBeginIndex();
-        int limit = text.getEndIndex();
-        if (start == limit) {
-            throw new IllegalArgumentException("Zero length iterator passed to TextLayout constructor.");
+        if (frc == null) {
+            throw new IllegalArgumentException("Null font render context passed to TextLayout constructor.");
         }
 
+        int start = text.getBeginIndex();
+        int limit = text.getEndIndex();
         int len = limit - start;
-        text.first();
         char[] chars = new char[len];
         int n = 0;
         for (char c = text.first();
@@ -1125,7 +1126,12 @@ public final class TextLayout implements Cloneable {
         float top1X, top2X;
         float bottom1X, bottom2X;
 
-        if (caret == 0 || caret == characterCount) {
+        if (caret == 0 && characterCount == 0) {
+
+            top1X = top2X = 0;
+            bottom1X = bottom2X = 0;
+
+        } else if (caret == 0 || caret == characterCount) {
 
             float pos;
             int logIndex;
@@ -1143,8 +1149,8 @@ public final class TextLayout implements Cloneable {
             pos += angle * shift;
             top1X = top2X = pos + angle*textLine.getCharAscent(logIndex);
             bottom1X = bottom2X = pos - angle*textLine.getCharDescent(logIndex);
-        }
-        else {
+
+        } else {
 
             {
                 int logIndex = textLine.visualToLogical(caret-1);
@@ -1884,7 +1890,6 @@ public final class TextLayout implements Cloneable {
         Shape[] result = new Shape[2];
 
         TextHitInfo hit = TextHitInfo.afterOffset(offset);
-
         int hitCaret = hitToCaret(hit);
 
         LayoutPathImpl lp = textLine.getLayoutPath();
@@ -2180,11 +2185,15 @@ public final class TextLayout implements Cloneable {
         checkTextHit(firstEndpoint);
         checkTextHit(secondEndpoint);
 
-        if(bounds == null) {
-                throw new IllegalArgumentException("Null Rectangle2D passed to TextLayout.getVisualHighlightShape()");
+        if (bounds == null) {
+            throw new IllegalArgumentException("Null Rectangle2D passed to TextLayout.getVisualHighlightShape()");
         }
 
         GeneralPath result = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+
+        if (characterCount == 0) {
+            return result;
+        }
 
         int firstCaret = hitToCaret(firstEndpoint);
         int secondCaret = hitToCaret(secondEndpoint);
@@ -2194,8 +2203,9 @@ public final class TextLayout implements Cloneable {
 
         if (firstCaret == 0 || secondCaret == 0) {
             GeneralPath ls = leftShape(bounds);
-            if (!ls.getBounds().isEmpty())
+            if (!ls.getBounds().isEmpty()) {
                 result.append(ls, false);
+            }
         }
 
         if (firstCaret == characterCount || secondCaret == characterCount) {
@@ -2282,11 +2292,15 @@ public final class TextLayout implements Cloneable {
             secondEndpoint = t;
         }
 
-        if(firstEndpoint < 0 || secondEndpoint > characterCount) {
+        if (firstEndpoint < 0 || secondEndpoint > characterCount) {
             throw new IllegalArgumentException("Range is invalid in TextLayout.getLogicalHighlightShape()");
         }
 
         GeneralPath result = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+
+        if (characterCount == 0) {
+            return result;
+        }
 
         int[] carets = new int[10]; // would this ever not handle all cases?
         int count = 0;
