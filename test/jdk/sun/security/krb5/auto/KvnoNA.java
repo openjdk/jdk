@@ -52,7 +52,7 @@ public class KvnoNA {
 
     static void prepareKtabs(String etype) throws Exception {
 
-        // Setup a temporary krb5.conf so we can generate ktab files
+        // Set up a temporary krb5.conf so we can generate ktab files
         // using the preferred etype.
         if (etype != null && etype.startsWith("des-cbc-")) {
             // When DES is used, we always write des-cbc-crc keys.
@@ -78,7 +78,7 @@ public class KvnoNA {
         Config.refresh();
 
         PrincipalName p = new PrincipalName(
-                OneKDC.BACKEND + "@" + OneKDC.REALM, PrincipalName.KRB_NT_SRV_HST);
+                OneKDC.SERVER + "@" + OneKDC.REALM, PrincipalName.KRB_NT_SRV_HST);
 
         // Case 1, kvno 2 has the same password
         KeyTab ktab = KeyTab.create("good2");
@@ -107,38 +107,34 @@ public class KvnoNA {
 
         prepareKtabs(etype);
         OneKDC kdc = new OneKDC(etype);
-        kdc.writeJAASConf();
 
-        // Use backend as server because its isInitiator is false,
-        // therefore no login failure. In KDC, kvno is 2.
-        kdc.addPrincipal(OneKDC.BACKEND, "pass2".toCharArray());
+        // In KDC, kvno is 2.
+        kdc.addPrincipal(OneKDC.SERVER, "pass2".toCharArray());
 
         // Case1, succeed
         check("good2");
 
         // Case 2, fails but without KRB_AP_ERR_BADKEYVER
-        Asserts.assertTrue(!(Asserts.assertThrows(GSSException.class, () -> check("bad2"))
-                .getCause() instanceof KrbException ke)
-                || ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER);
+        var e = Asserts.assertThrows(GSSException.class, () -> check("bad2"));
+        Asserts.assertTrue(!(e.getCause() instanceof KrbException ke)
+                || ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER, e.toString());
 
         // Case 3, succeed
         check("good3");
 
         // Case 4, fails with KRB_AP_ERR_BADKEYVER
-        Asserts.assertTrue(Asserts.assertThrows(GSSException.class, () -> check("bad3"))
-                .getCause() instanceof KrbException ke
-                && ke.returnCode() == Krb5.KRB_AP_ERR_BADKEYVER);
+        e = Asserts.assertThrows(GSSException.class, () -> check("bad3"));
+        Asserts.assertTrue(e.getCause() instanceof KrbException ke
+                && ke.returnCode() == Krb5.KRB_AP_ERR_BADKEYVER, e.toString());
     }
 
     static void check(String ktab) throws Exception {
-        Files.copy(Path.of(ktab), Path.of(OneKDC.KTAB),
-                StandardCopyOption.REPLACE_EXISTING);
 
-        Context c = Context.fromUserPass("dummy", "bogus".toCharArray(), false);
-        Context s = Context.fromJAAS("backend");
+        Context c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        Context s = Context.fromUserKtab(OneKDC.SERVER, ktab, true);
 
         try {
-            c.startAsClient(OneKDC.BACKEND, GSSUtil.GSS_KRB5_MECH_OID);
+            c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
             s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
             Context.handshake(c, s);
