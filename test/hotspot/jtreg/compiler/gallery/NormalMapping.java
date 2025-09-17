@@ -148,7 +148,7 @@ public class NormalMapping {
 
     /**
      * This class represents the lights that are located on the normal map,
-     * move around randomyl, and shine their color of light on the scene.
+     * moved around randomly, and shine their color of light on the scene.
      */
     public static class Light {
         public float x = 0.5f;
