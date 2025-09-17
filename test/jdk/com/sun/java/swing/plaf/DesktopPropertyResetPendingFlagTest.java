@@ -26,7 +26,7 @@
  * @bug 8367376
  * @summary DesktopProperty never reset pending status to process new updates
  * @modules java.desktop/sun.swing.plaf
- * @run main Test8367376
+ * @run main DesktopPropertyResetPendingFlagTest
  */
 
 import javax.swing.JButton;
@@ -44,7 +44,7 @@ import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.util.concurrent.CountDownLatch;
 
-public class Test8367376 extends JFrame {
+public class DesktopPropertyResetPendingFlagTest extends JFrame {
 
     static class ExpectedException extends RuntimeException {}
 
@@ -100,10 +100,12 @@ public class Test8367376 extends JFrame {
         };
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(newEventQueue);
 
-        SwingUtilities.invokeLater(Test8367376::setLookAndFeel);
+        SwingUtilities.invokeLater(
+                DesktopPropertyResetPendingFlagTest::setLookAndFeel);
 
         SwingUtilities.invokeLater(() -> {
-            Test8367376 t = new Test8367376();
+            DesktopPropertyResetPendingFlagTest t =
+                    new DesktopPropertyResetPendingFlagTest();
             t.pack();
             t.setVisible(true);
         });
@@ -137,7 +139,7 @@ public class Test8367376 extends JFrame {
     static int panelUpdateUICounter;
     static int observedExpectedExceptionCounter;
 
-    Test8367376() {
+    DesktopPropertyResetPendingFlagTest() {
         JButton button = new JButton("button");
         button.setUI(new BasicButtonUI() {
             @Override
