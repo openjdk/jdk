@@ -72,7 +72,7 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
 }
 
-// Add a symbol entry to the temporary hash table
+// Add an entry to the temporary hash table
 void CompactHashtableWriter::add(unsigned int hash, u4 value) {
   int index = hash % _num_buckets;
   _buckets[index]->append_if_missing(Entry(hash, value));
@@ -107,27 +107,28 @@ void CompactHashtableWriter::allocate_table() {
                                      SharedSpaceObjectAlignment);
 }
 
-// Write the compact table's buckets
+// Write the compact table's buckets and entries
 void CompactHashtableWriter::dump_table(NumberSeq* summary) {
   u4 offset = 0;
   for (int index = 0; index < _num_buckets; index++) {
     GrowableArray<Entry>* bucket = _buckets[index];
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
-      // bucket with one entry is compacted and only has the symbol offset
       _compact_buckets->at_put(index, BUCKET_INFO(offset, VALUE_ONLY_BUCKET_TYPE));
 
       Entry ent = bucket->at(0);
+      // bucket with one entry is value_only and only has the value
       _compact_entries->at_put(offset++, ent.value());
       _num_value_only_buckets++;
     } else {
-      // regular bucket, each entry is a symbol (hash, offset) pair
+      // regular bucket, it could contain zero or more than one entry,
+      // each entry is a (hash, value) pair
       _compact_buckets->at_put(index, BUCKET_INFO(offset, REGULAR_BUCKET_TYPE));
 
       for (int i=0; i<bucket_size; i++) {
         Entry ent = bucket->at(i);
         _compact_entries->at_put(offset++, u4(ent.hash())); // write entry hash
-        _compact_entries->at_put(offset++, ent.value());
+        _compact_entries->at_put(offset++, ent.value());    // write entry value
       }
       if (bucket_size == 0) {
         _num_empty_buckets++;
@@ -191,7 +192,8 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
 
 size_t SimpleCompactHashtable::calculate_header_size() {
   // We have 5 fields. Each takes up sizeof(intptr_t). See WriteClosure::do_u4
-  size_t bytes = sizeof(intptr_t) * 5;
+  constexpr size_t bytes = sizeof(intptr_t) * 5;
+  static_assert(bytes >= sizeof(SimpleCompactHashtable), "must");
   return bytes;
 }
 
