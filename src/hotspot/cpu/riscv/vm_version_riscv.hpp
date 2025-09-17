@@ -255,7 +255,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(marchid          ,  ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
   decl(mimpid           ,  ImpId           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
   decl(satp_mode        ,  SATP            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
-  decl(zicboz_block_size, "ZicbozBlockSize",  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
+  decl(zicboz_block_size,  ZicbozBlockSize ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                  \
 
   #define DECLARE_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)                  \
   struct NAME##RVNonExtFeatureValue : public RVNonExtFeatureValue {                            \
