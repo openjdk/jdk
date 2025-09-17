@@ -227,7 +227,8 @@ private:
 public:
   VMATree() : _tree() {}
   VMATree(const VMATree& other) : _tree() {
-    assert(other._tree.copy_into(_tree), "VMATree dies on OOM");
+    bool success = other._tree.copy_into(_tree);
+    assert(success, "VMATree dies on OOM");
   }
   VMATree& operator=(VMATree const&) = delete;
 
