@@ -171,10 +171,3 @@ uint G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(uint num
   const uint num_regions_per_worker = 384;
   return (num_regions + num_regions_per_worker - 1) / num_regions_per_worker;
 }
-
-bool G1UpdateRegionsAfterRebuild::do_heap_region(G1HeapRegion* r) {
-  // Update the remset tracking state from updating to complete
-  // if remembered sets have been rebuilt.
-  _g1h->policy()->remset_tracker()->update_after_rebuild(r);
-  return false;
-}

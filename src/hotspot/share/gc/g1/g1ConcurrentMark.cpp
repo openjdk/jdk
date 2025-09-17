@@ -1340,7 +1340,12 @@ class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
 public:
   G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
-  virtual bool do_heap_region(G1HeapRegion* r);
+  bool do_heap_region(G1HeapRegion* r) override {
+    // Update the remset tracking state from updating to complete
+    // if remembered sets have been rebuilt.
+    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
+    return false;
+  }
 };
 
 void G1ConcurrentMark::cleanup() {
