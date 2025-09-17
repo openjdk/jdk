@@ -94,7 +94,7 @@ public class Test8367376 extends JFrame {
                 } catch (ExpectedException e) {
                     // This is part of the test. But if we don't catch
                     // this here the test harness says our test failed.
-                    observedExpectedExceptionCtr++;
+                    observedExpectedExceptionCounter++;
                 }
             }
         };
@@ -122,10 +122,10 @@ public class Test8367376 extends JFrame {
         SwingUtilities.invokeLater(() -> {
             // We expect 3 updateUI invocations: during construction, the first
             // property.updateUI, & the second property.updateUI
-            assertEquals(3, panelUpdateUIctr);
+            assertEquals(3, panelUpdateUICounter);
 
             // We expect 2 attempts on buttonUI.uninstallUI
-            assertEquals(2, observedExpectedExceptionCtr);
+            assertEquals(2, observedExpectedExceptionCounter);
 
             // The test is finished
             keepAliveLatch.countDown();
@@ -148,7 +148,7 @@ public class Test8367376 extends JFrame {
         JPanel p = new JPanel() {
             @Override
             public void updateUI() {
-                panelUpdateUIctr++;
+                panelUpdateUICounter++;
             }
         };
         p.add(button);
