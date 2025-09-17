@@ -31,7 +31,6 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
-import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;

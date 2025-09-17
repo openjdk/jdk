@@ -146,12 +146,12 @@ enum SignatureScheme {
                                     "RSA", 511,
                                     ProtocolVersion.PROTOCOLS_TO_12);
 
-    final int id;                       // hash + signature
-    final String name;                  // literal name
-    final String algorithm;     // signature algorithm
-    final String keyAlgorithm;          // signature key algorithm
-    final SigAlgParamSpec signAlgParams;    // signature parameters
-    private final NamedGroup namedGroup;    // associated named group
+    final int id;                         // hash + signature
+    final String name;                    // literal name
+    final String algorithm;               // signature algorithm
+    final String keyAlgorithm;            // signature key algorithm
+    final SigAlgParamSpec signAlgParams;  // signature parameters
+    private final NamedGroup namedGroup;  // associated named group
 
     // The minimal required key size in bits.
     //
