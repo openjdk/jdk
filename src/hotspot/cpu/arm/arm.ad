@@ -3305,7 +3305,7 @@ pipe_class br_nop() %{
 
 pipe_class simple_call(method meth) %{
     instruction_count(2); multiple_bundles; force_serialization;
-    fixed_latency(100);
+    fixed_latency(30);
     BR  : R(1);
     MS  : R(1);
     A0  : R(1);
@@ -3313,18 +3313,18 @@ pipe_class simple_call(method meth) %{
 
 pipe_class compiled_call(method meth) %{
     instruction_count(1); multiple_bundles; force_serialization;
-    fixed_latency(100);
+    fixed_latency(30);
     MS  : R(1);
 %}
 
 pipe_class call(method meth) %{
     instruction_count(0); multiple_bundles; force_serialization;
-    fixed_latency(100);
+    fixed_latency(30);
 %}
 
 pipe_class tail_call(Universe ignore, label labl) %{
     single_instruction;
-    fixed_latency(100);
+    fixed_latency(30);
     BR  : R(1);
     MS  : R(1);
 %}
