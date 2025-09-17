@@ -25,6 +25,7 @@
  * @test
  * @requires vm.jvmci
  * @requires vm.simpleArch == "x64"
+ * @requires os.family == "linux"
  * @library /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -60,17 +61,22 @@ public class TestMethodBinding extends CodeInstallationTest {
         return 1 + 2;
     }
 
+    public static int delegateMethod() {
+        // instead of the addition we will insert a call to invokeStatic here
+        return 1 + 2;
+    }
+
     @Test
     public void test() {
         Class<?> returnType = int.class;
         Class<?>[] staticArgumentTypes = new Class<?>[]{};
         Object[] staticArguments = new Object[]{};
 
-        test(getMethod("invokeStatic"), returnType, staticArgumentTypes, staticArguments);
+        test(getMethod("delegateMethod"), getMethod("invokeStatic"), returnType, staticArgumentTypes, staticArguments);
     }
 
 
-    public void test(Method method, Class<?> returnClazz, Class<?>[] types, Object[] values) {
+    public void test(Method delegateMethod, Method method, Class<?> returnClazz, Class<?>[] types, Object[] values) {
         try {
             ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(method);
             assert resolvedMethod.isStatic() : "method should be static";
@@ -82,19 +88,19 @@ public class TestMethodBinding extends CodeInstallationTest {
                 }
                 JavaType returnType = metaAccess.lookupJavaType(returnClazz);
                 CallingConvention cc = codeCache.getRegisterConfig().getCallingConvention(JavaCall, returnType, argTypes, asm.valueKindFactory);
-                asm.emitCallPrologue(cc, values);
+                //asm.emitCallPrologue(cc, values);
 
                 asm.recordMark(config.MARKID_INVOKESTATIC);
                 int[] pos = new int[2];
                 // duringCall has to be false to trigger our bind logic in SharedRuntime::find_callee_info_helper
                 // we are allowed to do this because the call has no side-effect
-                BytecodeFrame frame = new BytecodeFrame(null, resolvedMethod, 0, false, false, new JavaValue[0], new JavaKind[0], 0, 0, 0);
+                BytecodeFrame frame = new BytecodeFrame(null, metaAccess.lookupJavaMethod(delegateMethod), 0, false, false, new JavaValue[0], new JavaKind[0], 0, 0, 0);
                 DebugInfo info = new DebugInfo(frame, new VirtualObject[0]);
                 info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
                 asm.emitJavaCall(pos, info);
 
                 asm.recordCall(pos[0], pos[1], resolvedMethod, true, info);
-                asm.emitCallEpilogue(cc);
+                //asm.emitCallEpilogue(cc);
                 if (returnClazz == float.class) {
                     asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
                 } else if (returnClazz == int.class) {
@@ -103,7 +109,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                     assert false : "Unimplemented return type: " + returnClazz;
                 }
 
-            }, method, values);
+            }, delegateMethod, values);
         } catch (Throwable e) {
             e.printStackTrace();
             throw e;
