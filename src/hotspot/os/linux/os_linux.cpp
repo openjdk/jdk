@@ -548,7 +548,7 @@ void os::Linux::initialize_system_info() {
     _physical_memory = std::numeric_limits<size_t>::max();
   } else {
     _physical_memory = static_cast<size_t>(n_phys_pages) * static_cast<size_t>(page_size);
-  }  
+  }
   assert(processor_count() > 0, "linux error");
 }
 
