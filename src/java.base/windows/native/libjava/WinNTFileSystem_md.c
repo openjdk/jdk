@@ -351,7 +351,10 @@ Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pa
 }
 
 /**
- * Returns the value of the registry key HKEY_CURRENT_USER\Network\<drive>,
+ * Returns the value of the registry key
+ *
+ * HKEY_CURRENT_USER\Network\<drive>\RemotePath
+ *
  * which contains the UNC path to which "drive" is mapped. If there is no
  * such registry key, or an error occurs, then NULL is returned.
  */
