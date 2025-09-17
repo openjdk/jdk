@@ -1750,10 +1750,10 @@ public interface Map<K, V> {
     }
 
     /**
-     * {@return a new on-demand computed map with the provided {@code keys}}
+     * {@return a new lazily computed map with the provided {@code keys}}
      * <p>
      * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
-     * keys are known at construction. The map's values are computed on demand via the
+     * keys are known at construction. The map's values are lazily computed via the
      * provided {@code computingFunction} when they are first accessed
      * (e.g., via {@linkplain Map#get(Object) Map::get}).
      * <p>
@@ -1768,22 +1768,22 @@ public interface Map<K, V> {
      * <p>
      * If the provided computing function returns {@code null},
      * a {@linkplain NullPointerException} will be thrown. Hence, just like other
-     * unmodifiable maps created via the {@code Map::of} factories, a computed map
+     * unmodifiable maps created via the {@code Map::of} factories, a lazy map
      * cannot contain {@code null} values. Clients that want to use nullable values can
      * wrap values into an {@linkplain Optional} holder.
      * <p>
      * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
-     * also computed on demand.
+     * also lazily computed.
      * <p>
      * The returned map is unmodifiable and does not implement the
      * {@linkplain Collection##optional-operations optional operations} in the
      * {@linkplain Map} interface.
      * <p>
      * If the provided computing function recursively calls itself or
-     * the returned computed map for the same key, an {@linkplain IllegalStateException}
+     * the returned lazy map for the same key, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
-     * The returned computed map strongly references its underlying
+     * The returned lazy map strongly references its underlying
      * computing function used to compute values only so long as there are
      * uncomputed values after which the underlying function is not strongly referenced
      * anymore and may be collected.
@@ -1795,23 +1795,23 @@ public interface Map<K, V> {
      * @throws NullPointerException if the provided set of {@code keys} is {@code null}
      *         or if the set of {@code keys} contains a {@code null} element.
      *
-     * @see ComputedConstant
+     * @see LazyConstant
      * @since 26
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
-    static <K, V> Map<K, V> ofComputed(Set<? extends K> keys,
-                                       Function<? super K, ? extends V> computingFunction) {
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <K, V> Map<K, V> ofLazy(Set<? extends K> keys,
+                                   Function<? super K, ? extends V> computingFunction) {
         // Protect against TOC-TOU attacks.
         // Also, implicit null check of `keys` and all its elements
         final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(computingFunction);
         if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
             @SuppressWarnings("unchecked")
-            var enumMap = (Map<K, V>) ComputedCollections.ofComputedMapWithEnumKeys(keyCopies, computingFunction);
+            var enumMap = (Map<K, V>) LazyCollections.ofLazyMapWithEnumKeys(keyCopies, computingFunction);
             return enumMap;
         } else {
             // A computed map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-            return ComputedCollections.ofComputedMap(keyCopies, computingFunction);
+            return LazyCollections.ofLazyMap(keyCopies, computingFunction);
         }
     }
 

@@ -74,8 +74,8 @@ public class VarHandleHolderBenchmark {
     private static final VarHandle VH_X = VAR_HANDLE_FUNCTION.apply("x");
     private static final VarHandle VH_Y = VAR_HANDLE_FUNCTION.apply("y");
 
-    private static final ComputedConstant<VarHandle> SV_X = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("x"));
-    private static final ComputedConstant<VarHandle> SV_Y = ComputedConstant.of(() -> VAR_HANDLE_FUNCTION.apply("y"));
+    private static final LazyConstant<VarHandle> SV_X = LazyConstant.of(() -> VAR_HANDLE_FUNCTION.apply("x"));
+    private static final LazyConstant<VarHandle> SV_Y = LazyConstant.of(() -> VAR_HANDLE_FUNCTION.apply("y"));
 
     private static final Map<String, VarHandle> U_MAP = Map.of(
             "x", VH_X,
@@ -85,7 +85,7 @@ public class VarHandleHolderBenchmark {
             "x", LAYOUT.varHandle(groupElement("x")),
             "y", LAYOUT.varHandle(groupElement("y")));
 
-    private static final Map<String, VarHandle> S_MAP = Map.ofComputed(
+    private static final Map<String, VarHandle> S_MAP = Map.ofLazy(
             Set.of("x", "y"),
             VAR_HANDLE_FUNCTION);
 

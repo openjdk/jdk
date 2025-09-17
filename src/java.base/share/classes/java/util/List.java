@@ -1196,10 +1196,10 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * {@return a new on-demand computed list with the provided {@code size}}
+     * {@return a new lazily computed list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
-     * with the provided {@code size}. The list's elements are computed on demand via the
+     * with the provided {@code size}. The list's elements are lazily computed via the
      * provided {@code computingFunction} when they are first accessed
      * (e.g., via {@linkplain List#get(int) List::get}).
      * <p>
@@ -1213,12 +1213,12 @@ public interface List<E> extends SequencedCollection<E> {
      * <p>
      * If the provided computing function returns {@code null},
      * a {@linkplain NullPointerException} will be thrown. Hence, just like other
-     * unmodifiable lists created via the {@code List::of} factories, a computed list
-     * cannot contain {@code null} elements. Clients that want to use nullable values can
-     * wrap elements into an {@linkplain Optional} holder.
+     * unmodifiable lists created via the {@code List::of} factories, a lazy list
+     * cannot contain {@code null} elements. Clients that want to use nullable elements
+     * can wrap elements into an {@linkplain Optional} holder.
      * <p>
      * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
-     * of the returned list are also computed on demand.
+     * of the returned list are also lazily computed.
      * <p>
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
@@ -1228,30 +1228,30 @@ public interface List<E> extends SequencedCollection<E> {
      * {@linkplain List} interface.
      * <p>
      * If the provided computing function recursively calls itself or the returned
-     * computed list for the same index, an {@linkplain IllegalStateException}
+     * lazy list for the same index, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
-     * The returned computed list strongly references its computing
+     * The returned lazy list strongly references its computing
      * function used to compute elements only so long as there are uncomputed elements
      * after which the computing function is not strongly referenced
      * anymore and may be collected.
      *
-     * @param size              the size of the returned computed list
+     * @param size              the size of the returned lazy list
      * @param computingFunction to invoke whenever an element is first accessed
      *                          (may not return {@code null})
      * @param <E>               the type of elements in the returned list
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      *
-     * @see ComputedConstant
+     * @see LazyConstant
      * @since 26
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
-    static <E> List<E> ofComputed(int size,
-                                  IntFunction<? extends E> computingFunction) {
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <E> List<E> ofLazy(int size,
+                              IntFunction<? extends E> computingFunction) {
         Utils.checkNonNegativeArgument(size, "size");
         Objects.requireNonNull(computingFunction);
         // A computed list is not Serializable, so we cannot return `List.of()` if `size == 0`
-        return ComputedCollections.ofComputedList(size, computingFunction);
+        return LazyCollections.ofLazyList(size, computingFunction);
     }
 
 }

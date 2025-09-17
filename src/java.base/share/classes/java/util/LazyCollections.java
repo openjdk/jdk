@@ -25,37 +25,36 @@
 
 package java.util;
 
-import jdk.internal.lang.ComputedConstantImpl;
+import jdk.internal.lang.LazyConstantImpl;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
- * Container class for computed collections implementations. Not part of the public API.
+ * Container class for lazy collections implementations. Not part of the public API.
  */
-final class ComputedCollections {
+final class LazyCollections {
 
     /**
      * No instances.
      */
-    private ComputedCollections() { }
+    private LazyCollections() { }
 
-    // Unsafe allows ComputedCollection classes to be used early in the boot sequence
+    // Unsafe allows LazyCollection classes to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @jdk.internal.ValueBased
-    static final class ComputedList<E>
+    static final class LazyList<E>
             extends ImmutableCollections.AbstractImmutableList<E>
             implements LenientList<E>, ElementBackedList<E> {
 
@@ -66,14 +65,14 @@ final class ComputedCollections {
         @Stable
         private final int size;
         @Stable
-        final FunctionHolder<IntFunction<? extends E>> mapperHolder;
+        final FunctionHolder<IntFunction<? extends E>> functionHolder;
         @Stable
         private final Mutexes mutexes;
 
-        private ComputedList(int size, IntFunction<? extends E> mapper) {
+        private LazyList(int size, IntFunction<? extends E> computingFunction) {
             this.elements = newGenericArray(size);
             this.size = size;
-            this.mapperHolder = new FunctionHolder<>(mapper, size);
+            this.functionHolder = new FunctionHolder<>(computingFunction, size);
             this.mutexes = new Mutexes(size);
             super();
         }
@@ -90,7 +89,7 @@ final class ComputedCollections {
         }
 
         private E getSlowPath(int i) {
-            return orElseComputeSlowPath(elements, i, mutexes.acquireMutex(offsetFor(i)), i, mapperHolder);
+            return orElseComputeSlowPath(elements, i, mutexes.acquireMutex(offsetFor(i)), i, functionHolder);
         }
 
         @Override
@@ -145,13 +144,13 @@ final class ComputedCollections {
 
         @Override
         public List<E> reversed() {
-            return new ReverseOrderComputedListView<>(this);
+            return new ReverseOrderLazyListView<>(this);
         }
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
             subListRangeCheck(fromIndex, toIndex, size());
-            return ComputedSubList.fromComputedList(this, fromIndex, toIndex);
+            return LazySubList.fromLazyList(this, fromIndex, toIndex);
         }
 
         @Override
@@ -177,22 +176,22 @@ final class ComputedCollections {
         }
 
         // @ValueBased cannot be used here as ImmutableCollections.SubList declares fields
-        static final class ComputedSubList<E> extends ImmutableCollections.SubList<E>
+        static final class LazySubList<E> extends ImmutableCollections.SubList<E>
                 implements LenientList<E> {
 
-            private ComputedSubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
+            private LazySubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
                 super(root, offset, size);
             }
 
             @Override
             public List<E> reversed() {
-                return new ReverseOrderComputedListView<>(this);
+                return new ReverseOrderLazyListView<>(this);
             }
 
             @Override
             public List<E> subList(int fromIndex, int toIndex) {
                 subListRangeCheck(fromIndex, toIndex, size());
-                return ComputedSubList.fromComputedSubList(this, fromIndex, toIndex);
+                return LazySubList.fromLazySubList(this, fromIndex, toIndex);
             }
 
             @Override
@@ -212,21 +211,21 @@ final class ComputedCollections {
                 return ((LenientList<E>) root).getAcquire(offset + index);
             }
 
-            static <E> ImmutableCollections.SubList<E> fromComputedList(ComputedList<E> list, int fromIndex, int toIndex) {
-                return new ComputedSubList<>(list, fromIndex, toIndex - fromIndex);
+            static <E> ImmutableCollections.SubList<E> fromLazyList(LazyList<E> list, int fromIndex, int toIndex) {
+                return new LazySubList<>(list, fromIndex, toIndex - fromIndex);
             }
 
-            static <E> ImmutableCollections.SubList<E> fromComputedSubList(ComputedSubList<E> parent, int fromIndex, int toIndex) {
-                return new ComputedSubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
+            static <E> ImmutableCollections.SubList<E> fromLazySubList(LazySubList<E> parent, int fromIndex, int toIndex) {
+                return new LazySubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
             }
 
         }
 
-        private static final class ReverseOrderComputedListView<E>
+        private static final class ReverseOrderLazyListView<E>
                 extends ReverseOrderListView.Rand<E>
                 implements LenientList<E> {
 
-            private ReverseOrderComputedListView(List<E> base) {
+            private ReverseOrderLazyListView(List<E> base) {
                 super(base, false);
             }
 
@@ -240,7 +239,7 @@ final class ComputedCollections {
             public List<E> subList(int fromIndex, int toIndex) {
                 final int size = base.size();
                 subListRangeCheck(fromIndex, toIndex, size);
-                return new ReverseOrderComputedListView<>(base.subList(size - toIndex, size - fromIndex));
+                return new ReverseOrderLazyListView<>(base.subList(size - toIndex, size - fromIndex));
             }
 
             @Override
@@ -261,8 +260,8 @@ final class ComputedCollections {
         E getAcquire(int i);
     }
 
-    static final class ComputedEnumMap<K extends Enum<K>, V>
-            extends AbstractComputedMap<K, V> {
+    static final class LazyEnumMap<K extends Enum<K>, V>
+            extends AbstractLazyMap<K, V> {
 
         @Stable
         private final Class<K> enumType;
@@ -273,16 +272,16 @@ final class ComputedCollections {
         @Stable
         private final IntPredicate member;
 
-        public ComputedEnumMap(Set<K> set,
-                               Class<K> enumType,
-                               int min,
-                               int backingSize,
-                               IntPredicate member,
-                               Function<? super K, ? extends V> mapper) {
+        public LazyEnumMap(Set<K> set,
+                           Class<K> enumType,
+                           int min,
+                           int backingSize,
+                           IntPredicate member,
+                           Function<? super K, ? extends V> computingFunction) {
             this.enumType = enumType;
             this.min = min;
             this.member = member;
-            super(set, set.size(), backingSize, mapper);
+            super(set, set.size(), backingSize, computingFunction);
         }
 
         @Override
@@ -317,13 +316,13 @@ final class ComputedCollections {
 
     }
 
-    static final class ComputedMap<K, V>
-            extends AbstractComputedMap<K, V> {
+    static final class LazyMap<K, V>
+            extends AbstractLazyMap<K, V> {
 
         @Stable
         private final Map<K, Integer> indexMapper;
 
-        public ComputedMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        public LazyMap(Set<K> keys, Function<? super K, ? extends V> computingFunction) {
             @SuppressWarnings("unchecked")
             final Entry<K, Integer>[] entries = (Entry<K, Integer>[]) new Entry<?, ?>[keys.size()];
             int i = 0;
@@ -331,7 +330,7 @@ final class ComputedCollections {
                 entries[i] = Map.entry(k, i++);
             }
             this.indexMapper = Map.ofEntries(entries);
-            super(keys, i, i, mapper);
+            super(keys, i, i, computingFunction);
         }
 
         @ForceInline
@@ -354,7 +353,7 @@ final class ComputedCollections {
         }
     }
 
-    static sealed abstract class AbstractComputedMap<K, V>
+    static sealed abstract class AbstractLazyMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         @Stable
@@ -366,18 +365,21 @@ final class ComputedCollections {
         @Stable
         private final int size;
         @Stable
-        final FunctionHolder<Function<? super K, ? extends V>> mapperHolder;
+        final FunctionHolder<Function<? super K, ? extends V>> functionHolder;
         @Stable
         private final Set<Entry<K, V>> entrySet;
 
-        private AbstractComputedMap(Set<K> keySet, int size, int backingSize, Function<? super K, ? extends V> mapper) {
+        private AbstractLazyMap(Set<K> keySet,
+                                int size,
+                                int backingSize,
+                                Function<? super K, ? extends V> computingFunction) {
             this.keySet = keySet;
             this.size = size;
-            this.mapperHolder = new FunctionHolder<>(mapper, size);
+            this.functionHolder = new FunctionHolder<>(computingFunction, size);
             this.values = newGenericArray(backingSize);
             this.mutexes = new Mutexes(backingSize);
             super();
-            this.entrySet = new ComputedMapEntrySet<>(this);
+            this.entrySet = new LazyMapEntrySet<>(this);
         }
 
         // Abstract methods
@@ -405,7 +407,7 @@ final class ComputedCollections {
                 return v;
             }
             final Object mutex = mutexes.acquireMutex(offset);
-            return orElseComputeSlowPath(values, index, mutex, key, mapperHolder);
+            return orElseComputeSlowPath(values, index, mutex, key, functionHolder);
         }
 
         @SuppressWarnings("unchecked")
@@ -414,14 +416,14 @@ final class ComputedCollections {
         }
 
         @jdk.internal.ValueBased
-        static final class ComputedMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
+        static final class LazyMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
 
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final AbstractComputedMap<K, V> map;
+            private final AbstractLazyMap<K, V> map;
 
-            private ComputedMapEntrySet(AbstractComputedMap<K, V> map) {
+            private LazyMapEntrySet(AbstractLazyMap<K, V> map) {
                 this.map = map;
                 super();
             }
@@ -436,8 +438,8 @@ final class ComputedCollections {
             }
 
             // For @ValueBased
-            private static <K, V> ComputedMapEntrySet<K, V> of(AbstractComputedMap<K, V> outer) {
-                return new ComputedMapEntrySet<>(outer);
+            private static <K, V> LazyMapEntrySet<K, V> of(AbstractLazyMap<K, V> outer) {
+                return new LazyMapEntrySet<>(outer);
             }
 
             @jdk.internal.ValueBased
@@ -446,11 +448,11 @@ final class ComputedCollections {
                 // Use a separate field for the outer class in order to facilitate
                 // a @Stable annotation.
                 @Stable
-                private final AbstractComputedMap<K, V> map;
+                private final AbstractLazyMap<K, V> map;
                 @Stable
                 private final Iterator<K> keyIterator;
 
-                private LazyMapIterator(AbstractComputedMap<K, V> map) {
+                private LazyMapIterator(AbstractLazyMap<K, V> map) {
                     this.map = map;
                     this.keyIterator = map.keySet.iterator();
                     super();
@@ -461,7 +463,7 @@ final class ComputedCollections {
                 @Override
                 public Entry<K, V> next() {
                     final K k = keyIterator.next();
-                    return new ComputedEntry<>(k, map, map.mapperHolder);
+                    return new LazyEntry<>(k, map, map.functionHolder);
                 }
 
                 @Override
@@ -470,23 +472,23 @@ final class ComputedCollections {
                             new Consumer<>() {
                                 @Override
                                 public void accept(K key) {
-                                    action.accept(new ComputedEntry<>(key, map, map.mapperHolder));
+                                    action.accept(new LazyEntry<>(key, map, map.functionHolder));
                                 }
                             };
                     keyIterator.forEachRemaining(innerAction);
                 }
 
                 // For @ValueBased
-                private static <K, V> LazyMapIterator<K, V> of(AbstractComputedMap<K, V> map) {
+                private static <K, V> LazyMapIterator<K, V> of(AbstractLazyMap<K, V> map) {
                     return new LazyMapIterator<>(map);
                 }
 
             }
         }
 
-        private record ComputedEntry<K, V>(K getKey, // trick
-                                           AbstractComputedMap<K, V> map,
-                                           FunctionHolder<Function<? super K, ? extends V>> mapperHolder) implements Entry<K, V> {
+        private record LazyEntry<K, V>(K getKey, // trick
+                                       AbstractLazyMap<K, V> map,
+                                       FunctionHolder<Function<? super K, ? extends V>> functionHolder) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
             @Override public V      getValue() {
@@ -494,10 +496,10 @@ final class ComputedCollections {
                 final V v = map.getAcquire(getKey);
                 return v != null
                         ? v
-                        : orElseComputeSlowPath(map.values, index, map.mutexes.acquireMutex(offsetFor(index)), getKey, mapperHolder);
+                        : orElseComputeSlowPath(map.values, index, map.mutexes.acquireMutex(offsetFor(index)), getKey, functionHolder);
             }
             @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
-            @Override public String toString() { return getKey() + "=" + ComputedConstantImpl.renderConstant(map.getAcquire(getKey)); }
+            @Override public String toString() { return getKey() + "=" + LazyConstantImpl.renderConstant(map.getAcquire(getKey)); }
 
             @Override
             public boolean equals(Object o) {
@@ -514,18 +516,18 @@ final class ComputedCollections {
 
         @Override
         public Collection<V> values() {
-            return ComputedMapValues.of(this);
+            return LazyMapValues.of(this);
         }
 
         @jdk.internal.ValueBased
-        static final class ComputedMapValues<K, V> extends ImmutableCollections.AbstractImmutableCollection<V> {
+        static final class LazyMapValues<K, V> extends ImmutableCollections.AbstractImmutableCollection<V> {
 
             // Use a separate field for the outer class in order to facilitate
             // a @Stable annotation.
             @Stable
-            private final AbstractComputedMap<K, V> map;
+            private final AbstractLazyMap<K, V> map;
 
-            private ComputedMapValues(AbstractComputedMap<K, V> map) {
+            private LazyMapValues(AbstractLazyMap<K, V> map) {
                 this.map = map;
                 super();
             }
@@ -544,7 +546,7 @@ final class ComputedCollections {
                     if (value == map) {
                         valueString = "(this Collection)";
                     } else {
-                        valueString = ComputedConstantImpl.renderConstant(value);
+                        valueString = LazyConstantImpl.renderConstant(value);
                     }
                     sj.add(valueString);
                 }
@@ -552,8 +554,8 @@ final class ComputedCollections {
             }
 
             // For @ValueBased
-            private static <K, V> ComputedMapValues<K, V> of(AbstractComputedMap<K, V> outer) {
-                return new ComputedMapValues<>(outer);
+            private static <K, V> LazyMapValues<K, V> of(AbstractLazyMap<K, V> outer) {
+                return new LazyMapValues<>(outer);
             }
 
         }
@@ -615,11 +617,6 @@ final class ComputedCollections {
             }
         }
 
-        @ForceInline
-        private Object mutexVolatile(long offset) {
-            // Can be plain semantics?
-            return check(UNSAFE.getReferenceVolatile(mutexes, offset), offset);
-        }
 
         // Todo: remove this after stabilization
         private Object check(Object mutex, long realOffset) {
@@ -640,9 +637,9 @@ final class ComputedCollections {
 
     }
 
-    public static <E> int indexOf(List<ComputedConstant<E>> list, Object o) {
+    public static <E> int indexOf(List<LazyConstant<E>> list, Object o) {
         Objects.requireNonNull(o);
-        if (o instanceof ComputedConstant<?> s) {
+        if (o instanceof LazyConstant<?> s) {
             final int size = list.size();
             for (int i = 0; i < size; i++) {
                 if (Objects.equals(s, list.get(i))) {
@@ -653,9 +650,9 @@ final class ComputedCollections {
         return -1;
     }
 
-    public static <E> int lastIndexOf(List<ComputedConstant<E>> list, Object o) {
+    public static <E> int lastIndexOf(List<LazyConstant<E>> list, Object o) {
         Objects.requireNonNull(o);
-        if (o instanceof ComputedConstant<?> s) {
+        if (o instanceof LazyConstant<?> s) {
             for (int i = list.size() - 1; i >= 0; i--) {
                 if (Objects.equals(s, list.get(i))) {
                     return i;
@@ -682,25 +679,26 @@ final class ComputedCollections {
             if (e == self) {
                 sj.add("(this Collection)");
             } else {
-                sj.add(ComputedConstantImpl.renderConstant(e));
+                sj.add(LazyConstantImpl.renderConstant(e));
             }
         }
         return sj.toString();
     }
 
-    public static <E> List<E> ofComputedList(int size,
-                                             IntFunction<? extends E> mapper) {
-        return new ComputedList<>(size, mapper);
+    public static <E> List<E> ofLazyList(int size,
+                                         IntFunction<? extends E> computingFunction) {
+        return new LazyList<>(size, computingFunction);
     }
 
-    public static <K, V> Map<K, V> ofComputedMap(Set<K> keys,
-                                                 Function<? super K, ? extends V> mapper) {
-        return new ComputedMap<>(keys, mapper);
+    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
+                                             Function<? super K, ? extends V> computingFunction) {
+        return new LazyMap<>(keys, computingFunction);
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, E extends Enum<E>, V> Map<K, V> ofComputedMapWithEnumKeys(Set<K> keys,
-                                                                                Function<? super K, ? extends V> mapper) {
+    public static <K, E extends Enum<E>, V>
+    Map<K, V> ofLazyMapWithEnumKeys(Set<K> keys,
+                                    Function<? super K, ? extends V> computingFunction) {
         // The input set is not empty
         final Class<E> enumType = ((E) keys.iterator().next()).getDeclaringClass();
         final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
@@ -714,7 +712,7 @@ final class ComputedCollections {
         }
         final int backingSize = max - min + 1;
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Map<K, V>) new ComputedEnumMap<>((Set<E>) keys, enumType, min, backingSize, member, (Function<E, V>) mapper);
+        return (Map<K, V>) new LazyEnumMap<>((Set<E>) keys, enumType, min, backingSize, member, (Function<E, V>) computingFunction);
     }
 
     @SuppressWarnings("unchecked")
@@ -757,7 +755,7 @@ final class ComputedCollections {
 
     static void preventReentry(Object mutex) {
         if (Thread.holdsLock(mutex)) {
-            throw new IllegalStateException("Recursive initialization of a computed collection is illegal");
+            throw new IllegalStateException("Recursive initialization of a lazy collection is illegal");
         }
     }
 
@@ -769,7 +767,7 @@ final class ComputedCollections {
         }
     }
 
-    public static <K, V> String renderMappings(AbstractComputedMap<K, V> self,
+    public static <K, V> String renderMappings(AbstractLazyMap<K, V> self,
                                                String selfName,
                                                boolean curly) {
         final StringJoiner sj = new StringJoiner(", ", curly ? "{" : "[", curly ? "}" : "]");
@@ -779,7 +777,7 @@ final class ComputedCollections {
             if (value == self) {
                 valueString = "(this " + selfName + ")";
             } else {
-                valueString = ComputedConstantImpl.renderConstant(value);
+                valueString = LazyConstantImpl.renderConstant(value);
             }
             sj.add(k + "=" + valueString);
         }

@@ -31,7 +31,7 @@
  * @run junit/othervm -Dopens=false TrustedFieldTypeTest
  */
 
-import jdk.internal.lang.ComputedConstantImpl;
+import jdk.internal.lang.LazyConstantImpl;
 import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,55 +53,55 @@ final class TrustedFieldTypeTest {
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-        ComputedConstant<Integer> originalValue = ComputedConstant.of(SUPPLIER);
+        LazyConstant<Integer> originalValue = LazyConstant.of(SUPPLIER);
         @SuppressWarnings("unchecked")
-        ComputedConstant<Integer>[] originalArrayValue = new ComputedConstant[10];
+        LazyConstant<Integer>[] originalArrayValue = new LazyConstant[10];
 
         final class Holder {
-            private final ComputedConstant<Integer> value = originalValue;
+            private final LazyConstant<Integer> value = originalValue;
         }
         final class ArrayHolder {
-            private final ComputedConstant<Integer>[] array = originalArrayValue;
+            private final LazyConstant<Integer>[] array = originalArrayValue;
         }
 
 
-        VarHandle valueVarHandle = lookup.findVarHandle(Holder.class, "value", ComputedConstant.class);
+        VarHandle valueVarHandle = lookup.findVarHandle(Holder.class, "value", LazyConstant.class);
         Holder holder = new Holder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.set(holder, ComputedConstant.of(SUPPLIER))
+                valueVarHandle.set(holder, LazyConstant.of(SUPPLIER))
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.compareAndSet(holder, originalValue, ComputedConstant.of(SUPPLIER))
+                valueVarHandle.compareAndSet(holder, originalValue, LazyConstant.of(SUPPLIER))
         );
 
-        VarHandle arrayVarHandle = lookup.findVarHandle(ArrayHolder.class, "array", ComputedConstant[].class);
+        VarHandle arrayVarHandle = lookup.findVarHandle(ArrayHolder.class, "array", LazyConstant[].class);
         ArrayHolder arrayHolder = new ArrayHolder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                arrayVarHandle.set(arrayHolder, new ComputedConstant[1])
+                arrayVarHandle.set(arrayHolder, new LazyConstant[1])
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                arrayVarHandle.compareAndSet(arrayHolder, originalArrayValue, new ComputedConstant[1])
+                arrayVarHandle.compareAndSet(arrayHolder, originalArrayValue, new LazyConstant[1])
         );
 
     }
 
     @Test
     void updateComputedConstantContentVia_j_i_m_Unsafe() {
-        ComputedConstant<Integer> computedConstant = ComputedConstant.of(SUPPLIER);
-        computedConstant.get();
+        LazyConstant<Integer> lazyConstant = LazyConstant.of(SUPPLIER);
+        lazyConstant.get();
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
 
-        long offset = unsafe.objectFieldOffset(computedConstant.getClass(), "constant");
+        long offset = unsafe.objectFieldOffset(lazyConstant.getClass(), "constant");
         assertTrue(offset > 0);
 
         // Unfortunately, it is possible to update the underlying data via jdk.internal.misc.Unsafe
-        Object oldData = unsafe.getAndSetReference(computedConstant, offset, 13);
+        Object oldData = unsafe.getAndSetReference(lazyConstant, offset, 13);
         assertEquals(VALUE, oldData);
-        assertEquals(13, computedConstant.get());
+        assertEquals(13, lazyConstant.get());
     }
 
     @Test
@@ -109,19 +109,19 @@ final class TrustedFieldTypeTest {
 
         if (Boolean.getBoolean("opens")) {
             // Unfortunately, add-opens allows direct access to the `value` field
-            Field field = ComputedConstantImpl.class.getDeclaredField("constant");
+            Field field = LazyConstantImpl.class.getDeclaredField("constant");
             field.setAccessible(true);
 
-            ComputedConstant<Integer> computedConstant = ComputedConstant.of(SUPPLIER);
-            computedConstant.get();
+            LazyConstant<Integer> lazyConstant = LazyConstant.of(SUPPLIER);
+            lazyConstant.get();
 
-            Object oldData = field.get(computedConstant);
+            Object oldData = field.get(lazyConstant);
             assertEquals(VALUE, oldData);
 
-            field.set(computedConstant, 13);
-            assertEquals(13, computedConstant.get());
+            field.set(lazyConstant, 13);
+            assertEquals(13, lazyConstant.get());
         } else {
-            Field field = ComputedConstantImpl.class.getDeclaredField("constant");
+            Field field = LazyConstantImpl.class.getDeclaredField("constant");
             assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));
         }
     }

@@ -36,10 +36,10 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy constant performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -56,11 +56,11 @@ public class StableSupplierBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final ComputedConstant<Integer> STABLE = init(VALUE);
-    private static final ComputedConstant<Integer> STABLE2 = init(VALUE2);
+    private static final LazyConstant<Integer> STABLE = init(VALUE);
+    private static final LazyConstant<Integer> STABLE2 = init(VALUE2);
 
-    private final ComputedConstant<Integer> stable = init(VALUE);
-    private final ComputedConstant<Integer> stable2 = init(VALUE2);
+    private final LazyConstant<Integer> stable = init(VALUE);
+    private final LazyConstant<Integer> stable2 = init(VALUE2);
 
     @Benchmark
     public int stable() {
@@ -72,8 +72,8 @@ public class StableSupplierBenchmark {
         return STABLE.get() + STABLE2.get();
     }
 
-    private static ComputedConstant<Integer> init(Integer value) {
-        return ComputedConstant.of(() -> value);
+    private static LazyConstant<Integer> init(Integer value) {
+        return LazyConstant.of(() -> value);
     }
 
 }

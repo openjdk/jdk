@@ -43,10 +43,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy value performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -60,13 +60,13 @@ import java.lang.ComputedConstant;
 public class StableMethodHandleBenchmark {
 
     private static final MethodHandle FINAL_MH = identityHandle();
-    private static final ComputedConstant<MethodHandle> STABLE_MH = ComputedConstant.of(StableMethodHandleBenchmark::identityHandle);
+    private static final LazyConstant<MethodHandle> STABLE_MH = LazyConstant.of(StableMethodHandleBenchmark::identityHandle);
 
     private static /* intentionally not final */ MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
     private static final AtomicReference<MethodHandle> ATOMIC_REFERENCE = new AtomicReference<>(identityHandle());
     private static final Map<String, MethodHandle> MAP = new ConcurrentHashMap<>();
-    private static final Map<String, MethodHandle> STABLE_MAP = Map.ofComputed(Set.of("identityHandle"), _ -> identityHandle());
+    private static final Map<String, MethodHandle> STABLE_MAP = Map.ofLazy(Set.of("identityHandle"), _ -> identityHandle());
 
     static {
         MAP.put("identityHandle", identityHandle());

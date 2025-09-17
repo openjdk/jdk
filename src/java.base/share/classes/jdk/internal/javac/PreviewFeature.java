@@ -76,8 +76,8 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         MODULE_IMPORTS, //remove when the boot JDK is JDK 25
         KEY_DERIVATION, //remove when the boot JDK is JDK 25
-        @JEP(number = 8359894, title = "Computed Constants", status = "Second Preview")
-        COMPUTED_CONSTANTS,
+        @JEP(number = 8359894, title = "Lazy Constants", status = "Second Preview")
+        LAZY_CONSTANTS,
         @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
         PEM_API,
         LANGUAGE_MODEL,

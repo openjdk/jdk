@@ -105,7 +105,7 @@ final class DemoContainerInjectionTest {
         }
 
         static Container of(Set<Class<?>> components, Function<Class<?>, ?> mapper) {
-            return new ComputedContainer(Map.ofComputed(components, mapper));
+            return new ComputedContainer(Map.ofLazy(components, mapper));
         }
 
     }
@@ -126,7 +126,7 @@ final class DemoContainerInjectionTest {
 
         static SettableContainer of(Set<Class<?>> components) {
             Map<Class<?>, Object> scratch = new ConcurrentHashMap<>();
-            return new SettableScratchContainer(scratch, Map.ofComputed(components, scratch::get));
+            return new SettableScratchContainer(scratch, Map.ofLazy(components, scratch::get));
         }
 
     }
@@ -139,7 +139,7 @@ final class DemoContainerInjectionTest {
         }
 
         static Container of(Map<Class<?>, Supplier<?>> components) {
-            var map = Map.ofComputed(components.keySet(), t -> components.get(t).get());
+            var map = Map.ofLazy(components.keySet(), t -> components.get(t).get());
             return new ProviderContainer(map);
         }
 

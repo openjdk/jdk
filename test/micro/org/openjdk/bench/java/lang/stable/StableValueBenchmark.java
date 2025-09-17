@@ -27,11 +27,11 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy constant performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -48,8 +48,8 @@ public class StableValueBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final ComputedConstant<Integer> STABLE = init(VALUE);
-    private static final ComputedConstant<Integer> STABLE2 = init(VALUE2);
+    private static final LazyConstant<Integer> STABLE = init(VALUE);
+    private static final LazyConstant<Integer> STABLE2 = init(VALUE2);
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
     private static final Supplier<Integer> DCL2 = new Dcl<>(() -> VALUE2);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
@@ -59,8 +59,8 @@ public class StableValueBenchmark {
     private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
     private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
 
-    private final ComputedConstant<Integer> stable = init(VALUE);
-    private final ComputedConstant<Integer> stable2 = init(VALUE2);
+    private final LazyConstant<Integer> stable = init(VALUE);
+    private final LazyConstant<Integer> stable2 = init(VALUE2);
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
@@ -115,16 +115,16 @@ public class StableValueBenchmark {
     }
 
 
-    private static ComputedConstant<Integer> init(Integer value) {
-        return ComputedConstant.of(() -> value);
+    private static LazyConstant<Integer> init(Integer value) {
+        return LazyConstant.of(() -> value);
     }
 
     private static final class Holder {
 
-        private final ComputedConstant<Integer> delegate;
+        private final LazyConstant<Integer> delegate;
 
         Holder(int value) {
-            delegate = ComputedConstant.of(() -> value);
+            delegate = LazyConstant.of(() -> value);
         }
 
         int get() {
@@ -133,10 +133,10 @@ public class StableValueBenchmark {
 
     }
 
-    private record RecordHolder(ComputedConstant<Integer> delegate) {
+    private record RecordHolder(LazyConstant<Integer> delegate) {
 
         RecordHolder(int value) {
-            this(ComputedConstant.of(() -> value));
+            this(LazyConstant.of(() -> value));
         }
 
         int get() {

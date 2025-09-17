@@ -28,9 +28,9 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-final class ComputedConstantTestUtil {
+final class LazyConstantTestUtil {
 
-    private ComputedConstantTestUtil() {}
+    private LazyConstantTestUtil() { }
 
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>
@@ -120,7 +120,7 @@ final class ComputedConstantTestUtil {
 
     static Object functionHolder(Object o) {
         try {
-            final Field field = field(o.getClass(), "mapperHolder");
+            final Field field = field(o.getClass(), "functionHolder");
             field.setAccessible(true);
             return field.get(o);
         } catch (ReflectiveOperationException e) {
@@ -148,9 +148,9 @@ final class ComputedConstantTestUtil {
         }
     }
 
-    static Supplier<?> underlying(ComputedConstant<?> o) {
+    static Supplier<?> computingFunction(LazyConstant<?> o) {
         try {
-            final Field field = field(o.getClass(), "underlying");
+            final Field field = field(o.getClass(), "computingFunction");
             field.setAccessible(true);
             return (Supplier<?>) field.get(o);
         } catch (ReflectiveOperationException e) {

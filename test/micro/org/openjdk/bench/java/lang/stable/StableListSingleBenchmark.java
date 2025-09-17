@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring stable list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -55,10 +55,10 @@ public class StableListSingleBenchmark {
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final List<Integer> STABLE = List.ofComputed(SIZE, IDENTITY);
+    private static final List<Integer> STABLE = List.ofLazy(SIZE, IDENTITY);
     private static final IntFunction<Integer> INT_FUNCTION = STABLE::get;
 
-    private final List<Integer> stable = List.ofComputed(SIZE, IDENTITY);
+    private final List<Integer> stable = List.ofLazy(SIZE, IDENTITY);
     private final IntFunction<Integer> intFunction = stable::get;
 
     @Benchmark

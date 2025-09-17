@@ -30,32 +30,32 @@ import java.util.function.Supplier;
 // Methods and suppliers for producing ISO 639/3166 resources used by Locale.
 class LocaleISOData {
 
-    static final ComputedConstant<String[]> ISO_639 =
-            ComputedConstant.of(new Supplier<>() {
+    static final LazyConstant<String[]> ISO_639 =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String[] get() {
                     return getISO2Table(isoLanguageTable);
                 }
             });
 
-    static final ComputedConstant<String[]> ISO_3166_1_ALPHA2 =
-            ComputedConstant.of(new Supplier<>() {
+    static final LazyConstant<String[]> ISO_3166_1_ALPHA2 =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String[] get() {
                     return getISO2Table(isoCountryTable);
                 }
             });
 
-    static final ComputedConstant<Set<String>> ISO_3166_1_ALPHA3 =
-            ComputedConstant.of(new Supplier<>() {
+    static final LazyConstant<Set<String>> ISO_3166_1_ALPHA3 =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public Set<String> get() {
                     return computeISO3166_1Alpha3Countries();
                 }
             });
 
-    static final ComputedConstant<Set<String>> ISO_3166_3 =
-            ComputedConstant.of(new Supplier<>() {
+    static final LazyConstant<Set<String>> ISO_3166_3 =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public Set<String> get() {
                     return Set.of(ISO3166_3);

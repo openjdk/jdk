@@ -48,7 +48,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.util.function.Supplier;
 
 import sun.net.ext.ExtendedSocketOptions;
@@ -96,7 +96,7 @@ public class Net {
         return EXCLUSIVE_BIND;
     }
 
-    private static final ComputedConstant<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = ComputedConstant.of(new Supplier<Boolean>() {
+    private static final LazyConstant<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = LazyConstant.of(new Supplier<Boolean>() {
         @Override  public Boolean get() { return shouldShutdownWriteBeforeClose0(); }});
 
     /**

@@ -438,7 +438,7 @@ class ImmutableCollections {
 
     static sealed class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess
-            permits ComputedCollections.ComputedList.ComputedSubList {
+            permits LazyCollections.LazyList.LazySubList {
 
         @Stable
         final AbstractImmutableList<E> root;
@@ -452,7 +452,7 @@ class ImmutableCollections {
         SubList(AbstractImmutableList<E> root, int offset, int size) {
             assert root instanceof List12
                     || root instanceof ListN
-                    || root instanceof ComputedCollections.ComputedList;
+                    || root instanceof LazyCollections.LazyList;
             this.root = root;
             this.offset = offset;
             this.size = size;

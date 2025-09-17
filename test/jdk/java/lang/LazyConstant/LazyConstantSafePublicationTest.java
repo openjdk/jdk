@@ -26,7 +26,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.lang
  * @enablePreview
- * @run junit ComputedConstantSafePublicationTest
+ * @run junit LazyConstantSafePublicationTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -38,24 +38,24 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ComputedConstantSafePublicationTest {
+final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final AtomicReference<ComputedConstant<Holder>[]> CONSTANTS = new AtomicReference<>();
+    private static final AtomicReference<LazyConstant<Holder>[]> CONSTANTS = new AtomicReference<>();
 
-    static ComputedConstant<Holder>[] constants() {
+    static LazyConstant<Holder>[] constants() {
         @SuppressWarnings("unchecked")
-        ComputedConstant<Holder>[] constants = (ComputedConstant<Holder>[]) new ComputedConstant[SIZE];
+        LazyConstant<Holder>[] constants = (LazyConstant<Holder>[]) new LazyConstant[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            constants[i] = ComputedConstant.of(Holder::new);
+            constants[i] = LazyConstant.of(Holder::new);
         }
         return constants;
     }
@@ -73,13 +73,13 @@ final class ComputedConstantSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final ComputedConstant<Holder>[] constants = CONSTANTS.get();
+        final LazyConstant<Holder>[] constants = CONSTANTS.get();
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                ComputedConstant<Holder> s = constants[i];
+                LazyConstant<Holder> s = constants[i];
                 Holder h;
                 // Wait until the ComputedConstant has a holder value
                 while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
@@ -95,11 +95,11 @@ final class ComputedConstantSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final ComputedConstant<Holder>[] constants = CONSTANTS.get();
+        final LazyConstant<Holder>[] constants = CONSTANTS.get();
 
         @Override
         public void run() {
-            ComputedConstant<Holder> s;
+            LazyConstant<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
                 s = constants[i];
@@ -172,7 +172,7 @@ final class ComputedConstantSafePublicationTest {
                                         .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
-                        fail("Giving up! Set computed constants seen by a new thread: " + nonNulls);
+                        fail("Giving up! Set lazy constants seen by a new thread: " + nonNulls);
                     }
                 }
             }

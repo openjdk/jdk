@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for computed map methods
+ * @summary Basic tests for lazy map methods
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedMapTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED LazyMapTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ComputedMapTest {
+final class LazyMapTest {
 
     enum Value {
         // Zero is here so that we have enums with ordinals before the first one
@@ -91,35 +91,35 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void factoryInvariants(Set<Value> set) {
-        assertThrows(NullPointerException.class, () -> Map.ofComputed(set, null), set.getClass().getSimpleName());
-        assertThrows(NullPointerException.class, () -> Map.ofComputed(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(set, null), set.getClass().getSimpleName());
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(null, MAPPER));
         Set<Value> setWithNull = new HashSet<>();
         setWithNull.add(KEY);
         setWithNull.add(null);
-        assertThrows(NullPointerException.class, () -> Map.ofComputed(setWithNull, MAPPER));
+        assertThrows(NullPointerException.class, () -> Map.ofLazy(setWithNull, MAPPER));
     }
 
     @ParameterizedTest
     @MethodSource("emptySets")
     void empty(Set<Value> set) {
-        var f0 = newMap(set);
-        assertTrue(f0.isEmpty());
-        assertEquals("{}", f0.toString());
-        assertThrows(NullPointerException.class, () -> f0.get(null));
-        assertNotEquals(null, f0);
+        var lazy = newLazyMap(set);
+        assertTrue(lazy.isEmpty());
+        assertEquals("{}", lazy.toString());
+        assertThrows(NullPointerException.class, () -> lazy.get(null));
+        assertNotEquals(null, lazy);
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void size(Set<Value> set) {
-        assertEquals(newRegularMap(set).size(), newMap(set).size());
+        assertEquals(newRegularMap(set).size(), newLazyMap(set).size());
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void get(Set<Value> set) {
-        ComputedConstantTestUtil.CountingFunction<Value, Integer> cf = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
-        var lazy = Map.ofComputed(set, cf);
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cf = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
+        var lazy = Map.ofLazy(set, cf);
         int cnt = 1;
         for (Value v : set) {
             assertEquals(MAPPER.apply(v), lazy.get(v));
@@ -133,15 +133,15 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void exception(Set<Value> set) {
-        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(_ -> {
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = Map.ofComputed(set, cif);
-        assertThrows(UnsupportedOperationException.class, () -> cached.get(KEY));
+        var lazy = Map.ofLazy(set, cif);
+        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(1, cif.cnt());
-        assertThrows(UnsupportedOperationException.class, () -> cached.get(KEY));
+        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(2, cif.cnt());
-        var toString = cached.toString();
+        var toString = lazy.toString();
         assertTrue(toString.startsWith("{"));
         // Key order is unspecified
         assertTrue(toString.contains(Value.THIRTEEN + "=.unset"));
@@ -153,7 +153,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void containsKey(Set<Value> set) {
-        var lazy = newMap(set);
+        var lazy = newLazyMap(set);
         for (Value v : set) {
             assertTrue(lazy.containsKey(v));
         }
@@ -163,7 +163,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void containsValue(Set<Value> set) {
-        var lazy = newMap(set);
+        var lazy = newLazyMap(set);
         for (Value v : set) {
             assertTrue(lazy.containsValue(MAPPER.apply(v)));
         }
@@ -173,7 +173,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void forEach(Set<Value> set) {
-        var lazy = newMap(set);
+        var lazy = newLazyMap(set);
         var ref = newRegularMap(set);
         Set<Map.Entry<Value, Integer>> expected = ref.entrySet();
         Set<Map.Entry<Value, Integer>> actual = new HashSet<>();
@@ -184,24 +184,24 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("emptySets")
     void toStringTestEmpty(Set<Value> set) {
-        var cached = newMap(set);
-        assertEquals("{}", cached.toString());
+        var lazy = newLazyMap(set);
+        assertEquals("{}", lazy.toString());
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void toStringTest(Set<Value> set) {
-        var cached = newMap(set);
-        var toString = cached.toString();
+        var lazy = newLazyMap(set);
+        var toString = lazy.toString();
         assertTrue(toString.startsWith("{"));
         assertTrue(toString.endsWith("}"));
 
         // Key order is unspecified
         for (Value key : set) {
-            toString = cached.toString();
+            toString = lazy.toString();
             assertTrue(toString.contains(key + "=.unset"), toString + " did not contain " + key + "=.unset");
-            cached.get(key);
-            toString = cached.toString();
+            lazy.get(key);
+            toString = lazy.toString();
             assertTrue(toString.contains(key + "=" + MAPPER.apply(key)), toString);
         }
 
@@ -212,7 +212,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void hashCodeTest(Set<Value> set) {
-        var lazy = newMap(set);
+        var lazy = newLazyMap(set);
         var regular = newRegularMap(set);
         assertEquals(regular.hashCode(), lazy.hashCode());
     }
@@ -220,7 +220,7 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void equality(Set<Value> set) {
-        var lazy = newMap(set);
+        var lazy = newLazyMap(set);
         var regular = newRegularMap(set);
         assertEquals(regular, lazy);
         assertEquals(lazy, regular);
@@ -231,58 +231,65 @@ final class ComputedMapTest {
     @MethodSource("nonEmptySets")
     void circular(Set<Value> set) {
         final AtomicReference<Map<?, ?>> ref = new AtomicReference<>();
-        Map<Value, Map<?, ?>> cached = Map.ofComputed(set, _ -> ref.get());
-        ref.set(cached);
-        cached.get(KEY);
-        var toString = cached.toString();
+        Map<Value, Map<?, ?>> lazy = Map.ofLazy(set, _ -> ref.get());
+        ref.set(lazy);
+        lazy.get(KEY);
+        var toString = lazy.toString();
         assertTrue(toString.contains("FORTY_TWO=(this Map)"), toString);
+        assertDoesNotThrow((() -> lazy.equals(lazy)));
+    }
 
-        // Todo:: Investigate how this should be handled
-        // assertDoesNotThrow(cached::hashCode);
-
-        assertDoesNotThrow((() -> cached.equals(cached)));
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void recursiveCall(Set<Value> set) {
+        final AtomicReference<Map<Value, ?>> ref = new AtomicReference<>();
+        @SuppressWarnings("unchecked")
+        Map<Value, Map<Value, Object>> lazy = Map.ofLazy(set, k -> (Map<Value, Object>) ref.get().get(k));
+        ref.set(lazy);
+        var x = assertThrows(IllegalStateException.class, () -> lazy.get(KEY));
+        assertEquals("Recursive initialization of a lazy collection is illegal", x.getMessage());
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void entrySet(Set<Value> set) {
+        var lazy = newLazyMap(set).entrySet();
         var regular = newRegularMap(set).entrySet();
-        var actual = newMap(set).entrySet();
-        assertTrue(regular.equals(actual));
-        assertTrue(actual.equals(regular));
-        assertTrue(regular.equals(actual));
+        assertTrue(regular.equals(lazy));
+        assertTrue(lazy.equals(regular));
+        assertTrue(regular.equals(lazy));
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void entrySetToString(Set<Value> set) {
-        var map = newMap(set);
-        var entrySet = map.entrySet();
-        var toString = entrySet.toString();
+        var lazy = newLazyMap(set);
+        var lazyEntrySet = lazy.entrySet();
+        var toString = lazyEntrySet.toString();
         for (var key : set) {
             assertTrue(toString.contains(key + "=.unset"));
         }
         assertTrue(toString.startsWith("["));
         assertTrue(toString.endsWith("]"));
 
-        map.get(KEY);
+        lazy.get(KEY);
         for (var key : set) {
             if (key.equals(KEY)) {
                 continue;
             }
-            assertTrue(entrySet.toString().contains(key + "=.unset"));
+            assertTrue(lazyEntrySet.toString().contains(key + "=.unset"));
         }
-        assertTrue(entrySet.toString().contains(KEY + "=" + VALUE));
+        assertTrue(lazyEntrySet.toString().contains(KEY + "=" + VALUE));
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void values(Set<Value> set) {
-        var map = newMap(set);
-        var values = map.values();
+        var lazy = newLazyMap(set);
+        var lazyValues = lazy.values();
         // Look at one of the elements
-        var val = values.stream().iterator().next();
-        var toString = map.toString();
+        var val = lazyValues.stream().iterator().next();
+        var toString = lazy.toString();
         for (var key : set) {
             var v = MAPPER.apply(key);
             if (v.equals(val)) {
@@ -293,26 +300,26 @@ final class ComputedMapTest {
         }
 
         // Mod ops
-        assertThrows(UnsupportedOperationException.class, () -> values.remove(val));
-        assertThrows(UnsupportedOperationException.class, () -> values.add(val));
-        assertThrows(UnsupportedOperationException.class, values::clear);
-        assertThrows(UnsupportedOperationException.class, () -> values.addAll(Set.of(VALUE)));
-        assertThrows(UnsupportedOperationException.class, () -> values.removeIf(i -> true));
-        assertThrows(UnsupportedOperationException.class, () -> values.retainAll(Set.of(VALUE)));
+        assertThrows(UnsupportedOperationException.class, () -> lazyValues.remove(val));
+        assertThrows(UnsupportedOperationException.class, () -> lazyValues.add(val));
+        assertThrows(UnsupportedOperationException.class, lazyValues::clear);
+        assertThrows(UnsupportedOperationException.class, () -> lazyValues.addAll(Set.of(VALUE)));
+        assertThrows(UnsupportedOperationException.class, () -> lazyValues.removeIf(i -> true));
+        assertThrows(UnsupportedOperationException.class, () -> lazyValues.retainAll(Set.of(VALUE)));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void valuesToString(Set<Value> set) {
-        var map = newMap(set);
-        var values = map.values();
+        var lazy = newLazyMap(set);
+        var lazyValues = lazy.values();
         var expected = set.stream()
                 .map(_ -> ".unset")
                 .collect(joining(", ", "[", "]"));
         //var expected = "[" + ".unset, ".repeat(set.size() - 1) + ".unset]";
-        assertEquals(expected, values.toString());
-        map.get(KEY);
-        var afterGet = values.toString();
+        assertEquals(expected, lazyValues.toString());
+        lazy.get(KEY);
+        var afterGet = lazyValues.toString();
         assertEquals(set.contains(KEY), afterGet.contains("" + VALUE), afterGet);
     }
 
@@ -320,7 +327,7 @@ final class ComputedMapTest {
     @MethodSource("allSets")
     void iteratorNext(Set<Value> set) {
         Set<Value> encountered = new HashSet<>();
-        var iterator = newMap(set).entrySet().iterator();
+        var iterator = newLazyMap(set).entrySet().iterator();
         while (iterator.hasNext()) {
             var entry = iterator.next();
             assertEquals(MAPPER.apply(entry.getKey()), entry.getValue());
@@ -333,7 +340,7 @@ final class ComputedMapTest {
     @MethodSource("nonEmptySets")
     void iteratorForEachRemaining(Set<Value> set) {
         Set<Value> encountered = new HashSet<>();
-        var iterator = newMap(set).entrySet().iterator();
+        var iterator = newLazyMap(set).entrySet().iterator();
         var entry = iterator.next();
         assertEquals(MAPPER.apply(entry.getKey()), entry.getValue());
         encountered.add(entry.getKey());
@@ -347,8 +354,8 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void lazyEntry(Set<Value> set) {
-        var map = newMap(set);
-        var entry = map.entrySet().stream()
+        var lazy = newLazyMap(set);
+        var entry = lazy.entrySet().stream()
                 .filter(e -> e.getKey().equals(KEY))
                 .findAny()
                 .orElseThrow();
@@ -366,14 +373,14 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void lazyForEachEntry(Set<Value> set) {
-        var map = newMap(set);
+        var lazy = newLazyMap(set);
         // Only touch the key.
-        map.entrySet().iterator().forEachRemaining(Map.Entry::getKey);
-        map.entrySet().iterator()
+        lazy.entrySet().iterator().forEachRemaining(Map.Entry::getKey);
+        lazy.entrySet().iterator()
                 .forEachRemaining(e -> assertTrue(e.toString().contains(".unset")));
         // Only touch the value.
-        map.entrySet().iterator().forEachRemaining(Map.Entry::getValue);
-        map.entrySet().iterator()
+        lazy.entrySet().iterator().forEachRemaining(Map.Entry::getValue);
+        lazy.entrySet().iterator()
                 .forEachRemaining(e -> assertFalse(e.toString().contains(".unset")));
     }
 
@@ -394,7 +401,7 @@ final class ComputedMapTest {
 
     static <T extends Throwable> void assertThrowsForOperation(Class<T> expectedType, Operation operation) {
         for (Set<Value> set : allSets().toList()) {
-            var lazy = newMap(set);
+            var lazy = newLazyMap(set);
             assertThrows(expectedType, () -> operation.accept(lazy), set.getClass().getSimpleName() + " " + operation);
         }
     }
@@ -404,93 +411,93 @@ final class ComputedMapTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void serializable(Set<Value> set) {
-        var map = newMap(set);
-        assertFalse(map instanceof Serializable);
-        assertFalse(map.entrySet() instanceof Serializable);
-        assertFalse(map.values() instanceof Serializable);
+        var lazy = newLazyMap(set);
+        assertFalse(lazy instanceof Serializable);
+        assertFalse(lazy.entrySet() instanceof Serializable);
+        assertFalse(lazy.values() instanceof Serializable);
     }
 
     @Test
     void nullResult() {
-        var map = Map.ofComputed(Set.of(0), _ -> null);
-        assertThrows(NullPointerException.class, () -> map.getOrDefault(0, 1));;
-        assertTrue(map.containsKey(0));
+        var lazy = Map.ofLazy(Set.of(0), _ -> null);
+        assertThrows(NullPointerException.class, () -> lazy.getOrDefault(0, 1));;
+        assertTrue(lazy.containsKey(0));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void functionHolder(Set<Value> set) {
-        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
+        Map<Value, Integer> lazy = Map.ofLazy(set, cif);
 
-        Object holder = ComputedConstantTestUtil.functionHolder(f1);
+        Object holder = LazyConstantTestUtil.functionHolder(lazy);
 
         int i = 0;
         for (Value key : set) {
-            assertEquals(set.size() - i, ComputedConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
-            int v = f1.get(key);
-            int v2 = f1.get(key);
+            assertEquals(set.size() - i, LazyConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
+            int v = lazy.get(key);
+            int v2 = lazy.get(key);
             i++;
         }
-        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
-        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
+        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
+        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void functionHolderViaEntrySet(Set<Value> set) {
-        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
+        Map<Value, Integer> lazy = Map.ofLazy(set, cif);
 
-        Object holder = ComputedConstantTestUtil.functionHolder(f1);
+        Object holder = LazyConstantTestUtil.functionHolder(lazy);
 
         int i = 0;
-        for (Map.Entry<Value, Integer> e : f1.entrySet()) {
-            assertEquals(set.size() - i, ComputedConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
+        for (Map.Entry<Value, Integer> e : lazy.entrySet()) {
+            assertEquals(set.size() - i, LazyConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
             int v = e.getValue();
             int v2 = e.getValue();
             i++;
         }
-        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
-        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
+        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
+        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
     }
 
     @ParameterizedTest
     @MethodSource("allSets")
     void underlyingRefViaEntrySetForEach(Set<Value> set) {
-        ComputedConstantTestUtil.CountingFunction<Value, Integer> cif = new ComputedConstantTestUtil.CountingFunction<>(MAPPER);
-        Map<Value, Integer> f1 = Map.ofComputed(set, cif);
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
+        Map<Value, Integer> lazy = Map.ofLazy(set, cif);
 
-        Object holder = ComputedConstantTestUtil.functionHolder(f1);
+        Object holder = LazyConstantTestUtil.functionHolder(lazy);
 
         final AtomicInteger i = new AtomicInteger();
-        f1.entrySet().forEach(e -> {
-            assertEquals(set.size() - i.get(), ComputedConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
+        lazy.entrySet().forEach(e -> {
+            assertEquals(set.size() - i.get(), LazyConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
             Integer val = e.getValue();
             Integer val2 = e.getValue();
             i.incrementAndGet();
         });
-        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
-        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
+        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
+        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
     }
 
     @Test
     void usesOptimizedVersion() {
-        Map<Value, Integer> enumMap = Map.ofComputed(EnumSet.of(KEY), Value::asInt);
+        Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(KEY), Value::asInt);
         assertTrue(enumMap.getClass().getName().contains("Enum"), enumMap.getClass().getName());
-        Map<Value, Integer> emptyMap = Map.ofComputed(EnumSet.noneOf(Value.class), Value::asInt);
+        Map<Value, Integer> emptyMap = Map.ofLazy(EnumSet.noneOf(Value.class), Value::asInt);
         assertFalse(emptyMap.getClass().getName().contains("Enum"), emptyMap.getClass().getName());
-        Map<Value, Integer> regularMap = Map.ofComputed(Set.of(KEY), Value::asInt);
+        Map<Value, Integer> regularMap = Map.ofLazy(Set.of(KEY), Value::asInt);
         assertFalse(regularMap.getClass().getName().contains("Enum"), regularMap.getClass().getName());
     }
 
     @Test
     void overriddenEnum() {
         final var overridden = Value.THIRTEEN;
-        Map<Value, Integer> enumMap = Map.ofComputed(EnumSet.of(overridden), MAPPER);
+        Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(overridden), MAPPER);
         assertEquals(MAPPER.apply(overridden), enumMap.get(overridden), enumMap.toString());
     }
 
@@ -498,7 +505,7 @@ final class ComputedMapTest {
     void enumAliasing() {
         enum MyEnum {FOO, BAR}
         enum MySecondEnum{BAZ, QUX}
-        Map<MyEnum, Integer> mapEnum = Map.ofComputed(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+        Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
         assertEquals(MyEnum.BAR.ordinal(), mapEnum.get(MyEnum.BAR));
         // Make sure class is checked, not just `ordinal()`
         assertNull(mapEnum.get(MySecondEnum.QUX));
@@ -538,8 +545,8 @@ final class ComputedMapTest {
     }
 
 
-    static Map<Value, Integer> newMap(Set<Value> set) {
-        return Map.ofComputed(set, MAPPER);
+    static Map<Value, Integer> newLazyMap(Set<Value> set) {
+        return Map.ofLazy(set, MAPPER);
     }
     static Map<Value, Integer> newRegularMap(Set<Value> set) {
         return set.stream()

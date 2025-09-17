@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for computed list methods
+ * @summary Basic tests for lazy list methods
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED ComputedListTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED LazyListTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ComputedListTest {
+final class LazyListTest {
 
     private static final int ZERO = 0;
     private static final int INDEX = 7;
@@ -58,26 +58,26 @@ final class ComputedListTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> List.ofComputed(SIZE, null));
-        assertThrows(IllegalArgumentException.class, () -> List.ofComputed(-1, IDENTITY));
+        assertThrows(NullPointerException.class, () -> List.ofLazy(SIZE, null));
+        assertThrows(IllegalArgumentException.class, () -> List.ofLazy(-1, IDENTITY));
     }
 
     @Test
     void isEmpty() {
-        assertFalse(newList().isEmpty());
-        assertTrue(newEmptyList().isEmpty());
+        assertFalse(newLazyList().isEmpty());
+        assertTrue(newEmptyLazyList().isEmpty());
     }
 
     @Test
     void size() {
-        assertEquals(SIZE, newList().size());
-        assertEquals(ZERO, newEmptyList().size());
+        assertEquals(SIZE, newLazyList().size());
+        assertEquals(ZERO, newEmptyLazyList().size());
     }
 
     @Test
     void get() {
-        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(IDENTITY);
-        var lazy = List.ofComputed(SIZE, cif);
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(IDENTITY);
+        var lazy = List.ofLazy(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
             assertEquals(i + 1, cif.cnt());
@@ -88,10 +88,10 @@ final class ComputedListTest {
 
     @Test
     void getException() {
-        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(_ -> {
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = List.ofComputed(SIZE, cif);
+        var lazy = List.ofLazy(SIZE, cif);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
@@ -100,8 +100,8 @@ final class ComputedListTest {
 
     @Test
     void toArray() {
-        assertArrayEquals(new Object[ZERO], newEmptyList().toArray());
-        assertArrayEquals(newRegularList().toArray(), newList().toArray());
+        assertArrayEquals(new Object[ZERO], newEmptyLazyList().toArray());
+        assertArrayEquals(newRegularList().toArray(), newLazyList().toArray());
     }
 
     @Test
@@ -110,8 +110,8 @@ final class ComputedListTest {
         for (int i = 0; i < SIZE; i++) {
             actual[INDEX] = 100 + i;
         }
-        var list = List.ofComputed(INDEX, IDENTITY);
-        assertSame(actual, list.toArray(actual));
+        var lazy = List.ofLazy(INDEX, IDENTITY);
+        assertSame(actual, lazy.toArray(actual));
         Integer[] expected = IntStream.range(0, SIZE)
                 .mapToObj(i -> i < INDEX ? i : null)
                 .toArray(Integer[]::new);
@@ -121,7 +121,7 @@ final class ComputedListTest {
     @Test
     void toArrayWithArraySmaller() {
         Integer[] arr = new Integer[INDEX];
-        Integer[] actual = newList().toArray(arr);
+        Integer[] actual = newLazyList().toArray(arr);
         assertNotSame(arr, actual);
         Integer[] expected = newRegularList().toArray(new Integer[0]);
         assertArrayEquals(expected, actual);
@@ -130,13 +130,13 @@ final class ComputedListTest {
     @Test
     void toArrayWithGenerator() {
         Integer[] expected = newRegularList().toArray(Integer[]::new);
-        Integer[] actual = newList().toArray(Integer[]::new);
+        Integer[] actual = newLazyList().toArray(Integer[]::new);
         assertArrayEquals(expected, actual);
     }
 
     @Test
     void firstIndex() {
-        var lazy = newList();
+        var lazy = newLazyList();
         for (int i = INDEX; i < SIZE; i++) {
             assertEquals(i, lazy.indexOf(i));
         }
@@ -145,7 +145,7 @@ final class ComputedListTest {
 
     @Test
     void lastIndex() {
-        var lazy = newList();
+        var lazy = newLazyList();
         for (int i = INDEX; i < SIZE; i++) {
             assertEquals(i, lazy.lastIndexOf(i));
         }
@@ -154,42 +154,42 @@ final class ComputedListTest {
 
     @Test
     void toStringTest() {
-        assertEquals("[]", newEmptyList().toString());
-        var list = List.ofComputed(2, IDENTITY);
-        assertEquals("[.unset, .unset]", list.toString());
-        list.get(0);
-        assertEquals("[0, .unset]", list.toString());
-        list.get(1);
-        assertEquals("[0, 1]", list.toString());
+        assertEquals("[]", newEmptyLazyList().toString());
+        var lazy = List.ofLazy(2, IDENTITY);
+        assertEquals("[.unset, .unset]", lazy.toString());
+        lazy.get(0);
+        assertEquals("[0, .unset]", lazy.toString());
+        lazy.get(1);
+        assertEquals("[0, 1]", lazy.toString());
     }
 
     @Test
     void hashCodeTest() {
-        assertEquals(List.of().hashCode(), newEmptyList().hashCode());
-        assertEquals(newRegularList().hashCode(), newList().hashCode());
+        assertEquals(List.of().hashCode(), newEmptyLazyList().hashCode());
+        assertEquals(newRegularList().hashCode(), newLazyList().hashCode());
     }
 
     @Test
     void equalsTest() {
-        assertTrue(newEmptyList().equals(List.of()));
-        assertTrue(List.of().equals(newEmptyList()));
-        assertTrue(newList().equals(newRegularList()));
-        assertTrue(newRegularList().equals(newList()));
-        assertFalse(newList().equals("A"));
+        assertTrue(newEmptyLazyList().equals(List.of()));
+        assertTrue(List.of().equals(newEmptyLazyList()));
+        assertTrue(newLazyList().equals(newRegularList()));
+        assertTrue(newRegularList().equals(newLazyList()));
+        assertFalse(newLazyList().equals("A"));
     }
 
     @Test
     void equalsPartialEvaluationTest() {
-        var list = List.ofComputed(2, IDENTITY);
-        assertFalse(list.equals(List.of(0)));
-        assertEquals("[0, .unset]", list.toString());
-        assertTrue(list.equals(List.of(0, 1)));
-        assertEquals("[0, 1]", list.toString());
+        var lazy = List.ofLazy(2, IDENTITY);
+        assertFalse(lazy.equals(List.of(0)));
+        assertEquals("[0, .unset]", lazy.toString());
+        assertTrue(lazy.equals(List.of(0, 1)));
+        assertEquals("[0, 1]", lazy.toString());
     }
 
     @Test
     void iteratorTotal() {
-        var iterator = newList().iterator();
+        var iterator = newLazyList().iterator();
         for (int i = 0; i < SIZE; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -204,7 +204,7 @@ final class ComputedListTest {
 
     @Test
     void iteratorPartial() {
-        var iterator = newList().iterator();
+        var iterator = newLazyList().iterator();
         for (int i = 0; i < INDEX; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -220,7 +220,7 @@ final class ComputedListTest {
 
     @Test
     void subList() {
-        var lazy = newList();
+        var lazy = newLazyList();
         var lazySubList = lazy.subList(1, SIZE);
         assertInstanceOf(RandomAccess.class, lazySubList);
         var regularList = newRegularList();
@@ -230,10 +230,10 @@ final class ComputedListTest {
 
     @Test
     void subList2() {
-        var lazy = newList();
+        var lazy = newLazyList();
         var lazySubList = lazy.subList(1, SIZE);
         lazySubList.get(0);
-        var eq = newList();
+        var eq = newLazyList();
         eq.get(1);
         assertEquals(eq.toString(), lazy.toString());
     }
@@ -244,23 +244,23 @@ final class ComputedListTest {
 
     @Test
     void reversed() {
-        var list = newList();
-        var reversed = list.reversed();
-        assertInstanceOf(RandomAccess.class, reversed);
-        assertEquals(SIZE - 1, reversed.getFirst());
-        assertEquals(0, reversed.getLast());
+        var lazy = newLazyList();
+        var reversedLazy = lazy.reversed();
+        assertInstanceOf(RandomAccess.class, reversedLazy);
+        assertEquals(SIZE - 1, reversedLazy.getFirst());
+        assertEquals(0, reversedLazy.getLast());
 
-        var reversed2 = reversed.reversed();
-        assertInstanceOf(RandomAccess.class, reversed2);
-        assertEquals(0, reversed2.getFirst());
-        assertEquals(SIZE - 1, reversed2.getLast());
+        var reversed2Lazy = reversedLazy.reversed();
+        assertInstanceOf(RandomAccess.class, reversed2Lazy);
+        assertEquals(0, reversed2Lazy.getFirst());
+        assertEquals(SIZE - 1, reversed2Lazy.getLast());
         // Make sure we get back a non-reversed implementation
-        assertEquals(list.getClass().getName(), reversed2.getClass().getName());
+        assertEquals(lazy.getClass().getName(), reversed2Lazy.getClass().getName());
     }
 
     @Test
     void sublistReversedToString() {
-        var actual = List.ofComputed(4, IDENTITY);
+        var actual = List.ofLazy(4, IDENTITY);
         var expected = List.of(0, 1, 2, 3);
         for (UnaryOperation op : List.of(
                 new UnaryOperation("subList", l -> l.subList(1, 3)),
@@ -277,13 +277,13 @@ final class ComputedListTest {
     }
 
     // This test makes sure successive view operations retains the property
-    // of being a computed view.
+    // of being a lazy view.
     @Test
-    void viewsComputed() {
+    void lazyViews() {
         viewOperations().forEach(op0 -> {
             viewOperations().forEach( op1 -> {
                 viewOperations().forEach(op2 -> {
-                    var list = newList();
+                    var list = newLazyList();
                     var view1 = op0.apply(list);
                     var view2 = op1.apply(view1);
                     var view3 = op2.apply(view2);
@@ -292,7 +292,7 @@ final class ComputedListTest {
                             op0 + " -> " + className(view1) + ", " +
                             op1 + " -> " + className(view2) + ", " +
                             op2 + " -> " + className3;
-                    assertTrue(className3.contains("Computed"), transitions);
+                    assertTrue(className3.contains("Lazy"), transitions);
                     assertUnevaluated(list);
                     assertUnevaluated(view1);
                     assertUnevaluated(view2);
@@ -305,10 +305,10 @@ final class ComputedListTest {
     @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
-        var lazy = List.ofComputed(SIZE, i -> ref.get().apply(i));
+        var lazy = List.ofLazy(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
-        assertEquals("Recursive initialization of a computed collection is illegal", x.getMessage());
+        assertEquals("Recursive initialization of a lazy collection is illegal", x.getMessage());
     }
 
     // Immutability
@@ -334,7 +334,7 @@ final class ComputedListTest {
     }
 
     static <T extends Throwable> void assertThrowsForOperation(Class<T> expectedType, Operation operation) {
-        var lazy = newList();
+        var lazy = newLazyList();
         assertThrows(expectedType, () -> operation.accept(lazy));
         var sub = lazy.subList(1, SIZE / 2);
         assertThrows(expectedType, () -> operation.accept(sub));
@@ -346,14 +346,14 @@ final class ComputedListTest {
 
     @Test
     void serializable() {
-        serializable(newList());
-        serializable(newEmptyList());
+        serializable(newLazyList());
+        serializable(newEmptyLazyList());
     }
 
     void serializable(List<Integer> list) {
         assertFalse(list instanceof Serializable);
         if (list.size()>INDEX) {
-            assertFalse(newList().subList(1, INDEX) instanceof Serializable);
+            assertFalse(newLazyList().subList(1, INDEX) instanceof Serializable);
         }
         assertFalse(list.iterator() instanceof Serializable);
         assertFalse(list.reversed() instanceof Serializable);
@@ -362,9 +362,9 @@ final class ComputedListTest {
 
     @Test
     void randomAccess() {
-        assertInstanceOf(RandomAccess.class, newList());
-        assertInstanceOf(RandomAccess.class, newEmptyList());
-        assertInstanceOf(RandomAccess.class, newList().subList(1, INDEX));
+        assertInstanceOf(RandomAccess.class, newLazyList());
+        assertInstanceOf(RandomAccess.class, newEmptyLazyList());
+        assertInstanceOf(RandomAccess.class, newLazyList().subList(1, INDEX));
     }
 
     @Test
@@ -373,7 +373,7 @@ final class ComputedListTest {
             viewOperations().forEach(op1 -> {
                 viewOperations().forEach(op2 -> {
                     childOperations().forEach(co -> {
-                        var list = newList();
+                        var list = newLazyList();
                         var view1 = op0.apply(list);
                         var view2 = op1.apply(view1);
                         var view3 = op2.apply(view2);
@@ -402,18 +402,18 @@ final class ComputedListTest {
 
     @Test
     void functionHolder() {
-        ComputedConstantTestUtil.CountingIntFunction<Integer> cif = new ComputedConstantTestUtil.CountingIntFunction<>(IDENTITY);
-        List<Integer> f1 = List.ofComputed(SIZE, cif);
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(IDENTITY);
+        List<Integer> f1 = List.ofLazy(SIZE, cif);
 
-        Object holder = ComputedConstantTestUtil.functionHolder(f1);
+        Object holder = LazyConstantTestUtil.functionHolder(f1);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(SIZE - i, ComputedConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, ComputedConstantTestUtil.functionHolderFunction(holder));
+            assertEquals(SIZE - i, LazyConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
             int v = f1.get(i);
             int v2 = f1.get(i);
         }
-        assertEquals(0, ComputedConstantTestUtil.functionHolderCounter(holder));
-        assertNull(ComputedConstantTestUtil.functionHolderFunction(holder));
+        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
+        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
     }
 
     // Support constructs
@@ -499,12 +499,12 @@ final class ComputedListTest {
         );
     }
 
-    static List<Integer> newList() {
-        return List.ofComputed(SIZE, IDENTITY);
+    static List<Integer> newLazyList() {
+        return List.ofLazy(SIZE, IDENTITY);
     }
 
-    static List<Integer> newEmptyList() {
-        return List.ofComputed(ZERO, IDENTITY);
+    static List<Integer> newEmptyLazyList() {
+        return List.ofLazy(ZERO, IDENTITY);
     }
 
     static List<Integer> newRegularList() {

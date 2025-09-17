@@ -22,10 +22,10 @@
  */
 
 /* @test
- * @summary Basic tests for ComputedConstant implementations
+ * @summary Basic tests for the LazyConstant implementation
  * @enablePreview
  * @modules java.base/jdk.internal.lang
- * @run junit/othervm --add-opens java.base/jdk.internal.lang=ALL-UNNAMED ComputedConstantTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang=ALL-UNNAMED LazyConstantTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.ComputedConstant;
+import java.lang.LazyConstant;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -42,96 +42,96 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-final class ComputedConstantTest {
+final class LazyConstantTest {
 
     private static final int VALUE = 42;
     private static final Supplier<Integer> SUPPLIER = () -> VALUE;
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> ComputedConstant.of(null));
+        assertThrows(NullPointerException.class, () -> LazyConstant.of(null));
     }
 
     @ParameterizedTest
     @MethodSource("factories")
-    void basic(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(SUPPLIER);
-        var cached = factory.apply(cs);
-        assertEquals(".unset", cached.toString());
-        assertEquals(SUPPLIER.get(), cached.get());
+    void basic(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
+        LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
+        var lazy = factory.apply(cs);
+        assertEquals(".unset", lazy.toString());
+        assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
-        assertEquals(SUPPLIER.get(), cached.get());
+        assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
-        assertEquals(Objects.toString(SUPPLIER.get()), cached.toString());
+        assertEquals(Objects.toString(SUPPLIER.get()), lazy.toString());
     }
 
     @ParameterizedTest
     @MethodSource("factories")
-    void exception(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(() -> {
+    void exception(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
+        LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = factory.apply(cs);
-        assertThrows(UnsupportedOperationException.class, cached::get);
+        var lazy = factory.apply(cs);
+        assertThrows(UnsupportedOperationException.class, lazy::get);
         assertEquals(1, cs.cnt());
-        assertThrows(UnsupportedOperationException.class, cached::get);
+        assertThrows(UnsupportedOperationException.class, lazy::get);
         assertEquals(2, cs.cnt());
-        assertEquals(".unset", cached.toString());
+        assertEquals(".unset", lazy.toString());
     }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void orElse(ComputedConstant<Integer> constant) {
+    @MethodSource("lazyConstants")
+    void orElse(LazyConstant<Integer> constant) {
         assertNull(constant.orElse(null));
         constant.get();
         assertEquals(VALUE, constant.orElse(null));
     }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void get(ComputedConstant<Integer> constant) {
+    @MethodSource("lazyConstants")
+    void get(LazyConstant<Integer> constant) {
         assertEquals(VALUE, constant.get());
     }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void isInitialized(ComputedConstant<Integer> constant) {
+    @MethodSource("lazyConstants")
+    void isInitialized(LazyConstant<Integer> constant) {
         assertFalse(constant.isInitialized());
         constant.get();
         assertTrue(constant.isInitialized());
    }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void testHashCode(ComputedConstant<Integer> constant) {
-        ComputedConstant<Integer> c1 = ComputedConstant.of(SUPPLIER);
+    @MethodSource("lazyConstants")
+    void testHashCode(LazyConstant<Integer> constant) {
+        LazyConstant<Integer> c1 = LazyConstant.of(SUPPLIER);
         assertEquals(c1.hashCode(), constant.hashCode());
         constant.get();
         assertEquals(c1.hashCode(), constant.hashCode());
         c1.get();
         assertEquals(c1.hashCode(), constant.hashCode());
-        ComputedConstant<Integer> different = ComputedConstant.of(() -> 13);
+        LazyConstant<Integer> different = LazyConstant.of(() -> 13);
         assertNotEquals(different.hashCode(), constant.hashCode());
     }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void testEquals(ComputedConstant<Integer> c0) {
+    @MethodSource("lazyConstants")
+    void testEquals(LazyConstant<Integer> c0) {
         assertNotEquals(null, c0);
-        ComputedConstant<Integer> s1 = ComputedConstant.of(SUPPLIER);
+        LazyConstant<Integer> s1 = LazyConstant.of(SUPPLIER);
         assertEquals(c0, s1);
         c0.get();
         assertEquals(c0, s1);
         s1.get();
         assertEquals(c0, s1);
-        ComputedConstant<Integer> different = ComputedConstant.of(() -> 13);
+        LazyConstant<Integer> different = LazyConstant.of(() -> 13);
         assertNotEquals(different, c0);
         assertNotEquals("a", c0);
     }
 
     @ParameterizedTest
-    @MethodSource("computedConstants")
-    void toStringUnset(ComputedConstant<Integer> constant) {
+    @MethodSource("lazyConstants")
+    void toStringUnset(LazyConstant<Integer> constant) {
         assertEquals(".unset", constant.toString());
         constant.get();
         assertEquals(Integer.toString(VALUE), constant.toString());
@@ -139,72 +139,72 @@ final class ComputedConstantTest {
 
     @Test
     void toStringCircular() {
-        AtomicReference<ComputedConstant<?>> ref = new AtomicReference<>();
-        ComputedConstant<ComputedConstant<?>> constant = ComputedConstant.of(ref::get);
+        AtomicReference<LazyConstant<?>> ref = new AtomicReference<>();
+        LazyConstant<LazyConstant<?>> constant = LazyConstant.of(ref::get);
         ref.set(constant);
         constant.get();
         String toString = assertDoesNotThrow(constant::toString);
-        assertEquals("(this ComputedConstant)", toString);
+        assertEquals("(this LazyConstant)", toString);
     }
 
     @Test
     void recursiveCall() {
-        AtomicReference<ComputedConstant<Integer>> ref = new AtomicReference<>();
-        ComputedConstant<Integer> constant = ComputedConstant.of(() -> ref.get().get());
-        ComputedConstant<Integer> constant1 = ComputedConstant.of(constant);
+        AtomicReference<LazyConstant<Integer>> ref = new AtomicReference<>();
+        LazyConstant<Integer> constant = LazyConstant.of(() -> ref.get().get());
+        LazyConstant<Integer> constant1 = LazyConstant.of(constant);
         ref.set(constant1);
         assertThrows(IllegalStateException.class, constant::get);
     }
 
     @ParameterizedTest
     @MethodSource("factories")
-    void underlying(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(SUPPLIER);
+    void underlying(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
+        LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var f1 = factory.apply(cs);
 
-        Supplier<?> underlyingBefore = ComputedConstantTestUtil.underlying(f1);
+        Supplier<?> underlyingBefore = LazyConstantTestUtil.computingFunction(f1);
         assertSame(cs, underlyingBefore);
         int v = f1.get();
-        Supplier<?> underlyingAfter = ComputedConstantTestUtil.underlying(f1);
+        Supplier<?> underlyingAfter = LazyConstantTestUtil.computingFunction(f1);
         assertNull(underlyingAfter);
     }
 
     @ParameterizedTest
     @MethodSource("factories")
-    void functionHolderException(Function<Supplier<Integer>, ComputedConstant<Integer>> factory) {
-        ComputedConstantTestUtil.CountingSupplier<Integer> cs = new ComputedConstantTestUtil.CountingSupplier<>(() -> {
+    void functionHolderException(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
+        LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
         var f1 = factory.apply(cs);
 
-        Supplier<?> underlyingBefore = ComputedConstantTestUtil.underlying(f1);
+        Supplier<?> underlyingBefore = LazyConstantTestUtil.computingFunction(f1);
         assertSame(cs, underlyingBefore);
         try {
             int v = f1.get();
         } catch (UnsupportedOperationException _) {
             // Expected
         }
-        Supplier<?> underlyingAfter = ComputedConstantTestUtil.underlying(f1);
+        Supplier<?> underlyingAfter = LazyConstantTestUtil.computingFunction(f1);
         assertSame(cs, underlyingAfter);
     }
 
-    private static Stream<ComputedConstant<Integer>> computedConstants() {
+    private static Stream<LazyConstant<Integer>> lazyConstants() {
         return factories()
                 .map(f -> f.apply(() -> VALUE));
     }
 
-    private static Stream<Function<Supplier<Integer>, ComputedConstant<Integer>>> factories() {
+    private static Stream<Function<Supplier<Integer>, LazyConstant<Integer>>> factories() {
         return Stream.of(
-                supplier("ComputedConstant.of(<lambda>)", ComputedConstant::of)
+                supplier("ComputedConstant.of(<lambda>)", LazyConstant::of)
         );
     }
 
-    private static Function<Supplier<Integer>, ComputedConstant<Integer>> supplier(String name,
-                                                                                   Function<Supplier<Integer>, ComputedConstant<Integer>> underlying) {
-        return new Function<Supplier<Integer>, ComputedConstant<Integer>>() {
+    private static Function<Supplier<Integer>, LazyConstant<Integer>> supplier(String name,
+                                                                               Function<Supplier<Integer>, LazyConstant<Integer>> underlying) {
+        return new Function<Supplier<Integer>, LazyConstant<Integer>>() {
             @Override
-            public ComputedConstant<Integer> apply(Supplier<Integer> supplier) {
-                return ComputedConstant.of(supplier);
+            public LazyConstant<Integer> apply(Supplier<Integer> supplier) {
+                return underlying.apply(supplier);
             }
 
             @Override

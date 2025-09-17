@@ -424,7 +424,7 @@ public abstract class Charset
     }
 
     /* The extended set of charsets */
-    private static final ComputedConstant<List<CharsetProvider>> EXTENDED_PROVIDERS = ComputedConstant.of(
+    private static final LazyConstant<List<CharsetProvider>> EXTENDED_PROVIDERS = LazyConstant.of(
             new Supplier<>() { public List<CharsetProvider> get() { return extendedProviders0(); }});
 
     private static List<CharsetProvider> extendedProviders0() {
@@ -615,7 +615,7 @@ public abstract class Charset
         return Collections.unmodifiableSortedMap(m);
     }
 
-    private static final ComputedConstant<Charset> defaultCharset = ComputedConstant.of(
+    private static final LazyConstant<Charset> defaultCharset = LazyConstant.of(
             new Supplier<>() { public Charset get() { return defaultCharset0(); }});
 
     private static Charset defaultCharset0() {
@@ -656,7 +656,7 @@ public abstract class Charset
     @Stable
     private final String[] aliases;
     @Stable
-    private final ComputedConstant<Set<String>> aliasSet = ComputedConstant.of(
+    private final LazyConstant<Set<String>> aliasSet = LazyConstant.of(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
 
     /**

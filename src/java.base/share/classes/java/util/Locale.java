@@ -983,8 +983,8 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static final ComputedConstant<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            ComputedConstant.of(new Supplier<>() {
+    private static final LazyConstant<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -2315,8 +2315,8 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private final transient ComputedConstant<String> languageTag =
-            ComputedConstant.of(new Supplier<>() {
+    private final transient LazyConstant<String> languageTag =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();

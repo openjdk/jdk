@@ -92,8 +92,8 @@ public final class BaseLocale {
     }
 
     // Interned BaseLocale cache
-    private static final ComputedConstant<ReferencedKeySet<BaseLocale>> CACHE =
-            ComputedConstant.of(new Supplier<>() {
+    private static final LazyConstant<ReferencedKeySet<BaseLocale>> CACHE =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeySet<BaseLocale> get() {
                     return ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());

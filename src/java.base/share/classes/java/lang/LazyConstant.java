@@ -26,7 +26,7 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.ComputedConstantImpl;
+import jdk.internal.lang.LazyConstantImpl;
 
 import java.io.Serializable;
 import java.util.List;
@@ -39,11 +39,11 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A computed constant is a deferred shallowly immutable constant to be computed at
+ * A lazy constant is a deferred shallowly immutable constant to be computed at
  * a later time by an underlying computing function.
  * <p>
- * A computed constant is created using the factory method
- * {@linkplain ComputedConstant#of(Supplier)}. When created, the computed constant is
+ * A lazy constant is created using the factory method
+ * {@linkplain LazyConstant#of(Supplier)}. When created, the lazy constant is
  * <em>not initialized</em>, which means the constant is not yet set. The constant,
  * of type {@code T}, can then be <em>initialized</em> (and retrieved) by calling
  * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an underlying
@@ -52,16 +52,16 @@ import java.util.function.Supplier;
  * the constant can <em>never change</em> and can be retrieved over and over again
  * by subsequent {@linkplain #get() get} invocations.
  * <p>
- * Consider the following example where a computed constant field "{@code logger}" is a
+ * Consider the following example where a lazy constant field "{@code logger}" is a
  * shallowly immutable holder of a constant of type {@code Logger}:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *    // Creates a new uninitialized computed constant
+ *    // Creates a new uninitialized lazy constant
  *    // @link substring="of" target="#of" :
- *    private final ComputedConstant<Logger> logger =
- *            ComputedConstant.of( () -> Logger.create(Component.class) );
+ *    private final LazyConstant<Logger> logger =
+ *            LazyConstant.of( () -> Logger.create(Component.class) );
  *
  *    public void process() {
  *        logger.get().info("Process started");
@@ -70,10 +70,10 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * Initially, the computed constant is <em>not initialized</em>, until {@code logger.get()}
+ * Initially, the lazy constant is <em>not initialized</em>, until {@code logger.get()}
  * evaluates the computing function, and initializes the constant to the result;
  * the result is then returned to the client. Hence, {@linkplain #get()} guarantees that
- * a computer constant is <em>initialized</em> before it returns, baring any exceptions.
+ * a lazy constant is <em>initialized</em> before it returns, baring any exceptions.
  * <p>
  * Furthermore, {@linkplain #get()} guarantees that, out several threads trying to invoke
  * the computing function simultaneously, only one is ever evaluated. This property is
@@ -81,12 +81,12 @@ import java.util.function.Supplier;
  * the call above to {@code Logger.create()} may result in storage resources being
  * prepared.
  *
- * <h2 id="composition">Composing computed constants</h2>
- * A computed constant can depend on other computed constants, forming a dependency graph
+ * <h2 id="composition">Composing lazy constants</h2>
+ * A lazy constant can depend on other computed constants, forming a dependency graph
  * that can be lazily computed but where access to individual elements can still be
  * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
- * which are held by computed constants:
+ * which are held by lazy constants:
  *
  * {@snippet lang = java:
  * public final class DependencyUtil {
@@ -103,8 +103,8 @@ import java.util.function.Supplier;
  *         }
  *     }
  *
- *     private static final ComputedConstant<Foo> FOO = ComputedConstant.of(Foo::new);
- *     private static final ComputedConstant<Bar> BAR = ComputedConstant.of(() -> new Bar(FOO.get()));
+ *     private static final LazyConstant<Foo> FOO = LazyConstant.of(Foo::new);
+ *     private static final LazyConstant<Bar> BAR = LazyConstant.of(() -> new Bar(FOO.get()));
  *
  *     public static Foo foo() {
  *         return FOO.get();
@@ -121,17 +121,17 @@ import java.util.function.Supplier;
  * the {@code Foo} does not already exist.
  * <p>
  * If the computing function returns {@code null}, a {@linkplain NullPointerException}
- * is thrown. Hence, a computed constant can never be {@code null}. Clients that want to
+ * is thrown. Hence, a lazy constant can never be {@code null}. Clients that want to
  * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
- * A computed constant is guaranteed to be initialized at most once. If competing
- * threads are racing to initialize a computed constant, only one update computes, while
+ * A lazy constant is guaranteed to be initialized at most once. If competing
+ * threads are racing to initialize a lazy constant, only one update computes, while
  * the other updates are blocked until the constant is initialized, whereafter the other
- * updates observes the computed constant is initialized and leave the constant unchanged
+ * updates observes the lazy constant is initialized and leave the constant unchanged
  * and will never invoke any computation.
  * <p>
- * The at-most-once write operation on a computed constant that succeeds
+ * The at-most-once write operation on a lazy constant that succeeds
  * (e.g., via an initial {@linkplain #get()} operation)
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * any other read operation (e.g. {@linkplain #get()}).
@@ -139,14 +139,14 @@ import java.util.function.Supplier;
  * <ul>
  *     <li>{@link #get()};</li>
  *     <li>{@link #hashCode()}, or</li>
- *     <li>{@link #equals(Object)} where the other object is a computed constant.</li>
+ *     <li>{@link #equals(Object)} where the other object is a lazy constant.</li>
  * </ul>
  * A read operation can be either:
  * <ul>
  *     <li>a {@link #get()};</li>
  *     <li>an {@link #isInitialized()};</li>
  *     <li>a {@link #hashCode()}, or</li>
- *     <li>a {@link #equals(Object)} where the other object is a computed constant.</li>
+ *     <li>a {@link #equals(Object)} where the other object is a lazy constant.</li>
  * </ul>
  * <p>
  * Invocations of the computing function (via any of the write-initiating operations
@@ -154,11 +154,11 @@ import java.util.function.Supplier;
  * followed by zero or one successful invocation of the computing function.
  *
  * <h2 id="performance">Performance</h2>
- * As a computed constant can never change after it has been initialized. Therefore,
- * a JVM implementation may, for an initialized computed constant, elide all future reads
- * of that computed constant, and instead directly use any constant that it has previously
- * observed. This is true if the reference to the computed constant is a VM constant
- * (e.g. in cases where the computed constant itself is stored in a
+ * As a lazy constant can never change after it has been initialized. Therefore,
+ * a JVM implementation may, for an initialized lazy constant, elide all future reads
+ * of that lazy constant, and instead directly use any constant that it has previously
+ * observed. This is true if the reference to the lazy constant is a VM constant
+ * (e.g. in cases where the lazy constant itself is stored in a
  * {@code static final} field) or forms a trusted chain to such a VM constant via
  * one or more layers of a {@linkplain Record record} fields or final fields
  * in hidden classes.
@@ -167,41 +167,41 @@ import java.util.function.Supplier;
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote As a computed constant can be initialized with an object but it is not
+ * @implNote As a lazy constant can be initialized with an object but it is not
  *           possible to ever remove the object, this can be a source of an unintended
- *           memory leak. A computed constant is
+ *           memory leak. A lazy constant is
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
- *           Be advised that reachable computed constants will hold their constants until
- *           the computed constants themselves are collected.
+ *           Be advised that reachable lazy constants will hold their constants until
+ *           the lazy constants themselves are collected.
  *           <p>
- *           A {@code ComputedConstant} that has a type parameter {@code T} that is an
+ *           A {@code LazyConstant} that has a type parameter {@code T} that is an
  *           array type (of arbitrary rank) will only allow the JVM to treat the
  *           <em>array reference</em> as a constant but <em>not its components</em>.
- *           Instead, a {@linkplain List#ofComputed(int, IntFunction) a computed list} of
+ *           Instead, a {@linkplain List#ofLazy(int, IntFunction) a computed list} of
  *           arbitrary depth can be used, which provides constant components.
- *           More generally, a computed constant can hold other computed constants of
+ *           More generally, a lazy constant can hold other lazy constants of
  *           arbitrary depth and still provide transitive constantness.
  *           <p>
- *           A {@code ComputedConstant} is not {@link Serializable}.
+ *           A {@code LazyConstant} is not {@link Serializable}.
  *           <p>
- *           Computed constants strongly references its underlying computing function
- *           used to compute values so long as the computed constant is not
+ *           Lazy constants strongly references its underlying computing function
+ *           used to compute values so long as the lazy constant is not
  *           initialized, after which the computing function is no longer strongly
  *           referenced and may be collected.
  *           <p>
- *           A computed constant is free to synchronize on itself. Hence, care must be
- *           taken when directly or indirectly synchronizing on a computed constant.
+ *           A lazy constant is free to synchronize on itself. Hence, care must be
+ *           taken when directly or indirectly synchronizing on a lazy constant.
  *
  * @param <T> type of the constant
  *
- * @see List#ofComputed(int, IntFunction)
- * @see Map#ofComputed(Set, Function)
+ * @see List#ofLazy(int, IntFunction)
+ * @see Map#ofLazy(Set, Function)
  * @since 26
  */
-@PreviewFeature(feature = PreviewFeature.Feature.COMPUTED_CONSTANTS)
-public sealed interface ComputedConstant<T>
+@PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+public sealed interface LazyConstant<T>
         extends Supplier<T>
-        permits ComputedConstantImpl {
+        permits LazyConstantImpl {
 
     /**
      * {@return the constant if initialized, otherwise, returns {@code other}}
@@ -232,10 +232,10 @@ public sealed interface ComputedConstant<T>
     // Object methods
 
     /**
-     * Indicates whether some other object is "equal to" this computed constant.
+     * Indicates whether some other object is "equal to" this lazy constant.
      * The other object is considered equal if:
      * <ul>
-     * <li>it is also a {@code ComputedConstant} and;
+     * <li>it is also a {@code LazyConstant} and;
      * <li>the constant values obtained via {@linkplain #get()} are "equal to"
      * each other via {@code equals()}.
      * </ul>
@@ -261,7 +261,7 @@ public sealed interface ComputedConstant<T>
     // Factories
 
     /**
-     * {@return a new computed constant to be computed later using the provided
+     * {@return a new lazy constant to be computed later using the provided
      *          {@code computingFunction}}
      *
      * @param computingFunction in the form of a Supplier to be used to compute
@@ -269,9 +269,9 @@ public sealed interface ComputedConstant<T>
      * @param <T>               type of the constant
      *
      */
-    static <T> ComputedConstant<T> of(Supplier<? extends T> computingFunction) {
+    static <T> LazyConstant<T> of(Supplier<? extends T> computingFunction) {
         Objects.requireNonNull(computingFunction);
-        return ComputedConstantImpl.ofComputed(computingFunction);
+        return LazyConstantImpl.ofLazy(computingFunction);
     }
 
 }

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Demo of an imperative stable value based on a computed constant
+ * @summary Demo of an imperative stable value based on a lazy constant
  * @enablePreview
  * @run junit DemoImperativeTest
  */
@@ -43,14 +43,14 @@ final class DemoImperativeTest {
 
         static <T> ImperativeStableValue<T> of() {
             var scratch = new AtomicReference<T>();
-            return new Impl<>(scratch, ComputedConstant.of(scratch::get));
+            return new Impl<>(scratch, LazyConstant.of(scratch::get));
         }
 
     }
 
 
     private record Impl<T>(AtomicReference<T> scratch,
-                           ComputedConstant<T> underlying) implements ImperativeStableValue<T> {
+                           LazyConstant<T> underlying) implements ImperativeStableValue<T> {
 
         @Override
         public boolean trySet(T t) {

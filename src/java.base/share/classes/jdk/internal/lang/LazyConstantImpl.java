@@ -33,22 +33,22 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * The sole implementation of the ComputedConstant interface.
+ * The sole implementation of the LazyConstant interface.
  *
  * @param <T> type of the constant
  * @implNote This implementation can be used early in the boot sequence as it does not
  * rely on reflection, MethodHandles, Streams etc.
  */
-public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
+public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     static final String UNSET_LABEL = ".unset";
 
-    // Unsafe allows `ComputedConstant` instances to be used early in the boot sequence
+    // Unsafe allows `LazyConstant` instances to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe offset for access of the `constant` field
     private static final long CONSTANT_OFFSET =
-            UNSAFE.objectFieldOffset(ComputedConstantImpl.class, "constant");
+            UNSAFE.objectFieldOffset(LazyConstantImpl.class, "constant");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -63,16 +63,16 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
     @Stable
     private T constant;
 
-    // Underlying supplier to be used to compute the `constant` field.
-    // The field needs to be `volatile` as a computed constant can be
+    // Underlying computing function to be used to compute the `constant` field.
+    // The field needs to be `volatile` as a lazy constant can be
     // created by one thread and computed by another thread.
-    // After the underlying supplier is successfully invoked, the field is set to
-    // `null` to allow the underlying supplier to be collected.
+    // After the function is successfully invoked, the field is set to
+    // `null` to allow the function to be collected.
     @Stable
-    private volatile Supplier<? extends T> underlying;
+    private volatile Supplier<? extends T> computingFunction;
 
-    private ComputedConstantImpl(Supplier<? extends T> underlying) {
-        this.underlying = underlying;
+    private LazyConstantImpl(Supplier<? extends T> computingFunction) {
+        this.computingFunction = computingFunction;
     }
 
     @ForceInline
@@ -87,11 +87,11 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
         synchronized (this) {
             T t = getAcquire();
             if (t == null) {
-                t = underlying.get();
+                t = computingFunction.get();
                 Objects.requireNonNull(t);
                 setRelease(t);
                 // Allow the underlying supplier to be collected after successful use
-                underlying = null;
+                computingFunction = null;
             }
             return t;
         }
@@ -112,7 +112,7 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof ComputedConstant<?> that
+        return obj instanceof LazyConstant<?> that
                 && this.get().equals(that.get());
     }
 
@@ -124,7 +124,7 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
     @Override
     public String toString() {
         final T t = getAcquire();
-        return t == this ? "(this ComputedConstant)" : renderConstant(t);
+        return t == this ? "(this LazyConstant)" : renderConstant(t);
     }
 
     public static String renderConstant(Object t) {
@@ -134,10 +134,9 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
     // Discussion on the memory semantics used.
     // ----------------------------------------
     // Using acquire/release semantics on the `constant` field is the cheapest way to
-    // obtain a happens-before (HB) relation between load and store operations. Every
-    // implementation of a method defined in the interface `ComputedConstant` except
-    // `equals()` and `hashCode()` starts with a load of the `constant` field using
-    // acquire semantics.
+    // establish a happens-before (HB) relation between load and store operations. Every
+    // implementation of a method defined in the interface `LazyConstant` except
+    // `equals()` starts with a load of the `constant` field using acquire semantics.
     //
     // If the underlying supplier was guaranteed to always create a new object,
     // a fence after creation and subsequent plain loads would suffice to ensure
@@ -158,14 +157,14 @@ public final class ComputedConstantImpl<T> implements ComputedConstant<T> {
 
     private void preventReentry() {
         if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursive invocation of a ComputedConstant's underlying supplier: " + underlying);
+            throw new IllegalStateException("Recursive invocation of a LazyConstant's underlying supplier: " + computingFunction);
         }
     }
 
     // Factory
 
-    public static <T> ComputedConstantImpl<T> ofComputed(Supplier<? extends T> underlying) {
-        return new ComputedConstantImpl<>(underlying);
+    public static <T> LazyConstantImpl<T> ofLazy(Supplier<? extends T> computingFunction) {
+        return new LazyConstantImpl<>(computingFunction);
     }
 
 }
