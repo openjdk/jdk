@@ -243,20 +243,20 @@ void StringDedup::Table::num_dead_callback(size_t num_dead) {
   // Lock while modifying dead count and state.
   MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
 
-  switch (Atomic::load(&_dead_state)) {
+  switch (AtomicAccess::load(&_dead_state)) {
   case DeadState::good:
-    Atomic::store(&_dead_count, num_dead);
+    AtomicAccess::store(&_dead_count, num_dead);
     break;
 
   case DeadState::wait1:
     // Set count first, so dedup thread gets this or a later value if it
     // sees the good state.
-    Atomic::store(&_dead_count, num_dead);
-    Atomic::release_store(&_dead_state, DeadState::good);
+    AtomicAccess::store(&_dead_count, num_dead);
+    AtomicAccess::release_store(&_dead_state, DeadState::good);
     break;
 
   case DeadState::wait2:
-    Atomic::release_store(&_dead_state, DeadState::wait1);
+    AtomicAccess::release_store(&_dead_state, DeadState::wait1);
     break;
 
   case DeadState::cleaning:
@@ -475,19 +475,19 @@ void StringDedup::Table::add(TableValue tv, uint hash_code) {
 }
 
 bool StringDedup::Table::is_dead_count_good_acquire() {
-  return Atomic::load_acquire(&_dead_state) == DeadState::good;
+  return AtomicAccess::load_acquire(&_dead_state) == DeadState::good;
 }
 
 // Should be consistent with cleanup_start_if_needed.
 bool StringDedup::Table::is_grow_needed() {
   return is_dead_count_good_acquire() &&
-         ((_number_of_entries - Atomic::load(&_dead_count)) > _grow_threshold);
+         ((_number_of_entries - AtomicAccess::load(&_dead_count)) > _grow_threshold);
 }
 
 // Should be consistent with cleanup_start_if_needed.
 bool StringDedup::Table::is_dead_entry_removal_needed() {
   return is_dead_count_good_acquire() &&
-         Config::should_cleanup_table(_number_of_entries, Atomic::load(&_dead_count));
+         Config::should_cleanup_table(_number_of_entries, AtomicAccess::load(&_dead_count));
 }
 
 StringDedup::Table::TableValue
@@ -646,7 +646,7 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
   // If dead count is good then we can read it once and use it below
   // without needing any locking.  The recorded count could increase
   // after the read, but that's okay.
-  size_t dead_count = Atomic::load(&_dead_count);
+  size_t dead_count = AtomicAccess::load(&_dead_count);
   // This assertion depends on dead state tracking.  Otherwise, concurrent
   // reference processing could detect some, but a cleanup operation could
   // remove them before they are reported.
@@ -670,8 +670,8 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
 
 void StringDedup::Table::set_dead_state_cleaning() {
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_dead_count, size_t(0));
-  Atomic::store(&_dead_state, DeadState::cleaning);
+  AtomicAccess::store(&_dead_count, size_t(0));
+  AtomicAccess::store(&_dead_state, DeadState::cleaning);
 }
 
 bool StringDedup::Table::start_resizer(bool grow_only, size_t number_of_entries) {
@@ -705,7 +705,7 @@ void StringDedup::Table::cleanup_end() {
   delete _cleanup_state;
   _cleanup_state = nullptr;
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_dead_state, DeadState::wait2);
+  AtomicAccess::store(&_dead_state, DeadState::wait2);
 }
 
 void StringDedup::Table::verify() {

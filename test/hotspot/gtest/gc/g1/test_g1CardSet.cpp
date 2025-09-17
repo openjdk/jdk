@@ -413,8 +413,8 @@ public:
         found++;
       }
     }
-    Atomic::add(&_added, added);
-    Atomic::add(&_found, found);
+    AtomicAccess::add(&_added, added);
+    AtomicAccess::add(&_found, found);
   }
 
   size_t added() const { return _added; }

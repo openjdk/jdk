@@ -77,7 +77,7 @@ MetadataAllocationRequest* MetaspaceCriticalAllocation::_requests_tail = nullptr
 void MetaspaceCriticalAllocation::add(MetadataAllocationRequest* request) {
   MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   log_info(metaspace)("Requesting critical metaspace allocation; almost out of memory");
-  Atomic::store(&_has_critical_allocation, true);
+  AtomicAccess::store(&_has_critical_allocation, true);
   // This is called by the request constructor to insert the request into the
   // global list.  The request's destructor will remove the request from the
   // list.  gcc13 has a false positive warning about the local request being
@@ -179,7 +179,7 @@ void MetaspaceCriticalAllocation::wait_for_purge(MetadataAllocationRequest* requ
 }
 
 void MetaspaceCriticalAllocation::block_if_concurrent_purge() {
-  if (Atomic::load(&_has_critical_allocation)) {
+  if (AtomicAccess::load(&_has_critical_allocation)) {
     // If there is a concurrent Metaspace::purge() operation, we will block here,
     // to make sure critical allocations get precedence and don't get starved.
     MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
@@ -205,7 +205,7 @@ void MetaspaceCriticalAllocation::process() {
     curr->set_result(result);
   }
   if (all_satisfied) {
-    Atomic::store(&_has_critical_allocation, false);
+    AtomicAccess::store(&_has_critical_allocation, false);
   }
   MetaspaceCritical_lock->notify_all();
 }
