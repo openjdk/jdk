@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_UTILITIES_JFRSET_HPP
 #define SHARE_JFR_UTILITIES_JFRSET_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allocation.hpp"
 
 template <typename K, AnyObj::allocation_type AllocType = AnyObj::C_HEAP, MemTag memtag = mtTracing>
 class JfrSetConfig : public AllStatic {

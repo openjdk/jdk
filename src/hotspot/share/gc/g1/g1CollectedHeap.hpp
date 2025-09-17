@@ -50,7 +50,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -442,8 +441,7 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  HeapWord* mem_allocate(size_t word_size,
-                         bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t word_size) override;
 
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This

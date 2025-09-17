@@ -27,7 +27,6 @@
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -201,34 +200,6 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
-class CPUTimeThreadClosure : public ThreadClosure {
-private:
-  jlong _cpu_time = 0;
-
-public:
-  virtual void do_thread(Thread* thread) {
-    jlong cpu_time = os::thread_cpu_time(thread);
-    if (cpu_time != -1) {
-      _cpu_time += cpu_time;
-    }
-  }
-  jlong cpu_time() { return _cpu_time; };
-};
-
-double CollectedHeap::elapsed_gc_cpu_time() const {
-  double string_dedup_cpu_time = UseStringDeduplication ?
-    os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
-
-  if (string_dedup_cpu_time == -1) {
-    string_dedup_cpu_time = 0;
-  }
-
-  CPUTimeThreadClosure cl;
-  gc_threads_do(&cl);
-
-  return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
-}
-
 void CollectedHeap::print_before_gc() const {
   print_relative_to_gc(GCWhen::BeforeGC);
 }
@@ -305,7 +276,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -633,35 +603,8 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_gc_cpu_time() const {
-  LogTarget(Info, gc, cpu) out;
-  if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
-    double process_cpu_time = os::elapsed_process_cpu_time();
-    double gc_cpu_time = elapsed_gc_cpu_time();
-
-    if (process_cpu_time == -1 || gc_cpu_time == -1) {
-      log_warning(gc, cpu)("Could not sample CPU time");
-      return;
-    }
-
-    double usage;
-    if (gc_cpu_time > process_cpu_time ||
-        process_cpu_time == 0 || gc_cpu_time == 0) {
-      // This can happen e.g. for short running processes with
-      // low CPU utilization
-      usage = 0;
-    } else {
-      usage = 100 * gc_cpu_time / process_cpu_time;
-    }
-    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time);
-  }
-}
-
 void CollectedHeap::before_exit() {
   print_tracing_info();
-
-  // Log GC CPU usage.
-  log_gc_cpu_time();
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();

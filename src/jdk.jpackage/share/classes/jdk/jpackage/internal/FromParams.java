@@ -79,12 +79,13 @@ final class FromParams {
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
             ApplicationLayout appLayout) throws ConfigException, IOException {
-        return createApplicationBuilder(params, launcherMapper, appLayout, Optional.of(RuntimeLayout.DEFAULT));
+        return createApplicationBuilder(params, launcherMapper, appLayout, RuntimeLayout.DEFAULT, Optional.of(RuntimeLayout.DEFAULT));
     }
 
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
-            ApplicationLayout appLayout, Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
+            ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
+            Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
 
         final var appBuilder = new ApplicationBuilder();
 
@@ -104,7 +105,7 @@ final class FromParams {
                 layout -> predefinedRuntimeImage.map(layout::resolveAt)).map(RuntimeLayout::runtimeDirectory);
 
         if (isRuntimeInstaller) {
-            appBuilder.appImageLayout(predefinedRuntimeLayout.orElseThrow());
+            appBuilder.appImageLayout(runtimeLayout);
         } else {
             appBuilder.appImageLayout(appLayout);
 

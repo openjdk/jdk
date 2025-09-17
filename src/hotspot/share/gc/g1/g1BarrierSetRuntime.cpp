@@ -47,7 +47,7 @@ void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t lengt
 JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread))
   assert(thread == JavaThread::current(), "pre-condition");
   assert(orig != nullptr, "should be optimized out");
-  assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
+  assert(oopDesc::is_oop(orig), "Error");
   // store the original value that was in the field reference
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
   G1BarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);

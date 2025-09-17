@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,8 +434,15 @@ class WindowsFileSystemProvider
         try {
             h1 = file1.openForReadAttributeAccess(true);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(file1);
+            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                x.lastError() != ERROR_PATH_NOT_FOUND)
+                x.rethrowAsIOException(file1);
         }
+
+        // if file1 does not exist, it cannot equal file2
+        if (h1 == 0L)
+            return false;
+
         try {
             WindowsFileAttributes attrs1 = null;
             try {
@@ -447,8 +454,15 @@ class WindowsFileSystemProvider
             try {
                 h2 = file2.openForReadAttributeAccess(true);
             } catch (WindowsException x) {
-                x.rethrowAsIOException(file2);
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND)
+                    x.rethrowAsIOException(file2);
             }
+
+            // if file2 does not exist, it cannot equal file1, which does
+            if (h2 == 0L)
+                return false;
+
             try {
                 WindowsFileAttributes attrs2 = null;
                 try {

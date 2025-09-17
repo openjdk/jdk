@@ -597,11 +597,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   # CXXFLAGS C++ language level for all of JDK, including Hotspot.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    LANGSTD_CXXFLAGS="-std=c++14"
+    LANGSTD_CXXFLAGS="-std=c++17"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LANGSTD_CXXFLAGS="-std:c++14"
+    LANGSTD_CXXFLAGS="-std:c++17"
   else
-    AC_MSG_ERROR([Cannot enable C++14 for this toolchain])
+    AC_MSG_ERROR([Cannot enable C++17 for this toolchain])
   fi
   TOOLCHAIN_CFLAGS_JDK_CXXONLY="$TOOLCHAIN_CFLAGS_JDK_CXXONLY $LANGSTD_CXXFLAGS"
   TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $LANGSTD_CXXFLAGS"
@@ -934,37 +934,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-
-  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
-  # that check.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_CPU" = "xlinux"; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      AC_LANG_PUSH(C)
-      OLD_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve"
-      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
-          [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
-          ])],
-          [
-            AC_MSG_RESULT([yes])
-            $2SVE_CFLAGS="-march=armv8-a+sve"
-          ],
-          [
-            AC_MSG_RESULT([no])
-            $2SVE_CFLAGS=""
-          ]
-      )
-      CFLAGS="$OLD_CFLAGS"
-      AC_LANG_POP(C)
-    fi
-  fi
-  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],

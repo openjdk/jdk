@@ -44,7 +44,6 @@ import com.sun.imageio.plugins.wbmp.WBMPImageReaderSpi;
 import com.sun.imageio.plugins.wbmp.WBMPImageWriterSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageReaderSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageWriterSpi;
-import sun.awt.AppContext;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
@@ -105,25 +104,15 @@ public final class IIORegistry extends ServiceRegistry {
         registerApplicationClasspathSpis();
     }
 
+    private static final IIORegistry registry = new IIORegistry();
+
     /**
      * Returns the default {@code IIORegistry} instance used by
      * the Image I/O API.  This instance should be used for all
      * registry functions.
-     *
-     * <p> Each {@code ThreadGroup} will receive its own instance.
-     *
-     * @return the default registry for the current
-     * {@code ThreadGroup}.
+     * @return the default registry for the Image I/O API
      */
     public static IIORegistry getDefaultInstance() {
-        AppContext context = AppContext.getAppContext();
-        IIORegistry registry =
-            (IIORegistry)context.get(IIORegistry.class);
-        if (registry == null) {
-            // Create an instance for this AppContext
-            registry = new IIORegistry();
-            context.put(IIORegistry.class, registry);
-        }
         return registry;
     }
 

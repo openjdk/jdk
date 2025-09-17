@@ -28,7 +28,6 @@
 #include "runtime/continuationHelper.hpp"
 
 #include "code/scopeDesc.hpp"
-#include "compiler/oopMap.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "runtime/frame.inline.hpp"
