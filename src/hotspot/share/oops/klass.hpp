@@ -741,7 +741,7 @@ public:
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
 
-  void clean_subklass(bool log = false);
+  Klass* clean_subklass(bool log = false);
 
   // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);

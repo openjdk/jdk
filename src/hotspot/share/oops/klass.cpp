@@ -695,12 +695,12 @@ void Klass::append_to_sibling_list() {
 }
 
 // The log parameter is for clean_weak_klass_links to report unlinked classes.
-void Klass::clean_subklass(bool log) {
+Klass* Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
     Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
-      return;
+      return subklass;
     }
     if (log && log_is_enabled(Trace, class, unload)) {
       ResourceMark rm;
@@ -726,8 +726,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass();
-    current->clean_subklass(true);
+    Klass* sub = current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }
