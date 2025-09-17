@@ -2242,8 +2242,8 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, i + lo_key);
       __ cmove(lir_cond_equal,
-               data_offset_reg,
                LIR_OprFact::intptrConst(count_offset),
+               data_offset_reg,
                data_offset_reg, T_INT);
     }
 
@@ -2298,8 +2298,8 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, x->key_at(i));
       __ cmove(lir_cond_equal,
-               data_offset_reg,
                LIR_OprFact::intptrConst(count_offset),
+               data_offset_reg,
                data_offset_reg, T_INT);
     }
 
