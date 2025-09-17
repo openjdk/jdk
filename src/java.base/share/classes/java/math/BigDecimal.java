@@ -1806,23 +1806,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             BigInteger[] qr;
             int i;
             for (i = 0; ; i++) {
-                final int exp = 1 << i;
                 qr = den.divideAndRemainder(fiveToTwoToThe(i));
                 if (qr[1].signum != 0) { // non-0 remainder
                     break;
                 } else {
                     den = qr[0];
-                    powsOf5 += exp;
+                    powsOf5 += 1 << i;
                 }
             }
             i--;
 
+            int log5Den = log5Upper(den);
+            if (log5Den < 1 << i)
+                i = BigInteger.bitLengthForInt(log5Den) - 1;
+
             for (; i >= 0; i--) {
-                final int exp = 1 << i;
                 qr = den.divideAndRemainder(fiveToTwoToThe(i));
                 if (qr[1].signum == 0) { // zero remainder
                     den = qr[0];
-                    powsOf5 += exp;
+                    powsOf5 += 1 << i;
                 }
             }
 
