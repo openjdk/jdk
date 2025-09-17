@@ -28,7 +28,7 @@
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
@@ -68,7 +68,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
       }
     }
 
-  } while (Atomic::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
+  } while (AtomicAccess::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
 }
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
@@ -96,19 +96,24 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
 
 void KlassCleaningTask::work() {
   for (ClassLoaderData* cur = _klass_iterator.next(); cur != nullptr; cur = _klass_iterator.next()) {
+      class CleanKlasses : public KlassClosure {
+      public:
 
-    for (Klass* klass = cur->klasses(); klass != nullptr; klass = klass->next_link()) {
-      klass->clean_subklass(true);
+        void do_klass(Klass* klass) override {
+          klass->clean_subklass(true);
 
-      Klass* sibling = klass->next_sibling(true);
-      klass->set_next_sibling(sibling);
+          Klass* sibling = klass->next_sibling(true);
+          klass->set_next_sibling(sibling);
 
-      if (klass->is_instance_klass()) {
-        Klass::clean_weak_instanceklass_links(InstanceKlass::cast(klass));
-      }
+          if (klass->is_instance_klass()) {
+            Klass::clean_weak_instanceklass_links(InstanceKlass::cast(klass));
+          }
 
-      assert(klass->subklass() == nullptr || klass->subklass()->is_loader_alive(), "must be");
-      assert(klass->next_sibling(false) == nullptr || klass->next_sibling(false)->is_loader_alive(), "must be");
-    }
+          assert(klass->subklass() == nullptr || klass->subklass()->is_loader_alive(), "must be");
+          assert(klass->next_sibling(false) == nullptr || klass->next_sibling(false)->is_loader_alive(), "must be");
+        }
+      } cl;
+
+      cur->classes_do(&cl);
   }
 }

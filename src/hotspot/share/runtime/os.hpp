@@ -1105,7 +1105,7 @@ class os: AllStatic {
 };
 
 // Note that "PAUSE" is almost always used with synchronization
-// so arguably we should provide Atomic::SpinPause() instead
+// so arguably we should provide AtomicAccess::SpinPause() instead
 // of the global SpinPause() with C linkage.
 // It'd also be eligible for inlining on many platforms.
 
