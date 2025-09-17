@@ -541,7 +541,14 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
+  const long int n_phys_pages = sysconf(_SC_PHYS_PAGES);
+  const long int page_size = sysconf(_SC_PAGESIZE);
+  const bool overflow = static_cast<uint64_t>(n_phys_pages) * static_cast<uint64_t>(page_size) > static_cast<uint64_t>(std::numeric_limits<size_t>::max());
+  if (overflow) {
+    _physical_memory = std::numeric_limits<size_t>::max();
+  } else {
+    _physical_memory = static_cast<size_t>(n_phys_pages) * static_cast<size_t>(page_size);
+  }  
   assert(processor_count() > 0, "linux error");
 }
 
