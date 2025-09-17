@@ -469,14 +469,9 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-bool ParallelScavengeHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
-         _gc_cause == GCCause::_wb_full_gc;
-}
-
 void ParallelScavengeHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = must_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = PSScavenge::invoke(clear_soft_refs);
