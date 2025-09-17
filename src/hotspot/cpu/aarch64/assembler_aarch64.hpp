@@ -778,11 +778,13 @@ public:
 
   typedef void (Assembler::* uncond_branch_insn)(address dest);
   typedef void (Assembler::* compare_and_branch_insn)(Register Rt, address dest);
+  typedef void (Assembler::* fp_memory_access_insn)(FloatRegister Rt, address dest);
   typedef void (Assembler::* test_and_branch_insn)(Register Rt, int bitpos, address dest);
   typedef void (Assembler::* prefetch_insn)(address target, prfop);
 
   void wrap_label(Label &L, uncond_branch_insn insn);
   void wrap_label(Register r, Label &L, compare_and_branch_insn insn);
+  void wrap_label(FloatRegister r, Label &L, fp_memory_access_insn insn);
   void wrap_label(Register r, int bitpos, Label &L, test_and_branch_insn insn);
   void wrap_label(Label &L, prfop, prefetch_insn insn);
 
@@ -1450,7 +1452,18 @@ public:
     f(opc, 31, 30), f(0b011, 29, 27), f(V, 26), f(0b00, 25, 24),        \
       sf(offset, 23, 5);                                                \
     rf(as_Register(Rt), 0);                                             \
+  }                                                                     \
+  void NAME(FloatRegister Rt, address dest, relocInfo::relocType rtype) { \
+    InstructionMark im(this);                                           \
+    guarantee(rtype == relocInfo::internal_word_type,                   \
+              "only internal_word_type relocs make sense here");        \
+    code_section()->relocate(inst_mark(), InternalAddress(dest).rspec()); \
+    NAME(Rt, dest);                                                     \
+  }                                                                     \
+  void NAME(FloatRegister Rt, Label &L) {                               \
+    wrap_label(Rt, L, &Assembler::NAME);                                \
   }
+
 
   INSN(ldrs, 0b00, 1);
   INSN(ldrd, 0b01, 1);

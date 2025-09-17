@@ -356,6 +356,16 @@ void Assembler::wrap_label(Register r, Label &L,
   }
 }
 
+void Assembler::wrap_label(FloatRegister r, Label &L,
+                           fp_memory_access_insn insn) {
+  if (L.is_bound()) {
+    (this->*insn)(r, target(L));
+  } else {
+    L.add_patch_at(code(), locator());
+    (this->*insn)(r, pc());
+  }
+}
+
 void Assembler::wrap_label(Register r, int bitpos, Label &L,
                                  test_and_branch_insn insn) {
   if (L.is_bound()) {
