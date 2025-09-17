@@ -435,6 +435,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
   Compile::TracePhase tp(_t_reachability_eliminate);
 
   assert(OptimizeReachabilityFences, "required");
+  DEBUG_ONLY( int no_of_constant_rfs = 0; )
 
   ResourceMark rm;
   Unique_Node_List redundant_rfs;
@@ -442,6 +443,15 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     ReachabilityFenceNode* rf = C->reachability_fence(i);
     assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
+    if (PreserveReachabilityFencesOnConstants) {
+      const Type* referent_t = igvn().type(rf->in(1));
+      assert(referent_t != TypePtr::NULL_PTR, "redundant rf");
+      bool is_constant_rf = referent_t->singleton();
+      if (is_constant_rf) {
+        DEBUG_ONLY( no_of_constant_rfs += 1; )
+        continue; // don't eliminate constant rfs
+      }
+    }
     if (!is_redundant_rf(rf, false /*rf_only*/)) {
       Node_List safepoints;
       enumerate_interfering_sfpts(rf, this, safepoints);
@@ -473,7 +483,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
     remove_rf(redundant_rfs.pop()->as_ReachabilityFence());
   }
 
-  assert(C->reachability_fences_count() == 0, "");
+  assert(C->reachability_fences_count() == no_of_constant_rfs, "");
   return progress;
 }
 

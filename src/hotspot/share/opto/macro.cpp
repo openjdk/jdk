@@ -716,7 +716,7 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
       sfpt_done->del_req(last--);
     }
     JVMState *jvms = sfpt_done->jvms();
-    jvms->set_endoff(sfpt_done->req());
+    jvms->set_endoff(sfpt_done->req()); // NB! problematic when reachability fences are present?
     // Now make a pass over the debug information replacing any references
     // to SafePointScalarObjectNode with the allocated object.
     int start = jvms->debug_start();
@@ -868,6 +868,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   // Process the safepoint uses
   while (safepoints.length() > 0) {
     SafePointNode* sfpt = safepoints.pop();
+    assert(sfpt->jvms()->endoff() == sfpt->req(), "reachability edges not supported");
+
     SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);
 
     if (sobj == nullptr) {

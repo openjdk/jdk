@@ -2519,7 +2519,7 @@ void Compile::Optimize() {
     PhaseIdealLoop::optimize(igvn, LoopOptsEliminateRFs);
     print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
     if (failing())  return;
-    assert(_reachability_fences.length() == 0, "no RF nodes allowed");
+    assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
   }
 
   C->clear_major_progress(); // ensure that major progress is now clear

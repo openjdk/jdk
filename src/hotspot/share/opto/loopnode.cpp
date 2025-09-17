@@ -5337,7 +5337,8 @@ void PhaseIdealLoop::build_and_optimize() {
     eliminate_reachability_fences();
     if (C->failing())  return;
     C->print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
-    assert(C->reachability_fences_count() == 0, "no RF nodes allowed");
+    assert(C->reachability_fences_count() == 0 ||
+           PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
   }
 }
 
