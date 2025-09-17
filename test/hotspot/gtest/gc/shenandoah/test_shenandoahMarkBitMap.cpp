@@ -221,7 +221,7 @@ public:
     HeapWord* heap_limit = end_of_my_heap;
     MarkBitMapAssertEqual(sentinel, heap_limit);
     HeapWord* prev_marked = end_of_my_heap + 1;;
-    for (int i = weakly_marked_objects - 1; i >= 0; i--) {
+    for (int i = (int) weakly_marked_objects - 1; i >= 0; i--) {
       // to be renamed get_prev_marked_addr()
       prev_marked = mbm.get_last_marked_addr(&my_heap_memory[0], prev_marked - 1);
       MarkBitMapAssertEqual(prev_marked, weakly_marked_addresses[i]);
