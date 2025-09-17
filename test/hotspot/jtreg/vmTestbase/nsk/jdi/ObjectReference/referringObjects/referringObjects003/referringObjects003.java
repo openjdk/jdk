@@ -49,7 +49,7 @@
  *         - check that the test thread group has been collected. The reference from the
  *           parent thread group is weak and should not prevent the test thread group from
  *           being collected.
- *         - check that threre are no references to test threads in target VM
+ *         - check that there are no references to test threads in target VM
  *
  * @requires !vm.graal.enabled
  * @library /vmTestbase
