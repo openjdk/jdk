@@ -881,8 +881,8 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
   JavaThread* THREAD = current; // For exception macros.
-  Klass* k = vmClasses::StackOverflowError_klass();
-  oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
+  InstanceKlass* k = vmClasses::StackOverflowError_klass();
+  oop exception_oop = k->allocate_instance(CHECK);
   if (delayed) {
     java_lang_Throwable::set_message(exception_oop,
                                      Universe::delayed_stack_overflow_error_message());
