@@ -2277,7 +2277,7 @@ HeapWord* ShenandoahFreeSet::cas_allocate_in_for_mutator(ShenandoahHeapRegion* r
   return obj;
 }
 
-class DirectAllocatableRegionRefillClosure final : public ShenandoahHeapRegionBreakableIterClosure {
+class DirectAllocatableRegionRefillClosure final : public ShenandoahHeapRegionIterationClosure {
   PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
   // inclusive
   const uint _start_index;
@@ -2453,7 +2453,7 @@ void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion
 }
 
 template<bool IS_MUTATOR, bool IS_OLD>
-uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty) {
+uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionIterationClosure* cl, bool use_empty) {
   assert((IS_MUTATOR && !IS_OLD) || !IS_MUTATOR, "Sanity check");
   ShenandoahFreeSetPartitionId partition = IS_MUTATOR ? ShenandoahFreeSetPartitionId::Mutator :
                                            (IS_OLD ? ShenandoahFreeSetPartitionId::OldCollector : ShenandoahFreeSetPartitionId::Mutator);
@@ -2475,7 +2475,7 @@ uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionBreakableI
 }
 
 template<typename Iter>
-uint ShenandoahFreeSet::iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionBreakableIterClosure* cl) {
+uint ShenandoahFreeSet::iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionIterationClosure* cl) {
   uint regions_iterated = 0u;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     regions_iterated++;

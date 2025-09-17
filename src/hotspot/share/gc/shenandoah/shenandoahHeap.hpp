@@ -117,12 +117,6 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-class ShenandoahHeapRegionBreakableIterClosure : public StackObj {
-public:
-  // Return true to break the iteration loop.
-  virtual bool heap_region_do(ShenandoahHeapRegion* r) { return false; };
-};
-
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;

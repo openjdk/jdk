@@ -347,6 +347,12 @@ struct ShenandoahDirectAllocationRegion {
   ShenandoahHeapRegion* volatile _address = nullptr;
 };
 
+class ShenandoahHeapRegionIterationClosure : public StackObj {
+public:
+  // Return true to break the iteration loop.
+  virtual bool heap_region_do(ShenandoahHeapRegion *r) { return false; };
+};
+
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
   friend class DirectAllocatableRegionRefillClosure;
 private:
@@ -462,10 +468,10 @@ private:
                                                  bool &in_new_region,
                                                  uint& new_start_index);
   template<bool IS_MUTATOR, bool IS_OLD>
-  uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
+  uint iterate_regions_for_alloc(ShenandoahHeapRegionIterationClosure* cl, bool use_empty);
 
   template<typename Iter>
-  uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionBreakableIterClosure* cl);
+  uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionIterationClosure* cl);
 
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
