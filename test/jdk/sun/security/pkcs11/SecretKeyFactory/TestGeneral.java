@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,14 @@
  * @run main/othervm TestGeneral
  */
 
+import jtreg.SkippedException;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -57,8 +61,11 @@ public class TestGeneral extends PKCS11Test {
         try {
             skf = SecretKeyFactory.getInstance(algorithm, p);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Not supported, skipping: " + e);
-            return;
+            throw new SkippedException("[algorithm: " + algorithm +
+                                       ", key: " + key.getAlgorithm() + "]" +
+                                       ", provider: " + p.getName() + "]" +
+                                       ", expectedTestResult: " + expected + "]" +
+                                       "Not supported, skipping: " + e);
         }
         try {
             SecretKey key2 = skf.translateKey(key);
@@ -99,21 +106,31 @@ public class TestGeneral extends PKCS11Test {
         SecretKey bf_128Key = new SecretKeySpec(rawBytes, 0, 16, "Blowfish");
         SecretKey cc20Key = new SecretKeySpec(rawBytes, 0, 32, "ChaCha20");
 
-        // fixed key length
-        test("AES", aes_128Key, p, TestResult.PASS);
-        test("AES", aes_256Key, p, TestResult.PASS);
-        test("AES", cc20Key, p, TestResult.FAIL);
+        List<String> skippedList  = new ArrayList<>();
+        try {
+            // fixed key length
+            test("AES", aes_128Key, p, TestResult.PASS);
+            test("AES", aes_256Key, p, TestResult.PASS);
+            test("AES", cc20Key, p, TestResult.FAIL);
 
-        test("ChaCha20", aes_128Key, p, TestResult.FAIL);
-        test("ChaCha20", aes_256Key, p, TestResult.FAIL);
-        test("ChaCha20", cc20Key, p, TestResult.PASS);
+            test("ChaCha20", aes_128Key, p, TestResult.FAIL);
+            test("ChaCha20", aes_256Key, p, TestResult.FAIL);
+            test("ChaCha20", cc20Key, p, TestResult.PASS);
 
-        // variable key length
-        // Different PKCS11 impls may have different ranges
-        // of supported key sizes for variable-key-length
-        // algorithms.
-        test("Blowfish", aes_128Key, p, TestResult.FAIL);
-        test("Blowfish", cc20Key, p, TestResult.FAIL);
-        test("Blowfish", bf_128Key, p, TestResult.PASS);
+            // variable key length
+            // Different PKCS11 impls may have different ranges
+            // of supported key sizes for variable-key-length
+            // algorithms.
+            test("Blowfish", aes_128Key, p, TestResult.FAIL);
+            test("Blowfish", cc20Key, p, TestResult.FAIL);
+            test("Blowfish", bf_128Key, p, TestResult.PASS);
+        } catch (SkippedException skippedException){
+            skippedException.printStackTrace();
+            skippedList.add(skippedException.getMessage());
+        }
+
+        if (!skippedList.isEmpty()) {
+            throw new SkippedException("One or more tests skipped " + skippedList);
+        }
     }
 }

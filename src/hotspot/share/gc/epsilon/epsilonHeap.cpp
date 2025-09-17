@@ -34,7 +34,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
 
@@ -154,7 +154,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   // Allocation successful, update counters
   if (verbose) {
     size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
+    if ((used - last >= _step_counter_update) && AtomicAccess::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
     }
   }
@@ -162,7 +162,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   // ...and print the occupancy line, if needed
   if (verbose) {
     size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
+    if ((used - last >= _step_heap_print) && AtomicAccess::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
       print_metaspace_info();
     }
@@ -260,8 +260,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   return res;
 }
 
-HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
-  *gc_overhead_limit_was_exceeded = false;
+HeapWord* EpsilonHeap::mem_allocate(size_t size) {
   return allocate_work(size);
 }
 

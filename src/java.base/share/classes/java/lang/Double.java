@@ -1242,6 +1242,8 @@ public final class Double extends Number
      * the same if and only if the method {@link
      * #doubleToLongBits(double)} returns the identical
      * {@code long} value when applied to each.
+     * In other words, {@linkplain ##repEquivalence representation
+     * equivalence} is used to compare the {@code double} values.
      *
      * @apiNote
      * This method is defined in terms of {@link
@@ -1455,6 +1457,12 @@ public final class Double extends Number
      *    Double.valueOf(d1).compareTo(Double.valueOf(d2))
      * </pre>
      *
+     * @apiNote
+     * One idiom to implement {@linkplain ##repEquivalence
+     * representation equivalence} on {@code double} values is
+     * {@snippet lang="java" :
+     * Double.compare(a, b) == 0
+     * }
      * @param   d1        the first {@code double} to compare
      * @param   d2        the second {@code double} to compare
      * @return  the value {@code 0} if {@code d1} is

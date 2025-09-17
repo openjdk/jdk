@@ -127,6 +127,8 @@ public:
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
+  static AlwaysClearPolicy _always_clear_policy;
+
   ReferencePolicy* _soft_reference_policy;
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
