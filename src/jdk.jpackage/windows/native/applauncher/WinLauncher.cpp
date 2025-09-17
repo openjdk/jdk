@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,16 @@ bool needRestartLauncher(AppLauncher& appLauncher, CfgFile& cfgFile) {
 }
 
 
+void enableConsoleCtrlHandler(bool enable) {
+    if (!SetConsoleCtrlHandler(NULL, enable ? FALSE : TRUE)) {
+        JP_THROW(SysError(tstrings::any() << "SetConsoleCtrlHandler(NULL, "
+                                            << (enable ? "FALSE" : "TRUE")
+                                            << ") failed",
+                                                    SetConsoleCtrlHandler));
+    }
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -308,6 +318,19 @@ void launchApp() {
         const auto args = SysInfo::getCommandArgs();
         std::for_each(args.begin(), args.end(), [&exec] (const tstring& arg) {
             exec.arg(arg);
+        });
+
+        exec.afterProcessCreated([&](HANDLE pid) {
+            //
+            // Ignore Ctrl+C in the current process.
+            // This will prevent child process termination without allowing
+            // it to handle Ctrl+C events.
+            //
+            // Disable the default Ctrl+C handler *after* the child process
+            // has been created as it is inheritable and we want the child
+            // process to have the default handler.
+            //
+            enableConsoleCtrlHandler(false);
         });
 
         DWORD exitCode = RunExecutorWithMsgLoop::apply(exec);
