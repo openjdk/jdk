@@ -29,7 +29,8 @@ import com.sun.java.swing.SwingUtilities3;
 /*
  * @test
  * @bug 8365379
- * @summary Verify SwingUtilities3 insets return correct result independent of initial values
+ * @summary Verify SwingUtilities3 insets return correct result
+ *          independent of initial values
  * @modules java.desktop/com.sun.java.swing
  * @run main ApplyInsetsTest
  */
@@ -45,7 +46,8 @@ public class ApplyInsetsTest {
 
         SwingUtilities3.applyInsets(rect, insets);
         if (!rect.equals(expected)) {
-            throw new RuntimeException("Test failed: expected " + expected + " but got " + rect);
+            throw new RuntimeException("Test failed: expected " + expected +
+                                       " but got " + rect);
         }
 
         // Right to left test
