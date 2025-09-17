@@ -368,7 +368,7 @@ class VM_RedefineClasses: public VM_Operation {
   int                         _bsm_index_map_count;
   intArray *                  _bsm_index_map_p;
 
-  // After merge_constant_pools pass 0, the BSMAttribute entries of merge_cp_p will have been expanded to fit
+  // After merge_constant_pools "Pass 0", the BSMAttribute entries of merge_cp_p will have been expanded to fit
   // scratch_cp's BSMAttribute entries as well.
   // However, the newly acquired space will not have been filled in yet.
   // To append to this new space, the iterator is used.
