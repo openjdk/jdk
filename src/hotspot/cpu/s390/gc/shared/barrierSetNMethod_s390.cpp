@@ -26,8 +26,8 @@
 #include "code/codeBlob.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "utilities/debug.hpp"
 
 class NativeMethodBarrier: public NativeInstruction {
@@ -38,14 +38,14 @@ class NativeMethodBarrier: public NativeInstruction {
     }
 
     address get_patchable_data_address() const {
-      address inst_addr = get_barrier_start_address() + BarrierSetAssembler::PATCHABLE_INSTRUCTION_OFFSET;
+      address inst_addr = get_barrier_start_address() + BarrierSetAssembler::PATCHABLE_SEQ_START_OFFSET;
 
       DEBUG_ONLY(Assembler::is_z_cfi(*((long*)inst_addr)));
-      return inst_addr;
+      return inst_addr + 2;
     }
 
   public:
-    static const int BARRIER_TOTAL_LENGTH = BarrierSetAssembler::PATCHABLE_INSTRUCTION_OFFSET + 2*6; // bytes
+    static const int BARRIER_TOTAL_LENGTH = BarrierSetAssembler::PATCHABLE_BARRIER_VALUE_OFFSET + 2*6; // bytes
 
     int get_guard_value() const {
       address data_addr = get_patchable_data_address();

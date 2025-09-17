@@ -67,7 +67,8 @@ public:
                                 OptoReg::Name opto_reg) const;
 #endif // COMPILER2
 
-  static const int PATCHABLE_INSTRUCTION_OFFSET = 3 * 6 + 2;
+  static const int PATCHABLE_SEQ_START_OFFSET = 3 * 6;
+  static const int PATCHABLE_BARRIER_VALUE_OFFSET = PATCHABLE_SEQ_START_OFFSET + 2;
 };
 
 #ifdef COMPILER2
