@@ -1016,16 +1016,6 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_AVX10_2);
   }
 
-  // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
-  if (UseAPX && !apx_supported) {
-    warning("UseAPX is not supported on this CPU, setting it to false");
-    FLAG_SET_DEFAULT(UseAPX, false);
-  }
-
-  if (!UseAPX) {
-    _features.clear_feature(CPU_APX_F);
-  }
 
   if (UseAVX < 2) {
     _features.clear_feature(CPU_AVX2);
@@ -1049,6 +1039,7 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_VZEROUPPER);
       _features.clear_feature(CPU_AVX512BW);
       _features.clear_feature(CPU_AVX512VL);
+      _features.clear_feature(CPU_APX_F);
       _features.clear_feature(CPU_AVX512DQ);
       _features.clear_feature(CPU_AVX512_VNNI);
       _features.clear_feature(CPU_AVX512_VAES);
@@ -1066,6 +1057,17 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_AVX10_1);
       _features.clear_feature(CPU_AVX10_2);
     }
+  }
+
+    // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  if (UseAPX && !apx_supported) {
+    warning("UseAPX is not supported on this CPU, setting it to false");
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
+  if (!UseAPX) {
+    _features.clear_feature(CPU_APX_F);
   }
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
@@ -1665,7 +1667,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
     }
   }

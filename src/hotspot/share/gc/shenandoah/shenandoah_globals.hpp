@@ -70,10 +70,6 @@
           "many consecutive young-gen collections have been "               \
           "completed following the preceding old-gen collection.")          \
                                                                             \
-  product(bool, ShenandoahGenerationalCensusAtEvac, false, EXPERIMENTAL,    \
-          "(Generational mode only) Object age census at evacuation, "      \
-          "rather than during marking.")                                    \
-                                                                            \
   product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
           "(Generational mode only) Dynamically adapt tenuring age.")       \
                                                                             \
