@@ -25,35 +25,64 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 public class UseShutdownHook {
 
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("UseShutdownHook started");
+        trace("Started");
+
+        var outputFile = Path.of(args[0]);
+        trace(String.format("Write output in [%s] file", outputFile));
+
+        var shutdownTimeoutSeconds = Integer.parseInt(args[1]);
+        trace(String.format("Automatically shutdown the app in %ss", shutdownTimeoutSeconds));
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                output("jpackage.test.appOutput", "shutdown hook executed");
+                output(outputFile, "shutdown hook executed");
             }
         });
 
+        var startTime = System.currentTimeMillis();
         var lock = new Object();
-        synchronized (lock) {
-            lock.wait();
-        }
+        do {
+            synchronized (lock) {
+                lock.wait(shutdownTimeoutSeconds * 1000);
+            }
+        } while ((System.currentTimeMillis() - startTime) < (shutdownTimeoutSeconds * 1000));
+
+        output(outputFile, "exit");
     }
 
-    private static void output(String propertyName, String msg) {
+    private static void output(Path outputFilePath, String msg) {
 
-        var outputFilePath = Path.of(System.getProperty(propertyName));
-
-        System.out.println(String.format("Writing [%s] into [%s]", msg, outputFilePath));
+        trace(String.format("Writing [%s] into [%s]", msg, outputFilePath));
 
         try {
             Files.createDirectories(outputFilePath.getParent());
-            Files.writeString(outputFilePath, msg);
+            Files.writeString(outputFilePath, msg, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
+
+    private static void trace(String msg) {
+        Date time = new Date(System.currentTimeMillis());
+        msg = String.format("UseShutdownHook [%s]: %s", SDF.format(time), msg);
+        System.out.println(msg);
+        try {
+            Files.write(traceFile, List.of(msg), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static final SimpleDateFormat SDF = new SimpleDateFormat("HH:mm:ss.SSS");
+
+    private static final Path traceFile = Path.of(System.getProperty("jpackage.test.trace-file"));
 }

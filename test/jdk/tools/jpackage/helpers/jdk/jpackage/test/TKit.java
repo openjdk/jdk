@@ -640,8 +640,7 @@ public final class TKit {
                     continue;
                 }
                 Path contextPath = (Path) event.context();
-                if (Files.isSameFile(watchDirectory.resolve(contextPath),
-                        fileToWaitFor)) {
+                if (Files.exists(fileToWaitFor) && Files.isSameFile(watchDirectory.resolve(contextPath), fileToWaitFor)) {
                     trace(String.format("File [%s] is available", fileToWaitFor));
                     return;
                 }

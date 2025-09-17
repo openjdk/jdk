@@ -27,9 +27,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherVerifier;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -43,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build Win8365790Test
  * @requires (os.family == "windows")
- * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
+ * @run main/othervm/timeout=100 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=Win8365790Test
  */
 public class Win8365790Test {
@@ -52,28 +55,73 @@ public class Win8365790Test {
     public void test() throws InterruptedException, IOException {
 
         var outputDir = TKit.createTempDirectory("response-dir");
-        var outputFile = outputDir.resolve("output.txt");
+
+        var mainOutputFile = outputDir.resolve("output.txt");
+        var mainTraceFile = outputDir.resolve("trace.txt");
+
+        var probeOutputFile = outputDir.resolve("probe-output.txt");
+        var probeTraceFile = outputDir.resolve("probe-trace.txt");
 
         var cmd = JPackageCommand
                 .helloAppImage(TEST_APP_JAVA + "*UseShutdownHook")
                 .ignoreFakeRuntime()
-                .addArguments("--java-options", "-Djpackage.test.appOutput=" + outputFile.toString());
+                .addArguments("--java-options", "-Djpackage.test.trace-file=" + mainTraceFile.toString())
+                .addArguments("--arguments", mainOutputFile.toString())
+                .addArguments("--arguments", Long.toString(Duration.ofSeconds(TETS_APP_AUTOCLOSE_TIMEOUT_SECONDS).getSeconds()));
+
+        new AdditionalLauncher("probe")
+                .withoutVerifyActions(LauncherVerifier.Action.values())
+                .addJavaOptions("-Djpackage.test.trace-file=" + probeTraceFile.toString())
+                .addDefaultArguments(probeOutputFile.toString(), Long.toString(Duration.ofSeconds(TETS_APP_AUTOCLOSE_TIMEOUT_SECONDS).getSeconds()))
+                .applyTo(cmd);
 
         cmd.executeAndAssertImageCreated();
 
-        // Launch the main launcher and send Ctrl+C signal to it.
+        cmd.readLauncherCfgFile("probe")
+                .add(new CfgFile().addValue("Application", "win.norestart", Boolean.TRUE.toString()))
+                .save(cmd.appLauncherCfgPath("probe"));
+
+        // Try Ctrl+C signal on a launcher with disabled restart functionality.
+        // It will create a single launcher process instead of the parent and the child processes.
+        // Ctrl+C always worked for launcher with disabled restart functionality.
+        var probeOutput = runLauncher(cmd, "probe", probeTraceFile, probeOutputFile);
+
+        if (!probeOutput.equals("shutdown hook executed")) {
+            // Ctrl+C signal didn't make it. Test environment doesn't support Ctrl+C signal
+            // delivery from the prowershell process to a child process, don't run the main
+            // test.
+            TKit.throwSkippedException(
+                    "The environment does NOT support Ctrl+C signal delivery from the prowershell process to a child process");
+        }
+
+        var mainOutput = runLauncher(cmd, null, mainTraceFile, mainOutputFile);
+
+        TKit.assertEquals("shutdown hook executed", mainOutput, "Check shutdown hook executed");
+    }
+
+    private static String runLauncher(JPackageCommand cmd, String launcherName, Path traceFile, Path outputFile) throws IOException {
+     // Launch the main launcher and send Ctrl+C signal to it.
         Thread.ofVirtual().start(() -> {
-            configureAndExecute(0, Executor.of("powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted", "-File", TEST_PS1.toString())
-                    .addArguments("-TimeoutSeconds", "5")
-                    .addArgument("-Executable").addArgument(cmd.appLauncherPath())
+            configureAndExecute(0, Executor.of("powershell", "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
+                    .addArgument("-File").addArgument(TEST_PS1)
+                    .addArguments("-TimeoutSeconds", Long.toString(Duration.ofSeconds(5).getSeconds()))
+                    .addArgument("-Executable").addArgument(cmd.appLauncherPath(launcherName))
                     .dumpOutput());
         });
 
-        TKit.waitForFileCreated(outputFile, Duration.ofSeconds(20), Duration.ofSeconds(1));
+        TKit.waitForFileCreated(traceFile, Duration.ofSeconds(20), Duration.ofSeconds(2));
+
+        try {
+            TKit.waitForFileCreated(outputFile, Duration.ofSeconds(TETS_APP_AUTOCLOSE_TIMEOUT_SECONDS * 2), Duration.ofSeconds(2));
+        } finally {
+            TKit.traceFileContents(traceFile, "Test app trace");
+        }
 
         TKit.assertFileExists(outputFile);
-        TKit.assertEquals("shutdown hook executed", Files.readString(outputFile), "Check shutdown hook executed");
+        return Files.readString(outputFile);
     }
+
+    private static final long TETS_APP_AUTOCLOSE_TIMEOUT_SECONDS = 30;
 
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT.resolve("apps/UseShutdownHook.java");
     private static final Path TEST_PS1 = TKit.TEST_SRC_ROOT.resolve(Path.of("resources/Win8365790Test.ps1")).normalize();

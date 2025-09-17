@@ -46,12 +46,15 @@ namespace Stuff {
 
   public struct Facade {
     public static void GenerateConsoleCtrlEvent() {
-      bool result = Details.GenerateConsoleCtrlEvent(0, 0);
-      if (!result) {
-        int errorCode = Marshal.GetLastWin32Error();
-        Console.Error.WriteLine("GenerateConsoleCtrlEvent function failed with error code: " + errorCode);
-        Environment.Exit(100);
+      if (!Details.GenerateConsoleCtrlEvent(0, 0)) {
+        reportLastErrorAndExit("GenerateConsoleCtrlEvent");
       }
+    }
+
+    internal static void reportLastErrorAndExit(String func) {
+      int errorCode = Marshal.GetLastWin32Error();
+      Console.Error.WriteLine(func + " function failed with error code: " + errorCode);
+      Environment.Exit(100);
     }
   }
 }
@@ -63,7 +66,7 @@ Set-PSDebug -Trace 2
 
 # Launch the target executable.
 # `-NoNewWindow` parameter will attach the started process to the existing console.
-Start-Process -NoNewWindow $Executable
+$childProc = Start-Process -PassThru -NoNewWindow $Executable
 
 # Wait a bit to let the started process complete initialization.
 Start-Sleep -Seconds $TimeoutSeconds
@@ -73,3 +76,8 @@ Start-Sleep -Seconds $TimeoutSeconds
 # i.e., it will be sent to this PowerShell process and to the started $Executable process because
 # it was configured to attach to the existing console (the console of this PowerShell process).
 [Stuff.Facade]::GenerateConsoleCtrlEvent()
+
+# Wait for child process termination
+Wait-Process -InputObject $childProc
+
+Exit 0
