@@ -48,20 +48,20 @@ public class TestMethodArguments {
     static final int MAX = 255;
     static final int INPUT_SIZE = 100;
 
-    public static Template.ZeroArgs generateTest(PrimitiveType t, int numberOfArguments) {
+    public static Template.ZeroArgs generateTest(PrimitiveType type, int numberOfArguments) {
         String arguments = IntStream.range(0, numberOfArguments)
                 .mapToObj(i -> "input[" + i + "]")
                 .collect(Collectors.joining(", "));
         String parameters = IntStream.range(0, numberOfArguments)
-                .mapToObj(i -> t.name() + " x" + i)
+                .mapToObj(i -> type.name() + " x" + i)
                 .collect(Collectors.joining(", "));
         String sum = numberOfArguments == 0 ? "0"
                 : IntStream.range(0, numberOfArguments)
                         .mapToObj(i -> "x" + i)
                         .collect(Collectors.joining(" + "));
         return Template.make(() -> Template.body(
-                Template.let("type", t.name()),
-                Template.let("boxedType", t.boxedTypeName()),
+                Template.let("type", type.name()),
+                Template.let("boxedType", type.boxedTypeName()),
                 Template.let("arguments", arguments),
                 Template.let("parameters", parameters),
                 Template.let("sum", sum),

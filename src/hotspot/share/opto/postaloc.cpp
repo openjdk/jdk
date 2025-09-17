@@ -664,7 +664,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
         if( useidx ) {
           OptoReg::Name ureg = lrgs(useidx).reg();
-          if( !value[ureg] ) {
+          if( value[ureg] == nullptr ) {
             int idx;            // Skip occasional useless copy
             while( (idx=def->is_Copy()) != 0 &&
                    def->in(idx) != nullptr &&  // null should not happen
@@ -681,7 +681,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
               bool is_adjacent = lrgs(useidx).mask().Member(ureg_lo);
               assert(is_adjacent || OptoReg::is_reg(ureg_lo),
                      "only registers can be non-adjacent");
-              if (!value[ureg_lo] && is_adjacent) { // Nearly always adjacent
+              if (value[ureg_lo] == nullptr && is_adjacent) { // Nearly always adjacent
                 value.map(ureg_lo,valdef); // record improved reaching-def info
                 regnd.map(ureg_lo,   def);
               }

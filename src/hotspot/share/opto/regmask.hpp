@@ -218,13 +218,17 @@ class RegMask {
   // value is decided solely by _infinite_stack, regardless of the value of
   // _hwm.
 
-  // We support offsetting/shifting register masks to explicitly represent stack
+  // We support offsetting/shifting register masks to make explicit stack
   // slots that originally are implicitly represented by _infinite_stack=true.
   // The main use is in PhaseChaitin::Select, when selecting stack slots for
-  // spilled values. The _offset variable indicates how many words we offset
-  // with. We consider all registers before the offset to not be included in the
-  // register mask.
+  // spilled values. Spilled values *must* get a stack slot, and therefore have
+  // _infinite_stack=true. If we run out of stack slots in an
+  // _infinite_mask=true register mask, we roll over the register mask to make
+  // the next set of stack slots available for selection.
   //
+  // The _offset variable indicates how many words we offset with.
+  // We consider all registers before the offset to not be included in the
+  // register mask.
   unsigned int _offset;
   //
   // The only operation that may update the _offset attribute is
@@ -438,7 +442,7 @@ public:
 
   // Construct an empty mask
   explicit RegMask(Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
-      : _rm_word() DEBUG_ONLY(COMMA _arena(arena)), _read_only(read_only),
+      : _rm_word(), _arena(arena) DEBUG_ONLY(COMMA _read_only(read_only)),
         _rm_size_in_words(RM_SIZE_IN_WORDS), _infinite_stack(false), _lwm(RM_WORD_MAX_INDEX), _hwm(0), _offset(0) {
     assert(valid_watermarks(), "post-condition");
   }
@@ -847,15 +851,15 @@ public:
   // The methods below are only for testing purposes (see test_regmask.cpp)
   // ----------------------------------------------------------------------
 
-  unsigned int static basic_rm_size_in_words() {
+  unsigned int static gtest_basic_rm_size_in_words() {
     return RM_SIZE_IN_WORDS;
   }
 
-  unsigned int static rm_size_in_bits_max() {
+  unsigned int static gtest_rm_size_in_bits_max() {
     return RM_SIZE_IN_WORDS_MAX * BitsPerWord;
   }
 
-  bool equals(const RegMask& rm) const {
+  bool gtest_equals(const RegMask& rm) const {
     assert(_offset == rm._offset, "offset mismatch");
     if (_infinite_stack != rm._infinite_stack) {
       return false;
@@ -883,7 +887,7 @@ public:
     return true;
   }
 
-  void set_offset(unsigned int offset) {
+  void gtest_set_offset(unsigned int offset) {
     _offset = offset;
   }
 

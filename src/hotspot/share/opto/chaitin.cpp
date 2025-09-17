@@ -1656,8 +1656,10 @@ uint PhaseChaitin::Select( ) {
     OptoReg::Name reg = choose_color(*lrg);
 
     //---------------
-    // If we fail to color and the infinite flag is set, trigger
-    // a chunk-rollover event
+    // If we fail to color and the infinite flag is set, we must trigger
+    // a chunk-rollover event and continue searching for a color in the next set
+    // of slots (which are all necessarily stack slots, as registers are only in
+    // the initial chunk)
     if (!OptoReg::is_valid(reg) && is_infinite_stack) {
       // Bump register mask up to next stack chunk
       bool success = lrg->rollover();

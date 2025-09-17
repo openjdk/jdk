@@ -502,22 +502,22 @@ Arena* arena() {
 }
 
 static void is_basic(const RegMask& rm) {
-  ASSERT_EQ(rm.rm_size_in_words(), RegMask::basic_rm_size_in_words());
+  ASSERT_EQ(rm.rm_size_in_words(), RegMask::gtest_basic_rm_size_in_words());
 }
 
 static void is_extended(const RegMask& rm) {
-  ASSERT_TRUE(rm.rm_size_in_words() > RegMask::basic_rm_size_in_words());
+  ASSERT_TRUE(rm.rm_size_in_words() > RegMask::gtest_basic_rm_size_in_words());
 }
 
 static int first_extended() {
-  return RegMask::basic_rm_size_in_words() * BitsPerWord;
+  return RegMask::gtest_basic_rm_size_in_words() * BitsPerWord;
 }
 
 static void extend(RegMask& rm, unsigned int n = 4) {
   // Extend the given RegMask with at least n dynamically-allocated words.
   rm.Insert(OptoReg::Name(first_extended() + (BitsPerWord * n) - 1));
   rm.Clear();
-  ASSERT_TRUE(rm.rm_size_in_words() >= RegMask::basic_rm_size_in_words() + n);
+  ASSERT_TRUE(rm.rm_size_in_words() >= RegMask::gtest_basic_rm_size_in_words() + n);
 }
 
 TEST_VM(RegMask, static_by_default) {
@@ -863,12 +863,12 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
       FAIL();
     }
     offset = new_offset_in_words * BitsPerWord;
-    if (offset + RegMask::rm_size_in_bits_max() > mask_aux_ref.size()) {
+    if (offset + RegMask::gtest_rm_size_in_bits_max() > mask_aux_ref.size()) {
       // Ensure that there is space in the reference mask.
       offset = 0;
     }
   }
-  mask_aux.set_offset(offset / BitsPerWord);
+  mask_aux.gtest_set_offset(offset / BitsPerWord);
   assert_equivalent(mask_aux, mask_aux_ref, false);
   uint max_size;
   uint size_target = next_random() % 3;
@@ -880,7 +880,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
     max_size = reg_capacity;
     break;
   case 2: // larger (if possible)
-    max_size = RegMask::rm_size_in_bits_max();
+    max_size = RegMask::gtest_rm_size_in_bits_max();
     break;
   default:
     FAIL();
@@ -953,7 +953,7 @@ TEST_VM(RegMask, random) {
     RegMask mask_aux(arena());
     switch (action) {
     case 0:
-      reg = (next_random() % RegMask::rm_size_in_bits_max()) + offset_ref;
+      reg = (next_random() % RegMask::gtest_rm_size_in_bits_max()) + offset_ref;
       if (Verbose) {
         tty->print_cr("action: Insert");
         tty->print("value   : ");
@@ -1085,7 +1085,7 @@ TEST_VM(RegMask, random) {
       if (Verbose) {
         tty->print_cr("action: reset");
       }
-      mask.set_offset(0);
+      mask.gtest_set_offset(0);
       mask.Clear();
       mask_ref.clear();
       infinite_stack_ref = false;
@@ -1136,7 +1136,7 @@ static uint grow_randomly(RegMask& rm, uint min_growth = 1,
   uint grow = min_growth + (max_growth > 0 ? next_random() % max_growth : 0);
   for (uint i = 0; i < grow; ++i) {
     uint reg = rm.rm_size_in_bits();
-    if (reg >= RegMask::rm_size_in_bits_max()) {
+    if (reg >= RegMask::gtest_rm_size_in_bits_max()) {
       // Cannot grow more
       break;
     }
@@ -1181,7 +1181,7 @@ TEST_VM(RegMask, random_copy) {
     RegMask dst(src, arena());
 
     // Check equality
-    bool passed = src.equals(dst);
+    bool passed = src.gtest_equals(dst);
     if (Verbose && !passed) {
       print_failure(src, dst);
     }
@@ -1211,7 +1211,7 @@ TEST_VM(RegMask, random_copy) {
     dst = src;
 
     // Check equality
-    bool passed = src.equals(dst);
+    bool passed = src.gtest_equals(dst);
     if (Verbose && !passed) {
       print_failure(src, dst);
     }
