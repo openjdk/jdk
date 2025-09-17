@@ -26,6 +26,7 @@
 
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
 
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:
@@ -67,6 +68,7 @@ class VTransformCFGNode;
 class VTransformOuterNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
+class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 class VTransformMemVectorNode;
@@ -90,9 +92,12 @@ public:
     return VTransformApplyResult(n, 0, 0);
   }
 
-  static VTransformApplyResult make_vector(Node* n, uint vector_length, uint vector_width) {
-    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyResult(n, vector_length, vector_width);
+  static VTransformApplyResult make_vector(VectorNode* vn) {
+    return VTransformApplyResult(vn, vn->length(), vn->length_in_bytes());
+  }
+
+  static VTransformApplyResult make_vector(Node* n, const TypeVect* vt) {
+    return VTransformApplyResult(n, vt->length(), vt->length_in_bytes());
   }
 
   static VTransformApplyResult make_empty() {
@@ -431,6 +436,7 @@ public:
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
+  virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
@@ -445,7 +451,7 @@ public:
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
-  void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn, Node* old_node) const;
+  void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -590,13 +596,52 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// Base class for all vector vtnodes.
+// Bundle the information needed for vector nodes.
+class VTransformVectorNodeProperties : public StackObj {
+private:
+  Node* _approximate_origin; // for proper propagation of node notes
+  const int _scalar_opcode;
+  const uint _vector_length;
+  const BasicType _element_basic_type;
+
+  VTransformVectorNodeProperties(Node* approximate_origin,
+                                 int scalar_opcode,
+                                 uint vector_length,
+                                 BasicType element_basic_type) :
+    _approximate_origin(approximate_origin),
+    _scalar_opcode(scalar_opcode),
+    _vector_length(vector_length),
+    _element_basic_type(element_basic_type) {}
+
+public:
+  static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+    Node* first = pack->at(0);
+    int opc = first->Opcode();
+    int vlen = pack->size();
+    BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+    return VTransformVectorNodeProperties(first, opc, vlen, bt);
+  }
+
+  Node* approximate_origin()     const { return _approximate_origin; }
+  int scalar_opcode()            const { return _scalar_opcode; }
+  uint vector_length()           const { return _vector_length; }
+  BasicType element_basic_type() const { return _element_basic_type; }
+};
+
+// Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
+  const VTransformVectorNodeProperties _properties;
+protected:
   GrowableArray<Node*> _nodes;
 public:
-  VTransformVectorNode(VTransform& vtransform, const uint req, const uint number_of_nodes) :
-    VTransformNode(vtransform, req), _nodes(vtransform.arena(), number_of_nodes, number_of_nodes, nullptr) {}
+  VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
+    VTransformNode(vtransform, req),
+    _properties(properties),
+    _nodes(vtransform.arena(),
+           properties.vector_length(),
+           properties.vector_length(),
+           nullptr) {}
 
   void set_nodes(const Node_List* pack) {
     for (uint k = 0; k < pack->size(); k++) {
@@ -604,20 +649,50 @@ public:
     }
   }
 
-  const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
+
+protected:
+  Node* approximate_origin()     const { return _properties.approximate_origin(); }
+  int scalar_opcode()            const { return _properties.scalar_opcode(); }
+  uint vector_length()           const { return _properties.vector_length(); }
+  BasicType element_basic_type() const { return _properties.element_basic_type(); }
 };
 
 // Catch all for all element-wise vector operations.
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
+private:
+  const int _vector_opcode;
 public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, req, number_of_nodes) {}
+  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties, const int vector_opcode) :
+    VTransformVectorNode(vtransform, req, properties), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// The scalar operation was a long -> int operation.
+// However, the vector operation is long -> long.
+// Hence, we vectorize it as: long --long_op--> long --cast--> int
+class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVectorNode {
+public:
+  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 2, properties) {}
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
+};
+
+class VTransformReinterpretVectorNode : public VTransformVectorNode {
+private:
+  const BasicType _src_bt;
+public:
+  VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const BasicType src_bt) :
+    VTransformVectorNode(vtransform, 2, properties), _src_bt(src_bt) {}
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 struct VTransformBoolTest {
@@ -628,23 +703,35 @@ struct VTransformBoolTest {
     _mask(mask), _is_negated(is_negated) {}
 };
 
-class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
+// Cmp + Bool -> VectorMaskCmp
+// The Bool node takes care of "apply".
+class VTransformCmpVectorNode : public VTransformVectorNode {
+public:
+  VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
+  virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
+  NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
+};
+
+class VTransformBoolVectorNode : public VTransformVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
-  VTransformBoolVectorNode(VTransform& vtransform, uint number_of_nodes, VTransformBoolTest test) :
-    VTransformElementWiseVectorNode(vtransform, 2, number_of_nodes), _test(test) {}
+  VTransformBoolVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, VTransformBoolTest test) :
+    VTransformVectorNode(vtransform, 2, properties), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, scalar init, vector]
-  VTransformReductionVectorNode(VTransform& vtransform, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, 3, number_of_nodes) {}
+  VTransformReductionVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
@@ -653,12 +740,16 @@ public:
 class VTransformMemVectorNode : public VTransformVectorNode {
 private:
   const VPointer _vpointer; // with size of the vector
+protected:
+  const TypePtr* _adr_type;
 
 public:
-  VTransformMemVectorNode(VTransform& vtransform, const uint req, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformVectorNode(vtransform, req, number_of_nodes),
-    _vpointer(vpointer) {}
+  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformVectorNode(vtransform, req, properties),
+    _vpointer(vpointer),
+    _adr_type(adr_type) {}
 
+  const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual const VPointer& vpointer() const override { return _vpointer; }
@@ -667,8 +758,8 @@ public:
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 3, number_of_nodes, vpointer) {}
+  VTransformLoadVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
@@ -679,8 +770,8 @@ public:
 class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 4, number_of_nodes, vpointer) {}
+  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 4, properties, vpointer, adr_type) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
@@ -703,8 +794,8 @@ void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
       callback(scalar->node());
     }
 
-    VTransformVectorNode* vector = vtn->isa_Vector();
-    if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
+    VTransformMemVectorNode* vector = vtn->isa_MemVector();
+    if (vector != nullptr) {
       for (int j = 0; j < vector->nodes().length(); j++) {
         callback(vector->nodes().at(j)->as_Mem());
       }

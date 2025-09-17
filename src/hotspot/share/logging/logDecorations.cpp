@@ -24,7 +24,7 @@
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "services/management.hpp"
@@ -33,12 +33,12 @@ const char* volatile LogDecorations::_host_name = nullptr;
 const int LogDecorations::_pid = os::current_process_id(); // This is safe to call during dynamic initialization.
 
 const char* LogDecorations::host_name() {
-  const char* host_name = Atomic::load_acquire(&_host_name);
+  const char* host_name = AtomicAccess::load_acquire(&_host_name);
   if (host_name == nullptr) {
     char buffer[1024];
     if (os::get_host_name(buffer, sizeof(buffer))) {
       host_name = os::strdup_check_oom(buffer);
-      const char* old_value = Atomic::cmpxchg(&_host_name, (const char*)nullptr, host_name);
+      const char* old_value = AtomicAccess::cmpxchg(&_host_name, (const char*)nullptr, host_name);
       if (old_value != nullptr) {
         os::free((void *) host_name);
         host_name = old_value;

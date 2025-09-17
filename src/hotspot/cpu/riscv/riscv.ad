@@ -3845,9 +3845,6 @@ attributes %{
 
   // ...in one line.
   instruction_fetch_units = 1;
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources
@@ -8941,7 +8938,7 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
 instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src, iRegPNoSp tmp) %{
   match(Set dst (DecodeNKlass src));
 
-  effect(TEMP tmp);
+  effect(TEMP_DEF dst, TEMP tmp);
 
   ins_cost(ALU_COST);
   format %{ "decode_klass_not_null  $dst, $src\t#@decodeKlass_not_null" %}

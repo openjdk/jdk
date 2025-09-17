@@ -101,10 +101,10 @@ class JvmtiVTMSTransitionDisabler : public AnyObj {
   static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
   static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
 
-  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
-  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
-  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
-  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+  static void inc_sync_protocol_enabled_count()      { AtomicAccess::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { AtomicAccess::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return AtomicAccess::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return AtomicAccess::load(&_sync_protocol_enabled_permanently); }
 
   static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
 
@@ -443,15 +443,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     }
     return klass;
   }
-
-  // Todo: get rid of this!
- private:
-  bool _debuggable;
- public:
-  // Should the thread be enumerated by jvmtiInternal::GetAllThreads?
-  bool is_debuggable()                 { return _debuggable; }
-  // If a thread cannot be suspended (has no valid last_java_frame) then it gets marked !debuggable
-  void set_debuggable(bool debuggable) { _debuggable = debuggable; }
 
  public:
 

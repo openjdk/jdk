@@ -114,6 +114,8 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
 
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  _generation->ref_processor()->set_soft_reference_policy(
+      GCCause::should_clear_all_soft_refs(cause));
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
@@ -732,7 +734,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   rp->reset_thread_locals();
-  rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   // Make above changes visible to worker threads
   OrderAccess::fence();
@@ -1187,6 +1188,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // We are not concerned about skipping this step in abbreviated cycles because regions
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
     heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
