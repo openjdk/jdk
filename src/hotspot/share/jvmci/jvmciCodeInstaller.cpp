@@ -1235,9 +1235,6 @@ bool is_inlined_method_handle_intrinsic(JavaThread* thread, methodHandle& caller
 
 // computation if binding is necessary corresponds to SharedRuntime::find_callee_info_helper
 bool bind_call(JavaThread* thread, CallSiteBindingContext& binding_context, methodHandle& method, JVMCI_TRAPS) {
-  if (method.is_null() || binding_context.caller.is_null()) {
-    JVMCI_THROW_MSG_(InternalError, "Binding context was not properly filled", false);
-  }
   // TODO for Valhalla: if method has scalarized parameters bind as well
   return binding_context.reexecute || is_inlined_method_handle_intrinsic(thread, binding_context.caller, binding_context.bci, method);
 }
