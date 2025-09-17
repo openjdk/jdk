@@ -703,6 +703,8 @@ public final class Utils {
         p1.setSNIMatchers(p.getSNIMatchers());
         p1.setServerNames(p.getServerNames());
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        p1.setSignatureSchemes(p.getSignatureSchemes());
+        p1.setNamedGroups(p.getNamedGroups());
         return p1;
     }
 
