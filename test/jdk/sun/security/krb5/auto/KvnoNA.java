@@ -54,7 +54,7 @@ public class KvnoNA {
 
         // Setup a temporary krb5.conf so we can generate ktab files
         // using the preferred etype.
-        if (etype != null && etype.startsWith("dec")) {
+        if (etype != null && etype.startsWith("des-cbc-")) {
             // When DES is used, we always write des-cbc-crc keys.
             // They should also be used by des-cbc-md5.
             Files.writeString(Path.of("temp.conf"), """
