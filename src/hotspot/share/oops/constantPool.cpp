@@ -60,7 +60,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -277,7 +277,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  AtomicAccess::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-null, so we need hardware store ordering here.
@@ -694,16 +694,16 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  AtomicAccess::release_store(adr, k);
 
-  jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                  (jbyte)JVM_CONSTANT_UnresolvedClass,
-                                  (jbyte)JVM_CONSTANT_Class);
+  jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
+                                        (jbyte)JVM_CONSTANT_UnresolvedClass,
+                                        (jbyte)JVM_CONSTANT_Class);
 
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    Atomic::store(adr, (Klass*)nullptr);
+    AtomicAccess::store(adr, (Klass*)nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -1035,9 +1035,9 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // This doesn't deterministically get an error.   So why do we save this?
     // We save this because jvmti can add classes to the bootclass path after
     // this error, so it needs to get the same error if the error is first.
-    jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                    (jbyte)tag.value(),
-                                    (jbyte)error_tag);
+    jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
+                                          (jbyte)tag.value(),
+                                          (jbyte)error_tag);
     if (old_tag != error_tag && old_tag != tag.value()) {
       // MethodHandles and MethodType doesn't change to resolved version.
       assert(this_cp->tag_at(cp_index).is_klass(), "Wrong tag value");

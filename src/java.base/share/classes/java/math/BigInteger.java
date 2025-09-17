@@ -2743,6 +2743,85 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Returns the integer {@code n}<sup>th</sup> root of this BigInteger. The integer
+     * {@code n}<sup>th</sup> root {@code r} of the corresponding mathematical integer {@code x}
+     * is defined as follows:
+     * <ul>
+     *   <li>if {@code x} &ge; 0, then {@code r} &ge; 0 is the largest integer such that
+     *   {@code r}<sup>{@code n}</sup> &le; {@code x};
+     *   <li>if {@code x} &lt; 0, then {@code r} &le; 0 is the smallest integer such that
+     *   {@code r}<sup>{@code n}</sup> &ge; {@code x}.
+     * </ul>
+     * If the root is defined, it is equal to the value of
+     * {@code x.signum()}&sdot; &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
+     * where {@code nthRoot(x, n)} denotes the real {@code n}<sup>th</sup> root of {@code x}
+     * treated as a real.
+     * Otherwise, the method throws an {@code ArithmeticException}.
+     *
+     * <p>Note that the magnitude of the integer {@code n}<sup>th</sup> root will be less than
+     * the magnitude of the real {@code n}<sup>th</sup> root if the latter is not representable
+     * as an integral value.
+     *
+     * @param n the root degree
+     * @return the integer {@code n}<sup>th</sup> root of {@code this}
+     * @throws ArithmeticException if {@code n <= 0}.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
+     * @see #sqrt()
+     * @since 26
+     * @apiNote Note that calling {@code nthRoot(2)} is equivalent to calling {@code sqrt()}.
+     */
+    public BigInteger nthRoot(int n) {
+        if (n == 1)
+            return this;
+
+        if (n == 2)
+            return sqrt();
+
+        checkRootDegree(n);
+        return new MutableBigInteger(this.mag).nthRootRem(n)[0].toBigInteger(signum);
+    }
+
+    /**
+     * Returns an array of two BigIntegers containing the integer {@code n}<sup>th</sup> root
+     * {@code r} of {@code this} and its remainder {@code this - r}<sup>{@code n}</sup>,
+     * respectively.
+     *
+     * @param n the root degree
+     * @return an array of two BigIntegers with the integer {@code n}<sup>th</sup> root at
+     *         offset 0 and the remainder at offset 1
+     * @throws ArithmeticException if {@code n <= 0}.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
+     * @see #sqrt()
+     * @see #sqrtAndRemainder()
+     * @see #nthRoot(int)
+     * @since 26
+     * @apiNote Note that calling {@code nthRootAndRemainder(2)} is equivalent to calling
+     *          {@code sqrtAndRemainder()}.
+     */
+    public BigInteger[] nthRootAndRemainder(int n) {
+        if (n == 1)
+            return new BigInteger[] { this, ZERO };
+
+        if (n == 2)
+            return sqrtAndRemainder();
+
+        checkRootDegree(n);
+        MutableBigInteger[] rootRem = new MutableBigInteger(this.mag).nthRootRem(n);
+        return new BigInteger[] {
+                rootRem[0].toBigInteger(signum),
+                rootRem[1].toBigInteger(signum)
+        };
+    }
+
+    private void checkRootDegree(int n) {
+        if (n <= 0)
+            throw new ArithmeticException("Non-positive root degree");
+
+        if ((n & 1) == 0 && this.signum < 0)
+            throw new ArithmeticException("Negative radicand with even root degree");
+    }
+
+    /**
      * Returns a BigInteger whose value is the greatest common divisor of
      * {@code abs(this)} and {@code abs(val)}.  Returns 0 if
      * {@code this == 0 && val == 0}.
