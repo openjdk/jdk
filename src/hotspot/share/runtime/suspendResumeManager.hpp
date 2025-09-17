@@ -60,7 +60,7 @@ class SuspendResumeManager {
   void set_suspended(bool to, bool register_vthread_SR);
 
   bool is_suspended() {
-    return Atomic::load(&_suspended);
+    return AtomicAccess::load(&_suspended);
   }
 
   bool has_async_suspend_handshake() { return _async_suspend_handshake; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,21 @@
 #ifndef OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 #define OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards
-      Atomic::store(to++, Atomic::load(from++));
+      AtomicAccess::store(to++, AtomicAccess::load(from++));
     }
   } else {
     from += count - 1;
     to   += count - 1;
     while (count-- > 0) {
       // Copy backwards
-      Atomic::store(to--, Atomic::load(from--));
+      AtomicAccess::store(to--, AtomicAccess::load(from--));
     }
   }
 }
