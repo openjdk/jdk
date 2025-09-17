@@ -100,7 +100,7 @@ public class Win8365790Test {
     }
 
     private static String runLauncher(JPackageCommand cmd, String launcherName, Path traceFile, Path outputFile) throws IOException {
-     // Launch the main launcher and send Ctrl+C signal to it.
+        // Launch the specified launcher and send Ctrl+C signal to it.
         Thread.ofVirtual().start(() -> {
             configureAndExecute(0, Executor.of("powershell", "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
                     .addArgument("-File").addArgument(TEST_PS1)
