@@ -102,6 +102,15 @@ public:
   static void change_thread_claim_token();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
 
+  struct ThreadsClaimTokenScope : StackObj {
+    ThreadsClaimTokenScope() {
+      Threads::change_thread_claim_token();
+    }
+    ~ThreadsClaimTokenScope() {
+      Threads::assert_all_threads_claimed();
+    }
+  };
+
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
   static void oops_do(OopClosure* f, NMethodClosure* cf);
