@@ -1853,9 +1853,6 @@ See Object Lifetime: C++17 6.8/8, C++20 6.7.3/8
 
 ### Additional Undecided Features
 
-* Trailing return type syntax for functions
-([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
-
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))
 
