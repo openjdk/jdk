@@ -3293,11 +3293,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Alaskayê</standard>
 					<daylight>Saeta Havînê ya Alaskayê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SA</generic>
-					<standard draft="contributed">SSAK</standard>
-					<daylight draft="contributed">SHAK</daylight>
-				</short>
 			</metazone>
 			<metazone type="Almaty">
 				<long>
@@ -3319,11 +3314,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Merkezî ya Standard a Amerîkaya Bakur</standard>
 					<daylight>Saeta Havînê ya Merkezî ya Amerîkaya Bakur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SN</generic>
-					<standard draft="contributed">SSN</standard>
-					<daylight draft="contributed">SHN</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -3331,11 +3321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Rojhilat ya Amerîkaya Bakur</standard>
 					<daylight>Saeta Havînê ya Rojhilat ya Amerîkaya Bakur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SR</generic>
-					<standard draft="contributed">SSR</standard>
-					<daylight draft="contributed">SHR</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3343,11 +3328,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Çîyayî ya Amerîkaya Bakur</standard>
 					<daylight>Saeta Havînê ya Çîyayî ya Amerîkaya Bakur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SÇ</generic>
-					<standard draft="contributed">SSÇ</standard>
-					<daylight draft="contributed">SHÇ</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3355,11 +3335,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Pasîfîkê ya Amerîkaya Bakur</standard>
 					<daylight>Saeta Havînê ya Pasîfîkê ya Amerîkaya Bakur</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SP</generic>
-					<standard draft="contributed">SSP</standard>
-					<daylight draft="contributed">SHP</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3423,11 +3398,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Atlantîkê</standard>
 					<daylight>Saeta Havînê ya Atlantîkê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SA</generic>
-					<standard draft="contributed">SSA</standard>
-					<daylight draft="contributed">SHA</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -3568,11 +3538,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Kubayê</standard>
 					<daylight>Saeta Havînê ya Kubayê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SK</generic>
-					<standard draft="contributed">SSK</standard>
-					<daylight draft="contributed">SHK</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
@@ -3691,11 +3656,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Grînlanda Rojhilat</standard>
 					<daylight>Saeta Havînê ya Grînlanda Rojhilat</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SGR</generic>
-					<standard draft="contributed">SSGR</standard>
-					<daylight draft="contributed">SHGR</daylight>
-				</short>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
@@ -3703,11 +3663,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Grînlanda Rojava</standard>
 					<daylight>Saeta Havînê ya Grînlanda Rojava</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SGRO</generic>
-					<standard draft="contributed">SSGRO</standard>
-					<daylight draft="contributed">SHGRO</daylight>
-				</short>
 			</metazone>
 			<metazone type="Guam">
 				<long>
@@ -3728,9 +3683,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>Saeta Standard a Hawaii-Aleutianê</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SSHA</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -3738,11 +3690,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Hawaii-Aleutianê</standard>
 					<daylight>Saeta Havînê ya Hawaii-Aleutianê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SHAL</generic>
-					<standard draft="contributed">SSHA</standard>
-					<daylight draft="contributed">SHHA</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -3981,11 +3928,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Newfoundlandê</standard>
 					<daylight>Saeta Havînê ya Newfoundlandê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SNF</generic>
-					<standard draft="contributed">SSNF</standard>
-					<daylight draft="contributed">SHNF</daylight>
-				</short>
 			</metazone>
 			<metazone type="Niue">
 				<long>
@@ -4277,9 +4219,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>Saeta Yukonê</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SY</standard>
-				</short>
 			</metazone>
 		</timeZoneNames>
 	</dates>

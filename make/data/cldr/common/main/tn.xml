@@ -367,7 +367,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<group>’</group>
+			<group>'</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>

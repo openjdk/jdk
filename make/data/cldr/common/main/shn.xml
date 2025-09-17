@@ -1147,11 +1147,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u200Bး ႞ ႟ ၵ ၶ ၷ င ၸ ၺ ꧣ တ ထ ၻ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ျ ရ ြ လ ဝ ွ ႂ ႀ သ ႁ ဢ ႃ ိ ီ ု ူ ေ ႄ ꧥ ် ႇ ႈ ႉ ႊ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[ꩡ ꩦ ꩧ ꩨ ꩩ ꩮ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[ၵ ၶ ၷ ꧠ င ၸ ꩡ ꧡ ꧢ ၺ ꩦ ꩧ ꩨ ꩩ တ ထ ၻ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ရ လ ဝ ႀ သ ႁ ꩮ ဢ]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[႐ ႑ ႒ ႓ ႔ ႕ ႖ ႗ ႘ ႙]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[၊ ။ ‘’ “”]</exemplarCharacters>
+		<exemplarCharacters>[ံး ႞ ႟ ၵ ၶ ၷ ꧠ င ၸ ꩡ ၺ ꩦ ꩧ ꩨ ꩩ ꧣ တ ထ ၻ ꩪ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ျ ရ ြ လ ဝ ွ ႂ ႀ သ ႁ ꩮ ဢ ႃ ိ ီ ု ူ ေ ႄ ဵ ႅ ႆ ၢ ꧥ ် ႇ ႈ ႉ ႊ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[၀႐ ၁႑ ၂႒ ၃႓ ၄႔ ၅႕ ၆႖ ၇႗ ၈႘ ၉႙ ၚ ၐ ၑ ၥ ၒ ၓ ၔ ၕ ဨ ဳ ၖ ၗ ၘ ၙ ဴ]</exemplarCharacters>
+		<exemplarCharacters type="index">[႞ ႟ ၵ ၶ ၷ ꧠ င ၸ ꩡ ၺ ꧣ တ ထ ၻ ꩪ ၼ ပ ၽ ၾ ၿ မ ယ ရ လ ဝ ႀ သ ႁ ꩮ ဢ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0၀႐ 1၁႑ 2၂႒ 3၃႓ 4၄႔ 5၅႕ 6၆႖ 7၇႗ 8၈႘ 9၉႙]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — … ၊ ။ ‘’ “” ( ) \[ \] \{ \} @ * / #]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -1489,15 +1489,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0">ပၢၼ်0</era>
 						<era type="1">ပၢၼ်1</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ပၢၼ်0</era>
 						<era type="1">ပၢၼ်1</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">ပၢၼ်0</era>
 						<era type="1">ပၢၼ်1</era>
 					</eraNarrow>
 				</eras>
@@ -5832,51 +5829,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢေႇၵႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢေႇၵႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ACT</generic>
-					<standard draft="contributed">ACT Acre</standard>
-					<daylight draft="contributed">ACT Acre</daylight>
-				</short>
 			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢႃႇၾၵၢၼ်ႇၼီႇသတၢၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">AFT</standard>
-				</short>
 			</metazone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢႃႇၾရိၵ ပွတ်းၵၢင်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CAT</standard>
-				</short>
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢႃႇၾရိၵ ပွတ်းဢွၵ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">EAT</standard>
-				</short>
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၾရိၵၸၢၼ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢႃႇၾရိၵ ပွတ်းတူၵ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WAT</standard>
-				</short>
 			</metazone>
 			<metazone type="Alaska">
 				<long>
@@ -5884,11 +5861,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢလႅတ်ႉသၵႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်းၵၢင်ဝၼ်း ဢလႅတ်ႉသၵႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Almaty">
 				<long>
@@ -5896,11 +5868,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႄးလ်မႃႇတီႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႄးလ်မႃႇတီႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">Alma-Ata</generic>
-					<standard draft="contributed">Alma-Ata</standard>
-					<daylight draft="contributed">Alma-AtaST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -5908,11 +5875,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢမၸွၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢမၸွၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AMT</generic>
-					<standard draft="contributed">AMST</standard>
-					<daylight draft="contributed">AMST</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
@@ -5920,11 +5882,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပွတ်းၵၢင်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပွတ်းၵၢင်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -5932,11 +5889,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပွတ်းဢွၵ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပွတ်းဢွၵ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -5944,11 +5896,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း သၼ်လွႆ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း သၼ်လွႆ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -5956,11 +5903,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပၸိၾိၵ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပၸိၾိၵ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -5968,11 +5910,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၼႃႇတီႇယႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႃႇၼႃႇတီႇယႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ANAT</generic>
-					<standard draft="contributed">ANAT</standard>
-					<daylight draft="contributed">ANAST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Apia">
 				<long>
@@ -5980,11 +5917,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း သႃႇမူဝ်းဝႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း သႃႇမူဝ်းဝႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SST</generic>
-					<standard draft="contributed">SST</standard>
-					<daylight draft="contributed">SDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Aqtau">
 				<long>
@@ -5999,11 +5931,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႅၵ်ႉတူဝ်ႇပီႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႅၵ်ႉတူဝ်ႇပီႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AQTT</generic>
-					<standard draft="contributed">AQTT</standard>
-					<daylight draft="contributed">AQTST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
@@ -6011,11 +5938,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇရၢပ်ႈ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢႃႇရၢပ်ႈ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ၶၢဝ်းယၢမ်း ဢႃႇရၢပ်ႈ</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
@@ -6023,11 +5945,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၵျႅၼ်ႇတီးၼႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢႃႇၵျႅၼ်ႇတီးၼႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ART</generic>
-					<standard draft="contributed">ARST</standard>
-					<daylight draft="contributed">ARST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
@@ -6035,11 +5952,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၵျႅၼ်ႇတီးၼႃး ပွတ်းတူၵ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢႃႇၵျႅၼ်ႇတီးၼႃး ပွတ်းတူၵ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">WART</generic>
-					<standard draft="contributed">WARST</standard>
-					<daylight draft="contributed">WARST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
@@ -6047,11 +5959,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇမေးၼီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႃႇမေးၼီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ၶၢဝ်းယၢမ်း ဢႃႇမေးၼီးယႃး</generic>
-					<standard draft="contributed">AMT</standard>
-					<daylight draft="contributed">လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇမေးၼီးယႃး</daylight>
-				</short>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
@@ -6059,11 +5966,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႅတ်ႉလႅၼ်းတိၵ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢႅတ်ႉလႅၼ်းတိၵ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -6071,11 +5973,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢေႃႉသထရေးလီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢေႃႉသထရေးလီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ACST</generic>
-					<standard draft="contributed">ACST</standard>
-					<daylight draft="contributed">ACDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
@@ -6083,11 +5980,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပွတ်းတူၵ်း တွၼ်ႈၵၢင် ဢေႃႉသထရေးလီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ပွတ်းတူၵ်း တွၼ်ႈၵၢင် ၶၢဝ်းမႆႈ ဢေႃႉသထရေးလီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ACWST</generic>
-					<standard draft="contributed">ACWST</standard>
-					<daylight draft="contributed">ACWDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
@@ -6095,11 +5987,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပွတ်းဢွၵ်ႇ ဢေႃႉသထရေးလီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ပွတ်းဢွၵ်ႇ ၵၢင်ဝၼ်း ဢေႃႉသထရေးလီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AEST</generic>
-					<standard draft="contributed">AEST</standard>
-					<daylight draft="contributed">AEDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
@@ -6107,11 +5994,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပွတ်းတူၵ်း ဢေႃႉသထရေးလီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ပွတ်းတူၵ်း ၵၢင်ဝၼ်း ဢေႃႉသထရေးလီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AWST</generic>
-					<standard draft="contributed">AWST</standard>
-					<daylight draft="contributed">AWDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
@@ -6119,11 +6001,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၸႃႇပၢႆႇၸၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႃႇၸႃႇပၢႆႇၸၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AZT</generic>
-					<standard draft="contributed">AZT</standard>
-					<daylight draft="contributed">AZST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Azores">
 				<long>
@@ -6131,11 +6008,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢႃႇၸူဝ်ႇရႅတ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢႃႇၸူဝ်ႇရႅတ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AZOT</generic>
-					<standard draft="contributed">AZOT</standard>
-					<daylight draft="contributed">AZOST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
@@ -6143,27 +6015,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပင်းၵလႃးတဵတ်ႈ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ပင်းၵလႃးတဵတ်ႈ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">BST</generic>
-					<standard draft="contributed">BST</standard>
-					<daylight draft="contributed">BSST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Bhutan">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၽူႇတၢၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">BTT</standard>
-				</short>
 			</metazone>
 			<metazone type="Bolivia">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ပူဝ်ႇလီးပီးယႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">BOT</standard>
-				</short>
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
@@ -6171,19 +6032,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပရႃႇၸီးလီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပရႃႇၸီးလီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">BRT</generic>
-					<standard draft="contributed">BRT</standard>
-					<daylight draft="contributed">BRST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ပရူႇၼၢႆး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">BNT</standard>
-				</short>
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
@@ -6191,27 +6044,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶဵပ်ႉဝႄႇတီႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၶဵပ်ႉဝႄႇတီႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CVT</generic>
-					<standard draft="contributed">CVT</standard>
-					<daylight draft="contributed">CVST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Casey">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၶေႇသီႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Chamorro">
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶျမ်ႇမူဝ်ႇရူဝ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CHST</standard>
-				</short>
 			</metazone>
 			<metazone type="Chatham">
 				<long>
@@ -6219,11 +6061,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶျႅတ်ႉထမ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၶျႅတ်ႉထမ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CHAST</generic>
-					<standard draft="contributed">CHAST</standard>
-					<daylight draft="contributed">CHADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Chile">
 				<long>
@@ -6231,11 +6068,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶျီႇလီႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၶျီႇလီႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CLT</generic>
-					<standard draft="contributed">CLT</standard>
-					<daylight draft="contributed">CLST</daylight>
-				</short>
 			</metazone>
 			<metazone type="China">
 				<long>
@@ -6243,27 +6075,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶႄႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၶႄႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ၶၢဝ်းယၢမ်း ၶႄႇ</generic>
-					<standard draft="contributed">လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶႄႇ</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵုၼ်ၶရိတ်ႉသမၢတ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CXT</standard>
-				</short>
 			</metazone>
 			<metazone type="Cocos">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မူႇၵုၼ်ၵူဝ်ႇၵူဝ်းသ်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CCT</standard>
-				</short>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
@@ -6271,11 +6092,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵူဝ်ႇလမ်ႇပီႇယႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵူဝ်ႇလမ်ႇပီႇယႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">COT</generic>
-					<standard draft="contributed">COT</standard>
-					<daylight draft="contributed">COST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Cook">
 				<long>
@@ -6283,11 +6099,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မူႇၵုၼ်ၶုၵ်ႈ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ မူႇၵုၼ်ၶုၵ်ႈ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CKT</generic>
-					<standard draft="contributed">CKT</standard>
-					<daylight draft="contributed">CKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
@@ -6295,35 +6106,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵူးပႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵူးပႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ၶၢဝ်းယၢမ်း ၵူးပႃး</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">ၶၢဝ်းဝၼ်း ၵူးပႃး</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း တေးဝိတ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">DAVT</standard>
-				</short>
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း တူႇမွၼ်ႉ တဝီႇလ်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">DDUT</standard>
-				</short>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း တီႇမေႃးလႅတ်ႉသ်တႄး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TLT</standard>
-				</short>
 			</metazone>
 			<metazone type="Easter">
 				<long>
@@ -6331,19 +6128,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵုၼ်ဢီႇသတႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵုၼ်ဢီႇသတႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">EAST</generic>
-					<standard draft="contributed">EAST</standard>
-					<daylight draft="contributed">EASST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢေႇၵႂႃႇတေႃႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">ECT</standard>
-				</short>
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
@@ -6351,11 +6140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ယူးရူပ်ႉ ပွတ်းၵၢင်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ယူးရူပ်ႉ ပွတ်းၵၢင်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CET</generic>
-					<standard draft="contributed">CET</standard>
-					<daylight draft="contributed">CEST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
@@ -6363,19 +6147,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ယူးရူပ်ႉ ပွတ်းဢွၵ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ယူးရူပ်ႉ ပွတ်းဢွၵ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">EET</generic>
-					<standard draft="contributed">EET</standard>
-					<daylight draft="contributed">EEST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ယူးရူပ်ႉ ပွတ်းဢွၵ်ႇ ဢၼ်ၵႆတိူဝ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">FET</standard>
-				</short>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
@@ -6383,11 +6159,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ယူးရူပ်ႉ ပွတ်းတူၵ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ယူးရူပ်ႉ ပွတ်းတူၵ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">WET</generic>
-					<standard draft="contributed">WET</standard>
-					<daylight draft="contributed">WEST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
@@ -6395,11 +6166,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မူႇၵုၼ် ၾွၵ်ႉလႅၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း မူႇၵုၼ် ၾွၵ်ႉလႅၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">FKT</generic>
-					<standard draft="contributed">FKST</standard>
-					<daylight draft="contributed">FKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
@@ -6407,43 +6173,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၾီႇၵျီႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၾီႇၵျီႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">FJT</generic>
-					<standard draft="contributed">FJT</standard>
-					<daylight draft="contributed">FJST</daylight>
-				</short>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵုၺ်ႇယႃႇၼႃႇ ၶွင် ၾရၢင်ႇသဵတ်ႈ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GFT</standard>
-				</short>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၾရၢင်ႇသဵတ်ႈ ပွတ်းၸၢၼ်း လႄႈ ဢႅၼ်ႇတၢၵ်ႈတီးၵႃႈ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TFT</standard>
-				</short>
 			</metazone>
 			<metazone type="Galapagos">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵႃႇလႃႇပၵူဝ်ႉသ်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GALT</standard>
-				</short>
 			</metazone>
 			<metazone type="Gambier">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵမ်ႇပီႇယႃႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GAMT</standard>
-				</short>
 			</metazone>
 			<metazone type="Georgia">
 				<long>
@@ -6451,27 +6200,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵျေႃႇၵျႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၵျေႃႇၵျႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">GET</generic>
-					<standard draft="contributed">GET</standard>
-					<daylight draft="contributed">GEST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Gilbert_Islands">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵိလ်ပႅတ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GILT</standard>
-				</short>
 			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၽတ်ႉၽဵင်ႇ ၵရိၼ်းဝိတ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GMT</standard>
-				</short>
 			</metazone>
 			<metazone type="Greenland">
 				<long>
@@ -6486,11 +6224,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵရိၼ်းလႅၼ်း ပွတ်းဢွၵ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵရိၼ်းလႅၼ်း ပွတ်းဢွၵ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">EGT</generic>
-					<standard draft="contributed">EGT</standard>
-					<daylight draft="contributed">EGST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
@@ -6498,11 +6231,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵရိၼ်းလႅၼ်း ပွတ်းတူၵ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵရိၼ်းလႅၼ်း ပွတ်းတူၵ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">WGT</generic>
-					<standard draft="contributed">WGT</standard>
-					<daylight draft="contributed">WGST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Guam">
 				<long>
@@ -6513,25 +6241,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢၢဝ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GST</standard>
-				</short>
 			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵၢႆႇယႃးၼႃႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GYT</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ႁႃႇဝၢႆးဢီး-ဢလူးသျၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -6539,11 +6258,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ႁႃႇဝၢႆးဢီး-ဢလူးသျၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ႁႃႇဝၢႆးဢီး-ဢလူးသျၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -6551,11 +6265,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ႁွင်းၵွင်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ႁွင်းၵွင်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HKT</generic>
-					<standard draft="contributed">HKT</standard>
-					<daylight draft="contributed">HKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
@@ -6568,49 +6277,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢိၼ်းတီးယႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">IST</standard>
-				</short>
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း သမုၵ်ႉတရႃႇဢိၼ်းတီးယႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">IOT</standard>
-				</short>
 			</metazone>
 			<metazone type="Indochina">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢိၼ်ႇတူဝ်ႇၶႄႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">ICT</standard>
-				</short>
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢိၼ်ႇတူဝ်ႇၼီးသျႃး ပွတ်းၵၢင်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WITA</standard>
-				</short>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢိၼ်ႇတူဝ်ႇၼီးသျႃး ပွတ်းဢွၵ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WIT</standard>
-				</short>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဢိၼ်ႇတူဝ်ႇၼီးသျႃး ပွတ်းတူၵ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WIB</standard>
-				</short>
 			</metazone>
 			<metazone type="Iran">
 				<long>
@@ -6618,11 +6309,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢီႇရၢၼ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢီႇရၢၼ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">IT</generic>
-					<standard draft="contributed">IRST</standard>
-					<daylight draft="contributed">IDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
@@ -6630,11 +6316,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢိရၶုတ်ႉသ်ၶ်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢိရၶုတ်ႉသ်ၶ်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">IRKT</generic>
-					<standard draft="contributed">IRKT</standard>
-					<daylight draft="contributed">IRKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Israel">
 				<long>
@@ -6642,11 +6323,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢိတ်ႇသရေး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢိတ်ႇသရေး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">IST</generic>
-					<standard draft="contributed">လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢိတ်ႇသရေး</standard>
-					<daylight draft="contributed">ISDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Japan">
 				<long>
@@ -6654,11 +6330,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵျႃႇပၢၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵျႃႇပၢၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">JST</generic>
-					<standard draft="contributed">JST</standard>
-					<daylight draft="contributed">JDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
@@ -6666,11 +6337,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵမ်ႇၶျတ်ႉၵႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၵမ်ႇၶျတ်ႉၵႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PETT</generic>
-					<standard draft="contributed">PETT</standard>
-					<daylight draft="contributed">PETST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Kazakhstan">
 				<long>
@@ -6693,19 +6359,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵၢဝ်းလီ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵၢဝ်းလီ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">KST</generic>
-					<standard draft="contributed">KST</standard>
-					<daylight draft="contributed">KDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Kosrae">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵွတ်ႉသ်ရေး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">KOST</standard>
-				</short>
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
@@ -6713,11 +6371,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၶရတ်ႉၼူဝ်ႇယႃႇသ်ၶ်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၶရတ်ႉၼူဝ်ႇယႃႇသ်ၶ်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">KRAT</generic>
-					<standard draft="contributed">KRAT</standard>
-					<daylight draft="contributed">KRAST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
@@ -6728,17 +6381,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း လင်းၵႃ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SLST</standard>
-				</short>
 			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မူႇၵုၼ်လၢႆး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">LINT</standard>
-				</short>
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
@@ -6746,11 +6393,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း လွတ်ႉႁၢဝ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း လွတ်ႉႁၢဝ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">LHST</generic>
-					<standard draft="contributed">LHST</standard>
-					<daylight draft="contributed">LHDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Macau">
 				<long>
@@ -6758,11 +6400,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မႃႇၵၢဝ်ႈ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ မႃႇၵၢဝ်ႈ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ၶၢဝ်းဝၼ်း ၵၢဝ်းလီ</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MSST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Magadan">
 				<long>
@@ -6770,43 +6407,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မႃႇၵႃႇတၢၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ မႃႇၵႃႇတၢၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MAGT</generic>
-					<standard draft="contributed">MAGT</standard>
-					<daylight draft="contributed">MAGST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Malaysia">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မလေးသျႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">MYT</standard>
-				</short>
 			</metazone>
 			<metazone type="Maldives">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မေႃႇတိပ်ႈ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">MVT</standard>
-				</short>
 			</metazone>
 			<metazone type="Marquesas">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မႃၶေးသႅတ်ႉသ်</standard>
 				</long>
-				<short>
-					<standard draft="contributed">MART</standard>
-				</short>
 			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မူႇၵုၼ်မႃးသျႄႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">MHT</standard>
-				</short>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
@@ -6814,19 +6434,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မေႃးရီႇသႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ မေႃးရီႇသႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MUT</generic>
-					<standard draft="contributed">MUT</standard>
-					<daylight draft="contributed">MUST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Mawson">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မေႃသၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">MAWT</standard>
-				</short>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
@@ -6841,11 +6453,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢူလၼ်ပႃတႃ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢူလၼ်ပႃတႃ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ULAT</generic>
-					<standard draft="contributed">ULAT</standard>
-					<daylight draft="contributed">ULAST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
@@ -6853,11 +6460,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း မွတ်ႉသ်ၵူဝ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ မွတ်ႉသ်ၵူဝ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MSK</generic>
-					<standard draft="contributed">MSK</standard>
-					<daylight draft="contributed">MSSK</daylight>
-				</short>
 			</metazone>
 			<metazone type="Myanmar">
 				<long>
@@ -6871,17 +6473,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၼၢဝ်ရူး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">NRT</standard>
-				</short>
 			</metazone>
 			<metazone type="Nepal">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၼေႇပေႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">NPT</standard>
-				</short>
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
@@ -6889,11 +6485,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၼိဝ်းၶႄႇလီႇတူဝ်းၼီးယႃး</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၼိဝ်းၶႄႇလီႇတူဝ်းၼီးယႃး</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">NCT</generic>
-					<standard draft="contributed">NCT</standard>
-					<daylight draft="contributed">NCST</daylight>
-				</short>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
@@ -6901,11 +6492,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၼိဝ်းၸီႇလႅၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၼိဝ်းၸီႇလႅၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">NZST</generic>
-					<standard draft="contributed">NZST</standard>
-					<daylight draft="contributed">NZDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
@@ -6918,9 +6504,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၼီးဝႄႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">NUT</standard>
-				</short>
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
@@ -6928,11 +6511,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၵုၼ်ၼေႃႇၾုၵ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၵုၼ်ၼေႃႇၾုၵ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">NFT</generic>
-					<standard draft="contributed">NFST</standard>
-					<daylight draft="contributed">NFDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Noronha">
 				<long>
@@ -6940,11 +6518,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၾႃႇၼႅၼ်ႇတူဝ်ႇ တႄႇ တီႇၼူဝ်ႇရွၼ်ႇႁႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ၾႃႇၼႅၼ်ႇတူဝ်ႇ တႄႇ တီႇၼူဝ်ႇရွၼ်ႇႁႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">FNT</generic>
-					<standard draft="contributed">FNT</standard>
-					<daylight draft="contributed">FNST</daylight>
-				</short>
 			</metazone>
 			<metazone type="North_Mariana">
 				<long>
@@ -6957,11 +6530,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၼူဝ်ႇဝူဝ်ႇသီႇပၢတ်ႉသ်ၶ်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၼူဝ်ႇဝူဝ်ႇသီႇပၢတ်ႉသ်ၶ်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">NOVT</generic>
-					<standard draft="contributed">NOVT</standard>
-					<daylight draft="contributed">NOVST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
@@ -6969,11 +6537,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢူမ်းသ်ၶ်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢူမ်းသ်ၶ်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OMST</generic>
-					<standard draft="contributed">OMST</standard>
-					<daylight draft="contributed">OMSST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
@@ -6981,27 +6544,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပႃႇၵိတ်ႈသတၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ပႃႇၵိတ်ႈသတၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PKT</generic>
-					<standard draft="contributed">PKT</standard>
-					<daylight draft="contributed">PKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Palau">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ပႃႇလၢဝ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">PWT</standard>
-				</short>
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ပႃးပႂႃႇၼိဝ်းၵီးၼီး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">PGT</standard>
-				</short>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
@@ -7009,11 +6561,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပႃႇရႃႇၵူၺ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပႃႇရႃႇၵူၺ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PYT</generic>
-					<standard draft="contributed">PYT</standard>
-					<daylight draft="contributed">PYST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Peru">
 				<long>
@@ -7021,11 +6568,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ပေႇရူႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ပေႇရူႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PET</generic>
-					<standard draft="contributed">PET</standard>
-					<daylight draft="contributed">PEST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
@@ -7033,19 +6575,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ၾီလိပ်ႈပိၼ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ၾီလိပ်ႈပိၼ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PHT</generic>
-					<standard draft="contributed">PHT</standard>
-					<daylight draft="contributed">PHST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Phoenix_Islands">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မူႇၵုၼ်ၽီးၼိၵ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">PHOT</standard>
-				</short>
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
@@ -7058,17 +6592,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၽိတ်ႉၶႅၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">PST</standard>
-				</short>
 			</metazone>
 			<metazone type="Ponape">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ပူၼ်းပေႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">PONT</standard>
-				</short>
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
@@ -7086,17 +6614,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ရေႇၼီႇယၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">RET</standard>
-				</short>
 			</metazone>
 			<metazone type="Rothera">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ရူဝ်ႇထႄႇရႃႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">ROTT</standard>
-				</short>
 			</metazone>
 			<metazone type="Sakhalin">
 				<long>
@@ -7104,11 +6626,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း သႃႇၶႃႇလိၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ သႃႇၶႃႇလိၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SAKT</generic>
-					<standard draft="contributed">SAKT</standard>
-					<daylight draft="contributed">SAKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Samara">
 				<long>
@@ -7116,11 +6633,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း သႃႇမႃႇရႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ သႃႇမႃႇရႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SAMT</generic>
-					<standard draft="contributed">SAMT</standard>
-					<daylight draft="contributed">SAMST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
@@ -7133,57 +6645,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း သေးသျႄႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SCT</standard>
-				</short>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း သိင်ႇၵႃႇပူဝ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SGT</standard>
-				</short>
 			</metazone>
 			<metazone type="Solomon">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း မူႇၵုၼ်သေႃႇလေႃႇမၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SBT</standard>
-				</short>
 			</metazone>
 			<metazone type="South_Georgia">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵျေႃႇၵျႃႇ ပွတ်းၸၢၼ်း</standard>
 				</long>
-				<short>
-					<standard draft="contributed">GST</standard>
-				</short>
 			</metazone>
 			<metazone type="Suriname">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း သျူးရီးၼႃႇမႄႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SRT</standard>
-				</short>
 			</metazone>
 			<metazone type="Syowa">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း သၢႆးဢူဝ်ႇဝႃႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">SYOT</standard>
-				</short>
 			</metazone>
 			<metazone type="Tahiti">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း တႁီႇတီႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TAHT</standard>
-				</short>
 			</metazone>
 			<metazone type="Taipei">
 				<long>
@@ -7191,27 +6682,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ထၢႆႇဝၢၼ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ထၢႆႇဝၢၼ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">TST</generic>
-					<standard draft="contributed">TST</standard>
-					<daylight draft="contributed">TDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း တႃႇၵျီႇၵီႇသတၼ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TJT</standard>
-				</short>
 			</metazone>
 			<metazone type="Tokelau">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ထူဝ်းၵေႇလၢဝ်ႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TKT</standard>
-				</short>
 			</metazone>
 			<metazone type="Tonga">
 				<long>
@@ -7219,19 +6699,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ထွင်းၵႃႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ထွင်းၵႃႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">TOT</generic>
-					<standard draft="contributed">TOT</standard>
-					<daylight draft="contributed">TOST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Truk">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၶျူၵ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">CHUT</standard>
-				</short>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
@@ -7239,19 +6711,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း တၢၵ်ႈမႅၼ်ႇၼီႇသတၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ တၢၵ်ႈမႅၼ်ႇၼီႇသတၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">TMT</generic>
-					<standard draft="contributed">TMT</standard>
-					<daylight draft="contributed">TMST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Tuvalu">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ထူးဝႃႇလူႇ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">TVT</standard>
-				</short>
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
@@ -7259,11 +6723,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢုရုၵူၺ်း</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၵၢင်ဝၼ်း ဢုရုၵူၺ်း</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">UYT</generic>
-					<standard draft="contributed">UYT</standard>
-					<daylight draft="contributed">UYST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
@@ -7271,11 +6730,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဢူႇၸပႄႉၵိတ်ႇသတၼ်ႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဢူႇၸပႄႉၵိတ်ႇသတၼ်ႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">UZT</generic>
-					<standard draft="contributed">UZT</standard>
-					<daylight draft="contributed">UZST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
@@ -7283,19 +6737,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဝႅၼ်ႇၼူးဝႃႇထူႇ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဝႅၼ်ႇၼူးဝႃႇထူႇ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">VUT</generic>
-					<standard draft="contributed">VUT</standard>
-					<daylight draft="contributed">VUST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Venezuela">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဝႄႇၼေႇၸွႆးလႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">VET</standard>
-				</short>
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
@@ -7303,11 +6749,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဝလႃႇတီႇဝူဝ်ႇသတွၵ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဝလႃႇတီႇဝူဝ်ႇသတွၵ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">VLAT</generic>
-					<standard draft="contributed">VLAT</standard>
-					<daylight draft="contributed">VLAST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
@@ -7315,35 +6756,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ဝူဝ်ႇၵူဝ်ႇၵရၢတ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ဝူဝ်ႇၵူဝ်ႇၵရၢတ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">VOLT</generic>
-					<standard draft="contributed">VOLT</standard>
-					<daylight draft="contributed">VOLST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Vostok">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဝေႃႉသ်တွၵ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">VOST</standard>
-				</short>
 			</metazone>
 			<metazone type="Wake">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ၵုၼ်ဝဵၵ်ႉ</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WAKT</standard>
-				</short>
 			</metazone>
 			<metazone type="Wallis">
 				<long>
 					<standard>ၶၢဝ်းယၢမ်း ဝႃးလိတ်ႈ လႄႈ ၾူႇတူးၼႃး</standard>
 				</long>
-				<short>
-					<standard draft="contributed">WFT</standard>
-				</short>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
@@ -7351,11 +6778,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ယၵုတ်ႉသ်ၶ်</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ယၵုတ်ႉသ်ၶ်</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">YAKT</generic>
-					<standard draft="contributed">YAKT</standard>
-					<daylight draft="contributed">YAKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
@@ -7363,11 +6785,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>လၵ်းၸဵင် ၶၢဝ်းယၢမ်း ယေႇၵႃႇတႄႇရိၼ်ႇပၢၵ်ႉ</standard>
 					<daylight>ၶၢဝ်းယၢမ်း ၶၢဝ်းမႆႈ ယေႇၵႃႇတႄႇရိၼ်ႇပၢၵ်ႉ</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">YEKT</generic>
-					<standard draft="contributed">YEKT</standard>
-					<daylight draft="contributed">YEKST</daylight>
-				</short>
 			</metazone>
 			<metazone type="Yukon">
 				<long>

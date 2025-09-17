@@ -286,7 +286,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[aà b d eè f g h iì j k l m n oòô p r s t v yỳ z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[áâã c éêë îï ñ {n̂} {n̈} óö q u w x ýÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áâã c éêë îï {n̂}{n̈}ñ óö q u w x ýÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T V Y Z]</exemplarCharacters>
 	</characters>
 	<delimiters>

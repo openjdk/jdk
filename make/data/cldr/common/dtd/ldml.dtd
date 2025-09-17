@@ -2280,7 +2280,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT rationalFormats ( alias | ( rationalPattern*,  integerAndRationalPattern*, rationalUsage*, special* ) ) >
+<!ELEMENT rationalFormats ( alias | ( rationalPattern*, integerAndRationalPattern*, rationalUsage*, special* ) ) >
 <!ATTLIST rationalFormats numberSystem CDATA #REQUIRED >
     <!--@MATCH:bcp47/nu-->
 
@@ -2289,19 +2289,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:literal/variant-->
 <!ATTLIST rationalPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
-    
+
 <!ELEMENT integerAndRationalPattern ( #PCDATA ) >
 <!ATTLIST integerAndRationalPattern alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/superSub-->
 <!ATTLIST integerAndRationalPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
-    
+
 <!ELEMENT rationalUsage ( #PCDATA ) >
 <!ATTLIST rationalUsage alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST rationalUsage draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
-
 
 <!ELEMENT scientificFormats ( alias | ( default*, scientificFormatLength*, special* ) ) >
 <!ATTLIST scientificFormats draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -3142,11 +3141,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST rulesetGrouping draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT rbnfRules ( #PCDATA )>
-
+<!ELEMENT rbnfRules ( #PCDATA ) >
+    <!--@CDATA-->
 <!ATTLIST rbnfRules alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
-
 <!ATTLIST rbnfRules draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->

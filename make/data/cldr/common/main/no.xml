@@ -1681,15 +1681,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0">0. tidsalder</era>
 						<era type="1">1. tidsalder</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">0. t.a.</era>
 						<era type="1">1. t.a.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">TA0</era>
 						<era type="1">TA1</era>
 					</eraNarrow>
 				</eras>
@@ -4852,7 +4849,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤;-#,##0.00 ¤</pattern>
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency">#,##0.00;-#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00;(¤ #,##0.00)</pattern>

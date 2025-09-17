@@ -1530,6 +1530,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="gtsu" replacement="gt?" reason="deprecated"/> <!- - Suchitepéquez => ?? -->
 			<!-- <subdivisionAlias type="gtto" replacement="gt?" reason="deprecated"/> <!- - Totonicapán => ?? -->
 			<!-- <subdivisionAlias type="gtza" replacement="gt?" reason="deprecated"/> <!- - Zacapa => ?? -->
+			<!-- <subdivisionAlias type="inct" replacement="in?" reason="deprecated"/> <!- - Chhattisgarh => ?? -->
 			<!-- <subdivisionAlias type="indd" replacement="in?" reason="deprecated"/> <!- - Daman and Diu => ?? -->
 			<!-- <subdivisionAlias type="indn" replacement="in?" reason="deprecated"/> <!- - Dadra and Nagar Haveli => ?? -->
 			<!-- <subdivisionAlias type="inor" replacement="in?" reason="deprecated"/> <!- - Odisha => ?? -->

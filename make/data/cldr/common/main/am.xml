@@ -1156,7 +1156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="coptic">
 				<eras>
 					<eraAbbr>
-						<era type="0" draft="unconfirmed">ዓ/ዓ</era>
 						<era type="1" draft="unconfirmed">ዓ/ም</era>
 					</eraAbbr>
 				</eras>

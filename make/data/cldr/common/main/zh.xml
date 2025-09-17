@@ -2013,7 +2013,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraAbbr>
-						<era type="0">科普特历前</era>
 						<era type="1">科普特历</era>
 					</eraAbbr>
 				</eras>

@@ -933,9 +933,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="em" type="emoji" scope="core">ኢሞጂ</type>
 			<type key="em" type="text" scope="core">ጽሑፍ</type>
 			<type key="hc" type="h11">ስርዓት 12 ሰዓታት (0–11)</type>
-			<type key="hc" type="h11" scope="core">12 (0–11) 12 (0❰NDASH❱11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11) 12 (0–11)</type>
 			<type key="hc" type="h12">ስርዓት 12 ሰዓታት (1–12)</type>
-			<type key="hc" type="h12" scope="core">12 (1–12) 12 (1❰NDASH❱12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12) 12 (1–12)</type>
 			<type key="hc" type="h23">ናይ 24 ሰዓታት ስርዓት (0–23)</type>
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">ናይ 24 ሰዓታት ስርዓት (1–24)</type>

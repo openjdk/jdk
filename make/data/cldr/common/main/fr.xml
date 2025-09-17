@@ -1840,11 +1840,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">avant Dioclétien</era>
 						<era type="1" draft="contributed">après Dioclétien</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">av. D.</era>
 						<era type="1" draft="contributed">ap. D.</era>
 					</eraAbbr>
 				</eras>
@@ -3799,11 +3797,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de l’Alaska</standard>
 					<daylight>heure d’été de l’Alaska</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HAK</generic>
-					<standard draft="unconfirmed">HNAK</standard>
-					<daylight draft="unconfirmed">HEAK</daylight>
-				</short>
 			</metazone>
 			<metazone type="Almaty">
 				<long>
@@ -3825,11 +3818,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale du centre nord-américain</standard>
 					<daylight>heure d’été du centre nord-américain</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HC</generic>
-					<standard draft="unconfirmed">HNC</standard>
-					<daylight draft="unconfirmed">HEC</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -3837,11 +3825,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de l’Est nord-américain</standard>
 					<daylight>heure d’été de l’Est nord-américain</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HE</generic>
-					<standard draft="unconfirmed">HNE</standard>
-					<daylight draft="unconfirmed">HEE</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3849,11 +3832,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale des Rocheuses</standard>
 					<daylight>heure d’été des Rocheuses</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HR</generic>
-					<standard draft="unconfirmed">HNR</standard>
-					<daylight draft="unconfirmed">HER</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3861,11 +3839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale du Pacifique nord-américain</standard>
 					<daylight>heure d’été du Pacifique nord-américain</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HP</generic>
-					<standard draft="unconfirmed">HNP</standard>
-					<daylight draft="unconfirmed">HEP</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3929,11 +3902,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de l’Atlantique</standard>
 					<daylight>heure d’été de l’Atlantique</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HA</generic>
-					<standard draft="unconfirmed">HNA</standard>
-					<daylight draft="unconfirmed">HEA</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -4074,11 +4042,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de Cuba</standard>
 					<daylight>heure d’été de Cuba</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HCU</generic>
-					<standard draft="unconfirmed">HNCU</standard>
-					<daylight draft="unconfirmed">HECU</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
@@ -4120,11 +4083,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale d’Europe de l’Est</standard>
 					<daylight>heure d’été d’Europe de l’Est</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">EET</generic>
-					<standard draft="unconfirmed">EEST</standard>
-					<daylight draft="unconfirmed">EEDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
@@ -4137,11 +4095,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale d’Europe de l’Ouest</standard>
 					<daylight>heure d’été d’Europe de l’Ouest</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">WET</generic>
-					<standard draft="unconfirmed">WEST</standard>
-					<daylight draft="unconfirmed">WEDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
@@ -4203,11 +4156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de l’Est du Groenland</standard>
 					<daylight>heure d’été de l’Est du Groenland</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HEG</generic>
-					<standard draft="unconfirmed">HNEG</standard>
-					<daylight draft="unconfirmed">HEEG</daylight>
-				</short>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
@@ -4215,11 +4163,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de l’Ouest du Groenland</standard>
 					<daylight>heure d’été de l’Ouest du Groenland</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HOG</generic>
-					<standard draft="unconfirmed">HNOG</standard>
-					<daylight draft="unconfirmed">HEOG</daylight>
-				</short>
 			</metazone>
 			<metazone type="Guam">
 				<long>
@@ -4240,9 +4183,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>heure normale d’Hawaï - Aléoutiennes</standard>
 				</long>
-				<short>
-					<standard draft="unconfirmed">HNHA</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -4250,11 +4190,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale d’Hawaï - Aléoutiennes</standard>
 					<daylight>heure d’été d’Hawaï - Aléoutiennes</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HHA</generic>
-					<standard draft="unconfirmed">HNHA</standard>
-					<daylight draft="unconfirmed">HEHA</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -4443,11 +4378,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale du Pacifique mexicain</standard>
 					<daylight>heure d’été du Pacifique mexicain</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HPMX</generic>
-					<standard draft="unconfirmed">HNPMX</standard>
-					<daylight draft="unconfirmed">HEPMX</daylight>
-				</short>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
@@ -4498,11 +4428,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>heure normale de Terre-Neuve</standard>
 					<daylight>heure d’été de Terre-Neuve</daylight>
 				</long>
-				<short>
-					<generic draft="unconfirmed">HTN</generic>
-					<standard draft="unconfirmed">HNTN</standard>
-					<daylight draft="unconfirmed">HETN</daylight>
-				</short>
 			</metazone>
 			<metazone type="Niue">
 				<long>

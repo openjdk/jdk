@@ -120,8 +120,11 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="alias"/>
       <xs:attribute name="since"/>
       <xs:attribute name="iana"/>
+      <xs:attribute name="region"/>
     </xs:complexType>
   </xs:element>
+  
+  
   
   
   

@@ -146,8 +146,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Africa_Eastern"/>
 			</timezone>
 			<timezone type="Africa/Monrovia">
-				<usesMetazone mzone="Liberia" to="1972-01-07 00:30"/>
-				<usesMetazone mzone="GMT" from="1972-01-07 00:30"/>
+				<usesMetazone mzone="Liberia" to="1972-01-07 00:45"/>
+				<!-- actual transition at 00:44:30, but ICU4C cannot parse that -->
+				<usesMetazone mzone="GMT" from="1972-01-07 00:45"/>
 			</timezone>
 			<timezone type="Africa/Nairobi">
 				<usesMetazone mzone="Africa_Eastern"/>
@@ -187,7 +188,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Africa/Windhoek">
 				<usesMetazone to="1990-03-20 22:00" mzone="Africa_Southern"/>
 				<usesMetazone to="1994-03-20 22:00" from="1990-03-20 22:00" mzone="Africa_Central"/>
-				<usesMetazone to="2017-10-23 22:00" from="1994-03-20 22:00" mzone="Africa_Western"/>
+				<usesMetazone to="2017-10-23 22:00" from="1994-03-20 22:00" mzone="Africa_Western" stdOffset="+01" dstOffset="+02"/>
 				<usesMetazone from="2017-10-23 22:00" mzone="Africa_Central"/>
 			</timezone>
 			<timezone type="America/Adak">
@@ -1219,8 +1220,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Europe_Central"/>
 			</timezone>
 			<timezone type="Europe/Dublin">
-				<usesMetazone mzone="Irish" to="1971-10-31 02:00"/>
-				<usesMetazone mzone="GMT" from="1971-10-31 02:00"/>
+				<usesMetazone mzone="Irish" to="1971-10-31 02:00" stdOffset="+00" dstOffset="+01"/>
+				<usesMetazone mzone="GMT" from="1971-10-31 02:00" stdOffset="+00" dstOffset="+01"/>
 			</timezone>
 			<timezone type="Europe/Gibraltar">
 				<usesMetazone mzone="Europe_Central"/>

@@ -8482,7 +8482,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern alt="1">{surname} {surname2}, {title} {given} {given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {given-informal}</namePattern>
+			<namePattern>{surname}, {given-informal}</namePattern>
 			<namePattern alt="1">{surname} {surname2}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">

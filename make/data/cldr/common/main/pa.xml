@@ -1094,7 +1094,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraAbbr>
-						<era type="0" draft="contributed">ਕਾਲ0</era>
 						<era type="1" draft="contributed">ਕਾਲ1</era>
 					</eraAbbr>
 				</eras>

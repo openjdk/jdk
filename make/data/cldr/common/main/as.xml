@@ -913,13 +913,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="em" type="emoji" scope="core">ইম’জী</type>
 			<type key="em" type="text" scope="core">পাঠ্য</type>
 			<type key="hc" type="h11">১২ ঘণ্টীয়া প্ৰণালী (০–১১)</type>
-			<type key="hc" type="h11" scope="core">১২ (০–১১) ১২ (০❰NDASH❱১১)</type>
+			<type key="hc" type="h11" scope="core">১২ (০–১১) ১২ (০–১১)</type>
 			<type key="hc" type="h12">১২ ঘণ্টীয়া প্ৰণালী (১–১২)</type>
-			<type key="hc" type="h12" scope="core">১২ (১–১২) ১২ (১❰NDASH❱১২)</type>
+			<type key="hc" type="h12" scope="core">১২ (১–১২) ১২ (১–১২)</type>
 			<type key="hc" type="h23">২৪ ঘণ্টীয়া প্ৰণালী (০–২৩)</type>
-			<type key="hc" type="h23" scope="core">24 (0–23) Hour Cycle (12 vs 24) others… ২৪ (০–২৩) …অন্য ঘণ্টীয়া প্ৰণালী(১২ বনাম ২৪): ২৪ (০–২৩) ৩ (০❰NDASH❱২৩)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23) Hour Cycle (12 vs 24) others… ২৪ (০–২৩) …অন্য ঘণ্টীয়া প্ৰণালী(১২ বনাম ২৪): ২৪ (০–২৩) ৩ (০–২৩)</type>
 			<type key="hc" type="h24">২৪ ঘণ্টীয়া প্ৰণালী (১–২৪)</type>
-			<type key="hc" type="h24" scope="core">২৪ (১–২৪) ২৪ (১❰NDASH❱২৪)</type>
+			<type key="hc" type="h24" scope="core">২৪ (১–২৪) ২৪ (১–২৪)</type>
 			<type key="lb" type="loose">ঢিলা পংক্তি বিচ্ছেদ শৈলী</type>
 			<type key="lb" type="loose" scope="core">ঢিলা</type>
 			<type key="lb" type="normal">সাধাৰণ পংক্তি বিচ্ছেদ শৈলী</type>

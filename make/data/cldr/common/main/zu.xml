@@ -5516,7 +5516,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} w</unitPattern>
 			</unit>
 			<unit type="duration-day">
-				<unitPattern count="one">{0}</unitPattern>
+				<unitPattern count="one">{0} usuku</unitPattern>
 				<unitPattern count="other">{0} suku</unitPattern>
 			</unit>
 			<unit type="duration-hour">

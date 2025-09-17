@@ -1345,15 +1345,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">قبل از حلول مسیح</era>
 						<era type="1" draft="contributed">بعد از حلول مسیح</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">قبل از مسیح</era>
 						<era type="1" draft="contributed">پس از مسیح</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">ق.م.</era>
 						<era type="1" draft="contributed">ب.م.</era>
 					</eraNarrow>
 				</eras>

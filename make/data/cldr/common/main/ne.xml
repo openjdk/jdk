@@ -1146,13 +1146,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="em" type="emoji" scope="core">इमोजी</type>
 			<type key="em" type="text" scope="core">टेक्स्ट</type>
 			<type key="hc" type="h11">१२ घण्टे प्रणाली (०–११)</type>
-			<type key="hc" type="h11" scope="core">१२ (0–11) १२ (0❰NDASH❱११)</type>
+			<type key="hc" type="h11" scope="core">१२ (0–11) १२ (0–११)</type>
 			<type key="hc" type="h12">१२ घन्टाको प्रणाली (१–१२)</type>
-			<type key="hc" type="h12" scope="core">१२(१–१२) १२ (1❰NDASH❱१२)</type>
+			<type key="hc" type="h12" scope="core">१२(१–१२) १२ (1–१२)</type>
 			<type key="hc" type="h23">२४ घन्टाको प्रणाली (०–२३)</type>
-			<type key="hc" type="h23" scope="core">२४ (०–२३) २४ (०❰NDASH❱२३)</type>
+			<type key="hc" type="h23" scope="core">२४ (०–२३) २४ (०–२३)</type>
 			<type key="hc" type="h24">२४ घन्टाको प्रणाली (१–२४)</type>
-			<type key="hc" type="h24" scope="core">२४ (१–२४) २४ (१❰NDASH❱२४)</type>
+			<type key="hc" type="h24" scope="core">२४ (१–२४) २४ (१–२४)</type>
 			<type key="lb" type="loose">पङ्क्ति विच्छेदको खुला शैली</type>
 			<type key="lb" type="loose" scope="core">खुला</type>
 			<type key="lb" type="normal">पङ्क्ति विच्छेदको सामान्य शैली</type>

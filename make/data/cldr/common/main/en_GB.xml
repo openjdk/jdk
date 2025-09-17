@@ -144,7 +144,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="GyMd">dd/MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
@@ -198,10 +197,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="islamic">
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
-						<dateFormatItem id="M">LL</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>

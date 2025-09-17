@@ -1282,6 +1282,7 @@ XXX Code for transations where no currency is involved
 		<language type="aa" scripts="Latn"/>
 		<language type="ab" scripts="Cyrl"/>
 		<language type="abq" scripts="Cyrl"/>
+		<language type="abq" scripts="Latn" alt="secondary"/>
 		<language type="abr" scripts="Latn"/>
 		<language type="ace" scripts="Latn"/>
 		<language type="ach" scripts="Latn"/>
@@ -1553,6 +1554,8 @@ XXX Code for transations where no currency is involved
 		<language type="got" scripts="Goth"/>
 		<language type="grb" scripts="Latn"/>
 		<language type="grc" scripts="Grek"/>
+		<language type="grr" scripts="Arab"/>
+		<language type="grr" scripts="Tfng" alt="secondary"/>
 		<language type="grt" scripts="Beng"/>
 		<language type="gsw" scripts="Latn"/>
 		<language type="gu" scripts="Gujr"/>
@@ -1826,6 +1829,8 @@ XXX Code for transations where no currency is involved
 		<language type="myv" scripts="Cyrl"/>
 		<language type="myx" scripts="Latn"/>
 		<language type="myz" scripts="Mand"/>
+		<language type="mzb" scripts="Arab"/>
+		<language type="mzb" scripts="Latn" alt="secondary"/>
 		<language type="mzn" scripts="Arab"/>
 		<language type="na" scripts="Latn"/>
 		<language type="nan" scripts="Hans"/>
@@ -2017,6 +2022,8 @@ XXX Code for transations where no currency is involved
 		<language type="ssy" scripts="Latn"/>
 		<language type="st" scripts="Latn"/>
 		<language type="stq" scripts="Latn"/>
+		<language type="stu" scripts="Lana"/>
+		<language type="stu" scripts="Tale" alt="secondary"/>
 		<language type="su" scripts="Latn"/>
 		<language type="su" scripts="Sund" alt="secondary"/>
 		<language type="suk" scripts="Latn"/>
@@ -2599,6 +2606,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ru" populationPercent="0.001"/>	<!--Russian-->
 			<languagePopulation type="vi" populationPercent="0.0005"/>	<!--Vietnamese-->
 			<languagePopulation type="uz_Cyrl" populationPercent="0.0004"/>	<!--Uzbek (Cyrillic)-->
+			<languagePopulation type="stu_Tale" populationPercent="0" references="R1386"/>	<!--Samtao (Tai Le)-->
 			<languagePopulation type="lzh" populationPercent="0" references="R1150"/>	<!--Literary Chinese-->
 		</territory>
 		<territory type="CO" gdp="978000000000" literacyPercent="93.6" population="49588400">	<!--Colombia-->
@@ -2705,6 +2713,8 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="mey" populationPercent="11" references="R1379"/>	<!--Hassaniyya-->
 			<languagePopulation type="kab" literacyPercent="10" populationPercent="7.8" references="R1293"/>	<!--Kabyle-->
 			<languagePopulation type="en" populationPercent="7"/>	<!--English-->
+			<languagePopulation type="mzb" populationPercent="0.36" references="R1386"/>	<!--Tumzabt-->
+			<languagePopulation type="grr" populationPercent="0.026" references="R1386"/>	<!--Taznatit-->
 		</territory>
 		<territory type="EA" gdp="7113000000" literacyPercent="97.7" population="150000">	<!--Ceuta & Melilla-->
 			<languagePopulation type="es" populationPercent="98" officialStatus="official" references="R1067"/>	<!--Spanish-->
@@ -3447,6 +3457,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="rhg" populationPercent="1.7"/>	<!--Rohingya-->
 			<languagePopulation type="mnw" populationPercent="1.5"/>	<!--Mon-->
 			<languagePopulation type="hnj" populationPercent="0.022" references="R1107"/>	<!--Hmong Njua-->
+			<languagePopulation type="stu" populationPercent="0.017" references="R1387"/>	<!--Samtao-->
 			<languagePopulation type="kht" populationPercent="0.0074"/>	<!--Khamti-->
 			<languagePopulation type="pi_Mymr" populationPercent="0" references="R1006"/>	<!--Pali (Myanmar)-->
 		</territory>
@@ -3841,6 +3852,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="koi" populationPercent="0.045" officialStatus="official_regional"/>	<!--Komi-Permyak-->
 			<languagePopulation type="pnt_Cyrl" populationPercent="0.04" references="R1335"/>	<!--Pontic (Cyrillic)-->
 			<languagePopulation type="mrj" populationPercent="0.021"/>	<!--Western Mari-->
+			<languagePopulation type="abq" populationPercent="0.021" references="R1040"/>	<!--Abaza-->
 			<languagePopulation type="alt" populationPercent="0.014"/>	<!--Southern Altai-->
 			<languagePopulation type="fi" populationPercent="0.012"/>	<!--Finnish-->
 			<languagePopulation type="sr" populationPercent="0.0041" references="R1040"/>	<!--Serbian-->
@@ -4089,6 +4101,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="sr_Latn" writingPercent="5" populationPercent="0.028" references="R1017"/>	<!--Serbian (Latin)-->
 			<languagePopulation type="lzz" literacyPercent="73" populationPercent="0.025" references="R1137"/>	<!--Laz-->
 			<languagePopulation type="sq" populationPercent="0.021"/>	<!--Albanian-->
+			<languagePopulation type="abq_Latn" populationPercent="0.015" references="R1388"/>	<!--Abaza (Latin)-->
 			<languagePopulation type="pnt_Latn" populationPercent="0.0061" references="R1336"/>	<!--Pontic (Latin)-->
 			<languagePopulation type="ab" populationPercent="0.0048" references="R1079"/>	<!--Abkhazian-->
 			<languagePopulation type="el" populationPercent="0.0048"/>	<!--Greek-->
@@ -4611,7 +4624,6 @@ XXX Code for transations where no currency is involved
         <calendar type="coptic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="284-08-28" code="bd"/> <!-- Before Diocletian. NOTE: No evidence this era is used -->
               <era type="1" start="284-08-29" code="am"/> <!-- Anno Martyrum -->
           </eras>
         </calendar>
@@ -5727,5 +5739,8 @@ XXX Code for transations where no currency is involved
 		<reference type="R1383" uri="https://www.axl.cefan.ulaval.ca/asie/iran.htm">[missing]</reference>
 		<reference type="R1384" uri="https://www.census.gov/data/tables/2013/demo/2009-2013-lang-tables.html">[missing]</reference>
 		<reference type="R1385" uri="https://www.ethnologue.com/language/mww/">[missing]</reference>
+		<reference type="R1386" uri="https://www.ethnologue.com/country/dz/languages">[missing]</reference>
+		<reference type="R1387" uri="https://www.ethnologue.com/country/mm/languages">[missing]</reference>
+		<reference type="R1388">Leclerc (2014)</reference>
 	</references>
 </supplementalData>

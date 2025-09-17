@@ -3798,7 +3798,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<generic>Hora de Turquia</generic>
 					<standard>Hora estàndard de Turquia</standard>
-					<daylight>Hora d'estiu de Turquia</daylight>
+					<daylight>Hora d’estiu de Turquia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">

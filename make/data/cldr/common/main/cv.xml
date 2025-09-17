@@ -2519,15 +2519,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0">Диоклетианчченхи</era>
 						<era type="1">Диоклетиантан</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">Диокл-ч.</era>
 						<era type="1">Диокл-т.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">Д-ч.</era>
 						<era type="1">Д-т.</era>
 					</eraNarrow>
 				</eras>

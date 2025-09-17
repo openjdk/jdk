@@ -2179,7 +2179,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM" draft="contributed">y-MM G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd" draft="contributed">dd.MM.y, E, G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d.M.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
@@ -2562,17 +2562,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM">MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y G</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd.MM.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h 'Uhr' a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH 'Uhr'</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hv" draft="contributed">HH 'h' v</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH 'Uhr' v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMd">dd.MM.</dateFormatItem>
@@ -2649,8 +2650,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h 'Uhr' a – h 'Uhr' a</greatestDifference>
-							<greatestDifference id="h">h – h 'Uhr' a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH 'Uhr'</greatestDifference>

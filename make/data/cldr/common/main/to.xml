@@ -1591,16 +1591,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</cyclicNameSet>
 				</cyclicNameSets>
 			</calendar>
-			<calendar type="coptic">
-				<eras>
-					<eraNames>
-						<era type="0" draft="unconfirmed">Taʻu maletile</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="unconfirmed">TMT</era>
-					</eraAbbr>
-				</eras>
-			</calendar>
 			<calendar type="ethiopic">
 				<eras>
 					<eraNames>

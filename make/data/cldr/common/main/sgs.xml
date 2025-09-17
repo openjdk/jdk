@@ -18,9 +18,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aā b cč d eė{ė̄}ē f g h iī j k l m n oō p r sš t uū v zž]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[{ch} {dz}{dž}]</exemplarCharacters>
-		<exemplarCharacters type="index">[AĀ B CČ D EĖ{Ė̄}Ē F G H IĪ J K L M N OŌ P R SŠ T UŪ V ZŽ]</exemplarCharacters>
+		<exemplarCharacters>[a ā b c č d e ē ė {ė̄} f g h i ī j k l m n o ō p r s š t u ū v z ž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{ch} {dz} {dž}]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Ā B C Č D E Ē Ė {Ė̄} F G H I Ī J K L M N O Ō P R S Š T U Ū V Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[, % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>

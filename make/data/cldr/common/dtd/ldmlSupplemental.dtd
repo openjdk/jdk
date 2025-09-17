@@ -997,6 +997,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST usesMetazone mzone NMTOKEN #REQUIRED >
     <!--@MATCH:metazone-->
     <!--@VALUE-->
+<!ATTLIST usesMetazone stdOffset CDATA #IMPLIED >
+    <!--@MATCH:regex/[+-][0-9]{2}(:[0-9]{2})?-->
+    <!--@VALUE-->
+<!ATTLIST usesMetazone dstOffset CDATA #IMPLIED >
+    <!--@MATCH:regex/[+-][0-9]{2}(:[0-9]{2})?-->
+    <!--@VALUE-->
 
 <!ELEMENT plurals ( pluralRules*, pluralRanges* ) >
 <!ATTLIST plurals type (ordinal | cardinal) #IMPLIED >

@@ -1556,11 +1556,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">înainte de Anno Martyrum</era>
 						<era type="1" draft="contributed">după Anno Martyrum</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">î.A.M.</era>
 						<era type="1" draft="contributed">A.M.</era>
 					</eraAbbr>
 				</eras>

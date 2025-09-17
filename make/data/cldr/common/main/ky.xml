@@ -908,13 +908,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="em" type="emoji" scope="core">Быйтыкча</type>
 			<type key="em" type="text" scope="core">Текст</type>
 			<type key="hc" type="h11">12 сааттык тутум (0–11)</type>
-			<type key="hc" type="h11" scope="core">12 (0❰NDASH❱11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 сааттык тутум (1–12)</type>
-			<type key="hc" type="h12" scope="core">12 (1❰NDASH❱12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 сааттык тутум (0–23)</type>
-			<type key="hc" type="h23" scope="core">24 (0❰NDASH❱23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 сааттык тутум (1–24)</type>
-			<type key="hc" type="h24" scope="core">24 (1❰NDASH❱24</type>
+			<type key="hc" type="h24" scope="core">24 (1–24</type>
 			<type key="lb" type="loose">Саптардын арасы кенен</type>
 			<type key="lb" type="loose" scope="core">Кенен</type>
 			<type key="lb" type="normal">Саптардын арасы орточо</type>

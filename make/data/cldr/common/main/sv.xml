@@ -4134,9 +4134,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Honolulutid</generic>
-					<standard>Honolulu, normaltid</standard>
-					<daylight>Honolulu, sommartid</daylight>
+					<generic>aleutisk tid</generic>
+					<standard>aleutisk normaltid</standard>
+					<daylight>aleutisk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">

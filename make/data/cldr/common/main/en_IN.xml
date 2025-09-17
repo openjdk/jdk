@@ -292,7 +292,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
@@ -309,60 +308,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMMEEEEd">EEEE, d MMMM y</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="japanese">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE, d MMMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="long">
-						<dateFormat>
-							<pattern>d MMMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>d MMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>d/M/y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern>{1} 'at' {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern>{1} 'at' {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<availableFormats>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MEEEEd">EEEE, d/M</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
