@@ -146,10 +146,6 @@ static void verify_preempt_preconditions(JavaThread* current, oop continuation) 
 freeze_result Continuation::try_preempt(JavaThread* current, oop continuation) {
   verify_preempt_preconditions(current, continuation);
 
-  if (LockingMode == LM_LEGACY) {
-    return freeze_unsupported;
-  }
-
   if (!is_vthread_safe_to_preempt(current, current->vthread())) {
     return freeze_pinned_native;
   }

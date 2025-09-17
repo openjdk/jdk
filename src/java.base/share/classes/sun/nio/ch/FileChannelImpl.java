@@ -178,7 +178,11 @@ public class FileChannelImpl
     }
 
     private void endBlocking(boolean completed) throws AsynchronousCloseException {
-        if (!uninterruptible) end(completed);
+        if (!uninterruptible) {
+            end(completed);
+        } else if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
+        }
     }
 
     // -- Standard channel operations --

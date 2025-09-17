@@ -372,7 +372,7 @@ childProcess(void *arg)
     jtregSimulateCrash(0, 6);
 #endif
     /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
+       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
        would do it anyways, but a little paranoia is a good thing. */
     if ((closeSafely(p->in[1])   == -1) ||
         (closeSafely(p->out[0])  == -1) ||
@@ -424,6 +424,11 @@ childProcess(void *arg)
         sigset_t unblock_signals;
         sigemptyset(&unblock_signals);
         sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+    }
+
+    // Children should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
+        goto WhyCantJohnnyExec;
     }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);

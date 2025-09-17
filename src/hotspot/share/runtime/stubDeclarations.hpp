@@ -672,6 +672,8 @@
   do_entry(initial, dcos, dcos, dcos)                                   \
   do_stub(initial, dtan)                                                \
   do_entry(initial, dtan, dtan, dtan)                                   \
+  do_stub(initial, dsinh)                                               \
+  do_entry(initial, dsinh, dsinh, dsinh)                                \
   do_stub(initial, dtanh)                                               \
   do_entry(initial, dtanh, dtanh, dtanh)                                \
   do_stub(initial, dcbrt)                                               \

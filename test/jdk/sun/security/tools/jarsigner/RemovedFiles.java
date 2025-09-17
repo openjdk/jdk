@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8309841
+ * @bug 8309841 8365559
  * @summary Jarsigner should print a warning if an entry is removed
  * @library /test/lib
  */
@@ -40,8 +40,15 @@ public class RemovedFiles {
 
     private static final String NONEXISTENT_ENTRIES_FOUND
             = "This jar contains signed entries for files that do not exist. See the -verbose output for more details.";
+    private static final String WEAK_UNSIGNED
+            = "The jar will be treated as unsigned, because it is signed with a weak algorithm that is now disabled";
 
     public static void main(String[] args) throws Exception {
+        t8309841();
+        t8365559();
+    }
+
+    static void t8309841() throws Exception {
         JarUtils.createJarFile(
                 Path.of("a.jar"),
                 Path.of("."),
@@ -89,6 +96,26 @@ public class RemovedFiles {
         SecurityTools.jarsigner("-verbose -verify b.jar")
                 .shouldContain("Warning: nonexistent signed entries: [Hello]")
                 .shouldContain(NONEXISTENT_ENTRIES_FOUND);
+    }
 
+    static void t8365559() throws Exception {
+        JarUtils.createJarFile(
+                Path.of("c.jar"),
+                Path.of("."),
+                Files.writeString(Path.of("c"), "c"));
+        SecurityTools.keytool("-genkeypair -storepass changeit -keystore ks -alias w -dname CN=w -keyalg ec");
+
+        // Sign the JAR using an already disabled signature algorithm SHA1withECDSA.
+        // The file can still be signed but verification will treat it as unsigned.
+        SecurityTools.jarsigner("-storepass changeit -keystore ks c.jar w -sigalg SHA1withECDSA")
+                        .shouldContain("the -sigalg option is considered a security risk and is disabled.");
+
+        SecurityTools.jarsigner("-verify c.jar")
+                .shouldContain(WEAK_UNSIGNED)
+                .shouldNotContain(NONEXISTENT_ENTRIES_FOUND);
+        SecurityTools.jarsigner("-verify -verbose c.jar")
+                .shouldContain(WEAK_UNSIGNED)
+                .shouldNotContain(NONEXISTENT_ENTRIES_FOUND)
+                .shouldNotContain("Warning: nonexistent signed entries:");
     }
 }

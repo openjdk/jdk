@@ -62,7 +62,8 @@ BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
       libExplicitAttach.c libImplicitAttach.c \
-      exelauncher.c libFDLeaker.c exeFDLeakTester.c
+      exelauncher.c libFDLeaker.c exeFDLeakTester.c \
+      libChangeSignalDisposition.c exePrintSignalDisposition.c
 
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
@@ -137,6 +138,7 @@ ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
       OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
       EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
       EXTRA_FILES := $(BUILD_JDK_JTREG_EXTRA_FILES), \
+      LIBS := $(LIBPTHREAD), \
   ))
 endif
 

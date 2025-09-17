@@ -66,7 +66,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -151,21 +151,21 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
     return nullptr;
   }
 
-  size_t cur_idx = Atomic::fetch_then_add(&_size, 1u);
+  size_t cur_idx = AtomicAccess::fetch_then_add(&_size, 1u);
 
   if (cur_idx >= _max_capacity) {
     return nullptr;
   }
 
   size_t bucket = get_bucket(cur_idx);
-  if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
+  if (AtomicAccess::load_acquire(&_buckets[bucket]) == nullptr) {
     if (!_should_grow) {
       // Prefer to restart the CM.
       return nullptr;
     }
 
     MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
-    if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
+    if (AtomicAccess::load_acquire(&_buckets[bucket]) == nullptr) {
       size_t desired_capacity = bucket_size(bucket) * 2;
       if (!try_expand_to(desired_capacity)) {
         return nullptr;
@@ -258,7 +258,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   // and the new capacity (new_capacity). This step ensures that there are no gaps in the
   // array and that the capacity accurately reflects the reserved memory.
   for (; i <= highest_bucket; i++) {
-    if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
+    if (AtomicAccess::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
     }
 
@@ -278,7 +278,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
       return false;
     }
     _capacity += bucket_capacity;
-    Atomic::release_store(&_buckets[i], bucket_base);
+    AtomicAccess::release_store(&_buckets[i], bucket_base);
   }
   return true;
 }
@@ -383,7 +383,7 @@ void G1CMRootMemRegions::reset() {
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = Atomic::fetch_then_add(&_num_root_regions, 1u);
+  size_t idx = AtomicAccess::fetch_then_add(&_num_root_regions, 1u);
   assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %zu", _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
@@ -411,7 +411,7 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return nullptr;
   }
 
-  size_t claimed_index = Atomic::fetch_then_add(&_claimed_root_regions, 1u);
+  size_t claimed_index = AtomicAccess::fetch_then_add(&_claimed_root_regions, 1u);
   if (claimed_index < _num_root_regions) {
     return &_root_regions[claimed_index];
   }
@@ -1109,7 +1109,7 @@ void G1ConcurrentMark::concurrent_cycle_start() {
 }
 
 uint G1ConcurrentMark::completed_mark_cycles() const {
-  return Atomic::load(&_completed_mark_cycles);
+  return AtomicAccess::load(&_completed_mark_cycles);
 }
 
 void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
@@ -1118,7 +1118,7 @@ void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
   if (mark_cycle_completed) {
-    Atomic::inc(&_completed_mark_cycles, memory_order_relaxed);
+    AtomicAccess::inc(&_completed_mark_cycles, memory_order_relaxed);
   }
 
   if (has_aborted()) {
@@ -1320,7 +1320,7 @@ public:
     G1OnRegionClosure on_region_cl(_g1h, _cm, &local_cleanup_list);
     _g1h->heap_region_par_iterate_from_worker_offset(&on_region_cl, &_hrclaimer, worker_id);
 
-    Atomic::add(&_total_selected_for_rebuild, on_region_cl._num_selected_for_rebuild);
+    AtomicAccess::add(&_total_selected_for_rebuild, on_region_cl._num_selected_for_rebuild);
 
     // Update the old/humongous region sets
     _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
@@ -1903,7 +1903,7 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
     HeapWord* end = curr_region != nullptr ? curr_region->end() : finger + G1HeapRegion::GrainWords;
 
     // Is the gap between reading the finger and doing the CAS too long?
-    HeapWord* res = Atomic::cmpxchg(&_finger, finger, end);
+    HeapWord* res = AtomicAccess::cmpxchg(&_finger, finger, end);
     if (res == finger && curr_region != nullptr) {
       // we succeeded
       HeapWord* bottom = curr_region->bottom();
@@ -1962,7 +1962,8 @@ public:
 };
 
 void G1ConcurrentMark::verify_no_collection_set_oops() {
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
+         "should be at a safepoint or initializing");
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
   }
@@ -2975,13 +2976,13 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_BYTE_FORMAT            "  %9zu"
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
 #define G1PPRL_DOUBLE_FORMAT          "%14.1f"
-#define G1PPRL_GCEFF_FORMAT           "  %14s"
 #define G1PPRL_GCEFF_H_FORMAT         "  %14s"
 #define G1PPRL_GID_H_FORMAT           "  %9s"
 #define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(9)
 #define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
 #define G1PPRL_LEN_H_FORMAT           "  %14s"
 #define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
+#define G1PPRL_GID_LIVENESS_FORMAT    "  %9.2f"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -3053,7 +3054,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   const char* remset_type = r->rem_set()->get_short_state_str();
   uint cset_group_id     = 0;
 
-  if (r->rem_set()->is_added_to_cset_group()) {
+  if (r->rem_set()->has_cset_group()) {
     cset_group_id = r->rem_set()->cset_group_id();
   }
 
@@ -3090,7 +3091,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
 
-  do_cset_groups();
+  log_cset_candidate_groups();
 
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
@@ -3110,10 +3111,33 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_FORMAT
+                          G1PPRL_LEN_FORMAT
+                          G1PPRL_GID_GCEFF_FORMAT
+                          G1PPRL_GID_LIVENESS_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          group->group_id(),
+                          group->length(),
+                          group->length() > 0 ? group->gc_efficiency() : 0.0,
+                          group->length() > 0 ? group->liveness_percent() : 0.0,
+                          group->card_set()->mem_size(),
+                          type);
+  _total_remset_bytes += group->card_set()->mem_size();
+}
+
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
+  for (G1CSetCandidateGroup* group : gl) {
+    log_cset_candidate_group_add_total(group, type);
+  }
+}
+
+void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collectionset Candidate Groups");
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young Regions, M=From Marking Regions, R=Retained Regions");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young, M=From Marking Regions, R=Retained Regions");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_H_FORMAT
                           G1PPRL_LEN_H_FORMAT
@@ -3137,49 +3161,10 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                           "(bytes)", "");
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CSetCandidateGroup* young_only_cset_group =g1h->young_regions_cset_group();
 
-  _total_remset_bytes += young_only_cset_group->card_set()->mem_size();
+  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
 
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                          G1PPRL_GID_FORMAT
-                          G1PPRL_LEN_FORMAT
-                          G1PPRL_GCEFF_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_BYTE_FORMAT
-                          G1PPRL_TYPE_H_FORMAT,
-                          young_only_cset_group->group_id(), young_only_cset_group->length(),
-                          "-",
-                          size_t(0), young_only_cset_group->card_set()->mem_size(),
-                          "Y");
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
-    _total_remset_bytes += group->card_set()->mem_size();
-    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                            G1PPRL_GID_FORMAT
-                            G1PPRL_LEN_FORMAT
-                            G1PPRL_GID_GCEFF_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_TYPE_H_FORMAT,
-                            group->group_id(), group->length(),
-                            group->gc_efficiency(),
-                            group->liveness(), group->card_set()->mem_size(),
-                            "M");
-  }
-
-  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
-    _total_remset_bytes += group->card_set()->mem_size();
-    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
-                            G1PPRL_GID_FORMAT
-                            G1PPRL_LEN_FORMAT
-                            G1PPRL_GID_GCEFF_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_BYTE_FORMAT
-                            G1PPRL_TYPE_H_FORMAT,
-                            group->group_id(), group->length(),
-                            group->gc_efficiency(),
-                            group->liveness(), group->card_set()->mem_size(),
-                            "R");
-  }
+  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
+  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
 }

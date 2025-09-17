@@ -72,21 +72,12 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
-  guard_with(nm, disarmed_guard_value());
+  set_guard_value(nm, disarmed_guard_value());
 }
 
 void BarrierSetNMethod::guard_with(nmethod* nm, int value) {
   assert((value & not_entrant) == 0, "not_entrant bit is reserved");
-  // Enter critical section.  Does not block for safepoint.
-  ConditionalMutexLocker ml(NMethodEntryBarrier_lock, !NMethodEntryBarrier_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
-  // Do not undo sticky bit
-  if (is_not_entrant(nm)) {
-    value |= not_entrant;
-  }
-  if (guard_value(nm) != value) {
-    // Patch the code only if needed.
-    set_guard_value(nm, value);
-  }
+  set_guard_value(nm, value);
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
@@ -118,6 +109,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     // and disarmed the nmethod. No need to continue.
     return true;
   }
+
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
@@ -179,10 +172,6 @@ void BarrierSetNMethod::arm_all_nmethods() {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
-  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
-  // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
-
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
   CodeBlob* cb = CodeCache::find_blob(return_address);
@@ -208,7 +197,7 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
     // a very rare event.
     if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
       static volatile uint32_t counter=0;
-      if (Atomic::add(&counter, 1u) % 10 == 0) {
+      if (AtomicAccess::add(&counter, 1u) % 10 == 0) {
         may_enter = false;
       }
     }
@@ -243,13 +232,7 @@ oop BarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
 // nmethod_stub_entry_barrier() may appear to be spurious, because is_armed() still returns
 // false and nmethod_entry_barrier() is not called.
 void BarrierSetNMethod::make_not_entrant(nmethod* nm) {
-  // Enter critical section.  Does not block for safepoint.
-  ConditionalMutexLocker ml(NMethodEntryBarrier_lock, !NMethodEntryBarrier_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
-  int value = guard_value(nm) | not_entrant;
-  if (guard_value(nm) != value) {
-    // Patch the code only if needed.
-    set_guard_value(nm, value);
-  }
+  set_guard_value(nm, not_entrant, not_entrant);
 }
 
 bool BarrierSetNMethod::is_not_entrant(nmethod* nm) {

@@ -22,19 +22,24 @@
  *
  */
 
+#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
+#include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/jni/jfrJniMethodRegistration.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/jfrEventSetting.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunk.hpp"
-#include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
+#include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
@@ -42,18 +47,13 @@
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
-#include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/jni/jfrJniMethodRegistration.hpp"
-#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
-#include "jfr/instrumentation/jfrJvmtiAgent.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/methodtracer/jfrMethodTracer.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
-#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
@@ -67,8 +67,8 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #ifdef LINUX
-#include "osContainer_linux.hpp"
 #include "os_linux.hpp"
+#include "osContainer_linux.hpp"
 #endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
@@ -412,9 +412,9 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
 #ifdef LINUX
   // We want the host memory, not the container limit.
   // os::physical_memory() would return the container limit.
-  return os::Linux::physical_memory();
+  return static_cast<jlong>(os::Linux::physical_memory());
 #else
-  return os::physical_memory();
+  return static_cast<jlong>(os::physical_memory());
 #endif
 JVM_END
 
@@ -423,7 +423,10 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
   // We want the host swap memory, not the container value.
   return os::Linux::host_swap();
 #else
-  return os::total_swap_space();
+  size_t total_swap_space = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::total_swap_space(total_swap_space);
+  return static_cast<jlong>(total_swap_space);
 #endif
 JVM_END
 
