@@ -21,19 +21,21 @@
  * questions.
  */
 
-#include "unittest.hpp"
 
-#include "memory/memRegion.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
-#include "utilities/ostream.hpp"
 
-#include "utilities/vmassert_uninstall.hpp"
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include <iostream>
 END_ALLOW_FORBIDDEN_FUNCTIONS
+
+#include "memory/memRegion.hpp"
+#include "unittest.hpp"
+
+#include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
+#include "utilities/vmassert_uninstall.hpp"
 
 // These tests will all be skipped (unless Shenandoah becomes the default
 // collector). To execute these tests, you must enable Shenandoah, which
@@ -49,14 +51,17 @@ END_ALLOW_FORBIDDEN_FUNCTIONS
 // interval - you can expect trouble. These tests will also not run in a build
 // with asserts enabled because they use APIs that expect to run on a safepoint.
 
-// I may have to disable tests if this is a debug build, but let's try
-// without that constraint first
-//
+#ifdef ASSERT
+#define SKIP_IF_NOT_SHENANDOAH()           \
+  std::cout << "skipped (debug build)\n";  \
+  return;
+#else
 #define SKIP_IF_NOT_SHENANDOAH() \
     if (!UseShenandoahGC) {      \
       std::cout << "skipped\n";  \
       return;                    \
     }
+#endif
 
 static bool _success;
 static size_t _assertion_failures;
