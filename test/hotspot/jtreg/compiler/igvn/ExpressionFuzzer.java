@@ -68,6 +68,7 @@ import static compiler.lib.template_framework.library.CodeGenerationDataNameType
 // - Constrain also the unsigned bounds
 // - Some basic IR tests to ensure that the constraints / checksum mechanics work.
 //   We may even have to add some IGVN optimizations to be able to better observe things right.
+// - Lower the CompileTaskTimeout, if possible. It is chosen conservatively (rather high) for now.
 public class ExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
