@@ -25,15 +25,10 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
-import static jdk.jpackage.internal.LinuxSystemEnvironment.createWithMixin;
 
 import jdk.jpackage.internal.util.Result;
 
 public interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
-
-    static LinuxRpmSystemEnvironment create(LinuxSystemEnvironment base, LinuxRpmSystemEnvironmentMixin mixin) {
-        return createWithMixin(LinuxRpmSystemEnvironment.class, base, mixin);
-    }
 
     static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
         return mixin(LinuxRpmSystemEnvironment.class, base, LinuxRpmSystemEnvironmentMixin::create);

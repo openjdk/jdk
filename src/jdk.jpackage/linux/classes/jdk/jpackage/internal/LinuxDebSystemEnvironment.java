@@ -24,16 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.LinuxSystemEnvironment.createWithMixin;
 import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
 
 import jdk.jpackage.internal.util.Result;
 
 public interface LinuxDebSystemEnvironment extends LinuxSystemEnvironment, LinuxDebSystemEnvironmentMixin {
-
-    static LinuxDebSystemEnvironment create(LinuxSystemEnvironment base, LinuxDebSystemEnvironmentMixin mixin) {
-        return createWithMixin(LinuxDebSystemEnvironment.class, base, mixin);
-    }
 
     static Result<LinuxDebSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
         return mixin(LinuxDebSystemEnvironment.class, base, LinuxDebSystemEnvironmentMixin::create);
