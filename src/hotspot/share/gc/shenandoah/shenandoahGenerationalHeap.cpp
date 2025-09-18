@@ -184,7 +184,7 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   workers()->run_task(&task);
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(bool concurrent) {
+void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {
   ShenandoahRegionIterator regions;
   ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, true /* only promote regions */);
   workers()->run_task(&task);

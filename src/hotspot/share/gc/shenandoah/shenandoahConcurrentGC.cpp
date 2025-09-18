@@ -576,7 +576,7 @@ void ShenandoahConcurrentGC::entry_promote_in_place() const {
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
   EventMark em("%s", "Promote in place");
 
-  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(true);
+  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, true);
 }
 
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
