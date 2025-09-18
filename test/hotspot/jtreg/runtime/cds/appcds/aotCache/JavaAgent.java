@@ -26,12 +26,24 @@
 /*
  * @test id=static
  * @bug 8361725
- * @summary -javaagent should be disabled with -Xshare:dump -XX:+AOTClassLinking
+ * @summary -javaagent is not allowed when creating static CDS archive
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build JavaAgent JavaAgentTransformer Util
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed
  * @run driver JavaAgent STATIC
+ */
+
+/**
+ * @test id=dynamic
+ * @bug 8362561
+ * @summary -javaagent is not allowed when creating dynamic CDS archive
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build JavaAgent JavaAgentTransformer Util
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. JavaAgent DYNAMIC
  */
 
 /*
@@ -64,7 +76,13 @@ public class JavaAgent {
                                         ClassFileInstaller.Manifest.fromSourceFile("JavaAgentTransformer.mf"),
                                         agentClasses);
 
-        new Tester().run(args);
+        Tester t = new Tester();
+        if (args[0].equals("STATIC") || args[0].equals("DYNAMIC")) {
+            // Some child processes may have non-zero exits. These are checked by
+            // checkExecutionForStaticWorkflow() and checkExecutionForDynamicWorkflow
+            t.setCheckExitValue(false);
+        }
+        t.run(args);
     }
 
     static class Tester extends CDSAppTester {
@@ -80,8 +98,6 @@ public class JavaAgent {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+AllowArchivingWithJavaAgent",
                 "-javaagent:" + agentJar,
                 "-Xlog:aot,cds",
                 "-XX:+AOTClassLinking",
@@ -99,8 +115,10 @@ public class JavaAgent {
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isAOTWorkflow()) {
                 checkExecutionForAOTWorkflow(out, runMode);
-            } else {
+            } else if (isStaticWorkflow()) {
                 checkExecutionForStaticWorkflow(out, runMode);
+            } else {
+                checkExecutionForDynamicWorkflow(out, runMode);
             }
         }
 
@@ -133,12 +151,31 @@ public class JavaAgent {
 
         public void checkExecutionForStaticWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
             switch (runMode) {
-            case RunMode.DUMP_STATIC:
-                out.shouldContain("Disabled all JVMTI agents with -Xshare:dump -XX:+AOTClassLinking");
-                out.shouldNotContain(agentPremainFinished);
-                break;
-            default:
+            case RunMode.TRAINING:
                 out.shouldContain(agentPremainFinished);
+                out.shouldHaveExitValue(0);
+                break;
+            case RunMode.DUMP_STATIC:
+                out.shouldContain("JVMTI agents are not allowed when dumping CDS archives");
+                out.shouldNotHaveExitValue(0);
+                break;
+            case RunMode.PRODUCTION:
+                out.shouldContain("Unable to use shared archive: invalid archive");
+                out.shouldNotHaveExitValue(0);
+                break;
+            }
+        }
+
+        public void checkExecutionForDynamicWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+            switch (runMode) {
+            case RunMode.DUMP_DYNAMIC:
+                out.shouldContain("JVMTI agents are not allowed when dumping CDS archives");
+                out.shouldNotHaveExitValue(0);
+                break;
+            case RunMode.PRODUCTION:
+                out.shouldContain("Unable to use shared archive: invalid archive");
+                out.shouldNotHaveExitValue(0);
+                break;
             }
         }
     }
