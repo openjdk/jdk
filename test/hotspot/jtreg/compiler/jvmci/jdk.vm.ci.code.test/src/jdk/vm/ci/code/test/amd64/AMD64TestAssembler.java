@@ -518,7 +518,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     private void nop(int count) {
         while (count > 0) {
-            code.emitByte(0x66);
+            code.emitByte(0x90);
             count--;
         }
     }

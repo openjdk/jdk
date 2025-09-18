@@ -25,7 +25,6 @@
  * @test
  * @requires vm.jvmci
  * @requires vm.simpleArch == "x64"
- * @requires os.family == "linux"
  * @library /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -100,7 +99,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                 asm.emitJavaCall(pos, info);
 
                 asm.recordCall(pos[0], pos[1], resolvedMethod, true, info);
-                //asm.emitCallEpilogue(cc);
+                asm.emitCallEpilogue(cc);
                 if (returnClazz == float.class) {
                     asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
                 } else if (returnClazz == int.class) {
