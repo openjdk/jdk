@@ -668,7 +668,7 @@
                                                                                                                                      \
   /******************************************************************************************/                                       \
   /* CI (NOTE: these CI fields are retained in VMStructs for the benefit of external tools, */                                       \
-  /* to ease their migration to a future alternative.                                       */                                       \
+  /* to ease their migration to a future alternative.)                                      */                                       \
   /******************************************************************************************/                                       \
                                                                                                                                      \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
