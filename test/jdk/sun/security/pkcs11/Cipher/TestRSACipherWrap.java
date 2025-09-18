@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 
 public class TestRSACipherWrap extends PKCS11Test {
 
@@ -54,8 +55,7 @@ public class TestRSACipherWrap extends PKCS11Test {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
         } catch (GeneralSecurityException e) {
-            System.out.println(RSA_ALGOS[0] + " unsupported, skipping");
-            return;
+            throw new SkippedException(RSA_ALGOS[0] + " unsupported, skipping");
         }
         String kpgAlgorithm = "RSA";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);

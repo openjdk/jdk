@@ -41,7 +41,7 @@ class DynamicArchiveHeader : public FileMapHeader {
   friend class CDSConstants;
 private:
   int _base_header_crc;
-  int _base_region_crc[MetaspaceShared::n_regions];
+  int _base_region_crc[AOTMetaspace::n_regions];
 
 public:
   int base_header_crc() const { return _base_header_crc; }
@@ -71,7 +71,7 @@ public:
   static void dump_array_klasses();
   static void setup_array_klasses();
   static void append_array_klass(ObjArrayKlass* oak);
-  static void serialize_array_klasses(SerializeClosure* soc);
+  static void serialize(SerializeClosure* soc);
   static void make_array_klasses_shareable();
   static void post_dump();
   static int  num_array_klasses();

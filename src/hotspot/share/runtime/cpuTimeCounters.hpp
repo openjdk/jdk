@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,7 +64,7 @@ private:
 
   // A long which atomically tracks how much CPU time has been spent doing GC
   // since the last time we called `publish_total_cpu_time()`.
-  // It is incremented using Atomic::add() to prevent race conditions, and
+  // It is incremented using AtomicAccess::add() to prevent race conditions, and
   // is added to the `gc_total` CPUTimeType at the end of GC.
   volatile jlong _gc_total_cpu_time_diff;
 

@@ -84,24 +84,6 @@ inline int g_isnan(double f) { return isnan(f); }
 inline int g_isfinite(jfloat  f)                 { return isfinite(f); }
 inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 
-
-// gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is null. The -Wno-invalid-offsetof
-// option could be used to suppress this warning, but we instead just
-// avoid the use of offsetof().
-//
-// FIXME: This macro is complex and rather arcane. Perhaps we should
-// use offsetof() instead, with the invalid-offsetof warning
-// temporarily disabled.
-#define offset_of(klass,field)                          \
-([]() {                                                 \
-  alignas(16) char space[sizeof (klass)];               \
-  klass* dummyObj = (klass*)space;                      \
-  char* c = (char*)(void*)&dummyObj->field;             \
-  return (size_t)(c - space);                           \
-}())
-
-
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"
 #define JLONG_FORMAT_W(width) "%" #width "ld"

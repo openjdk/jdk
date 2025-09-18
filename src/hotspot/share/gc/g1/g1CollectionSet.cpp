@@ -36,7 +36,6 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/quickSort.hpp"
 
 uint G1CollectionSet::groups_cur_length() const {
   assert(_inc_build_state == CSetBuildType::Inactive, "must be");
@@ -67,7 +66,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _survivor_region_length(0),
   _initial_old_region_length(0),
   _optional_groups(),
-  _inc_build_state(CSetBuildType::Inactive),
+  DEBUG_ONLY(_inc_build_state(CSetBuildType::Inactive) COMMA)
   _regions_inc_part_start(0),
   _groups_inc_part_start(0) {
 }
@@ -106,7 +105,7 @@ void G1CollectionSet::abandon_all_candidates() {
 }
 
 void G1CollectionSet::prepare_for_scan () {
-  groups()->prepare_for_scan();
+  _groups.prepare_for_scan();
 }
 
 void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
@@ -116,7 +115,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
-  assert(!hr->rem_set()->is_added_to_cset_group(), "Should have already uninstalled group remset");
+  assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
@@ -142,11 +141,11 @@ void G1CollectionSet::continue_incremental_building() {
   _regions_inc_part_start = _regions_cur_length;
   _groups_inc_part_start = groups_cur_length();
 
-  _inc_build_state = CSetBuildType::Active;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Active;)
 }
 
 void G1CollectionSet::stop_incremental_building() {
-  _inc_build_state = CSetBuildType::Inactive;
+  DEBUG_ONLY(_inc_build_state = CSetBuildType::Inactive;)
 }
 
 void G1CollectionSet::clear() {
@@ -324,7 +323,10 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, _g1h->young_regions_cardset()->occupied());
+  size_t num_young_cards = _g1h->young_regions_cardset()->occupied();
+  _policy->record_card_rs_length(num_young_cards);
+
+  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, num_young_cards);
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
   double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
@@ -342,10 +344,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
   return remaining_time_ms;
-}
-
-static int compare_region_idx(const uint a, const uint b) {
-  return static_cast<int>(a-b);
 }
 
 // The current mechanism for evacuating pinned old regions is as below:
@@ -387,6 +385,16 @@ static void print_finish_message(const char* reason, bool from_marking) {
                             from_marking ? "marking" : "retained", reason);
 }
 
+void G1CollectionSet::add_optional_group(G1CSetCandidateGroup* group,
+                                         uint& num_optional_regions,
+                                         double& predicted_optional_time_ms,
+                                         double predicted_time_ms) {
+  _optional_groups.append(group);
+  prepare_optional_group(group, num_optional_regions);
+  num_optional_regions += group->length();
+  predicted_optional_time_ms += predicted_time_ms;
+}
+
 double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms) {
   uint num_expensive_regions = 0;
   uint num_inital_regions = 0;
@@ -406,6 +414,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
+  bool make_first_group_optional = G1ForceOptionalEvacuation;
+
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
@@ -422,6 +432,15 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
     }
 
     double predicted_time_ms = group->predict_group_total_time_ms();
+
+    if (make_first_group_optional) {
+        make_first_group_optional = false;
+        add_optional_group(group,
+                           num_optional_regions,
+                           predicted_optional_time_ms,
+                           predicted_time_ms);
+        continue;
+    }
 
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
@@ -458,10 +477,10 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
       } else if (time_remaining_ms > 0) {
         // Keep adding optional regions until time is up.
-        _optional_groups.append(group);
-        prepare_optional_group(group, num_optional_regions);
-        num_optional_regions += group->length();
-        predicted_optional_time_ms += predicted_time_ms;
+        add_optional_group(group,
+                           num_optional_regions,
+                           predicted_optional_time_ms,
+                           predicted_time_ms);
       } else {
         print_finish_message("Predicted time too high", true);
         break;
@@ -562,10 +581,10 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
       num_initial_regions += group->length();
     } else if (predicted_time_ms <= optional_time_remaining_ms) {
       // Prepare optional collection region.
-      _optional_groups.append(group);
-      prepare_optional_group(group, num_optional_regions);
-      num_optional_regions += group->length();
-      predicted_optional_time_ms += predicted_time_ms;
+      add_optional_group(group,
+                         num_optional_regions,
+                         predicted_optional_time_ms,
+                         predicted_time_ms);
     } else {
       // Fits neither initial nor optional time limit. Exit.
       break;
@@ -604,7 +623,6 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
   assert(_optional_groups.num_regions() > 0,
          "Should only be called when there are optional regions");
 
-  uint num_groups_selected = 0;
   double total_prediction_ms = 0.0;
   G1CSetCandidateGroupList selected;
   for (G1CSetCandidateGroup* group : _optional_groups) {
@@ -620,16 +638,15 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     time_remaining_ms -= predicted_time_ms;
 
     num_regions_selected += group->length();
-    num_groups_selected++;
 
     add_group_to_collection_set(group);
     selected.append(group);
   }
 
   log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
-                            num_regions_selected, num_groups_selected);
+                            num_regions_selected, selected.length());
   // Remove selected groups from candidate list.
-  if (num_groups_selected > 0) {
+  if (selected.length() > 0) {
     _optional_groups.remove(&selected);
     candidates()->remove(&selected);
   }
@@ -645,10 +662,9 @@ uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
 
   double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
 
-  time_remaining_ms -= total_prediction_ms;
-
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_regions_selected, optional_regions_count, total_prediction_ms);
+
   return num_regions_selected;
 }
 
@@ -688,7 +704,6 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   finalize_old_part(time_remaining_ms);
 
   stop_incremental_building();
-  QuickSort::sort(_regions, _regions_cur_length, compare_region_idx);
 }
 
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
