@@ -428,6 +428,7 @@ public:
   template <typename F>
   void visit_in_order(F f);
 
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
   // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
@@ -475,15 +476,10 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 
 public:
   RBTree() : BaseType(), _allocator() {}
+  NONCOPYABLE(RBTree);
   ~RBTree() { remove_all(); }
-  RBTree(const RBTree& other) : BaseType(), _allocator() {
-    assert(std::is_copy_constructible<V>(), "Value type must be copy-constructible");
-    other.visit_in_order([&](auto node) {
-      this->upsert(node->key(), node->val());
-      return true;
-    });
-  }
-  RBTree& operator=(const RBTree& other) = delete;
+
+  bool copy_into(RBTree& other) const;
 
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;

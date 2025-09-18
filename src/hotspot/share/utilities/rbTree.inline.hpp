@@ -753,4 +753,53 @@ void AbstractRBTree<K, NodeType, COMPARATOR>::print_on(outputStream* st, const P
   }
 }
 
+template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
+  assert(other.size() == 0, "You can only copy into an empty RBTree");
+  assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
+  assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
+  enum class Dir { Left, Right };
+  struct node_pair { const IntrusiveRBNode* current; IntrusiveRBNode* other_parent; Dir dir; };
+  struct stack {
+    node_pair s[64];
+    int idx = 0;
+    stack() : idx(0) {}
+    node_pair pop() { idx--; return s[idx]; };
+    void push(node_pair n) { s[idx] = n; idx++; };
+    bool is_empty() { return idx == 0; };
+  };
+
+  stack visit_stack;
+  if (this->_root == nullptr)  {
+    return true;
+  }
+  RBNode<K, V>* root = static_cast<RBNode<K, V>*>(this->_root);
+  other._root = other.allocate_node(root->key(), root->val());
+  if (other._root == nullptr) return false;
+
+  visit_stack.push({this->_root->_left, other._root, Dir::Left});
+  visit_stack.push({this->_root->_right, other._root, Dir::Right});
+  while (!visit_stack.is_empty()) {
+    node_pair n = visit_stack.pop();
+    const RBNode<K, V>* current = static_cast<const RBNode<K, V>*>(n.current);
+    if (current == nullptr) continue;
+    RBNode<K, V>* new_node = other.allocate_node(current->key(), current->val());
+    if (new_node == nullptr) {
+      return false;
+    }
+    if (n.dir == Dir::Left) {
+      n.other_parent->_left = new_node;
+    } else {
+      n.other_parent->_right = new_node;
+    }
+    new_node->set_parent(n.other_parent);
+    new_node->_parent |= n.current->_parent & 0x1;
+    visit_stack.push({n.current->_left, new_node, Dir::Left});
+    visit_stack.push({n.current->_right, new_node, Dir::Right});
+  }
+  other._num_nodes = this->_num_nodes;
+  DEBUG_ONLY(other._expected_visited = this->_expected_visited);
+  return true;
+}
+
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP
