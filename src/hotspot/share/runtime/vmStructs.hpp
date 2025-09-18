@@ -27,6 +27,8 @@
 
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <cstddef>
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -157,7 +159,7 @@ private:
 
 // This macro generates a VMStructEntry line for a nonstatic field
 #define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), nullptr },
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offsetof(typeName, fieldName), nullptr },
 
 // This macro generates a VMStructEntry line for a static field
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
@@ -172,7 +174,7 @@ private:
 // nonstatic field, in which the size of the type is also specified.
 // The type string is given as null, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
-  { QUOTE(typeName), QUOTE(fieldName), nullptr, 0, offset_of(typeName, fieldName), nullptr },
+  { QUOTE(typeName), QUOTE(fieldName), nullptr, 0, offsetof(typeName, fieldName), nullptr },
 
 // This macro generates a VMStructEntry line for an unchecked
 // static field, in which the size of the type is also specified.
