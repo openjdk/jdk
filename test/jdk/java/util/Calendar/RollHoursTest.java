@@ -51,9 +51,9 @@ public class RollHoursTest {
             IntStream.rangeClosed(-55, 55).boxed().toList();
     // Various calendars to test against
     private static final List<Calendar> calendars = List.of(
-            // GMT, daylight savings free
+            // GMT, independent of daylight saving time transitions
             new GregorianCalendar(TimeZone.getTimeZone("GMT")),
-            // Daylight savings observing calendars
+            // Daylight saving observing calendars
             new GregorianCalendar(TimeZone.getTimeZone("America/Chicago")),
             new GregorianCalendar(TimeZone.getTimeZone("America/Chicago")),
             new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")),
@@ -61,16 +61,16 @@ public class RollHoursTest {
     );
 
     // Reset the times of each calendar. These calendars provide testing under
-    // daylight savings transitions (or the lack thereof) and different AM/PM hours.
+    // daylight saving transitions (or the lack thereof) and different AM/PM hours.
     @BeforeEach
     void clear() {
         // Reset all calendars each iteration for clean slate
         calendars.forEach(Calendar::clear);
 
-        // Basic test, independent of daylight savings transitions
+        // Basic test, independent of daylight saving transitions
         calendars.get(0).set(2005, 8, 20, 12, 10, 25);
 
-        // Transition to daylight savings time (CST/CDT) ---
+        // Transition to daylight saving time (CST/CDT) ---
         // Day of transition: 03/13/2016 (Sunday)
         //      Most interesting test case due to 2 AM skip
         calendars.get(1).set(2016, 2, 13, 3, 30, 55);
