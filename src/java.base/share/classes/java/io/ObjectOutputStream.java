@@ -26,6 +26,8 @@
 
 package java.io;
 
+import java.lang.runtime.ExactConversionsSupport;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1900,7 +1902,7 @@ public class ObjectOutputStream
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
             long utflen = utfLen(str, countNonZeroAscii);
-            if (utflen <= 0xFFFFL) {
+            if (ExactConversionsSupport.isLongToCharExact(utflen)) {
                 if(writeHeader) {
                     writeByte(TC_STRING);
                 }

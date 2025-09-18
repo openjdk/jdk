@@ -26,6 +26,8 @@
 
 package java.io;
 
+import java.lang.runtime.ExactConversionsSupport;
+
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
@@ -366,7 +368,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         long utflenLong = utfLen(str, countNonZeroAscii);
 
-        if (utflenLong > 65535L)
+        if (!ExactConversionsSupport.isLongToCharExact(utflenLong))
             throw new UTFDataFormatException(tooLongMsg(str, utflenLong));
 
         int utflen = (int)utflenLong;
