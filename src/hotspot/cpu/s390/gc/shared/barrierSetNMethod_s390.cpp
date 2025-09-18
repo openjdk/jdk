@@ -38,14 +38,20 @@ class NativeMethodBarrier: public NativeInstruction {
     }
 
     address get_patchable_data_address() const {
-      address inst_addr = get_barrier_start_address() + BarrierSetAssembler::PATCHABLE_SEQ_START_OFFSET;
+      address inst_addr = get_barrier_start_address() + BarrierSetAssembler::OFFSET_TO_PATCHABLE_DATA_INSTRUCTION;
 
-      DEBUG_ONLY(Assembler::is_z_cfi(*((long*)inst_addr)));
+      unsigned long instr = 0;
+      Assembler::get_instruction(inst_addr, &instr);
+      assert(Assembler::is_z_cfi(instr), "sanity check");
+
+      // we are currently pointing to cfi instruction,
+      // first 2 bytes are for instruction opcode and next 4 bytes will be the value/data to be patched,
+      // so we can skip the first 2 bytes and just return the value/data
       return inst_addr + 2;
     }
 
   public:
-    static const int BARRIER_TOTAL_LENGTH = BarrierSetAssembler::PATCHABLE_BARRIER_VALUE_OFFSET + 2*6; // bytes
+    static const int BARRIER_TOTAL_LENGTH = BarrierSetAssembler::BARRIER_TOTAL_LENGTH;
 
     int get_guard_value() const {
       address data_addr = get_patchable_data_address();
@@ -77,23 +83,30 @@ class NativeMethodBarrier: public NativeInstruction {
 
     #ifdef ASSERT
       void verify() const {
+        unsigned long instr = 0;
         int offset = 0; // bytes
         const address start = get_barrier_start_address();
 
-        MacroAssembler::is_load_const(/* address */ start + offset); // two instructions
+        assert(MacroAssembler::is_load_const(/* address */ start + offset), "sanity check"); // two instructions
         offset += Assembler::instr_len(&start[offset]);
         offset += Assembler::instr_len(&start[offset]);
 
-        Assembler::is_z_lg(*((long*)(start + offset)));
+        Assembler::get_instruction(start + offset, &instr);
+        assert(Assembler::is_z_lg(instr), "sanity check");
         offset += Assembler::instr_len(&start[offset]);
 
-        Assembler::is_z_cfi(*((long*)(start + offset)));
+        // it will be assignment operation, doesn't matter what's already there instr
+        // hence, no need to 0 it out.
+        Assembler::get_instruction(start + offset, &instr);
+        assert(Assembler::is_z_cfi(instr), "sanity check");
         offset += Assembler::instr_len(&start[offset]);
 
-        Assembler::is_z_larl(*((long*)(start + offset)));
+        Assembler::get_instruction(start + offset, &instr);
+        assert(Assembler::is_z_larl(instr), "sanity check");
         offset += Assembler::instr_len(&start[offset]);
 
-        Assembler::is_z_bcr(*((long*)(start + offset)));
+        Assembler::get_instruction(start + offset, &instr);
+        assert(Assembler::is_z_bcr(instr), "sanity check");
         offset += Assembler::instr_len(&start[offset]);
 
         assert(offset == BARRIER_TOTAL_LENGTH, "check offset == barrier length constant");

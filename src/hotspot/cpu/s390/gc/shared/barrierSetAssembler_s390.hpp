@@ -67,8 +67,8 @@ public:
                                 OptoReg::Name opto_reg) const;
 #endif // COMPILER2
 
-  static const int PATCHABLE_SEQ_START_OFFSET = 3 * 6;
-  static const int PATCHABLE_BARRIER_VALUE_OFFSET = PATCHABLE_SEQ_START_OFFSET + 2;
+  static const int OFFSET_TO_PATCHABLE_DATA_INSTRUCTION = 6 + 6 + 6; // iihf(6) + iilf(6) + lg(6)
+  static const int BARRIER_TOTAL_LENGTH = OFFSET_TO_PATCHABLE_DATA_INSTRUCTION + 6 + 6 + 2; // cfi(6) + larl(6) + bcr(2)
 };
 
 #ifdef COMPILER2
