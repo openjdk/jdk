@@ -168,7 +168,7 @@ public class CertChainAlgorithmConstraints extends SSLEngineTemplate {
         validChain[1] = linkCert2;
         validChain[2] = linkCert1;
 
-        var tm = ((X509ExtendedTrustManager) tmf.getTrustManagers()[0]);
+        var tm = (X509ExtendedTrustManager) tmf.getTrustManagers()[0];
 
         if (fail) {
             // Mixed-up chain: CertPathBuilder code path.
@@ -204,7 +204,7 @@ public class CertChainAlgorithmConstraints extends SSLEngineTemplate {
     // Certificate-building helper methods.
 
     private void setupCertificates() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
+        var kpg = KeyPairGenerator.getInstance(keyAlg);
         var caKeys = kpg.generateKeyPair();
         var serverKeys = kpg.generateKeyPair();
         var linkKeys1 = kpg.generateKeyPair();
