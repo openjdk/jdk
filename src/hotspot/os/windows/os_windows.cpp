@@ -3961,12 +3961,12 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_processor_type            = 0;
+int      os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
-int    os::win32::_processor_level           = 0;
+int      os::win32::_processor_level           = 0;
 uint64_t os::win32::_physical_memory         = 0;
 
-bool   os::win32::_is_windows_server         = false;
+bool     os::win32::_is_windows_server         = false;
 
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
