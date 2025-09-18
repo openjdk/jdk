@@ -29,10 +29,10 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -86,7 +86,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -698,7 +698,7 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::committed() const {
-  return Atomic::load(&_committed);
+  return AtomicAccess::load(&_committed);
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
@@ -789,7 +789,7 @@ size_t ShenandoahHeap::max_capacity() const {
 }
 
 size_t ShenandoahHeap::soft_max_capacity() const {
-  size_t v = Atomic::load(&_soft_max_size);
+  size_t v = AtomicAccess::load(&_soft_max_size);
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
@@ -800,7 +800,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
-  Atomic::store(&_soft_max_size, v);
+  AtomicAccess::store(&_soft_max_size, v);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
@@ -852,7 +852,7 @@ void ShenandoahHeap::notify_explicit_gc_requested() {
 }
 
 bool ShenandoahHeap::check_soft_max_changed() {
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
+  size_t new_soft_max = AtomicAccess::load(&SoftMaxHeapSize);
   size_t old_soft_max = soft_max_capacity();
   if (new_soft_max != old_soft_max) {
     new_soft_max = MAX2(min_capacity(), new_soft_max);
@@ -1094,8 +1094,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   return result;
 }
 
-HeapWord* ShenandoahHeap::mem_allocate(size_t size,
-                                        bool*  gc_overhead_limit_was_exceeded) {
+HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
   return allocate_memory(req);
 }
@@ -1979,8 +1978,8 @@ public:
     size_t stride = _stride;
 
     size_t max = _heap->num_regions();
-    while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
+    while (AtomicAccess::load(&_index) < max) {
+      size_t cur = AtomicAccess::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;

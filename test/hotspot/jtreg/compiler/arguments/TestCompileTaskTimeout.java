@@ -29,7 +29,7 @@ package compiler.arguments;
  * @requires vm.debug & vm.flagless & os.name == "Linux"
  * @summary Check functionality of CompileTaskTimeout
  * @library /test/lib
- * @run driver compiler.arguments.TestCompileTaskTimeout
+ * @run driver/timeout=480 compiler.arguments.TestCompileTaskTimeout
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -37,6 +37,11 @@ import jdk.test.lib.process.ProcessTools;
 public class TestCompileTaskTimeout {
 
     public static void main(String[] args) throws Throwable {
+        double timeoutFactor = 1.0;
+        try {
+            timeoutFactor = Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"));
+        } catch (NumberFormatException ignored) {}
+
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "--version")
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
@@ -49,7 +54,8 @@ public class TestCompileTaskTimeout {
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
 
-        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=2000", "--version")
+        int timeout = (int)(500.0 * timeoutFactor);
+        ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=" + timeout, "--version")
                     .shouldHaveExitValue(0);
     }
 }

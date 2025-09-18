@@ -54,12 +54,12 @@
  * @summary Acceptance tests: collector can withstand allocation
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=240 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
  *      TestAllocObjects
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=480 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
  *      TestAllocObjects

@@ -105,7 +105,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -396,8 +396,7 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
 }
 
 HeapWord*
-G1CollectedHeap::mem_allocate(size_t word_size,
-                              bool*  gc_overhead_limit_was_exceeded) {
+G1CollectedHeap::mem_allocate(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
 
   if (is_humongous(word_size)) {
@@ -1201,7 +1200,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, 1u /* group_id */),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungRegionId),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),

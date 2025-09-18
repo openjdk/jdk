@@ -289,8 +289,8 @@ public final class WeekFields implements Serializable {
      * <p>
      * This will look up appropriate values from the provider of localization data.
      * If the locale contains "fw" (First day of week) and/or "rg"
-     * (Region Override) <a href="../../util/Locale.html#def_locale_extension">
-     * Unicode extensions</a>, returned instance will reflect the values specified with
+     * (Region Override) {@linkplain Locale##def_locale_extension Unicode extensions},
+     * returned instance will reflect the values specified with
      * those extensions. If both "fw" and "rg" are specified, the value from
      * the "fw" extension supersedes the implicit one from the "rg" extension.
      *

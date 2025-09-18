@@ -27,7 +27,6 @@
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -277,7 +276,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
