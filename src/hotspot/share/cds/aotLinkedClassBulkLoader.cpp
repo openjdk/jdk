@@ -49,8 +49,8 @@ bool AOTLinkedClassBulkLoader::_platform_completed = false;
 bool AOTLinkedClassBulkLoader::_app_completed = false;
 bool AOTLinkedClassBulkLoader::_all_completed = false;
 
-void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
-  AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
+void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
+  AOTLinkedClassTable::get()->serialize(soc);
 }
 
 bool AOTLinkedClassBulkLoader::has_finished_loading_classes() {
@@ -60,7 +60,7 @@ bool AOTLinkedClassBulkLoader::has_finished_loading_classes() {
     // The ConstantPools of preloaded classes have references to other preloaded classes. We don't
     // want any Java code (including JVMCI compiler) to use these classes until all of them
     // are loaded.
-    return Atomic::load_acquire(&_all_completed);
+    return AtomicAccess::load_acquire(&_all_completed);
   }
 }
 
@@ -92,10 +92,10 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
 
   // Preloading is supported only for the static archive. Classes in the dynamic archive are loaded
   // later in load_javabase_classes() and load_non_javabase_classes().
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot1(), "boot1", Handle(), CHECK);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot2(), "boot2", Handle(), CHECK);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->platform(), "plat", h_platform_loader, CHECK);
-  preload_classes_in_table(AOTLinkedClassTable::for_static_archive()->app(), "app", h_system_loader, CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::get()->boot1(), "boot1", Handle(), CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::get()->boot2(), "boot2", Handle(), CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::get()->platform(), "plat", h_platform_loader, CHECK);
+  preload_classes_in_table(AOTLinkedClassTable::get()->app(), "app", h_system_loader, CHECK);
 
   log_info(aot, load)("Finished preloading classes");
 }
@@ -143,10 +143,10 @@ void AOTLinkedClassBulkLoader::validate_module_of_preloaded_classes() {
   Handle h_platform_loader(current, SystemDictionary::java_platform_loader());
   Handle h_system_loader(current, SystemDictionary::java_system_loader());
 
-  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot1(), "boot1", Handle());
-  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::for_static_archive()->boot2(), "boot2", Handle());
-  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::for_static_archive()->platform(), "plat", h_platform_loader);
-  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::for_static_archive()->app(), "app", h_system_loader);
+  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::get()->boot1(), "boot1", Handle());
+  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::get()->boot2(), "boot2", Handle());
+  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::get()->platform(), "plat", h_platform_loader);
+  validate_module_of_preloaded_classes_in_table(AOTLinkedClassTable::get()->app(), "app", h_system_loader);
 }
 
 void AOTLinkedClassBulkLoader::validate_module_of_preloaded_classes_in_table(Array<InstanceKlass*>* classes,
@@ -216,20 +216,13 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
 
   load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
 
-  if (CDSConfig::is_using_preloaded_classes()) {
-    DynamicArchive::setup_and_restore_array_klasses(current);
-    if (current->has_pending_exception()) {
-      exit_on_exception(current);
-    }
-  }
-
   if (AOTPrintTrainingInfo) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
   }
 
   _app_completed = true;
-  Atomic::release_store(&_all_completed, true);
+  AtomicAccess::release_store(&_all_completed, true);
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
@@ -256,27 +249,24 @@ void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS) {
   Handle h_loader(THREAD, class_loader_oop);
-  load_table(AOTLinkedClassTable::for_static_archive(),  class_category, h_loader, CHECK);
-  load_table(AOTLinkedClassTable::for_dynamic_archive(), class_category, h_loader, CHECK);
+  AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+  load_table(table, class_category, h_loader, CHECK);
 
   // Initialize the InstanceKlasses of all archived heap objects that are reachable from the
   // archived java class mirrors.
-  //
-  // Only the classes in the static archive can have archived mirrors.
-  AOTLinkedClassTable* static_table = AOTLinkedClassTable::for_static_archive();
   switch (class_category) {
   case AOTLinkedClassCategory::BOOT1:
     // Delayed until finish_loading_javabase_classes(), as the VM is not ready to
     // execute some of the <clinit> methods.
     break;
   case AOTLinkedClassCategory::BOOT2:
-    init_required_classes_for_loader(h_loader, static_table->boot2(), CHECK);
+    init_required_classes_for_loader(h_loader, table->boot2(), CHECK);
     break;
   case AOTLinkedClassCategory::PLATFORM:
-    init_required_classes_for_loader(h_loader, static_table->platform(), CHECK);
+    init_required_classes_for_loader(h_loader, table->platform(), CHECK);
     break;
   case AOTLinkedClassCategory::APP:
-    init_required_classes_for_loader(h_loader, static_table->app(), CHECK);
+    init_required_classes_for_loader(h_loader, table->app(), CHECK);
     break;
   case AOTLinkedClassCategory::UNREGISTERED:
     ShouldNotReachHere();
@@ -472,7 +462,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
 }
 
 void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
-  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::for_static_archive()->boot1(), CHECK);
+  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), CHECK);
 }
 
 // Some AOT-linked classes for <class_loader> must be initialized early. This includes
@@ -516,8 +506,7 @@ void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* cl
 
 void AOTLinkedClassBulkLoader::replay_training_at_init_for_preloaded_classes(TRAPS) {
   if (CDSConfig::is_using_aot_linked_classes() && TrainingData::have_data()) {
-    // Only static archive can have training data.
-    AOTLinkedClassTable* table = AOTLinkedClassTable::for_static_archive();
+    AOTLinkedClassTable* table = AOTLinkedClassTable::get();
     replay_training_at_init(table->boot1(),    CHECK);
     replay_training_at_init(table->boot2(),    CHECK);
     replay_training_at_init(table->platform(), CHECK);

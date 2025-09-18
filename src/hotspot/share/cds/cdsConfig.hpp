@@ -221,6 +221,7 @@ public:
     ~DumperThreadMark();
   };
 
+  static bool current_thread_is_dumper() NOT_CDS_RETURN_(false);
   static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
 };
 

@@ -79,7 +79,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
 #endif
 
 public:
-  static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
   static void preload_classes(JavaThread* current);
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;

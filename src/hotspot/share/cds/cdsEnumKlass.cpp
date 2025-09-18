@@ -40,7 +40,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
          InstanceKlass::cast(k)->is_enum_subclass();
 }
 
-// !!! This is legacy support for enum classes before JEP 483. This code is not needed when
+// !!! This is legacy support for enum classes before JEP 483. This file is not used when
 // !!! CDSConfig::is_initing_classes_at_dump_time()==true.
 //
 // Java Enum classes have synthetic <clinit> methods that look like this

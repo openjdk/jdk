@@ -35,7 +35,7 @@ VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    size_t old_sz = AtomicAccess::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
     if (old_sz == peak_sz) {
       break;
     } else {
@@ -208,14 +208,15 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 }
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  MemTracker::NmtVirtualMemoryLocker nvml;
+  bool ret = true;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
+      ret = false;
       return false;
     }
     return true;
   });
-  return true;
+  return ret;
 }
 
 size_t VirtualMemoryTracker::committed_size(const ReservedMemoryRegion* rmr) {

@@ -160,11 +160,10 @@ public:
       SystemDictionaryShared::write_to_archive(false);
       cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
       DynamicArchive::dump_array_klasses();
-      AOTClassLinker::write_to_archive();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
-      ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
+      DynamicArchive::serialize(&wc);
     }
 
     if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
@@ -414,6 +413,12 @@ public:
 GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
 Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
 
+void DynamicArchive::serialize(SerializeClosure* soc) {
+  SymbolTable::serialize_shared_table_header(soc, false);
+  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  soc->do_ptr(&_dynamic_archive_array_klasses);
+}
+
 void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
   if (_array_klasses == nullptr) {
     _array_klasses = new (mtClassShared) GrowableArray<ObjArrayKlass*>(50, mtClassShared);
@@ -452,25 +457,6 @@ void DynamicArchive::setup_array_klasses() {
     }
     log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
   }
-}
-
-void DynamicArchive::setup_and_restore_array_klasses(TRAPS) {
-  precond(CDSConfig::is_using_preloaded_classes());
-
-  if (_dynamic_archive_array_klasses != nullptr) {
-    setup_array_klasses();
-    for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
-      ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
-      Klass* elm = oak->element_klass();
-      assert(AOTMetaspace::in_aot_cache_static_region((void*)elm), "must be");
-      RecursiveLocker rl(MultiArray_lock, THREAD);
-      oak->restore_unshareable_info(elm->class_loader_data(), Handle(), CHECK);
-    }
-  }
-}
-
-void DynamicArchive::serialize_array_klasses(SerializeClosure* soc) {
-  soc->do_ptr(&_dynamic_archive_array_klasses);
 }
 
 void DynamicArchive::make_array_klasses_shareable() {
