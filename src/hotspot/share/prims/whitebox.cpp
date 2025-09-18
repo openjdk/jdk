@@ -74,7 +74,7 @@
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -1156,7 +1156,7 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
 WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   Method* clinit = ik->class_initializer();
   if (clinit == nullptr || clinit->method_holder()->is_not_initialized()) {
     return false;
@@ -1501,7 +1501,6 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
-  Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
 WB_END
 
@@ -1936,18 +1935,18 @@ WB_ENTRY(void, WB_ForceClassLoaderStatsSafepoint(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   return (jlong) ik->constants();
 WB_END
 
 WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   objArrayOop resolved_refs= ik->constants()->resolved_references();
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
 WB_END
 
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
     return -1;
@@ -1956,7 +1955,7 @@ WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1965,7 +1964,7 @@ WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint in
 WB_END
 
 WB_ENTRY(jint, WB_getMethodEntriesLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
     return -1;
@@ -1974,7 +1973,7 @@ WB_ENTRY(jint, WB_getMethodEntriesLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1983,7 +1982,7 @@ WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint i
 WB_END
 
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -1992,7 +1991,7 @@ WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
 WB_END
 
 WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
-  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
   if (cp->cache() == nullptr) {
       return -1;
@@ -2304,7 +2303,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
       jt->print_on(tty);
       jt->print_stack_on(tty);
       tty->cr();
-      Atomic::inc(&_num_threads_completed);
+      AtomicAccess::inc(&_num_threads_completed);
     }
 
   public:
@@ -2371,14 +2370,14 @@ WB_ENTRY(void, WB_LockAndBlock(JNIEnv* env, jobject wb, jboolean suspender))
     // We will deadlock here if we are 'suspender' and 'suspendee'
     // suspended in ~ThreadBlockInVM. This verifies we only suspend
     // at the right place.
-    while (Atomic::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
+    while (AtomicAccess::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
     assert(_emulated_lock == 1, "Must be locked");
 
     // Sleep much longer in suspendee to force situation where
     // 'suspender' is waiting above to acquire lock.
     os::naked_short_sleep(suspender ? 1 : 10);
   }
-  Atomic::store(&_emulated_lock, 0);
+  AtomicAccess::store(&_emulated_lock, 0);
 WB_END
 
 // Some convenience methods to deal with objects from java
@@ -2386,10 +2385,8 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != nullptr && strlen(field_name) > 0, "Field name not valid");
 
-  //Get the class of our object
-  Klass* arg_klass = object->klass();
-  //Turn it into an instance-klass
-  InstanceKlass* ik = InstanceKlass::cast(arg_klass);
+  //Only non-array oops have fields. Don't call this function on arrays!
+  InstanceKlass* ik = InstanceKlass::cast(object->klass());
 
   //Create symbols to look for in the class
   TempNewSymbol name_symbol = SymbolTable::new_symbol(field_name);
@@ -3065,7 +3062,7 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
   {
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(wbclass)));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(wbclass));
       Handle loader(THREAD, ik->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));

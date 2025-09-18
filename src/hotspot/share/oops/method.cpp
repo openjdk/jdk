@@ -65,7 +65,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -633,7 +633,7 @@ bool Method::init_training_data(MethodTrainingData* td) {
 bool Method::install_training_method_data(const methodHandle& method) {
   MethodTrainingData* mtd = MethodTrainingData::find(method);
   if (mtd != nullptr && mtd->final_profile() != nullptr) {
-    Atomic::replace_if_null(&method->_method_data, mtd->final_profile());
+    AtomicAccess::replace_if_null(&method->_method_data, mtd->final_profile());
     return true;
   }
   return false;
@@ -660,7 +660,7 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;   // return the exception (which is cleared)
   }
 
-  if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
+  if (!AtomicAccess::replace_if_null(&method->_method_data, method_data)) {
     MetadataFactory::free_metadata(loader_data, method_data);
     return;
   }
@@ -711,7 +711,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::replace_if_null(&_method_counters, counters);
+  return AtomicAccess::replace_if_null(&_method_counters, counters);
 }
 
 void Method::set_exception_handler_entered(int handler_bci) {
@@ -1349,7 +1349,7 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  nmethod *code = Atomic::load_acquire(&_code);
+  nmethod *code = AtomicAccess::load_acquire(&_code);
   return code == nullptr || (code->method() == nullptr) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
@@ -1389,7 +1389,7 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
-    Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
+    AtomicAccess::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
     // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();

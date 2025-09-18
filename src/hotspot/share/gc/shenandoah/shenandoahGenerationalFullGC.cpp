@@ -193,7 +193,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
                                                           ShenandoahHeapRegion* from_region, uint worker_id) :
         _preserved_marks(preserved_marks),
         _heap(ShenandoahGenerationalHeap::heap()),
-        _tenuring_threshold(0),
         _empty_regions(empty_regions),
         _empty_regions_pos(0),
         _old_to_region(nullptr),
@@ -212,8 +211,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
     _young_to_region = from_region;
     _young_compact_point = from_region->bottom();
   }
-
-  _tenuring_threshold = _heap->age_census()->tenuring_threshold();
 }
 
 void ShenandoahPrepareForGenerationalCompactionObjectClosure::set_from_region(ShenandoahHeapRegion* from_region) {
@@ -279,7 +276,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
-      (from_region_age + object_age >= _tenuring_threshold)) {
+      _heap->age_census()->is_tenurable(from_region_age + object_age)) {
     if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
       finish_old_region();
       _old_to_region = nullptr;

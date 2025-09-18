@@ -252,7 +252,6 @@ class NMethodToOopClosure : public NMethodClosure {
   NMethodToOopClosure(OopClosure* cl, bool fix_relocations) : _cl(cl), _fix_relocations(fix_relocations) {}
   void do_nmethod(nmethod* nm) override;
 
-  bool fix_relocations() const { return _fix_relocations; }
   const static bool FixRelocations = true;
 };
 

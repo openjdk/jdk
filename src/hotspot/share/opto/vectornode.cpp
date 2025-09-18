@@ -2268,6 +2268,99 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
+// Returns whether (XorV (VectorMaskCmp) -1) can be optimized by negating the
+// comparison operation.
+bool VectorMaskCmpNode::predicate_can_be_negated() {
+  switch (_predicate) {
+    case BoolTest::eq:
+    case BoolTest::ne:
+      // eq and ne also apply to floating-point special values like NaN and infinities.
+      return true;
+    case BoolTest::le:
+    case BoolTest::ge:
+    case BoolTest::lt:
+    case BoolTest::gt:
+    case BoolTest::ule:
+    case BoolTest::uge:
+    case BoolTest::ult:
+    case BoolTest::ugt: {
+      BasicType bt = vect_type()->element_basic_type();
+      // For float and double, we don't know if either comparison operand is a
+      // NaN, NaN {le|ge|lt|gt} anything is false, resulting in inconsistent
+      // results before and after negation.
+      return is_integral_type(bt);
+    }
+    default:
+      return false;
+  }
+}
+
+// This function transforms the following patterns:
+//
+// For integer types:
+// (XorV (VectorMaskCmp src1 src2 cond) (Replicate -1))
+//    => (VectorMaskCmp src1 src2 ncond)
+// (XorVMask (VectorMaskCmp src1 src2 cond) (MaskAll m1))
+//    => (VectorMaskCmp src1 src2 ncond)
+// (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// cond can be eq, ne, le, ge, lt, gt, ule, uge, ult and ugt.
+// ncond is the negative comparison of cond.
+//
+// For float and double types:
+// (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// cond can be eq or ne.
+Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  // Transformations for predicated vectors are not supported for now.
+  if (is_predicated_vector() ||
+      in1->is_predicated_vector() ||
+      in2->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  // XorV/XorVMask is commutative, swap VectorMaskCmp/VectorMaskCast to in1.
+  if (VectorNode::is_all_ones_vector(in1)) {
+    swap(in1, in2);
+  }
+
+  bool with_vector_mask_cast = false;
+  // Required conditions:
+  //   1. VectorMaskCast and VectorMaskCmp should only have a single use,
+  //      otherwise the optimization may be unprofitable.
+  //   2. The predicate of VectorMaskCmp should be negatable.
+  //   3. The second input should be an all true vector mask.
+  if (in1->Opcode() == Op_VectorMaskCast) {
+    if (in1->outcnt() != 1) {
+      return nullptr;
+    }
+    with_vector_mask_cast = true;
+    in1 = in1->in(1);
+  }
+  if (in1->Opcode() != Op_VectorMaskCmp ||
+      in1->outcnt() != 1 ||
+      !in1->as_VectorMaskCmp()->predicate_can_be_negated() ||
+      !VectorNode::is_all_ones_vector(in2)) {
+    return nullptr;
+  }
+
+  BoolTest::mask neg_cond = BoolTest::negate_mask((in1->as_VectorMaskCmp())->get_predicate());
+  ConINode* predicate_node = phase->intcon(neg_cond);
+  const TypeVect* vt = in1->as_Vector()->vect_type();
+  Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2), predicate_node, vt);
+  if (with_vector_mask_cast) {
+    // We optimized out a VectorMaskCast, regenerate one to ensure type correctness.
+    res = new VectorMaskCastNode(phase->transform(res), vect_type());
+  }
+  return res;
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2280,6 +2373,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
     return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
+  }
+
+  Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
   }
   return VectorNode::Ideal(phase, can_reshape);
 }

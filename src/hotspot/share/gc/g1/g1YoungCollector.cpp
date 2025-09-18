@@ -438,11 +438,11 @@ public:
   }
 
   void add_humongous_candidates(uint candidates) {
-    Atomic::add(&_humongous_candidates, candidates);
+    AtomicAccess::add(&_humongous_candidates, candidates);
   }
 
   void add_humongous_total(uint total) {
-    Atomic::add(&_humongous_total, total);
+    AtomicAccess::add(&_humongous_total, total);
   }
 
   uint humongous_candidates() {
@@ -679,7 +679,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!Atomic::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);
@@ -815,13 +815,18 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
+  double target_pause_time_ms = MaxGCPauseMillis;
+
+  if (G1ForceOptionalEvacuation) {
+    target_pause_time_ms = DBL_MAX;
+  }
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
-    double time_left_ms = MaxGCPauseMillis - time_used_ms;
+    double time_left_ms = target_pause_time_ms - time_used_ms;
 
-    if (time_left_ms < 0 ||
+    if (time_left_ms <= 0 ||
         !collection_set()->finalize_optional_for_evacuation(time_left_ms * policy()->optional_evacuation_fraction())) {
       log_trace(gc, ergo, cset)("Skipping evacuation of %u optional regions, no more regions can be evacuated in %.3fms",
                                 collection_set()->num_optional_regions(), time_left_ms);

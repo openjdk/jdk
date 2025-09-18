@@ -1216,6 +1216,9 @@ bool Node::has_special_unique_user() const {
   } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
     // See IfNode::fold_compares
     return true;
+  } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
+    // Condition for XorVMask(VectorMaskCmp(x,y,cond), MaskAll(true)) ==> VectorMaskCmp(x,y,ncond)
+    return true;
   } else {
     return false;
   }

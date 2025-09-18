@@ -35,7 +35,7 @@ static void contains_expected_num_of_registers(const RegMask& rm, unsigned int e
     ASSERT_TRUE(rm.is_NotEmpty());
   } else {
     ASSERT_TRUE(!rm.is_NotEmpty());
-    ASSERT_TRUE(!rm.is_AllStack());
+    ASSERT_TRUE(!rm.is_infinite_stack());
   }
 
   RegMaskIterator rmi(rm);
@@ -84,8 +84,8 @@ TEST_VM(RegMask, Set_ALL) {
   rm.Set_All();
   ASSERT_TRUE(rm.Size() == RegMask::CHUNK_SIZE);
   ASSERT_TRUE(rm.is_NotEmpty());
-  // Set_All sets AllStack bit
-  ASSERT_TRUE(rm.is_AllStack());
+  // Set_All sets the infinite bit
+  ASSERT_TRUE(rm.is_infinite_stack());
   contains_expected_num_of_registers(rm, RegMask::CHUNK_SIZE);
 }
 
@@ -135,7 +135,7 @@ TEST_VM(RegMask, SUBTRACT) {
   for (int i = 17; i < RegMask::CHUNK_SIZE; i++) {
     rm1.Insert(i);
   }
-  ASSERT_TRUE(rm1.is_AllStack());
+  ASSERT_TRUE(rm1.is_infinite_stack());
   rm2.SUBTRACT(rm1);
   contains_expected_num_of_registers(rm1, RegMask::CHUNK_SIZE - 17);
   contains_expected_num_of_registers(rm2, 17);
@@ -151,8 +151,8 @@ TEST_VM(RegMask, is_bound1) {
     contains_expected_num_of_registers(rm, 1);
     rm.Remove(i);
   }
-  // AllStack bit does not count as a bound register
-  rm.set_AllStack();
+  // The infinite bit does not count as a bound register
+  rm.set_infinite_stack();
   ASSERT_FALSE(rm.is_bound1());
 }
 
@@ -168,7 +168,7 @@ TEST_VM(RegMask, is_bound_pair) {
     contains_expected_num_of_registers(rm, 2);
     rm.Clear();
   }
-  // A pair with the AllStack bit does not count as a bound pair
+  // A pair with the infinite bit does not count as a bound pair
   rm.Clear();
   rm.Insert(RegMask::CHUNK_SIZE - 2);
   rm.Insert(RegMask::CHUNK_SIZE - 1);
@@ -187,7 +187,7 @@ TEST_VM(RegMask, is_bound_set) {
       contains_expected_num_of_registers(rm, size);
       rm.Clear();
     }
-    // A set with the AllStack bit does not count as a bound set
+    // A set with the infinite bit does not count as a bound set
     for (int j = RegMask::CHUNK_SIZE - size; j < RegMask::CHUNK_SIZE; j++) {
         rm.Insert(j);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 #include "gc/z/zBitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -70,7 +70,7 @@ inline bool ZBitMap::par_set_bit_pair_strong(idx_t bit, bool& inc_live) {
       inc_live = false;
       return false;
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val);
     if (cur_val == old_val) {
       // Success
       const bm_word_t marked_mask = bit_mask(bit);

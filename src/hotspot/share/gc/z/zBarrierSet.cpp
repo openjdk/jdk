@@ -163,7 +163,7 @@ void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
     // We avoid healing here because the store below colors the pointer store good,
     // hence avoiding the cost of a CAS.
     ZBarrier::store_barrier_on_heap_oop_field(dst, false /* heal */);
-    Atomic::store(dst, ZAddress::store_good(elem));
+    AtomicAccess::store(dst, ZAddress::store_good(elem));
   }
 }
 
