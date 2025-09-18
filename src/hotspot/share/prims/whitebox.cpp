@@ -2512,7 +2512,7 @@ WB_END
 
 // Available memory of the host machine (container-aware)
 WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
-  size_t avail_mem = 0;
+  uint64_t avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
   return static_cast<jlong>(avail_mem);

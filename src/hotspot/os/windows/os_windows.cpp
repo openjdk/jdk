@@ -848,22 +848,22 @@ jlong os::elapsed_frequency() {
 }
 
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(uint64_t& value) {
   return win32::available_memory(value);
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(uint64_t& value) {
   return win32::available_memory(value);
 }
 
-bool os::win32::available_memory(size_t& value) {
+bool os::win32::available_memory(uint64_t& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPhys);
+    value = static_cast<uint64_t>(ms.ullAvailPhys);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
@@ -871,12 +871,12 @@ bool os::win32::available_memory(size_t& value) {
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(uint64_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullTotalPageFile);
+    value = static_cast<uint64_t>(ms.ullTotalPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
@@ -884,12 +884,12 @@ bool os::total_swap_space(size_t& value) {
   }
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(uint64_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPageFile);
+    value = static_cast<uint64_t>(ms.ullAvailPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
@@ -897,7 +897,7 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-size_t os::physical_memory() {
+uint64_t os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -3964,7 +3964,7 @@ int os::current_process_id() {
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
-size_t os::win32::_physical_memory           = 0;
+uint64_t os::win32::_physical_memory           = 0;
 
 bool   os::win32::_is_windows_server         = false;
 
@@ -4198,7 +4198,7 @@ void os::win32::initialize_system_info() {
   if (res != TRUE) {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
-  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
+  _physical_memory = static_cast<uint64_t>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.

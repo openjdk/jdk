@@ -62,7 +62,7 @@ void GCInitLogger::print_cpu() {
 }
 
 void GCInitLogger::print_memory() {
-  size_t memory = os::physical_memory();
+  uint64_t memory = os::physical_memory();
   log_info_p(gc, init)("Memory: " PROPERFMT, PROPERFMTARGS(memory));
 }
 
