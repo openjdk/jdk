@@ -118,7 +118,7 @@ public class RollHoursTest {
         // For example with HOUR_OF_DAY at 15 and a 24-hour cycle
         // For rolling forwards 50 hours -> (50 + 15) % 24 = 17
         // For hour backwards 50 hours -> (24 + (15 - 50) % 24) % 24
-        //                             -> (24 + - 11) % 24 = 13
+        //                             -> (24 - 11) % 24 = 13
         var result = (roll >= 0 ? (hour + roll) : (hourCycle + (hour + roll) % hourCycle)) % hourCycle;
 
         // 2 AM does not exist on transition day. Calculate normalized value accordingly
