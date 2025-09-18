@@ -605,7 +605,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
       // than UnscaledOopHeapMax due to type constraints.
       uintptr_t lowest_start = aligned_heap_base_min_address;
       if (size < UnscaledOopHeapMax) {
-        lowest_start = MAX2(lowest_start, UnscaledOopHeapMax - size);
+        lowest_start = MAX2<uintptr_t>(lowest_start, UnscaledOopHeapMax - size);
       }
       lowest_start = align_up(lowest_start, attach_point_alignment);
       assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
