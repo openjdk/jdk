@@ -90,9 +90,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         iCount = ((PBEParameterSpec)paramSpec).getIterationCount();
     }
 
-    protected void engineInit(byte[] encoded)
-        throws IOException
-    {
+    protected void engineInit(byte[] encoded) throws IOException {
         DerValue pBMAC1_params = new DerValue(encoded);
         if (pBMAC1_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBMAC1 parameter parsing error: "
@@ -137,15 +135,13 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     }
 
     protected void engineInit(byte[] encoded, String decodingMethod)
-        throws IOException
-    {
+            throws IOException {
         engineInit(encoded);
     }
 
     protected <T extends AlgorithmParameterSpec>
             T engineGetParameterSpec(Class<T> paramSpec)
-        throws InvalidParameterSpecException
-    {
+        throws InvalidParameterSpecException {
         if (paramSpec.isAssignableFrom(PBEParameterSpec.class)) {
             return paramSpec.cast(
                 new PBEParameterSpec(salt, iCount));
@@ -188,8 +184,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     }
 
     protected byte[] engineGetEncoded(String encodingMethod)
-        throws IOException
-    {
+        throws IOException {
         return engineGetEncoded();
     }
 

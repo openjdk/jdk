@@ -129,22 +129,18 @@ class MacData {
     }
 
     MacData(String algName, byte[] digest, AlgorithmParameterSpec params,
-            boolean writePBMAC1, String kdfHmac, int keyLength,
-            byte[] extraSalt, int extraIterationCount)
-        throws NoSuchAlgorithmException
-    {
+            String kdfHmac, int keyLength, byte[] extraSalt,
+            int extraIterationCount) throws NoSuchAlgorithmException {
         AlgorithmId algid;
 
         if (algName == null) {
            throw new NullPointerException("the algName parameter " +
                                                "must be non-null");
         }
-        if (writePBMAC1) {
+        if (algName.equals("PBMAC1")) {
             pbmac1Keystore = true;
-            algid = AlgorithmId.get("PBMAC1");
-        } else {
-            algid = AlgorithmId.get(algName);
         }
+        algid = AlgorithmId.get(algName);
 
         this.digestAlgorithmName = algid.getName();
         this.digestAlgorithmParams = algid.getParameters();
@@ -218,11 +214,8 @@ class MacData {
      * @exception IOException if error occurs when constructing its
      * ASN.1 encoding.
      */
-    public byte[] getEncoded() throws NoSuchAlgorithmException,
-            IOException
-    {
+    public byte[] getEncoded() throws NoSuchAlgorithmException, IOException {
         if (pbmac1Keystore) {
-            //digestAlgorithmName = "PBMAC1";
             ObjectIdentifier pkcs5PBKDF2_OID =
                     ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 

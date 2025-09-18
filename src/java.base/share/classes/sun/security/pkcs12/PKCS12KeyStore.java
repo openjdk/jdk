@@ -1485,6 +1485,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         final MacData macData;
         final String kdfHmac;
         boolean writePBMAC1 = false;
+        int writeIterationCount = macIterationCount;
 
         if (macAlgorithm.equals("PBMAC1") ||
                 defaultMacAlgorithm().startsWith("PBEWith")) {
@@ -1498,12 +1499,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             }
             algName = "PBMAC1";
             writePBMAC1 = true;
+            // Override with value of security property.
+            writeIterationCount = defaultMacIterationCount();
         } else {
             algName = macAlgorithm.substring(7);
             kdfHmac = macAlgorithm;
         }
 
-        params = new PBEParameterSpec(getSalt(), macIterationCount);
+        params = new PBEParameterSpec(getSalt(), writeIterationCount);
 
         var skf = SecretKeyFactory.getInstance(kdfHmac.equals("HmacSHA512") ?
                 "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
@@ -1511,7 +1514,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             int keyLength = kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8;
 
             SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(passwd,
-                    params.getSalt(), macIterationCount, keyLength));
+                    params.getSalt(), writeIterationCount, keyLength));
 
             Mac m = Mac.getInstance(kdfHmac);
             try {
@@ -1523,7 +1526,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             byte[] macResult = m.doFinal();
 
             // encode as MacData
-            macData = new MacData(algName, macResult, params, writePBMAC1,
+            macData = new MacData(algName, macResult, params,
                     kdfHmac, keyLength, extraSalt, extraIterationCount);
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(macData.getEncoded());
@@ -2186,6 +2189,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             if (password != null) {
                 MacData macData = new MacData(s);
                 int ic = macData.getIterations();
+                byte[] salt = macData.getSalt();
 
                 try {
                     if (ic > MAX_ITERATION_COUNT) {
@@ -2196,7 +2200,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     String algName =
                             macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
                     if (algName.equals("PBMAC1")) {
-                        byte[] salt = macData.getSalt();
 
                         String pbmac1KdfHmac = macData.getKdfHmac();
                         pbmac1Hmac = pbmac1KdfHmac;
@@ -2216,8 +2219,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         macAlgorithm = "HmacPBE" + algName;
                         macIterationCount = ic;
 
+                        // save in extra in case we write out as PBMAC1
+                        extraSalt = salt;
+                        extraIterationCount = ic;
+
                         PBEParameterSpec params =
-                                new PBEParameterSpec(macData.getSalt(), ic);
+                                new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
                                 macAlgorithm);
                     }
