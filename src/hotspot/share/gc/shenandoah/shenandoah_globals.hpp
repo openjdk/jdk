@@ -34,6 +34,20 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
+          "(Generational mode only) What percent of a heap region "         \
+          "should be used before we consider promoting a region in "        \
+          "place?  Regions with less than this amount of used will "        \
+          "promoted by evacuation.  A benefit of promoting in place "       \
+          "is that less work is required by the GC at the time the "        \
+          "region is promoted.  A disadvantage of promoting in place "      \
+          "is that this introduces fragmentation of old-gen memory, "       \
+          "with old-gen regions scattered throughout the heap.  Regions "   \
+          "that have been promoted in place may need to be evacuated at "   \
+          "a later time in order to compact old-gen memory to enable "      \
+          "future humongous allocations.")                                  \
+          range(0,100)                                                      \
+                                                                            \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \
           "reserved for humongous objects if possible.  Old-generation "    \
@@ -165,7 +179,7 @@
           "collector accepts. In percents of heap region size.")            \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahOldGarbageThreshold, 15, EXPERIMENTAL,           \
+  product(uintx, ShenandoahOldGarbageThreshold, 25, EXPERIMENTAL,           \
           "How much garbage an old region has to contain before it would "  \
           "be taken for collection.")                                       \
           range(0,100)                                                      \
