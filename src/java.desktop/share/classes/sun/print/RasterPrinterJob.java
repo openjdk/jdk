@@ -2479,7 +2479,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @param s the text to process
      * @return the input text, with ignorable whitespace (if any) removed
      */
-    public String removeControlChars(String s) {
+    public static String removeControlChars(String s) {
         char[] in_chars = s.toCharArray();
         int len = in_chars.length;
         char[] out_chars = new char[len];

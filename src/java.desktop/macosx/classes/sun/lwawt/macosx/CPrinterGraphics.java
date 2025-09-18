@@ -44,11 +44,6 @@ public final class CPrinterGraphics extends ProxyGraphics2D {
     }
 
     @Override
-    public CPrinterJob getPrinterJob() {
-        return (CPrinterJob) super.getPrinterJob();
-    }
-
-    @Override
     public boolean drawImage(Image img, int x, int y,
                  Color bgcolor,
                  ImageObserver observer) {
@@ -83,13 +78,13 @@ public final class CPrinterGraphics extends ProxyGraphics2D {
 
     @Override
     public void drawString(String str, int x, int y) {
-        str = getPrinterJob().removeControlChars(str);
+        str = RasterPrinterJob.removeControlChars(str);
         super.drawString(str, x, y);
     }
 
     @Override
     public void drawString(String str, float x, float y) {
-        str = getPrinterJob().removeControlChars(str);
+        str = RasterPrinterJob.removeControlChars(str);
         super.drawString(str, x, y);
     }
 }
