@@ -23,8 +23,6 @@
 
 package jdk.jfr.event.profiling;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -103,13 +101,13 @@ public class TestCPUTimeSampleQueueAutoSizes {
     public static void main(String[] args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
             // setup recording
-            AtomicLong burstThreadId = new AtomicLong();
+            long burstThreadId = Thread.currentThread().threadId();
             final long startTimeMillis = Instant.now().toEpochMilli();
             LossEventCollection lossEvents = new LossEventCollection();
             rs.enable(EventNames.CPUTimeSample).with("throttle", "1ms");
             rs.enable(EventNames.CPUTimeSamplesLost);
             rs.onEvent(EventNames.CPUTimeSamplesLost, e -> {
-                if (e.getThread("eventThread").getJavaThreadId() == burstThreadId.get()) {
+                if (e.getThread("eventThread").getJavaThreadId() == burstThreadId) {
                     long eventTime = e.getStartTime().toEpochMilli();
                     long relativeTime = eventTime - startTimeMillis;
                     System.out.println("Lost samples: " + e.getLong("lostSamples") + " at " + relativeTime + " start time " + startTimeMillis);
@@ -120,14 +118,13 @@ public class TestCPUTimeSampleQueueAutoSizes {
             // while we are in native code
             disableOutOfStackWalking();
             rs.startAsync();
-            burstThreadId.set(Thread.currentThread().threadId());
 
 
             for (int i = 0; i < 5; i++) {
                 // run in native for one second
                 WHITE_BOX.busyWaitCPUTime(1000);
                 // going out-of-native at the end of the previous call should have triggered
-                // the safepoint handler, thereby also triggering the stack walkingand creation
+                // the safepoint handler, thereby also triggering the stack walking and creation
                 // of the loss event
                 lossEvents.addTimeBoxEnd(Instant.now().toEpochMilli() - startTimeMillis);
             }
@@ -141,11 +138,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
     }
 
     static void disableOutOfStackWalking() {
-        boolean supported = WHITE_BOX.cpuSamplerSetOutOfStackWalking(false);
-        if (!supported) {
-            System.out.println("Out-of-stack-walking not supported, skipping test");
-            Asserts.assertFalse(true);
-        }
+        Asserts.assertTrue(WHITE_BOX.cpuSamplerSetOutOfStackWalking(false), "Out-of-stack-walking not supported");
     }
 
     static void enableOutOfStackWalking() {
