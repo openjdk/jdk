@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_ASSEMBLER_RISCV_INLINE_HPP
 #define CPU_RISCV_ASSEMBLER_RISCV_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 
