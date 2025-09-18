@@ -408,6 +408,13 @@
           "events.")                                                        \
           range(0,100)                                                      \
                                                                             \
+  product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
+          "Collect additional metrics about evacuations. Enabling this "    \
+          "tracks how many objects and how many bytes were evacuated, and " \
+          "how many were abandoned. The information will be categorized "   \
+          "by thread type (worker or mutator) and evacuation type (young, " \
+          "old, or promotion.")                                             \
+                                                                            \
   product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
           "The minimum percentage of the heap to use for the young "        \
           "generation. Heuristics will not adjust the young generation "    \
