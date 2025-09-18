@@ -37,7 +37,7 @@ import static compiler.lib.template_framework.Template.body;
 
 /**
  * {@link Expression}s model Java expressions, that have a list of arguments with specified
- * argument types, and an result with a specified result type. Once can {@link #make} a new
+ * argument types, and a result with a specified result type. Once can {@link #make} a new
  * {@link Expression} or use existing ones from {@link Operations}.
  *
  * <p>
@@ -355,7 +355,7 @@ public class Expression {
             tokens.add(strings.get(i));
             tokens.add(arguments.get(i));
         }
-        tokens.add(strings.get(strings.size()-1));
+        tokens.add(strings.getLast());
 
         var template = Template.make(() -> body(
             tokens
@@ -377,7 +377,7 @@ public class Expression {
             sb.append(", ");
         }
         sb.append("\"");
-        sb.append(this.strings.get(this.strings.size()-1));
+        sb.append(this.strings.getLast());
         sb.append("\"]");
         return sb.toString();
     }
@@ -462,7 +462,7 @@ public class Expression {
             newStrings.add(nestingExpression.strings.get(i));
             newArgumentTypes.add(nestingExpression.argumentTypes.get(i));
         }
-        newStrings.add(nestingExpression.strings.get(nestingExpression.strings.size() - 1) +
+        newStrings.add(nestingExpression.strings.getLast() +
                        this.strings.get(argumentIndex + 1)); // concat S2 and s2
         for (int i = argumentIndex+1; i < this.argumentTypes.size(); i++) {
             newArgumentTypes.add(this.argumentTypes.get(i));

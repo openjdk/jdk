@@ -201,7 +201,6 @@ public class ExpressionFuzzer {
         // We need to prepare some random values to pass into the test method. We generate the values
         // once, and pass the same values into both the compiled and reference method.
         var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
-            //"#type #name = ", type.con(), ";\n"
             "#type #name = ",
             (type instanceof PrimitiveType pt) ? pt.callLibraryRNG() : type.con(),
             ";\n"

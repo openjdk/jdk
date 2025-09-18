@@ -58,13 +58,13 @@ public final class Operations {
         Expression.Info withNondeterministicResult = new Expression.Info().withNondeterministicResult();
 
         // ------------ byte -------------
-        ops.add(Expression.make(BYTES, "(byte)(", BYTES,    ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", SHORTS,   ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", CHARS,    ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", INTS,     ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", LONGS,    ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", FLOATS,   ")"));
-        ops.add(Expression.make(BYTES, "(byte)(", DOUBLES,  ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", BYTES,   ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", SHORTS,  ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", CHARS,   ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", INTS,    ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", LONGS,   ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", FLOATS,  ")"));
+        ops.add(Expression.make(BYTES, "(byte)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(BYTES, "(", BOOLEANS, "?", BYTES, ":", BYTES, ")"));
@@ -72,19 +72,19 @@ public final class Operations {
         // Arithmetic operations are not performned in byte, but rather promoted to int.
 
         // ------------ Byte -------------
-        ops.add(Expression.make(INTS, "Byte.compare(", BYTES, ", ", BYTES, ")"));
-        ops.add(Expression.make(INTS, "Byte.compareUnsigned(", BYTES, ", ", BYTES, ")"));
-        ops.add(Expression.make(INTS, "Byte.toUnsignedInt(", BYTES, ")"));
-        ops.add(Expression.make(LONGS, "Byte.toUnsignedLong(", BYTES, ")"));
+        ops.add(Expression.make(INTS,  "Byte.compare(",         BYTES, ", ", BYTES, ")"));
+        ops.add(Expression.make(INTS,  "Byte.compareUnsigned(", BYTES, ", ", BYTES, ")"));
+        ops.add(Expression.make(INTS,  "Byte.toUnsignedInt(",   BYTES, ")"));
+        ops.add(Expression.make(LONGS, "Byte.toUnsignedLong(",  BYTES, ")"));
 
         // ------------ char -------------
-        ops.add(Expression.make(CHARS, "(char)(", BYTES,    ")"));
-        ops.add(Expression.make(CHARS, "(char)(", SHORTS,   ")"));
-        ops.add(Expression.make(CHARS, "(char)(", CHARS,    ")"));
-        ops.add(Expression.make(CHARS, "(char)(", INTS,     ")"));
-        ops.add(Expression.make(CHARS, "(char)(", LONGS,    ")"));
-        ops.add(Expression.make(CHARS, "(char)(", FLOATS,   ")"));
-        ops.add(Expression.make(CHARS, "(char)(", DOUBLES,  ")"));
+        ops.add(Expression.make(CHARS, "(char)(", BYTES,   ")"));
+        ops.add(Expression.make(CHARS, "(char)(", SHORTS,  ")"));
+        ops.add(Expression.make(CHARS, "(char)(", CHARS,   ")"));
+        ops.add(Expression.make(CHARS, "(char)(", INTS,    ")"));
+        ops.add(Expression.make(CHARS, "(char)(", LONGS,   ")"));
+        ops.add(Expression.make(CHARS, "(char)(", FLOATS,  ")"));
+        ops.add(Expression.make(CHARS, "(char)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(CHARS, "(", BOOLEANS, "?", CHARS, ":", CHARS, ")"));
@@ -92,17 +92,17 @@ public final class Operations {
         // Arithmetic operations are not performned in char, but rather promoted to int.
 
         // ------------ Character -------------
-        ops.add(Expression.make(INTS, "Character.compare(", CHARS, ", ", CHARS, ")"));
+        ops.add(Expression.make(INTS,  "Character.compare(",      CHARS, ", ", CHARS, ")"));
         ops.add(Expression.make(CHARS, "Character.reverseBytes(", CHARS, ")"));
 
         // ------------ short -------------
-        ops.add(Expression.make(SHORTS, "(short)(", BYTES,    ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", SHORTS,   ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", CHARS,    ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", INTS,     ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", LONGS,    ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", FLOATS,   ")"));
-        ops.add(Expression.make(SHORTS, "(short)(", DOUBLES,  ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", BYTES,   ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", SHORTS,  ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", CHARS,   ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", INTS,    ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", LONGS,   ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", FLOATS,  ")"));
+        ops.add(Expression.make(SHORTS, "(short)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(SHORTS, "(", BOOLEANS, "?", SHORTS, ":", SHORTS, ")"));
@@ -110,31 +110,31 @@ public final class Operations {
         // Arithmetic operations are not performned in short, but rather promoted to int.
 
         // ------------ Short -------------
-        ops.add(Expression.make(INTS, "Short.compare(", SHORTS, ", ", SHORTS, ")"));
-        ops.add(Expression.make(INTS, "Short.compareUnsigned(", SHORTS, ", ", SHORTS, ")"));
-        ops.add(Expression.make(SHORTS, "Short.reverseBytes(", SHORTS, ")"));
-        ops.add(Expression.make(INTS, "Short.toUnsignedInt(", SHORTS, ")"));
-        ops.add(Expression.make(LONGS, "Short.toUnsignedLong(", SHORTS, ")"));
+        ops.add(Expression.make(INTS,   "Short.compare(",         SHORTS, ", ", SHORTS, ")"));
+        ops.add(Expression.make(INTS,   "Short.compareUnsigned(", SHORTS, ", ", SHORTS, ")"));
+        ops.add(Expression.make(SHORTS, "Short.reverseBytes(",    SHORTS, ")"));
+        ops.add(Expression.make(INTS,   "Short.toUnsignedInt(",   SHORTS, ")"));
+        ops.add(Expression.make(LONGS,  "Short.toUnsignedLong(",  SHORTS, ")"));
 
         // ------------ int -------------
-        ops.add(Expression.make(INTS, "(int)(", BYTES,    ")"));
-        ops.add(Expression.make(INTS, "(int)(", SHORTS,   ")"));
-        ops.add(Expression.make(INTS, "(int)(", CHARS,    ")"));
-        ops.add(Expression.make(INTS, "(int)(", INTS,     ")"));
-        ops.add(Expression.make(INTS, "(int)(", LONGS,    ")"));
-        ops.add(Expression.make(INTS, "(int)(", FLOATS,   ")"));
-        ops.add(Expression.make(INTS, "(int)(", DOUBLES,  ")"));
+        ops.add(Expression.make(INTS, "(int)(", BYTES,   ")"));
+        ops.add(Expression.make(INTS, "(int)(", SHORTS,  ")"));
+        ops.add(Expression.make(INTS, "(int)(", CHARS,   ")"));
+        ops.add(Expression.make(INTS, "(int)(", INTS,    ")"));
+        ops.add(Expression.make(INTS, "(int)(", LONGS,   ")"));
+        ops.add(Expression.make(INTS, "(int)(", FLOATS,  ")"));
+        ops.add(Expression.make(INTS, "(int)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(INTS, "(", BOOLEANS, "?", INTS, ":", INTS, ")"));
 
         // Arithmetic operators
         ops.add(Expression.make(INTS, "(-(", INTS, "))"));
-        ops.add(Expression.make(INTS, "(", INTS, " + ",   INTS, ")"));
-        ops.add(Expression.make(INTS, "(", INTS, " - ",   INTS, ")"));
-        ops.add(Expression.make(INTS, "(", INTS, " * ",   INTS, ")"));
-        ops.add(Expression.make(INTS, "(", INTS, " / ",   INTS, ")", withArithmeticException));
-        ops.add(Expression.make(INTS, "(", INTS, " % ",   INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS, "(", INTS, " + ", INTS, ")"));
+        ops.add(Expression.make(INTS, "(", INTS, " - ", INTS, ")"));
+        ops.add(Expression.make(INTS, "(", INTS, " * ", INTS, ")"));
+        ops.add(Expression.make(INTS, "(", INTS, " / ", INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS, "(", INTS, " % ", INTS, ")", withArithmeticException));
 
         // Bitwise Operators (non short-circuit)
         ops.add(Expression.make(INTS, "(~(", INTS, "))"));
@@ -146,54 +146,54 @@ public final class Operations {
         ops.add(Expression.make(INTS, "(", INTS, " >>> ", INTS, ")"));
 
         // Relational / Comparison Operators
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " == ",   INTS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " != ",   INTS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " > ",    INTS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " < ",    INTS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " >= ",   INTS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", INTS, " <= ",   INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " == ", INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " != ", INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " > ",  INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " < ",  INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " >= ", INTS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", INTS, " <= ", INTS, ")"));
 
         // ------------ Integer -------------
-        ops.add(Expression.make(INTS, "Integer.bitCount(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.compare(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.compareUnsigned(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.compress(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.divideUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
-        ops.add(Expression.make(INTS, "Integer.expand(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.highestOneBit(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.lowestOneBit(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.max(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.min(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.numberOfLeadingZeros(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.numberOfTrailingZeros(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.remainderUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
-        ops.add(Expression.make(INTS, "Integer.reverse(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.reverseBytes(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.rotateLeft(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.rotateRight(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.signum(", INTS, ")"));
-        ops.add(Expression.make(INTS, "Integer.sum(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.bitCount(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.compare(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.compareUnsigned(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.compress(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.divideUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS,  "Integer.expand(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.highestOneBit(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.lowestOneBit(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.max(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.min(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.numberOfLeadingZeros(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.numberOfTrailingZeros(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.remainderUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS,  "Integer.reverse(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.reverseBytes(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.rotateLeft(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.rotateRight(", INTS, ", ", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.signum(", INTS, ")"));
+        ops.add(Expression.make(INTS,  "Integer.sum(", INTS, ", ", INTS, ")"));
         ops.add(Expression.make(LONGS, "Integer.toUnsignedLong(", INTS, ")"));
 
         // ------------ long -------------
-        ops.add(Expression.make(LONGS, "(long)(", BYTES,    ")"));
-        ops.add(Expression.make(LONGS, "(long)(", SHORTS,   ")"));
-        ops.add(Expression.make(LONGS, "(long)(", CHARS,    ")"));
-        ops.add(Expression.make(LONGS, "(long)(", INTS,     ")"));
-        ops.add(Expression.make(LONGS, "(long)(", LONGS,    ")"));
-        ops.add(Expression.make(LONGS, "(long)(", FLOATS,   ")"));
-        ops.add(Expression.make(LONGS, "(long)(", DOUBLES,  ")"));
+        ops.add(Expression.make(LONGS, "(long)(", BYTES,   ")"));
+        ops.add(Expression.make(LONGS, "(long)(", SHORTS,  ")"));
+        ops.add(Expression.make(LONGS, "(long)(", CHARS,   ")"));
+        ops.add(Expression.make(LONGS, "(long)(", INTS,    ")"));
+        ops.add(Expression.make(LONGS, "(long)(", LONGS,   ")"));
+        ops.add(Expression.make(LONGS, "(long)(", FLOATS,  ")"));
+        ops.add(Expression.make(LONGS, "(long)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(LONGS, "(", BOOLEANS, "?", LONGS, ":", LONGS, ")"));
 
         // Arithmetic operators
         ops.add(Expression.make(LONGS, "(-(", LONGS, "))"));
-        ops.add(Expression.make(LONGS, "(", LONGS, " + ",   LONGS, ")"));
-        ops.add(Expression.make(LONGS, "(", LONGS, " - ",   LONGS, ")"));
-        ops.add(Expression.make(LONGS, "(", LONGS, " * ",   LONGS, ")"));
-        ops.add(Expression.make(LONGS, "(", LONGS, " / ",   LONGS, ")", withArithmeticException));
-        ops.add(Expression.make(LONGS, "(", LONGS, " % ",   LONGS, ")", withArithmeticException));
+        ops.add(Expression.make(LONGS, "(", LONGS, " + ", LONGS, ")"));
+        ops.add(Expression.make(LONGS, "(", LONGS, " - ", LONGS, ")"));
+        ops.add(Expression.make(LONGS, "(", LONGS, " * ", LONGS, ")"));
+        ops.add(Expression.make(LONGS, "(", LONGS, " / ", LONGS, ")", withArithmeticException));
+        ops.add(Expression.make(LONGS, "(", LONGS, " % ", LONGS, ")", withArithmeticException));
 
         // Bitwise Operators (non short-circuit)
         ops.add(Expression.make(LONGS, "(~(", LONGS, "))"));
@@ -205,17 +205,17 @@ public final class Operations {
         ops.add(Expression.make(LONGS, "(", LONGS, " >>> ", LONGS, ")"));
 
         // Relational / Comparison Operators
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " == ",   LONGS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " != ",   LONGS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " > ",    LONGS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " < ",    LONGS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " >= ",   LONGS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", LONGS, " <= ",   LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " == ", LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " != ", LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " > ",  LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " < ",  LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " >= ", LONGS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", LONGS, " <= ", LONGS, ")"));
 
         // ------------ Long -------------
-        ops.add(Expression.make(INTS, "Long.bitCount(", LONGS, ")"));
-        ops.add(Expression.make(INTS, "Long.compare(", LONGS, ", ", LONGS, ")"));
-        ops.add(Expression.make(INTS, "Long.compareUnsigned(", LONGS, ", ", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.bitCount(", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.compare(", LONGS, ", ", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.compareUnsigned(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.compress(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.divideUnsigned(", LONGS, ", ", LONGS, ")", withArithmeticException));
         ops.add(Expression.make(LONGS, "Long.expand(", LONGS, ", ", LONGS, ")"));
@@ -223,35 +223,35 @@ public final class Operations {
         ops.add(Expression.make(LONGS, "Long.lowestOneBit(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.max(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.min(", LONGS, ", ", LONGS, ")"));
-        ops.add(Expression.make(INTS, "Long.numberOfLeadingZeros(", LONGS, ")"));
-        ops.add(Expression.make(INTS, "Long.numberOfTrailingZeros(", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.numberOfLeadingZeros(", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.numberOfTrailingZeros(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.remainderUnsigned(", LONGS, ", ", LONGS, ")", withArithmeticException));
         ops.add(Expression.make(LONGS, "Long.reverse(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.reverseBytes(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.rotateLeft(", LONGS, ", ", INTS, ")"));
         ops.add(Expression.make(LONGS, "Long.rotateRight(", LONGS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS, "Long.signum(", LONGS, ")"));
+        ops.add(Expression.make(INTS,  "Long.signum(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.sum(", LONGS, ", ", LONGS, ")"));
 
         // ------------ float -------------
-        ops.add(Expression.make(FLOATS, "(float)(", BYTES,    ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", SHORTS,   ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", CHARS,    ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", INTS,     ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", LONGS,    ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", FLOATS,   ")"));
-        ops.add(Expression.make(FLOATS, "(float)(", DOUBLES,  ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", BYTES,   ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", SHORTS,  ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", CHARS,   ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", INTS,    ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", LONGS,   ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", FLOATS,  ")"));
+        ops.add(Expression.make(FLOATS, "(float)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(FLOATS, "(", BOOLEANS, "?", FLOATS, ":", FLOATS, ")"));
 
         // Arithmetic operators
         ops.add(Expression.make(FLOATS, "(-(", FLOATS, "))"));
-        ops.add(Expression.make(FLOATS, "(", FLOATS, " + ",   FLOATS, ")"));
-        ops.add(Expression.make(FLOATS, "(", FLOATS, " - ",   FLOATS, ")"));
-        ops.add(Expression.make(FLOATS, "(", FLOATS, " * ",   FLOATS, ")"));
-        ops.add(Expression.make(FLOATS, "(", FLOATS, " / ",   FLOATS, ")"));
-        ops.add(Expression.make(FLOATS, "(", FLOATS, " % ",   FLOATS, ")"));
+        ops.add(Expression.make(FLOATS, "(", FLOATS, " + ", FLOATS, ")"));
+        ops.add(Expression.make(FLOATS, "(", FLOATS, " - ", FLOATS, ")"));
+        ops.add(Expression.make(FLOATS, "(", FLOATS, " * ", FLOATS, ")"));
+        ops.add(Expression.make(FLOATS, "(", FLOATS, " / ", FLOATS, ")"));
+        ops.add(Expression.make(FLOATS, "(", FLOATS, " % ", FLOATS, ")"));
 
 
         // Relational / Comparison Operators
@@ -277,24 +277,24 @@ public final class Operations {
         ops.add(Expression.make(FLOATS, "Float.sum(", FLOATS, ", ", FLOATS, ")"));
 
         // ------------ double -------------
-        ops.add(Expression.make(DOUBLES, "(double)(", BYTES,    ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", SHORTS,   ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", CHARS,    ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", INTS,     ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", LONGS,    ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", FLOATS,   ")"));
-        ops.add(Expression.make(DOUBLES, "(double)(", DOUBLES,  ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", BYTES,   ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", SHORTS,  ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", CHARS,   ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", INTS,    ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", LONGS,   ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", FLOATS,  ")"));
+        ops.add(Expression.make(DOUBLES, "(double)(", DOUBLES, ")"));
         // There is no cast from boolean.
 
         ops.add(Expression.make(DOUBLES, "(", BOOLEANS, "?", DOUBLES, ":", DOUBLES, ")"));
 
         // Arithmetic operators
         ops.add(Expression.make(DOUBLES, "(-(", DOUBLES, "))"));
-        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " + ",   DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " - ",   DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " * ",   DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " / ",   DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " % ",   DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " + ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " - ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " * ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " / ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES, "(", DOUBLES, " % ", DOUBLES, ")"));
 
         // Relational / Comparison Operators
         ops.add(Expression.make(BOOLEANS, "(", DOUBLES, " == ", DOUBLES, ")"));
@@ -305,17 +305,17 @@ public final class Operations {
         ops.add(Expression.make(BOOLEANS, "(", DOUBLES, " <= ", DOUBLES, ")"));
 
         // ------------ Double -------------
-        ops.add(Expression.make(INTS, "Double.compare(", DOUBLES, ", ", DOUBLES, ")"));
-        ops.add(Expression.make(LONGS, "Double.doubleToLongBits(", DOUBLES, ")"));
-        ops.add(Expression.make(LONGS, "Double.doubleToRawLongBits(", DOUBLES, ")", withNondeterministicResult));
+        ops.add(Expression.make(INTS,     "Double.compare(", DOUBLES, ", ", DOUBLES, ")"));
+        ops.add(Expression.make(LONGS,    "Double.doubleToLongBits(", DOUBLES, ")"));
         // Note: there are multiple NaN values with different bit representations.
-        ops.add(Expression.make(DOUBLES, "Double.longBitsToDouble(", LONGS, ")"));
+        ops.add(Expression.make(LONGS,    "Double.doubleToRawLongBits(", DOUBLES, ")", withNondeterministicResult));
+        ops.add(Expression.make(DOUBLES,  "Double.longBitsToDouble(", LONGS, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isFinite(", DOUBLES, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isInfinite(", DOUBLES, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isNaN(", DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "Double.max(", DOUBLES, ", ", DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "Double.min(", DOUBLES, ", ", DOUBLES, ")"));
-        ops.add(Expression.make(DOUBLES, "Double.sum(", DOUBLES, ", ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES,  "Double.max(", DOUBLES, ", ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES,  "Double.min(", DOUBLES, ", ", DOUBLES, ")"));
+        ops.add(Expression.make(DOUBLES,  "Double.sum(", DOUBLES, ", ", DOUBLES, ")"));
 
         // ------------ boolean -------------
         // There is no cast to boolean.
@@ -326,14 +326,14 @@ public final class Operations {
 
         // Logical operators
         ops.add(Expression.make(BOOLEANS, "(!(", BOOLEANS, "))"));
-        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " || ",   BOOLEANS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " && ",   BOOLEANS, ")"));
-        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " ^ ",   BOOLEANS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " || ", BOOLEANS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " && ", BOOLEANS, ")"));
+        ops.add(Expression.make(BOOLEANS, "(", BOOLEANS, " ^ ",  BOOLEANS, ")"));
 
         // ------------ Boolean -------------
-        ops.add(Expression.make(INTS, "Boolean.compare(", BOOLEANS, ", ", BOOLEANS, ")"));
+        ops.add(Expression.make(INTS,     "Boolean.compare(",    BOOLEANS, ", ", BOOLEANS, ")"));
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalAnd(", BOOLEANS, ", ", BOOLEANS, ")"));
-        ops.add(Expression.make(BOOLEANS, "Boolean.logicalOr(", BOOLEANS, ", ", BOOLEANS, ")"));
+        ops.add(Expression.make(BOOLEANS, "Boolean.logicalOr(",  BOOLEANS, ", ", BOOLEANS, ")"));
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalXor(", BOOLEANS, ", ", BOOLEANS, ")"));
 
         // TODO: Math and other classes.
