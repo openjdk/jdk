@@ -33,6 +33,7 @@ import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -42,6 +43,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import jdk.test.lib.security.CertificateBuilder;
+import sun.security.provider.certpath.SunCertPathBuilderException;
 import sun.security.validator.ValidatorException;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.GeneralName;
@@ -58,6 +60,7 @@ import sun.security.x509.X500Name;
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  *          java.base/sun.security.validator
+ *          java.base/sun.security.provider.certpath
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm CertChainAlgorithmConstraints RSASSA-PSS RSASSA-PSS Rsa_pss_pss_Sha384 true
@@ -176,11 +179,13 @@ public class CertChainAlgorithmConstraints extends SSLEngineTemplate {
                     () -> tm.checkServerTrusted(mixedUpChain, "RSA", engine),
                     ex -> {
                         assertTrue(ex instanceof ValidatorException);
-                        assertEquals(ex.getMessage(),
-                                "PKIX path building failed: "
-                                        + "sun.security.provider.certpath."
-                                        + "SunCertPathBuilderException: unable to find "
-                                        + "valid certification path to requested target");
+                        assertTrue(
+                                ex.getCause() instanceof SunCertPathBuilderException);
+                        assertEquals(ex.getMessage(), "PKIX path "
+                                + "building failed: "
+                                + "sun.security.provider.certpath."
+                                + "SunCertPathBuilderException: unable to find "
+                                + "valid certification path to requested target");
                     });
 
             // Valid chain: PKIXCertPathValidator code path.
@@ -188,6 +193,8 @@ public class CertChainAlgorithmConstraints extends SSLEngineTemplate {
                     () -> tm.checkServerTrusted(validChain, "RSA", engine),
                     ex -> {
                         assertTrue(ex instanceof ValidatorException);
+                        assertTrue(
+                                ex.getCause() instanceof CertPathValidatorException);
                         assertTrue(ex.getMessage().startsWith("PKIX path "
                                 + "validation failed: java.security.cert."
                                 + "CertPathValidatorException: Algorithm "
