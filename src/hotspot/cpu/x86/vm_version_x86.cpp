@@ -914,6 +914,12 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
+  // Check if processor has specific Intel Ecore
+  if (FLAG_IS_DEFAULT(MarkSpecialX86ECoreTypes) && is_intel() && is_intel_server_family() &&
+    (_model == 0xCC || _model == 0xDD)) {
+    FLAG_SET_DEFAULT(MarkSpecialX86ECoreTypes, true);
+  }
+
   if (UseSSE < 4) {
     _features.clear_feature(CPU_SSE4_1);
     _features.clear_feature(CPU_SSE4_2);
