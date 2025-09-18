@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../lib/verify/Verify.java
- * @run main -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=10000 compiler.igvn.ExpressionFuzzer
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=10000 compiler.igvn.ExpressionFuzzer
  */
 
 package compiler.igvn;
