@@ -175,6 +175,50 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_one_offset(idx
   return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
+template<BitMap::bm_word_t flip, bool aligned_left>
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t beg, idx_t end) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(beg, end);
+  assert(!aligned_left || is_aligned(beg, BitsPerWord), "beg not aligned");
+
+  if (beg < end) {
+    // Get the last partial and flipped word in the range.
+    idx_t last_bit_index = end - 1;
+    idx_t word_index = to_words_align_down(last_bit_index);
+    bm_word_t cword = flipped_word(word_index, flip);
+    // Mask for extracting and testing bits of last word.
+    bm_word_t last_bit_mask = bm_word_t(1) << bit_in_word(last_bit_index);
+    if ((cword & last_bit_mask) != 0) { // Test last bit.
+      return last_bit_index;
+    }
+    // Extract prior bits, clearing those above last_bit_index.
+    cword &= (last_bit_mask - 1);
+    if (cword == 0) {           // Test other bits in the last word.
+      // Last word had no interesting bits.  Word search through
+      // aligned down beg for a non-zero flipped word.
+      idx_t word_limit = to_words_align_down(beg);
+      while (word_index-- > word_limit) {
+        cword = flipped_word(word_index, flip);
+        if (cword != 0) break;
+      }
+    }
+    // For all paths reaching here, (cword != 0) is already known, so we
+    // expect the compiler to not generate any code for it.  Either last word
+    // was non-zero, or found a non-zero word in range, or fully scanned range
+    // (so cword is zero).
+    if (cword != 0) {
+      idx_t result = bit_index(word_index) + log2i(cword);
+      if (aligned_left || (result >= beg)) return result;
+      // Result is below range bound; return end.
+    }
+  }
+  return end;
+}
+
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_one_offset(idx_t l_offset, idx_t r_offset) const {
+  return get_last_bit_impl<find_ones_flip, false>(l_offset, r_offset);
+}
+
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each
 // bit in the mask is 0 if the bit is in the range, 1 if not in the range.  The
 // returned mask can be used directly to clear the range, or inverted to set the

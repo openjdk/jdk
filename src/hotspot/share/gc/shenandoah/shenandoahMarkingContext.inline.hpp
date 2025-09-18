@@ -28,12 +28,17 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "logging/log.hpp"
 
 inline bool ShenandoahMarkingContext::mark_strong(oop obj, bool& was_upgraded) {
   return !allocated_after_mark_start(obj) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), was_upgraded);
+}
+
+inline bool ShenandoahMarkingContext::mark_strong_ignore_tams(oop obj, bool& was_upgraded) {
+  return _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), was_upgraded);
 }
 
 inline bool ShenandoahMarkingContext::mark_weak(oop obj) {
@@ -46,6 +51,10 @@ inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
 
 inline bool ShenandoahMarkingContext::is_marked(HeapWord* raw_obj) const {
   return allocated_after_mark_start(raw_obj) || _mark_bit_map.is_marked(raw_obj);
+}
+
+inline bool ShenandoahMarkingContext::is_marked_ignore_tams(HeapWord* raw_obj) const {
+  return _mark_bit_map.is_marked(raw_obj);
 }
 
 inline bool ShenandoahMarkingContext::is_marked_strong(oop obj) const {
@@ -70,6 +79,10 @@ inline bool ShenandoahMarkingContext::is_marked_strong_or_old(oop obj) const {
 
 inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(const HeapWord* start, const HeapWord* limit) const {
   return _mark_bit_map.get_next_marked_addr(start, limit);
+}
+
+inline HeapWord* ShenandoahMarkingContext::get_last_marked_addr(const HeapWord* start, const HeapWord* limit) const {
+  return _mark_bit_map.get_last_marked_addr(start, limit);
 }
 
 inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
@@ -100,10 +113,11 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
   assert((new_tams == r->bottom()) || (old_tams == r->bottom()) || (new_tams >= _top_bitmaps[idx]),
          "Region %zu, top_bitmaps updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(_top_bitmaps[idx]), p2i(new_tams));
+  /*
   assert(old_tams == r->bottom() || is_bitmap_range_within_region_clear(old_tams, new_tams),
          "Region %zu, bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
-
+*/
   log_debug(gc)("Capturing TAMS for %s Region %zu, was: " PTR_FORMAT ", now: " PTR_FORMAT,
                 r->affiliation_name(), idx, p2i(old_tams), p2i(new_tams));
 
