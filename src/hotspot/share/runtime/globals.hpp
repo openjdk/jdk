@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,6 +633,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PrintNMethods, false, DIAGNOSTIC,                           \
           "Print assembly code for nmethods when generated")                \
+                                                                            \
+  product(bool, PrintOptoMethodSize, false, DIAGNOSTIC,                     \
+          "Print estimated inlined instruction size for nmethods compiled"  \
+          "by C2")                                                          \
                                                                             \
   product(bool, PrintNativeNMethods, false, DIAGNOSTIC,                     \
           "Print assembly code for native nmethods when generated")         \

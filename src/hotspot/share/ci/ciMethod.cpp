@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1175,9 +1176,8 @@ int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
-      if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
-        _inline_instructions_size = isize > 0 ? isize : 0;
+      if (code != nullptr) {
+        _inline_instructions_size = code->inline_instructions_size();
       } else {
         _inline_instructions_size = 0;
       }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +146,17 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_superword,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
+    // Introduce a dumping interface for C2-compiled method sizes
+    if (PrintOptoMethodSize && C.failure_reason() == nullptr) {
+      Method* m = C.method()->get_Method();
+      // "InlineSmallCode / 4" used by C2 to block inlining of cold and medium methods
+      int inline_small_code_size  = InlineSmallCode / 4;
+      int instr_size = m->code()? m->code()->inline_instructions_size(): 0;
+      if (instr_size > inline_small_code_size &&
+          m->code_size() < FreqInlineSize) {
+        m->print_opto_method_size(instr_size);
+      }
+    }
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != nullptr) {
