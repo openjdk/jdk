@@ -222,6 +222,7 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
