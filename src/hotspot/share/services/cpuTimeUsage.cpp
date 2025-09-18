@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/cpuTimeUsage.hpp"
@@ -35,6 +36,7 @@
 volatile bool CPUTimeUsage::Error::_has_error = false;
 
 static inline jlong thread_cpu_time_or_zero(Thread* thread) {
+  assert(!thread->has_terminated(), "Cannot get cpu time for terminated thread: %zu", thread->osthread()->thread_id_for_printing());
   jlong cpu_time = os::thread_cpu_time(thread);
   if (cpu_time == -1) {
     CPUTimeUsage::Error::mark_error();

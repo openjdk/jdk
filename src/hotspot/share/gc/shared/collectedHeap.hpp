@@ -107,9 +107,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
   static Klass* _filler_object_klass;
 
-  // Flag to indicate that VM is shutting down.
-  volatile bool _is_shutting_down;
-
  protected:
   // Not used by all GCs
   MemRegion _reserved;
@@ -249,12 +246,11 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
+  bool is_shutting_down() const;
+
   // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
   // In this case, stall the allocation request briefly in the hope that
   // the VM shutdown completes before the allocation request returns.
-  bool is_shutting_down() const;
-
-  // Stall allocation requests until the VM shutdown is complete.
   void stall_for_vm_shutdown();
 
   void before_exit();
