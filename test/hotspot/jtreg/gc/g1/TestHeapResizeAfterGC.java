@@ -66,7 +66,7 @@ public class TestHeapResizeAfterGC {
 
     // Normal path.
     OutputAnalyzer out = run("120M","50M","1M");
-    out.shouldHaveExitValue(0);	
+    out.shouldHaveExitValue(0);
     out.shouldNotContain(skipResizeLogAfterYoungGC);
     out.shouldNotContain(skipResizeLogAfterFullGC);
     out.shouldContain(resizeLogAfterYoungGC);
@@ -75,7 +75,7 @@ public class TestHeapResizeAfterGC {
     // Fast path, MaxHeapSize(103M) and MinHeapSize(101M) will be equal
     // after alignment.
     out = run("103M","101M","4M");
-    out.shouldHaveExitValue(0);	
+    out.shouldHaveExitValue(0);
     out.shouldContain(skipResizeLogAfterYoungGC);
     out.shouldContain(skipResizeLogAfterFullGC);
     out.shouldNotContain(resizeLogAfterYoungGC);
