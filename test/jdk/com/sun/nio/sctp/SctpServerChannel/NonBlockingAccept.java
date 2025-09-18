@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4927640
+ * @library /test/lib
  * @summary Tests the SCTP protocol implementation
  * @author chegar
  * @run main/timeout=480 NonBlockingAccept
@@ -43,6 +44,8 @@ import com.sun.nio.sctp.SctpServerChannel;
 import static java.lang.System.out;
 import static java.lang.System.err;
 
+import jtreg.SkippedException;
+
 public class NonBlockingAccept {
     static CountDownLatch acceptLatch = new CountDownLatch(1);
     static final int SEL_TIMEOUT = 10000;
@@ -51,12 +54,6 @@ public class NonBlockingAccept {
     void test(String[] args) {
         SocketAddress address = null;
         NonblockingServer server;
-
-        if (!Util.isSCTPSupported()) {
-            out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        }
 
         if (args.length == 2) {
             /* requested to connecct to a specific address */
@@ -219,6 +216,10 @@ public class NonBlockingAccept {
     void sleep(long millis) { try { Thread.currentThread().sleep(millis); }
                           catch(InterruptedException ie) { unexpected(ie); }}
     public static void main(String[] args) throws Throwable {
+        if (!Util.isSCTPSupported()) {
+            throw new SkippedException("SCTP protocol is not supported");
+        }
+
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
                 .invoke( k.newInstance(), (Object) args);}

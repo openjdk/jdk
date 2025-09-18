@@ -31,7 +31,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "utilities/growableArray.hpp"
 
 class CardTableRS;
@@ -102,16 +101,7 @@ private:
   // old-gen.
   bool _is_heap_almost_full;
 
-  // Helper functions for allocation
-  HeapWord* attempt_allocation(size_t size,
-                               bool   is_tlab,
-                               bool   first_only);
-
   void do_full_collection(bool clear_all_soft_refs) override;
-
-  // Does the "cause" of GC indicate that
-  // we absolutely __must__ clear soft refs?
-  bool must_clear_all_soft_refs();
 
   bool is_young_gc_safe() const;
 
@@ -138,7 +128,7 @@ public:
 
   size_t max_capacity() const override;
 
-  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
 
   // Callback from VM_SerialCollectForAllocation operation.
   // This function does everything necessary/possible to satisfy an

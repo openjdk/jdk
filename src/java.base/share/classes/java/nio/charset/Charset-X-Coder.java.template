@@ -97,10 +97,10 @@ import jdk.internal.util.ArraysSupport;
  *
 #if[encoder]
  * is initially set to the $coder$'s default replacement, which often
- * (but not always) has the initial value&nbsp;$defaultReplName$;
+ * (but not always) has the initial value&nbsp;<code>{</code>&nbsp;<code>(byte)'?'</code>&nbsp;<code>}</code>;
 #end[encoder]
 #if[decoder]
- * has the initial value $defaultReplName$;
+ * has the initial value <code>"&#92;uFFFD"</code>;
 #end[decoder]
  *
  * its value may be changed via the {@link #replaceWith($replFQType$)
@@ -212,7 +212,12 @@ public abstract class Charset$Coder$ {
     /**
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ values and its replacement will be the
-     * $replTypeName$ $defaultReplName$.
+#if[encoder]
+     * byte array <code>{</code>&nbsp;<code>(byte)'?'</code>&nbsp;<code>}</code>.
+#end[encoder]
+#if[decoder]
+     * string <code>"&#92;uFFFD"</code>.
+#end[decoder]
      *
      * @param  cs
      *         The charset that created this $coder$
@@ -234,7 +239,12 @@ public abstract class Charset$Coder$ {
     {
         this(cs,
              average$ItypesPerOtype$, max$ItypesPerOtype$,
-             $defaultRepl$);
+#if[encoder]
+             new byte[] { (byte)'?' });
+#end[encoder]
+#if[decoder]
+             "\uFFFD");
+#end[decoder]
     }
 
     /**

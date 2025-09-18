@@ -3638,16 +3638,16 @@ bool LibraryCallKit::inline_native_getEventWriter() {
  * if (carrierThread != thread) { // is virtual thread
  *   const u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(thread);
  *   bool excluded = vthread_epoch_raw & excluded_mask;
- *   Atomic::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
- *   Atomic::store(&tl->_contextual_thread_excluded, is_excluded);
+ *   AtomicAccess::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
+ *   AtomicAccess::store(&tl->_contextual_thread_excluded, is_excluded);
  *   if (!excluded) {
  *     const u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
- *     Atomic::store(&tl->_vthread_epoch, vthread_epoch);
+ *     AtomicAccess::store(&tl->_vthread_epoch, vthread_epoch);
  *   }
- *   Atomic::release_store(&tl->_vthread, true);
+ *   AtomicAccess::release_store(&tl->_vthread, true);
  *   return;
  * }
- * Atomic::release_store(&tl->_vthread, false);
+ * AtomicAccess::release_store(&tl->_vthread, false);
  */
 void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
@@ -4788,19 +4788,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     // Test the header to see if it is safe to read w.r.t. locking.
     Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
     Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
-      Node *chk_monitor   = _gvn.transform(new CmpXNode(lmasked_header, monitor_val));
-      Node *test_monitor  = _gvn.transform(new BoolNode(chk_monitor, BoolTest::eq));
+    Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
+    Node *chk_monitor   = _gvn.transform(new CmpXNode(lmasked_header, monitor_val));
+    Node *test_monitor  = _gvn.transform(new BoolNode(chk_monitor, BoolTest::eq));
 
-      generate_slow_guard(test_monitor, slow_region);
-    } else {
-      Node *unlocked_val      = _gvn.MakeConX(markWord::unlocked_value);
-      Node *chk_unlocked      = _gvn.transform(new CmpXNode(lmasked_header, unlocked_val));
-      Node *test_not_unlocked = _gvn.transform(new BoolNode(chk_unlocked, BoolTest::ne));
-
-      generate_slow_guard(test_not_unlocked, slow_region);
-    }
+    generate_slow_guard(test_monitor, slow_region);
   }
 
   // Get the hash value and check to see that it has been properly assigned.

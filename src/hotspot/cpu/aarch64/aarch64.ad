@@ -5965,9 +5965,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 64 bytes
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources

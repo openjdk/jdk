@@ -24,19 +24,19 @@
 
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_posix.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
-#include "os_posix.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
-#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #if INCLUDE_SERVICES
 #ifndef AIX

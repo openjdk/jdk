@@ -36,6 +36,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -58,7 +59,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
@@ -429,8 +429,8 @@ int ClassFieldMap::interfaces_field_count(InstanceKlass* ik) {
   const Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
   int count = 0;
   for (int i = 0; i < interfaces->length(); i++) {
-    FilteredJavaFieldStream fld(interfaces->at(i));
-    count += fld.field_count();
+    count += interfaces->at(i)->java_fields_count();
+
   }
   return count;
 }
@@ -451,12 +451,11 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   // Static fields of interfaces and superclasses are reported as references from the interfaces/superclasses.
   // Need to calculate start index of this class fields: number of fields in all interfaces and superclasses.
   int index = interfaces_field_count(ik);
-  for (InstanceKlass* super_klass = ik->java_super(); super_klass != nullptr; super_klass = super_klass->java_super()) {
-    FilteredJavaFieldStream super_fld(super_klass);
-    index += super_fld.field_count();
+  for (InstanceKlass* super_klass = ik->super(); super_klass != nullptr; super_klass = super_klass->super()) {
+    index += super_klass->java_fields_count();
   }
 
-  for (FilteredJavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
+  for (JavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
     // ignore instance fields
     if (!fld.access_flags().is_static()) {
       continue;
@@ -478,14 +477,13 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
 
   // fields of the superclasses are reported first, so need to know total field number to calculate field indices
   int total_field_number = interfaces_field_count(ik);
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
-    FilteredJavaFieldStream fld(klass);
-    total_field_number += fld.field_count();
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
+    total_field_number += klass->java_fields_count();
   }
 
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
-    FilteredJavaFieldStream fld(klass);
-    int start_index = total_field_number - fld.field_count();
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
+    JavaFieldStream fld(klass);
+    int start_index = total_field_number - klass->java_fields_count();
     for (int index = 0; !fld.done(); fld.next(), index++) {
       // ignore static fields
       if (fld.access_flags().is_static()) {
@@ -2597,10 +2595,10 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     oop mirror = klass->java_mirror();
 
     // super (only if something more interesting than java.lang.Object)
-    InstanceKlass* java_super = ik->java_super();
-    if (java_super != nullptr && java_super != vmClasses::Object_klass()) {
-      oop super = java_super->java_mirror();
-      if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
+    InstanceKlass* super_klass = ik->super();
+    if (super_klass != nullptr && super_klass != vmClasses::Object_klass()) {
+      oop super_oop = super_klass->java_mirror();
+      if (!CallbackInvoker::report_superclass_reference(mirror, super_oop)) {
         return false;
       }
     }

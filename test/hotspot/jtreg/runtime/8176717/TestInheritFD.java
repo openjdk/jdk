@@ -92,7 +92,7 @@ public class TestInheritFD {
     public static final String THIRD_VM_PID_PREFIX = "Third VM pid=";
     public static final String THIRD_VM_WAITING_PREFIX = "Third VM waiting for second VM pid=";
 
-    public static long subProcessTimeout = (long)(15L * Utils.TIMEOUT_FACTOR);
+    public static long subProcessTimeout = (long)(60L * Utils.TIMEOUT_FACTOR);
 
     // Extract a pid from the specified String at the specified start offset.
     private static long extractPidFromStringOffset(String str, int start) {

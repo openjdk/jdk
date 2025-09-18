@@ -182,6 +182,8 @@ public sealed interface TypeAnnotation
      * @param targetInfo which type in a declaration or expression is annotated
      * @param targetPath which part of the type is annotated
      * @param annotation the annotation
+     * @throws IllegalArgumentException if the size of {@code targetPath}
+     *         exceeds the limit of {@link java.lang.classfile##u1 u1}
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                              Annotation annotation) {
@@ -486,6 +488,8 @@ public sealed interface TypeAnnotation
          * including a variable declared as a resource in a try-with-resources statement}
          * @param targetType {@link TargetType#LOCAL_VARIABLE} or {@link TargetType#RESOURCE_VARIABLE}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
@@ -494,6 +498,8 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the type in a local variable declaration}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofLocalVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.LOCAL_VARIABLE, table);
@@ -503,6 +509,8 @@ public sealed interface TypeAnnotation
          * {@return a target for annotations on the type in a local variable declared
          * as a resource in a try-with-resources statement}
          * @param table the list of local variable targets
+         * @throws IllegalArgumentException if the size of the list of targets
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         static LocalVarTarget ofResourceVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.RESOURCE_VARIABLE, table);
@@ -801,7 +809,6 @@ public sealed interface TypeAnnotation
          * @return the start of the bytecode section
          */
         Label startLabel();
-
 
         /**
          * The given local variable has a value at indices into the code array in the interval
