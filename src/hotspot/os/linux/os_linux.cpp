@@ -349,7 +349,7 @@ bool os::free_swap_space(uint64_t& value) {
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " UINT64_FORMAT,
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
   value = host_free_swap_val;
