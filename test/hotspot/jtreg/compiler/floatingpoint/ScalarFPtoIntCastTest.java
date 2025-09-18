@@ -33,7 +33,10 @@
 package compiler.floatingpoint;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.Verify;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 public class ScalarFPtoIntCastTest {
     private static final int COUNT = 16;
@@ -50,23 +53,26 @@ public class ScalarFPtoIntCastTest {
     }
 
     public ScalarFPtoIntCastTest() {
-        float_arr = new float[COUNT];
-        double_arr = new double[COUNT];
-        long_arr = new long[COUNT];
-        int_arr = new int[COUNT];
+        Random ran = new Random(0);
+        int_arr = IntStream.range(0, COUNT)
+            .mapToObj(i -> ran.nextInt(Byte.MAX_VALUE))
+            .mapToInt(Integer::intValue)
+            .toArray();
+        long_arr = Arrays.stream(int_arr)
+            .mapToLong(i -> i)
+            .toArray();
         short_arr = new short[COUNT];
         byte_arr = new byte[COUNT];
+        double_arr = new double[COUNT];
+        float_arr = new float[COUNT];
 
-        Random ran = new Random(0);
         for (int i = 0; i < COUNT; i++) {
-            int floor_val = ran.nextInt(Byte.MAX_VALUE);
+            int floor_val = int_arr[i];
             int ceil_val = floor_val + 1;
-            long_arr[i] = (long) floor_val;
-            int_arr[i] = floor_val;
             short_arr[i] = (short) floor_val;
             byte_arr[i] = (byte) floor_val;
-            float_arr[i] = ran.nextFloat(floor_val, ceil_val);
             double_arr[i] = ran.nextDouble(floor_val, ceil_val);
+            float_arr[i] = (float) double_arr[i];
         }
     }
 
@@ -77,16 +83,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2int() {
-        checkf2int();
-    }
-
-    public void checkf2int() {
         for (int i = 0; i < COUNT; i++) {
             float float_val = float_arr[i];
-            int expected = (int) float_val;
-            if (int_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: int_arr[" + i + "] = " + int_arr[i] + " != " + expected);
-            }
+            int computed = (int) float_val;
+            int expected = int_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -97,16 +98,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2L_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2long() {
-        checkf2long();
-    }
-
-    public void checkf2long() {
         for (int i = 0; i < COUNT; i++) {
             float float_val = float_arr[i];
-            long expected = (long) float_val;
-            if (long_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: long_arr[" + i + "] = " + long_arr[i] + " != " + expected);
-            }
+            long computed = (long) float_val;
+            long expected = long_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -117,16 +113,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2short() {
-        checkf2short();
-    }
-
-    public void checkf2short() {
         for (int i = 0; i < COUNT; i++) {
             float float_val = float_arr[i];
-            short expected = (short) float_val;
-            if (short_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: short_arr[" + i + "] = " + short_arr[i] + " != " + expected);
-            }
+            short computed = (short) float_val;
+            short expected = short_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -137,16 +128,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2byte() {
-        checkf2byte();
-    }
-
-    public void checkf2byte() {
         for (int i = 0; i < COUNT; i++) {
             float float_val = float_arr[i];
-            byte expected = (byte) float_val;
-            if (byte_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: byte_arr[" + i + "] = " + byte_arr[i] + " != " + expected);
-            }
+            byte computed = (byte) float_val;
+            byte expected = byte_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -157,16 +143,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2int() {
-        checkd2int();
-    }
-
-    public void checkd2int() {
         for (int i = 0; i < COUNT; i++) {
             double double_val = double_arr[i];
-            int expected = (int) double_val;
-            if (int_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: int_arr[" + i + "] = " + int_arr[i] + " != " + expected);
-            }
+            int computed = (int) double_val;
+            int expected = int_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -177,16 +158,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2L_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2long() {
-        checkd2long();
-    }
-
-    public void checkd2long() {
         for (int i = 0; i < COUNT; i++) {
             double double_val = double_arr[i];
-            long expected = (long) double_val;
-            if (long_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: long_arr[" + i + "] = " + long_arr[i] + " != " + expected);
-            }
+            long computed = (long) double_val;
+            long expected = long_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -197,16 +173,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2short() {
-        checkd2short();
-    }
-
-    public void checkd2short() {
         for (int i = 0; i < COUNT; i++) {
             double double_val = double_arr[i];
-            short expected = (short) double_val;
-            if (short_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: short_arr[" + i + "] = " + short_arr[i] + " != " + expected);
-            }
+            short computed = (short) double_val;
+            short expected = short_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 
@@ -217,16 +188,11 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2byte() {
-        checkd2byte();
-    }
-
-    public void checkd2byte() {
         for (int i = 0; i < COUNT; i++) {
             double double_val = double_arr[i];
-            byte expected = (byte) double_val;
-            if (byte_arr[i] != expected) {
-                throw new RuntimeException("Invalid result: byte_arr[" + i + "] = " + byte_arr[i] + " != " + expected);
-            }
+            byte computed = (byte) double_val;
+            byte expected = byte_arr[i];
+            Verify.checkEQ(computed, expected);
         }
     }
 }
