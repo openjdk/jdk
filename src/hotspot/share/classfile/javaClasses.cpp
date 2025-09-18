@@ -1013,7 +1013,7 @@ void java_lang_Class::initialize_mirror_fields(InstanceKlass* ik,
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
 void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
-  if (CDSConfig::is_using_preloaded_classes()) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
     oop archived_module = java_lang_Class::module(mirror());
     if (archived_module != nullptr) {
       precond(module() == nullptr || module() == archived_module);
@@ -1027,6 +1027,10 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
     // for java.base is known. But note that since we captured the null module another
     // thread may have completed that initialization.
+
+    // With AOT-linked classes, java.base should have been defined before the
+    // VM loads any classes.
+    precond(!CDSConfig::is_using_aot_linked_classes());
 
     bool javabase_was_defined = false;
     {
@@ -1061,17 +1065,19 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
-  if (!CDSConfig::is_using_preloaded_classes()) {
+  if (!CDSConfig::is_using_aot_linked_classes()) {
     // fixup_mirror_list() is not used when we have preloaded classes. See
     // Universe::fixup_mirrors().
     GrowableArray<Klass*>* mirror_list =
       new (mtClass) GrowableArray<Klass*>(40, mtClass);
     set_fixup_mirror_list(mirror_list);
-  }
 
-  GrowableArray<Klass*>* module_list =
-    new (mtModule) GrowableArray<Klass*>(500, mtModule);
-  set_fixup_module_field_list(module_list);
+    // With AOT-linked classes, java.base module is defined before any class
+    // is loaded, so there's no need for fixup_module_field_list().
+    GrowableArray<Klass*>* module_list =
+      new (mtModule) GrowableArray<Klass*>(500, mtModule);
+    set_fixup_module_field_list(module_list);
+  }
 }
 
 void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
@@ -1171,7 +1177,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       create_scratch_mirror(k, CHECK);
     }
   } else {
-    assert(!CDSConfig::is_using_preloaded_classes(), "should not come here");
+    assert(!CDSConfig::is_using_aot_linked_classes(), "should not come here");
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
   }
@@ -1217,7 +1223,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
   // see more details in vmClasses::resolve_all().
-  if (!vmClasses::Class_klass_loaded() && !CDSConfig::is_using_preloaded_classes()) {
+  if (!vmClasses::Class_klass_loaded() && !CDSConfig::is_using_aot_linked_classes()) {
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
     return true;

@@ -1164,7 +1164,7 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
   precond(Universe::is_bootstrapping());
   precond(java_platform_loader() != nullptr && java_system_loader() != nullptr);
   precond(class_loader() == nullptr || class_loader() == java_platform_loader() ||class_loader() == java_system_loader());
-  precond(CDSConfig::is_using_preloaded_classes());
+  precond(CDSConfig::is_using_aot_linked_classes());
   precond(AOTMetaspace::in_aot_cache_static_region((void*)ik));
   precond(!ik->is_loaded());
 

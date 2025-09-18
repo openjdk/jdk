@@ -281,9 +281,9 @@ void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderD
 }
 
 // This is called before AOTLinkedClassBulkLoader starts preloading classes. It makes sure that
-// when any class is preloaded, its module is already valid.
+// when we preload any class, its module is already valid.
 void ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(JavaThread* current) {
-  precond(CDSConfig::is_using_preloaded_classes());
+  precond(CDSConfig::is_using_aot_linked_classes());
 
   precond(_platform_loader_root_index >= 0);
   precond(_system_loader_root_index >= 0);

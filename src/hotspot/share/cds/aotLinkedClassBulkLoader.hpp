@@ -52,23 +52,16 @@ enum class AOTLinkedClassCategory : int;
 //     This happens after some Java code is executed, to load aot-linked classes in the dynamic archive.
 //     This steps also puts all aot-linked classes into at least the "linked" state.
 class AOTLinkedClassBulkLoader :  AllStatic {
-  static bool _boot2_completed;
-  static bool _platform_completed;
-  static bool _app_completed;
-  static bool _all_completed;
-  static bool _preloading_non_javavase_classes;
+#if INCLUDE_JVMCI
+  static bool _has_completed;
+#endif
 
   static void preload_classes_impl(TRAPS);
   static void preload_classes_in_table(Array<InstanceKlass*>* classes,
                                        const char* category_name, Handle loader, TRAPS);
-  static void load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop);
-  static void load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS);
-  static void load_table(AOTLinkedClassTable* table, AOTLinkedClassCategory class_category, Handle loader, TRAPS);
   static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
-  static void load_classes_impl(Array<InstanceKlass*>* classes,
-                                const char* category_name, Handle loader, TRAPS);
-  static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
-  static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
+  static void link_or_init_non_javabase_classes_impl(TRAPS);
+  static void link_or_init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
   static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;
 
 #ifdef ASSERT
@@ -81,13 +74,15 @@ class AOTLinkedClassBulkLoader :  AllStatic {
 public:
   static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
   static void preload_classes(JavaThread* current);
-  static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
-  static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
-  static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
+  static void link_or_init_javabase_classes(TRAPS) NOT_CDS_RETURN;
+  static void link_or_init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
 
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
-  static bool has_finished_loading_classes() NOT_CDS_RETURN_(true);
+
+#if INCLUDE_JVMCI
+  static bool has_completed() NOT_CDS_RETURN_(true);
+#endif
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

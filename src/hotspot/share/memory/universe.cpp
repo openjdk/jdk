@@ -583,8 +583,8 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 }
 
 void Universe::fixup_mirrors(TRAPS) {
-  if (CDSConfig::is_using_preloaded_classes()) {
-    // All mirrors preloaded classes are already restored.
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // All mirrors of preloaded classes are already restored. No need to fix up.
     return;
   }
 

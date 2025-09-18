@@ -101,7 +101,7 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
   for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
-    if (CDSConfig::is_using_preloaded_classes()) {
+    if (CDSConfig::is_using_aot_linked_classes()) {
       precond(klass_at(id)->is_loaded());
     } else {
       resolve(id, CHECK);
@@ -119,7 +119,7 @@ void vmClasses::resolve_all(TRAPS) {
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
 
-  if (CDSConfig::is_using_preloaded_classes()) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::preload_classes(THREAD);
   }
 
@@ -218,9 +218,6 @@ void vmClasses::resolve_all(TRAPS) {
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();
-  if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::load_javabase_classes(THREAD);
-  }
 }
 
 #if INCLUDE_CDS

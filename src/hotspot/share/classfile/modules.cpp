@@ -708,7 +708,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
   }
 
-  if (CDSConfig::is_using_preloaded_classes()) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
     // Already initialized
     precond(SystemDictionary::java_platform_loader() == h_platform_loader());
     precond(SystemDictionary::java_system_loader() == h_system_loader());
@@ -728,13 +728,13 @@ void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loade
   assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
          "CDS should be disabled if early class hooks are enabled");
 
-  if (CDSConfig::is_using_preloaded_classes()) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
     ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
     ClassLoaderDataShared::archived_boot_unnamed_module()->restore_archived_oops(boot_loader_data);
   }
 
   Handle java_base_module(current, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
-  if (!CDSConfig::is_using_preloaded_classes()) {
+  if (!CDSConfig::is_using_aot_linked_classes()) {
     // Patch any previously loaded class's module field with java.base's java.lang.Module.
     ModuleEntryTable::patch_javabase_entries(current, java_base_module);
   }
@@ -796,7 +796,7 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
     precond(unnamed_module == ClassLoaderDataShared::archived_boot_unnamed_module());
-    if (!CDSConfig::is_using_preloaded_classes()) {
+    if (!CDSConfig::is_using_aot_linked_classes()) {
       unnamed_module->restore_archived_oops(boot_loader_data);
     }
   } else
