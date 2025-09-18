@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.imageio.ImageIO;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.Container;
@@ -50,9 +49,6 @@ import java.awt.event.AWTEventListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -67,7 +63,6 @@ import java.util.concurrent.TimeUnit;
 public class DragSourceMotionListenerTest implements AWTEventListener {
     static class TestPanel extends Panel {
         final Dimension preferredDimension = new Dimension(200, 200);
-
         public Dimension getPreferredSize() {
             return preferredDimension;
         }
@@ -137,7 +132,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
         Toolkit.getDefaultToolkit()
                 .addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
-        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
     }
@@ -162,7 +156,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
                 testPoint2.setLocation(dstInsidePoint);
             });
             robot.waitForIdle();
-            robot.delay(100);
 
             if (!dsmObj.pointInComponent(robot, srcPoint, source)) {
                 throw new RuntimeException("WARNING: Couldn't locate source panel.");
@@ -174,9 +167,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
             robot.mouseMove(srcPoint.x, srcPoint.y);
             robot.keyPress(KeyEvent.VK_CONTROL);
-            robot.waitForIdle();
-            robot.delay(100);
-
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (; !srcPoint.equals(dstOutsidePoint);
                  srcPoint.translate(sign(dstOutsidePoint.x - srcPoint.x),
@@ -190,13 +180,11 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
                 robot.mouseMove(srcPoint.x, srcPoint.y++);
             }
 
-            for (; !srcPoint.equals(dstInsidePoint);
+            for (;!srcPoint.equals(dstInsidePoint);
                  srcPoint.translate(sign(dstInsidePoint.x - srcPoint.x),
                          sign(dstInsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
-            robot.waitForIdle();
-            robot.delay(100);
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
@@ -232,7 +220,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
     public void eventDispatched(AWTEvent e) {
         if (e.getID() == MouseEvent.MOUSE_RELEASED) {
-            clickedComponent = (Component) e.getSource();
+            clickedComponent = (Component)e.getSource();
             mouseReleaseEvent.countDown();
         }
     }
