@@ -1436,13 +1436,16 @@ public final class Double extends Number
      * The inclusion of a total order idiom in the Java SE API
      * predates the inclusion of that functionality in the IEEE 754
      * standard. The ordering of the totalOrder predicate chosen by
-     * IEEE 754 differs from the total order chosen by this method. In
-     * particular IEEE 754 regards "negative" NaN representations,
-     * that is NaN representations whose sign bit is set, to be less
-     * than any finite or infinite value, including negative
-     * infinity. Also in the IEEE 754 ordering, "positive" NaN values
-     * are greater than any finite or infinite value and also greater
-     * than negative NaN values.
+     * IEEE 754 differs from the total order chosen by this method.
+     * While this method treats all NaN representations as being in
+     * the same equivalence class, the IEEE 754 total order defines an
+     * ordering based on the bit patterns of the NaN among the
+     * different NaN representations. The IEEE 754 order regards
+     * "negative" NaN representations, that is NaN representations
+     * whose sign bit is set, to be less than any finite or infinite
+     * value and less than any "positive" NaN. In addition, the IEEE
+     * order regards all positive NaN values as greater than positive
+     * infinity.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
