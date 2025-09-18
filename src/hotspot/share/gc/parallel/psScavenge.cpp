@@ -234,7 +234,7 @@ public:
 };
 
 class ScavengeRootsTask : public WorkerTask {
-  Threads::ThreadsClaimTokenScope _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
   PSOldGen* _old_gen;
