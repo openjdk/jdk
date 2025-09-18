@@ -29,7 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -115,15 +115,15 @@ class ObjectMonitorTable : AllStatic {
   };
 
   static void inc_items_count() {
-    Atomic::inc(&_items_count, memory_order_relaxed);
+    AtomicAccess::inc(&_items_count, memory_order_relaxed);
   }
 
   static void dec_items_count() {
-    Atomic::dec(&_items_count, memory_order_relaxed);
+    AtomicAccess::dec(&_items_count, memory_order_relaxed);
   }
 
   static double get_load_factor() {
-    size_t count = Atomic::load(&_items_count);
+    size_t count = AtomicAccess::load(&_items_count);
     return (double)count / (double)_table_size;
   }
 
@@ -195,8 +195,8 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static void try_notify_grow() {
-    if (!_table->is_max_size_reached() && !Atomic::load(&_resize)) {
-      Atomic::store(&_resize, true);
+    if (!_table->is_max_size_reached() && !AtomicAccess::load(&_resize)) {
+      AtomicAccess::store(&_resize, true);
       if (Service_lock->try_lock()) {
         Service_lock->notify();
         Service_lock->unlock();
@@ -216,7 +216,7 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static bool should_resize() {
-    return should_grow() || should_shrink() || Atomic::load(&_resize);
+    return should_grow() || should_shrink() || AtomicAccess::load(&_resize);
   }
 
   template<typename Task, typename... Args>
@@ -265,14 +265,14 @@ class ObjectMonitorTable : AllStatic {
       lt.print("Start growing with load factor %f", get_load_factor());
       success = grow(current);
     } else {
-      if (!_table->is_max_size_reached() && Atomic::load(&_resize)) {
+      if (!_table->is_max_size_reached() && AtomicAccess::load(&_resize)) {
         lt.print("WARNING: Getting resize hints with load factor %f", get_load_factor());
       }
       lt.print("Start cleaning with load factor %f", get_load_factor());
       success = clean(current);
     }
 
-    Atomic::store(&_resize, false);
+    AtomicAccess::store(&_resize, false);
 
     return success;
   }

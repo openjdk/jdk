@@ -37,12 +37,13 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
@@ -216,8 +217,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   // Blow away all soft references on this cycle, if handling allocation failure,
   // either implicit or explicit GC request, or we are requested to do so unconditionally.
-  if (request.generation->is_global() && (ShenandoahCollectorPolicy::is_allocation_failure(request.cause) || ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || ShenandoahAlwaysClearSoftRefs)) {
-    _heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
+  if (GCCause::should_clear_all_soft_refs(request.cause) || (request.generation->is_global() &&
+      (ShenandoahCollectorPolicy::is_allocation_failure(request.cause) || ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || ShenandoahAlwaysClearSoftRefs))) {
+    request.generation->ref_processor()->set_soft_reference_policy(true);
   }
 
   // GC is starting, bump the internal ID
@@ -289,7 +291,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   _heap->set_forced_counters_update(false);
 
   // Retract forceful part of soft refs policy
-  _heap->soft_ref_policy()->set_should_clear_all_soft_refs(false);
+  request.generation->ref_processor()->set_soft_reference_policy(false);
 
   // Clear metaspace oom flag, if current cycle unloaded classes
   if (_heap->unload_classes()) {
