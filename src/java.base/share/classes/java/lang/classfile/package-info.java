@@ -278,11 +278,10 @@
  * Unless otherwise noted, passing null or an array or collection that contains
  * null as an element to a constructor or method of any Class-File API class or
  * interface will cause a {@link NullPointerException} to be thrown; passing any
- * string whose {@linkplain Utf8Entry Modified UTF-8} representation exceeds
- * the limits of {@link ##u2 u2}, any nominal descriptor represented by such a
- * string, or an array or collection that contains such a string or nominal
- * descriptor as an element to a constructor or method of any Class-File API
- * class or interface will cause an {@link IllegalArgumentException} to be thrown.
+ * string or nominal descriptor that cannot be represented in classfile, or an
+ * array or collection that contains such a string or nominal descriptor as an
+ * element to a constructor or method of any Class-File API class or interface
+ * will cause an {@link IllegalArgumentException} to be thrown.
  * <p>
  * No consistency checks are performed while building or transforming classfiles
  * (except for null and representable arguments checks). All builders and

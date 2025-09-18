@@ -46,10 +46,9 @@ import static java.util.Objects.requireNonNull;
  * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
  * <p>
  * Similar to nominal descriptors from {@link java.lang.constant}, {@code
- * Signature} can represent type signatures whose raw signature strings cannot
- * be represented by {@link Utf8Entry}.  There is no such check for {@code
- * String} or nominal descriptor arguments passed to static factory methods in
- * this class.
+ * Signature} can represent type signatures that cannot be represented in
+ * classfile.  There is no classfile representation checks for string or nominal
+ * descriptor arguments passed to static factory methods in this class.
  *
  * @see Type
  * @see SignatureAttribute

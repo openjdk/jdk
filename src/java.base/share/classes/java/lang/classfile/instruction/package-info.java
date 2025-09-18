@@ -31,10 +31,9 @@
  * <p>
  * Unless otherwise noted, passing null or an array or collection that contains null as an element to a constructor or
  * method of any Class-File API class or interface will cause a {@link NullPointerException} to be thrown; passing any
- * string whose {@linkplain Utf8Entry Modified UTF-8} representation exceeds the limits of {@link ##u2 u2}, any nominal
- * descriptor represented by such a string, or an array or collection that contains such a string or nominal descriptor
- * as an element to a constructor or method of any Class-File API class or interface will cause an {@link
- * IllegalArgumentException} to be thrown.
+ * string or nominal descriptor that cannot be represented in classfile, or an array or collection that contains such a
+ * string or nominal descriptor as an element to a constructor or method of any Class-File API class or interface will
+ * cause an {@link IllegalArgumentException} to be thrown.
  *
  * <h2 id="reading">Reading of instructions</h2>
  * Instructions and pseudo-instructions are usually accessed from a {@link CodeModel}, such as {@link CodeModel#forEach
