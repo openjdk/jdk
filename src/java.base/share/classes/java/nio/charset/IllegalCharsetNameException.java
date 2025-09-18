@@ -54,7 +54,7 @@ public class IllegalCharsetNameException
      */
     public IllegalCharsetNameException(String charsetName) {
         super(String.valueOf(charsetName));
-	this.charsetName = charsetName;
+        this.charsetName = charsetName;
     }
 
     /**

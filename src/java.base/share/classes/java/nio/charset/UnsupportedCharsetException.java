@@ -54,7 +54,7 @@ public class UnsupportedCharsetException
      */
     public UnsupportedCharsetException(String charsetName) {
         super(String.valueOf(charsetName));
-	this.charsetName = charsetName;
+        this.charsetName = charsetName;
     }
 
     /**
