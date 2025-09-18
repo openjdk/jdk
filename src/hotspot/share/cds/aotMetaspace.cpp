@@ -1076,11 +1076,6 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder, FileMapInfo* ma
     return false;
   }
   builder->write_archive(map_info, heap_info);
-
-  if (AllowArchivingWithJavaAgent) {
-    aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment", CDSConfig::type_of_archive_being_loaded());
-  }
   return true;
 }
 
