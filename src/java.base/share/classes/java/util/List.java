@@ -28,6 +28,7 @@ package java.util;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
+import java.io.Serializable;
 import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
@@ -91,9 +92,9 @@ import java.util.function.UnaryOperator;
  * interface.
  *
  * <h2><a id="unmodifiable">Unmodifiable Lists</a></h2>
- * <p>The {@link List#of(Object...) List.of} and
- * {@link List#copyOf List.copyOf} static factory methods
- * provide a convenient way to create unmodifiable lists. The {@code List}
+ * <p>The {@link List#of(Object...) List.of},
+ * {@link List#copyOf List.copyOf}, and {@link List#ofLazy(int, IntFunction)} static
+ * factory methods provide a convenient way to create unmodifiable lists. The {@code List}
  * instances created by these methods have the following characteristics:
  *
  * <ul>
@@ -104,7 +105,7 @@ import java.util.function.UnaryOperator;
  * this may cause the List's contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
  * {@code null} elements result in {@code NullPointerException}.
- * <li>They are serializable if all elements are serializable.
+ * <li>Unless otherwise specified, they are serializable if all elements are serializable.
  * <li>The order of elements in the list is the same as the order of the
  * provided arguments, or of the elements in the provided array.
  * <li>The lists and their {@link #subList(int, int) subList} views implement the
@@ -1223,10 +1224,6 @@ public interface List<E> extends SequencedCollection<E> {
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
      * <p>
-     * The returned list is unmodifiable and does not implement the
-     * {@linkplain Collection##optional-operation optional operations} in the
-     * {@linkplain List} interface.
-     * <p>
      * If the provided computing function recursively calls itself or the returned
      * lazy list for the same index, an {@linkplain IllegalStateException}
      * will be thrown.
@@ -1235,6 +1232,8 @@ public interface List<E> extends SequencedCollection<E> {
      * function used to compute elements only so long as there are uncomputed elements
      * after which the computing function is not strongly referenced
      * anymore and may be collected.
+     * <p>
+     * The returned List is <em>not</em> {@linkplain Serializable}.
      *
      * @param size              the size of the returned lazy list
      * @param computingFunction to invoke whenever an element is first accessed

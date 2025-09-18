@@ -116,8 +116,9 @@ import java.io.Serializable;
  *
  * <h2><a id="unmodifiable">Unmodifiable Maps</a></h2>
  * <p>The {@link Map#of() Map.of},
- * {@link Map#ofEntries(Map.Entry...) Map.ofEntries}, and
- * {@link Map#copyOf Map.copyOf}
+ * {@link Map#ofEntries(Map.Entry...) Map.ofEntries},
+ * {@link Map#copyOf Map.copyOf}, and
+ * {@link Map#ofLazy(Set, Function)}
  * static factory methods provide a convenient way to create unmodifiable maps.
  * The {@code Map}
  * instances created by these methods have the following characteristics:
@@ -130,7 +131,8 @@ import java.io.Serializable;
  * Map to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} keys and values. Attempts to create them with
  * {@code null} keys or values result in {@code NullPointerException}.
- * <li>They are serializable if all keys and values are serializable.
+ * <li>Unless otherwise specified, they are serializable if all keys and values
+ * are serializable.
  * <li>They reject duplicate keys at creation time. Duplicate keys
  * passed to a static factory method result in {@code IllegalArgumentException}.
  * <li>The iteration order of mappings is unspecified and is subject to change.
@@ -1775,10 +1777,6 @@ public interface Map<K, V> {
      * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
      * also lazily computed.
      * <p>
-     * The returned map is unmodifiable and does not implement the
-     * {@linkplain Collection##optional-operations optional operations} in the
-     * {@linkplain Map} interface.
-     * <p>
      * If the provided computing function recursively calls itself or
      * the returned lazy map for the same key, an {@linkplain IllegalStateException}
      * will be thrown.
@@ -1787,6 +1785,8 @@ public interface Map<K, V> {
      * computing function used to compute values only so long as there are
      * uncomputed values after which the underlying function is not strongly referenced
      * anymore and may be collected.
+     * <p>
+     * The returned Map is <em>not</em> {@linkplain Serializable}.
      *
      * @param keys              the (non-null) keys in the returned computed map
      * @param computingFunction to invoke whenever an associated value is first accessed
