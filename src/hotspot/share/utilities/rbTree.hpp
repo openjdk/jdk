@@ -202,14 +202,16 @@ private:
   static constexpr bool HasNodeComparator =
       std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, const NodeType*>;
 
+  // Due to a bug in older GCC versions with static templeted constexpr data members (see GCC PR 71954),
+  // we have to express this trait through a struct instead of a constexpr variable directly.
   template<typename, typename = void>
-  struct has_node_verifier : std::false_type {};
+  struct HasNodeVerifierImpl : std::false_type {};
 
   template <typename CMP>
-  struct has_node_verifier<CMP, std::void_t<decltype(&CMP::less_than)>>
+  struct HasNodeVerifierImpl<CMP, std::void_t<decltype(&CMP::less_than)>>
       : std::bool_constant<std::is_invocable_r_v<bool, decltype(&CMP::less_than), const NodeType*, const NodeType*>> {};
 
-  static constexpr bool HasNodeVerifier = has_node_verifier<COMPARATOR>::value;
+  static constexpr bool HasNodeVerifier = HasNodeVerifierImpl<COMPARATOR>::value;
 
   RBTreeOrdering cmp(const K& a, const NodeType* b) const {
     if constexpr (HasNodeComparator) {
