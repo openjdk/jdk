@@ -74,7 +74,6 @@ void ShenandoahSTWMark::mark() {
 
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  shenandoah_assert_generations_reconciled();
   rp->reset_thread_locals();
 
   // Init mark, do not expect forwarded pointers in roots
@@ -145,11 +144,9 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  shenandoah_assert_generations_reconciled();
   StringDedup::Requests requests;
 
-  mark_loop(worker_id, &_terminator, rp,
-            _generation->type(), false /* not cancellable */,
+  // TODO: Why are we passing our own fields to our own method?
+  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }

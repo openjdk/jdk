@@ -303,7 +303,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_degenerated();
+    heap->verifier()->verify_after_degenerated(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -379,7 +379,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
   if (!heap->collection_set()->is_empty()) {
     if (ShenandoahVerify) {
-      heap->verifier()->verify_before_evacuation();
+      heap->verifier()->verify_before_evacuation(_generation);
     }
 
     heap->set_evacuation_in_progress(true);
@@ -387,9 +387,9 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   } else {
     if (ShenandoahVerify) {
       if (has_in_place_promotions(heap)) {
-        heap->verifier()->verify_after_concmark_with_promotions();
+        heap->verifier()->verify_after_concmark_with_promotions(_generation);
       } else {
-        heap->verifier()->verify_after_concmark();
+        heap->verifier()->verify_after_concmark(_generation);
       }
     }
 
@@ -409,7 +409,7 @@ void ShenandoahDegenGC::op_cleanup_early() {
 
 void ShenandoahDegenGC::op_evacuate() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_evac);
-  ShenandoahHeap::heap()->evacuate_collection_set(false /* concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
 }
 
 void ShenandoahDegenGC::op_init_update_refs() {
@@ -437,7 +437,7 @@ void ShenandoahDegenGC::op_update_roots() {
   heap->update_heap_region_states(false /*concurrent*/);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {

@@ -144,7 +144,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_fullgc();
+    heap->verifier()->verify_before_fullgc(heap->global_generation());
   }
 
   if (VerifyBeforeGC) {
@@ -276,7 +276,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   heap->set_full_gc_in_progress(false);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_fullgc();
+    heap->verifier()->verify_after_fullgc(heap->global_generation());
   }
 
   if (VerifyAfterGC) {
@@ -1098,7 +1098,7 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahMarkingContext* const ctx = heap->gc_generation()->complete_marking_context();
+    ShenandoahMarkingContext* const ctx = heap->global_generation()->complete_marking_context();
     while (region != nullptr) {
       if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
         ctx->clear_bitmap(region);

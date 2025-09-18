@@ -706,7 +706,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
-    heap->verifier()->verify_before_concmark();
+    heap->verifier()->verify_before_concmark(_generation);
   }
 
   if (VerifyBeforeGC) {
@@ -791,7 +791,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
-        heap->verifier()->verify_before_evacuation();
+        heap->verifier()->verify_before_evacuation(_generation);
       }
 
       heap->set_evacuation_in_progress(true);
@@ -806,9 +806,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         if (has_in_place_promotions(heap)) {
-          heap->verifier()->verify_after_concmark_with_promotions();
+          heap->verifier()->verify_after_concmark_with_promotions(_generation);
         } else {
-          heap->verifier()->verify_after_concmark();
+          heap->verifier()->verify_after_concmark(_generation);
         }
       }
     }
@@ -898,7 +898,6 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
-      shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
         // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
@@ -1109,10 +1108,10 @@ void ShenandoahConcurrentGC::op_evacuate() {
 }
 
 void ShenandoahConcurrentGC::op_init_update_refs() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_update_refs_verify);
-    heap->verifier()->verify_before_update_refs();
+    heap->verifier()->verify_before_update_refs(_generation);
   }
 }
 
@@ -1198,7 +1197,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {
