@@ -34,12 +34,14 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class DisplayModeChanger {
 
+    private static final GraphicsDevice gd =
+            GraphicsEnvironment.getLocalGraphicsEnvironment()
+                               .getDefaultScreenDevice();
+    private static final DisplayMode currentDM = gd.getDisplayMode();
+
     public static void main(String[] args)
         throws InterruptedException, InvocationTargetException
     {
-        final GraphicsDevice gd =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().
-                getDefaultScreenDevice();
 
         EventQueue.invokeAndWait(new Runnable() {
             public void run() {
@@ -64,6 +66,7 @@ public class DisplayModeChanger {
                         if (f != null) {
                             f.dispose();
                         }
+                        gd.setDisplayMode(currentDM);
                     }
                 }
             }
@@ -76,7 +79,6 @@ public class DisplayModeChanger {
      */
     private static DisplayMode findDisplayMode(GraphicsDevice gd) {
         DisplayMode dms[] = gd.getDisplayModes();
-        DisplayMode currentDM = gd.getDisplayMode();
         for (DisplayMode dm : dms) {
             if (!dm.equals(currentDM) &&
                  dm.getRefreshRate() == currentDM.getRefreshRate())
