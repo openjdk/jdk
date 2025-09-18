@@ -41,8 +41,10 @@ public class ApplyInsetsTest {
         Insets insets = new Insets(5, 10, 15, 20);
         Rectangle expected = new Rectangle(rect.x + insets.left,
                                            rect.y + insets.top,
-                                           rect.width - (insets.left + insets.right),
-                                           rect.height - (insets.top + insets.bottom));
+                                           rect.width -
+                                                  (insets.left + insets.right),
+                                           rect.height -
+                                                  (insets.top + insets.bottom));
 
         SwingUtilities3.applyInsets(rect, insets);
         if (!rect.equals(expected)) {
@@ -55,8 +57,8 @@ public class ApplyInsetsTest {
         expected.x = rect.x + insets.right;
         SwingUtilities3.applyInsets(rect, insets, false);
         if (!rect.equals(expected)) {
-            throw new RuntimeException("Right to left test failed: expected " + expected +
-                                       " but got " + rect);
+            throw new RuntimeException("Right to left test failed: expected "
+                                       + expected + " but got " + rect);
         }
 
         System.out.println("Test passed.");
