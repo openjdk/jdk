@@ -501,7 +501,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, true);
+  AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -785,7 +785,7 @@ void AOTMetaspace::link_all_loaded_classes(JavaThread* current) {
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       if (may_be_eagerly_linked(ik)) {
         has_linked |= try_link_class(current, ik);
       }
@@ -812,7 +812,7 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
   }
@@ -2001,7 +2001,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
-    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::serialize(&rc);
     DynamicArchive::setup_array_klasses();
   }
 
