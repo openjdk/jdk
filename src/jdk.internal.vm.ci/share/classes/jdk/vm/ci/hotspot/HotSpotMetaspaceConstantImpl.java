@@ -43,9 +43,6 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
     private HotSpotMetaspaceConstantImpl(MetaspaceObject metaspaceObject, boolean compressed) {
         this.metaspaceObject = metaspaceObject;
         this.compressed = compressed;
-        if (compressed && !canBeStoredInCompressibleMetaSpace()) {
-            throw new IllegalArgumentException("constant cannot be compressed: " + metaspaceObject);
-        }
     }
 
     @Override
@@ -88,14 +85,7 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
 
     @Override
     public boolean isCompressible() {
-        if (compressed) {
-            return false;
-        }
-        return canBeStoredInCompressibleMetaSpace();
-    }
-
-    private boolean canBeStoredInCompressibleMetaSpace() {
-        return true;
+        return !compressed;
     }
 
     @Override
