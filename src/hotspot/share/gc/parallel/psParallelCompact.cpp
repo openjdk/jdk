@@ -297,29 +297,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
 }
 
-void
-ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
-{
-  assert(is_region_aligned(beg), "not RegionSize aligned");
-  assert(is_region_aligned(end), "not RegionSize aligned");
-
-  size_t cur_region = addr_to_region_idx(beg);
-  const size_t end_region = addr_to_region_idx(end);
-  HeapWord* addr = beg;
-  while (cur_region < end_region) {
-    _region_data[cur_region].set_destination(addr);
-    _region_data[cur_region].set_destination_count(0);
-    _region_data[cur_region].set_source_region(cur_region);
-
-    // Update live_obj_size so the region appears completely full.
-    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
-    _region_data[cur_region].set_live_obj_size(live_size);
-
-    ++cur_region;
-    addr += RegionSize;
-  }
-}
-
 // The total live words on src_region would overflow the target space, so find
 // the overflowing object and record the split point. The invariant is that an
 // obj should not cross space boundary.
@@ -894,7 +871,6 @@ void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 
     if (dense_prefix_end != old_space->bottom()) {
       fill_dense_prefix_end(id);
-      _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
     // Compacting objs in [dense_prefix_end, old_space->top())
@@ -1539,17 +1515,16 @@ void PSParallelCompact::forward_to_new_addr() {
 #ifdef ASSERT
 void PSParallelCompact::verify_forward() {
   HeapWord* const old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
-  RegionData* old_region = _summary_data.region(_summary_data.addr_to_region_idx(old_dense_prefix_addr));
-  HeapWord* bump_ptr = old_region->partial_obj_size() != 0
-                       ? old_dense_prefix_addr + old_region->partial_obj_size()
-                       : old_dense_prefix_addr;
+  // The destination addr for the first live obj after dense-prefix.
+  HeapWord* bump_ptr = old_dense_prefix_addr
+                     + _summary_data.addr_to_region_ptr(old_dense_prefix_addr)->partial_obj_size();
   SpaceId bump_ptr_space = old_space_id;
 
   for (uint id = old_space_id; id < last_space_id; ++id) {
     MutableSpace* sp = PSParallelCompact::space(SpaceId(id));
-    HeapWord* dense_prefix_addr = dense_prefix(SpaceId(id));
+    // Only verify objs after dense-prefix, because those before dense-prefix are not moved (forwarded).
+    HeapWord* cur_addr = dense_prefix(SpaceId(id));
     HeapWord* top = sp->top();
-    HeapWord* cur_addr = dense_prefix_addr;
 
     while (cur_addr < top) {
       cur_addr = mark_bitmap()->find_obj_beg(cur_addr, top);
