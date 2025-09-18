@@ -501,7 +501,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, true);
+  AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -2001,7 +2001,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
-    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::serialize(&rc);
     DynamicArchive::setup_array_klasses();
   }
 

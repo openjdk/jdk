@@ -756,6 +756,13 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  if (is_dumping_dynamic_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+  }
+
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
     assert(!is_dumping_static_archive(), "cannot be dumping both static and dynamic archives");
 
@@ -1014,11 +1021,10 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_preimage_static_archive()) {
-    return false;
-  } else if (is_dumping_dynamic_archive()) {
-    return is_using_full_module_graph() && AOTClassLinking;
-  } else if (is_dumping_static_archive()) {
+  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+    // FMG is required to guarantee that all cached boot/platform/app classes
+    // are visible in the production run, so they can be unconditionally
+    // loaded during VM bootstrap.
     return is_dumping_full_module_graph() && AOTClassLinking;
   } else {
     return false;
