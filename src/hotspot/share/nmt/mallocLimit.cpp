@@ -92,7 +92,7 @@ public:
     }
     stringStream ss;
     ss.print("%.*s", (int)(end - _p), _p);
-    MemTag mem_tag = MemTagFactory::tag(ss.freeze());
+    MemTag mem_tag = MemTagFactory::tag_maybe(ss.freeze());
     if (mem_tag != mtNone) {
       *out = mem_tag;
       _p = end;
@@ -153,7 +153,8 @@ void MallocLimitSet::print_on(outputStream* st) {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
                  mode_to_name(_glob.mode));
   } else {
-    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
+    int tag_count = MemTagFactory::number_of_tags();
+    for (int i = 0; i < tag_count; i++) {
       if (_memtag.at_grow(i).sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
                      MemTagFactory::name_of(NMTUtil::index_to_tag(i)),

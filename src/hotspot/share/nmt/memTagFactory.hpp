@@ -197,6 +197,10 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
     int number_of_tags() {
       return table.number_of_tags();
     }
+
+    MemTag tag_maybe(const char* name) {
+      return table.tag_of(name);
+    }
   };
 
   static DeferredStatic<Instance> _instance;
@@ -223,6 +227,11 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
   static int number_of_tags() {
     NmtMemTagLocker nvml;
     return _instance->number_of_tags();
+  }
+
+  static MemTag tag_maybe(const char* name) {
+    NmtMemTagLocker ntml;
+    return _instance->tag_exists(name);
   }
 };
 
