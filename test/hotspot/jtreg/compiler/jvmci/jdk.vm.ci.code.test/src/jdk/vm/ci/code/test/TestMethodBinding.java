@@ -56,38 +56,29 @@ import java.lang.reflect.Method;
 public class TestMethodBinding extends CodeInstallationTest {
 
 
-    public static int invokeStatic() {
+    public static int calculateSum() {
         return 1 + 2;
     }
 
     public static int delegateMethod() {
-        // instead of the addition we will insert a call to invokeStatic here
+        // instead of the addition we will do a call to calculateSum here
         return 1 + 2;
     }
 
     @Test
     public void test() {
-        Class<?> returnType = int.class;
-        Class<?>[] staticArgumentTypes = new Class<?>[]{};
-        Object[] staticArguments = new Object[]{};
-
-        test(getMethod("delegateMethod"), getMethod("invokeStatic"), returnType, staticArgumentTypes, staticArguments);
+        test(getMethod("delegateMethod"), getMethod("calculateSum"), int.class);
     }
 
 
-    public void test(Method delegateMethod, Method method, Class<?> returnClazz, Class<?>[] types, Object[] values) {
+    public void test(Method delegateMethod, Method method, Class<?> returnClazz) {
         try {
             ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(method);
-            assert resolvedMethod.isStatic() : "method should be static";
+            assert resolvedMethod.isStatic() : "method must be static";
             test(asm -> {
-                JavaType[] argTypes = new JavaType[types.length];
-                int i = 0;
-                for (Class<?> clazz : types) {
-                    argTypes[i++] = metaAccess.lookupJavaType(clazz);
-                }
+                JavaType[] argTypes = new JavaType[0];
                 JavaType returnType = metaAccess.lookupJavaType(returnClazz);
                 CallingConvention cc = codeCache.getRegisterConfig().getCallingConvention(JavaCall, returnType, argTypes, asm.valueKindFactory);
-                //asm.emitCallPrologue(cc, values);
 
                 asm.recordMark(config.MARKID_INVOKESTATIC);
                 int[] pos = new int[2];
@@ -99,7 +90,6 @@ public class TestMethodBinding extends CodeInstallationTest {
                 asm.emitJavaCall(pos, info);
 
                 asm.recordCall(pos[0], pos[1], resolvedMethod, true, info);
-                asm.emitCallEpilogue(cc);
                 if (returnClazz == float.class) {
                     asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
                 } else if (returnClazz == int.class) {
@@ -108,7 +98,7 @@ public class TestMethodBinding extends CodeInstallationTest {
                     assert false : "Unimplemented return type: " + returnClazz;
                 }
 
-            }, delegateMethod, values);
+            }, delegateMethod);
         } catch (Throwable e) {
             e.printStackTrace();
             throw e;
