@@ -461,9 +461,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
 
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  // Expect marking to be completed for the old generation before we fill in unmarked objects
+  assert(heap->old_generation()->is_mark_complete(), "sanity");
+  assert(is_old(), "Only need to coalesce and fill old regions");
 
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen

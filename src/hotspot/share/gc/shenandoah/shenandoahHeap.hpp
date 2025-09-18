@@ -474,7 +474,7 @@ protected:
 private:
   // GC support
   // Evacuation
-  virtual void evacuate_collection_set(bool concurrent);
+  virtual void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
@@ -489,7 +489,7 @@ private:
   // Turn off weak roots flag, purge old satb buffers in generational mode
   void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
-  virtual void update_heap_references(bool concurrent);
+  virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
   virtual void final_update_refs_update_region_states();
@@ -597,12 +597,12 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc);
+  void parallel_cleaning(ShenandoahGeneration* generation, bool full_gc);
 
 private:
   void stw_unload_classes(bool full_gc);
   void stw_process_weak_roots(bool full_gc);
-  void stw_weak_refs(bool full_gc);
+  void stw_weak_refs(ShenandoahGeneration* generation, bool full_gc);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);

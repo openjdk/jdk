@@ -362,7 +362,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   // STW cleanup weak roots and unload classes
-  heap->parallel_cleaning(false /*full gc*/);
+  heap->parallel_cleaning(_generation, false /*full gc*/);
 
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
@@ -423,7 +423,7 @@ void ShenandoahDegenGC::op_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_update_refs);
   // Handed over from concurrent update references phase
-  heap->update_heap_references(false /*concurrent*/);
+  heap->update_heap_references(_generation, false /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);

@@ -1257,7 +1257,8 @@ private:
   ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
-void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
+void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
+  assert(generation->is_global(), "Only global generation expected here");
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
 }
@@ -2036,14 +2037,13 @@ void ShenandoahHeap::do_class_unloading() {
   }
 }
 
-void ShenandoahHeap::stw_weak_refs(bool full_gc) {
+void ShenandoahHeap::stw_weak_refs(ShenandoahGeneration* generation, bool full_gc) {
   // Weak refs processing
   ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
                                                 : ShenandoahPhaseTimings::degen_gc_weakrefs;
   ShenandoahTimingsTracker t(phase);
   ShenandoahGCWorkerPhase worker_phase(phase);
-  shenandoah_assert_generations_reconciled();
-  gc_generation()->ref_processor()->process_references(phase, workers(), false /* concurrent */);
+  generation->ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::prepare_update_heap_references() {
@@ -2285,13 +2285,13 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   }
 }
 
-void ShenandoahHeap::parallel_cleaning(bool full_gc) {
+void ShenandoahHeap::parallel_cleaning(ShenandoahGeneration* generation, bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
   ShenandoahGCPhase phase(full_gc ?
                           ShenandoahPhaseTimings::full_gc_purge :
                           ShenandoahPhaseTimings::degen_gc_purge);
-  stw_weak_refs(full_gc);
+  stw_weak_refs(generation, full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
 }
@@ -2491,7 +2491,8 @@ private:
   }
 };
 
-void ShenandoahHeap::update_heap_references(bool concurrent) {
+void ShenandoahHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
+  assert(generation->is_global(), "Should only get global generation here");
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
   if (concurrent) {

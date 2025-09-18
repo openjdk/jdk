@@ -73,7 +73,6 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   // Weak reference processing
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   shenandoah_assert_generations_reconciled();
   rp->reset_thread_locals();
@@ -116,7 +115,6 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
@@ -145,7 +143,6 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();

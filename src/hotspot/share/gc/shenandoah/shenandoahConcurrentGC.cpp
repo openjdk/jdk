@@ -1105,7 +1105,7 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
-  ShenandoahHeap::heap()->evacuate_collection_set(true /*concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_init_update_refs() {
@@ -1117,7 +1117,7 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
-  ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
+  ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
 }
 
 class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {

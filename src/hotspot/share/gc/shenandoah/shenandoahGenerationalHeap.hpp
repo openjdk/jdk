@@ -99,7 +99,7 @@ public:
 
   // ---------- Update References
   //
-  void update_heap_references(bool concurrent) override;
+  void update_heap_references(ShenandoahGeneration* generation, bool concurrent) override;
   void final_update_refs_update_region_states() override;
 
 private:
