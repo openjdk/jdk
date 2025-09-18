@@ -969,6 +969,10 @@ public final class Float16
      *      to be greater than negative zero.
      * </ul>
      *
+     * @apiNote
+     * Copy or cross-reference corresponding note in {@code Double}
+     * once that text is finalized.
+     *
      * @param   anotherFloat16   the {@code Float16} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat16} is
      *          numerically equal to this {@code Float16}; a value

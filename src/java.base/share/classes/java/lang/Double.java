@@ -1425,12 +1425,24 @@ public final class Double extends Number
      *      This method chooses to define positive zero ({@code +0.0d}),
      *      to be greater than negative zero ({@code -0.0d}).
      * </ul>
-
+     *
      * This ensures that the <i>natural ordering</i> of {@code Double}
      * objects imposed by this method is <i>consistent with
      * equals</i>; see {@linkplain ##equivalenceRelation this
      * discussion for details of floating-point comparison and
      * ordering}.
+     *
+     * @apiNote
+     * The inclusion of a total order idiom in the Java SE API
+     * predates the inclusion of that functionality in the IEEE 754
+     * standard. The ordering of the totalOrder predicate chosen by
+     * IEEE 754 differs from the total order chosen by this method. In
+     * particular IEEE 754 regards "negative" NaN representations,
+     * that is NaN representations whose sign bit is set, to be less
+     * than any finite or infinite value, including negative
+     * infinity. Also in the IEEE 754 ordering, "positive" NaN values
+     * are greater than any finite or infinite value and also greater
+     * than negative NaN values.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
