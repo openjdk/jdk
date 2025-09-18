@@ -70,9 +70,7 @@ public class InitialFocusTest1 extends Frame implements FocusListener {
                 throw new RuntimeException("Wrong focus owner: " + focused);
             }
         } finally {
-            EventQueue.invokeAndWait(() -> {
-                app.dispose();
-            });
+            EventQueue.invokeAndWait(() -> app.dispose());
         }
     }
 
