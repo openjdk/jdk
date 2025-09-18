@@ -25,10 +25,11 @@ import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Launched by JNIMutatorTest to test a JNI attached thread attempting to mutate a final field.
+ * Launched by JNIAttachMutatorTest to test a JNI attached thread attempting to mutate
+ * a final field.
  */
 
-public class JNIMutator {
+public class JNIAttachMutator {
     private static final CountDownLatch finished = new CountDownLatch(1);
     private static volatile Object obj;
     private static volatile Throwable exc;
@@ -58,7 +59,7 @@ public class JNIMutator {
     }
 
     /**
-     * Usage: java JNIMutate <classname> <true|false>
+     * Usage: java JNIAttachMutator <classname> <true|false>
      */
     public static void main(String[] args) throws Exception {
         String cn = args[0];
@@ -114,6 +115,6 @@ public class JNIMutator {
     private static native void startThread();
 
     static {
-        System.loadLibrary("JNIMutator");
+        System.loadLibrary("JNIAttachMutator");
     }
 }

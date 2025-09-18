@@ -81,9 +81,9 @@ public class TestLookForUntestedEvents {
     private static final Set<String> coveredVirtualThreadEvents = Set.of(
         "VirtualThreadPinned", "VirtualThreadSubmitFailed");
 
-    // Theses events are tested in test/jdk/java/lang/reflect/Field/mutateFinals/FinalFieldMutationEventTest.java
+    // This event is tested in test/jdk/java/lang/reflect/Field/mutateFinals/FinalFieldMutationEventTest.java
     private static final Set<String> coveredFinalFieldMutationEvents = Set.of(
-            "FinalFieldMutationEvent");
+        "FinalFieldMutationEvent");
 
     // This is a "known failure list" for this test.
     // NOTE: if the event is not covered, a bug should be open, and bug number

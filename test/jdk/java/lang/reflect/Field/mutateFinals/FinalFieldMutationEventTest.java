@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8353835
  * @summary Basic test for JFR FinalFieldMutation event
  * @requires vm.hasJFR
  * @run junit FinalFieldMutationEventTest
@@ -49,18 +50,22 @@ class FinalFieldMutationEventTest {
     private static final String EVENT_NAME = "jdk.FinalFieldMutation";
 
     /**
+     * Test class with final field.
+     */
+    private static class C {
+        final int value;
+        C(int value) {
+            this.value = value;
+        }
+    }
+
+    /**
      * Test jdk.FinalFieldMutation is recorded when mutating a final field.
      */
     @Test
     void testFieldSet() throws Exception {
-        class C {
-            final int value;
-            C(int value) {
-                this.value = value;
-            }
-        }
-        Field f = C.class.getDeclaredField("value");
-        f.setAccessible(true);
+        Field field = C.class.getDeclaredField("value");
+        field.setAccessible(true);
 
         try (Recording recording = new Recording()) {
             recording.enable(EVENT_NAME);
@@ -70,7 +75,7 @@ class FinalFieldMutationEventTest {
             try {
                 var obj = new C(100);
                 try {
-                    f.setInt(obj, 200);
+                    field.setInt(obj, 200);
                     mutated = true;
                 } catch (IllegalAccessException e) {
                     // denied
@@ -79,16 +84,12 @@ class FinalFieldMutationEventTest {
                 recording.stop();
             }
 
-            // test FinalFieldMutation event recorded if field mutated
+            // FinalFieldMutation event should be recorded if field mutated
             List<RecordedEvent> events = find(recording, EVENT_NAME);
             System.err.println(events);
             if (mutated) {
                 assertEquals(1, events.size(), "1 event expected");
-                RecordedEvent e = events.get(0);
-                RecordedClass clazz = e.getClass("declaringClass");
-                assertNotNull(clazz);
-                assertEquals(C.class.getName(), clazz.getName());
-                assertEquals("value", e.getString("fieldName"));
+                checkEvent(events.get(0), field);
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }
@@ -100,14 +101,8 @@ class FinalFieldMutationEventTest {
      */
     @Test
     void testUnreflectSetter() throws Exception {
-        class C {
-            final int value;
-            C(int value) {
-                this.value = value;
-            }
-        }
-        Field f = C.class.getDeclaredField("value");
-        f.setAccessible(true);
+        Field field = C.class.getDeclaredField("value");
+        field.setAccessible(true);
 
         try (Recording recording = new Recording()) {
             recording.enable(EVENT_NAME);
@@ -115,7 +110,7 @@ class FinalFieldMutationEventTest {
             boolean unreflected = false;
             recording.start();
             try {
-                MethodHandles.lookup().unreflectSetter(f);
+                MethodHandles.lookup().unreflectSetter(field);
                 unreflected = true;
             } catch (IllegalAccessException e) {
                 // denied
@@ -123,20 +118,26 @@ class FinalFieldMutationEventTest {
                 recording.stop();
             }
 
-            // test FinalFieldMutation event recorded if field unreflected for setting
+            // FinalFieldMutation event should be recorded if field unreflected for set
             List<RecordedEvent> events = find(recording, EVENT_NAME);
             System.err.println(events);
             if (unreflected) {
                 assertEquals(1, events.size(), "1 event expected");
-                RecordedEvent e = events.get(0);
-                RecordedClass clazz = e.getClass("declaringClass");
-                assertNotNull(clazz);
-                assertEquals(C.class.getName(), clazz.getName());
-                assertEquals("value", e.getString("fieldName"));
+                checkEvent(events.get(0), field);
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }
         }
+    }
+
+    /**
+     * Test an event has the expected declaringClass and fieldName of the given Field.
+     */
+    private void checkEvent(RecordedEvent e, Field f) {
+        RecordedClass clazz = e.getClass("declaringClass");
+        assertNotNull(clazz);
+        assertEquals(f.getDeclaringClass().getName(), clazz.getName());
+        assertEquals(f.getName(), e.getString("fieldName"));
     }
 
     /**

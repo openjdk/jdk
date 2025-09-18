@@ -36,7 +36,6 @@ import jdk.internal.event.FinalFieldMutationEvent;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
-import jdk.internal.module.ModuleBootstrap.IllegalFinalFieldMutation;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
@@ -883,8 +882,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().set(obj, value);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().set(obj, value);
         }
@@ -925,8 +924,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setBoolean(obj, z);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setBoolean(obj, z);
         }
@@ -967,8 +966,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setByte(obj, b);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setByte(obj, b);
         }
@@ -1009,8 +1008,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setChar(obj, c);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setChar(obj, c);
         }
@@ -1051,8 +1050,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setShort(obj, s);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setShort(obj, s);
         }
@@ -1093,8 +1092,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setInt(obj, i);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setInt(obj, i);
         }
@@ -1135,8 +1134,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setLong(obj, l);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setLong(obj, l);
         }
@@ -1177,8 +1176,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setFloat(obj, f);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setFloat(obj, f);
         }
@@ -1219,8 +1218,8 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setDouble(obj, d);
         } else {
-            if (isFinalInstanceInNormalClass() && obj != null) {
-                checkAllowedToSetFinal(Reflection.getCallerClass());
+            if (isFinalInstanceInNormalClass()) {
+                checkAllowedToSetFinal(Reflection.getCallerClass(), obj);
             }
             getOverrideFieldAccessor().setDouble(obj, d);
         }
@@ -1403,8 +1402,10 @@ class Field extends AccessibleObject implements Member {
      * Check that the caller is allowed to mutate a final instance field in a class that
      * is not a record class or hidden class.
      * @throws IllegalAccessException if not allowed
+     * @throws NullPointerException if obj is null
      */
-    private void checkAllowedToSetFinal(Class<?> caller) throws IllegalAccessException {
+    private void checkAllowedToSetFinal(Class<?> caller, Object obj) throws IllegalAccessException {
+        Objects.requireNonNull(obj);
         checkAllowedToSetFinal(caller, false);
     }
 
@@ -1428,12 +1429,13 @@ class Field extends AccessibleObject implements Member {
         // check that package is open to caller
         final Module moduleToCheck;
         if (caller != null) {
+            moduleToCheck = caller.getModule();
             if (!Modules.isStaticallyOpened(clazz.getModule(),
                                             clazz.getPackageName(),
-                                            caller.getModule())) {
+                                            moduleToCheck)) {
                 throw new IllegalAccessException(notOpenToCallerMessage(caller, unreflect));
             }
-            moduleToCheck = caller.getModule();
+
         } else {
             // no java caller, only allowed if field is public in exported package
             if (!Reflection.verifyPublicMemberAccess(clazz, modifiers)) {
@@ -1442,14 +1444,14 @@ class Field extends AccessibleObject implements Member {
             moduleToCheck = ClassLoaders.appClassLoader().getUnnamedModule();
         }
 
-        // offer JFR event if final field mutation not denied
+        // record JFR event if final field mutation not denied
         var mode = ModuleBootstrap.illegalFinalFieldMutation();
-        if (mode != IllegalFinalFieldMutation.DENY) {
+        if (mode != ModuleBootstrap.IllegalFinalFieldMutation.DENY) {
             FinalFieldMutationEvent.offer(getDeclaringClass(), getName());
         }
 
         // check if illegal final field mutation is allowed or enabled for the module
-        if (mode == IllegalFinalFieldMutation.ALLOW
+        if (mode == ModuleBootstrap.IllegalFinalFieldMutation.ALLOW
                 || Modules.isFinalMutationEnabled(moduleToCheck)) {
             return;
         }

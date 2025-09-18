@@ -34,10 +34,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void* reserved) {
 }
 
 /**
- * Invokes JNIMutator.getObject()
+ * Invokes JNIAttachMutator.getObject()
  */
 jobject getObject(JNIEnv* env) {
-    jclass clazz = (*env)->FindClass(env, "JNIMutator");
+    jclass clazz = (*env)->FindClass(env, "JNIAttachMutator");
     if (clazz == NULL) {
         fprintf(stderr, "FindClass failed\n");
         return NULL;
@@ -56,10 +56,10 @@ jobject getObject(JNIEnv* env) {
 }
 
 /**
- * Invokes JNIMutator.getField()
+ * Invokes JNIAttachMutator.getField()
  */
 jobject getField(JNIEnv* env) {
-    jclass clazz = (*env)->FindClass(env, "JNIMutator");
+    jclass clazz = (*env)->FindClass(env, "JNIAttachMutator");
     if (clazz == NULL) {
         fprintf(stderr, "FindClass failed\n");
         return NULL;
@@ -92,10 +92,10 @@ jboolean setInt(JNIEnv* env, jobject obj, jobject fieldObj, jint newValue) {
 }
 
 /**
- * Invokes JNIMutator.finish
+ * Invokes JNIAttachMutator.finish
  */
 void finish(JNIEnv* env, jthrowable ex) {
-    jclass clazz = (*env)->FindClass(env, "JNIMutator");
+    jclass clazz = (*env)->FindClass(env, "JNIAttachMutator");
     if (clazz == NULL) {
         fprintf(stderr, "FindClass failed\n");
         return;
@@ -127,13 +127,13 @@ void* thread_main(void* arg) {
         return NULL;
     }
 
-    // invoke JNIMutator.getObject to get the object to test
+    // invoke JNIAttachMutator.getObject to get the object to test
     jobject obj = getObject(env);
     if (obj == NULL) {
         goto done;
     }
 
-    // invoke JNIMutator.getField to get the Field object with access enabled
+    // invoke JNIAttachMutator.getField to get the Field object with access enabled
     jobject fieldObj = getField(env);
     if (fieldObj == NULL) {
         goto done;
@@ -161,7 +161,7 @@ void* thread_main(void* arg) {
     return NULL;
 }
 
-JNIEXPORT void JNICALL Java_JNIMutator_startThread(JNIEnv *env, jclass clazz) {
+JNIEXPORT void JNICALL Java_JNIAttachMutator_startThread(JNIEnv *env, jclass clazz) {
     pthread_t tid;
     pthread_attr_t attr;
 

@@ -648,6 +648,8 @@ public final class LauncherHelper {
         if (opens != null) {
             addExportsOrOpens(opens, true);
         }
+
+        // Enable-Native-Access
         String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
         if (enableNativeAccess != null) {
             if (!enableNativeAccess.equals("ALL-UNNAMED")) {
@@ -655,6 +657,8 @@ public final class LauncherHelper {
             }
             Modules.addEnableNativeAccessToAllUnnamed();
         }
+
+        // Enable-Final-Field-Mutation
         String enableFinalFieldMutation = mainAttrs.getValue(ENABLE_FINAL_FIELD_MUTATION);
         if (enableFinalFieldMutation != null) {
             if (!enableFinalFieldMutation.equals("ALL-UNNAMED")) {

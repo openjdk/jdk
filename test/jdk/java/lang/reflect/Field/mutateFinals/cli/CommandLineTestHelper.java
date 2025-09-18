@@ -43,7 +43,8 @@ public class CommandLineTestHelper {
         class C {
             final int value;
             C(int value) {
-                this.value = value; }
+                this.value = value;
+            }
         }
         Field f = C.class.getDeclaredField("value");
         f.setAccessible(true);
@@ -58,7 +59,8 @@ public class CommandLineTestHelper {
         class C {
             final int value;
             C(int value) {
-                this.value = value; }
+                this.value = value;
+            }
         }
         Field f = C.class.getDeclaredField("value");
         f.setAccessible(true);

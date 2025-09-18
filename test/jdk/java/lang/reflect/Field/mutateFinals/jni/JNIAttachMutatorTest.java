@@ -28,8 +28,8 @@
  *    invoking Field.set to set a final field
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
- * @compile JNIMutator.java
- * @run junit JNIMutatorTest
+ * @compile JNIAttachMutator.java
+ * @run junit JNIAttachMutatorTest
  */
 
 import java.util.stream.Stream;
@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-class JNIMutatorTest {
+class JNIAttachMutatorTest {
     private static final String TEST_CLASSES = System.getProperty("test.classes");
     private static final String JAVA_LIBRARY_PATH = System.getProperty("java.library.path");
 
@@ -47,7 +47,7 @@ class JNIMutatorTest {
      */
     @Test
     void testPublicClassPublicFieldAllowMutation() throws Exception {
-        test("JNIMutator$C1", false, "--enable-final-field-mutation=ALL-UNNAMED");
+        test("JNIAttachMutator$C1", false, "--enable-final-field-mutation=ALL-UNNAMED");
     }
 
     /**
@@ -56,7 +56,7 @@ class JNIMutatorTest {
      */
     @Test
     void testPublicClassPublicFieldDisallowMutation() throws Exception {
-        test("JNIMutator$C1", true);
+        test("JNIAttachMutator$C1", true);
     }
 
     /**
@@ -64,7 +64,7 @@ class JNIMutatorTest {
      */
     @Test
     void testPublicClassAllowMutation() throws Exception {
-        test("JNIMutator$C2", true, "--enable-final-field-mutation=ALL-UNNAMED");
+        test("JNIAttachMutator$C2", true, "--enable-final-field-mutation=ALL-UNNAMED");
     }
 
     /**
@@ -72,7 +72,7 @@ class JNIMutatorTest {
      */
     @Test
     void testPublicFieldAllowMutation() throws Exception {
-        test("JNIMutator$C3", true, "--enable-final-field-mutation=ALL-UNNAMED");
+        test("JNIAttachMutator$C3", true, "--enable-final-field-mutation=ALL-UNNAMED");
     }
 
     private void test(String className, boolean expectIAE, String... extraOps) throws Exception {
@@ -82,7 +82,7 @@ class JNIMutatorTest {
                 "-Djava.library.path=" + JAVA_LIBRARY_PATH,
                 "--enable-native-access=ALL-UNNAMED",
                 "--illegal-final-field-mutation=deny",
-                "JNIMutator",
+                "JNIAttachMutator",
                 className,
                 expectIAE ? "true" : "false");
         String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
