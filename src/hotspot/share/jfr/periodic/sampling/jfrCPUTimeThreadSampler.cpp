@@ -231,7 +231,6 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
   DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled;)
-  DEBUG_ONLY(volatile u8 _out_of_stack_walking_iterations;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -281,10 +280,6 @@ public:
   #ifdef ASSERT
   void set_out_of_stack_walking_enabled(bool runnable) {
     AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
-  }
-
-  u8 out_of_stack_walking_iterations() const {
-    return AtomicAccess::load(&_out_of_stack_walking_iterations);
   }
   #endif
 };
@@ -393,7 +388,6 @@ void JfrCPUSamplerThread::run() {
     }
     DEBUG_ONLY(if (AtomicAccess::load_acquire(&_out_of_stack_walking_enabled)) {)
       if (AtomicAccess::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
-        DEBUG_ONLY(AtomicAccess::inc(&_out_of_stack_walking_iterations);)
         stackwalk_threads_in_native();
       }
     DEBUG_ONLY(})
@@ -591,13 +585,6 @@ void JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
     _instance->_sampler->set_out_of_stack_walking_enabled(runnable);
   }
-}
-
-u8 JfrCPUTimeThreadSampling::out_of_stack_walking_iterations() {
-  if (_instance != nullptr && _instance->_sampler != nullptr) {
-    return _instance->_sampler->out_of_stack_walking_iterations();
-  }
-  return 0;
 }
 #endif
 

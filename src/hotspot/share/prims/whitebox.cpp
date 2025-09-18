@@ -2679,14 +2679,6 @@ WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jb
   #endif
 WB_END
 
-WB_ENTRY(jlong, WB_CPUSamplerOutOfStackWalkingIterations(JNIEnv* env, jobject wb))
-  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    return (jlong)JfrCPUTimeThreadSampling::out_of_stack_walking_iterations();
-  #else
-    return 0;
-  #endif
-WB_END
-
 WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   ThreadToNativeFromVM ttn(thread);
   jstring info_string = env->NewStringUTF(XSTR(LIBC));
@@ -3042,7 +3034,6 @@ static JNINativeMethod methods[] = {
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"busyWaitCPUTime", CC"(I)V",                     (void*)&WB_BusyWaitCPUTime},
   {CC"cpuSamplerSetOutOfStackWalking", CC"(Z)Z",      (void*)&WB_CPUSamplerSetOutOfStackWalking},
-  {CC"cpuSamplerOutOfStackWalkingIterations", CC"()J",(void*)&WB_CPUSamplerOutOfStackWalkingIterations},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
