@@ -176,7 +176,7 @@ class MemTracker : AllStatic {
   static inline bool walk_virtual_memory(VirtualMemoryWalker* walker) {
     assert_post_init();
     if (!enabled()) return false;
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
   }
 
