@@ -259,9 +259,8 @@ class MarkingNMethodClosure : public NMethodToOopClosure {
   bool _keepalive_nmethods;
 
  public:
-  MarkingNMethodClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
-      NMethodToOopClosure(cl, fix_relocations),
-      _keepalive_nmethods(keepalive_nmethods) {}
+  MarkingNMethodClosure(OopClosure* cl) :
+      NMethodToOopClosure(cl, false /* fix_relocations */) {}
 
   // Called for each nmethod.
   virtual void do_nmethod(nmethod* nm);
