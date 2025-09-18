@@ -102,6 +102,8 @@ public class VectorBulkOperationsArray {
     ////         "1000", "3000", "10000"})
     // Describes how many array elements are accessed, i.e. how many
     // elements we loop over.
+    // TODO: add some really large sizes, to see what happens when we run out
+    // of L1 cache etc.
     public static int NUM_ACCESS_ELEMENTS;
 
     // Every array has two regions:
