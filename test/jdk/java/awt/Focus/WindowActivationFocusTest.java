@@ -26,7 +26,7 @@
  * @bug 4369903
  * @summary Focus on window activation does not work correctly
  * @key headful
- * @run main ActivateFocusTest
+ * @run main WindowActivationFocusTest
  */
 
 import java.awt.Color;
@@ -41,14 +41,14 @@ import java.awt.event.FocusListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class ActivateFocusTest {
+public class WindowActivationFocusTest {
 
     private static final int NUM_FRAMES = 2;
     private static ActivateFocus[] af;
 
     public static void main(final String[] args) throws Exception {
         try {
-            ActivateFocusTest app = new ActivateFocusTest();
+            WindowActivationFocusTest app = new WindowActivationFocusTest();
             EventQueue.invokeAndWait(() -> app.doTest());
 
             Thread.sleep(1000);
