@@ -128,7 +128,7 @@ bool MemBaseline::baseline_allocation_sites() {
   assert(_vma_allocations == nullptr, "must");
 
   {
-    MemTracker::NmtVirtualMemoryLocker locker;
+    NmtVirtualMemoryLocker locker;
     _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
     if (_vma_allocations == nullptr)  {
       return false;
