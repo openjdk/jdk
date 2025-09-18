@@ -54,19 +54,19 @@ bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   return _biased_cset_map[index] == 1;
 }
 
-size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
+size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() const {
   return _old_bytes_to_evacuate;
 }
 
-size_t ShenandoahCollectionSet::get_young_bytes_reserved_for_evacuation() {
+size_t ShenandoahCollectionSet::get_young_bytes_reserved_for_evacuation() const {
   return _young_bytes_to_evacuate - _young_bytes_to_promote;
 }
 
-size_t ShenandoahCollectionSet::get_young_bytes_to_be_promoted() {
+size_t ShenandoahCollectionSet::get_young_bytes_to_be_promoted() const {
   return _young_bytes_to_promote;
 }
 
-size_t ShenandoahCollectionSet::get_old_garbage() {
+size_t ShenandoahCollectionSet::get_old_garbage() const {
   return _old_garbage;
 }
 
