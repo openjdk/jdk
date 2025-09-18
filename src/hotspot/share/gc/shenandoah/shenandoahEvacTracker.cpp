@@ -133,17 +133,18 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
   }
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  AgeTable young_region_ages(false);
-  for (uint i = 0; i < heap->num_regions(); ++i) {
-    ShenandoahHeapRegion* r = heap->get_region(i);
-    if (r->is_young()) {
-      young_region_ages.add(r->age(), r->get_live_data_words());
+  if (heap->mode()->is_generational()) {
+    AgeTable young_region_ages(false);
+    for (uint i = 0; i < heap->num_regions(); ++i) {
+      ShenandoahHeapRegion* r = heap->get_region(i);
+      if (r->is_young()) {
+        young_region_ages.add(r->age(), r->get_live_data_words());
+      }
     }
+    st->print("Young regions: ");
+    young_region_ages.print_on(st);
+    st->cr();
   }
-  st->print("Young regions: ");
-  young_region_ages.print_on(st);
-  st->cr();
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
