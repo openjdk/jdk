@@ -283,7 +283,7 @@ public final class SSLLogger {
                         """,
                 Locale.ENGLISH);
 
-        private static final MessageFormat extendedCertFormart =
+        private static final MessageFormat extendedCertFormat =
             new MessageFormat(
                     """
                             "version"            : "v{0}",
@@ -513,7 +513,7 @@ public final class SSLLogger {
                         Utilities.indent(extBuilder.toString())
                         };
                     builder.append(Utilities.indent(
-                            extendedCertFormart.format(certFields)));
+                            extendedCertFormat.format(certFields)));
                 }
             } catch (Exception ce) {
                 // ignore the exception
