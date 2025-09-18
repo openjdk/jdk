@@ -39,10 +39,7 @@ class SerializeClosure;
 // in a production run.
 //
 class AOTLinkedClassTable {
-  // The VM may load up to 2 CDS archives -- static and dynamic. Each
-  // archive can have its own AOTLinkedClassTable.
-  static AOTLinkedClassTable _for_static_archive;
-  static AOTLinkedClassTable _for_dynamic_archive;
+  static AOTLinkedClassTable _instance;
 
   Array<InstanceKlass*>* _boot;  // only java.base classes
   Array<InstanceKlass*>* _boot2; // boot classes in other modules
@@ -54,11 +51,8 @@ public:
     _boot(nullptr), _boot2(nullptr),
     _platform(nullptr), _app(nullptr) {}
 
-  static AOTLinkedClassTable* for_static_archive()  { return &_for_static_archive; }
-  static AOTLinkedClassTable* for_dynamic_archive() { return &_for_dynamic_archive; }
-
-  static AOTLinkedClassTable* get(bool is_static_archive) {
-    return is_static_archive ? for_static_archive() : for_dynamic_archive();
+  static AOTLinkedClassTable* get() {
+    return &_instance;
   }
 
   Array<InstanceKlass*>* boot()     const { return _boot;     }
