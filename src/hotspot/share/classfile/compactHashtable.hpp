@@ -233,8 +233,6 @@ public:
   inline size_t entry_count() const {
     return _entry_count;
   }
-
-  static size_t calculate_header_size();
 };
 
 template <

@@ -190,16 +190,7 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
   _entries = entries;
 }
 
-size_t SimpleCompactHashtable::calculate_header_size() {
-  // We have 5 fields. Each takes up sizeof(intptr_t). See WriteClosure::do_u4
-  constexpr size_t bytes = sizeof(intptr_t) * 5;
-  static_assert(bytes >= sizeof(SimpleCompactHashtable), "must");
-  return bytes;
-}
-
 void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
-  // NOTE: if you change this function, you MUST change the number 5 in
-  // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
   soc->do_ptr(&_buckets);
