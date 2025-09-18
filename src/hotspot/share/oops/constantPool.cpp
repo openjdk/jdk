@@ -1828,22 +1828,22 @@ int ConstantPool::find_matching_entry(int pattern_i,
 bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle& cp2, int idx2) {
   const BSMAttributeEntry* const e1 = bsm_attribute_entry(idx1);
   const BSMAttributeEntry* const e2 = cp2->bsm_attribute_entry(idx2);
-  int k1 = bsmae1->bootstrap_method_index();
-  int k2 = bsmae2->bootstrap_method_index();
+  int k1 = e1->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
 
-  const int argc = bsmae1->argument_count();
-  if (argc != bsmae2->argument_count()) {
+  const int argc = e1->argument_count();
+  if (argc != e2->argument_count()) {
     return false;
   }
 
   for (int j = 0; j < argc; j++) {
-    k1 = bsmae1->argument(j);
-    k2 = bsmae2->argument(j);
+    k1 = e1->argument(j);
+    k2 = e2->argument(j);
     match = compare_entry_to(k1, cp2, k2);
     if (!match) {
       return false;
