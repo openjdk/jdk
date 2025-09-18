@@ -40,6 +40,12 @@ class RegionsTree : public VMATree {
  public:
   RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage), _with_storage(with_storage) { }
 
+  RegionsTree(const RegionsTree& other)
+  : VMATree(other),
+    _ncs_storage(other._ncs_storage),
+    _with_storage(other._with_storage) {}
+  RegionsTree& operator=(const RegionsTree& other) = delete;
+
   ReservedMemoryRegion find_reserved_region(address addr);
 
   SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
@@ -91,6 +97,8 @@ class RegionsTree : public VMATree {
     NativeCallStackStorage::StackIndex si = node.out_stack_index();
     return _ncs_storage.get(si);
   }
+
+  size_t committed_size(const ReservedMemoryRegion& rgn);
 };
 
 #endif // NMT_REGIONSTREE_HPP

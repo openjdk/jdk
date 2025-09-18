@@ -59,7 +59,6 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _thread               = thread;
   _thread_saved         = nullptr;
   _exception_state      = ES_CLEARED;
-  _debuggable           = true;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
   _hide_level           = 0;
