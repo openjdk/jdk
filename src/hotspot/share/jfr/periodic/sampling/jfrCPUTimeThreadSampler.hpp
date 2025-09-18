@@ -43,6 +43,13 @@ struct JfrCPUTimeSampleRequest {
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
 // Designed to be only used under lock and read linearly
+// The lock in question is the tri-state CPU time JFR lock in JfrThreadLocal
+// This allows us to skip most of the atomic accesses and memory barriers,
+// holding a lock acts as a memory barrier
+// Only the _lost_samples property is atomic, as it can be accessed even after
+// acquiring the lock failed.
+// Important to note is that the queue is also only accessed under lock in signal
+// handlers.
 class JfrCPUTimeTraceQueue {
 
   JfrCPUTimeSampleRequest* _data;
