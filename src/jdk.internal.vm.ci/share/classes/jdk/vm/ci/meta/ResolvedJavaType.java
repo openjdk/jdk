@@ -422,12 +422,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isCloneableWithAllocation();
 
     /**
-     * Lookup an unresolved type relative to an existing resolved type.
+     * Looks up {@code unresolvedJavaType} using the class loader of this resolved type.
+     *
+     * @param resolve specifies whether to attempt resolution if there is no currently resolved
+     *               type corresponding to {@code unresolvedJavaType}
+     * @return a resolved type for {@code unresolvedJavaType} or null
+     * @throws LinkageError if {@code resolve == true} and resolution failed
      */
     @SuppressWarnings("unused")
-    default ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
-        return null;
-    }
+    ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve);
 
     @SuppressWarnings("unused")
     default ResolvedJavaField resolveField(UnresolvedJavaField unresolvedJavaField, ResolvedJavaType accessingClass) {
