@@ -914,12 +914,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
-  // Check if processor has specific Intel Ecore
-  if (FLAG_IS_DEFAULT(MarkSpecialX86ECoreTypes) && is_intel() && is_intel_server_family() &&
-    (_model == 0xCC || _model == 0xDD)) {
-    FLAG_SET_DEFAULT(MarkSpecialX86ECoreTypes, true);
-  }
-
   if (UseSSE < 4) {
     _features.clear_feature(CPU_SSE4_1);
     _features.clear_feature(CPU_SSE4_2);
@@ -2085,6 +2079,10 @@ bool VM_Version::is_default_intel_cascade_lake() {
 
 bool VM_Version::is_intel_cascade_lake() {
   return is_intel_skylake() && _stepping >= 5;
+}
+
+bool VM_Version::is_intel_darkmont() {
+  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
 }
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
