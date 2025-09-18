@@ -1,0 +1,31 @@
+// Color allocation nodes to indicate the result of scape analysis.
+// This filter is relevant between the phases "After Escape Analysis"
+// and "After Macro Expansion".
+
+var bestColor   = java.awt.Color.decode("#6aa84f"); // Green.
+var betterColor = java.awt.Color.decode("#f1c232"); // Yellow.
+var worseColor  = java.awt.Color.decode("#e69138"); // Orange.
+var worstColor  = java.awt.Color.decode("#cc0000"); // Red.
+
+// Object does not escape compilation unit and is scalar replaceable.
+colorize(and([hasProperty("is_non_escaping"),
+              hasProperty("is_scalar_replaceable")]),
+         bestColor);
+
+// Object does not escape compilation unit but is not scalar replaceable,
+// due to of scalar replacement limitations. We can at least elide locks.
+colorize(and([hasProperty("is_non_escaping"),
+              not(hasProperty("is_scalar_replaceable"))]),
+         betterColor);
+
+// Object may escape compilation unit but does not escape thread.
+// We can at least elide locks.
+colorize(and([hasProperty("does_not_escape_thread"),
+              not(hasProperty("is_non_escaping"))]),
+         worseColor);
+
+// Object may escape compilation unit and thread. Nothing to do.
+colorize(and([matches("name", "Allocate"),
+              not(hasProperty("is_non_escaping")),
+              not(hasProperty("does_not_escape_thread"))]),
+         worstColor);

@@ -26,6 +26,7 @@
 #define SHARE_OPTO_ESCAPE_HPP
 
 #include "opto/addnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -321,6 +322,7 @@ public:
 class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
+  friend class IdealGraphPrinter;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
