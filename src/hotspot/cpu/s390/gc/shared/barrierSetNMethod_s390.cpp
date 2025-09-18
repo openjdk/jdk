@@ -38,16 +38,16 @@ class NativeMethodBarrier: public NativeInstruction {
     }
 
     address get_patchable_data_address() const {
-      address inst_addr = get_barrier_start_address() + BarrierSetAssembler::OFFSET_TO_PATCHABLE_DATA_INSTRUCTION;
+      address start_address = get_barrier_start_address();
+#ifdef ASSERT
+      address inst_addr = start_address + BarrierSetAssembler::OFFSET_TO_PATCHABLE_DATA_INSTRUCTION;
 
       unsigned long instr = 0;
       Assembler::get_instruction(inst_addr, &instr);
       assert(Assembler::is_z_cfi(instr), "sanity check");
+#endif // ASSERT
 
-      // we are currently pointing to cfi instruction,
-      // first 2 bytes are for instruction opcode and next 4 bytes will be the value/data to be patched,
-      // so we can skip the first 2 bytes and just return the value/data
-      return inst_addr + 2;
+      return start_address + BarrierSetAssembler::OFFSET_TO_PATCHABLE_DATA;
     }
 
   public:
@@ -95,7 +95,7 @@ class NativeMethodBarrier: public NativeInstruction {
         assert(Assembler::is_z_lg(instr), "sanity check");
         offset += Assembler::instr_len(&start[offset]);
 
-        // it will be assignment operation, doesn't matter what's already there instr
+        // it will be assignment operation, So it doesn't matter what value is already present in instr
         // hence, no need to 0 it out.
         Assembler::get_instruction(start + offset, &instr);
         assert(Assembler::is_z_cfi(instr), "sanity check");
