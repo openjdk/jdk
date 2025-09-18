@@ -25,6 +25,7 @@ import java.awt.Button;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
@@ -44,6 +45,7 @@ public class InitialFocusTest1 extends Frame implements FocusListener {
 
     public static void main(final String[] args) throws Exception {
         try {
+            Robot robot = new Robot();
             EventQueue.invokeAndWait(() -> {
                 app = new InitialFocusTest1();
                 app.setLayout(new FlowLayout());
@@ -57,12 +59,13 @@ public class InitialFocusTest1 extends Frame implements FocusListener {
                 app.setLocationRelativeTo(null);
                 app.setVisible(true);
             });
-            Thread.sleep(1000);
+            robot.waitForIdle();
+            robot.delay(1000);
             EventQueue.invokeAndWait(() -> {
                 app.button2.requestFocus();
             });
             // wait for the very very last focus event
-            Thread.sleep(1000);
+            robot.delay(1000);
             if (app.button2 != focused) {
                 throw new RuntimeException("Wrong focus owner: " + focused);
             }
