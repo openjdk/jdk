@@ -31,7 +31,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 /**
  * Provides analysis utilities for source code input.
@@ -393,6 +395,22 @@ public abstract class SourceCodeAnalysis {
          * {@return flags describing the overall completion context.}
          */
         public Set<CompletionContext> completionContext();
+        /**
+         * {@return if the context is a qualified expression
+         * (i.e. {@link CompletionContext#QUALIFIED} is set),
+         * the type of the selector expression; {@code null} otherwise.}
+         */
+        public TypeMirror selectorType();
+        /**
+         * {@return an implementation of some utility methods for
+         * operating on elements}
+         */
+        Elements elementUtils();
+        /**
+         * {@return an implementation of some utility methods for
+         * operating on types}
+         */
+        Types typeUtils();
     }
 
     /**

@@ -58,6 +58,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionState;
 import jdk.jshell.SourceCodeAnalysis.ElementSuggestion;
@@ -128,6 +129,18 @@ public class CompletionAPITest extends KullaTesting {
             assertEquals(EnumSet.noneOf(CompletionContext.class), state.completionContext());
         });
         assertTrue(actual.contains("java.util.ArrayList"), String.valueOf(actual));
+        completionSuggestions("(new java.util.ArrayList<String>()).", (state, suggestions) -> {
+            List<String> elsWithTypes =
+                suggestions.stream()
+                           .filter(el -> el.element() != null)
+                           .map(el -> el.element())
+                           .filter(el -> el.getKind() == ElementKind.METHOD)
+                           .map(el -> el.getSimpleName() + state.typeUtils()
+                                                                .asMemberOf((DeclaredType) state.selectorType(), el)
+                                                                .toString())
+                           .toList();
+            assertTrue(elsWithTypes.contains("add(java.lang.String)boolean"));
+        });
     }
 
     @Test

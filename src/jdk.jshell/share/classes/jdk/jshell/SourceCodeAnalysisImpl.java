@@ -159,6 +159,7 @@ import static javax.lang.model.element.ElementKind.MODULE;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 
 import javax.lang.model.type.IntersectionType;
+import javax.lang.model.util.Elements;
 import jdk.internal.shellsupport.doc.JavadocHelper.StoredElement;
 
 /**
@@ -395,6 +396,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 Predicate<Element> smartTypeFilter;
                 Predicate<Element> smartFilter;
                 Iterable<TypeMirror> targetTypes = findTargetType(at, tp);
+                TypeMirror selectorType = null;
                 if (targetTypes != null) {
                     if (tp.getLeaf().getKind() == Kind.MEMBER_REFERENCE) {
                         Types types = at.getTypes();
@@ -471,7 +473,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         if (identifier.contentEquals("*"))
                             break;
                         TreePath exprPath = new TreePath(tp, expression);
-                        TypeMirror site = at.trees().getTypeMirror(exprPath);
+                        selectorType = at.trees().getTypeMirror(exprPath);
                         boolean staticOnly = isStaticContext(at, exprPath);
                         ImportTree it = findImport(tp);
 
@@ -488,7 +490,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                         boolean isImport = it != null;
 
-                        List<? extends Element> members = membersOf(at, site, staticOnly && !isImport && tp.getLeaf().getKind() == Kind.MEMBER_SELECT);
+                        List<? extends Element> members = membersOf(at, selectorType, staticOnly && !isImport && tp.getLeaf().getKind() == Kind.MEMBER_SELECT);
                         Predicate<Element> filter = accessibility;
 
                         if (isNewClass(tp)) { // new xxx.|
@@ -549,7 +551,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             if (getAnnotationAttributeNameOrNull(tp.getParentPath(), true) != null) {
                                 //nested annotation
                                 return completionSuggestionsImpl(inputCode, cursor - 1, (state, items) -> {
-                                    CompletionState newState = new CompletionStateImpl(((CompletionStateImpl) state).scopeContent, completionContext);
+                                    CompletionState newState = new CompletionStateImpl(((CompletionStateImpl) state).scopeContent, completionContext, state.selectorType(), state.elementUtils(), state.typeUtils());
                                     return suggestionConvertor.convert(newState,
                                                                        items.stream()
                                                                             .filter(s -> s.element().getKind() == ElementKind.ANNOTATION_TYPE)
@@ -721,7 +723,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     }
                 }
 
-                CompletionState completionState = new CompletionStateImpl(scopeContent, completionContext);
+                CompletionState completionState = new CompletionStateImpl(scopeContent, completionContext, selectorType, at.getElements(), at.getTypes());
 
                 return suggestionConvertor.convert(completionState, result);
             }
@@ -2612,10 +2614,20 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         private final Collection<? extends Element> scopeContent;
         private final Set<CompletionContext> completionContext;
+        private final TypeMirror selectorType;
+        private final Elements elementUtils;
+        private final Types typeUtils;
 
-        public CompletionStateImpl(Collection<? extends Element> scopeContent, Set<CompletionContext> completionContext) {
+        public CompletionStateImpl(Collection<? extends Element> scopeContent,
+                                   Set<CompletionContext> completionContext,
+                                   TypeMirror selectorType,
+                                   Elements elementUtils,
+                                   Types typeUtils) {
             this.scopeContent = scopeContent;
-            this.completionContext = Collections.unmodifiableSet(completionContext);
+            this.completionContext = completionContext;
+            this.selectorType = selectorType;
+            this.elementUtils = elementUtils;
+            this.typeUtils = typeUtils;
         }
 
         @Override
@@ -2626,6 +2638,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         @Override
         public Set<CompletionContext> completionContext() {
             return completionContext;
+        }
+
+        @Override
+        public TypeMirror selectorType() {
+            return selectorType;
+        }
+
+        @Override
+        public Elements elementUtils() {
+            return elementUtils;
+        }
+
+        @Override
+        public Types typeUtils() {
+            return typeUtils;
         }
 
     }
