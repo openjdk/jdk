@@ -38,11 +38,17 @@ import java.util.Optional;
 
 import jdk.internal.classfile.impl.SignaturesImpl;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.constant.ConstantUtils;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
+ * <p>
+ * Names in signatures are <dfn id="#identifier">identifiers</dfn>, which must
+ * not be empty and must not contain any of the ASCII characters {@code
+ * . ; [ / < > :}.  Top-level class and interface names are denoted by
+ * slash-separated identifiers.
  *
  * @see Type
  * @see SignatureAttribute
@@ -73,6 +79,9 @@ public sealed interface Signature {
      * signature represents a reifiable type (JLS {@jls 4.7}).
      *
      * @param classDesc the symbolic description of the Java type
+     * @throws IllegalArgumentException if the field descriptor cannot be
+     *         {@linkplain ##identifier denoted}, such as due to the presence
+     *         of ASCII characters {@code < > :}
      */
     public static Signature of(ClassDesc classDesc) {
         requireNonNull(classDesc);
@@ -188,10 +197,12 @@ public sealed interface Signature {
          * @param className the name of the class or interface
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} does not
-         *         represent a class or interface
+         *         represent a class or interface, or if it cannot be
+         *         {@linkplain ##identifier denoted}, such as due to the
+         *         presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(ClassDesc className, TypeArg... typeArgs) {
-            return of(null, className, typeArgs);
+            return of(null, Util.toInternalName(className), typeArgs);
         }
 
         /**
@@ -201,8 +212,16 @@ public sealed interface Signature {
          * @param className the name of this class or interface
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} does not
-         *         represent a class or interface
+         *         represent a class or interface, or if it cannot be
+         *         {@linkplain ##identifier denoted}, such as due to the
+         *         presence of ASCII characters {@code < > :}
+         * @deprecated
+         * The resulting signature does not denote the class represented by
+         * {@code className} when {@code outerType} is not null.  Use {@link
+         * #of(ClassTypeSig, String, TypeArg...) of(ClassTypeSig, String, TypeArg...)}
+         * instead.
          */
+        @Deprecated(since = "26", forRemoval = true)
         public static ClassTypeSig of(ClassTypeSig outerType, ClassDesc className, TypeArg... typeArgs) {
             requireNonNull(className);
             return of(outerType, Util.toInternalName(className), typeArgs);
@@ -213,6 +232,9 @@ public sealed interface Signature {
          *
          * @param className the name of the class or interface
          * @param typeArgs the type arguments
+         * @throws IllegalArgumentException if {@code className} cannot be
+         *         {@linkplain ##identifier denoted}, such as due to the
+         *         presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(String className, TypeArg... typeArgs) {
             return of(null, className, typeArgs);
@@ -222,12 +244,20 @@ public sealed interface Signature {
          * {@return a class type signature}
          *
          * @param outerType signature of the outer type, may be {@code null}
+         *        to indicate this is a top-level class or interface
          * @param className the name of this class or interface
          * @param typeArgs the type arguments
+         * @throws IllegalArgumentException if {@code className} cannot be
+         *         {@linkplain ##identifier denoted}, such as due to the
+         *         presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(ClassTypeSig outerType, String className, TypeArg... typeArgs) {
-            requireNonNull(className);
-            return new SignaturesImpl.ClassTypeSigImpl(Optional.ofNullable(outerType), className.replace(".", "/"), List.of(typeArgs));
+            if (outerType != null) {
+                SignaturesImpl.validateIdentifier(className);
+            } else {
+                SignaturesImpl.validatePackageSpecifierPlusIdentifier(className);
+            }
+            return new SignaturesImpl.ClassTypeSigImpl(Optional.ofNullable(outerType), className, List.of(typeArgs));
         }
     }
 
@@ -383,9 +413,12 @@ public sealed interface Signature {
          * {@return a signature for a type variable}
          *
          * @param identifier the name of the type variable
+         * @throws IllegalArgumentException if the name cannot be {@linkplain
+         *         ##identifier denoted}, such as due to the presence of ASCII
+         *         characters {@code < > :}
          */
         public static TypeVarSig of(String identifier) {
-            return new SignaturesImpl.TypeVarSigImpl(requireNonNull(identifier));
+            return new SignaturesImpl.TypeVarSigImpl(SignaturesImpl.validateIdentifier(identifier));
         }
     }
 
@@ -408,9 +441,10 @@ public sealed interface Signature {
         /**
          * {@return an array type with the given component type}
          * @param componentSignature the component type
+         * @throws IllegalArgumentException if the component type is void
          */
         public static ArrayTypeSig of(Signature componentSignature) {
-            return of(1, requireNonNull(componentSignature));
+            return of(1, SignaturesImpl.validateNonVoid(componentSignature));
         }
 
         /**
@@ -418,10 +452,11 @@ public sealed interface Signature {
          * @param dims the dimension of the array
          * @param componentSignature the component type
          * @throws IllegalArgumentException if {@code dims < 1} or the
-         *         resulting array type exceeds 255 dimensions
+         *         resulting array type exceeds 255 dimensions or the component
+         *         type is void
          */
         public static ArrayTypeSig of(int dims, Signature componentSignature) {
-            requireNonNull(componentSignature);
+            SignaturesImpl.validateNonVoid(componentSignature);
             if (componentSignature instanceof SignaturesImpl.ArrayTypeSigImpl arr) {
                 if (dims < 1 || dims > 255 - arr.arrayDepth())
                     throw new IllegalArgumentException("illegal array depth value");
@@ -469,10 +504,13 @@ public sealed interface Signature {
          * @param identifier the name of the type parameter
          * @param classBound the class bound of the type parameter, may be {@code null}
          * @param interfaceBounds the interface bounds of the type parameter
+         * @throws IllegalArgumentException if the name cannot be {@linkplain
+         *         ##identifier denoted}, such as due to the presence of ASCII
+         *         characters {@code < > :}
          */
         public static TypeParam of(String identifier, RefTypeSig classBound, RefTypeSig... interfaceBounds) {
             return new SignaturesImpl.TypeParamImpl(
-                    requireNonNull(identifier),
+                    SignaturesImpl.validateIdentifier(identifier),
                     Optional.ofNullable(classBound),
                     List.of(interfaceBounds));
         }
@@ -483,10 +521,13 @@ public sealed interface Signature {
          * @param identifier the name of the type parameter
          * @param classBound the optional class bound of the type parameter
          * @param interfaceBounds the interface bounds of the type parameter
+         * @throws IllegalArgumentException if the name cannot be {@linkplain
+         *         ##identifier denoted}, such as due to the presence of ASCII
+         *         characters {@code < > :}
          */
         public static TypeParam of(String identifier, Optional<RefTypeSig> classBound, RefTypeSig... interfaceBounds) {
             return new SignaturesImpl.TypeParamImpl(
-                    requireNonNull(identifier),
+                    SignaturesImpl.validateIdentifier(identifier),
                     requireNonNull(classBound),
                     List.of(interfaceBounds));
         }
