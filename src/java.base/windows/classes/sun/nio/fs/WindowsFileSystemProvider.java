@@ -447,9 +447,43 @@ class WindowsFileSystemProvider
     }
 
     /**
+     * Returns the attributes of the next symbolic link encountered in the
+     * specified path. The handle contained in the returned value must be closed
+     * once the attributes are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if no link is found
+     */
+    private EntryAttributes linkAttributes(WindowsPath path)
+        throws WindowsException
+    {
+        long h = INVALID_HANDLE_VALUE;
+        try {
+            h = path.openForReadAttributeAccess(false);
+        } catch (WindowsException x) {
+            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                x.lastError() != ERROR_PATH_NOT_FOUND)
+                throw x;
+            return null;
+        }
+
+        WindowsFileAttributes attrs = null;
+        try {
+            attrs = WindowsFileAttributes.readAttributes(h);
+        } finally {
+            if (attrs == null || !attrs.isSymbolicLink()) {
+                CloseHandle(h);
+                return null;
+            }
+        }
+
+        return new EntryAttributes(attrs, h);
+    }
+
+    /**
      * Returns the attributes of the last symbolic link encountered in the
      * specified path. Links are not resolved in the path taken as a whole,
-     * but rather then first link is followed, then its target, and so on,
+     * but rather the first link is followed, then its target, and so on,
      * until no more links are encountered.  The handle contained in the
      * returned value must be closed once the attributes are no longer needed.
      *
@@ -460,54 +494,31 @@ class WindowsFileSystemProvider
     private EntryAttributes lastLinkAttributes(WindowsPath path)
         throws IOException, WindowsException
     {
-        var linkAttrs = new HashSet<EntryAttributes>();
-        EntryAttributes lastLinkAttributes = null;
-        long h = INVALID_HANDLE_VALUE;
-
+        var linkAttrs = new LinkedHashSet<EntryAttributes>();
         try {
             while (path != null) {
-                try {
-                    h = path.openForReadAttributeAccess(false);
-                } catch (WindowsException x) {
-                    if (x.lastError() != ERROR_FILE_NOT_FOUND &&
-                        x.lastError() != ERROR_PATH_NOT_FOUND)
-                        throw x;
-                    break;
-                }
-
-                WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(h);
-                if (!attrs.isSymbolicLink())
+                EntryAttributes linkAttr = linkAttributes(path);
+                if (linkAttr == null)
                     break;
 
-                EntryAttributes linkAttr = new EntryAttributes(attrs, h);
-                if (!linkAttrs.add(linkAttr))
+                if (!linkAttrs.add(linkAttr)) {
+                    // the element was not added to the set so close its handle
+                    // here as it would not be closed in the finally block
+                    CloseHandle(linkAttr.handle());
                     throw new FileSystemLoopException(path.toString());
-
-                h = INVALID_HANDLE_VALUE;
-
-                lastLinkAttributes = linkAttr;
+                }
 
                 String target = WindowsLinkSupport.readLink(path, linkAttr.handle());
                 path = WindowsPath.parse(path.getFileSystem(), target);
             }
-        } catch (IOException|WindowsException e) {
-            // only close the last link's handle in case of error
-            if (lastLinkAttributes != null) {
-                CloseHandle(lastLinkAttributes.handle());
-                throw e;
-            }
-        } finally {
-            // close vestigial handle
-            if (h != INVALID_HANDLE_VALUE)
-                CloseHandle(h);
 
-            // close all but the last link's handle
-            linkAttrs.remove(lastLinkAttributes);
-            for (EntryAttributes la : linkAttrs)
-                CloseHandle(la.handle());
+            if (!linkAttrs.isEmpty())
+                return linkAttrs.removeLast();
+        } finally {
+            linkAttrs.stream().forEach(la -> CloseHandle(la.handle()));
         }
 
-        return lastLinkAttributes;
+        return null;
     }
 
     /**
