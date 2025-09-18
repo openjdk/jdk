@@ -22,8 +22,8 @@
  */
 @SuppressWarnings("module")
 module m1 {
-    requires junit.platform.console.standalone;
-    opens p1 to junit.platform.console.standalone, m2;
+    requires org.junit.platform.console.standalone;
+    opens p1 to org.junit.platform.console.standalone, m2;
 
     exports p1;
     uses p1.Mutator;
