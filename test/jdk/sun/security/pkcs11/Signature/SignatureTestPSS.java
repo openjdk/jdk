@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
-import java.util.stream.IntStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import jtreg.SkippedException;
 
 /**
- * @test
+ * @test id=old_alg
  * @bug 8080462 8226651 8242332
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main SignatureTestPSS
  */
+
+/**
+ * @test id=new_alg
+ * @bug 8080462 8226651 8242332
+ * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
+ * @library /test/lib ..
+ * @modules jdk.crypto.cryptoki
+ * @run main SignatureTestPSS new-algS
+ */
 public class SignatureTestPSS extends PKCS11Test {
 
     private static final String SIGALG = "RSASSA-PSS";
 
     private static final int[] KEYSIZES = { 2048, 3072 };
-    private static final String[] DIGESTS = {
+    private static String[] DIGESTS = {
             "SHA-224", "SHA-256", "SHA-384" , "SHA-512",
-            "SHA3-224", "SHA3-256", "SHA3-384" , "SHA3-512",
     };
+
+    private static final String[] DIGESTS_NEW = {
+            "SHA3-224", "SHA3-256", "SHA3-384" , "SHA3-512"
+    };
+
     private static final byte[] DATA = generateData(100);
 
     /**
@@ -58,6 +79,9 @@ public class SignatureTestPSS extends PKCS11Test {
     private static boolean skipTest = true;
 
     public static void main(String[] args) throws Exception {
+        if (args.length>0 && "new-alg".equals(args[0])){
+            DIGESTS = DIGESTS_NEW;
+        }
         main(new SignatureTestPSS(), args);
     }
 
@@ -96,8 +120,7 @@ public class SignatureTestPSS extends PKCS11Test {
     private static void checkSignature(Provider p, byte[] data, PublicKey pub,
             PrivateKey priv, String hash, String mgfHash, PSSUtil.AlgoSupport s)
             throws NoSuchAlgorithmException, InvalidKeyException,
-            SignatureException, NoSuchProviderException,
-            InvalidAlgorithmParameterException {
+            SignatureException {
 
         // only test RSASSA-PSS signature against the supplied hash/mgfHash
         // if they are supported; otherwise PKCS11 library will throw
@@ -112,7 +135,14 @@ public class SignatureTestPSS extends PKCS11Test {
         } catch (InvalidAlgorithmParameterException iape) {
             if (s == PSSUtil.AlgoSupport.MAYBE) {
                 // confirmed to be unsupported; skip the rest of the test
-                System.out.println("    => Skip; no PSS support");
+                System.out.printf("    => Skip; no PSS support public key: %s, private key: %s, " +
+                                  "hash: %s, mgf hash: %s, Algo Support: %s%n",
+                        pub,
+                        priv,
+                        hash,
+                        mgfHash,
+                        s);
+                skipTest = true;
                 return;
             } else {
                 throw new RuntimeException("Unexpected Exception", iape);

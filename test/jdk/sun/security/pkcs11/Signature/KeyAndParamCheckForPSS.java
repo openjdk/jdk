@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,9 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 import jtreg.SkippedException;
 
@@ -84,7 +91,11 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         System.out.println("Testing " + hashAlg + " and MGF1" + mgfHashAlg);
         PSSUtil.AlgoSupport s = PSSUtil.isHashSupported(p, hashAlg, mgfHashAlg);
         if (s == PSSUtil.AlgoSupport.NO) {
-            System.out.println("=> Skip; no support");
+            System.out.printf("=> Skip; no support keysize: %d, hash alg: %s, mgf Hash Alg: %s%n",
+                    keySize,
+                    hashAlg,
+                    mgfHashAlg);
+            skipTest = true;
             return;
         }
 
