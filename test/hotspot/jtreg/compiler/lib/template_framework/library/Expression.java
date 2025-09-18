@@ -149,7 +149,7 @@ public class Expression {
     }
 
     /**
-     * Creates a new Espression with 1 arguments.
+     * Creates a new Expression with 1 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -161,11 +161,11 @@ public class Expression {
                                   String s0,
                                   CodeGenerationDataNameType t0,
                                   String s1) {
-        return new Expression(returnType, List.of(t0), List.of(s0, s1), new Info());
+        return make(returnType, s0, t0, s1, new Info());
     }
 
     /**
-     * Creates a new Espression with 1 argument.
+     * Creates a new Expression with 1 argument.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -183,7 +183,7 @@ public class Expression {
     }
 
     /**
-     * Creates a new Espression with 2 arguments.
+     * Creates a new Expression with 2 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -199,11 +199,11 @@ public class Expression {
                                   String s1,
                                   CodeGenerationDataNameType t1,
                                   String s2) {
-        return new Expression(returnType, List.of(t0, t1), List.of(s0, s1, s2), new Info());
+        return make(returnType, s0, t0, s1, t1, s2, new Info());
     }
 
     /**
-     * Creates a new Espression with 2 arguments.
+     * Creates a new Expression with 2 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -225,7 +225,7 @@ public class Expression {
     }
 
     /**
-     * Creates a new Espression with 3 arguments.
+     * Creates a new Expression with 3 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -245,11 +245,11 @@ public class Expression {
                                   String s2,
                                   CodeGenerationDataNameType t2,
                                   String s3) {
-        return new Expression(returnType, List.of(t0, t1, t2), List.of(s0, s1, s2, s3), new Info());
+        return make(returnType, s0, t0, s1, t1, s2, t2, s3, new Info());
     }
 
     /**
-     * Creates a new Espression with 3 arguments.
+     * Creates a new Expression with 3 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -275,7 +275,7 @@ public class Expression {
     }
 
     /**
-     * Creates a new Espression with 4 arguments.
+     * Creates a new Expression with 4 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.
@@ -299,11 +299,11 @@ public class Expression {
                                   String s3,
                                   CodeGenerationDataNameType t3,
                                   String s4) {
-        return new Expression(returnType, List.of(t0, t1, t2, t3), List.of(s0, s1, s2, s3, s4), new Info());
+        return make(returnType, s0, t0, s1, t1, s2, t2, s3, t3, s4, new Info());
     }
 
     /**
-     * Creates a new Espression with 4 arguments.
+     * Creates a new Expression with 4 arguments.
      *
      * @param returnType The return type of the {@link Expression}.
      * @param s0 The first string, to be placed before {@code t0}.

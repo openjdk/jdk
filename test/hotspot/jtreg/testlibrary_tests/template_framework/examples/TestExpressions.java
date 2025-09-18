@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8359412
- * @summary Demonstrate the use of Expressions form the Template Library.
+ * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/verify/Verify.java
