@@ -1937,15 +1937,15 @@ bool os::is_server_class_machine() {
   // Then actually look at the machine
   bool         result            = false;
   const unsigned int    server_processors = 2;
-  const julong server_memory     = 2UL * G;
+  const uint64_t server_memory     = 2UL * G;
   // We seem not to get our full complement of memory.
   //     We allow some part (1/8?) of the memory to be "missing",
   //     based on the sizes of DIMMs, and maybe graphics cards.
-  const julong missing_memory   = 256UL * M;
+  const uint64_t missing_memory   = 256UL * M;
   uint64_t phys_mem = os::physical_memory();
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
-      (phys_mem >= static_cast<uint64_t>(server_memory - missing_memory))) {
+      (phys_mem >= server_memory - missing_memory)) {
     const unsigned int logical_processors =
       VM_Version::logical_processors_per_package();
     if (logical_processors > 1) {

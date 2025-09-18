@@ -38,18 +38,18 @@ class os::win32 {
   friend class os;
 
  protected:
-  static int    _processor_type;
-  static int    _processor_level;
+  static int      _processor_type;
+  static int      _processor_level;
   static uint64_t _physical_memory;
-  static bool   _is_windows_server;
-  static bool   _has_exit_bug;
-  static bool   _processor_group_warning_displayed;
-  static bool   _job_object_processor_group_warning_displayed;
+  static bool     _is_windows_server;
+  static bool     _has_exit_bug;
+  static bool     _processor_group_warning_displayed;
+  static bool     _job_object_processor_group_warning_displayed;
 
-  static int    _major_version;
-  static int    _minor_version;
-  static int    _build_number;
-  static int    _build_minor;
+  static int      _major_version;
+  static int      _minor_version;
+  static int      _build_number;
+  static int      _build_minor;
 
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);

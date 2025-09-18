@@ -303,7 +303,7 @@ bool os::total_swap_space(uint64_t& value) {
     assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<uint64_t>(si.totalswap * si.mem_unit);
+  value = static_cast<uint64_t>(si.totalswap) * si.mem_unit;
   return true;
 }
 
@@ -314,7 +314,7 @@ static bool host_free_swap_f(uint64_t& value) {
     assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<uint64_t>(si.freeswap * si.mem_unit);
+  value = static_cast<uint64_t>(si.freeswap) * si.mem_unit;
   return true;
 }
 
@@ -2570,11 +2570,11 @@ void os::print_memory_info(outputStream* st) {
   struct sysinfo si;
   sysinfo(&si);
   uint64_t phys_mem = physical_memory();
-  st->print(", physical %zuk",
+  st->print(", physical " UINT64_FORMAT "k",
             phys_mem >> 10);
   uint64_t avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(%zuk free)",
+  st->print("(" UINT64_FORMAT "k free)",
             avail_mem >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
