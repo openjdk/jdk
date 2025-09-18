@@ -82,10 +82,10 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
 }
 
 void SuspendResumeManager::set_suspended_current_thread(int64_t vthread_id, bool register_vthread_SR) {
+  assert(_target == JavaThread::current(), "should be current thread");
 #if INCLUDE_JVMTI
   if (register_vthread_SR) {
     assert(_target->is_vthread_mounted(), "sanity check");
-    assert(_target == JavaThread::current(), "should be current thread");
     JvmtiVTSuspender::register_vthread_suspend(vthread_id);
   }
 #endif
