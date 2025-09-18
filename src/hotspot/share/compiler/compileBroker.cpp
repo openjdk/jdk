@@ -224,12 +224,15 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
-  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
