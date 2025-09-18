@@ -244,6 +244,7 @@ public class referringObjects001 extends HeapwalkingDebugger {
                 }
             }
         } catch (Throwable t) {
+            setSuccess(false);
             log.complain("Unexpected exception:");
             t.printStackTrace(log.getOutStream());
         }
