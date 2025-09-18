@@ -275,7 +275,7 @@ public:
   void handle_timer_signal(siginfo_t* info, void* context);
   bool init_timers();
   void stop_timer();
-  virtual void print_on(outputStream* st) const override;
+  virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
 

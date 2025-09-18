@@ -85,7 +85,7 @@ class JfrSamplerThread : public NonJavaThread {
   bool is_JfrSampler_thread() const { return true; }
   int64_t java_period() const { return AtomicAccess::load(&_java_period_millis); };
   int64_t native_period() const { return AtomicAccess::load(&_native_period_millis); };
-  virtual void print_on(outputStream* st) const override;
+  virtual void print_on(outputStream* st) const;
 };
 
 JfrSamplerThread::JfrSamplerThread(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames) :
