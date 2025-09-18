@@ -24,8 +24,8 @@
 
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
-#include "opto/idealGraphPrinter.hpp"
 #include "opto/escape.hpp"
+#include "opto/idealGraphPrinter.hpp"
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
 #include "runtime/arguments.hpp"
