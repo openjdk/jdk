@@ -2192,6 +2192,7 @@ XXX Code for transations where no currency is involved
 		<scriptVariant type="compound" id='Jpan' base='Hani Hira Kana'/> <!-- Japanese (alias for Han + Hiragana + Katakana) -->
 		<scriptVariant type="compound" id='Hrkt' base='Hira Kana'/> <!-- Japanese syllabaries (alias for Hiragana + Katakana) -->
 		<scriptVariant type="compound" id='Kore' base='Hang Hani'/> <!-- Korean (alias for Hangul + Han) -->
+		<scriptVariant type="compound" id='Hntl' base='Hant Latn'/> <!-- Han (Traditional variant) with Latin (alias for Hant + Latn) -->
 
 		<scriptVariant type="visual" id='Aran' base='Arab'/> <!-- Arabic (Nastaliq variant) -->
 		<scriptVariant type="visual" id='Cyrs' base='Cyrl'/> <!-- Cyrillic (Old Church Slavonic variant) -->
