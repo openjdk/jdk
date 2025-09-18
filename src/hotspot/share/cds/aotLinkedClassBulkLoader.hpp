@@ -52,10 +52,6 @@ enum class AOTLinkedClassCategory : int;
 //     This happens after some Java code is executed, to load aot-linked classes in the dynamic archive.
 //     This steps also puts all aot-linked classes into at least the "linked" state.
 class AOTLinkedClassBulkLoader :  AllStatic {
-#if INCLUDE_JVMCI
-  static bool _has_completed;
-#endif
-
   static void preload_classes_impl(TRAPS);
   static void preload_classes_in_table(Array<InstanceKlass*>* classes,
                                        const char* category_name, Handle loader, TRAPS);
@@ -79,10 +75,6 @@ public:
   static void exit_on_exception(JavaThread* current);
 
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
-
-#if INCLUDE_JVMCI
-  static bool has_completed() NOT_CDS_RETURN_(true);
-#endif
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

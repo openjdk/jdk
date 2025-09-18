@@ -48,22 +48,6 @@ void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
   AOTLinkedClassTable::get()->serialize(soc);
 }
 
-#if INCLUDE_JVMCI
-bool AOTLinkedClassBulkLoader::_has_completed = false;
-
-bool AOTLinkedClassBulkLoader::has_completed() {
-  assert(EnableJVMCI && UseJVMCICompiler, "used by UseJVMCICompiler only");
-  if (!CDSConfig::is_using_aot_linked_classes()) {
-    return true;
-  } else {
-    // The ConstantPools of preloaded classes have references to other preloaded classes. We don't
-    // want the JVMCI compiler to use these classes until AOTLinkedClassBulkLoader has finished loading
-    // everything.
-    return AtomicAccess::load_acquire(&_has_completed);
-  }
-}
-#endif // INCLUDE_JVMCI
-
 // This function is called before the VM executes any Java code (include AOT-compiled Java methods).
 //
 // We populate the boot/platform/app class loaders with classes from the AOT cache. This is a fundamental
@@ -240,12 +224,6 @@ void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes_impl(TRAPS) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
   }
-
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler) {
-    AtomicAccess::release_store(&_has_completed, true);
-  }
-#endif
 }
 
 void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
