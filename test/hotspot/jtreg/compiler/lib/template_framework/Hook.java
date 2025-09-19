@@ -35,13 +35,13 @@ package compiler.lib.template_framework;
  * {@snippet lang=java :
  * var myHook = new Hook("MyHook");
  *
- * var template1 = Template.make("name", (String name) -> body(
+ * var template1 = Template.make("name", (String name) -> scope(
  *     """
  *     public static int #name = 42;
  *     """
  * ));
  *
- * var template2 = Template.make(() -> body(
+ * var template2 = Template.make(() -> scope(
  *     """
  *     public class Test {
  *     """,
@@ -71,9 +71,10 @@ public record Hook(String name) {
      * From anywhere inside this scope, even in nested Templates, code can be
      * {@link #insert}ed back to the location where this {@link Hook} was {@link #anchor}ed.
      *
-     * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
+     * @param tokens A list of tokens, which have the same restrictions as {@link Template#scope}.
      * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
      */
+    // TODO: scope? - only if it simplifies the code
     public Token anchor(Object... tokens) {
         return new HookAnchorToken(this, TokenParser.parse(tokens));
     }
@@ -83,7 +84,7 @@ public record Hook(String name) {
      * This could be in the same Template, or one nested further out.
      *
      * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
-     * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
+     * @return The {@link Token} which when used inside a {@link Template#scope} performs the code insertion into the {@link Hook}.
      */
     public Token insert(TemplateToken templateToken) {
         return new HookInsertToken(this, templateToken);

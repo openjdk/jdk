@@ -76,7 +76,7 @@ final class Renderer {
      * <p>
      * When using nested templates, the user of the Template Framework may be tempted to first render
      * the nested template to a {@link String}, and then use this {@link String} as a token in an outer
-     * {@link Template#body}. This would be a bad pattern: the outer and nested {@link Template} would
+     * {@link Template#scope}. This would be a bad pattern: the outer and nested {@link Template} would
      * be rendered separately, and could not interact. For example, the nested {@link Template} would
      * not have access to the scopes of the outer {@link Template}. The inner {@link Template} could
      * not access {@link Name}s and {@link Hook}s from the outer {@link Template}. The user might assume
@@ -85,7 +85,7 @@ final class Renderer {
      *
      * <p>
      * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
-     * use that {@link TemplateToken} in the {@link Template#body} of the outer {@link Template}.
+     * use that {@link TemplateToken} in the {@link Template#scope} of the outer {@link Template}.
      * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
      * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
      *
@@ -247,8 +247,8 @@ final class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateBody body = templateToken.instantiate();
-        renderTokenList(body.tokens());
+        TemplateScope scope = templateToken.instantiate();
+        renderTokenList(scope.tokens());
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");

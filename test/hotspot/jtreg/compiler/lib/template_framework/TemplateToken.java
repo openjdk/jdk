@@ -49,7 +49,7 @@ public sealed abstract class TemplateToken implements Token
         }
 
         @Override
-        public TemplateBody instantiate() {
+        public TemplateScope instantiate() {
             return zeroArgs.instantiate();
         }
 
@@ -74,7 +74,7 @@ public sealed abstract class TemplateToken implements Token
         }
 
         @Override
-        public TemplateBody instantiate() {
+        public TemplateScope instantiate() {
             return oneArgs.instantiate(arg1);
         }
 
@@ -104,7 +104,7 @@ public sealed abstract class TemplateToken implements Token
         }
 
         @Override
-        public TemplateBody instantiate() {
+        public TemplateScope instantiate() {
             return twoArgs.instantiate(arg1, arg2);
         }
 
@@ -138,7 +138,7 @@ public sealed abstract class TemplateToken implements Token
         }
 
         @Override
-        public TemplateBody instantiate() {
+        public TemplateScope instantiate() {
             return threeArgs.instantiate(arg1, arg2, arg3);
         }
 
@@ -150,7 +150,7 @@ public sealed abstract class TemplateToken implements Token
         }
     }
 
-    abstract TemplateBody instantiate();
+    abstract TemplateScope instantiate();
 
     @FunctionalInterface
     interface ArgumentVisitor {
