@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
  * <p>
- * Names in signatures are <dfn id="#identifier">identifiers</dfn>, which must
+ * Names in signatures are <dfn id="identifier">identifiers</dfn>, which must
  * not be empty and must not contain any of the ASCII characters {@code
  * . ; [ / < > :}.  Top-level class and interface names are denoted by
  * slash-separated identifiers.
@@ -197,8 +197,8 @@ public sealed interface Signature {
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} does not
          *         represent a class or interface, or if it cannot be
-         *         {@linkplain ##identifier denoted}, such as due to the
-         *         presence of ASCII characters {@code < > :}
+         *         {@linkplain Signature##identifier denoted}, such as due to
+         *         the presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(ClassDesc className, TypeArg... typeArgs) {
             return of(null, Util.toInternalName(className), typeArgs);
@@ -212,8 +212,8 @@ public sealed interface Signature {
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} does not
          *         represent a class or interface, or if it cannot be
-         *         {@linkplain ##identifier denoted}, such as due to the
-         *         presence of ASCII characters {@code < > :}
+         *         {@linkplain Signature##identifier denoted}, such as due to
+         *         the presence of ASCII characters {@code < > :}
          * @deprecated
          * The resulting signature does not denote the class represented by
          * {@code className} when {@code outerType} is not null.  Use {@link
@@ -232,8 +232,8 @@ public sealed interface Signature {
          * @param className the name of the class or interface
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} cannot be
-         *         {@linkplain ##identifier denoted}, such as due to the
-         *         presence of ASCII characters {@code < > :}
+         *         {@linkplain Signature##identifier denoted}, such as due to
+         *         the presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(String className, TypeArg... typeArgs) {
             return of(null, className, typeArgs);
@@ -247,8 +247,8 @@ public sealed interface Signature {
          * @param className the name of this class or interface
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} cannot be
-         *         {@linkplain ##identifier denoted}, such as due to the
-         *         presence of ASCII characters {@code < > :}
+         *         {@linkplain Signature##identifier denoted}, such as due to
+         *         the presence of ASCII characters {@code < > :}
          */
         public static ClassTypeSig of(ClassTypeSig outerType, String className, TypeArg... typeArgs) {
             if (outerType != null) {
@@ -413,8 +413,8 @@ public sealed interface Signature {
          *
          * @param identifier the name of the type variable
          * @throws IllegalArgumentException if the name cannot be {@linkplain
-         *         ##identifier denoted}, such as due to the presence of ASCII
-         *         characters {@code < > :}
+         *         Signature##identifier denoted}, such as due to the presence
+         *         of ASCII characters {@code < > :}
          */
         public static TypeVarSig of(String identifier) {
             return new SignaturesImpl.TypeVarSigImpl(SignaturesImpl.validateIdentifier(identifier));
@@ -504,8 +504,8 @@ public sealed interface Signature {
          * @param classBound the class bound of the type parameter, may be {@code null}
          * @param interfaceBounds the interface bounds of the type parameter
          * @throws IllegalArgumentException if the name cannot be {@linkplain
-         *         ##identifier denoted}, such as due to the presence of ASCII
-         *         characters {@code < > :}
+         *         Signature##identifier denoted}, such as due to the presence
+         *         of ASCII characters {@code < > :}
          */
         public static TypeParam of(String identifier, RefTypeSig classBound, RefTypeSig... interfaceBounds) {
             return new SignaturesImpl.TypeParamImpl(
@@ -521,8 +521,8 @@ public sealed interface Signature {
          * @param classBound the optional class bound of the type parameter
          * @param interfaceBounds the interface bounds of the type parameter
          * @throws IllegalArgumentException if the name cannot be {@linkplain
-         *         ##identifier denoted}, such as due to the presence of ASCII
-         *         characters {@code < > :}
+         *         Signature##identifier denoted}, such as due to the presence
+         *         of ASCII characters {@code < > :}
          */
         public static TypeParam of(String identifier, Optional<RefTypeSig> classBound, RefTypeSig... interfaceBounds) {
             return new SignaturesImpl.TypeParamImpl(
