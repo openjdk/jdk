@@ -893,7 +893,6 @@ CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :
 
 void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
   print_local_time(output());
-
   jlong granularity = _granularity.value();
   if (granularity < 1) {
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
