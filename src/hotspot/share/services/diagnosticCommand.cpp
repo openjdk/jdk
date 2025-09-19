@@ -1089,7 +1089,6 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
 }
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
   char* path = _filepath.value();
   bool overwrite = _overwrite.value();
