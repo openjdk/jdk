@@ -139,6 +139,18 @@ public interface QuicTLSEngine {
     SSLSession getSession();
 
     /**
+     * Returns the SSLSession being constructed during a QUIC handshake.
+     *
+     * @return null if this instance is not currently handshaking, or if the
+     *              current handshake has not progressed far enough to create
+     *              a basic SSLSession. Otherwise, this method returns the
+     *              {@code SSLSession} currently being negotiated.
+     *
+     * @see SSLEngine#getHandshakeSession()
+     */
+    SSLSession getHandshakeSession();
+
+    /**
      * Returns the current handshake state of the connection. Sometimes packets
      * that could be decrypted can be received before the handshake has
      * completed, but should not be decrypted until it is complete

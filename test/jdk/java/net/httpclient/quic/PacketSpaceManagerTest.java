@@ -263,6 +263,11 @@ public class PacketSpaceManagerTest {
         }
 
         @Override
+        public SSLSession getHandshakeSession() {
+            throw new AssertionError("should not come here!");
+        }
+
+        @Override
         public void versionNegotiated(QuicVersion quicVersion) {
             // no-op
         }

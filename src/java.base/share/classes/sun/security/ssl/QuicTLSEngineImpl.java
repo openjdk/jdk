@@ -188,13 +188,8 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         return conContext.conSession;
     }
 
-    /**
-     * @return null if this instance is not currently handshaking, or if the
-     *              current handshake has not progressed far enough to create
-     *              a basic SSLSession. Otherwise, this method returns the
-     *              {@code SSLSession} currently being negotiated.
-     */
-    SSLSession getHandshakeSession() {
+    @Override
+    public SSLSession getHandshakeSession() {
         final HandshakeContext handshakeContext = conContext.handshakeContext;
         return handshakeContext == null
                 ? null

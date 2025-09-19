@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "cds/heapShared.hpp"
 #include "memory/iterator.hpp"
+#include "oops/oopHandle.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashTable.hpp"
 
@@ -80,7 +81,7 @@ public:
   virtual void do_klass(Klass* k);
 
   // For HashTable::iterate()
-  inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
+  inline bool do_entry(OopHandle& orig_obj, HeapShared::CachedOopInfo& value);
 
   static void verify();
 
