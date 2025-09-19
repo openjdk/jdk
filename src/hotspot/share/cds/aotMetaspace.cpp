@@ -1263,7 +1263,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     ik->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm;
-      log_error(aot, init)("class %s has @AOTForceInitialize but failed to initialize",
+      log_error(aot, init)("class %s has @AOTInitialize but failed to initialize",
                            ik->external_name());
       AOTMetaspace::unrecoverable_writing_error("Unexpected failure.");
     }
