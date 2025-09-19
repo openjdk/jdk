@@ -34,7 +34,6 @@ import java.security.spec.PSSParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.net.ssl.*;
@@ -182,10 +181,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
                                         SIGNATURE_CONSTRAINTS_MODE mode,
                                         boolean withDefaultCertPathConstraints) {
-        final AlgorithmConstraints userSpecifiedConstraints =
-                getUserSpecifiedConstraints(engine);
+        if (engine == null) {
+            return wrap(null, withDefaultCertPathConstraints);
+        }
+
         return new SSLAlgorithmConstraints(
-                nullIfDefault(userSpecifiedConstraints),
+                nullIfDefault(getUserSpecifiedConstraints(engine)),
                 new SupportedSignatureAlgorithmConstraints(engine.getHandshakeSession(), mode),
                 withDefaultCertPathConstraints);
     }
