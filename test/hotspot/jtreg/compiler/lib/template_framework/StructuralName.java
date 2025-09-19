@@ -90,16 +90,34 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
             this(null, null);
         }
 
+        // Wrap the FilteredSet as a Predicate.
+        private static record StructuralNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+            public boolean check(Name type) {
+                return fs.check(type);
+            }
+            public String toString() {
+                return fs.toString();
+            }
+        }
+
         NameSet.Predicate predicate() {
             if (subtype == null && supertype == null) {
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
-            return (Name name) -> {
-                if (!(name instanceof StructuralName structuralName)) { return false; }
-                if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
-                return true;
-            };
+            return new StructuralNamePredicate(this);
+        }
+
+        boolean check(Name name) {
+            if (!(name instanceof StructuralName structuralName)) { return false; }
+            if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
+            if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
+            return true;
+        }
+
+        public String toString() {
+            String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
+            String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
+            return "StructuralName.FilteredSet(" + msg1 + msg2 + ")";
         }
 
         /**

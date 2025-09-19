@@ -262,7 +262,7 @@ final class Renderer {
     private void renderNameSampleToken(NameSampleToken nst) {
         Name n = currentCodeFrame.sampleName(nst.predicate());
         if (n == null) {
-            throw new RendererException("No Name for TODO.");
+            throw new RendererException("No Name found for " + nst.predicate().toString());
         }
         if (nst.function() != null) {
             // We have a nested "scope" that captures the Name.

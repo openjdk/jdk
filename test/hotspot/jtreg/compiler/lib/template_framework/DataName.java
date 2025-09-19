@@ -115,18 +115,36 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             this(mutability, null, null);
         }
 
+        // Wrap the FilteredSet as a Predicate.
+        private static record DataNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+            public boolean check(Name type) {
+                return fs.check(type);
+            }
+            public String toString() {
+                return fs.toString();
+            }
+        }
+
         NameSet.Predicate predicate() {
             if (subtype == null && supertype == null) {
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
-            return (Name name) -> {
-                if (!(name instanceof DataName dataName)) { return false; }
-                if (mutability == Mutability.MUTABLE && !dataName.mutable()) { return false; }
-                if (mutability == Mutability.IMMUTABLE && dataName.mutable()) { return false; }
-                if (subtype != null && !dataName.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(dataName.type())) { return false; }
-                return true;
-            };
+            return new DataNamePredicate(this);
+        }
+
+        boolean check(Name name) {
+            if (!(name instanceof DataName dataName)) { return false; }
+            if (mutability == Mutability.MUTABLE && !dataName.mutable()) { return false; }
+            if (mutability == Mutability.IMMUTABLE && dataName.mutable()) { return false; }
+            if (subtype != null && !dataName.type().isSubtypeOf(subtype)) { return false; }
+            if (supertype != null && !supertype.isSubtypeOf(dataName.type())) { return false; }
+            return true;
+        }
+
+        public String toString() {
+            String msg1 = (subtype == null) ? "" : ", subtypeOf(" + subtype + ")";
+            String msg2 = (supertype == null) ? "" : ", supertypeOf(" + supertype + ")";
+            return "DataName.FilterdSet(" + mutability + msg1 + msg2 + ")";
         }
 
         /**

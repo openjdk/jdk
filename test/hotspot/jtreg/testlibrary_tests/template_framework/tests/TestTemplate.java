@@ -179,7 +179,8 @@ public class TestTemplate {
         expectRendererException(() -> testFailingDollarHashtagName3(), "Is not a valid '#' replacement pattern: '#' in '#$name'.");
         expectRendererException(() -> testFailingDollarHashtagName4(), "Is not a valid '$' replacement pattern: '$' in '$#name'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        expectRendererException(() -> testFailingSample1(),  "No Name for TODO.");
+        expectRendererException(() -> testFailingSample1a(),  "No Name found for DataName.FilterdSet(MUTABLE, subtypeOf(int), supertypeOf(int))");
+        expectRendererException(() -> testFailingSample1b(),  "No Name found for StructuralName.FilteredSet( subtypeOf(StructuralA) supertypeOf(StructuralA))");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
@@ -201,7 +202,8 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> testFailingAddStructuralName1(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddStructuralName2(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddStructuralName3(), "Unexpected weight: ");
-        expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
+        expectUnsupportedOperationException(() -> testFailingSample2a(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
+        expectUnsupportedOperationException(() -> testFailingSample2b(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
         expectRendererException(() -> testFailingAddNameDuplication1(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication2(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication3(), "Duplicate name:");
@@ -2132,7 +2134,7 @@ public class TestTemplate {
         String code = template2.render();
     }
 
-    public static void testFailingSample1() {
+    public static void testFailingSample1a() {
         var template1 = Template.make(() -> scope(
             // No DataName added yet.
             dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("v"),
@@ -2142,10 +2144,30 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    public static void testFailingSample2() {
+    public static void testFailingSample1b() {
+        var template1 = Template.make(() -> scope(
+            // No StructuralName added yet.
+            structuralNames().exactOf(myStructuralTypeA).sampleAndLetAs("v"),
+            "v is #v\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingSample2a() {
         var template1 = Template.make(() -> scope(
             // no type restriction
             dataNames(MUTABLE).sampleAndLetAs("v"),
+            "v is #v\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingSample2b() {
+        var template1 = Template.make(() -> scope(
+            // no type restriction
+            structuralNames().sampleAndLetAs("v"),
             "v is #v\n"
         ));
 
