@@ -495,6 +495,40 @@ TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap) {
   contains_expected_num_of_registers(rm2, 0);
 }
 
+#ifdef ASSERT
+
+TEST_VM_ASSERT_MSG(RegMask, unexpected_clone, ".*clone sanity check") {
+  RegMask rm1;
+  RegMask rm2;
+  // Copy contents of rm1 to rm2 inappropriately (no copy constructor)
+  memcpy((void*)&rm2, (void*)&rm1, sizeof(RegMask));
+  rm2.Member(0); // Safeguard in RegMask must catch this.
+}
+
+TEST_VM_ASSERT_MSG(RegMask, unexpected_growth, ".*unexpected register mask growth") {
+  RegMask rm;
+  // Add clearly out of range OptoReg::Name
+  rm.Insert(std::numeric_limits<OptoReg::Name>::max());
+}
+
+TEST_VM_ASSERT_MSG(RegMask, not_growable, ".*register mask not growable") {
+  RegMask rm;
+  // Add a bit just outside the mask, without having specified an arena for
+  // extension.
+  rm.Insert(rm.rm_size_in_bits());
+}
+
+TEST_VM_ASSERT_MSG(RegMask, offset_mismatch, ".*offset mismatch") {
+  RegMask rm1;
+  RegMask rm2;
+  rm1.set_infinite_stack(true);
+  rm1.rollover();
+  // Cannot copy with different offsets
+  rm2 = rm1;
+}
+
+#endif
+
 #ifndef PRODUCT
 
 Arena* arena() {

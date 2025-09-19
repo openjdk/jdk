@@ -68,39 +68,39 @@ public class TestMethodArguments {
                 Template.let("inputSize", INPUT_SIZE),
                 Template.let("numberOfArguments", numberOfArguments),
                 """
-                        static #boxedType[][] $inputs = generateInput(generator#boxedType, new #boxedType[#inputSize][#numberOfArguments]);
-                        static int $nextInput = 0;
-                        static #type[] $golden = $init();
+                static #boxedType[][] $inputs = generateInput(generator#boxedType, new #boxedType[#inputSize][#numberOfArguments]);
+                static int $nextInput = 0;
+                static #type[] $golden = $init();
 
-                        public static #type[] $init() {
-                            #type[] golden = new #type[$inputs.length];
-                            for (int i = 0; i < golden.length; ++i) {
-                                #boxedType[] input = $inputs[i];
-                                golden[i] = $test(#arguments);
-                            }
-                            return golden;
-                        }
+                public static #type[] $init() {
+                    #type[] golden = new #type[$inputs.length];
+                    for (int i = 0; i < golden.length; ++i) {
+                        #boxedType[] input = $inputs[i];
+                        golden[i] = $test(#arguments);
+                    }
+                    return golden;
+                }
 
-                        @Setup
-                        public static Object[] $setup() {
-                            #boxedType[] input = $inputs[$nextInput];
-                            return new Object[]{#arguments};
-                        }
+                @Setup
+                public static Object[] $setup() {
+                    #boxedType[] input = $inputs[$nextInput];
+                    return new Object[]{#arguments};
+                }
 
-                        @Test
-                        @Arguments(setup = "$setup")
-                        public static #type $test(#parameters) {
-                            return #sum;
-                        }
+                @Test
+                @Arguments(setup = "$setup")
+                public static #type $test(#parameters) {
+                    return #sum;
+                }
 
-                        @Check(test = "$test")
-                        public static void $check(#type res) {
-                            if (res != $golden[$nextInput]) {
-                                throw new RuntimeException("wrong result " + res + "!=" + $golden[$nextInput]);
-                            }
-                            $nextInput = ($nextInput + 1) % $inputs.length;
-                        }
-                        """));
+                @Check(test = "$test")
+                public static void $check(#type res) {
+                    if (res != $golden[$nextInput]) {
+                        throw new RuntimeException("wrong result " + res + "!=" + $golden[$nextInput]);
+                    }
+                    $nextInput = ($nextInput + 1) % $inputs.length;
+                }
+                """));
     }
 
     public static String generate(CompileFramework comp) {
@@ -117,38 +117,38 @@ public class TestMethodArguments {
         return Template.make(() -> Template.body(
                 Template.let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
                 """
-                        import java.util.Arrays;
-                        import java.util.stream.*;
-                        import compiler.lib.generators.*;
-                        import compiler.lib.ir_framework.*;
-                        import compiler.lib.template_framework.library.*;
+                import java.util.Arrays;
+                import java.util.stream.*;
+                import compiler.lib.generators.*;
+                import compiler.lib.ir_framework.*;
+                import compiler.lib.template_framework.library.*;
 
-                        public class InnerTest {
+                public class InnerTest {
 
-                            static RestrictableGenerator<Integer> generatorInteger = Generators.G.uniformInts();
-                            static RestrictableGenerator<Long> generatorLong = Generators.G.uniformLongs();
-                            static RestrictableGenerator<Float> generatorFloat = Generators.G.uniformFloats();
-                            static RestrictableGenerator<Double> generatorDouble = Generators.G.uniformDoubles();
+                    static RestrictableGenerator<Integer> generatorInteger = Generators.G.uniformInts();
+                    static RestrictableGenerator<Long> generatorLong = Generators.G.uniformLongs();
+                    static RestrictableGenerator<Float> generatorFloat = Generators.G.uniformFloats();
+                    static RestrictableGenerator<Double> generatorDouble = Generators.G.uniformDoubles();
 
-                            public static void main() {
-                                TestFramework framework = new TestFramework(InnerTest.class);
-                                framework.addFlags("-classpath", "#classpath");
-                                framework.start();
+                    public static void main() {
+                        TestFramework framework = new TestFramework(InnerTest.class);
+                        framework.addFlags("-classpath", "#classpath");
+                        framework.start();
+                    }
+
+                    public static <T> T[][] generateInput(Generator<T> t, T[][] array) {
+                        for (int i = 0; i < array.length; i++) {
+                            for (int j = 0; j < array[i].length; j++) {
+                                array[i][j] = t.next();
                             }
-
-                            public static <T> T[][] generateInput(Generator<T> t, T[][] array) {
-                                for (int i = 0; i < array.length; i++) {
-                                    for (int j = 0; j < array[i].length; j++) {
-                                        array[i][j] = t.next();
-                                    }
-                                }
-                                return array;
-                            }
-                        """,
+                        }
+                        return array;
+                    }
+                """,
                 tests,
                 """
-                        }
-                        """)).render();
+                }
+                """)).render();
     }
 
     public static void main(String[] args) {
