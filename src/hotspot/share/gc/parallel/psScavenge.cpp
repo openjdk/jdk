@@ -294,6 +294,7 @@ public:
     {
       PSScavengeRootsClosure root_closure(pm);
       _oop_storage_strong_par_state.oops_do(&root_closure);
+
       // Do the real work
       pm->drain_stacks(false);
     }
