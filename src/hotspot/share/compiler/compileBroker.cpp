@@ -2349,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }
