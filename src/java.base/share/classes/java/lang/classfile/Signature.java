@@ -147,6 +147,31 @@ public sealed interface Signature {
 
     /**
      * Models the signature of a possibly-parameterized class or interface type.
+     * <p>
+     * These are examples of class type signatures:
+     * <ul>
+     * <li>{@code Lcom/example/Outer;} for {@code Outer}
+     * <br>Has class name {@code com/example/Outer} and no outer type or type
+     *     argument.
+     * <li>{@code Lcom/example/Outer$Nested<TA;>;} for {@code Outer.Nested<A>}
+     * <br>Has class name {@code com/example/Outer$Nested} representing a nested
+     *     class, no outer type, and a single type argument of type variable
+     *     {@code A}.
+     * <li>{@code Lcom/example/GenericOuter<TA;>.Inner;} for {@code
+     *     GenericOuter<A>.Inner}
+     * <br>Has class name {@code Inner}, a simple class name, outer type
+     *     {@code Lcom/example/GenericOuter<TA;>;} for {@code GenericOuter<A>},
+     *     and no type argument.
+     * </ul>
+     * <p>
+     * If the {@linkplain #outerType() outer type} exists, the {@linkplain
+     * #className() class name} is the simple name of the nested type.
+     * Otherwise, it is a {@linkplain ClassEntry##internalname binary name in
+     * internal form} (separated by {@code /}).
+     * <p>
+     * If a nested type does not have any enclosing parameterization, it may
+     * be represented without an outer type and as an internal binary name,
+     * in which nesting is represented by {@code $} instead of {@code .}.
      *
      * @see Type
      * @see ParameterizedType
@@ -160,7 +185,8 @@ public sealed interface Signature {
         /**
          * {@return the signature of the class that this class is a member of,
          * only if this is a member class}  Note that the outer class may be
-         * absent if it is not a parameterized type.
+         * absent if this is a member class without any parameterized enclosing
+         * type.
          *
          * @jls 4.5 Parameterized Types
          */
@@ -169,7 +195,8 @@ public sealed interface Signature {
         /**
          * {@return the class or interface name; includes the {@linkplain
          * ClassEntry##internalname slash-separated} package name if there is no
-         * outer type}
+         * outer type}  Note this may indicate a nested class name with {@code $}
+         * separators if there is no parameterized enclosing type.
          */
         String className();
 
@@ -243,8 +270,8 @@ public sealed interface Signature {
          * {@return a class type signature}
          *
          * @param outerType signature of the outer type, may be {@code null}
-         *        to indicate this is a top-level class or interface
-         * @param className the name of this class or interface
+         * @param className the name of this class or interface, may not include
+         *                  {@code /} if outer type is present
          * @param typeArgs the type arguments
          * @throws IllegalArgumentException if {@code className} cannot be
          *         {@linkplain Signature##identifier denoted}, such as due to
