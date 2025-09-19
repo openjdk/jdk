@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -62,18 +63,24 @@ public class OfFileTest {
 
     private static final Path DEFAULT_FS_DIR = Path.of(System.getProperty("user.dir", "."));
 
-    private static final Path ZIP_FS_DIR = zipFsDir();
+    private static final FileSystem ZIP_FS = zipFs();
+
+    private static final Path ZIP_FS_DIR = ZIP_FS.getRootDirectories().iterator().next();
 
     private static final List<Path> PARENT_DIRS = List.of(DEFAULT_FS_DIR, ZIP_FS_DIR);
 
-    private static Path zipFsDir() {
+    private static FileSystem zipFs() {
         try {
             Path zipFile = DEFAULT_FS_DIR.resolve("file.zip");
-            FileSystem zipFS = FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
-            return zipFS.getRootDirectories().iterator().next();
+            return FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
+    }
+
+    @AfterAll
+    static void closeZipFs() throws IOException {
+        ZIP_FS.close();
     }
 
     static List<Path> parentDirs() {
