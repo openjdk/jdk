@@ -114,8 +114,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            // TODO: adjust to only those where it can happen, maybe only "$"?
-            throw new RendererException("A Template method such as '$', 'let', 'count' etc. was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'let', etc. was called outside a template rendering.");
         }
         return renderer;
     }

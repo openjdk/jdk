@@ -243,6 +243,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
         }
@@ -254,6 +255,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
         }
@@ -265,6 +267,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify? -> what if we want to sample but without opening
+        //       an inner scope that would make new data names local?
         public List<DataName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (DataName)n).toList();

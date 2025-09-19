@@ -216,6 +216,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
         }
@@ -227,6 +228,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
         }
@@ -238,6 +240,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public List<StructuralName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (StructuralName)n).toList();
