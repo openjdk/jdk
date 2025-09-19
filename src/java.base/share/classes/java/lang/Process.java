@@ -85,7 +85,24 @@ import java.util.stream.Stream;
  * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
  * to create a {@code Process}.
  *
- * <p>Subclasses of Process should override the {@link #close()}, {@link #onExit()}, and
+ * <p>Subclasses of Process should ensure that each overridden method
+ * invokes the superclass method.
+ * For example, if {@linkplain #close() close} is overridden, the subclass should
+ * ensure that {@code Process.close()} is called.
+ * {@snippet lang = "java" :
+ * public class LoggingProcess extends java.lang.Process {
+ *     ...
+ *     @Override
+ *     public void close() throws IOException  {
+ *         super.close();
+ *         LOGGER.log("process closed");
+ *     }
+ *     ...
+ * }
+ * }
+ *
+ * <p>Subclasses of Process that wrap another Process instance
+ * should override and delegate the {@link #onExit()} and
  * {@link #toHandle()} methods to provide a fully functional Process including the
  * {@linkplain #pid() process id},
  * {@linkplain #info() information about the process},
