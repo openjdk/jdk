@@ -31,6 +31,7 @@
 
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Robot;
 
 public class FrameLocation {
     private static final int X = 250;
@@ -40,42 +41,42 @@ public class FrameLocation {
     private static volatile int yPos;
 
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            f = new Frame("Frame Location Test");
-            f.setBounds(X, Y, 250, 250); // the size doesn't matter
-            f.setVisible(true);
-        });
-
-        for (int i = 0; i < 10; i++) {
-            // 2 seconds must be enough for the WM to show the window
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException _) {
-            }
-
+        Robot robot = new Robot();
+        try {
             EventQueue.invokeAndWait(() -> {
-                // Check the location
-                xPos = f.getX();
-                yPos = f.getY();
+                f = new Frame("Frame Location Test");
+                f.setBounds(X, Y, 250, 250); // the size doesn't matter
+                f.setVisible(true);
             });
 
-            if (xPos != X || yPos != Y) {
-                throw new RuntimeException("The frame location is wrong! Current: " +
-                        xPos + ", " + yPos + ";  expected: " + X + ", " + Y);
-            }
+            for (int i = 0; i < 10; i++) {
+                // 2 seconds must be enough for the WM to show the window
+                robot.waitForIdle();
+                robot.delay(2000);
 
-            // Emulate what happens when setGraphicsConfiguration() is called
-            synchronized (f.getTreeLock()) {
-                f.removeNotify();
-                f.addNotify();
+                EventQueue.invokeAndWait(() -> {
+                    // Check the location
+                    xPos = f.getX();
+                    yPos = f.getY();
+                });
+
+                if (xPos != X || yPos != Y) {
+                    throw new RuntimeException("The frame location is wrong! Current: " +
+                            xPos + ", " + yPos + ";  expected: " + X + ", " + Y);
+                }
+
+                // Emulate what happens when setGraphicsConfiguration() is called
+                synchronized (f.getTreeLock()) {
+                    f.removeNotify();
+                    f.addNotify();
+                }
             }
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (f != null) {
+                    f.dispose();
+                }
+            });
         }
-
-        EventQueue.invokeAndWait(() -> {
-            if (f != null) {
-                f.dispose();
-            }
-        });
     }
 }
-
