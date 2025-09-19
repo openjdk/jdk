@@ -99,7 +99,6 @@ serviceability/sa/sadebugd/ClhsdbAttachToDebugServer.java     8307393   generic-
 serviceability/sa/sadebugd/ClhsdbTestConnectArgument.java     8307393   generic-all
 serviceability/sa/ClhsdbTestAllocationMerge.java              8307393   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8307393   generic-all
-serviceability/sa/sadebugd/DebugdUtils.java                   8307393   generic-all
 serviceability/sa/sadebugd/DisableRegistryTest.java           8307393   generic-all
 serviceability/sa/sadebugd/PmapOnDebugdTest.java              8307393   generic-all
 serviceability/sa/sadebugd/RunCommandOnServerTest.java        8307393   generic-all
