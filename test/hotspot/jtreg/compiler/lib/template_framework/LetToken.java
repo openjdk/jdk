@@ -23,19 +23,5 @@
 
 package compiler.lib.template_framework;
 
-/**
- * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
- * {@link Token}s or {@link String}s or some permitted boxed primitives.
- */
-public sealed interface Token permits StringToken,
-                                      TemplateToken,
-                                      TemplateToken.ZeroArgs,
-                                      TemplateToken.OneArg,
-                                      TemplateToken.TwoArgs,
-                                      TemplateToken.ThreeArgs,
-                                      HookAnchorToken,
-                                      HookInsertToken,
-                                      AddNameToken,
-                                      NameSampleToken,
-                                      LetToken,
-                                      NothingToken {}
+// TODO: desc
+record LetToken(String key, String value) implements Token {}

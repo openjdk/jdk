@@ -150,7 +150,6 @@ public class TestTemplate {
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
         expectRendererException(() -> $("name"),                          "A Template method such as");
-        expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");

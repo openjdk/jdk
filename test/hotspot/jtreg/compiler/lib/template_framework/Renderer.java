@@ -266,7 +266,7 @@ final class Renderer {
         }
         if (nst.function() != null) {
             // We have a nested "scope" that captures the DataName.
-            // TODO: some frame for hashtags?
+            // TODO: some template frame for hashtags?
             TemplateScope scope = nst.getScope(n);
             renderTokenList(scope.tokens());
 
@@ -353,6 +353,9 @@ final class Renderer {
             }
             case NameSampleToken nst -> {
                 renderNameSampleToken(nst);
+            }
+            case LetToken(String key, String value) -> {
+                addHashtagReplacement(key, value);
             }
         }
     }

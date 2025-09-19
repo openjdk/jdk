@@ -658,13 +658,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
-     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
-     *         inside a {@link Template#scope}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return new NothingToken();
+        return new LetToken(key, Renderer.format(value));
     }
 
     /**
@@ -688,6 +685,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A {@link TemplateScope}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
+    // TODO: refactor so we can use it inside the template?
     static <T> TemplateScope let(String key, T value, Function<T, TemplateScope> function) {
         Renderer.getCurrent().addHashtagReplacement(key, value);
         return function.apply(value);
