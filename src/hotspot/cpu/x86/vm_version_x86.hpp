@@ -306,6 +306,14 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union StdCpuidEax29Ecx0 {
+    uint32_t value;
+    struct {
+      uint32_t  apx_nci_ndd_nf  : 1,
+                                : 31;
+    } bits;
+  };
+
   union StdCpuid24MainLeafEax {
     uint32_t value;
     struct {
@@ -591,6 +599,10 @@ protected:
     StdCpuid24MainLeafEax std_cpuid24_eax;
     StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
+    // cpuid function 0x29 APX Advanced Performance Extensions Leaf
+    // eax = 0x29, ecx = 0
+    StdCpuidEax29Ecx0 std_cpuid29_ebx;
+
     // cpuid function 0xB (processor topology)
     // ecx = 0
     uint32_t     tpl_cpuidB0_eax;
@@ -711,6 +723,7 @@ public:
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
+  static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
@@ -760,7 +773,9 @@ public:
     _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { _features.set_feature(CPU_APX_F); }
+  static void set_apx_cpuFeatures() {
+    _features.set_feature(CPU_APX_F);
+  }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);
     _features.set_feature(CPU_BMI2);
