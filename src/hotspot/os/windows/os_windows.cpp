@@ -3971,15 +3971,15 @@ bool     os::win32::_is_windows_server         = false;
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
 // including the latest one (as of this writing - Windows Server 2012 R2)
-bool   os::win32::_has_exit_bug              = true;
+bool     os::win32::_has_exit_bug              = true;
 
-int    os::win32::_major_version             = 0;
-int    os::win32::_minor_version             = 0;
-int    os::win32::_build_number              = 0;
-int    os::win32::_build_minor               = 0;
+int      os::win32::_major_version             = 0;
+int      os::win32::_minor_version             = 0;
+int      os::win32::_build_number              = 0;
+int      os::win32::_build_minor               = 0;
 
-bool   os::win32::_processor_group_warning_displayed = false;
-bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool     os::win32::_processor_group_warning_displayed = false;
+bool     os::win32::_job_object_processor_group_warning_displayed = false;
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
