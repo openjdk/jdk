@@ -256,8 +256,6 @@ class NMethodToOopClosure : public NMethodClosure {
 };
 
 class MarkingNMethodClosure : public NMethodToOopClosure {
-  bool _keepalive_nmethods;
-
  public:
   MarkingNMethodClosure(OopClosure* cl) :
       NMethodToOopClosure(cl, false /* fix_relocations */) {}
