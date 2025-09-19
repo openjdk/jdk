@@ -43,16 +43,14 @@ public class TestPopCountValueTransforms {
 
     static final int SIZE = 4096;
 
-    static int rand_numI = G.uniformInts(Integer.MIN_VALUE, Integer.MAX_VALUE).next();
-    static final int rand_bndI1 = G.uniformInts(-0xFF, 0xFF).next();
-    static final int rand_bndI2 = G.uniformInts(-0xFFFFF, 0xFFFFF).next();
-    static final int rand_popcI1 = G.uniformInts(0, 4).next();
+    static final int rand_bndI1 = G.ints().next();
+    static final int rand_bndI2 = G.ints().next();
+    static final int rand_popcI1 = G.uniformInts(0, 32).next();
     static final int rand_popcI2 = G.uniformInts(0, 32).next();
 
-    static long rand_numL = G.uniformLongs(Long.MIN_VALUE, Long.MAX_VALUE).next();
-    static final long rand_bndL1 = G.uniformLongs(-0xFFL, 0xFFL).next();
-    static final long rand_bndL2 = G.uniformLongs(-0xFFFFFFL, 0xFFFFFF).next();
-    static final long rand_popcL1 = G.uniformLongs(0, 4).next();
+    static final long rand_bndL1 = G.longs().next();
+    static final long rand_bndL2 = G.longs().next();
+    static final long rand_popcL1 = G.uniformLongs(0, 32).next();
     static final long rand_popcL2 = G.uniformLongs(0, 32).next();
 
     @Test
@@ -136,17 +134,18 @@ public class TestPopCountValueTransforms {
     }
 
     @Test
-    public int testPopCountRandomInt() {
+    public void testPopCountRandomInt(int rand_numI) {
+        int res = 0;
         int num = Math.clamp(rand_numI, Math.min(rand_bndI1, rand_bndI2), Math.max(rand_bndI1, rand_bndI2));
         if (Integer.bitCount(num) >= rand_popcI1 && Integer.bitCount(num) < rand_popcI2) {
-            return 1;
+            res = 1;
         } else {
-            return -1;
+            res = -1;
         }
+        checkPopCountRandomInt(rand_numI, res);
     }
 
-    @Check(test = "testPopCountRandomInt")
-    public void checkPopCountRandomInt(int res) {
+    public void checkPopCountRandomInt(int rand_numI, int res) {
         int exp = 0;
         int num = Math.clamp(rand_numI, Math.min(rand_bndI1, rand_bndI2), Math.max(rand_bndI1, rand_bndI2));
         while(num != 0) {
@@ -156,18 +155,25 @@ public class TestPopCountValueTransforms {
         Verify.checkEQ(exp >= rand_popcI1 && exp < rand_popcI2 ? 1 : -1, res);
     }
 
-    @Test
-    public long testPopCountRandomLong() {
-        long num = Math.clamp(rand_numL, Math.min(rand_bndL1, rand_bndL2), Math.max(rand_bndL1, rand_bndL2));
-        if (Long.bitCount(num) >= rand_popcL1 && Long.bitCount(num) < rand_popcL2) {
-            return 1L;
-        } else {
-            return -1L;
-        }
+    @Run(test="testPopCountRandomInt")
+    public void runPopCountRandomInt() {
+        testPopCountRandomInt(G.ints().next());
     }
 
-    @Check(test = "testPopCountRandomLong")
-    public void checkPopCountRandomLong(long res) {
+
+    @Test
+    public void testPopCountRandomLong(long rand_numL) {
+        long res = 0;
+        long num = Math.clamp(rand_numL, Math.min(rand_bndL1, rand_bndL2), Math.max(rand_bndL1, rand_bndL2));
+        if (Long.bitCount(num) >= rand_popcL1 && Long.bitCount(num) < rand_popcL2) {
+            res = 1L;
+        } else {
+            res = -1L;
+        }
+        checkPopCountRandomLong(rand_numL, res);
+    }
+
+    public void checkPopCountRandomLong(long rand_numL, long res) {
         int exp = 0;
         long num = Math.clamp(rand_numL, Math.min(rand_bndL1, rand_bndL2), Math.max(rand_bndL1, rand_bndL2));
         while(num != 0) {
@@ -175,6 +181,11 @@ public class TestPopCountValueTransforms {
             exp++;
         }
         Verify.checkEQ(exp >= rand_popcL1 && exp < rand_popcL2 ? 1L : -1L, res);
+    }
+
+    @Run(test="testPopCountRandomLong")
+    public void runPopCountRandomLong() {
+        testPopCountRandomLong(G.longs().next());
     }
 
     public TestPopCountValueTransforms() {
