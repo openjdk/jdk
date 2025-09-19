@@ -2320,10 +2320,14 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   if (mode()->is_generational()) {
+    size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
     young_generation()->reset_bytes_allocated_since_gc_start();
     old_generation()->reset_bytes_allocated_since_gc_start();
+    young_generation()->heuristics()->recalibrate_alloc_rate_last_sample(bytes_allocated);
+  } else {
+    size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
+    heuristics()->recalibrate_alloc_rate_last_sample(bytes_allocated);
   }
-
   global_generation()->reset_bytes_allocated_since_gc_start();
 }
 

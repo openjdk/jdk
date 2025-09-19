@@ -355,6 +355,7 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
+  _previous_gc_allocated(0),
   _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
   _rate(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor),
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
@@ -364,14 +365,15 @@ double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated >= _last_sample_value) {
-      rate = instantaneous_rate(now, allocated);
-      _rate.add(rate);
-      _rate_avg.add(_rate.avg());
-    }
-
+    // _previous_gc_allocated will be non-zero only on the first sample added since the start of the current GC.  In the
+    // event that no data was sampled during the preceding cycle, _previous_gc_allocated will represent the accumalation
+    // of multiple GCs.
+    rate = instantaneous_rate(now, _previous_gc_allocated + allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
+    _previous_gc_allocated = 0;
   }
   return rate;
 }
