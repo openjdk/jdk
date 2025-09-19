@@ -180,6 +180,7 @@ public class TestTemplate {
         expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
+        expectRendererException(() -> testFailingHashtag5(), "Missing hashtag replacement for #a");
         expectRendererException(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
         expectRendererException(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
         expectIllegalArgumentException(() -> scope(null),              "Unexpected tokens: null");
@@ -2067,6 +2068,17 @@ public class TestTemplate {
         var template1 = Template.make(() -> scope(
             // Missing hashtag name definition
             "#a\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtag5() {
+        var template1 = Template.make(() -> scope(
+            "use before definition: #a\n",
+            // let is a token, and is only evaluated after
+            // the string above, and so the string above fails.
+            let("a", "x")
         ));
 
         String code = template1.render();
