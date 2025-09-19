@@ -164,37 +164,37 @@ void oopDesc::release_obj_field_put(int offset, oop value)            { HeapAcce
 void oopDesc::obj_field_put_volatile(int offset, oop value)           { HeapAccess<MO_SEQ_CST>::oop_store_at(as_oop(), offset, value); }
 
 address oopDesc::address_field(int offset) const                      { return *field_addr<address>(offset); }
-address oopDesc::address_field_acquire(int offset) const              { return Atomic::load_acquire(field_addr<address>(offset)); }
+address oopDesc::address_field_acquire(int offset) const              { return AtomicAccess::load_acquire(field_addr<address>(offset)); }
 
 void oopDesc::address_field_put(int offset, address value)            { *field_addr<address>(offset) = value; }
-void oopDesc::release_address_field_put(int offset, address value)    { Atomic::release_store(field_addr<address>(offset), value); }
+void oopDesc::release_address_field_put(int offset, address value)    { AtomicAccess::release_store(field_addr<address>(offset), value); }
 
 Metadata* oopDesc::metadata_field(int offset) const                   { return *field_addr<Metadata*>(offset); }
 void oopDesc::metadata_field_put(int offset, Metadata* value)         { *field_addr<Metadata*>(offset) = value; }
 
-Metadata* oopDesc::metadata_field_acquire(int offset) const           { return Atomic::load_acquire(field_addr<Metadata*>(offset)); }
-void oopDesc::release_metadata_field_put(int offset, Metadata* value) { Atomic::release_store(field_addr<Metadata*>(offset), value); }
+Metadata* oopDesc::metadata_field_acquire(int offset) const           { return AtomicAccess::load_acquire(field_addr<Metadata*>(offset)); }
+void oopDesc::release_metadata_field_put(int offset, Metadata* value) { AtomicAccess::release_store(field_addr<Metadata*>(offset), value); }
 
-jbyte oopDesc::byte_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jbyte>(offset)); }
-void oopDesc::release_byte_field_put(int offset, jbyte value)         { Atomic::release_store(field_addr<jbyte>(offset), value); }
+jbyte oopDesc::byte_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jbyte>(offset)); }
+void oopDesc::release_byte_field_put(int offset, jbyte value)         { AtomicAccess::release_store(field_addr<jbyte>(offset), value); }
 
-jchar oopDesc::char_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jchar>(offset)); }
-void oopDesc::release_char_field_put(int offset, jchar value)         { Atomic::release_store(field_addr<jchar>(offset), value); }
+jchar oopDesc::char_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jchar>(offset)); }
+void oopDesc::release_char_field_put(int offset, jchar value)         { AtomicAccess::release_store(field_addr<jchar>(offset), value); }
 
-jboolean oopDesc::bool_field_acquire(int offset) const                { return Atomic::load_acquire(field_addr<jboolean>(offset)); }
-void oopDesc::release_bool_field_put(int offset, jboolean value)      { Atomic::release_store(field_addr<jboolean>(offset), jboolean(value & 1)); }
+jboolean oopDesc::bool_field_acquire(int offset) const                { return AtomicAccess::load_acquire(field_addr<jboolean>(offset)); }
+void oopDesc::release_bool_field_put(int offset, jboolean value)      { AtomicAccess::release_store(field_addr<jboolean>(offset), jboolean(value & 1)); }
 
-jint oopDesc::int_field_acquire(int offset) const                     { return Atomic::load_acquire(field_addr<jint>(offset)); }
-void oopDesc::release_int_field_put(int offset, jint value)           { Atomic::release_store(field_addr<jint>(offset), value); }
+jint oopDesc::int_field_acquire(int offset) const                     { return AtomicAccess::load_acquire(field_addr<jint>(offset)); }
+void oopDesc::release_int_field_put(int offset, jint value)           { AtomicAccess::release_store(field_addr<jint>(offset), value); }
 
-jshort oopDesc::short_field_acquire(int offset) const                 { return Atomic::load_acquire(field_addr<jshort>(offset)); }
-void oopDesc::release_short_field_put(int offset, jshort value)       { Atomic::release_store(field_addr<jshort>(offset), value); }
+jshort oopDesc::short_field_acquire(int offset) const                 { return AtomicAccess::load_acquire(field_addr<jshort>(offset)); }
+void oopDesc::release_short_field_put(int offset, jshort value)       { AtomicAccess::release_store(field_addr<jshort>(offset), value); }
 
-jlong oopDesc::long_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jlong>(offset)); }
-void oopDesc::release_long_field_put(int offset, jlong value)         { Atomic::release_store(field_addr<jlong>(offset), value); }
+jlong oopDesc::long_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jlong>(offset)); }
+void oopDesc::release_long_field_put(int offset, jlong value)         { AtomicAccess::release_store(field_addr<jlong>(offset), value); }
 
-jfloat oopDesc::float_field_acquire(int offset) const                 { return Atomic::load_acquire(field_addr<jfloat>(offset)); }
-void oopDesc::release_float_field_put(int offset, jfloat value)       { Atomic::release_store(field_addr<jfloat>(offset), value); }
+jfloat oopDesc::float_field_acquire(int offset) const                 { return AtomicAccess::load_acquire(field_addr<jfloat>(offset)); }
+void oopDesc::release_float_field_put(int offset, jfloat value)       { AtomicAccess::release_store(field_addr<jfloat>(offset), value); }
 
-jdouble oopDesc::double_field_acquire(int offset) const               { return Atomic::load_acquire(field_addr<jdouble>(offset)); }
-void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::release_store(field_addr<jdouble>(offset), value); }
+jdouble oopDesc::double_field_acquire(int offset) const               { return AtomicAccess::load_acquire(field_addr<jdouble>(offset)); }
+void oopDesc::release_double_field_put(int offset, jdouble value)     { AtomicAccess::release_store(field_addr<jdouble>(offset), value); }

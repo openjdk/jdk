@@ -3129,6 +3129,14 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               break;
             }
           }
+        } else if (use->is_LocalVar()) {
+          Node* phi = use->ideal_node();
+          if (phi->Opcode() == Op_Phi && reducible_merges.member(phi) && !can_reduce_phi(phi->as_Phi())) {
+            set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is merged in a non-reducible phi"));
+            reducible_merges.yank(phi);
+            found_nsr_alloc = true;
+            break;
+          }
         }
       }
     }
@@ -5067,7 +5075,7 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
 }
 
 void ConnectionGraph::print_statistics() {
-  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
+  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", AtomicAccess::load(&_no_escape_counter), AtomicAccess::load(&_arg_escape_counter), AtomicAccess::load(&_global_escape_counter));
 }
 
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
@@ -5078,11 +5086,11 @@ void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& ja
     JavaObjectNode* ptn = java_objects_worklist.at(next);
     if (ptn->ideal_node()->is_Allocate()) {
       if (ptn->escape_state() == PointsToNode::NoEscape) {
-        Atomic::inc(&ConnectionGraph::_no_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_no_escape_counter);
       } else if (ptn->escape_state() == PointsToNode::ArgEscape) {
-        Atomic::inc(&ConnectionGraph::_arg_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_arg_escape_counter);
       } else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
-        Atomic::inc(&ConnectionGraph::_global_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_global_escape_counter);
       } else {
         assert(false, "Unexpected Escape State");
       }

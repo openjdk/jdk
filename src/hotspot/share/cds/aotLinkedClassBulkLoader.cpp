@@ -46,8 +46,8 @@ bool AOTLinkedClassBulkLoader::_platform_completed = false;
 bool AOTLinkedClassBulkLoader::_app_completed = false;
 bool AOTLinkedClassBulkLoader::_all_completed = false;
 
-void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
-  AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
+void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
+  AOTLinkedClassTable::get()->serialize(soc);
 }
 
 bool AOTLinkedClassBulkLoader::class_preloading_finished() {
@@ -57,7 +57,7 @@ bool AOTLinkedClassBulkLoader::class_preloading_finished() {
     // The ConstantPools of preloaded classes have references to other preloaded classes. We don't
     // want any Java code (including JVMCI compiler) to use these classes until all of them
     // are loaded.
-    return Atomic::load_acquire(&_all_completed);
+    return AtomicAccess::load_acquire(&_all_completed);
   }
 }
 
@@ -90,7 +90,7 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
   }
 
   _app_completed = true;
-  Atomic::release_store(&_all_completed, true);
+  AtomicAccess::release_store(&_all_completed, true);
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
@@ -117,27 +117,24 @@ void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS) {
   Handle h_loader(THREAD, class_loader_oop);
-  load_table(AOTLinkedClassTable::for_static_archive(),  class_category, h_loader, CHECK);
-  load_table(AOTLinkedClassTable::for_dynamic_archive(), class_category, h_loader, CHECK);
+  AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+  load_table(table, class_category, h_loader, CHECK);
 
   // Initialize the InstanceKlasses of all archived heap objects that are reachable from the
   // archived java class mirrors.
-  //
-  // Only the classes in the static archive can have archived mirrors.
-  AOTLinkedClassTable* static_table = AOTLinkedClassTable::for_static_archive();
   switch (class_category) {
   case AOTLinkedClassCategory::BOOT1:
     // Delayed until finish_loading_javabase_classes(), as the VM is not ready to
     // execute some of the <clinit> methods.
     break;
   case AOTLinkedClassCategory::BOOT2:
-    init_required_classes_for_loader(h_loader, static_table->boot2(), CHECK);
+    init_required_classes_for_loader(h_loader, table->boot2(), CHECK);
     break;
   case AOTLinkedClassCategory::PLATFORM:
-    init_required_classes_for_loader(h_loader, static_table->platform(), CHECK);
+    init_required_classes_for_loader(h_loader, table->platform(), CHECK);
     break;
   case AOTLinkedClassCategory::APP:
-    init_required_classes_for_loader(h_loader, static_table->app(), CHECK);
+    init_required_classes_for_loader(h_loader, table->app(), CHECK);
     break;
   case AOTLinkedClassCategory::UNREGISTERED:
     ShouldNotReachHere();
@@ -333,7 +330,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
 }
 
 void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
-  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
+  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot(), CHECK);
 }
 
 // Some AOT-linked classes for <class_loader> must be initialized early. This includes
@@ -427,8 +424,7 @@ void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* cl
 
 void AOTLinkedClassBulkLoader::replay_training_at_init_for_preloaded_classes(TRAPS) {
   if (CDSConfig::is_using_aot_linked_classes() && TrainingData::have_data()) {
-    // Only static archive can have training data.
-    AOTLinkedClassTable* table = AOTLinkedClassTable::for_static_archive();
+    AOTLinkedClassTable* table = AOTLinkedClassTable::get();
     replay_training_at_init(table->boot(),     CHECK);
     replay_training_at_init(table->boot2(),    CHECK);
     replay_training_at_init(table->platform(), CHECK);
