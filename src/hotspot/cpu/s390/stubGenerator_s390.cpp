@@ -3363,28 +3363,22 @@ class StubGenerator: public StubCodeGenerator {
 
 #if COMPILER2_OR_JVMCI
     // Generate AES intrinsics code.
-    if (UseAESIntrinsics) {
-      if (VM_Version::has_Crypto_AES()) {
-        StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock();
-        StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock();
-        StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt();
-        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
-      } else {
-        // In PRODUCT builds, the function pointers will keep their initial (null) value.
-        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
-        assert(VM_Version::has_Crypto_AES(), "Inconsistent settings. Check vm_version_s390.cpp");
-      }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_aescrypt_encryptBlock)) {
+      StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock();
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_aescrypt_decryptBlock)) {
+      StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_cipherBlockChaining_encryptAESCrypt)) {
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_cipherBlockChaining_decryptAESCrypt)) {
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
+    } 
 
-    if (UseAESCTRIntrinsics) {
-      if (VM_Version::has_Crypto_AES_CTR()) {
-        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
-      } else {
-        // In PRODUCT builds, the function pointers will keep their initial (null) value.
-        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
-        assert(VM_Version::has_Crypto_AES_CTR(), "Inconsistent settings. Check vm_version_s390.cpp");
-      }
-    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_counterMode_AESCrypt)) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    } 
 
     // Generate GHASH intrinsics code
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_ghash_processBlocks)) {

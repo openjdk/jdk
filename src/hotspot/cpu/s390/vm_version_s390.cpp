@@ -1563,6 +1563,22 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
         return true;
       }
       break;
+    case vmIntrinsics::_aescrypt_encryptBlock:
+    case vmIntrinsics::_aescrypt_decryptBlock:
+    case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    case vmIntrinsics::_galoisCounterMode_AESCrypt:
+      if(has_Crypto_AES()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_counterMode_AESCrypt:
+      if(has_Crypto_AES_CTR()) {
+        return true;
+      }
+      break;
     default:
       return true;
   }
