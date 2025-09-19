@@ -22,9 +22,8 @@
  */
 
 /* @test
- * @bug 8154364 8366254
+ * @bug 8154364 8365626 8366254
  * @summary Test of Files.isSameFile
- * @requires (os.family != "windows")
  * @library .. /test/lib
  * @build IsSameFile jdk.test.lib.util.FileUtils
  * @run junit IsSameFile
@@ -50,6 +49,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -66,6 +66,8 @@ public class IsSameFile {
     private Path c;
     private List<Path> allFiles;
 
+    private boolean supportsSymbolicLinks;
+
     @BeforeAll
     public void init() throws IOException {
         home = Files.createTempDirectory("TestIsSameFile");
@@ -75,6 +77,12 @@ public class IsSameFile {
         allFiles.add(aa = home.resolve("a"));
         allFiles.add(b = home.resolve("b"));
         allFiles.add(c = home.resolve("c"));
+
+        supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(home);
+    }
+
+    private boolean supportsSymbolicLinks() {
+        return supportsSymbolicLinks;
     }
 
     public void deleteFiles() throws IOException {
@@ -203,9 +211,11 @@ public class IsSameFile {
         deleteFiles();
         Files.createFile(a);
         Files.createFile(b);
-        Files.createSymbolicLink(c, a);
         List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(true, a, c));
+        if (supportsSymbolicLinks) {
+            Files.createSymbolicLink(c, a);
+            list.add(Arguments.of(true, a, c));
+        }
         list.add(Arguments.of(false, a, b));
         return list.stream();
     }
@@ -220,13 +230,15 @@ public class IsSameFile {
     private Stream<Arguments> bcExistSource() throws IOException {
         deleteFiles();
         Files.createFile(b);
-        Files.createSymbolicLink(c, a);
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(true, a, a));
         list.add(Arguments.of(true, a, aa));
         list.add(Arguments.of(false, a, b));
         list.add(Arguments.of(true, b, b));
-        list.add(Arguments.of(false, a, c));
+        if (supportsSymbolicLinks) {
+            list.add(Arguments.of(false, a, c));
+            Files.createSymbolicLink(c, a);
+        }
         return list.stream();
     }
 
@@ -268,6 +280,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("equalFollowingSource")
     public void equalFollowing(boolean expect, Path x, Path y)
@@ -310,6 +323,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("unequalFollowingSource")
     public void unequalFollowing(boolean expect, Path x, Path y)
@@ -347,6 +361,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("unequalNotFollowingSource")
     public void unequalNotFollowing(boolean expect, Path x, Path y)
@@ -382,6 +397,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("multiLinkSource")
     public void multiLink(boolean expect, Path x, Path y)
@@ -419,6 +435,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("multiLinkNoTargetSource")
     public void multiLinkNoTarget(boolean expect, Path x, Path y)
@@ -449,6 +466,7 @@ public class IsSameFile {
         return list.stream();
     }
 
+    @EnabledIf("supportsSymbolicLinks")
     @ParameterizedTest
     @MethodSource("linkLoopSource")
     public void linkLoop(boolean expect, Path x, Path y) throws IOException {
