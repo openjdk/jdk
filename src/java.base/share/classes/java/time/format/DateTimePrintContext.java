@@ -110,7 +110,7 @@ final class DateTimePrintContext {
      * @param temporal  the temporal object being output, not null
      * @param formatter  the formatter controlling the format, not null
      */
-    public DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
+    DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
         this.temporal = adjust(temporal, formatter);
         this.formatter = formatter;
     }
