@@ -4860,9 +4860,13 @@ void os::set_native_thread_name(const char *name) {
     char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
     (void) os::snprintf(buf, sizeof(buf), "%s", name);
     buf[sizeof(buf) - 1] = '\0';
-    const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
+    int rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
     assert(rc != ERANGE, "pthread_setname_np failed");
+    // prctl uses the same limitation. I assume it _pthread_setname_np also uses
+    // prctl(PR_SET_NAME
+    rc = prctl(PR_SET_NAME, buf);
+    assert(rc == 0, "prctl(PR_SET_NAME) failed");
   }
 }
 
