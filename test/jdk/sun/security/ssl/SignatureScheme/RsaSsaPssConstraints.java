@@ -21,18 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8350807
- * @summary Certificates using MD5 algorithm that are disabled by default are
- *          incorrectly allowed in TLSv1.3 when re-enabled.
- * @modules java.base/sun.security.x509
- *          java.base/sun.security.util
- * @library /javax/net/ssl/templates
- *          /test/lib
- * @run main/othervm MD5NotAllowedInTLS13CertificateSignature
- */
-
+import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Utils.runAndCheckException;
 
@@ -44,19 +33,18 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 import jdk.test.lib.security.CertificateBuilder;
-import jdk.test.lib.security.SecurityUtils;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.GeneralName;
 import sun.security.x509.GeneralNames;
@@ -64,50 +52,111 @@ import sun.security.x509.KeyIdentifier;
 import sun.security.x509.SerialNumber;
 import sun.security.x509.X500Name;
 
-public class MD5NotAllowedInTLS13CertificateSignature extends
-        SSLSocketTemplate {
+
+/*
+ * @test
+ * @bug 8367104
+ * @summary Check for RSASSA-PSS parameters when validating certificates
+ *          against algorithm constraints.
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
+ * @library /javax/net/ssl/templates
+ *          /test/lib
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS Rsa_pss_pss_Sha384 true
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS RsaSsa-Pss true
+ * @run main/othervm RsaSsaPssConstraints RSA RSASSA-PSS rsa_pss_Rsae_sha384 true
+ * @run main/othervm RsaSsaPssConstraints RSA RSASSA-PSS Rsa true
+ * @run main/othervm RsaSsaPssConstraints RSA RSASSA-PSS RSASSA-pSS true
+ * @run main/othervm RsaSsaPssConstraints RSA SHA384withRSA rsa_pkcs1_Sha384 true
+ * @run main/othervm RsaSsaPssConstraints EC SHA384withECDSA Ecdsa_Secp384r1_sha384 true
+ * @run main/othervm RsaSsaPssConstraints RSA SHA384withRSA SHA384withRsA true
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS rsa_pss_rsae_sha384 false
+ * @run main/othervm RsaSsaPssConstraints RSA RSASSA-PSS rsa_pss_pss_sha384 false
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS rsa_pss_pss_sha256 false
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS rsa_pss_pss_sha512 false
+ * @run main/othervm RsaSsaPssConstraints RSASSA-PSS RSASSA-PSS RSA false
+ * @run main/othervm RsaSsaPssConstraints RSA RSASSA-PSS rsa_pss_rsae_sha512 false
+ * @run main/othervm RsaSsaPssConstraints RSA SHA384withRSA rsa_pkcs1_sha256 false
+ * @run main/othervm RsaSsaPssConstraints EC SHA384withECDSA ecdsa_secp256r1_sha256 false
+ * @run main/othervm RsaSsaPssConstraints EC SHA384withECDSA SHA512withECDSA false
+ */
+
+public class RsaSsaPssConstraints extends SSLSocketTemplate {
 
     private final String protocol;
+    private final String keyAlg;
+    private final String certSigAlg;
     private X509Certificate trustedCert;
     private X509Certificate serverCert;
     private X509Certificate clientCert;
     private KeyPair serverKeys;
     private KeyPair clientKeys;
 
-    protected MD5NotAllowedInTLS13CertificateSignature(String protocol)
-            throws Exception {
+    protected RsaSsaPssConstraints(
+            String protocol, String keyAlg,
+            String certSigAlg) throws Exception {
         super();
         this.protocol = protocol;
+        this.keyAlg = keyAlg;
+        this.certSigAlg = certSigAlg;
         setupCertificates();
     }
 
     public static void main(String[] args) throws Exception {
-        // MD5 is disabled by default in java.security config file,
-        // re-enable it for our test.
-        SecurityUtils.removeFromDisabledAlgs(
-                "jdk.certpath.disabledAlgorithms", List.of("MD5"));
-        SecurityUtils.removeFromDisabledAlgs(
-                "jdk.tls.disabledAlgorithms", List.of("MD5withRSA"));
+        if (args.length != 4) {
+            throw new RuntimeException("Wrong number of arguments");
+        }
 
-        // Should fail on TLSv1.3 and up.
-        runAndCheckException(
-                // The conditions to reproduce the bug being fixed only met when
-                // 'TLS' is specified, i.e. when older versions of protocol are
-                // supported besides TLSv1.3.
-                () -> new MD5NotAllowedInTLS13CertificateSignature("TLS").run(),
-                serverEx -> {
-                    Throwable clientEx = serverEx.getSuppressed()[0];
-                    assertTrue(clientEx instanceof SSLHandshakeException);
-                    assertTrue(clientEx.getMessage().startsWith(
-                            "(bad_certificate)"
-                                    + " PKIX path validation failed: "
-                                    + "java.security.cert.CertPathValidatorException:"
-                                    + " Algorithm constraints check failed on "
-                                    + "MD5withRSA signature and RSA key"));
-                });
+        String keyAlg = args[0];
+        String certSigAlg = args[1];
+        String constraintAlgo = args[2];
+        boolean fail = Boolean.parseBoolean(args[3]);
 
-        // Should run fine on TLSv1.2.
-        new MD5NotAllowedInTLS13CertificateSignature("TLSv1.2").run();
+        // Note: CertificateBuilder generates RSASSA-PSS certificate
+        // signature using SHA-384 digest algorithm by default.
+        Security.setProperty("jdk.tls.disabledAlgorithms",
+                constraintAlgo + " usage CertificateSignature");
+
+        for (String protocol : new String[]{"TLSv1.3", "TLSv1.2"}) {
+            var test = new RsaSsaPssConstraints(protocol, keyAlg, certSigAlg);
+
+            final String errorMsg = protocol.equals("TLSv1.2") ?
+                    "no cipher suites in common" :
+                    "No available authentication scheme";
+
+            if (fail) {
+                runAndCheckException(test::run,
+                        serverEx -> {
+                            assertTrue(
+                                    serverEx instanceof SSLHandshakeException);
+                            assertEquals(serverEx.getMessage(),
+                                    "(handshake_failure) " + errorMsg);
+                        });
+            } else {
+                test.run();
+            }
+        }
+
+        // Disable KeyManager's algorithm constraints checking and
+        // check against TrustManager's local supported signature
+        // algorithms on the client side.
+        System.setProperty(
+                "jdk.tls.SunX509KeyManager.certChecking", "false");
+
+        for (String protocol : new String[]{"TLSv1.3", "TLSv1.2"}) {
+            var test = new RsaSsaPssConstraints(protocol, keyAlg, certSigAlg);
+
+            if (fail) {
+                runAndCheckException(test::run,
+                        serverEx -> {
+                            Throwable clientEx = serverEx.getSuppressed()[0];
+                            assertTrue(clientEx instanceof SSLHandshakeException
+                                    || serverEx instanceof SSLHandshakeException);
+                        });
+            } else {
+                test.run();
+            }
+        }
     }
 
     @Override
@@ -143,18 +192,12 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         final char[] passphrase = "passphrase".toCharArray();
         ks.setKeyEntry("Whatever", privateKey, passphrase, chain);
 
-        // Using PKIX TrustManager - this is where MD5 signature check is done.
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(ks);
 
         // create SSL context
         SSLContext ctx = SSLContext.getInstance(protocol);
 
-        // Disable KeyManager's algorithm constraints checking,
-        // so we check against local supported signature
-        // algorithms which constitutes the fix being tested.
-        System.setProperty(
-                "jdk.tls.SunX509KeyManager.certChecking", "false");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
@@ -164,48 +207,48 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
     }
 
     // Certificate-building helper methods.
-    // Certificates are signed with signature using MD5WithRSA algorithm.
 
     private void setupCertificates() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
         KeyPair caKeys = kpg.generateKeyPair();
         this.serverKeys = kpg.generateKeyPair();
         this.clientKeys = kpg.generateKeyPair();
 
-        this.trustedCert = createTrustedCert(caKeys);
+        this.trustedCert = createTrustedCert(caKeys, certSigAlg);
 
         this.serverCert = customCertificateBuilder(
                 "O=Some-Org, L=Some-City, ST=Some-State, C=US",
                 serverKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
-                .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
+                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
 
         this.clientCert = customCertificateBuilder(
                 "CN=localhost, OU=SSL-Client, O=Some-Org, L=Some-City, ST=Some-State, C=US",
                 clientKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
-                .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
+                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
     }
 
-    private static X509Certificate createTrustedCert(KeyPair caKeys)
+    private static X509Certificate createTrustedCert(
+            KeyPair caKeys, String certSigAlg)
             throws Exception {
         SecureRandom random = new SecureRandom();
 
         KeyIdentifier kid = new KeyIdentifier(caKeys.getPublic());
         GeneralNames gns = new GeneralNames();
         GeneralName name = new GeneralName(new X500Name(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US"));
+                "O=Trusted-Org, L=Some-City, ST=Some-State, C=US"));
         gns.add(name);
         BigInteger serialNumber = BigInteger.valueOf(
                 random.nextLong(1000000) + 1);
         return customCertificateBuilder(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
+                name.toString(),
                 caKeys.getPublic(), caKeys.getPublic())
                 .setSerialNumber(serialNumber)
                 .addExtension(new AuthorityKeyIdentifierExtension(kid, gns,
                         new SerialNumber(serialNumber)))
                 .addBasicConstraintsExt(true, true, -1)
-                .build(null, caKeys.getPrivate(), "MD5WithRSA");
+                .build(null, caKeys.getPrivate(), certSigAlg);
     }
 
     private static CertificateBuilder customCertificateBuilder(
@@ -228,5 +271,4 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
 
         return builder;
     }
-
 }
