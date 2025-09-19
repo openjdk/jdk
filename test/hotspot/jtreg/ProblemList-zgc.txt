@@ -61,7 +61,8 @@ serviceability/sa/ClhsdbPrintAs.java                          8307393   generic-
 serviceability/sa/ClhsdbPrintStatics.java                     8307393   generic-all
 serviceability/sa/ClhsdbPstack.java#core                      8307393   generic-all
 serviceability/sa/ClhsdbPstack.java#process                   8307393   generic-all
-serviceability/sa/ClhsdbScanOops.java                         8307393   generic-all
+serviceability/sa/ClhsdbScanOops.java#parallel                8307393   generic-all
+serviceability/sa/ClhsdbScanOops.java#serial                  8307393   generic-all
 serviceability/sa/ClhsdbSource.java                           8307393   generic-all
 serviceability/sa/ClhsdbSymbol.java                           8307393   generic-all
 serviceability/sa/ClhsdbThread.java                           8307393   generic-all
