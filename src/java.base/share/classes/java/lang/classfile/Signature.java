@@ -38,7 +38,6 @@ import java.util.Optional;
 
 import jdk.internal.classfile.impl.SignaturesImpl;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.constant.ConstantUtils;
 
 import static java.util.Objects.requireNonNull;
 

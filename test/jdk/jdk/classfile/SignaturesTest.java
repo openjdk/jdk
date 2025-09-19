@@ -295,6 +295,7 @@ class SignaturesTest {
         Lcom/example/Outer<Ljava/lang/String;>
         Lcom/example/Outer<Ljava/lang/String;>.
         Lcom/example/Outer<Ljava/lang/String;>.Inner<[I>
+        [V
         """.lines().forEach(assertThrows(Signature::parseFrom));
     }
 
@@ -361,6 +362,7 @@ class SignaturesTest {
         (LSet<?Kind<*>;>;)V
         <T::LA>()V
         (TT;I)VI
+        (V)V
         """.lines().forEach(assertThrows(MethodSignature::parseFrom));
     }
 

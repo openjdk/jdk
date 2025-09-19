@@ -73,7 +73,7 @@ public final class SignaturesImpl {
             while (!match(')')) {
                 if (paramTypes == null)
                     paramTypes = new ArrayList<>();
-                paramTypes.add(typeSig());
+                paramTypes.add(validateNonVoid(typeSig()));
             }
             Signature returnType = typeSig();
             ArrayList<ThrowableSig> throwsTypes = null;
