@@ -26,18 +26,40 @@
 #include "runtime/os.hpp"
 #include "utilities/classpathStream.hpp"
 
-const char* ClasspathStream::get_next() {
-  while (_class_path[_end] != '\0' && _class_path[_end] != os::path_separator()[0]) {
-    _end++;
+ClasspathStream::ClasspathStream(const char* classpath) {
+  _cp = classpath;
+  skip_blank_paths();
+}
+
+char ClasspathStream::separator() {
+  // All supported platforms have a single character path separator.
+  return os::path_separator()[0];
+}
+
+void ClasspathStream::skip_blank_paths() {
+  while (*_cp == separator()) {
+    _cp++;
   }
-  int path_len = _end - _start;
+}
+
+const char* ClasspathStream::get_next() {
+  assert(has_next(), "call this only after you checked has_next()");
+  assert(*_cp != separator(), "ensured by constructor and get_next()");
+
+  const char* end = _cp + 1;
+  while (*end != separator() && *end != '\0') {
+    end++;
+  }
+
+  int path_len = end - _cp;
   char* path = NEW_RESOURCE_ARRAY(char, path_len + 1);
-  strncpy(path, &_class_path[_start], path_len);
+  strncpy(path, _cp, path_len);
   path[path_len] = '\0';
 
-  while (_class_path[_end] == os::path_separator()[0]) {
-    _end++;
-  }
-  _start = _end;
+  assert(strlen(path) > 0, "must be");
+
+  _cp = end;
+  skip_blank_paths();
+
   return path;
 }

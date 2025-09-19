@@ -164,7 +164,7 @@ static char* get_user_tmp_dir(const char* user) {
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   // construct the path name to user specific tmp directory
-  os::snprintf(dirname, nbytes, "%s\\%s_%s", tmpdir, perfdir, user);
+  os::snprintf_checked(dirname, nbytes, "%s\\%s_%s", tmpdir, perfdir, user);
 
   return dirname;
 }
@@ -454,7 +454,7 @@ static char *get_sharedmem_objectname(const char* user, int vmid) {
   //
   nbytes += UINT_CHARS;
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  os::snprintf(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
+  os::snprintf_checked(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
 
   return name;
 }
@@ -470,7 +470,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid) {
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  os::snprintf(name, nbytes, "%s\\%d", dirname, vmid);
+  os::snprintf_checked(name, nbytes, "%s\\%d", dirname, vmid);
 
   return name;
 }
@@ -1606,10 +1606,8 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   // using resource arrays for these names prevents the leaks
   // that would otherwise occur.
   //
-  char* rfilename = NEW_RESOURCE_ARRAY(char, strlen(filename) + 1);
-  char* robjectname = NEW_RESOURCE_ARRAY(char, strlen(objectname) + 1);
-  strcpy(rfilename, filename);
-  strcpy(robjectname, objectname);
+  char* rfilename = ResourceArea::strdup(THREAD, filename);
+  char* robjectname = ResourceArea::strdup(THREAD, objectname);
 
   // free the c heap resources that are no longer needed
   FREE_C_HEAP_ARRAY(char, luser);

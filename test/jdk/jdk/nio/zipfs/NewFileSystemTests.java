@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,17 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.testng.Assert.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 /**
  * @test
@@ -168,6 +174,96 @@ public class NewFileSystemTests {
         Map<String, ?> nullMap = null;
         assertThrows(NullPointerException.class, () ->
                 FileSystems.newFileSystem(Path.of("basic.jar"), nullMap));
+    }
+
+    /**
+     * Validate that without {@code "create" = true}, a ZIP file system cannot be
+     * opened if the underlying file is missing, but even with this set, a ZIP
+     * file system cannot be opened for conflicting or invalid access modes.
+     */
+    @DataProvider(name = "badEnvMap")
+    protected Object[][] badEnvMap() {
+        return new Object[][]{
+                {Map.of(), NoSuchFileException.class},
+                {Map.of("accessMode", "readOnly"), NoSuchFileException.class},
+                {Map.of("accessMode", "readWrite"), NoSuchFileException.class},
+                {Map.of("create", true, "accessMode", "readOnly"), IllegalArgumentException.class},
+                {Map.of("create", true, "accessMode", "badValue"), IllegalArgumentException.class},
+        };
+    }
+    @Test(dataProvider = "badEnvMap")
+    public void badArgumentsFailure(Map<String, String> env, Class<? extends Throwable> exception) throws IOException {
+        assertThrows(exception, () -> FileSystems.newFileSystem(Path.of("no_such.zip"), env));
+    }
+
+    /**
+     * Validate that multi-release JARs can be opened read-write if no release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarReadWriteSuccess() throws IOException {
+        // Multi-release JARs, when opened with a specified version are inherently read-only.
+        Path multiReleaseJar = createMultiReleaseJar();
+        try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("accessMode", "readWrite"))) {
+            assertFalse(fs.isReadOnly());
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "Default version",
+                    "unexpected file content");
+        }
+    }
+
+    /**
+     * Validate that when the underlying file is read-only, it cannot be opened in
+     * read-write mode.
+     */
+    @Test
+    public void readOnlyZipFileFailure() throws IOException {
+        // Underlying file is read-only.
+        Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
+        // In theory this can fail, and we should avoid unwanted false-negatives.
+        if (readOnlyZip.toFile().setReadOnly()) {
+            assertThrows(IOException.class,
+                    () -> FileSystems.newFileSystem(readOnlyZip, Map.of("accessMode", "readWrite")));
+        }
+    }
+
+    /**
+     * Validate that multi-release JAR is opened read-only by default if a release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarDefaultReadOnly() throws IOException {
+        Path multiReleaseJar = createMultiReleaseJar();
+        try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("releaseVersion", "1"))) {
+            assertTrue(fs.isReadOnly());
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "First version",
+                    "unexpected file content");
+        }
+    }
+
+    /**
+     * Validate that multi-release JARs cannot be opened read-write if a release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarReadWriteFailure() throws IOException {
+        Path multiReleaseJar = createMultiReleaseJar();
+        assertThrows(IOException.class,
+                () -> FileSystems.newFileSystem(
+                        multiReleaseJar,
+                        Map.of("accessMode", "readWrite", "releaseVersion", "1")));
+    }
+
+    private static Path createMultiReleaseJar() throws IOException {
+        return Utils.createJarFile("multi_release.jar", Map.of(
+                // Newline required for attribute to be read from Manifest file.
+                "META-INF/MANIFEST.MF", "Multi-Release: true\n",
+                "META-INF/versions/1/file.txt", "First version",
+                "META-INF/versions/2/file.txt", "Second version",
+                "file.txt", "Default version"));
     }
 
     /*

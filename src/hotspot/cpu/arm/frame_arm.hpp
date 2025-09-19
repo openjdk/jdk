@@ -108,6 +108,9 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null = false);
+
+  void setup(address pc);
   void init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   // accessors for the instance variables

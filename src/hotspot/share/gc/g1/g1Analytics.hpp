@@ -44,7 +44,15 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq _concurrent_mark_cleanup_times_ms;
 
   TruncatedSeq _alloc_rate_ms_seq;
-  double        _prev_collection_pause_end_ms;
+  double       _prev_collection_pause_end_ms;
+
+  // Records the total GC CPU time (in ms) at the end of the last GC pause.
+  // Used as a baseline to calculate CPU time spent in GC threads between pauses.
+  double _gc_cpu_time_at_pause_end_ms;
+
+  // CPU time (ms) spent by GC threads between the end of the last pause
+  // and the start of the current pause; calculated at start of a GC pause.
+  double _concurrent_gc_cpu_time_ms;
 
   TruncatedSeq _concurrent_refine_rate_ms_seq;
   TruncatedSeq _dirtied_cards_rate_ms_seq;
@@ -75,10 +83,10 @@ class G1Analytics: public CHeapObj<mtGC> {
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq _recent_prev_end_times_for_all_gcs_sec;
 
-  // Cached values for long and short term pause time ratios. See
-  // compute_pause_time_ratios() for how they are computed.
-  double _long_term_pause_time_ratio;
-  double _short_term_pause_time_ratio;
+  // Cached values for long and short term gc time ratios. See
+  // update_gc_time_ratios() for how they are computed.
+  double _long_term_gc_time_ratio;
+  double _short_term_gc_time_ratio;
 
   double predict_in_unit_interval(TruncatedSeq const* seq) const;
   size_t predict_size(TruncatedSeq const* seq) const;
@@ -102,15 +110,15 @@ public:
     return _prev_collection_pause_end_ms;
   }
 
-  double long_term_pause_time_ratio() const {
-    return _long_term_pause_time_ratio;
+  double long_term_gc_time_ratio() const {
+    return _long_term_gc_time_ratio;
   }
 
-  double short_term_pause_time_ratio() const {
-    return _short_term_pause_time_ratio;
+  double short_term_gc_time_ratio() const {
+    return _short_term_gc_time_ratio;
   }
 
-  uint number_of_recorded_pause_times() const {
+  static constexpr uint max_num_of_recorded_pause_times() {
     return NumPrevPausesForHeuristics;
   }
 
@@ -121,6 +129,20 @@ public:
   void set_prev_collection_pause_end_ms(double ms) {
     _prev_collection_pause_end_ms = ms;
   }
+
+  void set_gc_cpu_time_at_pause_end_ms(double ms) {
+    _gc_cpu_time_at_pause_end_ms = ms;
+  }
+
+  double gc_cpu_time_at_pause_end_ms() const {
+    return _gc_cpu_time_at_pause_end_ms;
+  }
+
+  void set_concurrent_gc_cpu_time_ms(double ms) {
+    _concurrent_gc_cpu_time_ms = ms;
+  }
+
+  double gc_cpu_time_ms() const;
 
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
@@ -173,8 +195,8 @@ public:
   size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.
-  void update_recent_gc_times(double end_time_sec, double elapsed_ms);
-  void compute_pause_time_ratios(double end_time_sec, double pause_time_ms);
+  void update_recent_gc_times(double end_time_sec, double gc_time_ms);
+  void update_gc_time_ratios(double end_time_sec, double pause_time_ms);
 };
 
 #endif // SHARE_GC_G1_G1ANALYTICS_HPP

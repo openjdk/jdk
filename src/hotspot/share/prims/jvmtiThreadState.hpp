@@ -77,7 +77,7 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 //
 // Virtual Thread Mount State Transition (VTMS transition) mechanism
 //
-class JvmtiVTMSTransitionDisabler {
+class JvmtiVTMSTransitionDisabler : public AnyObj {
  private:
   static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
@@ -101,10 +101,10 @@ class JvmtiVTMSTransitionDisabler {
   static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
   static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
 
-  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
-  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
-  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
-  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+  static void inc_sync_protocol_enabled_count()      { AtomicAccess::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { AtomicAccess::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return AtomicAccess::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return AtomicAccess::load(&_sync_protocol_enabled_permanently); }
 
   static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
 
@@ -312,6 +312,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void set_thread(JavaThread* thread);
   oop get_thread_oop();
 
+  void update_thread_oop_during_vm_start();
+
   inline bool is_virtual() { return _is_virtual; } // the _thread is virtual
 
   inline bool is_exception_detected()  { return _exception_state == ES_DETECTED;  }
@@ -441,15 +443,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     }
     return klass;
   }
-
-  // Todo: get rid of this!
- private:
-  bool _debuggable;
- public:
-  // Should the thread be enumerated by jvmtiInternal::GetAllThreads?
-  bool is_debuggable()                 { return _debuggable; }
-  // If a thread cannot be suspended (has no valid last_java_frame) then it gets marked !debuggable
-  void set_debuggable(bool debuggable) { _debuggable = debuggable; }
 
  public:
 

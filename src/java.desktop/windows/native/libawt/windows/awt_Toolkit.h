@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,23 +122,23 @@ class CriticalSection {
 // lock/unlock actions
 
 #define CRITICAL_SECTION_ENTER(cs) { \
-    J2dTraceLn4(J2D_TRACE_VERBOSE2, \
-                "CS.Wait:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+    J2dTraceLn(J2D_TRACE_VERBOSE2, \
+               "CS.Wait:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Enter(); \
-    J2dTraceLn4(J2D_TRACE_VERBOSE2, \
-                "CS.Enter: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+    J2dTraceLn(J2D_TRACE_VERBOSE2, \
+               "CS.Enter: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 #define CRITICAL_SECTION_LEAVE(cs) { \
-    J2dTraceLn4(J2D_TRACE_VERBOSE2, \
-                "CS.Leave: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+    J2dTraceLn(J2D_TRACE_VERBOSE2, \
+               "CS.Leave: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Leave(); \
-    J2dTraceLn4(J2D_TRACE_VERBOSE2, \
-                "CS.Left:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+    J2dTraceLn(J2D_TRACE_VERBOSE2, \
+               "CS.Left:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 // Redefine WinAPI values related to touch input, if OS < Windows 7.

@@ -34,7 +34,7 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 
 import com.apple.laf.AquaUtils.*;
 
-public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
+public final class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
     private static final RecyclableSingleton<ToolBarBorder> toolBarBorder = new RecyclableSingletonFromDefaultConstructor<ToolBarBorder>(ToolBarBorder.class);
     public static Border getToolBarBorder() {
         return toolBarBorder.get();
@@ -44,10 +44,14 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         return new AquaToolBarUI();
     }
 
+    @Override
     protected void setBorderToNonRollover(final Component c) { }
+    @Override
     protected void setBorderToNormal(final Component c) { }
+    @Override
     protected void setBorderToRollover(final Component c) { }
 
+    @Override
     protected RootPaneContainer createFloatingWindow(final JToolBar toolbar) {
         final RootPaneContainer window = super.createFloatingWindow(toolbar);
         window.getRootPane().putClientProperty("Window.style", "small");
@@ -56,7 +60,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
 
     /* ToolBarBorder and drag-off handle, based loosely on MetalBumps */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
+    static final class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
         protected void fillHandle(final Graphics g, final int x1, final int y1, final int x2, final int y2, final boolean horizontal) {
             g.setColor(UIManager.getColor("ToolBar.borderHandleColor"));
             if (horizontal) {
@@ -70,6 +74,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             }
         }
 
+        @Override
         public void paintBorder(final java.awt.Component c, final Graphics g, int x, int y, final int w, final int h) {
             g.translate(x, y);
 
@@ -100,11 +105,13 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             g.translate(-x, -y);
         }
 
+        @Override
         public Insets getBorderInsets(final java.awt.Component c) {
             final Insets borderInsets = new Insets(5, 5, 5, 5);
             return getBorderInsets(c, borderInsets);
         }
 
+        @Override
         public Insets getBorderInsets(final java.awt.Component c, final Insets borderInsets) {
             borderInsets.left = 4;
             borderInsets.right = 4;
@@ -132,6 +139,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             return borderInsets;
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }

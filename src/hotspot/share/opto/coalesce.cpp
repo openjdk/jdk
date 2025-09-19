@@ -581,7 +581,7 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
         if( _ulr.insert(lidx) ) {
           // Infinite-stack neighbors do not alter colorability, as they
           // can always color to some other color.
-          if( !lrgs(lidx).mask().is_AllStack() ) {
+          if( !lrgs(lidx).mask().is_infinite_stack() ) {
             // If this coalesce will make any new neighbor uncolorable,
             // do not coalesce.
             if( lrgs(lidx).just_lo_degree() )
@@ -698,7 +698,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // Number of bits free
   uint rm_size = rm.Size();
 
-  if (UseFPUForSpilling && rm.is_AllStack() ) {
+  if (UseFPUForSpilling && rm.is_infinite_stack()) {
     // Don't coalesce when frequency difference is large
     Block *dst_b = _phc._cfg.get_block_for_node(dst_copy);
     Block *src_def_b = _phc._cfg.get_block_for_node(src_def);
@@ -707,7 +707,9 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   }
 
   // If we can use any stack slot, then effective size is infinite
-  if( rm.is_AllStack() ) rm_size += 1000000;
+  if (rm.is_infinite_stack()) {
+    rm_size += 1000000;
+  }
   // Incompatible masks, no way to coalesce
   if( rm_size == 0 ) return false;
 

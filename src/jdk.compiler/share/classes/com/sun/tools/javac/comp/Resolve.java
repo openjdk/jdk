@@ -4008,11 +4008,19 @@ public class Resolve {
      * @param v      The variable
      */
     public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
-        return env.info.ctorPrologue &&
-            (v.flags() & STATIC) == 0 &&
-            v.owner.kind == TYP &&
-            types.isSubtype(env.enclClass.type, v.owner.type) &&
-            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
+        if (env.info.ctorPrologue &&
+                (v.flags() & STATIC) == 0 &&
+                v.isMemberOf(env.enclClass.sym, types)) {
+
+            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
+            if (base != null) {
+                return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
+            }
+
+            // It's an early reference to an instance field member of the current instance
+            return true;
+        }
+        return false;
     }
 
 /* ***************************************************************************

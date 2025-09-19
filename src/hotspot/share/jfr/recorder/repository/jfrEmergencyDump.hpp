@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class JfrEmergencyDump : AllStatic {
   static const char* chunk_path(const char* repository_path);
   static void on_vm_error(const char* repository_path);
   static void on_vm_error_report(outputStream* st, const char* repository_path);
-  static void on_vm_shutdown(bool exception_handler);
+  static void on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown);
 };
 
 #endif // SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP

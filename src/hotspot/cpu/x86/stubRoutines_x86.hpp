@@ -44,6 +44,7 @@ enum platform_dependent_constants {
 
 class x86 {
  friend class StubGenerator;
+ friend class StubRoutines;
  friend class VMStructs;
 
   // declare fields for arch-specific entries

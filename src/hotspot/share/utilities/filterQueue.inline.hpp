@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ void FilterQueue<E>::push(E data) {
   while (true){
     head = load_first();
     insnode->_next = head;
-    if (Atomic::cmpxchg(&_first, head, insnode) == head) {
+    if (AtomicAccess::cmpxchg(&_first, head, insnode) == head) {
       break;
     }
     yield.wait();
@@ -91,7 +91,7 @@ E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
 
     if (match_prev == nullptr) {
       // Working on first
-      if (Atomic::cmpxchg(&_first, match, match->_next) == match) {
+      if (AtomicAccess::cmpxchg(&_first, match, match->_next) == match) {
         E ret = match->_data;
         delete match;
         return ret;

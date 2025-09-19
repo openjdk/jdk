@@ -25,7 +25,10 @@
 
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // sample points per window
@@ -34,7 +37,44 @@ constexpr static const JfrSamplerParams _disabled_params = {
                                                              false // reconfigure
                                                            };
 
-static JfrEventThrottler* _throttler = nullptr;
+constexpr static const JfrEventId throttleble_events[] = {
+    JfrCPUTimeSampleEvent, JfrObjectAllocationSampleEvent,  JfrSafepointLatencyEvent
+};
+constexpr static int num_throttled_events = sizeof(throttleble_events) / sizeof(throttleble_events[0]);
+
+// Throttler-by-ID lookup table
+class ThrottlerLookupTable {
+  static constexpr int max = (int)LAST_EVENT_ID;
+  STATIC_ASSERT(max < 1000); // should this ever get unreasonably large, we rethink this table.
+  JfrEventThrottler* _table[max];
+public:
+  ThrottlerLookupTable() { memset(_table, 0, sizeof(_table)); }
+
+  bool initialize() {
+    for (int i = 0; i < num_throttled_events; i++) {
+      const JfrEventId id = throttleble_events[i];
+      JfrEventThrottler* p = JfrEventThrottler::create_throttler(id);
+      _table[(int)id] = p;
+      if (p == nullptr) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void destroy() {
+    for (int i = 0; i < max; i++) {
+      delete _table[i];
+      _table[i] = nullptr;
+    }
+  }
+
+  JfrEventThrottler* at(JfrEventId id) const {
+    return _table[(int)id];
+  }
+};
+
+static ThrottlerLookupTable _throttler_table;
 
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
@@ -47,30 +87,36 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   _update(false) {}
 
 bool JfrEventThrottler::create() {
-  assert(_throttler == nullptr, "invariant");
-  _throttler = new JfrEventThrottler(JfrObjectAllocationSampleEvent);
-  return _throttler != nullptr && _throttler->initialize();
+  bool rc = _throttler_table.initialize();
+  if (rc) {
+    _throttler_table.at(JfrCPUTimeSampleEvent)->_disabled = true; // CPU time sampler disabled
+  }
+  return rc;
 }
 
 void JfrEventThrottler::destroy() {
-  delete _throttler;
-  _throttler = nullptr;
+  _throttler_table.destroy();
 }
 
-// There is currently only one throttler instance, for the jdk.ObjectAllocationSample event.
-// When introducing additional throttlers, also add a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
-  assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
-  assert(event_id == JfrObjectAllocationSampleEvent, "Event type has an unconfigured throttler");
-  return event_id == JfrObjectAllocationSampleEvent ? _throttler : nullptr;
+  JfrEventThrottler* const throttler = _throttler_table.at(event_id);
+  assert(throttler != nullptr, "Event type %d has an unconfigured throttler", (int)event_id);
+  return throttler;
 }
 
 void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int64_t period_ms) {
-  if (event_id != JfrObjectAllocationSampleEvent) {
-    return;
+  JfrEventThrottler* const throttler = _throttler_table.at(event_id);
+  assert(throttler != nullptr, "Event type %d has an unconfigured throttler", (int)event_id);
+  throttler->configure(sample_size, period_ms);
+}
+
+JfrEventThrottler* JfrEventThrottler::create_throttler(JfrEventId id) {
+  JfrEventThrottler* p = new JfrEventThrottler(id);
+  if (p != nullptr && p->initialize() == false) {
+    delete p;
+    p = nullptr;
   }
-  assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
-  _throttler->configure(sample_size, period_ms);
+  return p;
 }
 
 /*
@@ -92,8 +138,8 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 // Predicate for event selection.
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
-  if (throttler == nullptr) return true;
-  return _throttler->_disabled ? true : _throttler->sample(timestamp);
+  assert(throttler != nullptr, "invariant");
+  return throttler->_disabled ? true : throttler->sample(timestamp);
 }
 
 /*

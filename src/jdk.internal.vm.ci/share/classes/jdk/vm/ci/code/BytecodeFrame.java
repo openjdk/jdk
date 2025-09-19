@@ -387,4 +387,11 @@ public final class BytecodeFrame extends BytecodePosition {
     public String toString() {
         return CodeUtil.append(new StringBuilder(100), this).toString();
     }
+
+    /**
+     * Returns a copy of the array describing the Java kinds in {@link #values}.
+     */
+    public JavaKind[] getSlotKinds() {
+        return (slotKinds == null) ? null : slotKinds.clone();
+    }
 }

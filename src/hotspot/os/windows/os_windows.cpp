@@ -42,7 +42,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -60,7 +60,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threads.hpp"
@@ -757,8 +756,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
-  int limit = 3;
-  do {
+  int trials_remaining = 4;
+  DWORD next_delay_ms = 1;
+  while (true) {
     thread_handle =
       (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
@@ -766,7 +766,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                              thread,
                              initflag,
                              &thread_id);
-  } while (thread_handle == nullptr && errno == EAGAIN && limit-- > 0);
+
+    if (thread_handle != nullptr) {
+      break;
+    }
+
+    if (errno != EAGAIN) {
+      break;
+    }
+
+    if (--trials_remaining <= 0) {
+      break;
+    }
+
+    log_debug(os, thread)("Failed to start native thread (%s), retrying after %dms.", os::errno_name(errno), next_delay_ms);
+    Sleep(next_delay_ms);
+    next_delay_ms *= 2;
+  }
 
   ResourceMark rm;
   char buf[64];
@@ -832,39 +848,56 @@ jlong os::elapsed_frequency() {
 }
 
 
-julong os::available_memory() {
-  return win32::available_memory();
+bool os::available_memory(size_t& value) {
+  return win32::available_memory(value);
 }
 
-julong os::free_memory() {
-  return win32::available_memory();
+bool os::free_memory(size_t& value) {
+  return win32::available_memory(value);
 }
 
-julong os::win32::available_memory() {
+bool os::win32::available_memory(size_t& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-
-  return (julong)ms.ullAvailPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullAvailPhys);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullTotalPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<size_t>(ms.ullAvailPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-julong os::physical_memory() {
+size_t os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -881,13 +914,6 @@ size_t os::rss() {
   return rss;
 }
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  MEMORYSTATUSEX ms;
-  ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  *limit = (size_t)ms.ullAvailVirtual;
-  return true;
-}
 
 int os::active_processor_count() {
   // User has overridden the number of active processors
@@ -1178,19 +1204,36 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
   FILETIME kernel;
   FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
   }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
 }
 
 jlong os::javaTimeMillis() {
@@ -1385,7 +1428,7 @@ void os::die() {
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
-    snprintf(name, MAX_PATH, "<not available>");
+    os::snprintf_checked(name, MAX_PATH, "<not available>");
   }
 
   JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
@@ -1401,7 +1444,7 @@ void  os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     if (tl == 0) {
-      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+      os::snprintf_checked(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
     JFR_ONLY(unload_event.set_error_msg(buf);)
   }
@@ -1696,6 +1739,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -1792,14 +1841,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load %s-bit .dll on a %s-bit platform",
-                 lib_arch_str, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load %s-bit .dll on a %s-bit platform",
+                         lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                 lib_arch, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                         lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -2228,6 +2277,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
@@ -2411,7 +2462,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_sem != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -2424,7 +2475,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -2607,14 +2658,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2735,19 +2784,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
-
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
 
     if (in_java) {
       switch (exception_code) {
@@ -3179,7 +3215,7 @@ int os::create_file_for_heap(const char* dir) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
   assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
@@ -3275,6 +3311,51 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+size_t os::commit_memory_limit() {
+  BOOL is_in_job_object = false;
+  BOOL res = IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to determine whether the process is running in a job failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling IsProcessInJob.
+    return SIZE_MAX;
+  }
+
+  if (!is_in_job_object) {
+    // Not limited by a Job Object
+    return SIZE_MAX;
+  }
+
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+  res = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr);
+  if (!res) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed for commit limit: %s", buf_len != 0 ? buf : "<unknown error>");
+
+    // Conservatively assume no limit when there was an error calling QueryInformationJobObject.
+    return SIZE_MAX;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) {
+    return jeli.ProcessMemoryLimit;
+  }
+
+  if (jeli.BasicLimitInformation.LimitFlags & JOB_OBJECT_LIMIT_JOB_MEMORY) {
+    return jeli.JobMemoryLimit;
+  }
+
+  // No limit
+  return SIZE_MAX;
+}
+
+size_t os::reserve_memory_limit() {
+  // Virtual address space cannot be limited on Windows.
+  return SIZE_MAX;
 }
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
@@ -3713,7 +3794,6 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
 
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
-bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
@@ -3884,7 +3964,7 @@ int os::current_process_id() {
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
-julong os::win32::_physical_memory           = 0;
+size_t os::win32::_physical_memory           = 0;
 
 bool   os::win32::_is_windows_server         = false;
 
@@ -4114,8 +4194,11 @@ void os::win32::initialize_system_info() {
 
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
-  GlobalMemoryStatusEx(&ms);
-  _physical_memory = ms.ullTotalPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res != TRUE) {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
+  }
+  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.
@@ -4214,15 +4297,15 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, nullptr)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (Atomic::load_acquire(&process_exiting) == 0) {
+    } else if (AtomicAccess::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
+        AtomicAccess::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
       }
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD && Atomic::load_acquire(&process_exiting) == 0) {
+      if (what == EPT_THREAD && AtomicAccess::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -4335,7 +4418,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     }
 
     if (!registered &&
-        Atomic::load_acquire(&process_exiting) != 0 &&
+        AtomicAccess::load_acquire(&process_exiting) != 0 &&
         process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()
@@ -4609,6 +4692,63 @@ static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* n
   }
 }
 
+// This method checks if a wide path is actually a symbolic link
+static bool is_symbolic_link(const wchar_t* wide_path) {
+  WIN32_FIND_DATAW fd;
+  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+  if (f != INVALID_HANDLE_VALUE) {
+    const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+    if (::FindClose(f) == 0) {
+      DWORD errcode = ::GetLastError();
+      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%lu.", errcode);
+    }
+    return result;
+  } else {
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%lu.", errcode);
+    return false;
+  }
+}
+
+// This method dereferences a symbolic link
+static WCHAR* get_path_to_target(const wchar_t* wide_path) {
+  HANDLE hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (hFile == INVALID_HANDLE_VALUE) {
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%lu.", errcode);
+    return nullptr;
+  }
+
+  // Returned value includes the terminating null character.
+  const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
+                                                              FILE_NAME_NORMALIZED);
+  if (target_path_size == 0) {
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    return nullptr;
+  }
+
+  WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size, mtInternal);
+
+  // The returned size is the length excluding the terminating null character.
+  const size_t res = ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size),
+                                                 FILE_NAME_NORMALIZED);
+  if (res != target_path_size - 1) {
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    return nullptr;
+  }
+
+  if (::CloseHandle(hFile) == 0) {
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%lu.", errcode);
+    return nullptr;
+  }
+
+  return path_to_target;
+}
+
 // Returns the given path as an absolute wide path in unc format. The returned path is null
 // on error (with err being set accordingly) and should be freed via os::free() otherwise.
 // additional_space is the size of space, in wchar_t, the function will additionally add to
@@ -4677,14 +4817,38 @@ int os::stat(const char *path, struct stat *sbuf) {
     return -1;
   }
 
-  WIN32_FILE_ATTRIBUTE_DATA file_data;;
-  BOOL bret = ::GetFileAttributesExW(wide_path, GetFileExInfoStandard, &file_data);
-  os::free(wide_path);
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
 
+  if (is_symlink) {
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr) {
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
+      os::free(wide_path);
+      return -1;
+    }
+  }
+
+  WIN32_FILE_ATTRIBUTE_DATA file_data;;
+  BOOL bret = ::GetFileAttributesExW(is_symlink ? path_to_target : wide_path, GetFileExInfoStandard, &file_data);
+
+  // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
-    errno = ::GetLastError();
+    DWORD errcode = ::GetLastError();
+    if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
+      errno = ENOENT;
+    } else {
+      errno = 0;
+    }
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
+    os::free(wide_path);
+    os::free(path_to_target);
     return -1;
   }
+
+  os::free(wide_path);
+  os::free(path_to_target);
 
   file_attribute_data_to_stat(sbuf, file_data);
   return 0;
@@ -4870,12 +5034,28 @@ int os::open(const char *path, int oflag, int mode) {
     errno = err;
     return -1;
   }
-  int fd = ::_wopen(wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
-  os::free(wide_path);
 
-  if (fd == -1) {
-    errno = ::GetLastError();
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
+
+  if (is_symlink) {
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr) {
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
+      os::free(wide_path);
+      return -1;
+    }
   }
+
+  int fd = ::_wopen(is_symlink ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
+
+  // if opening files failed, errno has been set to indicate the problem
+  if (fd == -1) {
+    log_debug(os)("os::open() failed to _wopen: errno->%s.", strerror(errno));
+  }
+  os::free(wide_path);
+  os::free(path_to_target);
 
   return fd;
 }
@@ -4940,7 +5120,8 @@ bool os::dir_is_empty(const char* path) {
     }
     FindClose(f);
   } else {
-    errno = ::GetLastError();
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("os::dir_is_empty() failed to FindFirstFileW: GetLastError->%lu.", errcode);
   }
 
   return is_empty;
@@ -5403,7 +5584,7 @@ int PlatformEvent::park(jlong Millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return OS_OK;
@@ -5466,7 +5647,7 @@ void PlatformEvent::park() {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;
@@ -5513,7 +5694,7 @@ void PlatformEvent::unpark() {
   // from the first park() call after an unpark() call which will help
   // shake out uses of park() and unpark() without condition variables.
 
-  if (Atomic::xchg(&_Event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_Event, 1) >= 0) return;
 
   ::SetEvent(_ParkHandle);
 }
@@ -5728,61 +5909,34 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// returns true if thread could be suspended,
-// false otherwise
-static bool do_suspend(HANDLE* h) {
-  if (h != nullptr) {
-    if (SuspendThread(*h) != ~0) {
-      return true;
-    }
-  }
-  return false;
-}
+// WINDOWS CONTEXT Flags for THREAD_SAMPLING
+#if defined(AMD64) || defined(_M_ARM64)
+  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
+#endif
 
-// resume the thread
-// calling resume on an active thread is a no-op
-static void do_resume(HANDLE* h) {
-  if (h != nullptr) {
-    ResumeThread(*h);
-  }
-}
-
-// retrieve a suspend/resume context capable handle
-// from the tid. Caller validates handle return value.
-void get_thread_handle_for_extended_context(HANDLE* h,
-                                            DWORD tid) {
-  if (h != nullptr) {
-    *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
-  }
+// Retrieve a suspend/resume context capable handle for the tid.
+// Caller validates handle return value.
+static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
+  return OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
 }
 
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
-  CONTEXT    ctxt;
-  HANDLE     h = nullptr;
-
-  // get context capable handle for thread
-  get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
-
-  // sanity
-  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+  const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
+  if (h == nullptr) {
     return;
   }
-
-  // suspend the thread
-  if (do_suspend(&h)) {
-    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
-    // get thread context
-    GetThreadContext(h, &ctxt);
-    SuspendedThreadTaskContext context(_thread, &ctxt);
-    // pass context to Thread Sampling impl
-    do_task(context);
-    // resume thread
-    do_resume(&h);
+  CONTEXT ctxt;
+  ctxt.ContextFlags = sampling_context_flags;
+  if (SuspendThread(h) != OS_ERR) {
+    if (GetThreadContext(h, &ctxt)) {
+      const SuspendedThreadTaskContext context(_thread, &ctxt);
+      // Pass context to Thread Sampling implementation.
+      do_task(context);
+    }
+    ResumeThread(h);
   }
-
-  // close handle
   CloseHandle(h);
 }
 

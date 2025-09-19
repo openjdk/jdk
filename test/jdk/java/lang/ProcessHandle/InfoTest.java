@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,10 +295,12 @@ public class InfoTest {
                     String expected = "sleep";
                     if (Platform.isWindows()) {
                         expected = "sleep.exe";
-                    } else if (Platform.isBusybox("/bin/sleep")) {
-                        // With busybox sleep is just a sym link to busybox.
-                        // The busbox executable is seen as ProcessHandle.Info command.
-                        expected = "busybox";
+                    } else if (Files.isSymbolicLink(Paths.get("/bin/sleep"))) {
+                        // Busybox sleep is a symbolic link to /bin/busybox.
+                        // Rust coreutils sleep is a symbolic link to coreutils
+                        // The busbox/coreutils executables are seen as ProcessHandle.Info command.
+                        Path executable = Files.readSymbolicLink(Paths.get("/bin/sleep"));
+                        expected = executable.getFileName().toString();
                     }
                     Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);

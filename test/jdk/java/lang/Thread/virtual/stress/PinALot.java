@@ -26,14 +26,14 @@
  * @summary Stress test timed park when pinned
  * @requires vm.debug != true
  * @library /test/lib
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED PinALot 500000
+ * @run main/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED PinALot 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true
  * @library /test/lib
- * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED PinALot 200000
+ * @run main/othervm/native/timeout=1200 --enable-native-access=ALL-UNNAMED PinALot 200000
  */
 
 import java.time.Duration;

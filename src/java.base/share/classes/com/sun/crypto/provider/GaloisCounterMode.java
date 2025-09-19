@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.*;
@@ -910,26 +911,26 @@ abstract class GaloisCounterMode extends CipherSpi {
          */
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
-                // The use of DirectBuffer::address below need not be guarded as
+                // The use of addresses below need not be guarded as
                 // no access is made to actual memory.
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
                 // Get the current memory address for the given ByteBuffers
-                long srcaddr = dsrc.address();
-                long dstaddr = ddst.address();
+                long srcaddr = NIO_ACCESS.getBufferAddress(src);
+                long dstaddr = NIO_ACCESS.getBufferAddress(dst);
 
                 // Find the lowest attachment that is the base memory address
                 // of the shared memory for the src object
                 while (dsrc.attachment() != null) {
-                    srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                    srcaddr = NIO_ACCESS.getBufferAddress((Buffer) dsrc.attachment());
                     dsrc = (DirectBuffer) dsrc.attachment();
                 }
 
                 // Find the lowest attachment that is the base memory address
                 // of the shared memory for the dst object
                 while (ddst.attachment() != null) {
-                    dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                    dstaddr = NIO_ACCESS.getBufferAddress((Buffer) ddst.attachment());
                     ddst = (DirectBuffer) ddst.attachment();
                 }
 
@@ -947,8 +948,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // side, we are not in overlap.
                 // NOTE: inPlaceArray does not apply here as direct buffers run
                 // through a byte[] to get to the combined intrinsic
-                if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                    ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                if (NIO_ACCESS.getBufferAddress(src) - srcaddr + src.position() >=
+                    NIO_ACCESS.getBufferAddress(dst) - dstaddr + dst.position()) {
                     return dst;
                 }
 
@@ -1602,7 +1603,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                         NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
-                                ((DirectBuffer)dst).address(),
+                                NIO_ACCESS.getBufferAddress(dst),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);

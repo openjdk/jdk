@@ -42,7 +42,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -80,7 +80,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
+    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers, ParGCArrayScanChunk),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),

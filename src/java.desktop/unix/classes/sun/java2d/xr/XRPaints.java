@@ -91,7 +91,7 @@ abstract class XRPaints {
 
     abstract void setXRPaint(SunGraphics2D sg2d, Paint paint);
 
-    private static class XRGradient extends XRPaints {
+    private static final class XRGradient extends XRPaints {
         private XRGradient() {
         }
 
@@ -126,7 +126,7 @@ abstract class XRPaints {
            return (int) Math.ceil(Math.sqrt(xDiff*xDiff + yDiff*yDiff));
     }
 
-    private static class XRLinearGradient extends XRPaints {
+    private static final class XRLinearGradient extends XRPaints {
 
         @Override
         boolean isPaintValid(SunGraphics2D sg2d) {
@@ -163,7 +163,7 @@ abstract class XRPaints {
         }
     }
 
-    private static class XRRadialGradient extends XRPaints {
+    private static final class XRRadialGradient extends XRPaints {
 
         @Override
         boolean isPaintValid(SunGraphics2D sg2d) {
@@ -204,7 +204,7 @@ abstract class XRPaints {
         }
     }
 
-    private static class XRTexture extends XRPaints {
+    private static final class XRTexture extends XRPaints {
 
         private XRSurfaceData getAccSrcSurface(XRSurfaceData dstData, BufferedImage bi) {
             // REMIND: this is a hack that attempts to cache the system

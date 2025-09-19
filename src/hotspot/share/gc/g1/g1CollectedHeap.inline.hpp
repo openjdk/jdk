@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -53,10 +53,10 @@ inline bool G1STWIsAliveClosure::do_object_b(oop p) {
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   count = 0;
-  if (Atomic::load(&_cur_claim) >= _list.length()) {
+  if (AtomicAccess::load(&_cur_claim) >= _list.length()) {
     return nullptr;
   }
-  uint claim = Atomic::fetch_then_add(&_cur_claim, _claim_step);
+  uint claim = AtomicAccess::fetch_then_add(&_cur_claim, _claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }
@@ -314,6 +314,10 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
 inline bool G1CollectedHeap::is_collection_set_candidate(const G1HeapRegion* r) const {
   const G1CollectionSetCandidates* candidates = collection_set()->candidates();
   return candidates->contains(r);
+}
+
+inline uint G1CollectedHeap::eden_target_length() const {
+  return _policy->young_list_target_length() - survivor_regions_count();
 }
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP

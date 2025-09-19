@@ -24,7 +24,6 @@
  */
 package jdk.incubator.vector;
 
-import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -70,7 +69,7 @@ import static jdk.internal.vm.vector.Utils.debug;
         }
 
         static String getDefaultName() {
-            return switch (StaticProperty.osArch()) {
+            return switch (System.getProperty("os.arch")) {
                 case "amd64", "x86_64" -> SVML;
                 case "aarch64", "riscv64" -> SLEEF;
                 default -> JAVA;

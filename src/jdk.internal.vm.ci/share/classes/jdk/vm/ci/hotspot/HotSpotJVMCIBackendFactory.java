@@ -27,10 +27,10 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.LongFunction;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 public interface HotSpotJVMCIBackendFactory {
 
@@ -48,7 +48,8 @@ public interface HotSpotJVMCIBackendFactory {
      * @param enumType the class of {@code CPUFeatureType}
      * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
      *            specifies a CPU feature and its value is a mask for a bit in {@code features}
-     * @param features bits specifying CPU features
+     * @param bitMaskSupplier supplier to get the bit mask for the corresponding VM constant
+     * @param featuresSupplier supplier to get the bits specifying CPU features
      * @param renaming maps from VM feature names to enum constant names where the two differ
      * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
      *             enum value
@@ -57,18 +58,19 @@ public interface HotSpotJVMCIBackendFactory {
     static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeatures(
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
-                    long features,
+                    LongFunction<Long> bitMaskSupplier,
+                    LongFunction<Long> featuresSupplier,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
         for (Entry<String, Long> e : constants.entrySet()) {
-            long bitMask = e.getValue();
+            long bitMask = bitMaskSupplier.apply(e.getValue());
             String key = e.getKey();
             if (key.startsWith("VM_Version::CPU_")) {
                 String name = key.substring("VM_Version::CPU_".length());
                 try {
                     CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
-                    if ((features & bitMask) != 0) {
+                    if ((featuresSupplier.apply(e.getValue()) & bitMask) != 0) {
                         outFeatures.add(feature);
                     }
                 } catch (IllegalArgumentException iae) {
@@ -82,57 +84,4 @@ public interface HotSpotJVMCIBackendFactory {
         return outFeatures;
     }
 
-    /**
-     * Converts CPU features bit map into enum constants.
-     *
-     * @param <CPUFeatureType> CPU feature enum type
-     * @param enumType the class of {@code CPUFeatureType}
-     * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
-     *            specifies a CPU feature and its value is a mask for a bit in {@code features}
-     * @param featuresBitMapAddress pointer to {@code VM_Features::_features_bitmap} field of {@code VM_Version::_features}
-     * @param featuresBitMapSize size of feature bit map in bytes
-     * @param renaming maps from VM feature names to enum constant names where the two differ
-     * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
-     *             enum value
-     * @return the set of converted values
-     */
-    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeatures(
-                    Class<CPUFeatureType> enumType,
-                    Map<String, Long> constants,
-                    long featuresBitMapAddress,
-                    long featuresBitMapSize,
-                    Map<String, String> renaming) {
-        EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
-        List<String> missing = new ArrayList<>();
-
-        for (Entry<String, Long> e : constants.entrySet()) {
-            String key = e.getKey();
-            long bitIndex = e.getValue();
-            if (key.startsWith("VM_Version::CPU_")) {
-                String name = key.substring("VM_Version::CPU_".length());
-                try {
-                    final long featuresElementShiftCount = 6; // log (# of bits per long)
-                    final long featuresElementMask = (1L << featuresElementShiftCount) - 1;
-
-                    CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
-
-                    long featureIndex = bitIndex >>> featuresElementShiftCount;
-                    long featureBitMask = 1L << (bitIndex & featuresElementMask);
-                    assert featureIndex < featuresBitMapSize;
-
-                    long featuresElement = UNSAFE.getLong(featuresBitMapAddress + featureIndex * Long.BYTES);
-
-                    if ((featuresElement & featureBitMask) != 0) {
-                        outFeatures.add(feature);
-                    }
-                } catch (IllegalArgumentException iae) {
-                    missing.add(name);
-                }
-            }
-        }
-        if (!missing.isEmpty()) {
-            throw new JVMCIError("Missing CPU feature constants: %s", missing);
-        }
-        return outFeatures;
-    }
 }

@@ -30,21 +30,27 @@
 
 class ClassLoaderData;
 class MetaspaceClosure;
+class ModuleEntry;
 class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
-  static void ensure_module_entry_table_exists(oop class_loader);
+  CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
+#if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);
   static void init_archived_tables();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
+  static void restore_archived_entries_for_null_class_loader_data();
   static oop  restore_archived_oops_for_null_class_loader_data();
   static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
   static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);
+  static ModuleEntry* archived_boot_unnamed_module();
+  static ModuleEntry* archived_unnamed_module(ClassLoaderData* loader_data);
+#endif // INCLUDE_CDS_JAVA_HEAP
   static bool is_full_module_graph_loaded() { return _full_module_graph_loaded; }
 };
 
