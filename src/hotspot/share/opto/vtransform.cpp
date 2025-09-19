@@ -757,7 +757,7 @@ void VTransformApplyState::init_memory_states_and_uses_after_loop() {
 
 // We may have reordered the scalar stores, or replaced them with vectors. Now
 // the last memory state in the loop may have changed. Thus, we need to change
-// the uses of the old last memory state the the new last memory state.
+// the uses of the old last memory state the new last memory state.
 void VTransformApplyState::fix_memory_state_uses_after_loop() {
   for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
     MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
