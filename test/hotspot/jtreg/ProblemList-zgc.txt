@@ -40,7 +40,6 @@ serviceability/sa/ClhsdbClasses.java                          8307393   generic-
 serviceability/sa/ClhsdbDumpclass.java                        8307393   generic-all
 serviceability/sa/ClhsdbDumpheap.java                         8307393   generic-all
 serviceability/sa/ClhsdbField.java                            8307393   generic-all
-serviceability/sa/ClhsdbFindPC.java#apa                       8307393   generic-all
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-core             8307393   generic-all
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-process          8307393   generic-all
 serviceability/sa/ClhsdbFindPC.java#xcomp-core                8307393   generic-all
