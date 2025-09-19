@@ -196,8 +196,7 @@ public final class SSLLogger {
                     if (logger instanceof SSLConsoleLogger) {
                         logger.log(level, msg, formatted);
                     } else {
-                        logger.log(level, () -> msg + ":" + LINE_SEP +
-                                formatted);
+                        logger.log(level, msg + ":" + LINE_SEP + formatted);
                     }
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
