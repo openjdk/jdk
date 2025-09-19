@@ -47,9 +47,10 @@ import java.lang.annotation.Target;
 /// the AOT assembly phase, whereas the latter will not.
 ///
 /// Before adding this annotation to a class _X_, the author must determine
-/// that it's safe to execute the static analyzer of _X_ during the AOT
+/// that it's safe to execute the static initializer of _X_ during the AOT
 /// assembly phase. In addition, all supertypes of _X_ must also have this
-/// annotation.
+/// annotation. If a supertype of _X_ is found to be missing this annotation,
+/// the AOT assembly phase will fail.
 ///
 /// This annotation is only recognized on privileged code and is ignored elsewhere.
 ///

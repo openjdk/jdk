@@ -112,21 +112,18 @@ import java.lang.annotation.Target;
 /// remotely) if the execution of such an API touches _X_ for initialization,
 /// or even if such an API request is in any way sensitive to values stored in
 /// the fields of _X_, even if the sensitivity is a simple reference identity
-/// test.  As noted above, all supertypes of _X_ must also have the
-/// `@AOTSafeClassInitializer` annotation, and must also be safe for AOT
-/// initialization.
+/// test.
 ///
 /// The author of an AOT-initialized class may elect to patch some states at
 /// production startup, using an [AOTRuntimeSetup] method, as long as the
 /// pre-patched field values (present during AOT assembly) are determined to be
 /// compatible with the post-patched values that apply to the production run.
 ///
-/// In the assembly phase, `classFileParser.cpp` performs checks on the annotated
-/// classes, to ensure all supertypes of this class that must be initialized when
-/// this class is initialized have the `@AOTSafeClassInitializer` annotation.
-/// Otherwise, a [ClassFormatError] will be thrown. (This assembly phase restriction
-/// allows module patching and instrumentation to work on annotated classes when
-/// AOT is not enabled)
+/// Before adding this annotation to a class _X_, the author must determine
+/// that it's safe to execute the static initializer of _X_ during the AOT
+/// assembly phase. In addition, all supertypes of _X_ must also have this
+/// annotation. If a supertype of _X_ is found to be missing this annotation,
+/// the AOT assembly phase will fail.
 ///
 /// This annotation is only recognized on privileged code and is ignored elsewhere.
 ///
