@@ -1662,20 +1662,18 @@ static void compaction_with_stealing_work(TaskTerminator* terminator, uint worke
 }
 
 class FillDensePrefixAndCompactionTask: public WorkerTask {
-  uint _num_workers;
   TaskTerminator _terminator;
 
 public:
   FillDensePrefixAndCompactionTask(uint active_workers) :
       WorkerTask("FillDensePrefixAndCompactionTask"),
-      _num_workers(active_workers),
       _terminator(active_workers, ParCompactionManager::region_task_queues()) {
   }
 
   virtual void work(uint worker_id) {
     if (worker_id == 0) {
       auto start = Ticks::now();
-      PSParallelCompact::fill_dead_objs_in_dense_prefix(worker_id, _num_workers);
+      PSParallelCompact::fill_dead_objs_in_dense_prefix();
       log_trace(gc, phases)("Fill dense prefix by worker 0: %.3f ms", (Ticks::now() - start).seconds() * 1000);
     }
     compaction_with_stealing_work(&_terminator, worker_id);
@@ -1706,7 +1704,7 @@ void PSParallelCompact::fill_range_in_dense_prefix(HeapWord* start, HeapWord* en
   } while (addr < end);
 }
 
-void PSParallelCompact::fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers) {
+void PSParallelCompact::fill_dead_objs_in_dense_prefix() {
   ParMarkBitMap* bitmap = mark_bitmap();
 
   HeapWord* const bottom = _space_info[old_space_id].space()->bottom();
