@@ -165,37 +165,47 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Samples a random {@link StructuralName} from the filtered set, according to the weights
-         * of the contained {@link StructuralName}s.
+         * of the contained {@link StructuralName}s, making the sampled {@link StructuralName}
+         * available to an inner scope.
          *
-         * @return The sampled {@link StructuralName}.
+         * @param function The {@link Function} that creates the inner {@link TemplateScope} given
+         *                 the sampled {@link StructuralName}.
+         * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
-         * @throws RendererException If the set was empty.
          */
-        // TODO: remove
-        public StructuralName sample() {
-            StructuralName n = (StructuralName)Renderer.getCurrent().sampleName(predicate());
-            if (n == null) {
-                String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
-                String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
-                throw new RendererException("No variable:" + msg1 + msg2 + ".");
-            }
-            return n;
-        }
-
         // TODO: make sure we have tests/examples for all!
+        // TODO: combo sample?
         public NameSampleToken sample(Function<StructuralName, TemplateScope> function) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
 
+        /**
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and making a hashtag replacement for both
+         * the name and type of the {@link StructuralName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @param type the key of the hashtag replacement for the {@link StructuralName} type.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public NameSampleToken sampleAndLetAs(String name, String type) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<StructuralName>(predicate(), name, type, null);
         }
 
+        /**
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and making a hashtag replacement for the
+         * name of the {@link StructuralName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public NameSampleToken sampleAndLetAs(String name) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<StructuralName>(predicate(), name, null, null);
         }
 

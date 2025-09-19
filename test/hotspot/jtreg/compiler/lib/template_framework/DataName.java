@@ -192,37 +192,47 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
 
         /**
          * Samples a random {@link DataName} from the filtered set, according to the weights
-         * of the contained {@link DataName}s.
+         * of the contained {@link DataName}s, making the sampled {@link DataName}
+         * available to an inner scope.
          *
-         * @return The sampled {@link DataName}.
+         * @param function The {@link Function} that creates the inner {@link TemplateScope} given
+         *                 the sampled {@link DataName}.
+         * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
-         * @throws RendererException If the set was empty.
          */
-        // TODO: remove
-        public DataName sample() {
-            DataName n = (DataName)Renderer.getCurrent().sampleName(predicate());
-            if (n == null) {
-                String msg1 = (subtype == null) ? "" : ", subtypeOf(" + subtype + ")";
-                String msg2 = (supertype == null) ? "" : ", supertypeOf(" + supertype + ")";
-                throw new RendererException("No variable: " + mutability + msg1 + msg2 + ".");
-            }
-            return n;
-        }
-
         // TODO: make sure we have tests/examples for all!
+        // TODO: combo sample?
         public NameSampleToken sample(Function<DataName, TemplateScope> function) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<DataName>(predicate(), null, null, function);
         }
 
+        /**
+         * Samples a random {@link DataName} from the filtered set, according to the weights
+         * of the contained {@link DataName}s, and making a hashtag replacement for both
+         * the name and type of the {@link DataName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link DataName} name.
+         * @param type the key of the hashtag replacement for the {@link DataName} type.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public NameSampleToken sampleAndLetAs(String name, String type) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<DataName>(predicate(), name, type, null);
         }
 
+        /**
+         * Samples a random {@link DataName} from the filtered set, according to the weights
+         * of the contained {@link DataName}s, and making a hashtag replacement for the
+         * name of the {@link DataName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link DataName} name.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public NameSampleToken sampleAndLetAs(String name) {
-            // TODO: are exceptions nice enough with just predicate?
             return new NameSampleToken<DataName>(predicate(), name, null, null);
         }
 
