@@ -53,7 +53,6 @@ serviceability/sa/ClhsdbJstack.java#id0                       8307393   generic-
 serviceability/sa/ClhsdbJstack.java#id1                       8307393   generic-all
 serviceability/sa/ClhsdbJstackWithConcurrentLock.java         8307393   generic-all
 serviceability/sa/ClhsdbJstackXcompStress.java                8307393   generic-all
-serviceability/sa/ClhsdbLauncher.java                         8307393   generic-all
 serviceability/sa/ClhsdbLongConstant.java                     8307393   generic-all
 serviceability/sa/ClhsdbPmap.java                             8307393   generic-all
 serviceability/sa/ClhsdbPmap.java#core                        8307393   generic-all
