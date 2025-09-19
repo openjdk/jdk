@@ -69,17 +69,17 @@ public class TestCPUTimeSampleQueueAutoSizes {
         private final List<LossEvent> events = new ArrayList<>();
         private final List<Long> timeBoxEnds = new ArrayList<>();
 
-        public void addEvent(LossEvent event) {
+        public synchronized void addEvent(LossEvent event) {
             events.add(event);
         }
 
-        public List<LossEvent> getSortedEvents() {
+        public synchronized List<LossEvent> getSortedEvents() {
             return events.stream()
                          .sorted(Comparator.comparingLong(e -> e.relativeTimeMillis))
                          .collect(Collectors.toList());
         }
 
-        public List<LossEvent> getEventsPerTimeBox() {
+        public synchronized List<LossEvent> getEventsPerTimeBox() {
             List<LossEvent> ret = new ArrayList<>();
             AtomicLong previousEnd = new AtomicLong(0);
             for (Long timeBoxEnd : timeBoxEnds) {
@@ -93,7 +93,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
             return ret;
         }
 
-        public void addTimeBoxEnd(long timeBoxEnd) {
+        public synchronized void addTimeBoxEnd(long timeBoxEnd) {
             timeBoxEnds.add(timeBoxEnd);
         }
     }
@@ -129,6 +129,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
                 lossEvents.addTimeBoxEnd(Instant.now().toEpochMilli() - startTimeMillis);
             }
 
+            rs.stop();
             rs.close();
 
             enableOutOfStackWalking();
