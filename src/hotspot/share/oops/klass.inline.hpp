@@ -175,13 +175,4 @@ inline bool Klass::search_secondary_supers(Klass *k) const {
   return result;
 }
 
-// Returns true if this Klass needs to be addressable via narrow Klass ID.
-inline bool Klass::needs_narrow_id() const {
-  // Classes that are never instantiated need no narrow Klass Id, since the
-  // only point of having a narrow id is to put it into an object header. Keeping
-  // never instantiated classes out of class space lessens the class space pressure.
-  // For more details, see JDK-8338526.
-  // Note: don't call this function before access flags are initialized.
-  return UseClassMetaspaceForAllClasses || (!is_abstract() && !is_interface());
-}
 #endif // SHARE_OOPS_KLASS_INLINE_HPP
