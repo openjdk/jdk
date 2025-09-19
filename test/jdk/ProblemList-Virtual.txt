@@ -63,6 +63,5 @@ jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
 # The problems with permissions
 jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
-java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
 javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all
