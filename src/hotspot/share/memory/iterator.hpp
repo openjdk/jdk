@@ -258,7 +258,7 @@ class NMethodToOopClosure : public NMethodClosure {
 class MarkingNMethodClosure : public NMethodToOopClosure {
  public:
   MarkingNMethodClosure(OopClosure* cl) :
-      NMethodToOopClosure(cl, false /* fix_relocations */) {}
+      NMethodToOopClosure(cl, !NMethodToOopClosure::FixRelocations) {}
 
   // Called for each nmethod.
   virtual void do_nmethod(nmethod* nm);
