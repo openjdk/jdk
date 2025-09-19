@@ -211,7 +211,6 @@ import compiler.lib.ir_framework.TestFramework;
  * are not concerned about mutability.
  *
  * <p>
- * TODO: fix
  * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
  * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
  * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
@@ -765,7 +764,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param weight The weight of the {@link DataName}, which correlates to the probability
      *               of this {@link DataName} being chosen when we sample.
      *               Must be a value from 1 to 1000.
-     * @return The token that performs the defining action. // TODO: fix
+     * @return The token that performs the defining action.
      */
     static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
         if (mutability != DataName.Mutability.MUTABLE &&
@@ -776,8 +775,7 @@ public sealed interface Template permits Template.ZeroArgs,
         if (weight <= 0 || 1000 < weight) {
             throw new IllegalArgumentException("Unexpected weight: " + weight);
         }
-        Renderer.getCurrent().addName(new DataName(name, type, mutable, weight));
-        return new NothingToken();
+        return new AddNameToken(new DataName(name, type, mutable, weight));
     }
 
     /**
@@ -789,7 +787,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param mutability Indicates if the {@link DataName} is to be mutable or immutable,
      *                   i.e. if we intend to use the {@link DataName} only for reading
      *                   or if we also allow it to be mutated.
-     * @return The token that performs the defining action. // TODO: fix
+     * @return The token that performs the defining action.
      */
     static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability) {
         return addDataName(name, type, mutability, 1);
@@ -814,14 +812,13 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param weight The weight of the {@link StructuralName}, which correlates to the probability
      *               of this {@link StructuralName} being chosen when we sample.
      *               Must be a value from 1 to 1000.
-     * @return The token that performs the defining action. // TODO: fix
+     * @return The token that performs the defining action.
      */
     static Token addStructuralName(String name, StructuralName.Type type, int weight) {
         if (weight <= 0 || 1000 < weight) {
             throw new IllegalArgumentException("Unexpected weight: " + weight);
         }
-        Renderer.getCurrent().addName(new StructuralName(name, type, weight));
-        return new NothingToken();
+        return new AddNameToken(new StructuralName(name, type, weight));
     }
 
     /**
@@ -830,7 +827,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
-     * @return The token that performs the defining action. // TODO: fix
+     * @return The token that performs the defining action.
      */
     static Token addStructuralName(String name, StructuralName.Type type) {
         return addStructuralName(name, type, 1);

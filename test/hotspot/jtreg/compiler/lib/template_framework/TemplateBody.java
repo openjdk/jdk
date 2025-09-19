@@ -26,9 +26,6 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * TODO: rename to TemplateScope? - or maybe just reove?
- *       ah, or maybe make it a one-use kind of token list, just to avoid duplication?
- *       of course throwing a good exception would be a little tricky...
  * A Template generates a {@link TemplateBody}, which is a list of {@link Token}s,
  * which are then later rendered to {@link String}s.
  *

@@ -23,17 +23,4 @@
 
 package compiler.lib.template_framework;
 
-/**
- * The {@link Template#body} and {@link Hook#anchor} are given a list of tokens, which are either
- * {@link Token}s or {@link String}s or some permitted boxed primitives.
- */
-public sealed interface Token permits StringToken,
-                               TemplateToken,
-                               TemplateToken.ZeroArgs,
-                               TemplateToken.OneArg,
-                               TemplateToken.TwoArgs,
-                               TemplateToken.ThreeArgs,
-                               HookAnchorToken,
-                               HookInsertToken,
-                               AddNameToken,
-                               NothingToken {}
+record AddNameToken(Name name) implements Token {}
