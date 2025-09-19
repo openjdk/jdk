@@ -269,6 +269,7 @@ public:
       // in the old gen.
       {
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
+
         // The top of the old gen changes during scavenge when objects are promoted.
         card_table->scavenge_contents_parallel(_old_gen->start_array(),
                                                _old_gen->object_space()->bottom(),
