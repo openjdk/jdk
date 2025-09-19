@@ -2958,6 +2958,7 @@ void AdapterHandlerLibrary::link_aot_adapter_handler(AdapterHandlerEntry* handle
 // This method is used during production run to link archived adapters (stored in AOT Cache)
 // to their code in AOT Code Cache
 void AdapterHandlerEntry::link() {
+  ResourceMark rm;
   assert(_fingerprint != nullptr, "_fingerprint must not be null");
   bool generate_code = false;
   // Generate code only if AOTCodeCache is not available, or
