@@ -3387,7 +3387,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_ghash_processBlocks)) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
