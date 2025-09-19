@@ -52,15 +52,15 @@ class MutateFinalsTest {
     @Test
     void testFieldSet() throws Exception {
         class C {
-            final Object value;
-            C(Object value) {
+            final String value;
+            C(String value) {
                 this.value = value;
             }
         }
         Field f = C.class.getDeclaredField("value");
 
-        Object oldValue = new Object();
-        Object newValue = new Object();
+        String oldValue = "oldValue";
+        String newValue = "newValue";
         var obj = new C(oldValue);
 
         f.setAccessible(false);
@@ -71,6 +71,8 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.set(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.set("not a C", newValue));
+            assertThrows(IllegalArgumentException.class, () -> f.set(obj, 100)); // not a string
             f.set(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -99,8 +101,9 @@ class MutateFinalsTest {
         assertTrue(obj.value == oldValue);
 
         f.setAccessible(true);
-        assertThrows(NullPointerException.class, () -> f.set(null, newValue));
+        assertThrows(NullPointerException.class, () -> f.setBoolean(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setBoolean("not a C", newValue));
             f.setBoolean(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -131,6 +134,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setByte(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setByte("not a C", newValue));
             f.setByte(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -161,6 +165,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setChar(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setChar("not a C", newValue));
             f.setChar(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -191,6 +196,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setShort(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setShort("not a C", newValue));
             f.setShort(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -221,6 +227,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setInt(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setInt("not a C", newValue));
             f.setInt(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -251,6 +258,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setLong(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setLong("not a C", newValue));
             f.setLong(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -281,6 +289,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setFloat(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setFloat("not a C", newValue));
             f.setFloat(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {
@@ -311,6 +320,7 @@ class MutateFinalsTest {
         f.setAccessible(true);
         assertThrows(NullPointerException.class, () -> f.setDouble(null, newValue));
         if (writeAccess) {
+            assertThrows(IllegalArgumentException.class, () -> f.setDouble("not a C", newValue));
             f.setDouble(obj, newValue);
             assertTrue(obj.value == newValue);
         } else {

@@ -945,10 +945,12 @@ public final class Module implements AnnotatedElement {
      * private access or provide a way to bypass or suppress Java language
      * access control checks.
      *
-     * <p> Opening a package with this method does not allow the given module
-     * to {@linkplain Field#set(Object, Object) reflectively set} a final field
-     * in the package, or {@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)
-     * obtain a method handle with write access} to a final field in the package.
+     * <p> Opening a package with this method does not allow the given module to
+     * {@linkplain Field#set(Object, Object) reflectively set} a final field declared
+     * in a class in the package, or
+     * {@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain
+     * a method handle with write access} to a final field declared in a class in the
+     * package.
      *
      * <p> This method has no effect if the package is already <em>open</em>
      * to the given module. </p>
