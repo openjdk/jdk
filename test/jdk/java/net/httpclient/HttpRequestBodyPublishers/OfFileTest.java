@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OfFileTest {
 
-    private static final Path DEFAULT_FS_DIR = Path.of(System.getProperty("java.io.tmpdir"));
+    private static final Path DEFAULT_FS_DIR = Path.of(System.getProperty("user.dir", "."));
 
     private static final Path ZIP_FS_DIR = zipFsDir();
 
