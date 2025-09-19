@@ -120,8 +120,8 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
 // We use the KnownBits information from the integer types to derive how many one bits
 // we have at least and at most.
 // From the definition of KnownBits, we know:
-//   zeros: Indicates which bits must be 0: ones[i] =1 -> t[i]=0
-//   ones:  Indicates which bits must be 1: zeros[i]=1 -> t[i]=1
+//   zeros: Indicates which bits must be 0: zeros[i]=1 -> t[i]=0
+//   ones:  Indicates which bits must be 1: ones[i]=1 -> t[i]=1
 //
 // From this, we derive:
 //   numer_of_zeros_in_t >= pop_count(zeros)
