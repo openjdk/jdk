@@ -105,12 +105,13 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
 }
 
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
+  ArrayKlass* ak;
   if (klass->is_array_klass()) {
-    return ArrayKlass::cast(klass)->allocate_arrayArray(1, length, THREAD);
+    ak = ArrayKlass::cast(klass)->array_klass(CHECK_NULL);
   } else {
-    ArrayKlass* ak = InstanceKlass::cast(klass)->array_klass(CHECK_NULL);
-    return ObjArrayKlass::cast(ak)->allocate_instance(length, THREAD);
+    ak = InstanceKlass::cast(klass)->array_klass(CHECK_NULL);
   }
+  return ObjArrayKlass::cast(ak)->allocate_instance(length, THREAD);
 }
 
 objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {
