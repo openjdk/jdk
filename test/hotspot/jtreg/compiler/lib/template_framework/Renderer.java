@@ -177,18 +177,16 @@ final class Renderer {
     }
 
     // TODO: remove?
-    Name sampleName(NameSet.Predicate predicate) {
-        return currentCodeFrame.sampleName(predicate);
-    }
-
     int countNames(NameSet.Predicate predicate) {
         return currentCodeFrame.countNames(predicate);
     }
 
+    // TODO: remove?
     boolean hasAnyNames(NameSet.Predicate predicate) {
         return currentCodeFrame.hasAnyNames(predicate);
     }
 
+    // TODO: remove?
     List<Name> listNames(NameSet.Predicate predicate) {
         return currentCodeFrame.listNames(predicate);
     }
