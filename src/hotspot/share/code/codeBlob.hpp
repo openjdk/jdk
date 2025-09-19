@@ -421,7 +421,6 @@ private:
 public:
   // Creation
   static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
-  void get_offsets(int entry_offset[ENTRY_COUNT]);
   address i2c_entry() { return code_begin(); }
   address c2i_entry() { return i2c_entry() + _c2i_offset; }
   address c2i_unverified_entry() { return i2c_entry() + _c2i_unverified_offset; }
