@@ -32,6 +32,8 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/debug.hpp"
 
+#if INCLUDE_CDS_JAVA_HEAP
+
 oop AOTOopChecker::get_oop_field(oop obj, const char* name, const char* sig) {
   Symbol* name_sym = SymbolTable::probe(name, checked_cast<int>(strlen(name)));
   assert(name_sym != nullptr, "Symbol must have been resolved for an existing field of this obj");
@@ -74,3 +76,5 @@ void AOTOopChecker::check(oop obj) {
     }
   }
 }
+
+#endif //INCLUDE_CDS_JAVA_HEAP
