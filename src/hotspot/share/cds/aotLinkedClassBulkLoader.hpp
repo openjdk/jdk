@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
 #define SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
 
-#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -57,7 +57,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
   static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;
 public:
-  static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
 
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;

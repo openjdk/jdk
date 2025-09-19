@@ -47,7 +47,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -187,7 +187,7 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oop
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(type_mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(type_mirror);
 
   if (klass == nullptr) {
     ResourceMark rm(current);
@@ -565,8 +565,8 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
 
   if (obj == nullptr) {
     tty->print("null");
-  } else if (oopDesc::is_oop_or_null(obj, true) && (!as_string || !java_lang_String::is_instance(obj))) {
-    if (oopDesc::is_oop_or_null(obj, true)) {
+  } else if (oopDesc::is_oop_or_null(obj) && (!as_string || !java_lang_String::is_instance(obj))) {
+    if (oopDesc::is_oop_or_null(obj)) {
       char buf[O_BUFLEN];
       tty->print("%s@" INTPTR_FORMAT, obj->klass()->name()->as_C_string(buf, O_BUFLEN), p2i(obj));
     } else {
@@ -747,6 +747,7 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
                                   bool is_default,
+                                  bool profile_deopt,
                                   FailedSpeculation** failed_speculations)
 {
   _failed_speculations = failed_speculations;
@@ -761,10 +762,12 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
     _properties.bits._has_name = 0;
   }
   _properties.bits._is_default = is_default;
+  _properties.bits._profile_deopt = profile_deopt;
 }
 
 void JVMCINMethodData::copy(JVMCINMethodData* data) {
-  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_properties.bits._is_default, data->_failed_speculations);
+  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_properties.bits._is_default,
+             data->_properties.bits._profile_deopt, data->_failed_speculations);
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
@@ -1619,7 +1622,7 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   static volatile int report_error = 0;
-  if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {
+  if (!report_error && AtomicAccess::cmpxchg(&report_error, 0, 1) == 0) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != nullptr) {
@@ -2086,6 +2089,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   char* failure_detail = nullptr;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;
+  bool profile_deopt = JVMCIENV->get_HotSpotNmethod_profileDeopt(nmethod_mirror) != 0;
   assert(JVMCIENV->isa_HotSpotNmethod(nmethod_mirror), "must be");
   JVMCIObject name = JVMCIENV->get_InstalledCode_name(nmethod_mirror);
   const char* nmethod_mirror_name = name.is_null() ? nullptr : JVMCIENV->as_utf8_string(name);
@@ -2154,6 +2158,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                         nmethod_entry_patch_offset,
                                                         nmethod_mirror_name,
                                                         install_default,
+                                                        profile_deopt,
                                                         failed_speculations);
       nm =  nmethod::new_nmethod(method,
                                  compile_id,

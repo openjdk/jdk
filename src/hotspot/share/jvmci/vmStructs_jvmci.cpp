@@ -141,12 +141,14 @@
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dsinh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+  static_field(CompilerToVM::Data,             crc_table_addr,                         address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
@@ -339,7 +341,6 @@
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   volatile_nonstatic_field(ObjectMonitor,      _entry_list,                                   ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
-  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
@@ -417,8 +418,6 @@
   static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
   static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
-  static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
-  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
   static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
   static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
   static_field(StubRoutines,                _multiplyToLen,                                   address)                               \
@@ -763,6 +762,7 @@
   declare_constant(Deoptimization::Reason_constraint)                     \
   declare_constant(Deoptimization::Reason_div0_check)                     \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_type_checked_inlining)          \
   declare_constant(Deoptimization::Reason_optimized_type_check)           \
@@ -778,10 +778,6 @@
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
-                                                                          \
-  declare_constant(LockingMode::LM_MONITOR)                               \
-  declare_constant(LockingMode::LM_LEGACY)                                \
-  declare_constant(LockingMode::LM_LIGHTWEIGHT)                           \
                                                                           \
   /*********************************/                                     \
   /* InstanceKlass _misc_flags */                                         \
@@ -832,7 +828,6 @@
                                                                           \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::stw_instruction_and_data_patch))  \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
-  AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
   declare_constant(ObjectMonitor::NO_OWNER)                               \
   declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
@@ -1152,7 +1147,6 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 #endif
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };
-#undef DECLARE_CPU_FEATURE_FLAG
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,

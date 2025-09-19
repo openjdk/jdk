@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,9 +27,6 @@
 
 package jdk.jfr.internal.settings;
 
-import static jdk.jfr.internal.util.TimespanUnit.SECONDS;
-import static jdk.jfr.internal.util.TimespanUnit.MILLISECONDS;
-
 import java.util.Objects;
 import java.util.Set;
 
@@ -41,7 +38,6 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.TimespanRate;
-import jdk.jfr.internal.util.Utils;
 
 @MetadataDefinition
 @Label("CPUThrottleSetting")
@@ -58,18 +54,18 @@ public final class CPUThrottleSetting extends SettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        TimespanRate max = null;
+        TimespanRate highestRate = null;
         for (String value : values) {
             TimespanRate rate = TimespanRate.of(value);
             if (rate != null) {
-                if (max == null || rate.isHigher(max)) {
-                    max = rate;
+                if (highestRate == null) {
+                    highestRate = rate;
+                } else {
+                    highestRate = TimespanRate.selectHigherResolution(highestRate, rate);
                 }
-                max = new TimespanRate(max.rate(), max.autoAdapt() || rate.autoAdapt());
             }
         }
-        // "off" is not supported
-        return Objects.requireNonNullElse(max.toString(), DEFAULT_VALUE);
+        return Objects.requireNonNullElse(highestRate.toString(), DEFAULT_VALUE);
     }
 
     @Override

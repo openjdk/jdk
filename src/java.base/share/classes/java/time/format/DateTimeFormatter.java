@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1199,8 +1199,10 @@ public final class DateTimeFormatter {
      * When formatting, the instant will always be suffixed by 'Z' to indicate UTC.
      * The second-of-minute is always output.
      * The nano-of-second outputs zero, three, six or nine digits as necessary.
-     * When parsing, the behaviour of {@link DateTimeFormatterBuilder#appendOffsetId()}
-     * will be used to parse the offset, converting the instant to UTC as necessary.
+     * When parsing, the lenient mode behavior of
+     * {@link DateTimeFormatterBuilder#appendOffset(String, String)
+     * appendOffset("+HH", "Z")} will be used to parse the offset,
+     * converting the instant to UTC as necessary.
      * The time to at least the seconds field is required.
      * Fractional seconds from zero to nine are parsed.
      * The localized decimal style is not used.
@@ -1506,9 +1508,9 @@ public final class DateTimeFormatter {
      * localization, such as the text or localized pattern.
      * <p>
      * The locale is stored as passed in, without further processing.
-     * If the locale has <a href="../../util/Locale.html#def_locale_extension">
-     * Unicode extensions</a>, they may be used later in text
-     * processing. To set the chronology, time-zone and decimal style from
+     * If the locale has {@linkplain Locale##def_locale_extension Unicode extensions},
+     * they may be used later in text processing.
+     * To set the chronology, time-zone and decimal style from
      * unicode extensions, see {@link #localizedBy localizedBy()}.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1533,7 +1535,7 @@ public final class DateTimeFormatter {
      * localization, such as the text or localized pattern. If the locale contains the
      * "ca" (calendar), "nu" (numbering system), "rg" (region override), and/or
      * "tz" (timezone)
-     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the chronology, numbering system and/or the zone are overridden. If both "ca"
      * and "rg" are specified, the chronology from the "ca" extension supersedes the
      * implicit one from the "rg" extension. Same is true for the "nu" extension.

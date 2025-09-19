@@ -39,7 +39,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * jpackagerTest keychain with
  * always allowed access to this keychain for user which runs test.
  * note:
- * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.openjdk.java.net" can be over-ridden by system property
  * "jpackage.mac.signing.key.user.name", and
  * "jpackagerTest" can be over-ridden by system property
  * "jpackage.mac.signing.keychain"
@@ -55,6 +55,25 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build jdk.jpackage.test.*
  * @build SigningPackageTest
  * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest != null)
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * --jpt-run=SigningPackageTest
+ * --jpt-space-subst=*
+ * --jpt-include=SigningPackageTest.test(true,*true,*true,*ASCII_INDEX)
+ * --jpt-before-run=SigningBase.verifySignTestEnvReady
+ */
+
+/*
+ * @test
+ * @summary jpackage with --type pkg,dmg --mac-sign
+ * @library /test/jdk/tools/jpackage/helpers
+ * @library base
+ * @key jpackagePlatformPackage
+ * @build SigningBase
+ * @build jdk.jpackage.test.*
+ * @build SigningPackageTest
+ * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady

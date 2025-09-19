@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076 8341260
+ * @bug 8329817 8334432 8339076 8341260 8362207
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */
@@ -815,6 +815,11 @@ public class BasicFloat16ArithTests {
 
                 {0x1.ffcp-14f, 0x1.0p-24f, 0x1.0p14f, // *Cannot* be held exactly
                  0x1.0p14f},
+
+                // Arguments where using float fma or uniform float
+                // arithmetic gives the wrong result
+                {0x1.08p7f, 0x1.04p7f, 0x1.0p-24f,
+                 0x1.0c4p14f},
 
                 // Check values where the exact result cannot be
                 // exactly stored in a double.

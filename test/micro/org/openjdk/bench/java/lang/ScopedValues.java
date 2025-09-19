@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
+import static java.lang.ScopedValue.where;
 import static org.openjdk.bench.java.lang.ScopedValuesData.*;
 
 /**
@@ -102,6 +103,26 @@ public class ScopedValues {
         return result;
     }
 
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandUnboundOrElses(Blackhole bh) throws Exception {
+        int result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.unbound.orElse(1);
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandBoundOrElses(Blackhole bh) throws Exception {
+        int result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.sl1.orElse(1);
+        }
+        return result;
+    }
+
     // Test 2: stress the ScopedValue cache.
     // The idea here is to use a bunch of bound values cyclically, which
     // stresses the ScopedValue cache.
@@ -137,12 +158,12 @@ public class ScopedValues {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int CreateBindThenGetThenRemove_ScopedValue() throws Exception {
-        return ScopedValue.where(sl1, THE_ANSWER).call(sl1::get);
+        return where(sl1, THE_ANSWER).call(sl1::get);
     }
 
 
     // Create a Carrier ahead of time: might be slightly faster
-    private static final ScopedValue.Carrier HOLD_42 = ScopedValue.where(sl1, 42);
+    private static final ScopedValue.Carrier HOLD_42 = where(sl1, 42);
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int bindThenGetThenRemove_ScopedValue() throws Exception {
@@ -230,4 +251,65 @@ public class ScopedValues {
         ScopedValue<Integer> val = ScopedValue.newInstance();
         return val;
     }
+
+    // Test 6: Performance with a large number of bindings
+    static final long deepCall(ScopedValue<Integer> outer, long n) {
+        long result = 0;
+        if (n > 0) {
+            ScopedValue<Long> sv = ScopedValue.newInstance();
+            return where(sv, n).call(() -> deepCall(outer, n - 1));
+        } else {
+            for (int i = 0; i < 1_000_000; i++) {
+                result += outer.orElse(12);
+            }
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long deepBindingTest1() {
+        return deepCall(ScopedValuesData.unbound, 1000);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long deepBindingTest2() {
+        return deepCall(ScopedValuesData.sl1, 1000);
+    }
+
+
+    // Test 7: Performance with a large number of bindings
+    // Different from Test 6 in that we recursively build a very long
+    // list of Carriers and invoke Carrier.call() only once.
+    static final long deepCall2(ScopedValue<Integer> outer, ScopedValue.Carrier carrier, long n) {
+        long result = 0;
+        if (n > 0) {
+            ScopedValue<Long> sv = ScopedValue.newInstance();
+            return deepCall2(outer, carrier.where(sv, n), n - 1);
+        } else {
+            result = carrier.call(() -> {
+                long sum = 0;
+                for (int i = 0; i < 1_000_000; i++) {
+                    sum += outer.orElse(12);
+                }
+                return sum;
+            });
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long deepBindingTest3() {
+        return deepCall2(ScopedValuesData.unbound, where(ScopedValuesData.sl2,0), 1000);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long deepBindingTest4() {
+        return deepCall2(ScopedValuesData.sl1, where(ScopedValuesData.sl2, 0), 1000);
+    }
+
+
 }

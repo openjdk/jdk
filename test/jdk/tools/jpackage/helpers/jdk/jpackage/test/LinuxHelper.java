@@ -23,25 +23,30 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -308,8 +313,8 @@ public final class LinuxHelper {
     }
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
-        String packageName = LinuxHelper.getPackageName(cmd);
-        long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        String packageName = getPackageName(cmd);
+        long packageSize = getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
         TKit.assertNotEquals(0, packageSize, String.format(
                 "Check installed size of [%s] package in not zero", packageName));
@@ -330,7 +335,7 @@ public final class LinuxHelper {
             checkPrerequisites = packageSize > 5;
         }
 
-        List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);
+        List<String> prerequisites = getPrerequisitePackages(cmd);
         if (checkPrerequisites) {
             final String vitalPackage = "libc";
             TKit.assertTrue(prerequisites.stream().filter(
@@ -340,13 +345,28 @@ public final class LinuxHelper {
                             vitalPackage, prerequisites, packageName));
         } else {
             TKit.trace(String.format(
-                    "Not cheking %s required packages of [%s] package",
+                    "Not checking %s required packages of [%s] package",
                     prerequisites, packageName));
         }
     }
 
-    static void addBundleDesktopIntegrationVerifier(PackageTest test,
-            boolean integrated) {
+    public static Collection<? extends InvokeShortcutSpec> getInvokeShortcutSpecs(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+
+        final var desktopFiles = getDesktopFiles(cmd);
+        final var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
+
+        return desktopFiles.stream().map(desktopFile -> {
+            var systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+            return new InvokeShortcutSpec.Stub(
+                    launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile),
+                    LauncherShortcut.LINUX_SHORTCUT,
+                    new DesktopFile(systemDesktopFile, false).findQuotedValue("Path").map(Path::of),
+                    List.of("gtk-launch", PathUtils.replaceSuffix(systemDesktopFile.getFileName(), "").toString()));
+        }).toList();
+    }
+
+    static void addBundleDesktopIntegrationVerifier(PackageTest test, boolean integrated) {
         final String xdgUtils = "xdg-utils";
 
         Function<List<String>, String> verifier = (lines) -> {
@@ -392,52 +412,81 @@ public final class LinuxHelper {
         });
 
         test.addInstallVerifier(cmd -> {
-            // Verify .desktop files.
-            try (var files = Files.list(cmd.appLayout().desktopIntegrationDirectory())) {
-                List<Path> desktopFiles = files
-                        .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .toList();
-                if (!integrated) {
-                    TKit.assertStringListEquals(List.of(),
-                            desktopFiles.stream().map(Path::toString).collect(
-                                    Collectors.toList()),
-                            "Check there are no .desktop files in the package");
-                }
-                for (var desktopFile : desktopFiles) {
-                    verifyDesktopFile(cmd, desktopFile);
-                }
+            if (!integrated) {
+                TKit.assertStringListEquals(
+                        List.of(),
+                        getDesktopFiles(cmd).stream().map(Path::toString).toList(),
+                        "Check there are no .desktop files in the package");
             }
         });
     }
 
-    private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
-            throws IOException {
+    static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
+        final var desktopFiles = getDesktopFiles(cmd);
+        try {
+            if (installed) {
+                var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
+                for (var desktopFile : desktopFiles) {
+                    verifyDesktopFile(cmd, predefinedAppImage, desktopFile);
+                }
+
+                if (!cmd.isPackageUnpacked("Not verifying system .desktop files")) {
+                    for (var desktopFile : desktopFiles) {
+                        Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                            TKit.assertFileExists(systemDesktopFile);
+                            TKit.assertStringListEquals(
+                                    Files.readAllLines(desktopFile),
+                                    Files.readAllLines(systemDesktopFile),
+                                    String.format("Check [%s] and [%s] files are equal", desktopFile, systemDesktopFile));
+                    }
+                }
+            } else {
+                for (var desktopFile : getDesktopFiles(cmd)) {
+                    Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
+                    TKit.assertPathExists(systemDesktopFile, false);
+                }
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
+        var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
+        var packageDir = cmd.pathToPackageFile(unpackedDir);
+        return getPackageFiles(cmd).filter(path -> {
+            return packageDir.equals(path.getParent()) && path.getFileName().toString().endsWith(".desktop");
+        }).map(Path::getFileName).map(unpackedDir::resolve).toList();
+    }
+
+    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
+        Objects.requireNonNull(cmd);
+        Objects.requireNonNull(predefinedAppImage);
+        Objects.requireNonNull(desktopFile);
+
+        return predefinedAppImage.map(v -> {
+            return v.launchers().keySet().stream();
+        }).orElseGet(() -> {
+            return Stream.concat(Stream.of(cmd.name()), cmd.addLauncherNames().stream());
+        }).filter(name-> {
+            return getDesktopFile(cmd, name).equals(desktopFile);
+        }).findAny().orElseThrow(() -> {
+            TKit.assertUnexpected(String.format("Failed to find launcher corresponding to [%s] file", desktopFile));
+            // Unreachable
+            return null;
+        });
+    }
+
+    private static void verifyDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) throws IOException {
+        Objects.requireNonNull(cmd);
+        Objects.requireNonNull(predefinedAppImage);
+        Objects.requireNonNull(desktopFile);
+
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
 
-        var launcherName = Stream.of(List.of(cmd.name()), cmd.addLauncherNames()).flatMap(List::stream).filter(name -> {
-            return getDesktopFile(cmd, name).equals(desktopFile);
-        }).findAny();
-        if (!cmd.hasArgument("--app-image")) {
-            TKit.assertTrue(launcherName.isPresent(),
-                    "Check the desktop file corresponds to one of app launchers");
-        }
+        var launcherName = launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile);
 
-        List<String> lines = Files.readAllLines(desktopFile);
-        TKit.assertEquals("[Desktop Entry]", lines.get(0), "Check file header");
-
-        Map<String, String> data = lines.stream()
-        .skip(1)
-        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str)))
-        .map(str -> {
-            String components[] = str.split("=(?=.+)");
-            if (components.length == 1) {
-                return Map.entry(str.substring(0, str.length() - 1), "");
-            }
-            return Map.entry(components[0], components[1]);
-        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
-            TKit.assertUnexpected("Multiple values of the same key");
-            return null;
-        }));
+        var data = new DesktopFile(desktopFile, true);
 
         final Set<String> mandatoryKeys = new HashSet<>(Set.of("Name", "Comment",
                 "Exec", "Icon", "Terminal", "Type", "Categories"));
@@ -447,34 +496,47 @@ public final class LinuxHelper {
 
         for (var e : Map.of("Type", "Application", "Terminal", "false").entrySet()) {
             String key = e.getKey();
-            TKit.assertEquals(e.getValue(), data.get(key), String.format(
+            TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
                     "Check value of [%s] key", key));
         }
 
-        // Verify the value of `Exec` key is escaped if required
-        String launcherPath = data.get("Exec");
-        if (Pattern.compile("\\s").matcher(launcherPath).find()) {
-            TKit.assertTrue(launcherPath.startsWith("\"")
-                    && launcherPath.endsWith("\""),
-                    "Check path to the launcher is enclosed in double quotes");
-            launcherPath = launcherPath.substring(1, launcherPath.length() - 1);
-        }
+        String launcherPath = data.findQuotedValue("Exec").orElseThrow();
 
-        if (launcherName.isPresent()) {
-            TKit.assertEquals(launcherPath, cmd.pathToPackageFile(
-                    cmd.appLauncherPath(launcherName.get())).toString(),
-                    String.format(
-                            "Check the value of [Exec] key references [%s] app launcher",
-                            launcherName.get()));
-        }
+        TKit.assertEquals(
+                launcherPath,
+                cmd.pathToPackageFile(cmd.appLauncherPath(launcherName)).toString(),
+                String.format("Check the value of [Exec] key references [%s] app launcher", launcherName));
+
+        var appLayout = cmd.appLayout();
+
+        LauncherShortcut.LINUX_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).map(shortcutWorkDirType -> {
+            switch (shortcutWorkDirType) {
+                case DEFAULT -> {
+                    return (Path)null;
+                }
+                case APP_DIR -> {
+                    return cmd.pathToPackageFile(appLayout.appDirectory());
+                }
+                default -> {
+                    throw new AssertionError();
+                }
+            }
+        }).map(Path::toString).ifPresentOrElse(shortcutWorkDir -> {
+            var actualShortcutWorkDir = data.find("Path");
+            TKit.assertTrue(actualShortcutWorkDir.isPresent(), "Check [Path] key exists");
+            TKit.assertEquals(actualShortcutWorkDir.get(), shortcutWorkDir, "Check the value of [Path] key");
+        }, () -> {
+            TKit.assertTrue(data.find("Path").isEmpty(), "Check there is no [Path] key");
+        });
 
         for (var e : List.<Map.Entry<Map.Entry<String, Optional<String>>, Function<ApplicationLayout, Path>>>of(
                 Map.entry(Map.entry("Exec", Optional.of(launcherPath)), ApplicationLayout::launchersDirectory),
                 Map.entry(Map.entry("Icon", Optional.empty()), ApplicationLayout::desktopIntegrationDirectory))) {
-            var path = e.getKey().getValue().or(() -> Optional.of(data.get(
-                    e.getKey().getKey()))).map(Path::of).get();
+            var path = e.getKey().getValue().or(() -> {
+                return data.findQuotedValue(e.getKey().getKey());
+            }).map(Path::of).get();
             TKit.assertFileExists(cmd.pathToUnpackedPackageFile(path));
-            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(cmd.appLayout()));
+            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(appLayout));
             TKit.assertTrue(path.getParent().equals(expectedDir), String.format(
                     "Check the value of [%s] key references a file in [%s] folder",
                     e.getKey().getKey(), expectedDir));
@@ -760,6 +822,62 @@ public final class LinuxHelper {
             throw new RuntimeException(ex);
         }
     }
+
+
+    private static final class DesktopFile {
+        DesktopFile(Path path, boolean verify) {
+            try {
+                List<String> lines = Files.readAllLines(path);
+                if (verify) {
+                    TKit.assertEquals("[Desktop Entry]", lines.getFirst(), "Check file header");
+                }
+
+                var stream = lines.stream().skip(1).filter(Predicate.not(String::isEmpty));
+                if (verify) {
+                    stream = stream.peek(str -> {
+                        TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str));
+                    });
+                }
+
+                data = stream.map(str -> {
+                    String components[] = str.split("=(?=.+)");
+                    if (components.length == 1) {
+                        return Map.entry(str.substring(0, str.length() - 1), "");
+                    } else {
+                        return Map.entry(components[0], components[1]);
+                    }
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        Set<String> keySet() {
+            return data.keySet();
+        }
+
+        Optional<String> find(String property) {
+            return Optional.ofNullable(data.get(Objects.requireNonNull(property)));
+        }
+
+        Optional<String> findQuotedValue(String property) {
+            return find(property).map(value -> {
+                if (Pattern.compile("\\s").matcher(value).find()) {
+                    boolean quotesMatched = value.startsWith("\"") && value.endsWith("\"");
+                    if (!quotesMatched) {
+                        TKit.assertTrue(quotesMatched,
+                                String.format("Check the value of key [%s] is enclosed in double quotes", property));
+                    }
+                    return value.substring(1, value.length() - 1);
+                } else {
+                    return value;
+                }
+            });
+        }
+
+        private final Map<String, String> data;
+    }
+
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));

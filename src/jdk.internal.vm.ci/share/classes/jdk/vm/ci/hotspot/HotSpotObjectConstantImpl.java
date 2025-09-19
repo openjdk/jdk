@@ -89,19 +89,15 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
-    public JavaConstant getCallSiteTarget(Assumptions assumptions) {
+    public Assumptions.AssumptionResult<JavaConstant> getCallSiteTarget() {
         if (runtime().getCallSite().isInstance(this)) {
             // For ConstantCallSites, we need to read "isFrozen" before reading "target"
             // isFullyInitializedConstantCallSite() reads "isFrozen"
             if (isFullyInitializedConstantCallSite()) {
-                return readTarget();
-            }
-            if (assumptions == null) {
-                return null;
+                return new Assumptions.AssumptionResult<>(readTarget());
             }
             HotSpotObjectConstantImpl result = readTarget();
-            assumptions.record(new Assumptions.CallSiteTargetValue(this, result));
-            return result;
+            return new Assumptions.AssumptionResult<>(result, new Assumptions.CallSiteTargetValue(this, result));
         }
         return null;
     }

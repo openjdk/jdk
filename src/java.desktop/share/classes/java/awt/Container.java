@@ -1557,8 +1557,8 @@ public class Container extends Component {
      * as a {@code Frame} object) should be used to restore the validity of the
      * component hierarchy.
      * <p>
-     * The {@code Window} class and the {@code Applet} class are the validate
-     * roots in AWT.  Swing introduces more validate roots.
+     * The {@code Window} class is the validate root in AWT.
+     * Swing introduces more validate roots.
      *
      * @return whether this container is a validate root
      * @see #invalidate

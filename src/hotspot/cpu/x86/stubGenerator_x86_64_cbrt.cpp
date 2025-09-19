@@ -190,7 +190,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _D_table[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmCbrt() {
-  StubGenStubId stub_id = StubGenStubId::dcbrt_id;
+  StubId stub_id = StubId::stubgen_dcbrt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

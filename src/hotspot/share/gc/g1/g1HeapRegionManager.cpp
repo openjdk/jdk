@@ -34,7 +34,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -52,7 +52,7 @@ public:
 
     if (SafepointSynchronize::is_at_safepoint()) {
       guarantee(Thread::current()->is_VM_thread() ||
-                FreeList_lock->owned_by_self(), "master free list MT safety protocol at a safepoint");
+                G1FreeList_lock->owned_by_self(), "master free list MT safety protocol at a safepoint");
     } else {
       guarantee(Heap_lock->owned_by_self(), "master free list MT safety protocol outside a safepoint");
     }
@@ -288,7 +288,7 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
   uint uncommitted = 0;
   uint offset = 0;
   do {
-    MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
     G1HeapRegionRange range = _committed_map.next_inactive_range(offset);
     // No more regions available for uncommit. Return the number of regions
     // already uncommitted or 0 if there were no longer any inactive regions.
@@ -374,7 +374,7 @@ void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThrea
     if (_committed_map.inactive(i)) {
       // Need to grab the lock since this can be called by a java thread
       // doing humongous allocations.
-      MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
       // State might change while getting the lock.
       if (_committed_map.inactive(i)) {
         reactivate_regions(i, 1);
@@ -726,7 +726,7 @@ bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
 
 bool G1HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
-  uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
+  uint old_val = AtomicAccess::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
   return old_val == Unclaimed;
 }
 

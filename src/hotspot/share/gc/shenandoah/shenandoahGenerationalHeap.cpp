@@ -80,7 +80,6 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
   _age_census(nullptr),
-  _evac_tracker(new ShenandoahEvacuationTracker()),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
@@ -98,18 +97,6 @@ void ShenandoahGenerationalHeap::post_initialize() {
 void ShenandoahGenerationalHeap::print_init_logger() const {
   ShenandoahGenerationalInitLogger logger;
   logger.print_all();
-}
-
-void ShenandoahGenerationalHeap::print_tracing_info() const {
-  ShenandoahHeap::print_tracing_info();
-
-  LogTarget(Info, gc, stats) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.cr();
-    ls.cr();
-    evac_tracker()->print_global_on(&ls);
-  }
 }
 
 void ShenandoahGenerationalHeap::initialize_heuristics() {
@@ -229,7 +216,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
+    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
         return result;
@@ -337,8 +324,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
+  if (ShenandoahEvacTracking) {
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+  }
+
   // Copy the object:
-  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
@@ -359,8 +349,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     // safe to do this on the public copy (this is also done during concurrent mark).
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
-    // Record that the evacuation succeeded
-    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize));
+    if (ShenandoahEvacTracking) {
+      // Record that the evacuation succeeded
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    }
 
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());
@@ -370,7 +362,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       assert(target_gen == YOUNG_GENERATION, "Error");
       // We record this census only when simulating pre-adaptive tenuring behavior, or
       // when we have been asked to record the census at evacuation rather than at mark
-      if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+      if (!ShenandoahGenerationalAdaptiveTenuring) {
         evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
       }
     }
@@ -827,19 +819,15 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          region_progress = true;
         } else if (r->is_old()) {
           if (gc_generation->is_global()) {
 
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-            region_progress = true;
           }
           // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
-          // Don't bother to report pacing progress in this case.
         } else {
           // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
           // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
@@ -855,10 +843,6 @@ private:
                  "%s Region %zu is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
                  r->affiliation_name(), r->index());
         }
-      }
-
-      if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
       }
 
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
@@ -915,10 +899,6 @@ private:
           size_t clusters = assignment._chunk_size / cluster_size;
           assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
           scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
-        }
-
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }

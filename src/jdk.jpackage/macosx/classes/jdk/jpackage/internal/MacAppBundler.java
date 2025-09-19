@@ -42,11 +42,11 @@ public class MacAppBundler extends AppImageBundler {
              final BuildEnv env;
 
              if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-                 env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+                 env = MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params);
                  final var pkg = MacPackagingPipeline.createSignAppImagePackage(app, env);
                  MacPackagingPipeline.build(Optional.of(pkg)).create().execute(env, pkg, output);
              } else {
-                 env = BuildEnv.withAppImageDir(BuildEnvFromParams.BUILD_ENV.fetchFrom(params), output);
+                 env = BuildEnv.withAppImageDir(MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params), output);
                  MacPackagingPipeline.build(Optional.empty())
                          .excludeDirFromCopying(output.getParent())
                          .excludeDirFromCopying(OUTPUT_DIR.fetchFrom(params)).create().execute(env, app);
@@ -69,7 +69,7 @@ public class MacAppBundler extends AppImageBundler {
             }
         }
 
-        if (StandardBundlerParam.getPredefinedAppImage(params) != null) {
+        if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             if (!Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 throw new ConfigException(

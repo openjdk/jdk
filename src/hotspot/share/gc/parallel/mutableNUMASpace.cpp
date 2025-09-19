@@ -30,7 +30,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
@@ -412,8 +412,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
     size_t chunk_byte_size = 0;
     if (i < lgrp_spaces()->length() - 1) {
-      if (!UseAdaptiveNUMAChunkSizing                                ||
-          (UseAdaptiveNUMAChunkSizing && NUMAChunkResizeWeight == 0) ||
+      if (!UseAdaptiveNUMAChunkSizing ||
+           NUMAChunkResizeWeight == 0 ||
            samples_count() < AdaptiveSizePolicyReadyThreshold) {
         // No adaptation. Divide the space equally.
         chunk_byte_size = default_chunk_size();
@@ -571,7 +571,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
-      if (Atomic::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
+      if (AtomicAccess::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
         break;
       }
     }
