@@ -740,7 +740,6 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }
-  address base_address();
 
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
 

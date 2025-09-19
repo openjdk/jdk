@@ -2780,7 +2780,7 @@ void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, Adapter
                 handler->fingerprint()->as_string(), insts_size);
   st->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(handler->get_c2i_entry()));
   if (Verbose || PrintStubCode) {
-    address first_pc = handler->base_address();
+    address first_pc = adapter_blob->content_begin();
     if (first_pc != nullptr) {
       Disassembler::decode(first_pc, first_pc + insts_size, st, &adapter_blob->asm_remarks());
       st->cr();
@@ -2822,7 +2822,6 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
   // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
   int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
   address entry_address[AdapterBlob::ENTRY_COUNT];
-  assert(AdapterBlob::ENTRY_COUNT == 4, "sanity");
   SharedRuntime::generate_i2c2i_adapters(&masm,
                                          total_args_passed,
                                          comp_args_on_stack,
@@ -3030,15 +3029,6 @@ void AdapterHandlerLibrary::lookup_simple_adapters() {
          _obj_obj_arg_handler->is_linked(), "Initial adapters not in linked state");
 }
 #endif // INCLUDE_CDS
-
-address AdapterHandlerEntry::base_address() {
-  address base = _adapter_blob->i2c_entry();
-  if (base == nullptr) base = _adapter_blob->c2i_entry();
-  assert(base <= _adapter_blob->c2i_entry() || _adapter_blob->c2i_entry() == nullptr, "");
-  assert(base <= _adapter_blob->c2i_unverified_entry() || _adapter_blob->c2i_unverified_entry() == nullptr, "");
-  assert(base <= _adapter_blob->c2i_no_clinit_check_entry() || _adapter_blob->c2i_no_clinit_check_entry() == nullptr, "");
-  return base;
-}
 
 void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   LogStreamHandle(Trace, aot) lsh;
