@@ -160,11 +160,10 @@ public:
       SystemDictionaryShared::write_to_archive(false);
       cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
       DynamicArchive::dump_array_klasses();
-      AOTClassLinker::write_to_archive();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
-      ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
+      DynamicArchive::serialize(&wc);
     }
 
     if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
@@ -396,11 +395,6 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (AllowArchivingWithJavaAgent) {
-      aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
-                       "for testing purposes only and should not be used in a production environment",
-                       CDSConfig::type_of_archive_being_loaded());
-    }
     AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
   }
@@ -413,6 +407,12 @@ public:
 // which have element klass in the static archive.
 GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
 Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
+
+void DynamicArchive::serialize(SerializeClosure* soc) {
+  SymbolTable::serialize_shared_table_header(soc, false);
+  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  soc->do_ptr(&_dynamic_archive_array_klasses);
+}
 
 void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
   if (_array_klasses == nullptr) {
@@ -454,10 +454,6 @@ void DynamicArchive::setup_array_klasses() {
     }
     log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
   }
-}
-
-void DynamicArchive::serialize_array_klasses(SerializeClosure* soc) {
-  soc->do_ptr(&_dynamic_archive_array_klasses);
 }
 
 void DynamicArchive::make_array_klasses_shareable() {

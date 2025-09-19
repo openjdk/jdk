@@ -173,7 +173,7 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   ~ShenandoahAgeCensus();
 
   // Return the local age table (population vector) for worker_id.
-  // Only used in the case of (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac)
+  // Only used in the case of ShenandoahGenerationalAdaptiveTenuring
   AgeTable* get_local_age_table(uint worker_id) const {
     return _local_age_table[worker_id];
   }
@@ -204,9 +204,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 #endif // SHENANDOAH_CENSUS_NOISE
 
   // Update the census data, and compute the new tenuring threshold.
-  // This method should be called at the end of each marking (or optionally
-  // evacuation) cycle to update the tenuring threshold to be used in
-  // the next cycle.
+  // This method should be called at the end of each marking cycle to update
+  // the tenuring threshold to be used in the next cycle.
   // age0_pop is the population of Cohort 0 that may have been missed in
   // the regular census during the marking cycle, corresponding to objects
   // allocated when the concurrent marking was in progress.
@@ -231,7 +230,7 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 
   // Return the net size of objects encountered (counted or skipped) in census
   // at most recent epoch.
-  size_t get_total() { return _total; }
+  size_t get_total() const { return _total; }
 #endif // !PRODUCT
 
   // Print the age census information

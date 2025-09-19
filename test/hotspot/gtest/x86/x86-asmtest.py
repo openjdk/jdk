@@ -92,6 +92,8 @@ registers_mapping = {
     'r31': {64: 'r31', 32: 'r31d', 16: 'r31w', 8: 'r31b'},
 }
 
+commutative_instrs = ['imul', 'add', 'and', 'xor', 'or']
+
 class Operand(object):
     def generate(self):
         return self
@@ -400,6 +402,15 @@ class RegMemRegNddInstruction(NFInstruction):
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.reg2 = Register().generate(reg2, width)
         self.generate_operands(self.reg1, self.mem, self.reg2)
+        self.demote = True
+    
+    def astr(self):
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            # imul does not support RegMemReg
+            if self._aname in commutative_instrs[1:] and ops[0] == ops[2] and (not self.no_flag):
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[:2]])
+        return super().astr()
 
 class RegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, imm):
@@ -448,6 +459,9 @@ class RegRegRegNddInstruction(NFInstruction):
             ops = [op.cstr() for op in self.operands]
             if ops[0] == ops[1] and (not self.no_flag):
                 return  hdr + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
+            if self._aname in commutative_instrs and ops[0] == ops[2] and (not self.no_flag):
+                return  hdr + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[:2]])
+            
         return hdr + super().astr()
 
 class RegRegRegImmNddInstruction(NFInstruction):
@@ -571,6 +585,18 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                                           else test_regs[(i + 1) % len(test_regs)] if full_set \
                                           else random.choice(test_regs)
                     test_reg3 = test_regs[(i + 2) % len(test_regs)] if full_set else random.choice(test_regs)
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            
+            demote = True if TEST_DEMOTION else False
+            commute = True if op[1] in commutative_instrs else False
+            if RegOp in [RegRegRegNddInstruction] and demote and commute :
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_reg2 = test_regs[(i + 2) % len(test_regs)] if full_set else random.choice(test_regs)
+                    test_reg3 = test_reg1
+                    
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -699,7 +725,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemRegNddInstruction, RegRegMemNddInstruction, CondRegRegMemInstruction]:
-            demote_options = [False] if TEST_DEMOTION and RegOp not in [RegMemRegNddInstruction] else [False, True]
+            demote_options = [False, True]
             for demote in demote_options:
                 for i in range(len(test_regs) if full_set else 1):
                     test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
@@ -1023,6 +1049,8 @@ instruction_set = {
     RegMemRegNddInstruction: [
         ('eaddl', 'add', 32, False),
         ('eaddl', 'add', 32, True),
+        ('eandl', 'and', 32, False),
+        ('eandl', 'and', 32, True),
         ('eorl', 'or', 32, False),
         ('eorl', 'or', 32, True),
         ('eorb', 'or', 8, False),
