@@ -23,13 +23,13 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP
+#ifndef OS_CPU_BSD_ZERO_ATOMICACCESS_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_ATOMICACCESS_BSD_ZERO_HPP
 
 #include "orderAccess_bsd_zero.hpp"
 #include "runtime/os.hpp"
 
-// Implementation of class atomic
+// Implementation of class AtomicAccess
 
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
@@ -149,4 +149,4 @@ inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
   __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }
 
-#endif // OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP
+#endif // OS_CPU_BSD_ZERO_ATOMICACCESS_BSD_ZERO_HPP
