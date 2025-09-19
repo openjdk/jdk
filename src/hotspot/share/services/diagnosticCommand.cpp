@@ -878,7 +878,6 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
   CodeCache::write_perf_map(_filename.value(), output());
 }
 #endif // LINUX
