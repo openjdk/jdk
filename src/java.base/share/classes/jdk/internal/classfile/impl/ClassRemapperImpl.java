@@ -309,7 +309,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
             case Signature.ClassTypeSig cts ->
                 Signature.ClassTypeSig.of(
                         cts.outerType().map(this::mapSignature).orElse(null),
-                        Util.toInternalName(map(cts.classDesc())), // wrong, needs fix with InnerClasses
+                        Util.toInternalName(map(cts.classDesc())),
                         cts.typeArgs().stream().map(ta -> switch (ta) {
                             case Signature.TypeArg.Unbounded u -> u;
                             case Signature.TypeArg.Bounded bta -> Signature.TypeArg.bounded(
