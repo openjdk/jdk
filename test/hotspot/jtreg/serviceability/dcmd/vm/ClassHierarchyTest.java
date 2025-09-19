@@ -54,15 +54,18 @@ public class ClassHierarchyTest {
     // |--DcmdTestClass$$Lambda/4081552/0xa529fbb0
 
     // > VM.class_hierarchy DcmdBaseClass
+    // 2025-01-01 10:59:59
     // java.lang.Object/null
     // |--DcmdBaseClass/0xa4abcd48
 
     // > VM.class_hierarchy DcmdBaseClass -s
+    // 2025-01-01 10:59:59
     // java.lang.Object/null
     // |--DcmdBaseClass/0xa4abcd48
     // |  |--DcmdTestClass/0xa4abcd48
 
     // > VM.class_hierarchy DcmdBaseClass -i -s
+    // 2025-01-01 10:59:59
     // java.lang.Object/null
     // |--DcmdBaseClass/0xa4abcd48
     // |  implements Intf2/0xa4abcd48 (declared intf)
@@ -111,13 +114,14 @@ public class ClassHierarchyTest {
         // Verify the output for the simple hierachry of just DcmdBaseClass.
         output = executor.execute("VM.class_hierarchy DcmdBaseClass");
         lines = output.asLines().iterator();
+        lines.next(); // skip timestamp
         i = 0;
         while (lines.hasNext()) {
             String line = lines.next();
             Matcher m = expected_lines[i].matcher(line);
             i++;
             if (!m.matches()) {
-                Assert.fail("Failed to match line #" + i + ": " + line);
+                Assert.fail("Failed. Expected line #%d \"%s\" to match \"%s\"".formatted(i, line, expected_lines[i].pattern()));
             }
             // Should only be two lines of output in this form.
             if (i == 2) break;
@@ -130,13 +134,14 @@ public class ClassHierarchyTest {
         // Verify the output for the full hierarchy of DcmdBaseClass, but without interfaces.
         output = executor.execute("VM.class_hierarchy DcmdBaseClass -s");
         lines = output.asLines().iterator();
+        lines.next(); // skip timestamp
         i = 0;
         while (lines.hasNext()) {
             String line = lines.next();
             Matcher m = expected_lines[i].matcher(line);
             i++;
             if (!m.matches()) {
-                Assert.fail("Failed to match line #" + i + ": " + line);
+                Assert.fail("Failed. Expected line #%d \"%s\" to match \"%s\"".formatted(i, line, expected_lines[i].pattern()));
             }
             // "implements" lines should not be in this output.
             if (i == 2 || i == 4) i += 2;
@@ -149,6 +154,7 @@ public class ClassHierarchyTest {
         // Verify the output for the full hierarchy of DcmdBaseClass, including interfaces.
         output = executor.execute("VM.class_hierarchy DcmdBaseClass -i -s");
         lines = output.asLines().iterator();
+        lines.next(); // skip timestamp
         i = 0;
         String classLoaderAddr = null;
         while (lines.hasNext()) {

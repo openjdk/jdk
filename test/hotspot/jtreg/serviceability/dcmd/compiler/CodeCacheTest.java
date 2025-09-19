@@ -113,6 +113,7 @@ public class CodeCacheTest {
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = executor.execute("Compiler.codecache");
         Iterator<String> lines = output.asLines().iterator();
+        lines.next(); // skip timestamp
 
         // Validate code cache segments
         String line;
