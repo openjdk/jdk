@@ -26,4 +26,9 @@ package compiler.lib.template_framework;
 import java.util.function.Function;
 
 // TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
-record DataNameSampleToken(NameSet.Predicate predicate, Function<DataName, TemplateScope> function) implements Token {}
+// TODO: documentation about lambda and hashtag, maybe also an assert?
+record DataNameSampleToken(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<DataName, TemplateScope> function) implements Token {}

@@ -192,9 +192,20 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return n;
         }
 
+        // TODO: make sure we have tests/examples for all!
         public DataNameSampleToken sample(Function<DataName, TemplateScope> function) {
             // TODO: are exceptions nice enough with just predicate?
-            return new DataNameSampleToken(predicate(), function);
+            return new DataNameSampleToken(predicate(), null, null, function);
+        }
+
+        public DataNameSampleToken sampleAndLetAs(String name, String type) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new DataNameSampleToken(predicate(), name, type, null);
+        }
+
+        public DataNameSampleToken sampleAndLetAs(String name) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new DataNameSampleToken(predicate(), name, null, null);
         }
 
         /**

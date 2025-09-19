@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * {@link StructuralName}s represent things like method and class names, and can be added to the local
@@ -153,6 +154,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          * @throws RendererException If the set was empty.
          */
+        // TODO: remove
         public StructuralName sample() {
             StructuralName n = (StructuralName)Renderer.getCurrent().sampleName(predicate());
             if (n == null) {
@@ -161,6 +163,22 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
                 throw new RendererException("No variable:" + msg1 + msg2 + ".");
             }
             return n;
+        }
+
+        // TODO: make sure we have tests/examples for all!
+        public StructuralNameSampleToken sample(Function<StructuralName, TemplateScope> function) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new StructuralNameSampleToken(predicate(), null, null, function);
+        }
+
+        public StructuralNameSampleToken sampleAndLetAs(String name, String type) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new StructuralNameSampleToken(predicate(), name, type, null);
+        }
+
+        public StructuralNameSampleToken sampleAndLetAs(String name) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new StructuralNameSampleToken(predicate(), name, null, null);
         }
 
         /**

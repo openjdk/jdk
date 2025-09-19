@@ -114,7 +114,8 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'let', 'sample', 'count' etc. was called outside a template rendering.");
+            // TODO: adjust to only those where it can happen, maybe only "$"?
+            throw new RendererException("A Template method such as '$', 'let', 'count' etc. was called outside a template rendering.");
         }
         return renderer;
     }
@@ -258,6 +259,64 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
+    private void renderDataNameSampleToken(DataNameSampleToken dnst) {
+        DataName dn = (DataName)currentCodeFrame.sampleName(dnst.predicate());
+        if (dn == null) {
+            throw new RendererException("No DataName for TODO.");
+        }
+        if (dnst.function() != null) {
+            // We have a nested "scope" that captures the DataName.
+            // TODO: some frame for hashtags?
+            TemplateScope scope = dnst.function().apply(dn);
+            renderTokenList(scope.tokens());
+
+            if (dnst.name() != null) {
+                throw new RuntimeException("not implemented");
+            }
+            if (dnst.type() != null) {
+                throw new RuntimeException("not implemented");
+            }
+        } else {
+            // No nested "scope", we use the DataName for a local "let" style
+            // hashtag replacement definition.
+            if (dnst.name() != null) {
+                addHashtagReplacement(dnst.name(), dn.name());
+            }
+            if (dnst.type() != null) {
+                addHashtagReplacement(dnst.type(), dn.type());
+            }
+        }
+    }
+
+    private void renderStructuralNameSampleToken(StructuralNameSampleToken snst) {
+        StructuralName dn = (StructuralName)currentCodeFrame.sampleName(snst.predicate());
+        if (dn == null) {
+            throw new RendererException("No StructuralName for TODO.");
+        }
+        if (snst.function() != null) {
+            // We have a nested "scope" that captures the StructuralName.
+            // TODO: some frame for hashtags?
+            TemplateScope scope = snst.function().apply(dn);
+            renderTokenList(scope.tokens());
+
+            if (snst.name() != null) {
+                throw new RuntimeException("not implemented");
+            }
+            if (snst.type() != null) {
+                throw new RuntimeException("not implemented");
+            }
+        } else {
+            // No nested "scope", we use the StructuralName for a local "let" style
+            // hashtag replacement definition.
+            if (snst.name() != null) {
+                addHashtagReplacement(snst.name(), dn.name());
+            }
+            if (snst.type() != null) {
+                addHashtagReplacement(snst.type(), dn.type());
+            }
+        }
+    }
+
     private void renderToken(Token token) {
         switch (token) {
             case StringToken(String s) -> {
@@ -321,14 +380,11 @@ final class Renderer {
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
             }
-            case DataNameSampleToken(NameSet.Predicate predicate, Function<DataName, TemplateScope> function) -> {
-                DataName dn = (DataName)currentCodeFrame.sampleName(predicate);
-                if (dn == null) {
-                    throw new RendererException("No DataName for TODO.");
-                }
-                // TODO: some frame for hashtags?
-                TemplateScope scope = function.apply(dn);
-                renderTokenList(scope.tokens());
+            case DataNameSampleToken dnst -> {
+                renderDataNameSampleToken(dnst);
+            }
+            case StructuralNameSampleToken snst -> {
+                renderStructuralNameSampleToken(snst);
             }
         }
     }
