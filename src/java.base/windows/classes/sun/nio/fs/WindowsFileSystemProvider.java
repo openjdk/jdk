@@ -447,8 +447,8 @@ class WindowsFileSystemProvider
     }
 
     /**
-     * Returns the attributes of the next symbolic link encountered in the
-     * specified path. The handle contained in the returned value must be closed
+     * Returns the attributes of the file located by the given path if it is a
+     * symbolic link. The handle contained in the returned value must be closed
      * once the attributes are no longer needed.
      *
      * @param path the file system path to examine
