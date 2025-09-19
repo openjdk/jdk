@@ -96,13 +96,15 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     const size_t start_page = (size_t)start_idx * _pages_per_region;
     const size_t size_in_pages = num_regions * _pages_per_region;
     bool zero_filled = _storage.commit(start_page, size_in_pages);
-    if (_memory_tag == mtJavaHeap) {
+
+    if (should_distribute_across_numa_nodes()) {
       for (uint region_index = start_idx; region_index < start_idx + num_regions; region_index++ ) {
         void* address = _storage.page_start(region_index * _pages_per_region);
         size_t size_in_bytes = _storage.page_size() * _pages_per_region;
         G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region_index);
       }
     }
+
     if (AlwaysPreTouch) {
       _storage.pretouch(start_page, size_in_pages, pretouch_workers);
     }
@@ -148,14 +150,61 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     return _region_commit_map.find_first_set_bit(region, region_limit) != region_limit;
   }
 
-  void numa_request_on_node(size_t page_idx) {
-    if (_memory_tag == mtJavaHeap) {
-      uint region = (uint)(page_idx * _regions_per_page);
-      void* address = _storage.page_start(page_idx);
-      size_t size_in_bytes = _storage.page_size();
-      G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region);
+  bool commit_pages(size_t start_page, size_t size_in_pages) {
+    bool result = _storage.commit(start_page, size_in_pages);
+
+    if (should_distribute_across_numa_nodes()) {
+      for (size_t page = start_page; page < start_page + size_in_pages; page++) {
+        uint region = checked_cast<uint>(page * _regions_per_page);
+        void* address = _storage.page_start(page);
+        size_t size_in_bytes = _storage.page_size();
+        G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region);
+      }
     }
+    return result;
   }
+
+  // Given increasing integers, applies the method OnNewRange(size_t range_start, size_t range_size)
+  // in the constructor all ranges of consecutive indexes. Consecutive means that
+  // the difference between integers is 1.
+  // Call apply_last() to cover the last range.
+  template <typename OnNewRange>
+  class RangeApplicator {
+    size_t const NoIndex = SIZE_MAX;
+
+    size_t _cur_start;
+    size_t _cur_end;
+
+    OnNewRange _on_new_range;
+
+  public:
+    RangeApplicator(OnNewRange on_new_range) : _cur_start(NoIndex), _cur_end(NoIndex), _on_new_range(on_new_range) { }
+    ~RangeApplicator() {
+      assert(_cur_start == NoIndex, "must be, missing application of lambda");
+      assert(_cur_end == NoIndex, "must be, missing application of lambda");
+    }
+
+    void next_value(size_t index) {
+      assert(_cur_end == NoIndex || _cur_end < index, "Given indexes must be ascending");
+
+      if (_cur_start == NoIndex) {
+        _cur_start = _cur_end = index;
+      } else if (_cur_end + 1 != index) {
+        _on_new_range(_cur_start, _cur_end - _cur_start + 1);
+        _cur_start = _cur_end = index;
+      } else {
+        _cur_end = index;
+      }
+    }
+
+    void apply_last() {
+      if (_cur_start != NoIndex) {
+        assert(_cur_end != NoIndex, "must be");
+        _on_new_range(_cur_start, _cur_end - _cur_start + 1);
+        _cur_start = _cur_end = NoIndex;
+      }
+    }
+  };
 
  public:
   G1RegionsSmallerThanCommitSizeMapper(ReservedSpace rs,
@@ -190,6 +239,13 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     {
+      auto commit_range = [&](size_t page_start, size_t size_in_pages) {
+        if (!commit_pages(page_start, size_in_pages)) {
+          all_zero_filled = false;
+        }
+      };
+      RangeApplicator range(commit_range);
+
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
       for (size_t page = start_page; page <= end_page; page++) {
         if (!is_page_committed(page)) {
@@ -199,18 +255,13 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
           }
           num_committed++;
 
-          if (!_storage.commit(page, 1)) {
-            // Found dirty region during commit.
-            all_zero_filled = false;
-          }
-
-          // Move memory to correct NUMA node for the heap.
-          numa_request_on_node(page);
+          range.next_value(page);
         } else {
           // Page already committed.
           all_zero_filled = false;
         }
       }
+      range.apply_last();
 
       // Update the commit map for the given range. Not using the par_set_range
       // since updates to _region_commit_map for this mapper is protected by _lock.
@@ -233,6 +284,11 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t start_page = region_idx_to_page_idx(start_idx);
     size_t end_page = region_idx_to_page_idx(region_limit - 1);
 
+    auto uncommit_range = [&](size_t page_start, size_t size_in_pages) {
+      _storage.uncommit(page_start, size_in_pages);
+    };
+    RangeApplicator r(uncommit_range);
+
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
@@ -245,9 +301,10 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       // the page is still marked as committed after the clear we should
       // not uncommit it.
       if (!is_page_committed(page)) {
-        _storage.uncommit(page, 1);
+        r.next_value(page);
       }
     }
+    r.apply_last();
   }
 };
 
@@ -255,6 +312,10 @@ void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, b
   if (_listener != nullptr) {
     _listener->on_commit(start_idx, num_regions, zero_filled);
   }
+}
+
+bool G1RegionToSpaceMapper::should_distribute_across_numa_nodes() const {
+  return _memory_tag == mtJavaHeap && G1NUMA::numa()->is_enabled();
 }
 
 G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,
