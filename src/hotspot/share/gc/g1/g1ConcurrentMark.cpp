@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
@@ -1186,179 +1187,6 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
   }
 }
 
-// Update per-region liveness info based on CM stats. Then, reclaim empty
-// regions right away and select certain regions (e.g. sparse ones) for remset
-// rebuild.
-class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
-  G1CollectedHeap* _g1h;
-  G1ConcurrentMark* _cm;
-  G1HeapRegionClaimer _hrclaimer;
-
-  uint volatile _total_selected_for_rebuild;
-
-  // Reclaimed empty regions
-  G1FreeRegionList _cleanup_list;
-
-  struct G1OnRegionClosure : public G1HeapRegionClosure {
-    G1CollectedHeap* _g1h;
-    G1ConcurrentMark* _cm;
-    // The number of regions actually selected for rebuild.
-    uint _num_selected_for_rebuild;
-
-    size_t _freed_bytes;
-    uint _num_old_regions_removed;
-    uint _num_humongous_regions_removed;
-    G1FreeRegionList* _local_cleanup_list;
-
-    G1OnRegionClosure(G1CollectedHeap* g1h,
-                      G1ConcurrentMark* cm,
-                      G1FreeRegionList* local_cleanup_list) :
-      _g1h(g1h),
-      _cm(cm),
-      _num_selected_for_rebuild(0),
-      _freed_bytes(0),
-      _num_old_regions_removed(0),
-      _num_humongous_regions_removed(0),
-      _local_cleanup_list(local_cleanup_list) {}
-
-    void reclaim_empty_region(G1HeapRegion* hr) {
-      assert(!hr->has_pinned_objects(), "precondition");
-      assert(hr->used() > 0, "precondition");
-
-      _freed_bytes += hr->used();
-      hr->set_containing_set(nullptr);
-      hr->clear_cardtable();
-      _cm->clear_statistics(hr);
-      G1HeapRegionPrinter::mark_reclaim(hr);
-    }
-
-    void reclaim_empty_humongous_region(G1HeapRegion* hr) {
-      assert(hr->is_starts_humongous(), "precondition");
-
-      auto on_humongous_region = [&] (G1HeapRegion* hr) {
-        assert(hr->is_humongous(), "precondition");
-
-        reclaim_empty_region(hr);
-        _num_humongous_regions_removed++;
-        _g1h->free_humongous_region(hr, _local_cleanup_list);
-      };
-
-      _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
-    }
-
-    void reclaim_empty_old_region(G1HeapRegion* hr) {
-      assert(hr->is_old(), "precondition");
-
-      reclaim_empty_region(hr);
-      _num_old_regions_removed++;
-      _g1h->free_region(hr, _local_cleanup_list);
-    }
-
-    bool do_heap_region(G1HeapRegion* hr) override {
-      G1RemSetTrackingPolicy* tracker = _g1h->policy()->remset_tracker();
-      if (hr->is_starts_humongous()) {
-        // The liveness of this humongous obj decided by either its allocation
-        // time (allocated after conc-mark-start, i.e. live) or conc-marking.
-        const bool is_live = _cm->top_at_mark_start(hr) == hr->bottom()
-                          || _cm->contains_live_object(hr->hrm_index())
-                          || hr->has_pinned_objects();
-        if (is_live) {
-          const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
-          auto on_humongous_region = [&] (G1HeapRegion* hr) {
-            if (selected_for_rebuild) {
-              _num_selected_for_rebuild++;
-            }
-            _cm->update_top_at_rebuild_start(hr);
-          };
-
-          _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
-        } else {
-          reclaim_empty_humongous_region(hr);
-        }
-      } else if (hr->is_old()) {
-        uint region_idx = hr->hrm_index();
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
-
-        const bool is_live = hr->live_bytes() != 0
-                          || hr->has_pinned_objects();
-        if (is_live) {
-          const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
-          if (selected_for_rebuild) {
-            _num_selected_for_rebuild++;
-          }
-          _cm->update_top_at_rebuild_start(hr);
-        } else {
-          reclaim_empty_old_region(hr);
-        }
-      }
-
-      return false;
-    }
-  };
-
-public:
-  G1UpdateRegionLivenessAndSelectForRebuildTask(G1CollectedHeap* g1h,
-                                                G1ConcurrentMark* cm,
-                                                uint num_workers) :
-    WorkerTask("G1 Update Region Liveness and Select For Rebuild"),
-    _g1h(g1h),
-    _cm(cm),
-    _hrclaimer(num_workers),
-    _total_selected_for_rebuild(0),
-    _cleanup_list("Empty Regions After Mark List") {}
-
-  ~G1UpdateRegionLivenessAndSelectForRebuildTask() {
-    if (!_cleanup_list.is_empty()) {
-      log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
-      // And actually make them available.
-      _g1h->prepend_to_freelist(&_cleanup_list);
-    }
-  }
-
-  void work(uint worker_id) override {
-    G1FreeRegionList local_cleanup_list("Local Cleanup List");
-    G1OnRegionClosure on_region_cl(_g1h, _cm, &local_cleanup_list);
-    _g1h->heap_region_par_iterate_from_worker_offset(&on_region_cl, &_hrclaimer, worker_id);
-
-    AtomicAccess::add(&_total_selected_for_rebuild, on_region_cl._num_selected_for_rebuild);
-
-    // Update the old/humongous region sets
-    _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
-                                   on_region_cl._num_humongous_regions_removed);
-
-    {
-      MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
-      _g1h->decrement_summary_bytes(on_region_cl._freed_bytes);
-
-      _cleanup_list.add_ordered(&local_cleanup_list);
-      assert(local_cleanup_list.is_empty(), "post-condition");
-    }
-  }
-
-  uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
-
-  static uint desired_num_workers(uint num_regions) {
-    const uint num_regions_per_worker = 384;
-    return (num_regions + num_regions_per_worker - 1) / num_regions_per_worker;
-  }
-};
-
-class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-
-public:
-  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) :
-    _g1h(g1h) {
-  }
-
-  virtual bool do_heap_region(G1HeapRegion* r) {
-    // Update the remset tracking state from updating to complete
-    // if remembered sets have been rebuilt.
-    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
-    return false;
-  }
-};
-
 class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
@@ -1505,6 +1333,20 @@ void G1ConcurrentMark::compute_new_sizes() {
   // sure we update the old gen/space data.
   _g1h->monitoring_support()->update_sizes();
 }
+
+class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+
+public:
+  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) : _g1h(g1h) { }
+
+  bool do_heap_region(G1HeapRegion* r) override {
+    // Update the remset tracking state from updating to complete
+    // if remembered sets have been rebuilt.
+    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
+    return false;
+  }
+};
 
 void G1ConcurrentMark::cleanup() {
   assert_at_safepoint_on_vm_thread();
