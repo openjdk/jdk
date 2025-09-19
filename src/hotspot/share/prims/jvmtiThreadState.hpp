@@ -27,8 +27,8 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
-#include "oops/oopHandle.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopHandle.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/javaThread.hpp"
@@ -434,21 +434,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline void clear_class_versions_map() { set_class_versions_map(nullptr, nullptr); }
 
   static inline
-  Klass* class_to_verify_considering_redefinition(Klass* klass,
-                                                  JavaThread *thread) {
-    if (!klass->is_instance_klass()) {
-      // set_class_being_redefined() records ONLY InstanceKlass* that are being redefined, so
-      // other Klasses will never match.
-      return klass;
-    } else {
-      return class_to_verify_considering_redefinition(InstanceKlass::cast(klass),
-                                                      thread);
-    }
-  }
-
-  static inline
   InstanceKlass* class_to_verify_considering_redefinition(InstanceKlass* klass,
-                                                          JavaThread *thread) {
+                                                          JavaThread* thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state != nullptr && state->_the_class_for_redefinition_verification != nullptr) {
       if (state->_the_class_for_redefinition_verification == klass) {

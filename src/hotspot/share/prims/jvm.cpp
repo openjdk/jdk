@@ -2253,23 +2253,25 @@ JVM_END
 // Reflection for the verifier /////////////////////////////////////////////////////////////////
 
 // RedefineClasses support: bug 6214132 caused verification to fail.
-// All functions from this section should call the jvmtiThreadSate function:
-//   Klass* class_to_verify_considering_redefinition(Klass* klass).
-// The function returns a Klass* of the _scratch_class if the verifier
-// was invoked in the middle of the class redefinition.
-// Otherwise it returns its argument value which is the _the_class Klass*.
-// Please, refer to the description in the jvmtiThreadState.hpp.
+// All functions from this section, unless noted otherwise, should call the functions
+//   get_klass_considering_redefinition(), or
+//   get_instance_klass_considering_redefinition()
+// These function return JvmtiThreadState::_scratch_class if the verifier
+// was invoked in the middle of the redefinition of cls.
+// See jvmtiThreadState.hpp for details.
 
-inline Klass* get_klass_considering_redefinition(jclass cls, JavaThread *thread) {
+inline Klass* get_klass_considering_redefinition(jclass cls, JavaThread* thread) {
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  return k;
+  if (k->is_instance_klass()) {
+    return JvmtiThreadState::class_to_verify_considering_redefinition(InstanceKlass::cast(k), thread);
+  } else {
+    return k;
+  }
 }
 
-inline InstanceKlass* get_instance_klass_considering_redefinition(jclass cls, JavaThread *thread) {
+inline InstanceKlass* get_instance_klass_considering_redefinition(jclass cls, JavaThread* thread) {
   InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(cls));
-  ik = JvmtiThreadState::class_to_verify_considering_redefinition(ik, thread);
-  return ik;
+  return JvmtiThreadState::class_to_verify_considering_redefinition(ik, thread);
 }
 
 JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
@@ -2278,9 +2280,9 @@ JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
     return JNI_FALSE;
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
-  // This isn't necessary since answer is the same since redefinition
+  // This isn't necessary since answer is the same because redefinition
   // has already checked this matches for the scratch class.
-  // k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  // k = get_klass_considering_redefinition(cls, thread)
   jboolean result = k->is_interface();
   assert(!result || k->is_instance_klass(),
          "all interfaces are instance types");
@@ -2288,7 +2290,8 @@ JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
 JVM_END
 
 JVM_ENTRY(const char*, JVM_GetClassNameUTF(JNIEnv *env, jclass cls))
-  Klass* k = get_klass_considering_redefinition(cls, thread);
+  // No need to call get_klass_considering_redefinition() as redefinition cannot change a class's name.
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   return k->name()->as_utf8();
 JVM_END
 
