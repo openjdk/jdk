@@ -26,12 +26,28 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * TODO: rename to TemplateScope? - or maybe just reove?
- *       ah, or maybe make it a one-use kind of token list, just to avoid duplication?
- *       of course throwing a good exception would be a little tricky...
- * A Template generates a {@link TemplateBody}, which is a list of {@link Token}s,
- * which are then later rendered to {@link String}s.
- *
- * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
+ * The {@link TokenList} represents the tokens genrated by a Template call, TODO: else?
+ * Note, that such a {@link TokenList} has to be used exactly once in a {@link Template},
+ * otherwise a {@link RendererException} is thrown. Using it exactly once means the
+ * generated string corresponding to the {@link Token}s of the {@link TokenList} occurs
+ * exactly once in the rendered string.
  */
-public record TemplateBody(List<Token> tokens) {}
+public final class TokenList implements Token {
+    private final List<Token> tokens;
+    private boolean hasBeenUsed = false;
+
+    TokenList(List<Token> tokens) {
+        this.tokens = List.copyOf(tokens); // defensive immutable copy
+        // TODO: register with Renderer, so we can throw an exception if it is never used!
+    }
+
+    List<Token> getTokens() {
+        if (this.hasBeenUsed) {
+            throw new RendererException("Duplicate use of TokenList not permitted. " +
+                                        "Did you duplicate the output from a Template.call" +
+                                        "or ... TODO?");
+        }
+        this.hasBeenUsed = true;
+        return tokens;
+    }
+}

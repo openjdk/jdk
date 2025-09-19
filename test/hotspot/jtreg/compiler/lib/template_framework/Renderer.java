@@ -320,6 +320,25 @@ final class Renderer {
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;
             }
+            case TokenList tokenList -> {
+                // TODO: what to do with tokens? How does this mesh with the CodeFrame?
+                //       Also this is nasty. It allows the user to receive intermediate
+                //       state of the rendering, and mess up the state. Not great.
+                //       The user could take the tokens, and decide to reverse the order
+                //       or forget to forward, or duplicate. That just does not look nice.
+                //       Maybe we should actually make "sample" a token, in the way that
+                //       "let" can be a token as well. How would that work:
+                //       dataNames()....sample((DataName dn) -> scope(
+                //           more tokens, maybe a let, etc.
+                //       ))
+                //       For convenience, we could even have automatic hashtag capture.
+                //       dataNames()....sample("name", "type", (DataName dn) -> scope(
+                //           more tokens, maybe a let, etc.
+                //       ))
+                //       Or maybe even only capturing via hashtag, let's see.
+                //       The "scope" would use the hashtags from outside, but only
+                //       define them locally, so "let" needs to be a token for sure.
+            }
         }
     }
 
