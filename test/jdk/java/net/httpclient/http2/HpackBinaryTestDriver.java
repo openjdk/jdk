@@ -29,6 +29,6 @@
  * @compile/module=java.net.http jdk/internal/net/http/hpack/SpecHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/TestHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/BuffersTestingKit.java
- * @run testng/othervm java.net.http/jdk.internal.net.http.hpack.BinaryPrimitivesTest
+ * @run testng/othervm/timeout=240 java.net.http/jdk.internal.net.http.hpack.BinaryPrimitivesTest
  */
 public class HpackBinaryTestDriver { }

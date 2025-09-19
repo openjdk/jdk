@@ -357,6 +357,13 @@ public class HttpClientBuilderTest {
     @Test
     public void testVersion() {
         HttpClient.Builder builder = HttpClient.newBuilder();
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_2);
+        }
+        builder.version(Version.HTTP_3);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_3);
+        }
         builder.version(Version.HTTP_2);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().version() == Version.HTTP_2);
@@ -366,6 +373,10 @@ public class HttpClientBuilderTest {
             assertTrue(closer.build().version() == Version.HTTP_1_1);
         }
         assertThrows(NPE, () -> builder.version(null));
+        builder.version(Version.HTTP_3);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_3);
+        }
         builder.version(Version.HTTP_2);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().version() == Version.HTTP_2);

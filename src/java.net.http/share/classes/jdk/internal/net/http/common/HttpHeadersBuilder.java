@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,15 @@ public class HttpHeadersBuilder {
 
     public HttpHeadersBuilder() {
         headersMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    // used in test library (Http3ServerExchange)
+    public HttpHeadersBuilder(HttpHeaders headers) {
+        headersMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (Map.Entry<String, List<String>> entry : headers.map().entrySet()) {
+            List<String> valuesCopy = new ArrayList<>(entry.getValue());
+            headersMap.put(entry.getKey(), valuesCopy);
+        }
     }
 
     public HttpHeadersBuilder structuralCopy() {
