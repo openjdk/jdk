@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,11 +86,6 @@ import java.util.Objects;
  * Context object used during date and time printing.
  * <p>
  * This class provides a single wrapper to items used in the format.
- *
- * @implSpec
- * This class is a mutable context intended for use from a single thread.
- * Usage of the class is thread-safe within standard printing as the framework creates
- * a new instance of the class for each format and printing is single-threaded.
  *
  * @since 1.8
  */
