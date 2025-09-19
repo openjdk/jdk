@@ -153,8 +153,6 @@ public class TestTemplate {
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),  "A Template method such as");
-        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).sample(), "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
         expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
@@ -178,7 +176,7 @@ public class TestTemplate {
         expectRendererException(() -> testFailingDollarHashtagName3(), "Is not a valid '#' replacement pattern: '#' in '#$name'.");
         expectRendererException(() -> testFailingDollarHashtagName4(), "Is not a valid '$' replacement pattern: '$' in '$#name'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
+        expectRendererException(() -> testFailingSample1(),  "No Name for TODO.");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
@@ -1119,16 +1117,14 @@ public class TestTemplate {
         ));
 
         var template6 = Template.make("type", (DataName.Type type) -> scope(
-            dataNames(MUTABLE).exactOf(type).sample((DataName v) -> scope( // TODO: can we get name directly?
-                let("v", v.name()),
-                "{ $sample\n",
-                "#v = 7\n",
-                "} $sample\n"
-            ))
+            dataNames(MUTABLE).exactOf(type).sampleAndLetAs("v"),
+            "{ $sample\n",
+            "#v = 7\n",
+            "} $sample\n"
         ));
 
         var template7 = Template.make("type", (DataName.Type type) -> scope(
-            let("v", dataNames(MUTABLE_OR_IMMUTABLE).exactOf(type).sample().name()),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(type).sampleAndLetAs("v"),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
@@ -1329,8 +1325,17 @@ public class TestTemplate {
         ));
 
         var template3 = Template.make("type", (DataName.Type type) -> scope(
-            let("name", dataNames(MUTABLE).subtypeOf(type).sample()),
-            "Sample #type: #name\n"
+            dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name1"),
+            "Sample #type: #name1\n",
+            dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name2", "type2"),
+            "Sample #type: #name2 #type2\n",
+            dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> scope(
+                let("name3", dn.name()),
+                let("type3", dn.type()),
+                let("dn", dn), // format the whole DataName with toString
+                "Sample #type: #name3 #type3 #dn\n"
+            ))
+            // TODO: also auto capture hashtags!
         ));
 
         var template4 = Template.make(() -> scope(
@@ -1383,12 +1388,22 @@ public class TestTemplate {
               supertype: false, 0, {}
             ]
             Create name for myClassA11, should be visible for the super classes
-            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA11: v1_1
+            Sample myClassA11: v1_1 myClassA11
+            Sample myClassA11: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: v1_1
+            Sample myClassA1: v1_1 myClassA11
+            Sample myClassA1: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA: v1_1
+            Sample myClassA: v1_1 myClassA11
+            Sample myClassA: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
             Create name for myClassA, should never be visible for the sub classes
-            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA11: v1_1
+            Sample myClassA11: v1_1 myClassA11
+            Sample myClassA11: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: v1_1
+            Sample myClassA1: v1_1 myClassA11
+            Sample myClassA1: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
             DataNames:
             [myClassA:
               exact: true, 1, {v2_1}
@@ -1544,8 +1559,17 @@ public class TestTemplate {
         ));
 
         var template3 = Template.make("type", (StructuralName.Type type) -> scope(
-            let("name", structuralNames().subtypeOf(type).sample()),
-            "Sample #type: #name\n"
+            structuralNames().subtypeOf(type).sampleAndLetAs("name1"),
+            "Sample #type: #name1\n",
+            structuralNames().subtypeOf(type).sampleAndLetAs("name2", "type2"),
+            "Sample #type: #name2 #type2\n",
+            structuralNames().subtypeOf(type).sample((StructuralName sn) -> scope(
+                let("name3", sn.name()),
+                let("type3", sn.type()),
+                let("sn", sn), // format the whole StructuralName with toString
+                "Sample #type: #name3 #type3 #sn\n"
+            ))
+            // TODO: also auto capture hashtags!
         ));
 
         var template4 = Template.make(() -> scope(
@@ -1598,12 +1622,22 @@ public class TestTemplate {
               supertype: false, 0, {}
             ]
             Create name for myStructuralTypeA11, should be visible for the supertypes
-            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA11: v1_1
+            Sample StructuralA11: v1_1 StructuralA11
+            Sample StructuralA11: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: v1_1
+            Sample StructuralA1: v1_1 StructuralA11
+            Sample StructuralA1: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA: v1_1
+            Sample StructuralA: v1_1 StructuralA11
+            Sample StructuralA: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
             Create name for myStructuralTypeA, should never be visible for the subtypes
-            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA11: v1_1
+            Sample StructuralA11: v1_1 StructuralA11
+            Sample StructuralA11: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: v1_1
+            Sample StructuralA1: v1_1 StructuralA11
+            Sample StructuralA1: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
             StructuralNames:
             [StructuralA:
               exact: true, 1, {v2_1}
@@ -1687,7 +1721,7 @@ public class TestTemplate {
         ));
 
         var template4 = Template.make("type", (StructuralName.Type type) -> scope(
-            let("v", structuralNames().exactOf(type).sample().name()),
+            structuralNames().exactOf(type).sampleAndLetAs("v"),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
@@ -1982,8 +2016,8 @@ public class TestTemplate {
 
     public static void testFailingSample1() {
         var template1 = Template.make(() -> scope(
-            // No variable added yet.
-            let("v", dataNames(MUTABLE).exactOf(myInt).sample().name()),
+            // No DataName added yet.
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("v"),
             "v is #v\n"
         ));
 
@@ -1993,7 +2027,7 @@ public class TestTemplate {
     public static void testFailingSample2() {
         var template1 = Template.make(() -> scope(
             // no type restriction
-            let("v", dataNames(MUTABLE).sample().name()),
+            dataNames(MUTABLE).sampleAndLetAs("v"),
             "v is #v\n"
         ));
 

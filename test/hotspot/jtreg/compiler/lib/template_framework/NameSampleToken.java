@@ -27,8 +27,13 @@ import java.util.function.Function;
 
 // TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
 // TODO: documentation about lambda and hashtag, maybe also an assert?
-record DataNameSampleToken(
+record NameSampleToken<N>(
         NameSet.Predicate predicate,
         String name,
         String type,
-        Function<DataName, TemplateScope> function) implements Token {}
+        Function<N, TemplateScope> function) implements Token {
+
+    TemplateScope getScope(Name n) {
+        return function().apply((N)n);
+    }
+}

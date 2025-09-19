@@ -166,19 +166,19 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         }
 
         // TODO: make sure we have tests/examples for all!
-        public StructuralNameSampleToken sample(Function<StructuralName, TemplateScope> function) {
+        public NameSampleToken sample(Function<StructuralName, TemplateScope> function) {
             // TODO: are exceptions nice enough with just predicate?
-            return new StructuralNameSampleToken(predicate(), null, null, function);
+            return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
 
-        public StructuralNameSampleToken sampleAndLetAs(String name, String type) {
+        public NameSampleToken sampleAndLetAs(String name, String type) {
             // TODO: are exceptions nice enough with just predicate?
-            return new StructuralNameSampleToken(predicate(), name, type, null);
+            return new NameSampleToken<StructuralName>(predicate(), name, type, null);
         }
 
-        public StructuralNameSampleToken sampleAndLetAs(String name) {
+        public NameSampleToken sampleAndLetAs(String name) {
             // TODO: are exceptions nice enough with just predicate?
-            return new StructuralNameSampleToken(predicate(), name, null, null);
+            return new NameSampleToken<StructuralName>(predicate(), name, null, null);
         }
 
         /**
