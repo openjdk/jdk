@@ -36,6 +36,6 @@ public sealed interface Token permits StringToken,
                                       HookAnchorToken,
                                       HookInsertToken,
                                       AddNameToken,
-                                      NameSampleToken,
+                                      NameSetQueryToken,
                                       LetToken,
                                       NothingToken {}

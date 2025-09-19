@@ -203,8 +203,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          */
         // TODO: make sure we have tests/examples for all!
         // TODO: combo sample?
-        public NameSampleToken sample(Function<DataName, TemplateScope> function) {
-            return new NameSampleToken<DataName>(predicate(), null, null, function);
+        public NameSetQueryToken sample(Function<DataName, TemplateScope> function) {
+            return NameSetQueryToken.makeSample(predicate(), null, null, function);
         }
 
         /**
@@ -218,8 +218,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSampleToken sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<DataName>(predicate(), name, type, null);
+        public NameSetQueryToken sampleAndLetAs(String name, String type) {
+            return NameSetQueryToken.makeSample(predicate(), name, type, null);
         }
 
         /**
@@ -232,8 +232,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSampleToken sampleAndLetAs(String name) {
-            return new NameSampleToken<DataName>(predicate(), name, null, null);
+        public NameSetQueryToken sampleAndLetAs(String name) {
+            return NameSetQueryToken.makeSample(predicate(), name, null, null);
         }
 
         /**
@@ -255,7 +255,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: remove or modify?
+        // TODO: remove or modify? - could do also a "ifHasAnyDo" or "ifHasNoneDo"
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
         }
@@ -269,6 +269,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          */
         // TODO: remove or modify? -> what if we want to sample but without opening
         //       an inner scope that would make new data names local?
+        //       We could also do a kind of "map".
         public List<DataName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (DataName)n).toList();
