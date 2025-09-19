@@ -138,11 +138,13 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
+        testDataNames0();
         testDataNames1();
         testDataNames2();
         testDataNames3();
         testDataNames4();
         testDataNames5();
+        testStructuralNames0();
         testStructuralNames1();
         testStructuralNames2();
         testListArgument();
@@ -1000,6 +1002,22 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testDataNames0() {
+        var template = Template.make(() -> scope(
+            // When a DataName is added, it is immediately available afterwards.
+            // This may seem trivial, but it requires that either both "add" and
+            // "sample" happen in lambda execution, or in token evaluation.
+            // Otherwise, one can float above the other, and lead to unintuitive
+            // behavior.
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("v"),
+            "sample: #v."
+        ));
+
+        String code = template.render();
+        checkEQ(code, "sample: x.");
+    }
+
     public static void testDataNames1() {
         var hook1 = new Hook("Hook1");
 
@@ -1517,6 +1535,22 @@ public class TestTemplate {
         String code = template1.render();
         String expected = "";
         checkEQ(code, expected);
+    }
+
+    public static void testStructuralNames0() {
+        var template = Template.make(() -> scope(
+            // When a StructuralName is added, it is immediately available afterwards.
+            // This may seem trivial, but it requires that either both "add" and
+            // "sample" happen in lambda execution, or in token evaluation.
+            // Otherwise, one can float above the other, and lead to unintuitive
+            // behavior.
+            addStructuralName("x", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).sampleAndLetAs("v"),
+            "sample: #v."
+        ));
+
+        String code = template.render();
+        checkEQ(code, "sample: x.");
     }
 
     public static void testStructuralNames1() {

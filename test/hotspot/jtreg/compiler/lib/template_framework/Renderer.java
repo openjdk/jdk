@@ -266,7 +266,9 @@ final class Renderer {
         }
         if (nst.function() != null) {
             // We have a nested "scope" that captures the DataName.
-            // TODO: some template frame for hashtags?
+            // TODO: some template frame for hashtags? And also probably
+            // for new definitions etc!
+            // TODO: add tests for it
             TemplateScope scope = nst.getScope(n);
             renderTokenList(scope.tokens());
 
