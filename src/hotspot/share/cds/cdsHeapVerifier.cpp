@@ -36,6 +36,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -273,7 +274,8 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
 
 // This function is called once for every archived heap object. Warn if this object is referenced by
 // a static field of a class that's not aot-initialized.
-inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
+inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, HeapShared::CachedOopInfo& value) {
+  oop orig_obj = orig_obj_handle.resolve();
   _archived_objs++;
 
   if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
@@ -323,7 +325,7 @@ public:
 
 // Call this function (from gdb, etc) if you want to know why an object is archived.
 void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
-  HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(orig_obj);
+  HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(orig_obj);
   if (info != nullptr) {
     trace_to_root(st, orig_obj, nullptr, info);
   } else {
@@ -357,7 +359,7 @@ const char* static_field_name(oop mirror, oop field) {
 int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
   if (info->orig_referrer() != nullptr) {
-    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(info->orig_referrer());
+    HeapShared::CachedOopInfo* ref = HeapShared::get_cached_oop_info(info->orig_referrer());
     assert(ref != nullptr, "sanity");
     level = trace_to_root(st, info->orig_referrer(), orig_obj, ref) + 1;
   } else if (java_lang_String::is_instance(orig_obj)) {

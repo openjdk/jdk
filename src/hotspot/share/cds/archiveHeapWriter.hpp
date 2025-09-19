@@ -152,7 +152,7 @@ private:
   };
   static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
 
-  typedef ResizeableHashTable<size_t, oop,
+  typedef ResizeableHashTable<size_t, OopHandle,
       AnyObj::C_HEAP,
       mtClassShared> BufferOffsetToSourceObjectTable;
   static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;
@@ -227,6 +227,7 @@ private:
 
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
+  static void delete_tables_with_raw_oops();
   static void add_source_obj(oop src_obj);
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);

@@ -720,6 +720,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
 
+  HeapShared::delete_tables_with_raw_oops();
   CDSConfig::set_is_at_aot_safepoint(false);
 }
 
