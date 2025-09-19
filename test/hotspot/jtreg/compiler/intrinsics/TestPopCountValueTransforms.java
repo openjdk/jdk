@@ -50,8 +50,8 @@ public class TestPopCountValueTransforms {
 
     static final long rand_bndL1 = G.longs().next();
     static final long rand_bndL2 = G.longs().next();
-    static final long rand_popcL1 = G.uniformLongs(0, 32).next();
-    static final long rand_popcL2 = G.uniformLongs(0, 32).next();
+    static final long rand_popcL1 = G.uniformLongs(0, 64).next();
+    static final long rand_popcL2 = G.uniformLongs(0, 64).next();
 
     @Test
     @IR(counts = {IRNode.POPCOUNT_L, " 0 "})
