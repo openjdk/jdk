@@ -48,7 +48,7 @@ class PhaseChaitin;
 // Live-RanGe structure.
 class LRG : public ResourceObj {
 public:
-  static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
+  static const uint INFINITE_STACK_SIZE = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
 
   double _cost;                 // 2 for loads/1 for stores times block freq
@@ -83,14 +83,14 @@ public:
   void set_degree( uint degree ) {
     _eff_degree = degree;
     DEBUG_ONLY(_degree_valid = 1;)
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Made a change that hammered degree
   void invalid_degree() { DEBUG_ONLY(_degree_valid=0;) }
   // Incrementally modify degree.  If it was correct, it should remain correct
   void inc_degree( uint mod ) {
     _eff_degree += mod;
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Compute the degree between 2 live ranges
   int compute_degree( LRG &l ) const;
@@ -105,9 +105,9 @@ private:
   RegMask _mask;                // Allowed registers for this LRG
   uint _mask_size;              // cache of _mask.Size();
 public:
-  int compute_mask_size() const { return _mask.is_AllStack() ? AllStack_size : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.Size(); }
   void set_mask_size( int size ) {
-    assert((size == (int)AllStack_size) || (size == (int)_mask.Size()), "");
+    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.Size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;

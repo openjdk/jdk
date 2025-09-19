@@ -28,6 +28,7 @@
  * VMThreadStackSize values should result in an error message that shows
  * the minimum stack size value for each thread type.
  * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TooSmallStackSize

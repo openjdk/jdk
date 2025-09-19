@@ -501,7 +501,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, true);
+  AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -652,6 +652,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  CDSConfig::set_is_at_aot_safepoint(true);
+
   if (!CDSConfig::is_dumping_final_static_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
@@ -717,6 +719,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
+
+  HeapShared::delete_tables_with_raw_oops();
+  CDSConfig::set_is_at_aot_safepoint(false);
 }
 
 class CollectClassesForLinking : public KlassClosure {
@@ -773,20 +778,17 @@ bool AOTMetaspace::may_be_eagerly_linked(InstanceKlass* ik) {
   return true;
 }
 
-void AOTMetaspace::link_shared_classes(TRAPS) {
-  AOTClassLinker::initialize();
-  AOTClassInitializer::init_test_class(CHECK);
-
+void AOTMetaspace::link_all_loaded_classes(JavaThread* current) {
   while (true) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     CollectClassesForLinking collect_classes;
     bool has_linked = false;
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       if (may_be_eagerly_linked(ik)) {
-        has_linked |= try_link_class(THREAD, ik);
+        has_linked |= try_link_class(current, ik);
       }
     }
 
@@ -796,6 +798,13 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
+}
+
+void AOTMetaspace::link_shared_classes(TRAPS) {
+  AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
+
+  link_all_loaded_classes(THREAD);
 
   // Eargerly resolve all string constants in constant pools
   {
@@ -804,7 +813,7 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
-      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
   }
@@ -1068,11 +1077,6 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder, FileMapInfo* ma
     return false;
   }
   builder->write_archive(map_info, heap_info);
-
-  if (AllowArchivingWithJavaAgent) {
-    aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment", CDSConfig::type_of_archive_being_loaded());
-  }
   return true;
 }
 
@@ -1288,7 +1292,7 @@ void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   } else if (CDSConfig::new_aot_flags_used()) {
     vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
   } else {
-    vm_exit_during_initialization("Unable to use shared archive.", nullptr);
+    vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
 }
 
@@ -1416,6 +1420,7 @@ FileMapInfo* AOTMetaspace::open_static_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
+    log_info(cds)("Opening of static archive %s failed", static_archive);
     return nullptr;
   }
   return mapinfo;
@@ -1992,7 +1997,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
-    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::serialize(&rc);
     DynamicArchive::setup_array_klasses();
   }
 

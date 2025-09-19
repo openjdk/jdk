@@ -33,7 +33,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -99,7 +99,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingNMethodClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
+        NMethodToOopClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -127,7 +127,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       pm->process_popped_location_depth(task, true);
-      pm->drain_stacks_depth(true);
+      pm->drain_stacks(true);
     } else {
       if (terminator.offer_termination()) {
         break;
@@ -148,15 +148,10 @@ public:
 PSIsAliveClosure PSScavenge::_is_alive_closure;
 
 class PSKeepAliveClosure: public OopClosure {
-protected:
-  MutableSpace* _to_space;
   PSPromotionManager* _promotion_manager;
 
 public:
   PSKeepAliveClosure(PSPromotionManager* pm) : _promotion_manager(pm) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    _to_space = heap->young_gen()->to_space();
-
     assert(_promotion_manager != nullptr, "Sanity");
   }
 
@@ -239,7 +234,7 @@ public:
 };
 
 class ScavengeRootsTask : public WorkerTask {
-  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
   PSOldGen* _old_gen;
@@ -252,7 +247,7 @@ public:
   ScavengeRootsTask(PSOldGen* old_gen,
                     uint active_workers) :
     WorkerTask("ScavengeRootsTask"),
-    _strong_roots_scope(active_workers),
+    _threads_claim_token_scope(),
     _subtasks(ParallelRootType::sentinel),
     _old_gen(old_gen),
     _gen_top(old_gen->object_space()->top()),
