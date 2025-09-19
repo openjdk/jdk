@@ -207,6 +207,8 @@ protected:
   Klass(KlassKind kind);
   Klass();
 
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
+
  public:
   int kind() { return _kind; }
 
@@ -794,10 +796,6 @@ public:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
-
-  // Returns true if this Klass needs to be addressable via narrow Klass ID.
-  inline bool needs_narrow_id() const;
-
 };
 
 #endif // SHARE_OOPS_KLASS_HPP
