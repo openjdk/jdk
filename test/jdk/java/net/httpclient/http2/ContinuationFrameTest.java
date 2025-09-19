@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
- * @run testng/othervm ContinuationFrameTest
+ * @run junit/othervm ContinuationFrameTest
  */
 
 import java.io.IOException;
@@ -46,6 +46,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.stream.Stream;
+
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
@@ -59,25 +61,25 @@ import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ContinuationFrameTest {
 
-    SSLContext sslContext;
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    String http2URI;
-    String https2URI;
-    String noBodyhttp2URI;
-    String noBodyhttps2URI;
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    static SSLContext sslContext;
+    static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    static String http2URI;
+    static String https2URI;
+    static String noBodyhttp2URI;
+    static String noBodyhttps2URI;
+    final static ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     /**
      * A function that returns a list of 1) a HEADERS frame ( with an empty
@@ -132,29 +134,29 @@ public class ContinuationFrameTest {
             return frames;
         };
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
-        return new Object[][] {
-                { http2URI,        false, oneContinuation },
-                { https2URI,       false, oneContinuation },
-                { http2URI,        true,  oneContinuation },
-                { https2URI,       true,  oneContinuation },
+    static Stream<Arguments> variants() {
+        return Stream.of(
+                Arguments.of(http2URI,  false, oneContinuation),
+                Arguments.of(https2URI, false, oneContinuation),
+                Arguments.of(http2URI,  true,  oneContinuation),
+                Arguments.of(https2URI, true,  oneContinuation),
 
-                { noBodyhttp2URI,  false, twoContinuation },
-                { noBodyhttp2URI,  true,  twoContinuation },
-                { noBodyhttps2URI, false, twoContinuation },
-                { noBodyhttps2URI, true,  twoContinuation },
+                Arguments.of(noBodyhttp2URI,  false, twoContinuation),
+                Arguments.of(noBodyhttp2URI,  true,  twoContinuation),
+                Arguments.of(noBodyhttps2URI, false, twoContinuation),
+                Arguments.of(noBodyhttps2URI, true,  twoContinuation),
 
-                { http2URI,        false, byteAtATime },
-                { https2URI,       false, byteAtATime },
-                { http2URI,        true,  byteAtATime },
-                { https2URI,       true,  byteAtATime },
-        };
+                Arguments.of(http2URI,  false, byteAtATime),
+                Arguments.of(https2URI, false, byteAtATime),
+                Arguments.of(http2URI,  true,  byteAtATime),
+                Arguments.of(https2URI, true,  byteAtATime)
+        );
     }
 
     static final int ITERATION_COUNT = 20;
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void test(String uri,
               boolean sameClient,
               BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> headerFramesSupplier)
@@ -184,22 +186,20 @@ public class ContinuationFrameTest {
 
             if(uri.contains("nobody")) {
                 out.println("Got response: " + resp);
-                assertTrue(resp.statusCode() == 204,
-                    "Expected 204, got:" + resp.statusCode());
-                assertEquals(resp.version(), HTTP_2);
+                assertEquals(204, resp.statusCode(), "Expected 204, got:" + resp.statusCode());
+                assertEquals(HTTP_2, resp.version());
                 continue;
             }
             out.println("Got response: " + resp);
             out.println("Got body: " + resp.body());
-            assertTrue(resp.statusCode() == 200,
-                       "Expected 200, got:" + resp.statusCode());
-            assertEquals(resp.body(), "Hello there!");
-            assertEquals(resp.version(), HTTP_2);
+            assertEquals(200, resp.statusCode(), "Expected 200, got:" + resp.statusCode());
+            assertEquals("Hello there!", resp.body());
+            assertEquals(HTTP_2, resp.version());
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -227,8 +227,8 @@ public class ContinuationFrameTest {
         https2TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         AssertionError fail = TRACKER.check(500);
         try {
             http2TestServer.stop();
