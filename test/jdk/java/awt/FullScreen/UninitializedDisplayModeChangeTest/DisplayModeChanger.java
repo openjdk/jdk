@@ -38,39 +38,37 @@ public class DisplayModeChanger {
             GraphicsEnvironment.getLocalGraphicsEnvironment()
                                .getDefaultScreenDevice();
     private static final DisplayMode currentDM = gd.getDisplayMode();
+    private static Frame f = null;
 
     public static void main(String[] args)
-        throws InterruptedException, InvocationTargetException
-    {
-
-        EventQueue.invokeAndWait(new Runnable() {
-            public void run() {
-                Frame f = null;
+        throws InterruptedException, InvocationTargetException {
+        try {
+            EventQueue.invokeAndWait(() -> {
                 if (gd.isFullScreenSupported()) {
-                    try {
-                        f = new Frame("DisplayChanger Frame");
-                        gd.setFullScreenWindow(f);
-                        if (gd.isDisplayChangeSupported()) {
-                            DisplayMode dm = findDisplayMode(gd);
-                            if (gd != null) {
-                                gd.setDisplayMode(dm);
-                            }
+                    f = new Frame("DisplayChanger Frame");
+                    gd.setFullScreenWindow(f);
+                    if (gd.isDisplayChangeSupported()) {
+                        DisplayMode dm = findDisplayMode(gd);
+                        if (gd != null) {
+                            gd.setDisplayMode(dm);
                         }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
-                        gd.setFullScreenWindow(null);
-                    } finally {
-                        if (f != null) {
-                            f.dispose();
-                        }
-                        gd.setDisplayMode(currentDM);
                     }
                 }
+            });
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
             }
-        });
+            EventQueue.invokeAndWait(() -> gd.setFullScreenWindow(null));
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (f != null) {
+                    f.dispose();
+                }
+                gd.setDisplayMode(currentDM);
+            });
+        }
     }
 
     /**

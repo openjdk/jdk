@@ -28,8 +28,8 @@
  * @summary Tests that no exception is thrown when display mode is changed
  *          externally
  * @compile UninitializedDisplayModeChangeTest.java DisplayModeChanger.java
- * @run main/othervm/timeout=420 UninitializedDisplayModeChangeTest
- * @run main/othervm/timeout=420 -Djava.awt.headless=true UninitializedDisplayModeChangeTest
+ * @run main/othervm/timeout=360 UninitializedDisplayModeChangeTest
+ * @run main/othervm/timeout=360 -Djava.awt.headless=true UninitializedDisplayModeChangeTest
  */
 
 import java.awt.EventQueue;
