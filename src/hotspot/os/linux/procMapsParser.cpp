@@ -81,6 +81,7 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   // scan THPeligible into a bool
   int thpel = 0;
   if (::sscanf(_line, "THPeligible: %d", &thpel) == 1) {
+    assert(thpel == 1 || thpel == 0, "Unexpected value %d", thpel);
     out.thpeligible = (thpel == 1);
     return;
   }
