@@ -50,7 +50,7 @@ import jdk.test.whitebox.WhiteBox;
  * Repeats the cycle 5 times and verifies that the loss decreases significantly from the first
  * to the last iteration.
  * @test
- * @requires vm.hasJFR & os.family == "linux" & vm.debug
+ * @requires vm.hasJFR & os.family == "linux" & vm.debug & vm.flagless
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @build  jdk.test.whitebox.WhiteBox
