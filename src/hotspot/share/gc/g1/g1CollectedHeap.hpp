@@ -75,6 +75,7 @@ class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
 class G1NewTracer;
 class G1RemSet;
+class G1ReviseYoungLengthTask;
 class G1ServiceTask;
 class G1ServiceThread;
 class GCMemoryManager;
@@ -171,9 +172,23 @@ private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
+  G1ReviseYoungLengthTask* _revise_young_length_task;
 
   WorkerThreads* _workers;
-  G1CardTable* _card_table;
+
+  // The current epoch for refinement, i.e. the number of times the card tables
+  // have been swapped by a garbage collection.
+  // Used for detecting whether concurrent refinement has been interrupted by a
+  // garbage collection.
+  size_t _refinement_epoch;
+
+  // The following members are for tracking safepoint durations between garbage
+  // collections.
+  jlong _last_synchronized_start;
+
+  jlong _last_refinement_epoch_start;
+  jlong _yield_duration_in_refinement_epoch;       // Time spent in safepoints since beginning of last refinement epoch.
+  size_t _last_safepoint_refinement_epoch;         // Refinement epoch before last safepoint.
 
   Ticks _collection_pause_end;
 
@@ -541,12 +556,17 @@ public:
   void run_batch_task(G1BatchedTask* cl);
 
   // Return "optimal" number of chunks per region we want to use for claiming areas
-  // within a region to claim.
+  // within a region to claim during card table scanning.
   // The returned value is a trade-off between granularity of work distribution and
   // memory usage and maintenance costs of that table.
   // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
   // and so on seems to be such a good trade-off.
-  static uint get_chunks_per_region();
+  static uint get_chunks_per_region_for_scan();
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim during card table merging.
+  // This is much smaller than for scanning as the merge work is much smaller.
+  // Currently 1 for 1M regions, 2 for 2/4M regions, 4 for 8/16M regions and so on.
+  static uint get_chunks_per_region_for_merge();
 
   G1Allocator* allocator() {
     return _allocator;
@@ -687,11 +707,6 @@ public:
 
   // Add the given region to the retained regions collection set candidates.
   void retain_region(G1HeapRegion* hr);
-  // It dirties the cards that cover the block so that the post
-  // write barrier never queues anything when updating objects on this
-  // block. It is assumed (and in fact we assert) that the block
-  // belongs to a young region.
-  inline void dirty_young_block(HeapWord* start, size_t word_size);
 
   // Frees a humongous region by collapsing it into individual regions
   // and calling free_region() for each of them. The freed regions
@@ -905,6 +920,10 @@ public:
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
+  jlong last_refinement_epoch_start() const { return _last_refinement_epoch_start; }
+  void set_last_refinement_epoch_start(jlong epoch_start, jlong last_yield_duration);
+  jlong yield_duration_in_refinement_epoch();
+
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
@@ -1069,7 +1088,16 @@ public:
   }
 
   G1CardTable* card_table() const {
-    return _card_table;
+    return static_cast<G1CardTable*>(G1BarrierSet::g1_barrier_set()->card_table());
+  }
+
+  G1CardTable* refinement_table() const {
+    return G1BarrierSet::g1_barrier_set()->refinement_table();
+  }
+
+  G1CardTable::CardValue* card_table_base() const {
+    assert(card_table() != nullptr, "must be");
+    return card_table()->byte_map_base();
   }
 
   // Iteration functions.

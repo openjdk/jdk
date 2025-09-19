@@ -23,41 +23,33 @@
  */
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/timer.hpp"
 
 G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
-  _refinement_time(),
-  _refined_cards(0),
-  _precleaned_cards(0),
-  _dirtied_cards(0)
+  _sweep_duration(0),
+  _yield_during_sweep_duration(0),
+  _cards_scanned(0),
+  _cards_clean(0),
+  _cards_not_parsable(0),
+  _cards_already_refer_to_cset(0),
+  _cards_refer_to_cset(0),
+  _cards_no_cross_region(0),
+  _refine_duration(0)
 {}
 
-double G1ConcurrentRefineStats::refinement_rate_ms() const {
-  // Report 0 when no time recorded because no refinement performed.
-  double secs = refinement_time().seconds();
-  return (secs > 0) ? (refined_cards() / (secs * MILLIUNITS)) : 0.0;
-}
+void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
+  AtomicAccess::add(&_sweep_duration, other->_sweep_duration, memory_order_relaxed);
+  AtomicAccess::add(&_yield_during_sweep_duration, other->_yield_during_sweep_duration, memory_order_relaxed);
 
-G1ConcurrentRefineStats&
-G1ConcurrentRefineStats::operator+=(const G1ConcurrentRefineStats& other) {
-  _refinement_time += other._refinement_time;
-  _refined_cards += other._refined_cards;
-  _precleaned_cards += other._precleaned_cards;
-  _dirtied_cards += other._dirtied_cards;
-  return *this;
-}
+  AtomicAccess::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
+  AtomicAccess::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);
+  AtomicAccess::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
+  AtomicAccess::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
+  AtomicAccess::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
+  AtomicAccess::add(&_cards_no_cross_region, other->_cards_no_cross_region, memory_order_relaxed);
 
-template<typename T>
-static T clipped_sub(T x, T y) {
-  return (x < y) ? T() : (x - y);
-}
-
-G1ConcurrentRefineStats&
-G1ConcurrentRefineStats::operator-=(const G1ConcurrentRefineStats& other) {
-  _refinement_time = clipped_sub(_refinement_time, other._refinement_time);
-  _refined_cards = clipped_sub(_refined_cards, other._refined_cards);
-  _precleaned_cards = clipped_sub(_precleaned_cards, other._precleaned_cards);
-  _dirtied_cards = clipped_sub(_dirtied_cards, other._dirtied_cards);
-  return *this;
+  AtomicAccess::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
 }
 
 void G1ConcurrentRefineStats::reset() {

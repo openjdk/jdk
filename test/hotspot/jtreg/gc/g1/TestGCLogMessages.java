@@ -108,8 +108,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Other:", Level.INFO),
 
         // Pre Evacuate Collection Set
-        new LogMessageWithLevel("JT Retire TLABs And Flush Logs \\(ms\\):", Level.DEBUG),
-        new LogMessageWithLevel("Non-JT Flush Logs \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("JavaThread Retire TLABs \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Choose Collection Set:", Level.DEBUG),
         new LogMessageWithLevel("Region Register:", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots:", Level.DEBUG),
@@ -126,10 +125,11 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merged Howl ArrayOfCards:", Level.DEBUG),
         new LogMessageWithLevel("Merged Howl BitMap:", Level.DEBUG),
         new LogMessageWithLevel("Merged Howl Full:", Level.DEBUG),
-        new LogMessageWithLevel("Log Buffers \\(ms\\):", Level.DEBUG),
-        new LogMessageWithLevel("Dirty Cards:", Level.DEBUG),
-        new LogMessageWithLevel("Merged Cards:", Level.DEBUG),
-        new LogMessageWithLevel("Skipped Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Merged From RS Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Total Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Merge Refinement Table:", Level.DEBUG),
+        new LogMessageWithLevel("Sweep \\(ms\\):", Level.DEBUG),
+
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Thread Roots \\(ms\\):", Level.TRACE),
@@ -173,15 +173,16 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merge Per-Thread State \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste:", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste:", Level.DEBUG),
-        new LogMessageWithLevel("Evac Fail Extra Cards:", Level.DEBUG),
-        new LogMessageWithLevel("Clear Logged Cards \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Pending Cards:", Level.DEBUG),
+        new LogMessageWithLevel("To-Young-Gen Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Evac-Fail Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Marked Cards:", Level.DEBUG),
+        new LogMessageWithLevel("Clear Pending Cards \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
 
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2:", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
-        new LogMessageWithLevel("Redirty Logged Cards \\(ms\\):", Level.DEBUG),
-        new LogMessageWithLevel("Redirtied Cards:", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
@@ -243,9 +244,7 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel concRefineMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Mutator refinement: ", Level.DEBUG),
-        new LogMessageWithLevel("Concurrent refinement: ", Level.DEBUG),
-        new LogMessageWithLevel("Total refinement: ", Level.DEBUG),
+        new LogMessageWithLevel("Refinement: sweep: ", Level.DEBUG),
         // "Concurrent refinement rate" optionally printed if any.
         // "Generate dirty cards rate" optionally printed if any.
     };
