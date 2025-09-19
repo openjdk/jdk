@@ -125,33 +125,19 @@ import java.util.function.Supplier;
  * the {@code Foo} does not already exist.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
- * A lazy constant is guaranteed to be initialized at most once. If competing
- * threads are racing to initialize a lazy constant, only one update computes, while
- * the other updates are blocked until the constant is initialized, whereafter the other
- * updates observes the lazy constant is initialized and leave the constant unchanged
- * and will never invoke any computation.
+ * A lazy constant is guaranteed to be initialized atomically and at most once. If
+ * competing threads are racing to initialize a lazy constant, only one update computes,
+ * while the other updates are blocked until the constant is initialized, whereafter
+ * the other updates observes the lazy constant is initialized and leave the constant
+ * unchanged and will never invoke any computation.
  * <p>
- * The at-most-once write operation on a lazy constant that succeeds
- * (e.g., via an initial {@linkplain #get()} operation)
+ * Furthermore, there is a
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * any other read operation (e.g. {@linkplain #get()}).
- * A write operation can be initiated via invoking either:
- * <ul>
- *     <li>{@link #get()};</li>
- *     <li>{@link #hashCode()}, or</li>
- *     <li>{@link #equals(Object)} where the other object is a lazy constant.</li>
- * </ul>
- * A read operation can be either:
- * <ul>
- *     <li>a {@link #get()};</li>
- *     <li>an {@link #isInitialized()};</li>
- *     <li>a {@link #hashCode()}, or</li>
- *     <li>a {@link #equals(Object)} where the other object is a lazy constant.</li>
- * </ul>
+ * relation between any and all operations on a lazy constant with respect to the
+ * lazy constant itself (but not with respect to actions on other objects).
  * <p>
- * Invocations of the computing function (via any of the write-initiating operations
- * like {@link #get()}) form a total order of zero or more exceptional invocations
- * followed by zero or one successful invocation of the computing function.
+ * Invocations of the computing function form a total order of zero or more exceptional
+ * invocations followed by zero or one successful invocation of the computing function.
  *
  * <h2 id="performance">Performance</h2>
  * As a lazy constant can never change after it has been initialized. Therefore,
