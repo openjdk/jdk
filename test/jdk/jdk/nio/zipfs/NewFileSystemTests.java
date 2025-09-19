@@ -25,6 +25,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -222,7 +223,7 @@ public class NewFileSystemTests {
     @Test
     public void readOnlyZipFileFailure() throws IOException {
         if (Platform.isRoot()) {
-            throw new org.testng.SkipException("Test skipped when executed by root user.");
+            throw new SkipException("Test skipped when executed by root user.");
         }
         // Underlying file is read-only.
         Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
