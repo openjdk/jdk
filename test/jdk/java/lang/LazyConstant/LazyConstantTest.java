@@ -120,12 +120,16 @@ final class LazyConstantTest {
         assertNotEquals(null, c0);
         LazyConstant<Integer> s1 = LazyConstant.of(SUPPLIER);
         assertEquals(c0, s1);
+        assertEquals(s1, c0);
         c0.get();
         assertEquals(c0, s1);
+        assertEquals(s1, c0);
         s1.get();
         assertEquals(c0, s1);
+        assertEquals(s1, c0);
         LazyConstant<Integer> different = LazyConstant.of(() -> 13);
         assertNotEquals(different, c0);
+        assertNotEquals(c0, different);
         assertNotEquals("a", c0);
     }
 

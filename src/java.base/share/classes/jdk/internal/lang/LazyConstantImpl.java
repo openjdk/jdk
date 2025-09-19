@@ -115,7 +115,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         // In order to guarantee a happens-before edge between
         // any operation on a lazy constant, we need to read the constant
         // up front even though the `obj` might not be an instance of `LazyConstant`.
-        final T t = getAcquire();
+        final T t = get();
         return obj instanceof LazyConstant<?> that
                 && t.equals(that.get());
     }
