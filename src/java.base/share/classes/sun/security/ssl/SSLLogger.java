@@ -190,8 +190,15 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                    logger.log(level, () -> msg + ":" + LINE_SEP +
-                            SSLSimpleFormatter.formatParameters(params));
+                    String formatted =
+                            SSLSimpleFormatter.formatParameters(params);
+                    // use the customized log method for SSLConsoleLogger
+                    if (logger instanceof SSLConsoleLogger) {
+                        logger.log(level, msg, formatted);
+                    } else {
+                        logger.log(level, () -> msg + ":" + LINE_SEP +
+                                formatted);
+                    }
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
