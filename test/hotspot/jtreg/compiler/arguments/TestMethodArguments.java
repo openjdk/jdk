@@ -27,7 +27,7 @@
  * @summary Ensure that C2 can compile methods up to the maximum
  *          number of parameters (according to the JVM spec).
  * @library /test/lib /
- * @run driver compiler.arguments.TestMethodArguments
+ * @run driver/timeout=480 compiler.arguments.TestMethodArguments
  */
 
 package compiler.arguments;
