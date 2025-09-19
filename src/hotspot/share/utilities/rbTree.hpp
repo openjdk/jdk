@@ -202,7 +202,7 @@ private:
   static constexpr bool HasNodeComparator =
       std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, const NodeType*>;
 
-  // Due to a bug in older GCC versions with static templeted constexpr data members (see GCC PR 71954),
+  // Due to a bug in older GCC versions with static templated constexpr data members (see GCC PR 71954),
   // we have to express this trait through a struct instead of a constexpr variable directly.
   template<typename, typename = void>
   struct HasNodeVerifierImpl : std::false_type {};
