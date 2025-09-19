@@ -51,9 +51,9 @@ import jdk.internal.javac.PreviewFeature;
  * To ensure correct usage, the {@code fork}, {@code join} and {@code close} methods may
  * only be invoked by the <em>owner thread</em> (the thread that opened the {@code
  * StructuredTaskScope}), the {@code fork} method may not be called after {@code join},
- * the {@code join} method may only be invoked once to get outcome, and the {@code close}
- * method throws an exception after closing if the owner did not invoke the {@code join}
- * method after forking subtasks.
+ * the {@code join} method may only be invoked once to get the outcome, and the
+ * {@code close} method throws an exception after closing if the owner did not invoke the
+ * {@code join} method after forking subtasks.
  *
  * <p> As a first example, consider a task that splits into two subtasks to concurrently
  * fetch resources from two URL locations "left" and "right". Both subtasks may complete
