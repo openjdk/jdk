@@ -716,7 +716,7 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
       sfpt_done->del_req(last--);
     }
     JVMState *jvms = sfpt_done->jvms();
-    jvms->set_endoff(sfpt_done->req()); // NB! problematic when reachability fences are present?
+    jvms->set_endoff(sfpt_done->req());
     // Now make a pass over the debug information replacing any references
     // to SafePointScalarObjectNode with the allocated object.
     int start = jvms->debug_start();
