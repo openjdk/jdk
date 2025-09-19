@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
@@ -198,32 +199,19 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
         X509Certificate[] trustedChain;
-        if ((socket != null) && socket.isConnected() &&
-                (socket instanceof SSLSocket sslSocket)) {
+        if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
 
             SSLSession session = sslSocket.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forSocket(
-                                sslSocket, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
             // Grab any stapled OCSP responses for use in validation
             List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
+            if (!checkClientTrusted && session instanceof ExtendedSSLSession) {
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
@@ -255,29 +243,18 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         X509Certificate[] trustedChain;
         if (engine != null) {
+
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forEngine(
-                                engine, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forEngine(engine, false);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
+                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
 
             // Grab any stapled OCSP responses for use in validation
             List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
+            if (!checkClientTrusted && session instanceof ExtendedSSLSession) {
                 responseList =
                         ((ExtendedSSLSession)session).getStatusResponses();
             }
