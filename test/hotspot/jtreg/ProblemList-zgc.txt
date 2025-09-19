@@ -103,7 +103,6 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java            8307393   generic-
 serviceability/sa/TestSysProps.java                           8307393   generic-all
 serviceability/sa/TestType.java                               8307393   generic-all
 serviceability/sa/UniqueVtableTest.java                       8307393   generic-all
-serviceability/sa/jmap-hprof/JMapHProfLargeHeapProc.java      8307393   generic-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbAttachToDebugServer.java     8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbTestConnectArgument.java     8307393   generic-all
