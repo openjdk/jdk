@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -175,6 +176,7 @@ final class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
+    // TODO: remove?
     Name sampleName(NameSet.Predicate predicate) {
         return currentCodeFrame.sampleName(predicate);
     }
@@ -318,6 +320,15 @@ final class Renderer {
             }
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
+            }
+            case DataNameSampleToken(NameSet.Predicate predicate, Function<DataName, TemplateScope> function) -> {
+                DataName dn = (DataName)currentCodeFrame.sampleName(predicate);
+                if (dn == null) {
+                    throw new RendererException("No DataName for TODO.");
+                }
+                // TODO: some frame for hashtags?
+                TemplateScope scope = function.apply(dn);
+                renderTokenList(scope.tokens());
             }
         }
     }

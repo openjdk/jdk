@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * {@link DataName}s represent things like fields and local variables, and can be added to the local
@@ -180,6 +181,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          * @throws RendererException If the set was empty.
          */
+        // TODO: remove
         public DataName sample() {
             DataName n = (DataName)Renderer.getCurrent().sampleName(predicate());
             if (n == null) {
@@ -188,6 +190,11 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
                 throw new RendererException("No variable: " + mutability + msg1 + msg2 + ".");
             }
             return n;
+        }
+
+        public DataNameSampleToken sample(Function<DataName, TemplateScope> function) {
+            // TODO: are exceptions nice enough with just predicate?
+            return new DataNameSampleToken(predicate(), function);
         }
 
         /**

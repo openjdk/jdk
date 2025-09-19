@@ -23,18 +23,7 @@
 
 package compiler.lib.template_framework;
 
-/**
- * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
- * {@link Token}s or {@link String}s or some permitted boxed primitives.
- */
-public sealed interface Token permits StringToken,
-                               TemplateToken,
-                               TemplateToken.ZeroArgs,
-                               TemplateToken.OneArg,
-                               TemplateToken.TwoArgs,
-                               TemplateToken.ThreeArgs,
-                               HookAnchorToken,
-                               HookInsertToken,
-                               AddNameToken,
-                               DataNameSampleToken,
-                               NothingToken {}
+import java.util.function.Function;
+
+// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
+record DataNameSampleToken(NameSet.Predicate predicate, Function<DataName, TemplateScope> function) implements Token {}

@@ -1119,10 +1119,12 @@ public class TestTemplate {
         ));
 
         var template6 = Template.make("type", (DataName.Type type) -> scope(
-            let("v", dataNames(MUTABLE).exactOf(type).sample().name()),
-            "{ $sample\n",
-            "#v = 7\n",
-            "} $sample\n"
+            dataNames(MUTABLE).exactOf(type).sample((DataName v) -> scope( // TODO: can we get name directly?
+                let("v", v.name()),
+                "{ $sample\n",
+                "#v = 7\n",
+                "} $sample\n"
+            ))
         ));
 
         var template7 = Template.make("type", (DataName.Type type) -> scope(
