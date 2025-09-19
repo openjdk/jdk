@@ -115,7 +115,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
          "Precondition, actively building cset or adding optional later on");
   assert(hr->is_old(), "the region should be old");
 
-  assert(!hr->rem_set()->is_added_to_cset_group(), "Should have already uninstalled group remset");
+  assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
@@ -385,6 +385,16 @@ static void print_finish_message(const char* reason, bool from_marking) {
                             from_marking ? "marking" : "retained", reason);
 }
 
+void G1CollectionSet::add_optional_group(G1CSetCandidateGroup* group,
+                                         uint& num_optional_regions,
+                                         double& predicted_optional_time_ms,
+                                         double predicted_time_ms) {
+  _optional_groups.append(group);
+  prepare_optional_group(group, num_optional_regions);
+  num_optional_regions += group->length();
+  predicted_optional_time_ms += predicted_time_ms;
+}
+
 double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms) {
   uint num_expensive_regions = 0;
   uint num_inital_regions = 0;
@@ -404,6 +414,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
+  bool make_first_group_optional = G1ForceOptionalEvacuation;
+
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
@@ -420,6 +432,15 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
     }
 
     double predicted_time_ms = group->predict_group_total_time_ms();
+
+    if (make_first_group_optional) {
+        make_first_group_optional = false;
+        add_optional_group(group,
+                           num_optional_regions,
+                           predicted_optional_time_ms,
+                           predicted_time_ms);
+        continue;
+    }
 
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
@@ -456,10 +477,10 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
       } else if (time_remaining_ms > 0) {
         // Keep adding optional regions until time is up.
-        _optional_groups.append(group);
-        prepare_optional_group(group, num_optional_regions);
-        num_optional_regions += group->length();
-        predicted_optional_time_ms += predicted_time_ms;
+        add_optional_group(group,
+                           num_optional_regions,
+                           predicted_optional_time_ms,
+                           predicted_time_ms);
       } else {
         print_finish_message("Predicted time too high", true);
         break;
@@ -560,10 +581,10 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
       num_initial_regions += group->length();
     } else if (predicted_time_ms <= optional_time_remaining_ms) {
       // Prepare optional collection region.
-      _optional_groups.append(group);
-      prepare_optional_group(group, num_optional_regions);
-      num_optional_regions += group->length();
-      predicted_optional_time_ms += predicted_time_ms;
+      add_optional_group(group,
+                         num_optional_regions,
+                         predicted_optional_time_ms,
+                         predicted_time_ms);
     } else {
       // Fits neither initial nor optional time limit. Exit.
       break;
@@ -641,10 +662,9 @@ uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
 
   double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
 
-  time_remaining_ms -= total_prediction_ms;
-
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_regions_selected, optional_regions_count, total_prediction_ms);
+
   return num_regions_selected;
 }
 
