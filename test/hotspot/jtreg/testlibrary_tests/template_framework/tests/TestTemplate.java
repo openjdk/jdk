@@ -138,7 +138,9 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
-        testDataNames0();
+        testDataNames0a();
+        testDataNames0b();
+        testDataNames0c();
         testDataNames1();
         testDataNames2();
         testDataNames3();
@@ -1002,7 +1004,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testDataNames0() {
+    public static void testDataNames0a() {
         var template = Template.make(() -> scope(
             // When a DataName is added, it is immediately available afterwards.
             // This may seem trivial, but it requires that either both "add" and
@@ -1016,6 +1018,88 @@ public class TestTemplate {
 
         String code = template.render();
         checkEQ(code, "sample: x.");
+    }
+
+    public static void testDataNames0b() {
+        // Test that the scope keeps local DataNames only for the scope, but that
+        // we can see DataNames of outer scopes.
+        var template = Template.make(() -> scope(
+            // Outer scope DataName:
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                let("name1", dn.name()),
+                "sample: #name1.\n",
+                // We can also see the outer DataName:
+                dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name2"),
+                "sample: #name2.\n",
+                // Local DataName:
+                addDataName("y", myLong, MUTABLE),
+                dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name3"),
+                "sample: #name3.\n"
+            )),
+            // We can still see the outer scope DataName:
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name4"),
+            "sample: #name4.\n",
+            // But we cannot see the DataNames that are local to the inner scope.
+            // So here, we will always see "z", and never "y".
+            addDataName("z", myLong, MUTABLE),
+            dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name5"),
+            "sample: #name5.\n"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            sample: x.
+            sample: x.
+            sample: y.
+            sample: x.
+            sample: z.
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testDataNames0c() {
+        // Test that hashtag replacements that are local to inner scopes are
+        // only visible to inner scopes, but dollar replacements are the same
+        // for the whole Template.
+        var template = Template.make(() -> scope(
+            let("global", "GLOBAL"),
+            "g: #global. $a\n",
+            // Create a dummy DataName soe we can create the scope.
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                "g: #global. $b\n",
+                let("local", "LOCAL1"),
+                "l: #local. $c\n"
+            )),
+            "g: #global. $d\n",
+            // Open the scope again just to see if we can create the local again there.
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                "g: #global. $e\n",
+                let("local", "LOCAL2"),
+                "l: #local. $f\n"
+            )),
+            // We can now use the "local" hashtag replacement again, since it
+            // was previously only defined in an inner scope.
+            let("local", "LOCAL3"),
+            "g: #global. $g\n",
+            "l: #local. $h\n"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            g: GLOBAL. a_1
+            g: GLOBAL. b_1
+            l: LOCAL1. c_1
+            g: GLOBAL. d_1
+            g: GLOBAL. e_1
+            l: LOCAL2. f_1
+            g: GLOBAL. g_1
+            l: LOCAL3. h_1
+            """;
+        checkEQ(code, expected);
     }
 
     public static void testDataNames1() {

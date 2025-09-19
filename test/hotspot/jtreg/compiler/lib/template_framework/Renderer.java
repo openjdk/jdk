@@ -265,12 +265,19 @@ final class Renderer {
             throw new RendererException("No Name for TODO.");
         }
         if (nst.function() != null) {
-            // We have a nested "scope" that captures the DataName.
-            // TODO: some template frame for hashtags? And also probably
-            // for new definitions etc!
-            // TODO: add tests for it
-            TemplateScope scope = nst.getScope(n);
-            renderTokenList(scope.tokens());
+            // We have a nested "scope" that captures the Name.
+            // Any hashtag and name definitions inside the scope are
+            // local to the scope, and disappear after the scope.
+
+            // We need the CodeFrame for local names.
+            CodeFrame outerCodeFrame = currentCodeFrame;
+            currentCodeFrame = CodeFrame.make(currentCodeFrame);
+
+            // We need to be able to define local hashtag replacements, but still
+            // see the outer ones. We also need to have the same id for dollar
+            // replacement as the outer frame.
+            TemplateFrame templateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
+            currentTemplateFrame = templateFrame;
 
             if (nst.name() != null) {
                 throw new RuntimeException("not implemented");
@@ -278,6 +285,17 @@ final class Renderer {
             if (nst.type() != null) {
                 throw new RuntimeException("not implemented");
             }
+
+            TemplateScope scope = nst.getScope(n);
+            renderTokenList(scope.tokens());
+
+            if (currentTemplateFrame != templateFrame) {
+                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            }
+            currentTemplateFrame = currentTemplateFrame.parent;
+
+            outerCodeFrame.addCode(currentCodeFrame.getCode());
+            currentCodeFrame = outerCodeFrame;
         } else {
             // No nested "scope", we use the Name for a local "let" style
             // hashtag replacement definition.
