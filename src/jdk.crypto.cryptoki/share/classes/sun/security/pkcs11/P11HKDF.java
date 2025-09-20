@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,8 +168,15 @@ final class P11HKDF extends KDFSpi {
         checkDerivedKeyType(ki, alg);
         P11KeyGenerator.checkKeySize(ki.keyGenMech, outLen * 8, token);
 
-        P11Key p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
-                " could not be converted to a token key for HKDF derivation.");
+        P11Key p11BaseKey = null;
+        try {
+            p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
+                    " could not be converted to a token key for HKDF derivation.");
+        } catch (ProviderException pe) {
+            if (!isExtract || !"RAW".equalsIgnoreCase(baseKey.getFormat())) {
+                throw pe;
+            }
+        }
 
         long saltType = CKF_HKDF_SALT_NULL;
         byte[] saltBytes = null;
@@ -191,7 +199,12 @@ final class P11HKDF extends KDFSpi {
                 new CK_ATTRIBUTE(CKA_VALUE_LEN, outLen)
         };
         Session session = null;
-        long baseKeyID = p11BaseKey.getKeyID();
+        long baseKeyID;
+        if (p11BaseKey != null) {
+            baseKeyID = p11BaseKey.getKeyID();
+        } else {
+            baseKeyID = convertKeyToData(baseKey.getEncoded());
+        }
         try {
             session = token.getOpSession();
             CK_HKDF_PARAMS params = new CK_HKDF_PARAMS(isExtract, isExpand,
@@ -230,8 +243,42 @@ final class P11HKDF extends KDFSpi {
             if (p11SaltKey != null) {
                 p11SaltKey.releaseKeyID();
             }
-            p11BaseKey.releaseKeyID();
+            if (p11BaseKey != null) {
+                p11BaseKey.releaseKeyID();
+            } else {
+                destroyDataObject(baseKeyID);
+            }
             token.releaseSession(session);
+        }
+    }
+
+    private void destroyDataObject(long baseKeyID) {
+        try {
+            Session session = token.getObjSession();
+            try {
+                token.p11.C_DestroyObject(session.id(), baseKeyID);
+            } finally {
+                token.releaseSession(session);
+            }
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("Failed to destroy IKM data object.", e);
+        }
+    }
+
+    private long convertKeyToData(byte[] keyBytes) {
+        CK_ATTRIBUTE[] inputAttributes = new CK_ATTRIBUTE[]{
+                new CK_ATTRIBUTE(CKA_CLASS, CKO_DATA),
+                new CK_ATTRIBUTE(CKA_VALUE, keyBytes),
+        };
+        try {
+            Session session = token.getObjSession();
+            try {
+                return token.p11.C_CreateObject(session.id(), inputAttributes);
+            } finally {
+                token.releaseSession(session);
+            }
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("Failed to create IKM data object.", e);
         }
     }
 
