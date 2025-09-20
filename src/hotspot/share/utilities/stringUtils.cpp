@@ -144,8 +144,6 @@ ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist opti
   return canonicalized_list;
 }
 
-// Given a string that may or may not end on a decimal number, find position of that
-// number. Returns -1 if no number was found to trail the string, or if string is empty.
 int StringUtils::find_trailing_number(const char* s) {
   precond(s != nullptr);
   const size_t l = strlen(s);
@@ -156,13 +154,6 @@ int StringUtils::find_trailing_number(const char* s) {
   return pos < l ? pos : -1;
 }
 
-// Given a string of unknown length and an output buffer, fit string into output buffer such
-// that:
-// - plain copy if it fits
-// - if it does not fit and it does not end in a number, truncate
-// - if it does not fit and it ends in a number, truncate the middle while preserving
-//   the trailing number. The resulting string will be assembled from <first part>..<number trail>,
-//   e.g. "C1 CompilerThread2", limited to 15 chars, would be "C1 CompilerT..2"
 char* StringUtils::abbreviate_preserve_trailing_number(const char* s, char* out, size_t outlen) {
   precond(out != nullptr && s != nullptr && outlen > 0);
   constexpr int dots = 2;
