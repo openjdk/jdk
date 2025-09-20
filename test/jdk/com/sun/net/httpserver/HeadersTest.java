@@ -289,6 +289,8 @@ public class HeadersTest {
         list.add(null);
         assertThrows(NPE, () -> h0.putAll(Map.of("a", list)));
         assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("\n"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("AbC\n", List.of("hey"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("Ab\n", List.of("hi"))));
 
         final var h1 = new Headers();
         h1.put("a", List.of("1"));
