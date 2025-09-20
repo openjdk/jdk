@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,23 @@ public class MouseClickCount {
         String INSTRUCTIONS = """
                 1. Clicking on Frame panel quickly will produce clickCount larger than 1
                    in the TextArea the count is printed for each mouse click
+
                 2. Verify that a left-button click followed by a right button click quickly
                    will not generate 1, 2, i.e. it's not considered a double clicking.
-                 """;
+
+                PLEASE NOTE: On macOS mouse sensitivity may play a role, if you observe click
+                counts of 1,2 on press of left-mouse button followed by right-mouse button
+                verify by increasing the double-click speed or setting to maximum in
+                Settings > Mouse Sensitivity > Double-Click Speed
+                """;
+
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(initialize())
-                .build()
-                .awaitAndCheck();
+                      .title("Test Instructions")
+                      .instructions(INSTRUCTIONS)
+                      .columns(45)
+                      .testUI(initialize())
+                      .build()
+                      .awaitAndCheck();
     }
 
     private static Frame initialize() {
