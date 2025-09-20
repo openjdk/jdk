@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2477,10 +2478,11 @@ public final class DateTimeFormatterBuilder {
          *
          * @param context  the context to format using, not null
          * @param buf  the buffer to append to, not null
+         * @param optional  whether this printer is optional, true if formatting is optional
          * @return false if unable to query the value from the date-time, true otherwise
          * @throws DateTimeException if the date-time cannot be printed successfully
          */
-        boolean format(DateTimePrintContext context, StringBuilder buf);
+        boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional);
 
         /**
          * Parses text into date-time information.
@@ -2530,21 +2532,13 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
-            if (optional) {
-                context.startOptional();
-            }
-            try {
-                for (DateTimePrinterParser pp : printerParsers) {
-                    if (pp.format(context, buf) == false) {
-                        buf.setLength(length);  // reset buffer
-                        return true;
-                    }
-                }
-            } finally {
-                if (optional) {
-                    context.endOptional();
+            boolean effectiveOptional = optional | this.optional;
+            for (DateTimePrinterParser pp : printerParsers) {
+                if (!pp.format(context, buf, effectiveOptional)) {
+                    buf.setLength(length);  // reset buffer
+                    return true;
                 }
             }
             return true;
@@ -2613,9 +2607,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int preLen = buf.length();
-            if (printerParser.format(context, buf) == false) {
+            if (printerParser.format(context, buf, optional) == false) {
                 return false;
             }
             int len = buf.length() - preLen;
@@ -2682,7 +2676,7 @@ public final class DateTimeFormatterBuilder {
         LENIENT;
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             return true;  // nothing to do here
         }
 
@@ -2724,7 +2718,7 @@ public final class DateTimeFormatterBuilder {
             this.value = value;
         }
 
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             return true;
         }
 
@@ -2750,7 +2744,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             buf.append(literal);
             return true;
         }
@@ -2800,7 +2794,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             buf.append(literal);
             return true;
         }
@@ -2912,8 +2906,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long valueLong = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long valueLong = context.getValue(field, optional);
             if (valueLong == null) {
                 return false;
             }
@@ -3367,8 +3361,8 @@ public final class DateTimeFormatterBuilder {
         };
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3556,8 +3550,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3704,8 +3698,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3717,7 +3711,7 @@ public final class DateTimeFormatterBuilder {
                 text = provider.getText(chrono, field, value, textStyle, context.getLocale());
             }
             if (text == null) {
-                return numberPrinterParser().format(context, buf);
+                return numberPrinterParser().format(context, buf, optional);
             }
             buf.append(text);
             return true;
@@ -3799,9 +3793,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
-            Long inSecs = context.getValue(INSTANT_SECONDS);
+            Long inSecs = context.getValue(INSTANT_SECONDS, optional);
             Long inNanos = null;
             if (context.getTemporal().isSupported(NANO_OF_SECOND)) {
                 inNanos = context.getTemporal().getLong(NANO_OF_SECOND);
@@ -3985,8 +3979,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
             }
@@ -4284,8 +4278,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
             }
@@ -4498,8 +4492,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(TemporalQueries.zoneId());
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            ZoneId zone = context.getValue(TemporalQueries.zoneId(), optional);
             if (zone == null) {
                 return false;
             }
@@ -4620,8 +4614,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(query);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            ZoneId zone = context.getValue(query, optional);
             if (zone == null) {
                 return false;
             }
@@ -5045,8 +5039,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Chronology chrono = context.getValue(TemporalQueries.chronology());
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Chronology chrono = context.getValue(TemporalQueries.chronology(), optional);
             if (chrono == null) {
                 return false;
             }
@@ -5142,9 +5136,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             Chronology chrono = Chronology.from(context.getTemporal());
-            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf);
+            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf, optional);
         }
 
         @Override
@@ -5253,8 +5247,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            return printerParser(context.getLocale()).format(context, buf);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            return printerParser(context.getLocale()).format(context, buf, optional);
         }
 
         @Override
@@ -5357,12 +5351,12 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long hod = context.getValue(HOUR_OF_DAY);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long hod = context.getValue(HOUR_OF_DAY, optional);
             if (hod == null) {
                 return false;
             }
-            Long moh = context.getValue(MINUTE_OF_HOUR);
+            Long moh = context.getValue(MINUTE_OF_HOUR, optional);
             long value = Math.floorMod(hod, 24) * 60 + (moh != null ? Math.floorMod(moh, 60) : 0);
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);
