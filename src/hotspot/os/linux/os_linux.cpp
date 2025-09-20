@@ -4856,39 +4856,21 @@ uint os::processor_id() {
 }
 
 void os::set_native_thread_name(const char *name) {
+  char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
+  // We may need to truncate the thread name. Since a common pattern is
+  // for thread names is to be both longer than 15 chars and have a trailing number
+  // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we truncate "smartly"
+  // by attempting to preserve the trailing number in the name if there is one
+  // (e.g. "DispatcherWorkerThread21" -> "DispatcherW..21").
+  StringUtils::abbreviate_preserve_trailing_number(name, buf, sizeof(buf));
+  // set name in kernel
+  int rc = prctl(PR_SET_NAME, buf);
+  assert(rc == 0, "prctl(PR_SET_NAME) failed");
   if (Linux::_pthread_setname_np) {
-    char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
-    // Try to be smart: we have a 16 byte limitation in both _pthread_setname_np
-    // and prctl(PR_SET_NAME). A common pattern for thread names is to have a
-    // trailing thread number of some sort, e.g., "AllocationThread#333". In such
-    // a case, attempt to preserve the number, like this: "Allocation..333".
-    constexpr size_t max_chars = sizeof(buf) - 1;
-    const size_t l = strlen(name);
-    if (l > max_chars) {
-      constexpr int prefix_min_len = 6;
-      constexpr int dots = 2; // number of dots to print between prefix and trailing digits
-      // search pos of last nondigit
-      size_t pos = l;
-      while (isdigit(name[pos - 1]) && pos > prefix_min_len + dots) {
-        pos--;
-      }
-      if (pos < l) {
-        // found trailing number
-        const int tail_len = l - pos;
-        const int prefix_len = max_chars - dots - tail_len - 1;
-        (void)os::snprintf(buf, max_chars, "%.*s..%s", prefix_len, name, name + pos);
-      } else {
-        // no truncation, just use the first 15 characters
-        (void)os::snprintf(buf, max_chars, "%s", name);
-      }
-    } else {
-      (void)os::snprintf(buf, max_chars, "%s", name);
-    }
-    int rc = Linux::_pthread_setname_np(pthread_self(), buf);
+    // set name in pthread lib
+    rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
     assert(rc != ERANGE, "pthread_setname_np failed");
-    rc = prctl(PR_SET_NAME, buf);
-    assert(rc == 0, "prctl(PR_SET_NAME) failed");
   }
 }
 

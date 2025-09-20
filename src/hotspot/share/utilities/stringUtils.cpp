@@ -24,6 +24,7 @@
 
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -142,3 +143,52 @@ ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist opti
   canonicalized_list[i] = '\0';
   return canonicalized_list;
 }
+
+// Given a string that may or may not end on a decimal number, find position of that
+// number. Returns -1 if no number was found to trail the string, or if string is empty.
+int StringUtils::find_trailing_number(const char* s) {
+  precond(s != nullptr);
+  const size_t l = strlen(s);
+  size_t pos = l;
+  while (isdigit(s[pos - 1]) && pos > 0) {
+    pos--;
+  }
+  return pos < l ? pos : -1;
+}
+
+// Given a string of unknown length and an output buffer, fit string into output buffer such
+// that:
+// - plain copy if it fits
+// - if it does not fit and it does not end in a number, truncate
+// - if it does not fit and it ends in a number, truncate the middle while preserving
+//   the trailing number. The resulting string will be assembled from <first part>..<number trail>,
+//   e.g. "C1 CompilerThread2", limited to 15 chars, would be "C1 CompilerT..2"
+char* StringUtils::abbreviate_preserve_trailing_number(const char* s, char* out, size_t outlen) {
+  precond(out != nullptr && s != nullptr && outlen > 0);
+  constexpr int dots = 2;
+  const int maxchars = checked_cast<int>(outlen) - 1;
+  const int l = checked_cast<int>(strlen(s));
+  // Impose some reasonable length below which we just truncate dumbly
+  const int smart_truncation_threshold = 4 /* prefix */ + dots + 4 /* space for number */;
+  if (l <= maxchars || maxchars < smart_truncation_threshold) {
+    (void) os::snprintf(out, outlen, "%s", s); // plain copy, possibly truncating
+  } else {
+    const int number_pos = find_trailing_number(s);
+    if (number_pos == -1) {
+      // No trailing number, just truncate
+      // Impose some reasonable length below which we just truncate
+      (void) os::snprintf(out, outlen, "%s", s);
+    } else {
+      const int l = checked_cast<int>(strlen(s));
+      const int max_number_len = maxchars / 2; // numbers longer than this are truncated at the beginning ("WorkerThread123123123", 10 outlen => "Work..3123")
+      const int number_len = MIN2(max_number_len, l - number_pos);
+      const int corrected_number_pos = l - number_len; // since we may truncate the number, too
+      const int prefix_len = maxchars - dots - number_len;
+      assert(prefix_len > 0 && number_len > 0, "Sanity");
+      (void) os::snprintf(out, outlen, "%.*s..%s", prefix_len, s, s + corrected_number_pos);
+    }
+  }
+  return out;
+}
+
+
