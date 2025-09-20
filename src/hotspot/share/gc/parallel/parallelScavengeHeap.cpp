@@ -65,7 +65,16 @@ GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
+  // If using largepage, SpaceAlignment is the desired largepage size.
+  size_t desired_page_size = (SpaceAlignment == default_space_alignment())
+                           ? os::vm_page_size()
+                           : SpaceAlignment;
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, desired_page_size);
+  // Adjust SpaceAlignment based on actually used large page size.
+  if (UseLargePages) {
+    SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
+  }
+  assert(is_aligned(SpaceAlignment, heap_rs.page_size()), "inv");
 
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
