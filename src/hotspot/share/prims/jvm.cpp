@@ -2256,7 +2256,7 @@ JVM_END
 // All functions from this section, unless noted otherwise, should call the functions
 //   get_klass_considering_redefinition(), or
 //   get_instance_klass_considering_redefinition()
-// These function return JvmtiThreadState::_scratch_class if the verifier
+// These functions return JvmtiThreadState::_scratch_class if the verifier
 // was invoked in the middle of the redefinition of cls.
 // See jvmtiThreadState.hpp for details.
 
