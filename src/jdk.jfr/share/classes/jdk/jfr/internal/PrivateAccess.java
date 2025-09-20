@@ -35,6 +35,7 @@ import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 
 /**
@@ -99,4 +100,6 @@ public abstract class PrivateAccess {
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 
     public abstract boolean isVisible(EventType t);
+
+    public abstract Recording newRecording(RecordingStream stream);
 }
