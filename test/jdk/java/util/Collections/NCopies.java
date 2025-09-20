@@ -135,6 +135,13 @@ public class NCopies {
         check(Collections.nCopies(0, null).equals(Collections.nCopies(0, "non-null")));
     }
 
+    private static void checkReversed() {
+        List<String> copies = Collections.nCopies(10, "content");
+        check(copies.equals(copies.reversed()));
+        List<String> empty = Collections.nCopies(0, "content");
+        check(empty.equals(empty.reversed()));
+    }
+
     public static void main(String[] args) {
         try {
             List<String> empty = Collections.nCopies(0, "foo");
@@ -148,6 +155,8 @@ public class NCopies {
             checkHashCode();
 
             checkEquals();
+
+            checkReversed();
 
         } catch (Throwable t) { unexpected(t); }
 
