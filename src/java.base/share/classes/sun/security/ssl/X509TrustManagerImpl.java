@@ -79,7 +79,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         this.trustedCerts = trustedCerts;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
             SSLLogger.fine("adding as trusted certificates",
                     (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
@@ -96,7 +96,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         trustedCerts = v.getTrustedCertificates();
         serverValidator = v;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
             SSLLogger.fine("adding as trusted certificates",
                     (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
@@ -230,7 +230,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     null, checkClientTrusted ? null : authType);
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);
         }
@@ -273,7 +273,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     null, checkClientTrusted ? null : authType);
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);
         }
@@ -307,7 +307,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     hostname = new SNIHostName(sniName.getEncoded());
                 } catch (IllegalArgumentException iae) {
                     // unlikely to happen, just in case ...
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+                    if (SSLLogger.logging &&
+                            SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine("Illegal server name: " + sniName);
                     }
                 }
