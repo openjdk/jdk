@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,18 @@
  * @test
  * @bug 7123519
  * @summary Problem with java/classes_security
+ * @enablePreview
  * @run main/othervm ComodoHacker PKIX
  * @run main/othervm ComodoHacker SunX509
  */
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
-import javax.net.ssl.*;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.security.KeyStore;
+import java.security.PEMDecoder;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.spec.*;
-import java.security.interfaces.*;
 
 public class ComodoHacker {
     // DigiNotar Root CA, untrusted root certificate
@@ -213,6 +210,8 @@ public class ComodoHacker {
         "baB2sVGcVNBkK55bT8gPqnx8JypubyUvayzZGg==\n" +
         "-----END CERTIFICATE-----";
 
+    private static final PEMDecoder pemDecoder = PEMDecoder.of();
+
     private static String tmAlgorithm;               // trust manager
 
     public static void main(String args[]) throws Exception {
@@ -253,19 +252,15 @@ public class ComodoHacker {
     }
 
     private static X509TrustManager getTrustManager() throws Exception {
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
 
+        // generate certificate from cert string
+        Certificate trustedCert = pemDecoder.decode(trustedCertStr, X509Certificate.class);
         // import the trusted cert
-        try (ByteArrayInputStream is =
-                new ByteArrayInputStream(trustedCertStr.getBytes())) {
-            Certificate trustedCert = cf.generateCertificate(is);
-            ks.setCertificateEntry("RSA Export Signer", trustedCert);
-        }
+        ks.setCertificateEntry("RSA Export Signer", trustedCert);
 
         // create the trust manager
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmAlgorithm);
@@ -276,28 +271,11 @@ public class ComodoHacker {
 
     private static X509Certificate[] getFraudulentChain() throws Exception {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
         X509Certificate[] chain = new X509Certificate[4];
-        try (ByteArrayInputStream is =
-                new ByteArrayInputStream(targetCertStr.getBytes())) {
-            chain[0] = (X509Certificate)cf.generateCertificate(is);
-        }
-
-        try (ByteArrayInputStream is =
-                new ByteArrayInputStream(intermediateCertStr.getBytes())) {
-            chain[1] = (X509Certificate)cf.generateCertificate(is);
-        }
-
-        try (ByteArrayInputStream is =
-                new ByteArrayInputStream(compromisedCertStr.getBytes())) {
-            chain[2] = (X509Certificate)cf.generateCertificate(is);
-        }
-
-        try (ByteArrayInputStream is =
-                new ByteArrayInputStream(untrustedCrossCertStr.getBytes())) {
-            chain[3] = (X509Certificate)cf.generateCertificate(is);
-        }
+        chain[0] = pemDecoder.decode(targetCertStr, X509Certificate.class);
+        chain[1] = pemDecoder.decode(intermediateCertStr, X509Certificate.class);
+        chain[2] = pemDecoder.decode(compromisedCertStr, X509Certificate.class);
+        chain[3] = pemDecoder.decode(untrustedCrossCertStr, X509Certificate.class);
 
         return chain;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,31 @@
  * @summary PIT b61: PKI test suite fails because self signed certificates
  *          are being rejected
  * @modules java.base/sun.security.util
+ * @enablePreview
  * @run main/othervm StatusLoopDependency subca
  * @run main/othervm StatusLoopDependency subci
  * @run main/othervm StatusLoopDependency alice
- * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.SocketException;
-import java.util.*;
+import java.security.DEREncodable;
+import java.security.PEMDecoder;
 import java.security.Security;
-import java.security.cert.*;
-import java.security.cert.CertPathValidatorException.BasicReason;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CRL;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
 import sun.security.util.DerInputStream;
 
 /**
@@ -183,61 +196,46 @@ public final class StatusLoopDependency {
         "N9AvUXxGxU4DruoJuFPcrCI=\n" +
         "-----END X509 CRL-----";
 
-    private static Set<TrustAnchor> generateTrustAnchors()
-            throws CertificateException {
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    private static final PEMDecoder pemDecoder = PEMDecoder.of();
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+    private static Set<TrustAnchor> generateTrustAnchors() {
+        X509Certificate selfSignedCert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate a trust anchor
         TrustAnchor anchor =
-            new TrustAnchor((X509Certificate)selfSignedCert, null);
+            new TrustAnchor(selfSignedCert, null);
 
         return Collections.singleton(anchor);
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection entries = new HashSet();
 
-        // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Collection<DEREncodable> entries = new HashSet<>();
 
-        ByteArrayInputStream is;
-
-        is = new ByteArrayInputStream(targetCertStr.getBytes());
-        Certificate cert = cf.generateCertificate(is);
+        DEREncodable cert = pemDecoder.decode(targetCertStr, X509Certificate.class);
         entries.add(cert);
 
-        is = new ByteArrayInputStream(subCaCertStr.getBytes());
-        cert = cf.generateCertificate(is);
+        cert = pemDecoder.decode(subCaCertStr, X509Certificate.class);
         entries.add(cert);
 
-        is = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        cert = cf.generateCertificate(is);
+        cert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
         entries.add(cert);
 
-        is = new ByteArrayInputStream(topCrlIssuerCertStr.getBytes());
-        cert = cf.generateCertificate(is);
+        cert = pemDecoder.decode(topCrlIssuerCertStr, X509Certificate.class);
         entries.add(cert);
 
-        is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
-        cert = cf.generateCertificate(is);
+        cert = pemDecoder.decode(subCrlIssuerCertStr, X509Certificate.class);
         entries.add(cert);
 
         // generate CRL from CRL string
-        is = new ByteArrayInputStream(topCrlStr.getBytes());
-        Collection mixes = cf.generateCRLs(is);
-        entries.addAll(mixes);
+        DEREncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
+        entries.add(mixes);
 
-        is = new ByteArrayInputStream(subCrlStr.getBytes());
-        mixes = cf.generateCRLs(is);
-        entries.addAll(mixes);
+        mixes = pemDecoder.decode(subCrlStr, X509CRL.class);
+        entries.add(mixes);
 
         return CertStore.getInstance("Collection",
-                            new CollectionCertStoreParameters(entries));
+                new CollectionCertStoreParameters(entries));
     }
 
     private static X509CertSelector generateSelector(String name)
@@ -245,17 +243,16 @@ public final class StatusLoopDependency {
         X509CertSelector selector = new X509CertSelector();
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream is = null;
+        String cert;
         if (name.equals("subca")) {
-            is = new ByteArrayInputStream(subCaCertStr.getBytes());
+            cert = subCaCertStr;
         } else if (name.equals("subci")) {
-            is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
+            cert = subCrlIssuerCertStr;
         } else {
-            is = new ByteArrayInputStream(targetCertStr.getBytes());
+            cert = targetCertStr;
         }
 
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = pemDecoder.decode(cert, X509Certificate.class);
         byte[] extVal = target.getExtensionValue("2.5.29.14");
         if (extVal != null) {
             DerInputStream in = new DerInputStream(extVal);
@@ -269,21 +266,18 @@ public final class StatusLoopDependency {
         return selector;
     }
 
-    private static boolean match(String name, Certificate cert)
-                throws Exception {
-        X509CertSelector selector = new X509CertSelector();
+    private static boolean match(String name, Certificate cert) {
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream is = null;
+        String newCert;
         if (name.equals("subca")) {
-            is = new ByteArrayInputStream(subCaCertStr.getBytes());
+            newCert = subCaCertStr;
         } else if (name.equals("subci")) {
-            is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
+            newCert = subCrlIssuerCertStr;
         } else {
-            is = new ByteArrayInputStream(targetCertStr.getBytes());
+            newCert = targetCertStr;
         }
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = pemDecoder.decode(newCert, X509Certificate.class);
 
         return target.equals(cert);
     }
