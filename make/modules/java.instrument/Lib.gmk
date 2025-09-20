@@ -43,8 +43,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
     LIBS := $(ICONV_LIBS), \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
