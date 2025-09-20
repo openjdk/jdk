@@ -25,33 +25,73 @@
  * @test
  * @bug 8366421
  * @summary Test for ModifiedUtf.utfLen() return type change from int to long to avoid overflow
- * @modules java.base/jdk.internal.util
- * @run main TestUtfLen
+ * @modules java.base/jdk.internal.classfile.impl
+ *          java.base/jdk.internal.util
+ * @run main/othervm -Xmx4g --add-opens java.base/jdk.internal.classfile.impl=ALL-UNNAMED TestUtfLen
  */
 
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.reflect.Method;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.UTFDataFormatException;
+
+import jdk.internal.classfile.impl.BufWriterImpl;
+import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.util.ModifiedUtf;
 
 public class TestUtfLen {
-    private static final String ONE_BYTE   = "A";        // 1-byte UTF-8
-    private static final String TWO_BYTE   = "\u0100";   // 2-byte UTF-8
-    private static final String THREE_BYTE = "\u2600";   // 3-byte UTF-8
+  private static final String THREE_BYTE = "\u2600";   // 3-byte UTF-8
 
-    public static void main(String[] args) {
-        String chunk = ONE_BYTE + TWO_BYTE + THREE_BYTE;
-        long perChunkLen = ModifiedUtf.utfLen(chunk, 0);
-        if (perChunkLen != 6L) {
-            throw new RuntimeException("Expected perChunkLen=6 but got " + perChunkLen);
-        }
+  public static void main(String[] args) {
+    int count = Integer.MAX_VALUE / 3 + 1;
+    long expected = 3L * count;
+    String largeString = THREE_BYTE.repeat(count);
 
-        int iterations = (Integer.MAX_VALUE / 6) + 1;
-        long total = 0L;
-        for (int i = 0; i < iterations; i++) {
-            total += ModifiedUtf.utfLen(chunk, 0);
-        }
-        long expected = perChunkLen * iterations;
-        if (total != expected) {
-            throw new RuntimeException("Expected total=" + expected + " but got " + total);
-        }
-        System.out.println("PASSED");
+    long total = ModifiedUtf.utfLen(largeString, 0);
+    if (total != expected) {
+      throw new RuntimeException("Expected total=" + expected + " but got " + total);
     }
+
+    /**
+     * Verifies that the following three methods that call ModifiedUtf.utfLen()
+     * correctly handle overflow:
+     * - DataOutputStream.writeUTF(String)
+     * - BufWriterImpl.writeUtfEntry(String)
+     * - ObjectOutputStream.writeUTF(String)
+     */
+    try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+         DataOutputStream dataOut = new DataOutputStream(byteOut)) {
+      dataOut.writeUTF(largeString);
+      throw new RuntimeException("Expected UTFDataFormatException was not thrown.");
+    } catch (UTFDataFormatException e) {
+    }
+
+    BufWriterImpl bufWriter = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
+    Method writeUtfEntry = bufWriter.getClass().getDeclaredMethod("writeUtfEntry", String.class);
+    writeUtfEntry.setAccessible(true);
+    try {
+      writeUtfEntry.invoke(bufWriter, largeString);
+      throw new RuntimeException("Expected IllegalArgumentException was not thrown.");
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (!(cause instanceof IllegalArgumentException)) {
+        throw new RuntimeException("Expected IllegalArgumentException was not thrown.");
+      }
+    }
+
+    File tempFile = File.createTempFile("utfLenOverflow", ".dat");
+    tempFile.deleteOnExit();
+    try (FileOutputStream fos = new FileOutputStream(tempFile);
+      ObjectOutputStream objOut = new ObjectOutputStream(fos)){
+      objOut.writeUTF(largeString);
+    }
+
+    System.out.println("PASSED");
+  }
 }
