@@ -409,7 +409,6 @@ java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407,8302787  macosx-all,windows-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
-java/awt/Modal/ToFront/DialogToFrontModeless1Test.java 8213530 linux-all
 java/awt/Modal/ToFront/DialogToFrontNonModalTest.java 8221899 linux-all
 java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all,macosx-all
 java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all,macosx-all
