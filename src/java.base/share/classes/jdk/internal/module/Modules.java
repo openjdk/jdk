@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,36 @@ public class Modules {
      */
     public static void addEnableNativeAccessToAllUnnamed() {
         JLA.addEnableNativeAccessToAllUnnamed();
+    }
+
+    /**
+     * Enable code in all unnamed modules to mutate final instance fields.
+     */
+    public static void addEnableFinalMutationToAllUnnamed() {
+        JLA.addEnableFinalMutationToAllUnnamed();
+    }
+
+    /**
+     * Enable code in a given module to mutate final instance fields.
+     */
+    public static boolean tryEnableFinalMutation(Module m) {
+        return JLA.tryEnableFinalMutation(m);
+    }
+
+    /**
+     * Return true if code in a given module is allowed to mutate final instance fields.
+     */
+    public static boolean isFinalMutationEnabled(Module m) {
+        return JLA.isFinalMutationEnabled(m);
+    }
+
+    /**
+     * Return true if a given module has statically opened the given package to a given
+     * other module. "statically open" means the module declaration, --add-opens on the
+     * command line, or Add-Opens in the main manifest of an executable JAR.
+     */
+    public static boolean isStaticallyOpened(Module m, String pn, Module other) {
+        return JLA.isStaticallyOpened(m, pn, other);
     }
 
     /**

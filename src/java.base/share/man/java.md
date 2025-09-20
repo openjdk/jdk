@@ -465,6 +465,38 @@ the JVM.
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
 
+`--enable-final-field-mutation` *module*\[,*module*...\]
+:   This option allows code in the specified modules to mutate final instance
+    fields when the field's declaring class is in a package that is open to the
+    module mutating the field.
+
+    *module* can the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    code on the class path.
+
+-`--illegal-final-field-mutation=`*parameter*
+:   This option specifies the mode for how illegal final field mutation is handled:
+
+    > **Note:** This option will be removed in a future release.
+
+    -   `allow`: This mode allows illegal final field mutation in all modules,
+        without any warings.
+
+    -   `warn`: This mode is identical to `allow` except that a warning message is
+        issued for the first illegal final field mutation performaed in a module.
+        This mode is the default for the current JDK but will change in a future
+        release.
+
+    -   `debug`: This mode is identical to `allow` except that a warning message
+        and stack trace are printed for every illegal final field mutation.
+
+    -   `deny`: This mode disables final field mutation. That is, any illegal final
+        field mutation access causes an `IllegalAccessException`. This mode will
+        become the default in a future release.
+
+    To verify that your application is ready for a future version of the JDK,
+    run it with `--illegal-final-field-mutation=deny` along with any necessary
+    `--enable-final-field-mutation` options.
+
 `--finalization=`*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
     are "enabled" and "disabled". Finalization is enabled by default, so the

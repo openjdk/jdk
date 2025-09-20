@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @build Fields HiddenClassTest
- * @run testng/othervm HiddenClassTest
  * @summary Test java.lang.reflect.AccessibleObject with modules
+ * @run junit/othervm --enable-final-field-mutation=ALL-UNNAMED -DwriteAccess=true HiddenClassTest
+ * @run junit/othervm --illegal-final-field-mutation=deny -DwriteAccess=false HiddenClassTest
  */
 
 import java.io.IOException;
@@ -37,22 +37,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class HiddenClassTest {
-    static final Class<?> hiddenClass = defineHiddenClass();
-    private static Class<?> defineHiddenClass() {
+class HiddenClassTest {
+    static Class<?> hiddenClass;
+    static boolean writeAccess;
+
+    @BeforeAll
+    static void setup() throws Exception {
         String classes = System.getProperty("test.classes");
-        Path cf = Paths.get(classes, "Fields.class");
-        try {
-            byte[] bytes = Files.readAllBytes(cf);
-            return MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        Path cf = Path.of(classes, "Fields.class");
+        byte[] bytes = Files.readAllBytes(cf);
+        hiddenClass = MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
+
+        String s = System.getProperty("writeAccess");
+        assertNotNull(s);
+        writeAccess = Boolean.valueOf(s);
     }
 
     /*
@@ -60,7 +62,7 @@ public class HiddenClassTest {
      * in a normal class
      */
     @Test
-    public void testFieldsInNormalClass() throws Throwable {
+    void testFieldsInNormalClass() throws Throwable {
         // despite the name "HiddenClass", this class is loaded by the
         // class loader as non-hidden class
         Class<?> c = Fields.class;
@@ -68,7 +70,11 @@ public class HiddenClassTest {
         assertFalse(c.isHidden());
         readOnlyAccessibleObject(c, "STATIC_FINAL", null, true);
         readWriteAccessibleObject(c, "STATIC_NON_FINAL", null, false);
-        readWriteAccessibleObject(c, "FINAL", o, true);
+        if (writeAccess) {
+            readWriteAccessibleObject(c, "FINAL", o, true);
+        } else {
+            readOnlyAccessibleObject(c, "FINAL", o, true);
+        }
         readWriteAccessibleObject(c, "NON_FINAL", o, false);
     }
 
@@ -77,7 +83,7 @@ public class HiddenClassTest {
      * in a hidden class
      */
     @Test
-    public void testFieldsInHiddenClass() throws Throwable {
+    void testFieldsInHiddenClass() throws Throwable {
         assertTrue(hiddenClass.isHidden());
         Object o = hiddenClass.newInstance();
         readOnlyAccessibleObject(hiddenClass, "STATIC_FINAL", null, true);
@@ -96,11 +102,7 @@ public class HiddenClassTest {
         }
         assertTrue(f.trySetAccessible());
         assertTrue(f.get(o) != null);
-        try {
-            f.set(o, null);
-            assertTrue(false, "should fail to set " + name);
-        } catch (IllegalAccessException e) {
-        }
+        assertThrows(IllegalAccessException.class, () -> f.set(o, null));
     }
 
     private static void readWriteAccessibleObject(Class<?> c, String name, Object o, boolean isFinal) throws Exception {
@@ -113,10 +115,6 @@ public class HiddenClassTest {
         }
         assertTrue(f.trySetAccessible());
         assertTrue(f.get(o) != null);
-        try {
-            f.set(o, null);
-        } catch (IllegalAccessException e) {
-            throw e;
-        }
+        f.set(o, null);
     }
 }
