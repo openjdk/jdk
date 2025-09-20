@@ -4856,11 +4856,19 @@ uint os::processor_id() {
 }
 
 void os::set_native_thread_name(const char *name) {
+  char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
+  // We may need to truncate the thread name. Since a common pattern is
+  // for thread names is to be both longer than 15 chars and have a trailing number
+  // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we truncate "smartly"
+  // by attempting to preserve the trailing number in the name if there is one
+  // (e.g. "DispatcherWorkerThread21" -> "DispatcherW..21").
+  StringUtils::abbreviate_preserve_trailing_number(name, buf, sizeof(buf));
+  // set name in kernel
+  int rc = prctl(PR_SET_NAME, buf);
+  assert(rc == 0, "prctl(PR_SET_NAME) failed");
   if (Linux::_pthread_setname_np) {
-    char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    (void) os::snprintf(buf, sizeof(buf), "%s", name);
-    buf[sizeof(buf) - 1] = '\0';
-    const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
+    // set name in pthread lib
+    rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
     assert(rc != ERANGE, "pthread_setname_np failed");
   }
