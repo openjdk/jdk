@@ -888,6 +888,12 @@ void G1CollectedHeap::resize_heap(size_t resize_bytes, bool should_expand) {
 
 void G1CollectedHeap::resize_heap_after_full_collection(size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
+  // Short-cut calculation if the heap size is fixed (MinHeapSize == MaxHeapSize) and
+  // cannot expand or shrink.
+  if (is_fixed_size_heap()) {
+    log_debug(gc, ergo, heap)("Skip heap resize after full collection.");
+    return;
+  }
 
   bool should_expand;
   size_t resize_bytes = _heap_sizing_policy->full_collection_resize_amount(should_expand, allocation_word_size);
@@ -898,6 +904,13 @@ void G1CollectedHeap::resize_heap_after_full_collection(size_t allocation_word_s
 }
 
 void G1CollectedHeap::resize_heap_after_young_collection(size_t allocation_word_size) {
+  // Short-cut calculation if the heap size is fixed (MinHeapSize == MaxHeapSize) and
+  // cannot expand or shrink.
+  if (is_fixed_size_heap()) {
+    log_trace(gc, ergo, heap)("Skip heap resize after young collection.");
+    return;
+  }
+
   Ticks start = Ticks::now();
 
   bool should_expand;
@@ -1212,7 +1225,8 @@ G1CollectedHeap::G1CollectedHeap() :
   _ref_processor_cm(nullptr),
   _is_alive_closure_cm(),
   _is_subject_to_discovery_cm(this),
-  _region_attr() {
+  _region_attr(),
+  _fixed_size_heap(MaxHeapSize == MinHeapSize) {
 
   _verifier = new G1HeapVerifier(this);
 

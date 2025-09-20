@@ -569,6 +569,7 @@ public:
   void resize_heap_after_young_collection(size_t allocation_word_size);
   void resize_heap_after_full_collection(size_t allocation_word_size);
 
+  inline bool is_fixed_size_heap() const;
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
   // Immediately uncommit uncommittable regions.
@@ -1054,6 +1055,10 @@ public:
   // the collection set or not. Each of the array's elements denotes whether the
   // corresponding region is in the collection set or not.
   G1HeapRegionAttrBiasedMappedArray _region_attr;
+
+  // True if the heap size is fixed (MinHeapSize == MaxHeapSize) and
+  // thus cannot expand or shrink.
+  bool _fixed_size_heap;
 
  public:
 
