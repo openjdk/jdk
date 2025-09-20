@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
         frame.add(target);
 
         Toolkit.getDefaultToolkit()
-               .addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
+                .addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
         frame.pack();
         frame.setVisible(true);
     }
@@ -170,9 +170,11 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (; !srcPoint.equals(dstOutsidePoint);
                  srcPoint.translate(sign(dstOutsidePoint.x - srcPoint.x),
-                                    sign(dstOutsidePoint.y - srcPoint.y))) {
+                         sign(dstOutsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
+            robot.waitForIdle();
+            robot.delay(100);
 
             for (int i = 0; i < 10; i++) {
                 robot.mouseMove(srcPoint.x, srcPoint.y++);
@@ -180,9 +182,10 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
             for (;!srcPoint.equals(dstInsidePoint);
                  srcPoint.translate(sign(dstInsidePoint.x - srcPoint.x),
-                                    sign(dstInsidePoint.y - srcPoint.y))) {
+                         sign(dstInsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
+
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.waitForIdle();
