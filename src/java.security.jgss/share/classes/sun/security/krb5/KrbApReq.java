@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,8 +279,21 @@ public class KrbApReq {
                                    EType.toString(encPartKeyType));
         }
 
-        byte[] bytes = apReqMessg.ticket.encPart.decrypt(dkey,
-            KeyUsage.KU_TICKET);
+        byte[] bytes;
+        try {
+            bytes = apReqMessg.ticket.encPart.decrypt(dkey, KeyUsage.KU_TICKET);
+        } catch (KrbException ke) {
+            // When EncryptedData::decrypt and the key kvno does not match,
+            // throw a different exception.
+            if (!EncryptionKey.versionMatches(dkey.getKeyVersionNumber(), kvno)) {
+                var ke2 = new KrbApErrException(Krb5.KRB_AP_ERR_BADKEYVER);
+                ke2.initCause(ke);
+                throw ke2;
+            } else {
+                throw ke;
+            }
+        }
+
         byte[] temp = apReqMessg.ticket.encPart.reset(bytes);
         EncTicketPart enc_ticketPart = new EncTicketPart(temp);
 
