@@ -151,7 +151,7 @@ int StringUtils::find_trailing_number(const char* s) {
   while (isdigit(s[pos - 1]) && pos > 0) {
     pos--;
   }
-  return pos < l ? pos : -1;
+  return pos < l ? checked_cast<int>(pos) : -1;
 }
 
 char* StringUtils::abbreviate_preserve_trailing_number(const char* s, char* out, size_t outlen) {
