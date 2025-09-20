@@ -117,6 +117,14 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
     public static final NamedParameterSpec ML_KEM_1024
             = new NamedParameterSpec("ML-KEM-1024");
 
+    /**
+     * The X-Wing parameters
+     *
+     * @since 26
+     */
+    public static final NamedParameterSpec X_WING
+            = new NamedParameterSpec("X-Wing");
+
     private final String name;
 
     /**
