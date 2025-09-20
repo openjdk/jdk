@@ -107,6 +107,7 @@ public class TestG1ParallelPhases {
             "Termination",
             "RedirtyCards",
             "RecalculateUsed",
+            "RebuildFreeList"
             "ResizeTLABs",
             "FreeCSet",
             "UpdateDerivedPointers",
