@@ -99,7 +99,7 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
 
 static inline InstanceKlass* get_ik(jclass def) {
   oop mirror = JNIHandles::resolve_non_null(def);
-  return InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  return java_lang_Class::as_InstanceKlass(mirror);
 }
 
 // If any of the classes are being redefined, wait
@@ -1310,12 +1310,12 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 class RedefineVerifyMark : public StackObj {
  private:
   JvmtiThreadState* _state;
-  Klass*            _scratch_class;
+  InstanceKlass*    _scratch_class;
   OopHandle         _scratch_mirror;
 
  public:
 
-  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
+  RedefineVerifyMark(InstanceKlass* the_class, InstanceKlass* scratch_class,
                      JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
