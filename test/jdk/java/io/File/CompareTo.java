@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  */
 
 /* @test
-   @bug 4131169
-   @summary Test respecified compareTo method
+ * @bug 4131169 8191963
+ * @summary Test compareTo and equals methods
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main CompareTo
  */
 
-import java.io.*;
-
+import java.io.File;
+import jdk.test.lib.Platform;
 
 public class CompareTo {
 
@@ -36,6 +39,19 @@ public class CompareTo {
         File f2 = new File("B");
         if (!(f1.compareTo(f2) < 0))
             throw new Exception("compareTo incorrect");
+
+        // U+0131 = ı 'LATIN SMALL LETTER DOTLESS I'
+        File smallDotlessI = new File("\u0131");
+        // U+0130 = İ 'LATIN CAPITAL LETTER I WITH DOT ABOVE'
+        File largeDotfullI = new File("\u0130");
+        File latinCapitalI = new File("I");
+
+        boolean shouldBeEqual= smallDotlessI.equals(latinCapitalI);
+        if (!shouldBeEqual)
+            throw new Exception("Small dotless \"i\" does not equal \"I\"");
+        boolean shouldNotBeEqual = largeDotfullI.equals(latinCapitalI);
+        if (shouldNotBeEqual)
+            throw new Exception("Large dotted \"I\" equals \"I\"");
     }
 
     private static void testUnix() throws Exception {
@@ -46,8 +62,10 @@ public class CompareTo {
     }
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\') testWin32();
-        if (File.separatorChar == '/') testUnix();
+        if (Platform.isWindows())
+            testWin32();
+        else
+            testUnix();
     }
 
 }
