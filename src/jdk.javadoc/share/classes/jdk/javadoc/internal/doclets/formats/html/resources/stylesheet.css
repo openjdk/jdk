@@ -1957,6 +1957,30 @@ pre.snippet .highlighted {
     background-color: var(--snippet-highlight-color);
     border-radius: 10%;
 }
+
+nav.toc div.toc-header input.filter-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+nav.toc div.toc-header .toc-sort-toggle {
+    flex: 0 0 auto;
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    padding: .5em;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+nav.toc div.toc-header .toc-sort-toggle > img {
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+}
+
+
 /*
  * Hide navigation links and search box in print layout
  */
