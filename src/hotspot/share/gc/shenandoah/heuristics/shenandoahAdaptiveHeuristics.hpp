@@ -41,12 +41,21 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
+
+  void recalibrate(size_t bytes_allocated) {
+    // Under normal conditions, _previous_gc_allocated equals zero on entry to this function.  It will only be non-zero
+    // if allocation rate was never sampled during previous GC cycle.
+    _previous_gc_allocated += bytes_allocated - _last_sample_value;
+    _last_sample_value = 0;
+  }
+
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
 
   double _last_sample_time;
   size_t _last_sample_value;
+  size_t _previous_gc_allocated;
   double _interval_sec;
   TruncatedSeq _rate;
   TruncatedSeq _rate_avg;
@@ -149,6 +158,11 @@ protected:
   inline void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     ShenandoahHeuristics::accept_trigger();
+  }
+
+public:
+  virtual void recalibrate_alloc_rate_last_sample(size_t bytes_allocated) override {
+    _allocation_rate.recalibrate(bytes_allocated);
   }
 };
 
