@@ -170,7 +170,7 @@ uint AOTCodeCache::max_aot_code_size() {
 // At this point all AOT class linking seetings are finilized
 // and AOT cache is open so we can map AOT code region.
 void AOTCodeCache::initialize() {
-#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
+#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
   disable_caching();
   return;
@@ -238,7 +238,7 @@ void AOTCodeCache::initialize() {
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
   FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
-#endif // defined(AMD64) || defined(AARCH64)
+#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
 }
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache

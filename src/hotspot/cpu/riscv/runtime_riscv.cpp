@@ -26,6 +26,7 @@
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "opto/runtime.hpp"
@@ -58,6 +59,11 @@ public:
 
 //------------------------------generate_uncommon_trap_blob--------------------
 UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
+  if (blob != nullptr) {
+    return blob->as_uncommon_trap_blob();
+  }
+
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -243,8 +249,10 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  return UncommonTrapBlob::create(&buffer, oop_maps,
-                                                  SimpleRuntimeFrame::framesize >> 1);
+  UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
+                                                       SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
+  return ut_blob;
 }
 
 //------------------------------generate_exception_blob---------------------------
@@ -279,6 +287,11 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(!OptoRuntime::is_callee_saved_register(R12_num), "");
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
+  if (blob != nullptr) {
+    return blob->as_exception_blob();
+  }
 
   // Allocate space for the code
   ResourceMark rm;
@@ -382,6 +395,8 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob
-  return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
+  return ex_blob;
 }
 #endif // COMPILER2
