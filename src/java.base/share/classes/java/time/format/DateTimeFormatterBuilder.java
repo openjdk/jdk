@@ -2532,9 +2532,9 @@ public final class DateTimeFormatterBuilder {
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
-            optional |= this.optional;
+            boolean effectiveOptional = optional | this.optional;
             for (DateTimePrinterParser pp : printerParsers) {
-                if (pp.format(context, buf, optional) == false) {
+                if (pp.format(context, buf, effectiveOptional) == false) {
                     buf.setLength(length);  // reset buffer
                     return true;
                 }
