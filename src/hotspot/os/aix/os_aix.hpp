@@ -35,7 +35,7 @@ class os::Aix {
 
  private:
 
-  static size_t _physical_memory;
+  static uint64_t _physical_memory;
   static pthread_t _main_thread;
 
   // 0 = uninitialized, otherwise 16 bit number:
@@ -54,9 +54,9 @@ class os::Aix {
   //  1 - EXTSHM=ON
   static int _extshm;
 
-  static bool available_memory(size_t& value);
-  static bool free_memory(size_t& value);
-  static size_t physical_memory() { return _physical_memory; }
+  static bool available_memory(uint64_t& value);
+  static bool free_memory(uint64_t& value);
+  static uint64_t physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
   // OS recognitions (AIX OS level) call this before calling Aix::os_version().
