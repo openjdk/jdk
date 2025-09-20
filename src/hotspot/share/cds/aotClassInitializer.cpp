@@ -49,10 +49,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 
   check_aot_annotations(ik);
 
-  if (ik->force_aot_initialization()) {
-    assert(ik->is_initialized(), "must have been initialized before this check");
-  }
-
   if (!ik->is_initialized() && !ik->is_being_initialized()) {
     if (ik->has_aot_safe_initializer()) {
       ResourceMark rm;
@@ -223,9 +219,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
     // at runtime, we need to make sure Invokers$Holder is also aot-inited.
     if (ik->has_aot_safe_initializer()) {
-      return true;
-    }
-    if (ik->force_aot_initialization()) {
       return true;
     }
   }

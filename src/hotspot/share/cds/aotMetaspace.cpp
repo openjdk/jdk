@@ -1230,8 +1230,6 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     return false;
   }
 
-  bool made_progress = false;
-
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
@@ -1257,10 +1255,10 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
-    made_progress = true;
+    return true;
+  } else {
+    return false;
   }
-
-  return made_progress;
 }
 
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {

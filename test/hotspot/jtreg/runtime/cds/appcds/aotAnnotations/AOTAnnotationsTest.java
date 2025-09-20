@@ -60,6 +60,7 @@ public class AOTAnnotationsTest {
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
                 "-Xlog:aot+class=debug",
+                "-Xlog:aot+init",
             };
         }
 
@@ -82,7 +83,8 @@ class AOTAnnotationsTestApp {
         double d = 12.34567;
 
         // Double.toString() uses jdk.internal.math.MathUtils.
-        // Because MathUtils has @AOTSafeClassInitializer, it will be cached in aot-inited state.
+        // Because MathUtils has @AOTSafeClassInitializer and was initialized during
+        // the training run, it will be cached in aot-inited state.
         System.out.println(Double.toString(d));
     }
 }
