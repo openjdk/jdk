@@ -4992,7 +4992,7 @@ pipe_class pipe_class_compare() %{
 // Pipeline class for traps.
 pipe_class pipe_class_trap() %{
   single_instruction;
-  fixed_latency(100);
+  fixed_latency(30);
 %}
 
 // Pipeline class for memory operations.
@@ -5004,7 +5004,7 @@ pipe_class pipe_class_memory() %{
 // Pipeline class for call.
 pipe_class pipe_class_call() %{
   single_instruction;
-  fixed_latency(100);
+  fixed_latency(30);
 %}
 
 // Define the class for the Nop node.
