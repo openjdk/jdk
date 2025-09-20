@@ -2093,6 +2093,10 @@ bool VM_Version::is_intel_cascade_lake() {
   return is_intel_skylake() && _stepping >= 5;
 }
 
+bool VM_Version::is_intel_darkmont() {
+  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
+}
+
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
 // The Intel platforms that supports the serialize instruction
