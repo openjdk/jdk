@@ -26,11 +26,19 @@
 // system properties in samevm/agentvm mode.
 //
 
-/* @test
+/* @test id=tls12
  * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
  * @bug 6766775
  * @library /test/lib
- * @run main/othervm IPIdentities
+ * @run main/othervm IPIdentities TLSv1.2 MD5withRSA
+ * @author Xuelei Fan
+ */
+
+/* @test id=tls13
+ * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
+ * @bug 6766775
+ * @library /test/lib
+ * @run main/othervm IPIdentities TLSv1.3 SHA256withRSA
  * @author Xuelei Fan
  */
 
@@ -40,35 +48,17 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.X509Certificate;
-
-import java.security.cert.Certificate;
-import java.math.BigInteger;
 import jdk.test.lib.net.URIBuilder;
-import jdk.test.lib.security.CertificateBuilder;
-import jdk.test.lib.security.CertificateBuilder.KeyUsage;
-import sun.security.x509.AuthorityKeyIdentifierExtension;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.KeyIdentifier;
-import sun.security.x509.SerialNumber;
-import sun.security.x509.X500Name;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManagerFactory;
 
 
-public class IPIdentities {
+public class IPIdentities extends IdentitiesBase {
 
     /*
      * =============================================================
@@ -83,17 +73,6 @@ public class IPIdentities {
      */
     static boolean separateServerThread = true;
 
-    static X509Certificate trustedCert;
-
-    static X509Certificate serverCert;
-
-    static X509Certificate clientCert;
-
-    static KeyPair serverKeys;
-    static KeyPair clientKeys;
-
-    static char passphrase[] = "passphrase".toCharArray();
-
     /*
      * Is the server ready to serve?
      */
@@ -104,10 +83,7 @@ public class IPIdentities {
      */
     volatile static boolean closeReady = false;
 
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = Boolean.getBoolean("test.debug");
+
 
     private SSLServerSocket sslServerSocket = null;
 
@@ -118,8 +94,7 @@ public class IPIdentities {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLContext context = getSSLContext(trustedCert, serverCert,
-            serverKeys, passphrase);
+        SSLContext context = getServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
 
         // doClientSide() connects to the loopback address
@@ -174,8 +149,7 @@ public class IPIdentities {
     void doClientSide() throws Exception {
         SSLContext reservedSSLContext = SSLContext.getDefault();
         try {
-            SSLContext context = getSSLContext(trustedCert, clientCert,
-                    clientKeys, passphrase);
+            SSLContext context = getClientSSLContext();
             SSLContext.setDefault(context);
 
             /*
@@ -223,82 +197,25 @@ public class IPIdentities {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
-    private static X509Certificate createTrustedCert(KeyPair caKeys) throws Exception {
-        SecureRandom random = new SecureRandom();
 
-        KeyIdentifier kid = new KeyIdentifier(caKeys.getPublic());
-        GeneralNames gns = new GeneralNames();
-        GeneralName name = new GeneralName(new X500Name(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US"));
-        gns.add(name);
-        BigInteger serialNumber = BigInteger.valueOf(random.nextLong(1000000)+1);
-        return CertificateBuilder.newCertificateBuilder(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
-                caKeys.getPublic(), caKeys.getPublic())
-                .setSerialNumber(serialNumber)
-                .addExtension(new AuthorityKeyIdentifierExtension(kid, gns,
-                        new SerialNumber(serialNumber)))
-                .addBasicConstraintsExt(true, true, -1)
-                .setOneHourValidity()
-                .build(null, caKeys.getPrivate(), "MD5WithRSA");
-    }
-
-    private static void setupCertificates() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        KeyPair caKeys = kpg.generateKeyPair();
-        serverKeys = kpg.generateKeyPair();
-        clientKeys = kpg.generateKeyPair();
-
-        trustedCert = createTrustedCert(caKeys);
-        if (debug) {
-            System.out.println("----------- Trusted Cert -----------");
-            CertificateBuilder.printCertificate(trustedCert, System.out);
-        }
-
-        serverCert = CertificateBuilder.newCertificateBuilder(
-                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
-                serverKeys.getPublic(), caKeys.getPublic(),
-                KeyUsage.DIGITAL_SIGNATURE, KeyUsage.NONREPUDIATION, KeyUsage.KEY_ENCIPHERMENT)
-                .addBasicConstraintsExt(false, false, -1)
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
-                .setOneHourValidity()
-                .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
-        if (debug) {
-            System.out.println("----------- Server Cert -----------");
-            CertificateBuilder.printCertificate(serverCert, System.out);
-        }
-
-        clientCert = CertificateBuilder.newCertificateBuilder(
-                "CN=localhost, OU=SSL-Client, O=Some-Org, L=Some-City, ST=Some-State, C=US",
-                clientKeys.getPublic(), caKeys.getPublic(),
-                KeyUsage.DIGITAL_SIGNATURE, KeyUsage.NONREPUDIATION, KeyUsage.KEY_ENCIPHERMENT)
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
-                .addBasicConstraintsExt(false, false, -1)
-                .setOneHourValidity()
-                .build(trustedCert, caKeys.getPrivate(), "MD5WithRSA");
-        if (debug) {
-            System.out.println("----------- Client Cert -----------");
-            CertificateBuilder.printCertificate(clientCert, System.out);
-        }
-    }
 
     public static void main(String args[]) throws Exception {
-        // MD5 is used in this test case, don't disable MD5 algorithm.
-        Security.setProperty("jdk.certpath.disabledAlgorithms",
-                "MD2, RSA keySize < 1024");
-        Security.setProperty("jdk.tls.disabledAlgorithms",
-                "SSLv3, RC4, DH keySize < 768");
+        if (args[1].contains("MD5")) {
+            // MD5 is used in this test case, don't disable MD5 algorithm.
+            Security.setProperty("jdk.certpath.disabledAlgorithms",
+                    "MD2, RSA keySize < 1024");
+            Security.setProperty("jdk.tls.disabledAlgorithms",
+                    "SSLv3, RC4, DH keySize < 768");
+        }
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
 
-        setupCertificates();
-
         /*
          * Start the tests.
          */
-        new IPIdentities();
+        new IPIdentities(args[0], args[1]);
     }
 
     Thread clientThread = null;
@@ -308,7 +225,9 @@ public class IPIdentities {
      *
      * Fork off the other side, then do your work.
      */
-    IPIdentities() throws Exception {
+    IPIdentities(String protocol, String signatureAlg) throws Exception {
+        super(protocol, signatureAlg);
+
         if (separateServerThread) {
             startServer(true);
             startClient(false);
@@ -382,44 +301,6 @@ public class IPIdentities {
         } else {
             doClientSide();
         }
-    }
-
-    // get the ssl context
-    private static SSLContext getSSLContext(X509Certificate trustedCert,
-            X509Certificate keyCert, KeyPair key, char[] passphrase) throws Exception {
-
-        // create a key store
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(null, null);
-
-        // import the trused cert
-        ks.setCertificateEntry("RSA Export Signer", trustedCert);
-
-        if (keyCert != null) {
-            Certificate[] chain = new Certificate[2];
-            chain[0] = keyCert;
-            chain[1] = trustedCert;
-
-            // import the key entry.
-            ks.setKeyEntry("Whatever", key.getPrivate(), passphrase, chain);
-        }
-
-        // create SSL context
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-        tmf.init(ks);
-
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-
-        if (keyCert != null) {
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
-
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
-
-        return ctx;
     }
 
 }
