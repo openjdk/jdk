@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,46 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 6895647
-  @summary X11 Frame locations should be what we set them to
-  @author anthony.petrov@oracle.com: area=awt.toplevel
-  @run main FrameLocation
+ * @test
+ * @key headful
+ * @bug 6895647
+ * @summary X11 Frame locations should be what we set them to
+ * @run main FrameLocation
  */
 
-import java.awt.*;
+import java.awt.EventQueue;
+import java.awt.Frame;
 
 public class FrameLocation {
     private static final int X = 250;
     private static final int Y = 250;
+    private static Frame f;
+    private static volatile int xPos;
+    private static volatile int yPos;
 
-    public static void main(String[] args) {
-        Frame f = new Frame("test");
-        f.setBounds(X, Y, 250, 250); // the size doesn't matter
-        f.setVisible(true);
+    public static void main(String[] args) throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            f = new Frame("Frame Location Test");
+            f.setBounds(X, Y, 250, 250); // the size doesn't matter
+            f.setVisible(true);
+        });
 
         for (int i = 0; i < 10; i++) {
             // 2 seconds must be enough for the WM to show the window
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException ex) {
+            } catch (InterruptedException _) {
             }
 
-            // Check the location
-            int x = f.getX();
-            int y = f.getY();
+            EventQueue.invokeAndWait(() -> {
+                // Check the location
+                xPos = f.getX();
+                yPos = f.getY();
+            });
 
-            if (x != X || y != Y) {
-                throw new RuntimeException("The frame location is wrong! Current: " + x + ", " + y + ";  expected: " + X + ", " + Y);
+            if (xPos != X || yPos != Y) {
+                throw new RuntimeException("The frame location is wrong! Current: " +
+                        xPos + ", " + yPos + ";  expected: " + X + ", " + Y);
             }
 
             // Emulate what happens when setGraphicsConfiguration() is called
@@ -63,7 +71,11 @@ public class FrameLocation {
             }
         }
 
-        f.dispose();
+        EventQueue.invokeAndWait(() -> {
+            if (f != null) {
+                f.dispose();
+            }
+        });
     }
 }
 
