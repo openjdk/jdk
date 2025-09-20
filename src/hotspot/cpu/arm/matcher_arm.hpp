@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,13 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = false;
+
+  // Return true if this CPU requires the index input saved in an array address
+  // for vector gather-load/scatter-store operations. Otherwise, return false if
+  // the index input should be saved in a vector register.
+  static bool gather_scatter_requires_index_in_address(BasicType bt) {
+    return false;
+  }
 
   // Some architecture needs a helper to check for alltrue vector
   static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {

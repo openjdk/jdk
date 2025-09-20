@@ -164,6 +164,16 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Return true if this CPU requires the index input saved in an array address
+  // for vector gather-load/scatter-store operations. Otherwise, return false if
+  // the index input should be saved in a vector register.
+  //
+  // SVE requires vector indices for gather-load/scatter-store operations on all
+  // data types.
+  static bool gather_scatter_requires_index_in_address(BasicType bt) {
+    return false;
+  }
+
   // An all-set mask is used for the alltrue vector test with SVE
   static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
     return is_predicate && is_alltrue;
