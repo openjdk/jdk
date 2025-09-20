@@ -2534,7 +2534,7 @@ public final class DateTimeFormatterBuilder {
             int length = buf.length();
             boolean effectiveOptional = optional | this.optional;
             for (DateTimePrinterParser pp : printerParsers) {
-                if (pp.format(context, buf, effectiveOptional) == false) {
+                if (!pp.format(context, buf, effectiveOptional)) {
                     buf.setLength(length);  // reset buffer
                     return true;
                 }
