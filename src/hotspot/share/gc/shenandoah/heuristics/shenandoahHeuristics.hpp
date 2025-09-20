@@ -240,7 +240,7 @@ public:
   virtual void initialize();
 
   virtual void recalibrate_alloc_rate_last_sample(size_t bytes_allocated) {
-    // do nothing 
+    // do nothing
   }
 
   double elapsed_cycle_time() const;
