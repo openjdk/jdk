@@ -772,7 +772,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
-    AOTLinkedClassBulkLoader::link_or_init_javabase_classes(CHECK_JNI_ERR);
+    AOTLinkedClassBulkLoader::link_or_init_javabase_classes(THREAD);
   }
 
   // Start string deduplication thread if requested.

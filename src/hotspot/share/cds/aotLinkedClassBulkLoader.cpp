@@ -180,15 +180,16 @@ void AOTLinkedClassBulkLoader::validate_module(Klass* k, const char* category_na
 }
 #endif
 
-void AOTLinkedClassBulkLoader::link_or_init_javabase_classes(TRAPS) {
-  link_or_init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), CHECK);
+void AOTLinkedClassBulkLoader::link_or_init_javabase_classes(JavaThread* current) {
+  link_or_init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), current);
+  if (current->has_pending_exception()) {
+    exit_on_exception(current);
+  }
 }
 
 void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes(JavaThread* current) {
   link_or_init_non_javabase_classes_impl(current);
   if (current->has_pending_exception()) {
-    // We cannot continue, as we might have loaded some of the aot-linked classes, which
-    // may have dangling C++ pointers to other aot-linked classes that we have failed to load.
     exit_on_exception(current);
   }
 }
@@ -225,6 +226,17 @@ void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes_impl(TRAPS) {
     TrainingData::print_archived_training_data_on(tty);
   }
 }
+
+// For the AOT cache to function properly, all classes in the AOTLinkedClassTable
+// must be loaded and linked. In addition, AOT-initialized classes must be moved to
+// the initialized state.
+//
+// We can encounter a failure during the loading, linking, or initialization of
+// classes in the AOTLinkedClassTable only if:
+//   - We ran out of memory,
+//   - There is a serious error in the VM implemenation
+// When this happens, the VM may be in an inconsistent state (e.g., we have a cached
+// heap object of class X, but X is not linked). We must exit the JVM now.
 
 void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
   assert(current->has_pending_exception(), "precondition");

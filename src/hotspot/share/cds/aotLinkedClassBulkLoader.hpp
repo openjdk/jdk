@@ -70,7 +70,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
 public:
   static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
   static void preload_classes(JavaThread* current);
-  static void link_or_init_javabase_classes(TRAPS) NOT_CDS_RETURN;
+  static void link_or_init_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void link_or_init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
 
