@@ -2165,7 +2165,7 @@ class BFSActions : public StackObj {
   virtual bool is_target_node(Node* node) const = 0;
 
   // Defines an action that should be taken when we visit a target node in the BFS traversal.
-  virtual void target_node_action(Node* target_node) = 0;
+  virtual void target_node_action(Node* node, uint i) = 0;
 };
 
 // Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
@@ -2187,7 +2187,7 @@ class DataNodeBFS : public StackObj {
         Node* input = next->in(j);
         if (_bfs_actions.is_target_node(input)) {
           assert(_bfs_actions.should_visit(input), "must also pass node filter");
-          _bfs_actions.target_node_action(input);
+          _bfs_actions.target_node_action(next, j);
         } else if (_bfs_actions.should_visit(input)) {
           _nodes_to_visit.push(input);
         }
