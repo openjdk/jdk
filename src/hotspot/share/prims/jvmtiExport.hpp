@@ -373,7 +373,7 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(return _should_post_class_file_load_hook);
     NOT_JVMTI(return false;)
   }
-  static bool has_frame_pops(JavaThread* thread) NOT_JVMTI(return false);
+  static bool has_frame_pops(JavaThread* thread) NOT_JVMTI_RETURN_(false);
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
   static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);
