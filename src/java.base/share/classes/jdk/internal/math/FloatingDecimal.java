@@ -32,40 +32,32 @@ import java.util.Arrays;
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
- * static convenience methods, although a <code>BinaryToASCIIConverter</code>
+ * static convenience methods, although a {@link BinaryToASCIIConverter}
  * instance may be obtained and reused.
  */
-public class FloatingDecimal{
+public class FloatingDecimal {
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
-    // (There are more really boring constants at the end.)
     //
-    static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
-    static final long   FRACT_HOB = ( 1L<<EXP_SHIFT ); // assumed High-Order bit
-    static final long   EXP_ONE   = ((long)DoubleConsts.EXP_BIAS)<<EXP_SHIFT; // exponent of 1.0
-    static final int    MAX_SMALL_BIN_EXP = 62;
-    static final int    MIN_SMALL_BIN_EXP = -( 63 / 3 );
-    static final int    MAX_DECIMAL_DIGITS = 15;
-    static final int    MAX_DECIMAL_EXPONENT = 308;
-    static final int    MIN_DECIMAL_EXPONENT = -324;
-    static final int    MAX_NDIGITS = 1100;
+    private static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
+    private static final long   FRACT_HOB = 1L << EXP_SHIFT; // assumed High-Order bit
+    private static final long   EXP_ONE   = (long) DoubleConsts.EXP_BIAS << EXP_SHIFT; // exponent of 1.0
+    private static final int    MAX_SMALL_BIN_EXP = 62;
+    private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
+    private static final int    MAX_DECIMAL_DIGITS = 15;  // max{n : 10^n <= 2^P}
+    private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
-    static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
-    static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
-    static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
-    static final int    SINGLE_MAX_DECIMAL_EXPONENT = 38;
-    static final int    SINGLE_MIN_DECIMAL_EXPONENT = -45;
-    static final int    SINGLE_MAX_NDIGITS = 200;
-
-    static final int    INT_DECIMAL_DIGITS = 9;
+    private static final int    SINGLE_EXP_SHIFT  = FloatConsts.SIGNIFICAND_WIDTH - 1;
+    private static final int    SINGLE_FRACT_HOB  = 1 << SINGLE_EXP_SHIFT;
+    private static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
 
     /**
-     * Converts a <code>String</code> to a double precision floating point value.
+     * Converts a {@link String} to a double precision floating point value.
      *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The double precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted double precision value.
      */
     public static double parseDouble(String s) throws NumberFormatException {
@@ -73,11 +65,11 @@ public class FloatingDecimal{
     }
 
     /**
-     * Converts a <code>String</code> to a single precision floating point value.
+     * Converts a {@link String} to a single precision floating point value.
      *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The single precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted single precision value.
      */
     public static float parseFloat(String s) throws NumberFormatException {
@@ -94,7 +86,7 @@ public class FloatingDecimal{
      * @return The double-precision value of the conversion
      */
     public static double parseDoubleSignlessDigits(int decExp, byte[] digits, int length) {
-        return readDoubleSignlessDigits(decExp, digits, length).doubleValue();
+        return new ASCIIToBinaryBuffer(false, decExp, digits, length).doubleValue();
     }
 
     /**
@@ -103,25 +95,6 @@ public class FloatingDecimal{
      */
     public interface BinaryToASCIIConverter {
         int getChars(byte[] result);
-
-        /**
-         * Retrieves the decimal exponent most closely corresponding to this value.
-         * @return The decimal exponent.
-         */
-        int getDecimalExponent();
-
-        /**
-         * Retrieves the value as an array of digits.
-         * @param digits The digit array.
-         * @return The number of valid digits copied into the array.
-         */
-        int getDigits(char[] digits);
-
-        /**
-         * Indicates the sign of the value.
-         * @return {@code value < 0.0}.
-         */
-        boolean isNegative();
 
         /**
          * Indicates whether the value is either infinite or not a number.
@@ -148,16 +121,14 @@ public class FloatingDecimal{
     }
 
     /**
-     * A <code>BinaryToASCIIConverter</code> which represents <code>NaN</code>
+     * A {@link BinaryToASCIIConverter} which represents <code>NaN</code>
      * and infinite values.
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
-        private final boolean isNegative;
 
-        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
+        public ExceptionalBinaryToASCIIBuffer(String image) {
             this.image = image;
-            this.isNegative = isNegative;
         }
 
         @Override
@@ -165,21 +136,6 @@ public class FloatingDecimal{
         public int getChars(byte[] chars) {
             image.getBytes(0, image.length(), chars, 0);
             return image.length();
-        }
-
-        @Override
-        public int getDecimalExponent() {
-            throw new IllegalArgumentException("Exceptional value does not have an exponent");
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            throw new IllegalArgumentException("Exceptional value does not have digits");
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
         }
 
         @Override
@@ -201,14 +157,14 @@ public class FloatingDecimal{
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP);
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP);
+    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP);
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[] {'0'});
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[] {'0'});
 
     /**
-     * A buffered implementation of <code>BinaryToASCIIConverter</code>.
+     * A buffered implementation of {@link BinaryToASCIIConverter}.
      */
     static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private boolean isNegative;
@@ -234,7 +190,7 @@ public class FloatingDecimal{
          * Default constructor; used for non-zero values,
          * <code>BinaryToASCIIBuffer</code> may be thread-local and reused
          */
-        BinaryToASCIIBuffer(){
+        BinaryToASCIIBuffer() {
             this.digits = new byte[20];
         }
 
@@ -247,22 +203,6 @@ public class FloatingDecimal{
             this.digits = digits;
             this.firstDigitIndex = 0;
             this.nDigits = digits.length;
-        }
-
-        @Override
-        public int getDecimalExponent() {
-            return decExponent;
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
-            return this.nDigits;
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
         }
 
         @Override
@@ -293,13 +233,14 @@ public class FloatingDecimal{
          * In particular:
          * lvalue is a finite number (not Inf, nor NaN)
          * lvalue > 0L (not zero, nor negative).
-         *
+         *<p>
          * The only reason that we develop the digits here, rather than
          * calling on Long.toString() is that we can do it a little faster,
          * and besides want to treat trailing 0s specially. If Long.toString
          * changes, we should re-evaluate this strategy!
          */
-        private void developLongDigits( int decExponent, long lvalue, int insignificantDigits ){
+        private void developLongDigits(long lvalue, int insignificantDigits) {
+            int decExponent = 0;
             if ( insignificantDigits != 0 ){
                 // Discard non-significant low-order bits, while rounding,
                 // up to insignificant value.
@@ -356,7 +297,7 @@ public class FloatingDecimal{
             this.nDigits = this.digits.length - digitno;
         }
 
-        private void dtoa( int binExp, long fractBits, int nSignificantBits, boolean isCompatibleFormat)
+        private void dtoa( int binExp, long fractBits, int nSignificantBits)
         {
             assert fractBits > 0 ; // fractBits here can't be zero or negative
             assert (fractBits & FRACT_HOB)!=0  ; // Hi-order bit should be set
@@ -408,7 +349,7 @@ public class FloatingDecimal{
                         } else {
                             fractBits >>>= (EXP_SHIFT-binExp) ;
                         }
-                        developLongDigits( 0, fractBits, insignificant );
+                        developLongDigits(fractBits, insignificant );
                         return;
                     }
                     //
@@ -539,7 +480,6 @@ public class FloatingDecimal{
                     // was too high, our first quotient will be zero. In this
                     // case, we discard it and decrement decExp.
                     //
-                    ndigit = 0;
                     q = b / s;
                     b = 10 * ( b % s );
                     m *= 10;
@@ -558,7 +498,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat ||decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -593,7 +533,6 @@ public class FloatingDecimal{
                     // was too high, our first quotient will be zero. In this
                     // case, we discard it and decrement decExp.
                     //
-                    ndigit = 0;
                     q = (int) ( b / s );
                     b = 10L * ( b % s );
                     m *= 10L;
@@ -612,7 +551,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -655,7 +594,6 @@ public class FloatingDecimal{
                 // was too high, our first quotient will be zero. In this
                 // case, we discard it and decrement decExp.
                 //
-                ndigit = 0;
                 q = Bval.quoRemIteration( Sval );
                 low  = (Bval.cmp( Mval ) < 0);
                 high = tenSval.addAndCmp(Bval,Mval)<=0;
@@ -673,7 +611,7 @@ public class FloatingDecimal{
                 // Thus we will need more than one digit if we're using
                 // E-form
                 //
-                if (!isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                if (decExp < -3 || decExp >= 8){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -743,7 +681,7 @@ public class FloatingDecimal{
         /**
          * Estimate decimal exponent. (If it is small-ish,
          * we could double-check.)
-         *
+         *<p>
          * First, scale the mantissa bits such that 1 <= d2 < 2.
          * We are then going to estimate
          *          log10(d2) ~=~  (d2-1.5)/1.5 + log(1.5)
@@ -786,6 +724,7 @@ public class FloatingDecimal{
          *  for ( i = 0; insignificant >= 10L; i++ )
          *         insignificant /= 10L;
          */
+        @Stable
         private static final int[] insignificantDigitsNumber = {
             0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3,
             4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7,
@@ -796,6 +735,7 @@ public class FloatingDecimal{
         };
 
         // approximately ceil( log2( long5pow[i] ) )
+        @Stable
         private static final int[] N_5_BITS = {
                 0,
                 3,
@@ -953,112 +893,198 @@ public class FloatingDecimal{
         }
     }
 
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NOT_A_NUMBER  = new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_ZERO = new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_ZERO = new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
+    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_INFINITY =
+            new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_INFINITY =
+            new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NOT_A_NUMBER  =
+            new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
+    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_ZERO =
+            new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
+    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_ZERO =
+            new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
 
     /**
-     * A buffered implementation of <code>ASCIIToBinaryConverter</code>.
+     * A buffered implementation of {@link ASCIIToBinaryConverter}.
+     *<p>
+     * The mathematical value x of an instance is
+     *      ±0.d_1...d_n 10^e
+     * where d_i = d[i-1] - '0' (0 < n ≤ d.length) is the i-th digit.
+     * isNegative denotes the - sign.
+     * Further, it is assumed that d_1 > 0.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        final boolean isNegative;
-        final int     decExponent;
-        final byte[]  digits;
-        int           nDigits;
+        private final boolean isNegative;
+        private final int e;
+        private final byte[] d;
+        private final int n;
 
-        ASCIIToBinaryBuffer( boolean negSign, int decExponent, byte[] digits, int n)
-        {
+        ASCIIToBinaryBuffer(boolean negSign, int e, byte[] d, int n) {
             this.isNegative = negSign;
-            this.decExponent = decExponent;
-            this.digits = digits;
-            this.nDigits = n;
+            this.e = e;
+            this.d = d;
+            this.n = n;
         }
 
-        /**
-         * Takes a FloatingDecimal, which we presumably just scanned in,
-         * and finds out what its value is, as a double.
-         *
-         * AS A SIDE EFFECT, SET roundDir TO INDICATE PREFERRED
-         * ROUNDING DIRECTION in case the result is really destined
-         * for a single-precision float.
-         */
+        /* When n ≤ 19, return the decimal in d as an unsigned long. */
+        private long toLong(int n) {
+            long f = 0;
+            for (int i = 0; i < n; ++i) {
+                f = 10 * f + (d[i] - '0');
+            }
+            return f;
+        }
+
         @Override
         public double doubleValue() {
-            int kDigits = Math.min(nDigits, MAX_DECIMAL_DIGITS + 1);
-            //
+            /*
+             * As described above, the magnitude of the mathematical value is
+             *      |x| = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
+             * where f = d_1...d_n and ep = e - n are integers.
+             */
+            if (e <= E_THR_Z[BINARY_64_IX]) {
+                return isNegative ? -0.0 : 0.0;
+            }
+            if (e >= E_THR_I[BINARY_64_IX]) {
+                return isNegative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+            }
+            /*
+             * Attempt some fast paths before resorting to heavier lifting work.
+             * Here, let P = Double.PRECISION = 53.
+             *
+             * Below, f is a (signed) long, thus require n ≤ 18.
+             * In fact, not all f values fit in a (signed) long when n > 18.
+             *
+             * However, when n = 19 then d fits in an unsigned long.
+             * The method highPrecisionDoubleValue() can deal with them.
+             */
+            int n = this.n;
+            if (n > FLOG_10_MAX_LONG + 1) {
+                /*
+                 * n > 19 is too large for both this method's fast paths and
+                 * for highPrecisionDoubleValue().
+                 */
+                return fullPrecisionDoubleValue();  // n is too large
+            }
+            /*
+             * Note that for doubles, readJavaFormatString() ensures
+             * d_1 > 0, d_n > 0, 0 < n ≤ 769.
+             * The other invoker of this method is parseDoubleSignlessDigits()
+             * with a significantly smaller 0 < n ≤ 26.
+             * Hence, ep does not overflow.
+             *
+             * When ep < -22 neither 10^ep nor 10^(-ep) are exact doubles.
+             * Thus, the expressions f 10^ep as well as f / 10^(-ep) could
+             * incur 2 or more rounding errors when double arithmetic is used.
+             */
+            long f = toLong(n);  // 0 < f < 10^19 when considered unsigned long
+            int ep = e - n;
+            if (n == FLOG_10_MAX_LONG + 1 || -MAX_SMALL_TEN > ep) {
+                return highPrecisionDoubleValue(f);
+            }
+            /*
+             * Here we have n ≤ 18, hence f < 10^18.
+             * If 0 < ep & n + ep ≤ 18 then |x| = f 10^ep < 10^n 10^ep ≤ 10^18.
+             * Thus, |x| = (f 10^ep) 10^0 fits in a long as well.
+             */
+            if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
+                /* 0 < ep < 18, hence the arg to pow10() is safe. */
+                f *= MathUtils.pow10(ep);
+                ep = 0;
+            }
+            double v = f;
+            if (ep == 0) {
+                /*
+                 * While f might not be an exact double, v is correctly rounded.
+                 * This case includes precisely all x values that are
+                 * integers meeting |x| < 10^18.
+                 */
+                return isNegative ? -v : v;
+            }
+
+            /*
+             * Here -22 ≤ ep.
+             * Since f < 10^18, f is an exact double iff (long) v == f holds.
+             *
+             * If f is not an exact double, resort to higher precision arithmetic.
+             *
+             * Otherwise, if ep ≤ 22, then f 10^ep incurs at most one
+             * rounding error when computed in double arithmetic.
+             */
+            boolean isExact = (long) v == f;
+            if (isExact && ep <= MAX_SMALL_TEN) {
+                /*
+                 * Since -22 ≤ ep ≤ 22, 10^|ep| is an exact double.
+                 * The product or quotient below operate on exact doubles,
+                 * so the result is subject to at most one rounding error.
+                 */
+                v = ep >= 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
+                return isNegative ? -v : v;
+            }
+
+            /*
+             * Here, f < 10^18 is not an exact double or ep > 22.
+             * If f is not an exact double, resort to high precision arithmetic.
+             *
+             * Otherwise, ep > 22.
+             * When n ≤ 15 let ef = 15 - n.
+             * Then f 10^ef < 10^15 < 2^P, so f 10^ef is an exact double.
+             * When n ≤ 16 and d_1 < 9 let ef = 16 - n.
+             * Then f 10^ef < 9 10^15 < 2^P, thus f 10^ef is an exact double.
+             * Otherwise, let ef be negative.
+             *
+             * Thus, when ef ≥ 0 and ep - ef ≤ 22 we know that
+             * f 10^ep = (f 10^ef) 10^(ep-ef), with (f 10^ef) and 10^(ep-ef)
+             * both exact doubles.
+             */
+            if (isExact) {  // v and f are mathematically equal.
+                int ef = (d[0] < '9'
+                        ? MAX_DECIMAL_DIGITS + 1
+                        : MAX_DECIMAL_DIGITS) - n;
+                /*
+                 * Test cases are:
+                 *      for ef ≥ 0 & ep - ef ≤ 22 take x = .89e38
+                 *      for ef ≥ 0 & ep - ef > 22 take x = .91e38
+                 *      for ef < 0 take x = .72057594037927936e40 = 2^(P+3) 10^23
+                 * Only the 1st case is handled here.
+                 */
+                if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {
+                    /* The left associativity of * is essential here! */
+                    v = v * SMALL_10_POW[ef] * SMALL_10_POW[ep - ef];
+                    return isNegative ? -v : v;
+                }
+            }
+
+            return highPrecisionDoubleValue(f);
+        }
+
+        private double highPrecisionDoubleValue(long f) {
+            /*
+             * TODO add fast paths when 0 < f < 10^19 considered as unsigned long.
+             *  For now just resort to full precision.
+             */
+            return fullPrecisionDoubleValue();
+        }
+
+        /*
+         * Assumes
+         *      0 < n ≤ 769
+         *      d_1 > 0, d_n > 0
+         *      E_THR_Z[BINARY_64_IX] < e < E_THR_I[BINARY_64_IX]
+         */
+        private double fullPrecisionDoubleValue() {
+            int n = this.n;
+            int kDigits = Math.min(n, MAX_DECIMAL_DIGITS + 1);
+
             // convert the lead kDigits to a long integer.
-            //
-            // (special performance hack: start to do it using int)
-            int iValue = (int) digits[0] - (int) '0';
-            int iDigits = Math.min(kDigits, INT_DECIMAL_DIGITS);
-            for (int i = 1; i < iDigits; i++) {
-                iValue = iValue * 10 + (int) digits[i] - (int) '0';
-            }
-            long lValue = (long) iValue;
-            for (int i = iDigits; i < kDigits; i++) {
-                lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
-            }
+            long lValue = toLong(kDigits);
             double dValue = (double) lValue;
-            int exp = decExponent - kDigits;
+            int exp = e - kDigits;
             //
             // lValue now contains a long integer with the value of
             // the first kDigits digits of the number.
             // dValue contains the (double) of the same.
             //
-
-            if (nDigits <= MAX_DECIMAL_DIGITS) {
-                //
-                // possibly an easy case.
-                // We know that the digits can be represented
-                // exactly. And if the exponent isn't too outrageous,
-                // the whole thing can be done with one operation,
-                // thus one rounding error.
-                // Note that all our constructors trim all leading and
-                // trailing zeros, so simple values (including zero)
-                // will always end up here
-                //
-                if (exp == 0 || dValue == 0.0) {
-                    return (isNegative) ? -dValue : dValue; // small floating integer
-                }
-                else if (exp >= 0) {
-                    if (exp <= MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer with one operation,
-                        // thus one roundoff.
-                        //
-                        double rValue = dValue * SMALL_10_POW[exp];
-                        return (isNegative) ? -rValue : rValue;
-                    }
-                    int slop = MAX_DECIMAL_DIGITS - kDigits;
-                    if (exp <= MAX_SMALL_TEN + slop) {
-                        //
-                        // We can multiply dValue by 10^(slop)
-                        // and it is still "small" and exact.
-                        // Then we can multiply by 10^(exp-slop)
-                        // with one rounding.
-                        //
-                        dValue *= SMALL_10_POW[slop];
-                        double rValue = dValue * SMALL_10_POW[exp - slop];
-                        return (isNegative) ? -rValue : rValue;
-                    }
-                    //
-                    // Else we have a hard case with a positive exp.
-                    //
-                } else {
-                    if (exp >= -MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer in one division.
-                        //
-                        double rValue = dValue / SMALL_10_POW[-exp];
-                        return (isNegative) ? -rValue : rValue;
-                    }
-                    //
-                    // Else we have a hard case with a negative exp.
-                    //
-                }
-            }
 
             //
             // Harder cases:
@@ -1069,13 +1095,6 @@ public class FloatingDecimal{
             // naively, scaling by powers of 10.
             //
             if (exp > 0) {
-                if (decExponent > MAX_DECIMAL_EXPONENT + 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // Infinity. Cut to the chase.
-                    //
-                    return (isNegative) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-                }
                 if ((exp & 15) != 0) {
                     dValue *= SMALL_10_POW[exp & 15];
                 }
@@ -1117,13 +1136,6 @@ public class FloatingDecimal{
                 }
             } else if (exp < 0) {
                 exp = -exp;
-                if (decExponent < MIN_DECIMAL_EXPONENT - 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // zero. Cut to the chase.
-                    //
-                    return (isNegative) ? -0.0 : 0.0;
-                }
                 if ((exp & 15) != 0) {
                     dValue /= SMALL_10_POW[exp & 15];
                 }
@@ -1172,12 +1184,8 @@ public class FloatingDecimal{
             // Formulate the EXACT big-number result as
             // bigD0 * 10^exp
             //
-            if (nDigits > MAX_NDIGITS) {
-                nDigits = MAX_NDIGITS + 1;
-                digits[MAX_NDIGITS] = '1';
-            }
-            FDBigInteger bigD0 = new FDBigInteger(lValue, digits, kDigits, nDigits);
-            exp = decExponent - nDigits;
+            FDBigInteger bigD0 = new FDBigInteger(lValue, d, kDigits, n);
+            exp = e - n;
 
             long ieeeBits = Double.doubleToRawLongBits(dValue); // IEEE-754 bits of double candidate
             final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
@@ -1187,7 +1195,6 @@ public class FloatingDecimal{
             FDBigInteger bigD = null;
             int prevD2 = 0;
 
-            correctionLoop:
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = (int) (ieeeBits >>> EXP_SHIFT);
@@ -1289,20 +1296,20 @@ public class FloatingDecimal{
                 } else {
                     // the candidate is exactly right!
                     // this happens with surprising frequency
-                    break correctionLoop;
+                    break;
                 }
                 cmpResult = diff.cmpPow52(B5, Ulp2);
                 if ((cmpResult) < 0) {
                     // difference is small.
                     // this is close enough
-                    break correctionLoop;
+                    break;
                 } else if (cmpResult == 0) {
                     // difference is exactly half an ULP
                     // round to some other value maybe, then finish
                     if ((ieeeBits & 1) != 0) { // half ties to even
                         ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     }
-                    break correctionLoop;
+                    break;
                 } else {
                     // difference is non-trivial.
                     // could scale addend by ratio of difference to
@@ -1310,9 +1317,8 @@ public class FloatingDecimal{
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     if (ieeeBits == 0 || ieeeBits == DoubleConsts.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
+                        break; // oops. Fell off end of range.
                     }
-                    continue; // try again.
                 }
 
             }
@@ -1322,34 +1328,38 @@ public class FloatingDecimal{
             return Double.longBitsToDouble(ieeeBits);
         }
 
-        /**
-         * Takes a FloatingDecimal, which we presumably just scanned in,
-         * and finds out what its value is, as a float.
-         * This is distinct from doubleValue() to avoid the extremely
-         * unlikely case of a double rounding error, wherein the conversion
-         * to double has one rounding error, and the conversion of that double
-         * to a float has another rounding error, IN THE WRONG DIRECTION,
-         * ( because of the preference to a zero low-order bit ).
-         */
         @Override
         public float floatValue() {
-            int kDigits = Math.min(nDigits, SINGLE_MAX_DECIMAL_DIGITS + 1);
+            /*
+             * As described above, the magnitude of the mathematical value is
+             *      |x| = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
+             * where f = d_1...d_n and ep = e - n are integers.
+             */
+            if (e <= E_THR_Z[BINARY_32_IX]) {
+                return isNegative ? -0.0f : 0.0f;
+            }
+            if (e >= E_THR_I[BINARY_32_IX]) {
+                return isNegative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+            }
+            /*
+             * Note that for doubles, readJavaFormatString() ensures
+             * d_1 > 0, d_n > 0, 0 < n ≤ 114, so exp does not overflow.
+             */
+            int n = this.n;
+            int kDigits = Math.min(n, SINGLE_MAX_DECIMAL_DIGITS + 1);
             //
             // convert the lead kDigits to an integer.
             //
-            int iValue = (int) digits[0] - (int) '0';
-            for (int i = 1; i < kDigits; i++) {
-                iValue = iValue * 10 + (int) digits[i] - (int) '0';
-            }
+            int iValue = (int) toLong(kDigits);
             float fValue = (float) iValue;
-            int exp = decExponent - kDigits;
+            int exp = e - kDigits;
             //
             // iValue now contains an integer with the value of
             // the first kDigits digits of the number.
             // fValue contains the (float) of the same.
             //
 
-            if (nDigits <= SINGLE_MAX_DECIMAL_DIGITS) {
+            if (n <= SINGLE_MAX_DECIMAL_DIGITS) {
                 //
                 // possibly an easy case.
                 // We know that the digits can be represented
@@ -1398,26 +1408,6 @@ public class FloatingDecimal{
                     // Else we have a hard case with a negative exp.
                     //
                 }
-            } else if ((decExponent >= nDigits) && (nDigits + decExponent <= MAX_DECIMAL_DIGITS)) {
-                //
-                // In double-precision, this is an exact floating integer.
-                // So we can compute to double, then shorten to float
-                // with one round, and get the right answer.
-                //
-                // First, finish accumulating digits.
-                // Then convert that integer to a double, multiply
-                // by the appropriate power of ten, and convert to float.
-                //
-                long lValue = (long) iValue;
-                for (int i = kDigits; i < nDigits; i++) {
-                    lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
-                }
-                double dValue = (double) lValue;
-                exp = decExponent - nDigits;
-                dValue *= SMALL_10_POW[exp];
-                fValue = (float) dValue;
-                return (isNegative) ? -fValue : fValue;
-
             }
             //
             // Harder cases:
@@ -1430,13 +1420,6 @@ public class FloatingDecimal{
             //
             double dValue = fValue;
             if (exp > 0) {
-                if (decExponent > SINGLE_MAX_DECIMAL_EXPONENT + 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // Infinity. Cut to the chase.
-                    //
-                    return (isNegative) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-                }
                 if ((exp & 15) != 0) {
                     dValue *= SMALL_10_POW[exp & 15];
                 }
@@ -1450,13 +1433,6 @@ public class FloatingDecimal{
                 }
             } else if (exp < 0) {
                 exp = -exp;
-                if (decExponent < SINGLE_MIN_DECIMAL_EXPONENT - 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // zero. Cut to the chase.
-                    //
-                    return (isNegative) ? -0.0f : 0.0f;
-                }
                 if ((exp & 15) != 0) {
                     dValue /= SMALL_10_POW[exp & 15];
                 }
@@ -1478,12 +1454,8 @@ public class FloatingDecimal{
             // Formulate the EXACT big-number result as
             // bigD0 * 10^exp
             //
-            if (nDigits > SINGLE_MAX_NDIGITS) {
-                nDigits = SINGLE_MAX_NDIGITS + 1;
-                digits[SINGLE_MAX_NDIGITS] = '1';
-            }
-            FDBigInteger bigD0 = new FDBigInteger(iValue, digits, kDigits, nDigits);
-            exp = decExponent - nDigits;
+            FDBigInteger bigD0 = new FDBigInteger(iValue, d, kDigits, n);
+            exp = e - n;
 
             int ieeeBits = Float.floatToRawIntBits(fValue); // IEEE-754 bits of float candidate
             final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
@@ -1493,7 +1465,6 @@ public class FloatingDecimal{
             FDBigInteger bigD = null;
             int prevD2 = 0;
 
-            correctionLoop:
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
@@ -1595,20 +1566,20 @@ public class FloatingDecimal{
                 } else {
                     // the candidate is exactly right!
                     // this happens with surprising frequency
-                    break correctionLoop;
+                    break;
                 }
                 cmpResult = diff.cmpPow52(B5, Ulp2);
                 if ((cmpResult) < 0) {
                     // difference is small.
                     // this is close enough
-                    break correctionLoop;
+                    break;
                 } else if (cmpResult == 0) {
                     // difference is exactly half an ULP
                     // round to some other value maybe, then finish
                     if ((ieeeBits & 1) != 0) { // half ties to even
                         ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     }
-                    break correctionLoop;
+                    break;
                 } else {
                     // difference is non-trivial.
                     // could scale addend by ratio of difference to
@@ -1616,9 +1587,8 @@ public class FloatingDecimal{
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
+                        break; // oops. Fell off end of range.
                     }
-                    continue; // try again.
                 }
 
             }
@@ -1633,28 +1603,34 @@ public class FloatingDecimal{
          * All the positive powers of 10 that can be
          * represented exactly in double/float.
          */
+        @Stable
         private static final double[] SMALL_10_POW = {
-            1.0e0,
-            1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5,
-            1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10,
-            1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15,
-            1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20,
-            1.0e21, 1.0e22
+                1e0, 1e1, 1e2, 1e3, 1e4,
+                1e5, 1e6, 1e7, 1e8, 1e9,
+                1e10, 1e11, 1e12, 1e13, 1e14,
+                1e15, 1e16, 1e17, 1e18, 1e19,
+                1e20, 1e21, 1e22,
         };
 
+        @Stable
         private static final float[] SINGLE_SMALL_10_POW = {
-            1.0e0f,
-            1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
-            1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
+                1e0f, 1e1f, 1e2f, 1e3f, 1e4f,
+                1e5f, 1e6f, 1e7f, 1e8f, 1e9f,
+                1e10f,
         };
 
+        @Stable
         private static final double[] BIG_10_POW = {
-            1e16, 1e32, 1e64, 1e128, 1e256 };
-        private static final double[] TINY_10_POW = {
-            1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
+                1e16, 1e32, 1e64, 1e128, 1e256,
+        };
 
-        private static final int MAX_SMALL_TEN = SMALL_10_POW.length-1;
-        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length-1;
+        @Stable
+        private static final double[] TINY_10_POW = {
+                1e-16, 1e-32, 1e-64, 1e-128, 1e-256,
+        };
+
+        private static final int MAX_SMALL_TEN = SMALL_10_POW.length - 1;
+        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length - 1;
 
     }
 
@@ -1668,7 +1644,7 @@ public class FloatingDecimal{
      */
     public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean compat) {
         return compat
-                ? getCompatBinaryToASCIIConverter(d, true)
+                ? getCompatBinaryToASCIIConverter(d)
                 : getBinaryToASCIIConverter(d);
     }
 
@@ -1699,7 +1675,7 @@ public class FloatingDecimal{
      * Should be removed in the future, along with its dependent methods and
      * fields (> 550 lines).
      */
-    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
+    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
@@ -1735,18 +1711,8 @@ public class FloatingDecimal{
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, fractBits, nSignificantBits, isCompatibleFormat);
+        buf.dtoa(binExp, fractBits, nSignificantBits);
         return buf;
-    }
-
-    static ASCIIToBinaryConverter readDoubleSignlessDigits(int decExp, byte[] digits, int length) {
-
-        // Prevent an extreme negative exponent from causing overflow issues in doubleValue().
-        // Large positive values are handled within doubleValue();
-        if (decExp < MIN_DECIMAL_EXPONENT) {
-            return A2BC_POSITIVE_ZERO;
-        }
-        return new ASCIIToBinaryBuffer(false, decExp, digits, length);
     }
 
     /**
@@ -1782,6 +1748,7 @@ public class FloatingDecimal{
          *       23 for BINARY_16_IX (Float16, once integrated in java.base)
          *      114 for BINARY_32_IX (float)
          *      769 for BINARY_64_IX (double)
+         * but is much shorter in common cases.
          */
         int len = in.length();  // fail fast on null
 
@@ -1989,12 +1956,12 @@ public class FloatingDecimal{
             if (ep < Q_MIN[ix] - bl) {
                 return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
             }
-            if (ep > QE_MAX[ix] - bl) {
+            if (ep > QP_MAX[ix] - bl) {
                 return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
             }
             int q = (int) ep;  // narrowing conversion is safe
             int shr;  // (sh)ift to (r)ight iff shr > 0
-            if (q >= QE_MIN[ix] - bl) {
+            if (q >= QP_MIN[ix] - bl) {
                 shr = bl - P[ix];
                 q += shr;
             } else {
@@ -2109,7 +2076,6 @@ public class FloatingDecimal{
          * Again, since q is not known exactly, we proceed as in the previous
          * case, with ql as a safe replacement for q.
          */
-        // TODO insert logic for small n: 9 for float, 18 for double
         int ql = Math.max(MathUtils.flog2pow10(e - 1) - (P[ix] - 1), Q_MIN[ix]);
         int np = e + Math.max(2 - ql, 1);
         byte[] digits = new byte[Math.min(n, np)];
@@ -2231,12 +2197,12 @@ public class FloatingDecimal{
      *      c = b_1...b_P  (b_i in [0, 2))
      *
      * Equivalently, the floating-point value can be (uniquely) expressed as
-     *      m 2^ep
-     * where integer qe and real f meet
-     *      qe = q + P
+     *      m 2^qp
+     * where integer qp and real m meet
+     *      qp = q + P
      *      m = c 2^(-P)
      * Hence,
-     *      QE_MIN = Q_MIN + P, QE_MAX = Q_MAX + P,
+     *      QP_MIN = Q_MIN + P, QP_MAX = Q_MAX + P,
      *      2^(-1) <= m < 1     (normal)
      *      m < 2^(-1)          (subnormal)
      *      m = 0.b_1...b_P
@@ -2261,28 +2227,19 @@ public class FloatingDecimal{
             // 237,
     };
 
-    @Stable
-    private static final int[] W = {
-            5,
-            FloatToDecimal.W,
-            DoubleToDecimal.W,
-//            (1 << 4 + BINARY_128_IX) - P[BINARY_128_IX],
-//            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
-    };
-
-    /* Minimum exponent in the m 2^e representation. */
     /* Minimum exponent in the c 2^q representation. */
     @Stable
     private static final int[] Q_MIN = {
             -24,  // Float16ToDecimal.Q_MIN,
             FloatToDecimal.Q_MIN,
             DoubleToDecimal.Q_MIN,
-//            QE_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
-//            QE_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
+//            -16_494,
+//            -262_378,
     };
 
+    /* Minimum exponent in the m 2^qp representation. */
     @Stable
-    private static final int[] QE_MIN = {
+    private static final int[] QP_MIN = {
             Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
             FloatToDecimal.Q_MIN + FloatToDecimal.P,
             DoubleToDecimal.Q_MIN + DoubleToDecimal.P,
@@ -2290,14 +2247,14 @@ public class FloatingDecimal{
 //            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
     };
 
-    /* Maximum exponent in the m 2^e representation. */
+    /* Maximum exponent in the m 2^qp representation. */
     @Stable
-    private static final int[] QE_MAX = {
-            3 - QE_MIN[BINARY_16_IX],
+    private static final int[] QP_MAX = {
+            3 - QP_MIN[BINARY_16_IX],
             FloatToDecimal.Q_MAX + FloatToDecimal.P,
             DoubleToDecimal.Q_MAX + DoubleToDecimal.P,
-//            3 - QE_MIN[BINARY_128_IX],
-//            3 - QE_MIN[BINARY_256_IX],
+//            3 - QP_MIN[BINARY_128_IX],
+//            3 - QP_MIN[BINARY_256_IX],
     };
 
     @Stable
