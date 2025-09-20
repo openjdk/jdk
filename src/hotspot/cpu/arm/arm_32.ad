@@ -323,6 +323,11 @@ reg_class vectorx_reg(R_S0,R_S1,R_S2,R_S3, R_S4,R_S5,R_S6,R_S7,
 
 %}
 
+reg_class vectorx_low_reg(R_S0,R_S1,R_S2,R_S3, R_S4,R_S5,R_S6,R_S7,
+                      R_S8,R_S9,R_S10,R_S11, /* skip S14/S15 */
+                      R_S16,R_S17,R_S18,R_S19, R_S20,R_S21,R_S22,R_S23,
+                      R_S24,R_S25,R_S26,R_S27, R_S28,R_S29,R_S30,R_S31);
+
 source_hpp %{
 // FIXME
 const MachRegisterNumbers R_mem_copy_lo_num = R_S14_num;
