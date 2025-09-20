@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 
-import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
@@ -30,12 +29,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -72,7 +73,6 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new GridLayout(0,1));
         frame.setSize(200, 200);
-        frame.setVisible(true);
 
         menuBar = new JMenuBar();
         JMenu menu = new JMenu("Test Menu");
@@ -104,6 +104,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame.setJMenuBar(menuBar);
 
         propagateAWTControls(frame);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
