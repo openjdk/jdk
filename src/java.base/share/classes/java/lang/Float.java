@@ -1253,6 +1253,9 @@ public final class Float extends Number
      * discussion for details of floating-point comparison and
      * ordering}.
      *
+     * @apiNote
+     * Copy or cross-reference corresponding note in {@code Double}
+     * once that text is finalized.
      *
      * @param   anotherFloat   the {@code Float} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat} is
