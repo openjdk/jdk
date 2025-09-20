@@ -23,8 +23,8 @@
 //
 
 source_hpp %{
-#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 %}
 
 instruct compareAndSwapP_shenandoah(rRegI res,

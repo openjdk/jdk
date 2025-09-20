@@ -24,9 +24,9 @@
 
 #ifdef COMPILER2
 
+#include "adfiles/ad_x86.hpp"
 #include "opto/addnode.hpp"
 #include "peephole_x86_64.hpp"
-#include "adfiles/ad_x86.hpp"
 
 // This function transforms the shapes
 // mov d, s1; add d, s2 into

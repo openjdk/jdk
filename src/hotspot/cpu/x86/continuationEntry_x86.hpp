@@ -25,6 +25,8 @@
 #ifndef CPU_X86_CONTINUATIONENTRY_X86_HPP
 #define CPU_X86_CONTINUATIONENTRY_X86_HPP
 
+#include "runtime/continuationEntry.hpp"
+
 class ContinuationEntryPD {
   // empty
 };

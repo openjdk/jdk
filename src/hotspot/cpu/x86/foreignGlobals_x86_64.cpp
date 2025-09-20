@@ -22,10 +22,10 @@
  */
 
 #include "classfile/javaClasses.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/foreignGlobals.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/formatBuffer.hpp"
 
