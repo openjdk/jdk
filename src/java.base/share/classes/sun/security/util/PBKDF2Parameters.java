@@ -84,7 +84,7 @@ final public class PBKDF2Parameters {
     private ObjectIdentifier kdfAlgo_OID =
             ObjectIdentifier.of(KnownOIDs.HmacSHA1);
 
-    private String kdfAlgo = "HmacSHA1";
+    private String prfAlgo = "HmacSHA1";
 
     public PBKDF2Parameters(DerValue keyDerivationFunc) throws IOException {
 
@@ -135,7 +135,7 @@ final public class PBKDF2Parameters {
                         + "expecting the object identifier for a HmacSHA "
                         + "pseudorandom function");
             }
-            kdfAlgo = o.stdName();
+            prfAlgo = o.stdName();
             prf.data.getOptional(DerValue.tag_Null);
             prf.data.atEnd();
         }
@@ -174,7 +174,7 @@ final public class PBKDF2Parameters {
      *
      * @return name of Hmac
      */
-    public String getKdfAlgo() {
-        return this.kdfAlgo;
+    public String getPrfAlgo() {
+        return this.prfAlgo;
     }
 }

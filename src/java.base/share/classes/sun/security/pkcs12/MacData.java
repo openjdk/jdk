@@ -87,44 +87,41 @@ class MacData {
         // Get the digest.
         this.digest = digestInfo[1].getOctetString();
 
-        if (digestInfo[0].tag != DerValue.tag_Sequence) {
-            throw new IOException("algid parse error, not a sequence");
-        }
-        if (digestAlgorithmName.equals("PBMAC1")) {
+        if (this.digestAlgorithmName.equals("PBMAC1")) {
             PBEParameterSpec pbeSpec;
 
             try {
                 pbeSpec =
-                        digestAlgorithmParams.getParameterSpec(
+                        this.digestAlgorithmParams.getParameterSpec(
                         PBEParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
                 throw new IOException(
                         "Invalid PBE algorithm parameters");
             }
-            iterations = pbeSpec.getIterationCount();
-            macSalt = pbeSpec.getSalt();
-            String ps = digestAlgorithmParams.toString();
-            kdfHmac = getKdfHmac(ps);
-            if (!(kdfHmac.equals("HmacSHA512") ||
-                    kdfHmac.equals("HmacSHA256"))) {
-                throw new IllegalArgumentException("unsupported PBMAC1 Hmac");
+            this.iterations = pbeSpec.getIterationCount();
+            this.macSalt = pbeSpec.getSalt();
+            String ps = this.digestAlgorithmParams.toString();
+            this.kdfHmac = getKdfHmac(ps);
+            if (!(this.kdfHmac.equals("HmacSHA512") ||
+                    this.kdfHmac.equals("HmacSHA256"))) {
+                throw new IOException("unsupported PBMAC1 Hmac");
             }
 
-            Hmac = kdfHmac;
+            this.Hmac = this.kdfHmac;
         }
 
         // Get the old salt.
-        extraSalt = macData[1].getOctetString();
+        this.extraSalt = macData[1].getOctetString();
 
         // Old iterations are optional. The default value is 1.
         if (macData.length > 2) {
-            extraIterations = macData[2].getInteger();
+            this.extraIterations = macData[2].getInteger();
         } else {
-            extraIterations = 1;
+            this.extraIterations = 1;
         }
-        if (!digestAlgorithmName.equals("PBMAC1")) {
-            macSalt = extraSalt;
-            iterations = extraIterations;
+        if (!this.digestAlgorithmName.equals("PBMAC1")) {
+            this.macSalt = this.extraSalt;
+            this.iterations = this.extraIterations;
         }
     }
 
@@ -138,7 +135,7 @@ class MacData {
                                                "must be non-null");
         }
         if (algName.equals("PBMAC1")) {
-            pbmac1Keystore = true;
+            this.pbmac1Keystore = true;
         }
         algid = AlgorithmId.get(algName);
 
@@ -159,7 +156,7 @@ class MacData {
             throw new IllegalArgumentException("unsupported parameter spec");
         }
 
-        if (pbmac1Keystore) {
+        if (this.pbmac1Keystore) {
             this.macSalt = p.getSalt();
             this.iterations = p.getIterationCount();
             this.kdfHmac = kdfHmac;
@@ -181,31 +178,31 @@ class MacData {
     }
 
     String getDigestAlgName() {
-        return digestAlgorithmName;
+        return this.digestAlgorithmName;
     }
 
     byte[] getSalt() {
-        return macSalt;
+        return this.macSalt;
     }
 
     int getIterations() {
-        return iterations;
+        return this.iterations;
     }
 
     byte[] getDigest() {
-        return digest;
+        return this.digest;
     }
 
     String getKdfHmac() {
-        return kdfHmac;
+        return this.kdfHmac;
     }
 
     byte[] getExtraSalt() {
-        return extraSalt;
+        return this.extraSalt;
     }
 
     int getExtraIterations() {
-        return extraIterations;
+        return this.extraIterations;
     }
 
     /**
@@ -215,7 +212,7 @@ class MacData {
      * ASN.1 encoding.
      */
     public byte[] getEncoded() throws NoSuchAlgorithmException, IOException {
-        if (pbmac1Keystore) {
+        if (this.pbmac1Keystore) {
             ObjectIdentifier pkcs5PBKDF2_OID =
                     ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 
@@ -241,14 +238,14 @@ class MacData {
 
             DerOutputStream pBKDF2_params = new DerOutputStream();
 
-            pBKDF2_params.putOctetString(macSalt); // choice: 'specified OCTET STRING'
+            pBKDF2_params.putOctetString(this.macSalt); // choice: 'specified OCTET STRING'
 
             // encode iterations
-            pBKDF2_params.putInteger(iterations);
+            pBKDF2_params.putInteger(this.iterations);
 
             // encode derived key length
-            if (keyLength > 0) {
-                pBKDF2_params.putInteger(keyLength / 8); // derived key length (in octets)
+            if (this.keyLength > 0) {
+                pBKDF2_params.putInteger(this.keyLength / 8); // derived key length (in octets)
             }
             pBKDF2_params.write(DerValue.tag_Sequence, kdfHmac);
             tmp3.putOID(pkcs5PBKDF2_OID);
@@ -260,11 +257,11 @@ class MacData {
 
             tmp1.write(DerValue.tag_Sequence, tmp4);
             tmp2.write(DerValue.tag_Sequence, tmp1);
-            tmp2.putOctetString(digest);
+            tmp2.putOctetString(this.digest);
             tmp0.write(DerValue.tag_Sequence, tmp2);
-            tmp0.putOctetString(Objects.requireNonNullElse(extraSalt, not_used));
-            if (extraIterations != -1) {
-                tmp0.putInteger(extraIterations);
+            tmp0.putOctetString(Objects.requireNonNullElse(this.extraSalt, not_used));
+            if (this.extraIterations != -1) {
+                tmp0.putInteger(this.extraIterations);
             } else {
                 tmp0.putInteger(1);
             }
@@ -282,19 +279,19 @@ class MacData {
 
         DerOutputStream tmp2 = new DerOutputStream();
         // encode encryption algorithm
-        AlgorithmId algid = AlgorithmId.get(digestAlgorithmName);
+        AlgorithmId algid = AlgorithmId.get(this.digestAlgorithmName);
         algid.encode(tmp2);
 
         // encode digest data
-        tmp2.putOctetString(digest);
+        tmp2.putOctetString(this.digest);
 
         tmp.write(DerValue.tag_Sequence, tmp2);
 
         // encode salt
-        tmp.putOctetString(macSalt);
+        tmp.putOctetString(this.macSalt);
 
         // encode iterations
-        tmp.putInteger(iterations);
+        tmp.putInteger(this.iterations);
 
         // wrap everything into a SEQUENCE
         out.write(DerValue.tag_Sequence, tmp);

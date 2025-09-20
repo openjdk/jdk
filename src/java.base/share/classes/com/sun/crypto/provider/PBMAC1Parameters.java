@@ -120,7 +120,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
 
         DerValue kdf = pBMAC1_params.data.getDerValue();
         var kdfParams = new PBKDF2Parameters(kdf);
-        String kdfAlgo = kdfParams.getKdfAlgo();
+        String prfAlgo = kdfParams.getPrfAlgo();
         salt = kdfParams.getSalt();
         iCount = kdfParams.getIterationCount();
 
@@ -131,7 +131,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
                     + "error: missing keyLength field");
         }
 
-        pbmac1AlgorithmName = "PBMAC1With" + kdfAlgo + "And" + hmacAlgo;
+        pbmac1AlgorithmName = "PBMAC1With" + prfAlgo + "And" + hmacAlgo;
     }
 
     protected void engineInit(byte[] encoded, String decodingMethod)
