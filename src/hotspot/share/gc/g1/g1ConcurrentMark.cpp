@@ -1651,6 +1651,8 @@ class G1RemarkThreadsClosure : public ThreadClosure {
 };
 
 class G1CMRemarkTask : public WorkerTask {
+  // For Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope;
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
@@ -1674,7 +1676,7 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    WorkerTask("Par Remark"), _cm(cm) {
+    WorkerTask("Par Remark"), _threads_claim_token_scope(), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
 };
@@ -1693,8 +1695,6 @@ void G1ConcurrentMark::finalize_marking() {
   // through the task.
 
   {
-    StrongRootsScope srs(active_workers);
-
     G1CMRemarkTask remarkTask(this, active_workers);
     // We will start all available threads, even if we decide that the
     // active_workers will be fewer. The extra ones will just bail out
