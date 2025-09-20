@@ -202,21 +202,21 @@ class UnixSecureDirectoryStream
     {
         UnixPath from = getName(fromObj);
         UnixPath to = getName(toObj);
-        if (dir == null)
-            throw new NullPointerException();
-        if (!(dir instanceof UnixSecureDirectoryStream))
+        if (dir != null && !(dir instanceof UnixSecureDirectoryStream))
             throw new ProviderMismatchException();
         UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
+        int todfd = that != null ? that.dfd : AT_FDCWD;
 
         // lock ordering doesn't matter
         this.ds.readLock().lock();
         try {
-            that.ds.readLock().lock();
+            if (that != null)
+                that.ds.readLock().lock();
             try {
-                if (!this.ds.isOpen() || !that.ds.isOpen())
+                if (!this.ds.isOpen() || (that != null && !that.ds.isOpen()))
                     throw new ClosedDirectoryStreamException();
                 try {
-                    renameat(this.dfd, from.asByteArray(), that.dfd, to.asByteArray());
+                    renameat(this.dfd, from.asByteArray(), todfd, to.asByteArray());
                 } catch (UnixException x) {
                     if (x.errno() == EXDEV) {
                         throw new AtomicMoveNotSupportedException(
@@ -225,7 +225,8 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(from, to);
                 }
             } finally {
-                that.ds.readLock().unlock();
+                if (that != null)
+                    that.ds.readLock().unlock();
             }
         } finally {
             this.ds.readLock().unlock();
