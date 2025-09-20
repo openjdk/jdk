@@ -384,6 +384,12 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
+     * Appends the 2 width string representation of the {@code int}
+     * argument to StringBuilder.
+     */
+    void appendPair(StringBuilder buf, int v);
+
+    /**
      * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
