@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,11 +409,10 @@ public class BasicStroke implements Stroke {
     *            {@code false} otherwise.
     */
     public boolean equals(Object obj) {
-        if (!(obj instanceof BasicStroke)) {
+        if (!(obj instanceof BasicStroke bs)) {
             return false;
         }
 
-        BasicStroke bs = (BasicStroke) obj;
         if (width != bs.width) {
             return false;
         }

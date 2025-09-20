@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,10 +145,9 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
 
     public void beginResizingFrame(JComponent f, int direction) {
         usingDragPane = false;
-        if(f.getParent() instanceof JLayeredPane) {
+        if(f.getParent() instanceof JLayeredPane p) {
             if(dragPane == null)
                 dragPane = new DragPane();
-            JLayeredPane p = (JLayeredPane)f.getParent();
             p.setLayer(dragPane, Integer.MAX_VALUE);
             dragPane.setBounds(f.getX(), f.getY(),
                                 f.getWidth(), f.getHeight());

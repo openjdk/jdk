@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -769,8 +769,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @since 1.4
      */
     protected void setBorderToRollover(Component c) {
-        if (c instanceof AbstractButton) {
-            AbstractButton b = (AbstractButton)c;
+        if (c instanceof AbstractButton b) {
 
             Border border = borderTable.get(b);
             if (border == null || border instanceof UIResource) {
@@ -809,8 +808,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @since 1.4
      */
     protected void setBorderToNonRollover(Component c) {
-        if (c instanceof AbstractButton) {
-            AbstractButton b = (AbstractButton)c;
+        if (c instanceof AbstractButton b) {
 
             Border border = borderTable.get(b);
             if (border == null || border instanceof UIResource) {
@@ -853,8 +851,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @since 1.4
      */
     protected void setBorderToNormal(Component c) {
-        if (c instanceof AbstractButton) {
-            AbstractButton b = (AbstractButton)c;
+        if (c instanceof AbstractButton b) {
 
             Border border = borderTable.remove(b);
             b.setBorder(border);
@@ -1021,11 +1018,9 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     }
 
     private boolean isBlocked(Component comp, Object constraint) {
-        if (comp instanceof Container) {
-            Container cont = (Container)comp;
+        if (comp instanceof Container cont) {
             LayoutManager lm = cont.getLayout();
-            if (lm instanceof BorderLayout) {
-                BorderLayout blm = (BorderLayout)lm;
+            if (lm instanceof BorderLayout blm) {
                 Component c = blm.getLayoutComponent(cont, constraint);
                 return (c != null && c != toolBar);
             }

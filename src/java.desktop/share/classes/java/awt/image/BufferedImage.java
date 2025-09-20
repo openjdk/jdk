@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,20 +677,17 @@ public class BufferedImage extends java.awt.Image
             return;
         }
 
-        if ((raster instanceof IntegerComponentRaster) &&
+        if ((raster instanceof IntegerComponentRaster iraster) &&
             (numBands == 3 || numBands == 4)) {
-            IntegerComponentRaster iraster =
-                (IntegerComponentRaster) raster;
             // Check if the raster params and the color model
             // are correct
             int pixSize = cm.getPixelSize();
             if (iraster.getPixelStride() == 1 &&
                 isStandard &&
-                cm instanceof DirectColorModel  &&
+                cm instanceof DirectColorModel dcm &&
                 (pixSize == 32 || pixSize == 24))
             {
                 // Now check on the DirectColorModel params
-                DirectColorModel dcm = (DirectColorModel) cm;
                 int rmask = dcm.getRedMask();
                 int gmask = dcm.getGreenMask();
                 int bmask = dcm.getBlueMask();
@@ -717,30 +714,27 @@ public class BufferedImage extends java.awt.Image
                 }  // if (rmask == DCM_BGR_RED_MASK &&
             }   // if (iraster.getPixelStride() == 1
         }   // ((raster instanceof IntegerComponentRaster) &&
-        else if ((cm instanceof IndexColorModel) && (numBands == 1) &&
+        else if ((cm instanceof IndexColorModel icm) && (numBands == 1) &&
                  isStandard &&
                  (!cm.hasAlpha() || !isAlphaPre))
         {
-            IndexColorModel icm = (IndexColorModel) cm;
             int pixSize = icm.getPixelSize();
 
             if (raster instanceof BytePackedRaster) {
                 imageType = TYPE_BYTE_BINARY;
             }   // if (raster instanceof BytePackedRaster)
-            else if (raster instanceof ByteComponentRaster) {
-                ByteComponentRaster braster = (ByteComponentRaster) raster;
+            else if (raster instanceof ByteComponentRaster braster) {
                 if (braster.getPixelStride() == 1 && pixSize <= 8) {
                     imageType = TYPE_BYTE_INDEXED;
                 }
             }
         }   // else if (cm instanceof IndexColorModel) && (numBands == 1))
         else if ((raster instanceof ShortComponentRaster)
-                 && (cm instanceof DirectColorModel)
+                 && (cm instanceof DirectColorModel dcm)
                  && isStandard
                  && (numBands == 3)
                  && !cm.hasAlpha())
         {
-            DirectColorModel dcm = (DirectColorModel) cm;
             if (dcm.getRedMask() == DCM_565_RED_MASK) {
                 if (dcm.getGreenMask() == DCM_565_GRN_MASK &&
                     dcm.getBlueMask()  == DCM_565_BLU_MASK) {
@@ -754,16 +748,12 @@ public class BufferedImage extends java.awt.Image
                 }
             }
         }   // else if ((cm instanceof IndexColorModel) && (numBands == 1))
-        else if ((raster instanceof ByteComponentRaster)
-                 && (cm instanceof ComponentColorModel)
+        else if ((raster instanceof ByteComponentRaster braster)
+                 && (cm instanceof ComponentColorModel ccm)
                  && isStandard
-                 && (raster.getSampleModel() instanceof PixelInterleavedSampleModel)
+                 && (raster.getSampleModel() instanceof PixelInterleavedSampleModel csm)
                  && (numBands == 3 || numBands == 4))
         {
-            ComponentColorModel ccm = (ComponentColorModel) cm;
-            PixelInterleavedSampleModel csm =
-                (PixelInterleavedSampleModel)raster.getSampleModel();
-            ByteComponentRaster braster = (ByteComponentRaster) raster;
             int[] offs = csm.getBandOffsets();
             if (ccm.getNumComponents() != numBands) {
                 throw new RasterFormatException("Number of components in "+
