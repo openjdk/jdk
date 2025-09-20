@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.AlgorithmParameterSpec;
 import sun.security.util.KeyUtil;
 
 /**
@@ -106,7 +105,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
             ka.init(localPrivateKey);
             ka.doPhase(peerPublicKey, true);
-            sharedSecret = ka.generateSecret("TlsPremasterSecret");
+            sharedSecret = ka.generateSecret("Generic");
 
             CipherSuite.HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
             SSLKeyDerivation kd = context.handshakeKeyDerivation;
