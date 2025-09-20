@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test id=parallel
  * @bug 8192985
  * @summary Test the clhsdb 'scanoops' command
  * @requires vm.gc.Parallel
@@ -33,7 +33,7 @@
  */
 
 /**
- * @test
+ * @test id=serial
  * @bug 8192985
  * @summary Test the clhsdb 'scanoops' command
  * @requires vm.gc.Serial
