@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
