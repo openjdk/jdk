@@ -39,7 +39,7 @@ public:
     MemTracker::record_thread_stack(stack_end, stack_size);
 
     {
-      MemTracker::NmtVirtualMemoryLocker nvml;
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
       // snapshot current stack usage
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
@@ -47,7 +47,7 @@ public:
 
     ReservedMemoryRegion rmr_found;
     {
-      MemTracker::NmtVirtualMemoryLocker vml;
+      NmtVirtualMemoryLocker vml;
       rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
     }
 
@@ -63,7 +63,7 @@ public:
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
     {
-      MemTracker::NmtVirtualMemoryLocker vml;
+      NmtVirtualMemoryLocker vml;
       VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
         if (cmr.base() + cmr.size() == stack_top) {
           EXPECT_TRUE(cmr.size() <= stack_size);
@@ -110,7 +110,7 @@ public:
     // trigger the test
     ReservedMemoryRegion rmr_found;
     {
-      MemTracker::NmtVirtualMemoryLocker nvml;
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
       rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }
@@ -120,7 +120,7 @@ public:
 
     bool precise_tracking_supported = false;
     {
-      MemTracker::NmtVirtualMemoryLocker nvml;
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
         if (cmr.size() == size) {
           return false;
@@ -142,7 +142,7 @@ public:
     // Cleanup
     os::disclaim_memory(base, size);
     {
-      MemTracker::NmtVirtualMemoryLocker nvml;
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
       rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }

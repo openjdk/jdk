@@ -43,20 +43,20 @@ TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
   VMATree::RegionData rd2 = rt.make_region_data(ncs, mtGC);
   VMATree::SummaryDiff diff;
   diff = rt.reserve_mapping(0, 100, rd);
-  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(100, diff[NMTUtil::tag_to_index(mtTest)].reserve);
   diff = rt.commit_region(0, 50, ncs);
   diff = rt.reserve_mapping(0, 100, rd);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-50, diff[NMTUtil::tag_to_index(mtTest)].commit);
   diff = rt.reserve_mapping(0, 100, rd2);
-  EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+  EXPECT_EQ(-100, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(100, diff[NMTUtil::tag_to_index(mtGC)].reserve);
   diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtGC)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtGC)].reserve);
+  EXPECT_EQ(50, diff[NMTUtil::tag_to_index(mtGC)].commit);
   diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
 TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
@@ -64,14 +64,14 @@ TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(0, 100, rd);
   VMATree::SummaryDiff diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff[NMTUtil::tag_to_index(mtTest)].commit);
   diff = rt.commit_region((address)60, 10, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(10, diff[NMTUtil::tag_to_index(mtTest)].commit);
   diff = rt.uncommit_region(0, 50);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-50, diff[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
 TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
