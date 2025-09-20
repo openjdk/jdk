@@ -51,8 +51,8 @@ import jdk.internal.util.ModifiedUtf;
 public class TestUtfLen {
 
   /**
-   * Keep only a fixed-length output and stop writing further data 
-   * by throwing an exception when the limit is exceeded. 
+   * Keep only a fixed-length output and stop writing further data
+   * by throwing an exception when the limit is exceeded.
    * For testing purposes only.
    */
   static class HeaderCaptureOutputStream extends OutputStream {
