@@ -1981,31 +1981,31 @@ extern "C" {
 #define STRIDE(array) ((char*)&array[1] - (char*)&array[0])
 
 JNIEXPORT VMStructEntry* gHotSpotVMStructs = VMStructs::localHotSpotVMStructs;
-JNIEXPORT uint64_t gHotSpotVMStructEntryTypeNameOffset = offset_of(VMStructEntry, typeName);
-JNIEXPORT uint64_t gHotSpotVMStructEntryFieldNameOffset = offset_of(VMStructEntry, fieldName);
-JNIEXPORT uint64_t gHotSpotVMStructEntryTypeStringOffset = offset_of(VMStructEntry, typeString);
-JNIEXPORT uint64_t gHotSpotVMStructEntryIsStaticOffset = offset_of(VMStructEntry, isStatic);
-JNIEXPORT uint64_t gHotSpotVMStructEntryOffsetOffset = offset_of(VMStructEntry, offset);
-JNIEXPORT uint64_t gHotSpotVMStructEntryAddressOffset = offset_of(VMStructEntry, address);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryTypeNameOffset = offsetof(VMStructEntry, typeName);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryFieldNameOffset = offsetof(VMStructEntry, fieldName);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryTypeStringOffset = offsetof(VMStructEntry, typeString);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryIsStaticOffset = offsetof(VMStructEntry, isStatic);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryOffsetOffset = offsetof(VMStructEntry, offset);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMStructEntryAddressOffset = offsetof(VMStructEntry, address);
 JNIEXPORT uint64_t gHotSpotVMStructEntryArrayStride = STRIDE(gHotSpotVMStructs);
 
 JNIEXPORT VMTypeEntry* gHotSpotVMTypes = VMStructs::localHotSpotVMTypes;
-JNIEXPORT uint64_t gHotSpotVMTypeEntryTypeNameOffset = offset_of(VMTypeEntry, typeName);
-JNIEXPORT uint64_t gHotSpotVMTypeEntrySuperclassNameOffset = offset_of(VMTypeEntry, superclassName);
-JNIEXPORT uint64_t gHotSpotVMTypeEntryIsOopTypeOffset = offset_of(VMTypeEntry, isOopType);
-JNIEXPORT uint64_t gHotSpotVMTypeEntryIsIntegerTypeOffset = offset_of(VMTypeEntry, isIntegerType);
-JNIEXPORT uint64_t gHotSpotVMTypeEntryIsUnsignedOffset = offset_of(VMTypeEntry, isUnsigned);
-JNIEXPORT uint64_t gHotSpotVMTypeEntrySizeOffset = offset_of(VMTypeEntry, size);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntryTypeNameOffset = offsetof(VMTypeEntry, typeName);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntrySuperclassNameOffset = offsetof(VMTypeEntry, superclassName);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntryIsOopTypeOffset = offsetof(VMTypeEntry, isOopType);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntryIsIntegerTypeOffset = offsetof(VMTypeEntry, isIntegerType);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntryIsUnsignedOffset = offsetof(VMTypeEntry, isUnsigned);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMTypeEntrySizeOffset = offsetof(VMTypeEntry, size);
 JNIEXPORT uint64_t gHotSpotVMTypeEntryArrayStride = STRIDE(gHotSpotVMTypes);
 
 JNIEXPORT VMIntConstantEntry* gHotSpotVMIntConstants = VMStructs::localHotSpotVMIntConstants;
-JNIEXPORT uint64_t gHotSpotVMIntConstantEntryNameOffset = offset_of(VMIntConstantEntry, name);
-JNIEXPORT uint64_t gHotSpotVMIntConstantEntryValueOffset = offset_of(VMIntConstantEntry, value);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMIntConstantEntryNameOffset = offsetof(VMIntConstantEntry, name);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMIntConstantEntryValueOffset = offsetof(VMIntConstantEntry, value);
 JNIEXPORT uint64_t gHotSpotVMIntConstantEntryArrayStride = STRIDE(gHotSpotVMIntConstants);
 
 JNIEXPORT VMLongConstantEntry* gHotSpotVMLongConstants = VMStructs::localHotSpotVMLongConstants;
-JNIEXPORT uint64_t gHotSpotVMLongConstantEntryNameOffset = offset_of(VMLongConstantEntry, name);
-JNIEXPORT uint64_t gHotSpotVMLongConstantEntryValueOffset = offset_of(VMLongConstantEntry, value);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMLongConstantEntryNameOffset = offsetof(VMLongConstantEntry, name);
+extern JNIEXPORT constexpr uint64_t gHotSpotVMLongConstantEntryValueOffset = offsetof(VMLongConstantEntry, value);
 JNIEXPORT uint64_t gHotSpotVMLongConstantEntryArrayStride = STRIDE(gHotSpotVMLongConstants);
 } // "C"
 
