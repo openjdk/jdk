@@ -804,6 +804,22 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // - Load and link all classes used in the training run. Of these
+    //   classes, eagerly initialize the ones marked with @AOTInitialize.
+    // - Perform per-class optimization such as AOT-resolution of
+    //   constant pool entries that were resolved during the training run.
+    FinalImageRecipes::apply_recipes(CHECK);
+
+    // Because the AOT assembly phase does not run the exact code as in the
+    // training run (e.g., we use different lambda form invoker classes;
+    // generated lambda form classes are not recorded in FinalImageRecipes),
+    // the recipes do not cover all classes that have been loaded so far. As
+    // a result, we might have some unlinked classes at this point. Since we
+    // require cached classes to be linked, all such classes will be linked
+    // by the following step.
+  }
+
   link_all_loaded_classes(THREAD);
 
   // Eargerly resolve all string constants in constant pools
@@ -816,10 +832,6 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
       InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
-  }
-
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    FinalImageRecipes::apply_recipes(CHECK);
   }
 }
 
@@ -1217,6 +1229,8 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     return false;
   }
 
+  bool made_progress = false;
+
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
@@ -1242,10 +1256,22 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
-    return true;
-  } else {
-    return false;
+    made_progress = true;
   }
+
+  if (CDSConfig::is_initing_classes_at_dump_time() && ik->force_aot_initialization() && !ik->is_initialized()) {
+    ik->initialize(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm;
+      log_error(aot, init)("class %s has @AOTInitialize but failed to initialize",
+                           ik->external_name());
+      AOTMetaspace::unrecoverable_writing_error("Unexpected failure.");
+    }
+    // May cause more classes to be loaded.
+    made_progress = true;
+  }
+
+  return made_progress;
 }
 
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
