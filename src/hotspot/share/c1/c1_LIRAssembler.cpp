@@ -478,12 +478,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     fatal("unexpected op code: %s", op->name());
     break;
   }
-
-  // JSR 292
-  // Record if this method has MethodHandle invokes.
-  if (op->is_method_handle_invoke()) {
-    compilation()->set_has_method_handle_invokes(true);
-  }
 }
 
 

@@ -432,8 +432,7 @@ OptoRegPair c2::return_value(int ideal_reg) {
 
 int MachCallStaticJavaNode::ret_addr_offset() {
   bool far = (_method == nullptr) ? maybe_far_call(this) : !cache_reachable();
-  return ((far ? 3 : 1) + (_method_handle_invoke ? 1 : 0)) *
-    NativeInstruction::instruction_size;
+  return (far ? 3 : 1) * NativeInstruction::instruction_size;
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
