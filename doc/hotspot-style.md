@@ -170,9 +170,14 @@ a .inline.hpp file.
 * .inline.hpp files should only be included in .cpp or .inline.hpp
 files.
 
-* All .inline.hpp files should include their corresponding .hpp file as
-the first include line with a blank line separating it from the rest of the
-include lines. Declarations needed by other files should be put in the .hpp
+* All .inline.hpp files should include their corresponding .hpp file (same
+file name, without the ".inline" infix) as the first include line with a blank
+line separating it from the rest of the include lines. If such file does not
+exist, and the .inline.hpp file contains an architecture qualifier (e.g.
+`_x86.inline.hpp`), the .inline.hpp file should include the corresponding
+architecture-less .hpp file, if available.
+
+* Declarations needed by other files should be put in the .hpp
 file, and not in the .inline.hpp file. This rule exists to resolve problems
 with circular dependencies between .inline.hpp files.
 
