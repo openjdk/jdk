@@ -357,6 +357,7 @@
   *                   -XX:TieredStopAtLevel=4
   *                   TestClone
   */
+
 public class TestClone {
 
     public static void main(String[] args) throws Exception {

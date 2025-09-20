@@ -102,7 +102,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
   // tams and ctx below are for old generation marking. As such, young gen roots must
   // consider everything above tams, since it doesn't represent a TAMS for young gen's
   // SATB marking.
-  const HeapWord* tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
+  HeapWord* const tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
 
   NOT_PRODUCT(ShenandoahCardStats stats(whole_cards, card_stats(worker_id));)
 
@@ -167,14 +167,25 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       assert(right <= region->top() && end_addr <= region->top(), "Busted bounds");
       const MemRegion mr(left, right);
 
-      // NOTE: We'll not call block_start() repeatedly
-      // on a very large object if its head card is dirty. If not,
-      // (i.e. the head card is clean) we'll call it each time we
-      // process a new dirty range on the object. This is always
-      // the case for large object arrays, which are typically more
+      // NOTE: We'll not call first_object_start() repeatedly
+      // on a very large object, i.e. one spanning multiple cards,
+      // if its head card is dirty. If not, (i.e. its head card is clean)
+      // we'll call it each time we process a new dirty range on the object.
+      // This is always the case for large object arrays, which are typically more
       // common.
-      HeapWord* p = _scc->block_start(dirty_l);
+      assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
+      HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, dirty_r);
+      if ((p == nullptr) || (p >= right)) {
+        // There are no live objects to be scanned in this dirty range.  cur_index identifies first card in this
+        // uninteresting dirty range.  At top of next loop iteration, we will either end the looop
+        // (because cur_index < start_card_index) or we will begin the search for a range of clean cards.
+        continue;
+      }
+
       oop obj = cast_to_oop(p);
+      assert(oopDesc::is_oop(obj), "Not an object at " PTR_FORMAT ", left: " PTR_FORMAT ", right: " PTR_FORMAT,
+             p2i(p), p2i(left), p2i(right));
+      assert(ctx==nullptr || ctx->is_marked(obj), "Error");
 
       // PREFIX: The object that straddles into this range of dirty cards
       // from the left may be subject to special treatment unless
