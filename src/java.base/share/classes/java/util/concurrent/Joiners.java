@@ -213,6 +213,11 @@ class Joiners {
         }
 
         @Override
+        public void onTimeout() {
+            // do nothing, this joiner does not throw TimeoutException
+        }
+
+        @Override
         public Stream<Subtask<T>> result() {
             return subtasks.stream();
         }
