@@ -3254,7 +3254,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ load_klass(rax, recv, rscratch1);
 
   // profile this call
-  __ profile_virtual_call(rax, rlocals, rdx);
+  __ profile_virtual_call(rax, rlocals);
   // get target Method* & entry point
   __ lookup_virtual_method(rax, index, method);
 
@@ -3395,7 +3395,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // profile this call
   __ restore_bcp(); // rbcp was destroyed by receiver type check
-  __ profile_virtual_call(rdx, rbcp, rlocals);
+  __ profile_virtual_call(rdx, rbcp);
 
   // Get declaring interface class from method, and itable index
   __ load_method_holder(rax, rbx);
