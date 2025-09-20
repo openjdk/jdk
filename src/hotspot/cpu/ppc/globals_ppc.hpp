@@ -145,6 +145,8 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "switch off all optimizations requiring SIGTRAP.")                \
   product(bool, TrapBasedICMissChecks, true, DIAGNOSTIC,                    \
           "Raise and handle SIGTRAP if inline cache miss detected.")        \
+  product(bool, TrapBasedNMethodEntryBarriers, true, DIAGNOSTIC,            \
+          "Raise and handle SIGTRAP if nmethod entry barrier armed.")       \
                                                                             \
   product(bool, TraceTraps, false, DIAGNOSTIC,                              \
           "Trace all traps the signal handler handles.")                    \
