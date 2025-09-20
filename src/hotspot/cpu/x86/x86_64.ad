@@ -11712,6 +11712,7 @@ instruct convD2F_reg_mem(regF dst, memory src)
 // XXX do mem variants
 instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I src));
   effect(KILL cr);
   format %{ "convert_f2i $dst, $src" %}
@@ -11721,8 +11722,31 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
+instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvF2I src));
+  format %{ "evcvttss2sisl $dst, $src" %}
+  ins_encode %{
+    __ evcvttss2sisl($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convF2I_reg_mem_avx10(rRegI dst, memory src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvF2I (LoadF src)));
+  format %{ "evcvttss2sisl $dst, $src" %}
+  ins_encode %{
+    __ evcvttss2sisl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L src));
   effect(KILL cr);
   format %{ "convert_f2l $dst, $src"%}
@@ -11732,8 +11756,31 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
+instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvF2L src));
+  format %{ "evcvttss2sisq $dst, $src" %}
+  ins_encode %{
+    __ evcvttss2sisq($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convF2L_reg_mem_avx10(rRegL dst, memory src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvF2L (LoadF src)));
+  format %{ "evcvttss2sisq $dst, $src" %}
+  ins_encode %{
+    __ evcvttss2sisq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I src));
   effect(KILL cr);
   format %{ "convert_d2i $dst, $src"%}
@@ -11743,13 +11790,58 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
+instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvD2I src));
+  format %{ "evcvttsd2sisl $dst, $src" %}
+  ins_encode %{
+    __ evcvttsd2sisl($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convD2I_reg_mem_avx10(rRegI dst, memory src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvD2I (LoadD src)));
+  format %{ "evcvttsd2sisl $dst, $src" %}
+  ins_encode %{
+    __ evcvttsd2sisl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L src));
   effect(KILL cr);
   format %{ "convert_d2l $dst, $src"%}
   ins_encode %{
     __ convertF2I(T_LONG, T_DOUBLE, $dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvD2L src));
+  format %{ "evcvttsd2sisq $dst, $src" %}
+  ins_encode %{
+    __ evcvttsd2sisq($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convD2L_reg_mem_avx10(rRegL dst, memory src)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (ConvD2L (LoadD src)));
+  format %{ "evcvttsd2sisq $dst, $src" %}
+  ins_encode %{
+    __ evcvttsd2sisq($dst$$Register, $src$$Address);
   %}
   ins_pipe(pipe_slow);
 %}
