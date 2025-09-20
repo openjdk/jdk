@@ -457,6 +457,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
             ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
             ASAN_LDFLAGS="$ASAN_LDFLAGS -shared-libasan"
           fi
+          # Optionally allow the JVM to continue after ASAN reported an error.
+          ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-recover=address"
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
           ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"
