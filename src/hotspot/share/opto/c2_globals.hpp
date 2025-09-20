@@ -58,6 +58,9 @@
   product(bool, StressMacroExpansion, false, DIAGNOSTIC,                    \
           "Randomize macro node expansion order")                           \
                                                                             \
+  product(bool, StressRegisterAllocation, false, DIAGNOSTIC,                \
+          "Randomize register allocation order")                            \
+                                                                            \
   product(bool, StressMacroElimination, false, DIAGNOSTIC,                  \
           "Randomize macro node elimination order")                         \
                                                                             \
