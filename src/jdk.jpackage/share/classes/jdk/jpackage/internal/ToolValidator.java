@@ -24,36 +24,31 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 
 
-public final class ToolValidator {
+final class ToolValidator {
 
     ToolValidator(String tool) {
         this(Path.of(tool));
     }
 
     ToolValidator(Path toolPath) {
-        this.toolPath = toolPath;
-        args = new ArrayList<>();
-
+        this.toolPath = Objects.requireNonNull(toolPath);
         if (OperatingSystem.isLinux()) {
             setCommandLine("--version");
         }
-
-        setToolNotFoundErrorHandler(null);
-        setToolOldVersionErrorHandler(null);
     }
 
     ToolValidator setCommandLine(String... args) {
@@ -67,7 +62,17 @@ public final class ToolValidator {
     }
 
     ToolValidator setMinimalVersion(DottedVersion v) {
-        return setMinimalVersion(t -> DottedVersion.compareComponents(v, DottedVersion.lazy(t)));
+        return setMinimalVersion(new Comparable<String>() {
+            @Override
+            public int compareTo(String o) {
+                return DottedVersion.compareComponents(v, DottedVersion.lazy(o));
+            }
+
+            @Override
+            public String toString() {
+                return v.toString();
+            }
+        });
     }
 
     ToolValidator setVersionParser(Function<Stream<String>, String> v) {
@@ -75,69 +80,85 @@ public final class ToolValidator {
         return this;
     }
 
-    ToolValidator setToolNotFoundErrorHandler(
-            BiFunction<String, IOException, ConfigException> v) {
+    ToolValidator setToolNotFoundErrorHandler(Function<Path, ConfigException> v) {
         toolNotFoundErrorHandler = v;
         return this;
     }
 
-    ToolValidator setToolOldVersionErrorHandler(BiFunction<String, String, ConfigException> v) {
+    ToolValidator setToolOldVersionErrorHandler(BiFunction<Path, String, ConfigException> v) {
         toolOldVersionErrorHandler = v;
         return this;
     }
 
+    ToolValidator checkExistsOnly(boolean v) {
+        checkExistsOnly = v;
+        return this;
+    }
+
+    ToolValidator checkExistsOnly() {
+        return checkExistsOnly(true);
+    }
+
     ConfigException validate() {
+        if (checkExistsOnly) {
+            if (Files.isExecutable(toolPath) && !Files.isDirectory(toolPath)) {
+                return null;
+            } else if (Files.exists(toolPath)) {
+                return new ConfigException(
+                        I18N.format("error.tool-not-executable", toolPath), (String)null);
+            } else if (toolNotFoundErrorHandler != null) {
+                return toolNotFoundErrorHandler.apply(toolPath);
+            } else {
+                return new ConfigException(
+                        I18N.format("error.tool-not-found", toolPath),
+                        I18N.format("error.tool-not-found.advice", toolPath));
+            }
+        }
+
         List<String> cmdline = new ArrayList<>();
         cmdline.add(toolPath.toString());
-        cmdline.addAll(args);
+        if (args != null) {
+            cmdline.addAll(args);
+        }
 
-        String name = IOUtils.getFileName(toolPath).toString();
+        boolean canUseTool[] = new boolean[1];
+        if (minimalVersion == null) {
+            // No version check.
+            canUseTool[0] = true;
+        }
+
+        String[] version = new String[1];
+
         try {
-            ProcessBuilder pb = new ProcessBuilder(cmdline);
-            AtomicBoolean canUseTool = new AtomicBoolean();
-            if (minimalVersion == null) {
-                // No version check.
-                canUseTool.setPlain(true);
-            }
-
-            String[] version = new String[1];
-            Executor.of(pb).setQuiet(true).setOutputConsumer(lines -> {
+            Executor.of(cmdline.toArray(String[]::new)).setQuiet(true).setOutputConsumer(lines -> {
                 if (versionParser != null && minimalVersion != null) {
                     version[0] = versionParser.apply(lines);
-                    if (minimalVersion.compareTo(version[0]) < 0) {
-                        canUseTool.setPlain(true);
+                    if (version[0] != null && minimalVersion.compareTo(version[0]) <= 0) {
+                        canUseTool[0] = true;
                     }
                 }
             }).execute();
-
-            if (!canUseTool.getPlain()) {
-                if (toolOldVersionErrorHandler != null) {
-                    return toolOldVersionErrorHandler.apply(name, version[0]);
-                }
-                return new ConfigException(MessageFormat.format(I18N.getString(
-                        "error.tool-old-version"), name, minimalVersion),
-                        MessageFormat.format(I18N.getString(
-                                "error.tool-old-version.advice"), name,
-                                minimalVersion));
-            }
         } catch (IOException e) {
-            if (toolNotFoundErrorHandler != null) {
-                return toolNotFoundErrorHandler.apply(name, e);
-            }
-            return new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.tool-not-found"), name, e.getMessage()),
-                    MessageFormat.format(I18N.getString(
-                            "error.tool-not-found.advice"), name), e);
+            return new ConfigException(I18N.format("error.tool-error", toolPath, e.getMessage()), null, e);
         }
 
-        // All good. Tool can be used.
-        return null;
+        if (canUseTool[0]) {
+            // All good. Tool can be used.
+            return null;
+        } else if (toolOldVersionErrorHandler != null) {
+            return toolOldVersionErrorHandler.apply(toolPath, version[0]);
+        } else {
+            return new ConfigException(
+                    I18N.format("error.tool-old-version", toolPath, minimalVersion),
+                    I18N.format("error.tool-old-version.advice", toolPath, minimalVersion));
+        }
     }
 
     private final Path toolPath;
     private List<String> args;
     private Comparable<String> minimalVersion;
     private Function<Stream<String>, String> versionParser;
-    private BiFunction<String, IOException, ConfigException> toolNotFoundErrorHandler;
-    private BiFunction<String, String, ConfigException> toolOldVersionErrorHandler;
+    private Function<Path, ConfigException> toolNotFoundErrorHandler;
+    private BiFunction<Path, String, ConfigException> toolOldVersionErrorHandler;
+    private boolean checkExistsOnly;
 }
