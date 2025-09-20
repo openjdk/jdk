@@ -173,7 +173,7 @@ char* StringUtils::abbreviate_preserve_trailing_number(const char* s, char* out,
       const int l = checked_cast<int>(strlen(s));
       const int max_number_len = maxchars / 2; // numbers longer than this are truncated at the beginning ("WorkerThread123123123", 10 outlen => "Work..3123")
       const int number_len = MIN2(max_number_len, l - number_pos);
-      const int corrected_number_pos = l - number_len; // since we may truncate the number, too
+      const int corrected_number_pos = l - number_len; // since we may have to also truncate the number
       const int prefix_len = maxchars - dots - number_len;
       assert(prefix_len > 0 && number_len > 0, "Sanity");
       (void) os::snprintf(out, outlen, "%.*s..%s", prefix_len, s, s + corrected_number_pos);
