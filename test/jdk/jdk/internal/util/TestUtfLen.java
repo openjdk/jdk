@@ -30,22 +30,49 @@
  * @run main/othervm -Xmx4g --add-opens java.base/jdk.internal.classfile.impl=ALL-UNNAMED TestUtfLen
  */
 
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.ClassFile;
-import java.lang.reflect.Method;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.UTFDataFormatException;
+
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.util.ModifiedUtf;
 
 public class TestUtfLen {
+
+  /**
+   * Keep only a fixed-length output and stop writing further data 
+   * by throwing an exception when the limit is exceeded. 
+   * For testing purposes only.
+   */
+  static class HeaderCaptureOutputStream extends OutputStream {
+    private byte[] head;
+    private int count;
+
+    public HeaderCaptureOutputStream(int headSize) {
+      this.head = new byte[headSize];
+    }
+
+    @Override
+    public void write(int b) {
+      head[count] = (byte) b;
+      count += 1;
+    }
+    public byte[] get(){
+      return head;
+    }
+  }
+
   private static final String THREE_BYTE = "\u2600";   // 3-byte UTF-8
 
   public static void main(String[] args) {
@@ -85,11 +112,28 @@ public class TestUtfLen {
       }
     }
 
-    File tempFile = File.createTempFile("utfLenOverflow", ".dat");
-    tempFile.deleteOnExit();
-    try (FileOutputStream fos = new FileOutputStream(tempFile);
-      ObjectOutputStream objOut = new ObjectOutputStream(fos)){
+    /**
+     * In the writeUTF function, utfLen is used to calculate the length of the string to be written
+     * and store it in the stream header. This test uses the HeaderCaptureOutputStream inner class
+     * to capture the header bytes and compare them with the expected length,
+     * verifying that utfLen returns the correct value.
+     */
+    int lengthFieldSize = 8;
+    // Offset to UTF length field: 2 bytes STREAM_MAGIC + 2 bytes STREAM_VERSION + 5 bytes block data header
+    int lengthFieldOffset = 9;
+    int headerSize = 20; // greater than lengthFieldSize + lengthFieldOffset
+    HeaderCaptureOutputStream headerOut = new HeaderCaptureOutputStream(headerSize);
+    try (ObjectOutputStream objOut = new ObjectOutputStream(headerOut)) {
       objOut.writeUTF(largeString);
+    } catch (Exception e) {
+    } finally {
+      byte[] header = headerOut.get();
+      ByteBuffer bf = ByteBuffer.wrap(header, lengthFieldOffset, lengthFieldSize);
+      bf.order(ByteOrder.BIG_ENDIAN);
+      long lenInHeader = bf.getLong();
+      if ( lenInHeader != expected ) {
+        throw new RuntimeException("Header length mismatch: expected=" + expected + ", found=" + lenInHeader);
+      }
     }
 
     System.out.println("PASSED");
