@@ -74,6 +74,7 @@
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "runtime/vframe_hp.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
@@ -1194,11 +1195,40 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     return receiver;
   }
 
+
+  #if INCLUDE_JVMCI
+    methodHandle attached_method(THREAD, extract_attached_method(vfst));
+    bool caller_is_jvmci = vfst.nm()->is_compiled_by_jvmci();
+
+    if (attached_method.not_null() && caller_is_jvmci) {
+      javaVFrame* jVFrame = vfst.asJavaVFrame();
+      assert(jVFrame->is_compiled_frame(), "should be compiled frame");
+      compiledVFrame* cVFrame = (compiledVFrame*) jVFrame;
+      bool should_reexecute = cVFrame->should_reexecute();
+      Bytecodes::Code code = caller->java_code_at(bci);
+      // TODO for Valhalla: If the bytecode is if_acmpeq or if_acmpne and the attached method performs a substitutability check, skip this logic.
+      // Valhalla adds handling for substitutability checks in this method.
+      if (cVFrame->should_reexecute()) {
+        // For invoke bytecodes, the reexecute bit is not set (see Interpreter::bytecode_should_reexecute).
+        // Since the reexecute bit is set for this call, no corresponding invoke bytecode exists.
+        Method* callee = attached_method();
+        assert(attached_method->is_static(), "attached method should be static");
+        bc = Bytecodes::_invokestatic;
+        LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+        return receiver;
+      }
+
+
+    }
+  #else
+    methodHandle attached_method(THREAD, extract_attached_method(vfst));
+  #endif // INCLUDE_JVMCI
+
+
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
 
-  methodHandle attached_method(current, extract_attached_method(vfst));
   if (attached_method.not_null()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
