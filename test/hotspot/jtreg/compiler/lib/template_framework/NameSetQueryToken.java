@@ -23,12 +23,24 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
-/**
- * A Template generates a {@link TemplateBody}, which is a list of {@link Token}s,
- * which are then later rendered to {@link String}s.
- *
- * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
- */
-public record TemplateBody(List<Token> tokens) {}
+// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
+// TODO: documentation about lambda and hashtag, maybe also an assert?
+record NameSetQueryToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, TemplateScope> function,
+        Operation operation) implements Token {
+
+    static enum Operation { SAMPLE, FOR_EACH };
+
+    static <N> NameSetQueryToken<N> makeSample(NameSet.Predicate predicate, String name, String type, Function<N, TemplateScope> function) {
+        return new NameSetQueryToken<N>(predicate, name, type, function, Operation.SAMPLE);
+    }
+
+    TemplateScope getScope(Name n) {
+        return function().apply((N)n);
+    }
+}

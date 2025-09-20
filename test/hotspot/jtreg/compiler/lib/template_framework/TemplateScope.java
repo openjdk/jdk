@@ -23,19 +23,12 @@
 
 package compiler.lib.template_framework;
 
+import java.util.List;
+
 /**
- * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
- * {@link Token}s or {@link String}s or some permitted boxed primitives.
+ * A Template generates a {@link TemplateScope}, which is a list of {@link Token}s,
+ * which are then later rendered to {@link String}s.
+ *
+ * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
  */
-public sealed interface Token permits StringToken,
-                                      TemplateToken,
-                                      TemplateToken.ZeroArgs,
-                                      TemplateToken.OneArg,
-                                      TemplateToken.TwoArgs,
-                                      TemplateToken.ThreeArgs,
-                                      HookAnchorToken,
-                                      HookInsertToken,
-                                      AddNameToken,
-                                      NameSetQueryToken,
-                                      LetToken,
-                                      NothingToken {}
+public record TemplateScope(List<Token> tokens) {}

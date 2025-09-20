@@ -43,6 +43,7 @@ class NameSet {
 
     interface Predicate {
         boolean check(Name type);
+        String toString(); // used when sampling fails.
     }
 
     NameSet(NameSet parent) {

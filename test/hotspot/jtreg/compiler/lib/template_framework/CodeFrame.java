@@ -38,6 +38,7 @@ import java.util.List;
  * <p>
  * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
  * Template.
+ * TODO: is that still accurate? And below?
  *
  * <p>
  * For simple Template nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.

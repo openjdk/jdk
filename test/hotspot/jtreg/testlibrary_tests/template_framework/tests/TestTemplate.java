@@ -44,7 +44,7 @@ import compiler.lib.template_framework.StructuralName;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
@@ -121,7 +121,7 @@ public class TestTemplate {
         // The following tests all pass, i.e. have no errors during rendering.
         testSingleLine();
         testMultiLine();
-        testBodyTokens();
+        testScopeTokens();
         testWithOneArgument();
         testWithTwoArguments();
         testWithThreeArguments();
@@ -138,11 +138,15 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
+        testDataNames0a();
+        testDataNames0b();
+        testDataNames0c();
         testDataNames1();
         testDataNames2();
         testDataNames3();
         testDataNames4();
         testDataNames5();
+        testStructuralNames0();
         testStructuralNames1();
         testStructuralNames2();
         testListArgument();
@@ -150,11 +154,8 @@ public class TestTemplate {
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
         expectRendererException(() -> $("name"),                          "A Template method such as");
-        expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),  "A Template method such as");
-        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).sample(), "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
         expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
@@ -178,16 +179,18 @@ public class TestTemplate {
         expectRendererException(() -> testFailingDollarHashtagName3(), "Is not a valid '#' replacement pattern: '#' in '#$name'.");
         expectRendererException(() -> testFailingDollarHashtagName4(), "Is not a valid '$' replacement pattern: '$' in '$#name'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
+        expectRendererException(() -> testFailingSample1a(),  "No Name found for DataName.FilterdSet(MUTABLE, subtypeOf(int), supertypeOf(int))");
+        expectRendererException(() -> testFailingSample1b(),  "No Name found for StructuralName.FilteredSet( subtypeOf(StructuralA) supertypeOf(StructuralA))");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
+        expectRendererException(() -> testFailingHashtag5(), "Missing hashtag replacement for #a");
         expectRendererException(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
         expectRendererException(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
-        expectIllegalArgumentException(() -> body(null),              "Unexpected tokens: null");
-        expectIllegalArgumentException(() -> body("x", null),         "Unexpected token: null");
-        expectIllegalArgumentException(() -> body(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> scope(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> scope("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> scope(new Hook("Hook1")), "Unexpected token:");
         Hook hook1 = new Hook("Hook1");
         expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
@@ -199,7 +202,8 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> testFailingAddStructuralName1(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddStructuralName2(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddStructuralName3(), "Unexpected weight: ");
-        expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
+        expectUnsupportedOperationException(() -> testFailingSample2a(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
+        expectUnsupportedOperationException(() -> testFailingSample2b(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
         expectRendererException(() -> testFailingAddNameDuplication1(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication2(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication3(), "Duplicate name:");
@@ -211,13 +215,13 @@ public class TestTemplate {
     }
 
     public static void testSingleLine() {
-        var template = Template.make(() -> body("Hello World!"));
+        var template = Template.make(() -> scope("Hello World!"));
         String code = template.render();
         checkEQ(code, "Hello World!");
     }
 
     public static void testMultiLine() {
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             """
             Code on more
             than a single line
@@ -232,10 +236,10 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testBodyTokens() {
-        // We can fill the body with Objects of different types, and they get concatenated.
-        // Lists get flattened into the body.
-        var template = Template.make(() -> body(
+    public static void testScopeTokens() {
+        // We can fill the scope with Objects of different types, and they get concatenated.
+        // Lists get flattened into the scope.
+        var template = Template.make(() -> scope(
             "start ",
             Integer.valueOf(1), 1,
             Long.valueOf(2), 2L,
@@ -250,31 +254,31 @@ public class TestTemplate {
 
     public static void testWithOneArgument() {
         // Capture String argument via String name.
-        var template1 = Template.make("a", (String a) -> body("start #a end"));
+        var template1 = Template.make("a", (String a) -> scope("start #a end"));
         checkEQ(template1.render("x"), "start x end");
         checkEQ(template1.render("a"), "start a end");
         checkEQ(template1.render("" ), "start  end");
 
         // Capture String argument via typed lambda argument.
-        var template2 = Template.make("a", (String a) -> body("start ", a, " end"));
+        var template2 = Template.make("a", (String a) -> scope("start ", a, " end"));
         checkEQ(template2.render("x"), "start x end");
         checkEQ(template2.render("a"), "start a end");
         checkEQ(template2.render("" ), "start  end");
 
         // Capture Integer argument via String name.
-        var template3 = Template.make("a", (Integer a) -> body("start #a end"));
+        var template3 = Template.make("a", (Integer a) -> scope("start #a end"));
         checkEQ(template3.render(0  ), "start 0 end");
         checkEQ(template3.render(22 ), "start 22 end");
         checkEQ(template3.render(444), "start 444 end");
 
         // Capture Integer argument via templated lambda argument.
-        var template4 = Template.make("a", (Integer a) -> body("start ", a, " end"));
+        var template4 = Template.make("a", (Integer a) -> scope("start ", a, " end"));
         checkEQ(template4.render(0  ), "start 0 end");
         checkEQ(template4.render(22 ), "start 22 end");
         checkEQ(template4.render(444), "start 444 end");
 
         // Test Strings with backslashes:
-        var template5 = Template.make("a", (String a) -> body("start #a " + a + " end"));
+        var template5 = Template.make("a", (String a) -> scope("start #a " + a + " end"));
         checkEQ(template5.render("/"), "start / / end");
         checkEQ(template5.render("\\"), "start \\ \\ end");
         checkEQ(template5.render("\\\\"), "start \\\\ \\\\ end");
@@ -282,25 +286,25 @@ public class TestTemplate {
 
     public static void testWithTwoArguments() {
         // Capture 2 String arguments via String names.
-        var template1 = Template.make("a1", "a2", (String a1, String a2) -> body("start #a1 #a2 end"));
+        var template1 = Template.make("a1", "a2", (String a1, String a2) -> scope("start #a1 #a2 end"));
         checkEQ(template1.render("x", "y"), "start x y end");
         checkEQ(template1.render("a", "b"), "start a b end");
         checkEQ(template1.render("",  "" ), "start   end");
 
         // Capture 2 String arguments via typed lambda arguments.
-        var template2 = Template.make("a1", "a2", (String a1, String a2) -> body("start ", a1, " ", a2, " end"));
+        var template2 = Template.make("a1", "a2", (String a1, String a2) -> scope("start ", a1, " ", a2, " end"));
         checkEQ(template2.render("x", "y"), "start x y end");
         checkEQ(template2.render("a", "b"), "start a b end");
         checkEQ(template2.render("",  "" ), "start   end");
 
         // Capture 2 Integer arguments via String names.
-        var template3 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start #a1 #a2 end"));
+        var template3 = Template.make("a1", "a2", (Integer a1, Integer a2) -> scope("start #a1 #a2 end"));
         checkEQ(template3.render(0,   1  ), "start 0 1 end");
         checkEQ(template3.render(22,  33 ), "start 22 33 end");
         checkEQ(template3.render(444, 555), "start 444 555 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
-        var template4 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start ", a1, " ", a2, " end"));
+        var template4 = Template.make("a1", "a2", (Integer a1, Integer a2) -> scope("start ", a1, " ", a2, " end"));
         checkEQ(template4.render(0,   1  ), "start 0 1 end");
         checkEQ(template4.render(22,  33 ), "start 22 33 end");
         checkEQ(template4.render(444, 555), "start 444 555 end");
@@ -308,46 +312,46 @@ public class TestTemplate {
 
     public static void testWithThreeArguments() {
         // Capture 3 String arguments via String names.
-        var template1 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start #a1 #a2 #a3 end"));
+        var template1 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> scope("start #a1 #a2 #a3 end"));
         checkEQ(template1.render("x", "y", "z"), "start x y z end");
         checkEQ(template1.render("a", "b", "c"), "start a b c end");
         checkEQ(template1.render("",  "", "" ),  "start    end");
 
         // Capture 3 String arguments via typed lambda arguments.
-        var template2 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
+        var template2 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> scope("start ", a1, " ", a2, " ", a3, " end"));
         checkEQ(template1.render("x", "y", "z"), "start x y z end");
         checkEQ(template1.render("a", "b", "c"), "start a b c end");
         checkEQ(template1.render("",  "", "" ),  "start    end");
 
         // Capture 3 Integer arguments via String names.
-        var template3 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start #a1 #a2 #a3 end"));
+        var template3 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> scope("start #a1 #a2 #a3 end"));
         checkEQ(template3.render(0,   1  , 2  ), "start 0 1 2 end");
         checkEQ(template3.render(22,  33 , 44 ), "start 22 33 44 end");
         checkEQ(template3.render(444, 555, 666), "start 444 555 666 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
-        var template4 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
+        var template4 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> scope("start ", a1, " ", a2, " ", a3, " end"));
         checkEQ(template3.render(0,   1  , 2  ), "start 0 1 2 end");
         checkEQ(template3.render(22,  33 , 44 ), "start 22 33 44 end");
         checkEQ(template3.render(444, 555, 666), "start 444 555 666 end");
     }
 
     public static void testNested() {
-        var template1 = Template.make(() -> body("proton"));
+        var template1 = Template.make(() -> scope("proton"));
 
-        var template2 = Template.make("a1", "a2", (String a1, String a2) -> body(
+        var template2 = Template.make("a1", "a2", (String a1, String a2) -> scope(
             "electron #a1\n",
             "neutron #a2\n"
         ));
 
-        var template3 = Template.make("a1", "a2", (String a1, String a2) -> body(
+        var template3 = Template.make("a1", "a2", (String a1, String a2) -> scope(
             "Universe ", template1.asToken(), " {\n",
                 template2.asToken("up", "down"),
                 template2.asToken(a1, a2),
             "}\n"
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             template3.asToken("low", "high"),
             "{\n",
                 template3.asToken("42", "24"),
@@ -377,9 +381,9 @@ public class TestTemplate {
     public static void testHookSimple() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> body("Hello\n"));
+        var template1 = Template.make(() -> scope("Hello\n"));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "{\n",
             hook1.anchor(
                 "World\n",
@@ -403,11 +407,11 @@ public class TestTemplate {
     public static void testHookIsAnchored() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make(() -> body("isAnchored: ", hook1.isAnchored(), "\n"));
+        var template0 = Template.make(() -> scope("isAnchored: ", hook1.isAnchored(), "\n"));
 
-        var template1 = Template.make(() -> body("Hello\n", template0.asToken()));
+        var template1 = Template.make(() -> scope("Hello\n", template0.asToken()));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "{\n",
             template0.asToken(),
             hook1.anchor(
@@ -436,10 +440,10 @@ public class TestTemplate {
     public static void testHookNested() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+        var template1 = Template.make("a", (String a) -> scope("x #a x\n"));
 
         // Test nested use of hooks in the same template.
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "{\n",
             hook1.anchor(), // empty
             "zero\n",
@@ -498,9 +502,9 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
         var hook2 = new Hook("Hook2");
 
-        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+        var template1 = Template.make("a", (String a) -> scope("x #a x\n"));
 
-        var template2 = Template.make("b", (String b) -> body(
+        var template2 = Template.make("b", (String b) -> scope(
             "{\n",
             template1.asToken(b + "A"),
             hook1.insert(template1.asToken(b + "B")),
@@ -530,7 +534,7 @@ public class TestTemplate {
         ));
 
         // Test use of hooks across templates.
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "{\n",
             "base-A\n",
             hook1.anchor(
@@ -586,9 +590,9 @@ public class TestTemplate {
     public static void testHookRecursion() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+        var template1 = Template.make("a", (String a) -> scope("x #a x\n"));
 
-        var template2 = Template.make("b", (String b) -> body(
+        var template2 = Template.make("b", (String b) -> scope(
             "<\n",
             template1.asToken(b + "A"),
             hook1.insert(template1.asToken(b + "B")), // sub-B is rendered before template2.
@@ -604,7 +608,7 @@ public class TestTemplate {
         ));
 
         // Test use of hooks across templates.
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "{\n",
             "hook-start\n",
             hook1.anchor(
@@ -642,16 +646,16 @@ public class TestTemplate {
     public static void testDollar() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("a", (String a) -> body("x $name #a x\n"));
+        var template1 = Template.make("a", (String a) -> scope("x $name #a x\n"));
 
-        var template2 = Template.make("a", (String a) -> body(
+        var template2 = Template.make("a", (String a) -> scope(
             "{\n",
             "y $name #a y\n",
             template1.asToken($("name")),
             "}\n"
         ));
 
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "{\n",
             "$name\n",
             "$name", "\n",
@@ -707,7 +711,7 @@ public class TestTemplate {
     public static void testLet() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("a", (String a) -> body(
+        var template1 = Template.make("a", (String a) -> scope(
             "{\n",
             "y #a y\n",
             let("b", "<" + a + ">"),
@@ -716,13 +720,13 @@ public class TestTemplate {
         ));
 
         var template2 = Template.make("a", (Integer a) -> let("b", a * 10, b ->
-            body(
+            scope(
                 let("c", b * 3),
                 "abc = #a #b #c\n"
             )
         ));
 
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "{\n",
             let("x", "abc"),
             template1.asToken("alpha"),
@@ -767,7 +771,7 @@ public class TestTemplate {
     }
 
     public static void testDollarAndHashtagBrackets() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("xyz", "abc"),
             let("xyz_", "def"),
             let("xyz_klm", "ghi"),
@@ -792,19 +796,19 @@ public class TestTemplate {
     }
 
     public static void testSelector() {
-        var template1 = Template.make("a", (String a) -> body(
+        var template1 = Template.make("a", (String a) -> scope(
             "<\n",
             "x #a x\n",
             ">\n"
         ));
 
-        var template2 = Template.make("a", (String a) -> body(
+        var template2 = Template.make("a", (String a) -> scope(
             "<\n",
             "y #a y\n",
             ">\n"
         ));
 
-        var template3 = Template.make("a", (Integer a) -> body(
+        var template3 = Template.make("a", (Integer a) -> scope(
             "[\n",
             "z #a z\n",
             // Select which template should be used:
@@ -813,7 +817,7 @@ public class TestTemplate {
             "]\n"
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             "{\n",
             template3.asToken(-1),
             "break\n",
@@ -865,7 +869,7 @@ public class TestTemplate {
         // Binding allows use of template1 inside template1, via the Binding indirection.
         var binding1 = new TemplateBinding<Template.OneArg<Integer>>();
 
-        var template1 = Template.make("i", (Integer i) -> body(
+        var template1 = Template.make("i", (Integer i) -> scope(
             "[ #i\n",
             // We cannot yet use the template1 directly, as it is being defined.
             // So we use binding1 instead.
@@ -874,7 +878,7 @@ public class TestTemplate {
         ));
         binding1.bind(template1);
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "{\n",
             // Now, we can use template1 normally, as it is already defined.
             template1.asToken(3),
@@ -902,7 +906,7 @@ public class TestTemplate {
     }
 
     public static void testFuel() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("f", fuel()),
 
             "<#f>\n"
@@ -910,7 +914,7 @@ public class TestTemplate {
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
         var binding2 = new TemplateBinding<Template.OneArg<Integer>>();
-        var template2 = Template.make("i", (Integer i) -> body(
+        var template2 = Template.make("i", (Integer i) -> scope(
             let("f", fuel()),
 
             "[ #i #f\n",
@@ -920,7 +924,7 @@ public class TestTemplate {
         ));
         binding2.bind(template2);
 
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "{\n",
             template2.asToken(3),
             "}\n"
@@ -948,7 +952,7 @@ public class TestTemplate {
     }
 
     public static void testFuelCustom() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             setFuelCost(2.0f),
             let("f", fuel()),
 
@@ -957,7 +961,7 @@ public class TestTemplate {
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
         var binding2 = new TemplateBinding<Template.OneArg<Integer>>();
-        var template2 = Template.make("i", (Integer i) -> body(
+        var template2 = Template.make("i", (Integer i) -> scope(
             setFuelCost(3.0f),
             let("f", fuel()),
 
@@ -968,7 +972,7 @@ public class TestTemplate {
         ));
         binding2.bind(template2);
 
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             setFuelCost(5.0f),
             let("f", fuel()),
 
@@ -1002,10 +1006,108 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testDataNames0a() {
+        var template = Template.make(() -> scope(
+            // When a DataName is added, it is immediately available afterwards.
+            // This may seem trivial, but it requires that either both "add" and
+            // "sample" happen in lambda execution, or in token evaluation.
+            // Otherwise, one can float above the other, and lead to unintuitive
+            // behavior.
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("v"),
+            "sample: #v."
+        ));
+
+        String code = template.render();
+        checkEQ(code, "sample: x.");
+    }
+
+    public static void testDataNames0b() {
+        // Test that the scope keeps local DataNames only for the scope, but that
+        // we can see DataNames of outer scopes.
+        var template = Template.make(() -> scope(
+            // Outer scope DataName:
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                let("name1", dn.name()),
+                "sample: #name1.\n",
+                // We can also see the outer DataName:
+                dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name2"),
+                "sample: #name2.\n",
+                // Local DataName:
+                addDataName("y", myLong, MUTABLE),
+                dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name3"),
+                "sample: #name3.\n"
+            )),
+            // We can still see the outer scope DataName:
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name4"),
+            "sample: #name4.\n",
+            // But we cannot see the DataNames that are local to the inner scope.
+            // So here, we will always see "z", and never "y".
+            addDataName("z", myLong, MUTABLE),
+            dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name5"),
+            "sample: #name5.\n"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            sample: x.
+            sample: x.
+            sample: y.
+            sample: x.
+            sample: z.
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testDataNames0c() {
+        // Test that hashtag replacements that are local to inner scopes are
+        // only visible to inner scopes, but dollar replacements are the same
+        // for the whole Template.
+        var template = Template.make(() -> scope(
+            let("global", "GLOBAL"),
+            "g: #global. $a\n",
+            // Create a dummy DataName soe we can create the scope.
+            addDataName("x", myInt, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                "g: #global. $b\n",
+                let("local", "LOCAL1"),
+                "l: #local. $c\n"
+            )),
+            "g: #global. $d\n",
+            // Open the scope again just to see if we can create the local again there.
+            dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
+                "g: #global. $e\n",
+                let("local", "LOCAL2"),
+                "l: #local. $f\n"
+            )),
+            // We can now use the "local" hashtag replacement again, since it
+            // was previously only defined in an inner scope.
+            let("local", "LOCAL3"),
+            "g: #global. $g\n",
+            "l: #local. $h\n"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            g: GLOBAL. a_1
+            g: GLOBAL. b_1
+            l: LOCAL1. c_1
+            g: GLOBAL. d_1
+            g: GLOBAL. e_1
+            l: LOCAL2. f_1
+            g: GLOBAL. g_1
+            l: LOCAL3. h_1
+            """;
+        checkEQ(code, expected);
+    }
+
     public static void testDataNames1() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "[",
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).hasAny(),
             ", ",
@@ -1015,20 +1117,20 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
             addDataName(name, type, MUTABLE),
             "define #type #name\n",
             template1.asToken()
         ));
 
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             "<\n",
             hook1.insert(template2.asToken($("name"), myInt)),
             "$name = 5\n",
             ">\n"
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             "{\n",
             template1.asToken(),
             hook1.anchor(
@@ -1074,7 +1176,7 @@ public class TestTemplate {
     public static void testDataNames2() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> body(
+        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> scope(
             "  #mutability: [",
             dataNames(mutability).exactOf(myInt).hasAny(),
             ", ",
@@ -1084,7 +1186,7 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template1 = Template.make("type", (DataName.Type type) -> body(
+        var template1 = Template.make("type", (DataName.Type type) -> scope(
             "[#type:\n",
             template0.asToken(type, MUTABLE),
             template0.asToken(type, IMMUTABLE),
@@ -1092,51 +1194,51 @@ public class TestTemplate {
             "]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
             addDataName(name, type, MUTABLE),
             "define mutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
             addDataName(name, type, IMMUTABLE),
             "define immutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template4 = Template.make("type", (DataName.Type type) -> body(
+        var template4 = Template.make("type", (DataName.Type type) -> scope(
             "{ $store\n",
             hook1.insert(template2.asToken($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
-        var template5 = Template.make("type", (DataName.Type type) -> body(
+        var template5 = Template.make("type", (DataName.Type type) -> scope(
             "{ $load\n",
             hook1.insert(template3.asToken($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
 
-        var template6 = Template.make("type", (DataName.Type type) -> body(
-            let("v", dataNames(MUTABLE).exactOf(type).sample().name()),
+        var template6 = Template.make("type", (DataName.Type type) -> scope(
+            dataNames(MUTABLE).exactOf(type).sampleAndLetAs("v"),
             "{ $sample\n",
             "#v = 7\n",
             "} $sample\n"
         ));
 
-        var template7 = Template.make("type", (DataName.Type type) -> body(
-            let("v", dataNames(MUTABLE_OR_IMMUTABLE).exactOf(type).sample().name()),
+        var template7 = Template.make("type", (DataName.Type type) -> scope(
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(type).sampleAndLetAs("v"),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
         ));
 
-        var template8 = Template.make(() -> body(
+        var template8 = Template.make(() -> scope(
             "class $X {\n",
             template1.asToken(myInt),
             hook1.anchor(
-                "begin $body\n",
+                "begin $scope\n",
                 template1.asToken(myInt),
                 "start with immutable\n",
                 template5.asToken(myInt),
@@ -1174,7 +1276,7 @@ public class TestTemplate {
               IMMUTABLE: [true, 1, names: {name_10}]
               MUTABLE_OR_IMMUTABLE: [true, 2, names: {name_10, name_21}]
             ]
-            begin body_1
+            begin scope_1
             [int:
               MUTABLE: [false, 0, names: {}]
               IMMUTABLE: [false, 0, names: {}]
@@ -1219,7 +1321,7 @@ public class TestTemplate {
     public static void testDataNames3() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> body(
+        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> scope(
             "  #mutability: [",
             dataNames(mutability).exactOf(myInt).hasAny(),
             ", ",
@@ -1229,7 +1331,7 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template1 = Template.make("type", (DataName.Type type) -> body(
+        var template1 = Template.make("type", (DataName.Type type) -> scope(
             "[#type:\n",
             template0.asToken(type, MUTABLE),
             template0.asToken(type, IMMUTABLE),
@@ -1237,11 +1339,11 @@ public class TestTemplate {
             "]\n"
         ));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "class $Y {\n",
             template1.asToken(myInt),
             hook1.anchor(
-                "begin $body\n",
+                "begin $scope\n",
                 template1.asToken(myInt),
                 "define mutable $v1\n",
                 addDataName($("v1"), myInt, MUTABLE),
@@ -1263,7 +1365,7 @@ public class TestTemplate {
               IMMUTABLE: [false, 0, names: {}]
               MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
             ]
-            begin body_1
+            begin scope_1
             [int:
               MUTABLE: [false, 0, names: {}]
               IMMUTABLE: [false, 0, names: {}]
@@ -1294,7 +1396,7 @@ public class TestTemplate {
     public static void testDataNames4() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (DataName.Type type) -> body(
+        var template1 = Template.make("type", (DataName.Type type) -> scope(
             "[#type:\n",
             "  exact: ",
             dataNames(MUTABLE).exactOf(type).hasAny(),
@@ -1321,17 +1423,26 @@ public class TestTemplate {
         ));
 
         List<DataName.Type> types = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "DataNames:\n",
             types.stream().map(t -> template1.asToken(t)).toList()
         ));
 
-        var template3 = Template.make("type", (DataName.Type type) -> body(
-            let("name", dataNames(MUTABLE).subtypeOf(type).sample()),
-            "Sample #type: #name\n"
+        var template3 = Template.make("type", (DataName.Type type) -> scope(
+            dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name1"),
+            "Sample #type: #name1\n",
+            dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name2", "type2"),
+            "Sample #type: #name2 #type2\n",
+            dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> scope(
+                let("name3", dn.name()),
+                let("type3", dn.type()),
+                let("dn", dn), // format the whole DataName with toString
+                "Sample #type: #name3 #type3 #dn\n"
+            ))
+            // TODO: also auto capture hashtags!
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             "class $W {\n",
             template2.asToken(),
             hook1.anchor(
@@ -1381,12 +1492,22 @@ public class TestTemplate {
               supertype: false, 0, {}
             ]
             Create name for myClassA11, should be visible for the super classes
-            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA11: v1_1
+            Sample myClassA11: v1_1 myClassA11
+            Sample myClassA11: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: v1_1
+            Sample myClassA1: v1_1 myClassA11
+            Sample myClassA1: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA: v1_1
+            Sample myClassA: v1_1 myClassA11
+            Sample myClassA: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
             Create name for myClassA, should never be visible for the sub classes
-            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA11: v1_1
+            Sample myClassA11: v1_1 myClassA11
+            Sample myClassA11: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: v1_1
+            Sample myClassA1: v1_1 myClassA11
+            Sample myClassA1: v1_1 myClassA11 DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
             DataNames:
             [myClassA:
               exact: true, 1, {v2_1}
@@ -1450,7 +1571,7 @@ public class TestTemplate {
         var hook2 = new Hook("Hook2");
 
         // It is safe in separate Hook scopes.
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             hook1.anchor(
                 addDataName("name1", myInt, MUTABLE)
             ),
@@ -1460,15 +1581,15 @@ public class TestTemplate {
         ));
 
         // It is safe in separate Template scopes.
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             addDataName("name2", myInt, MUTABLE)
         ));
-        var template3 = Template.make(() -> body(
+        var template3 = Template.make(() -> scope(
             template2.asToken(),
             template2.asToken()
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             // The following is not safe, it would collide
             // with (1), because it would be inserted to the
             // hook1.anchor in template5, and hence be available
@@ -1483,7 +1604,7 @@ public class TestTemplate {
                 addDataName("name3", myInt, MUTABLE)
             )
         ));
-        var template5 = Template.make(() -> body(
+        var template5 = Template.make(() -> scope(
             hook1.anchor(
                 // (1) this is the first one we add.
                 addDataName("name3", myInt, MUTABLE)
@@ -1491,7 +1612,7 @@ public class TestTemplate {
         ));
 
         // Put it all together into a single test.
-        var template6 = Template.make(() -> body(
+        var template6 = Template.make(() -> scope(
             template1.asToken(),
             template3.asToken(),
             template5.asToken()
@@ -1502,10 +1623,26 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testStructuralNames0() {
+        var template = Template.make(() -> scope(
+            // When a StructuralName is added, it is immediately available afterwards.
+            // This may seem trivial, but it requires that either both "add" and
+            // "sample" happen in lambda execution, or in token evaluation.
+            // Otherwise, one can float above the other, and lead to unintuitive
+            // behavior.
+            addStructuralName("x", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).sampleAndLetAs("v"),
+            "sample: #v."
+        ));
+
+        String code = template.render();
+        checkEQ(code, "sample: x.");
+    }
+
     public static void testStructuralNames1() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (StructuralName.Type type) -> body(
+        var template1 = Template.make("type", (StructuralName.Type type) -> scope(
             "[#type:\n",
             "  exact: ",
             structuralNames().exactOf(type).hasAny(),
@@ -1536,17 +1673,26 @@ public class TestTemplate {
                                                   myStructuralTypeA2,
                                                   myStructuralTypeA11,
                                                   myStructuralTypeB);
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "StructuralNames:\n",
             types.stream().map(t -> template1.asToken(t)).toList()
         ));
 
-        var template3 = Template.make("type", (StructuralName.Type type) -> body(
-            let("name", structuralNames().subtypeOf(type).sample()),
-            "Sample #type: #name\n"
+        var template3 = Template.make("type", (StructuralName.Type type) -> scope(
+            structuralNames().subtypeOf(type).sampleAndLetAs("name1"),
+            "Sample #type: #name1\n",
+            structuralNames().subtypeOf(type).sampleAndLetAs("name2", "type2"),
+            "Sample #type: #name2 #type2\n",
+            structuralNames().subtypeOf(type).sample((StructuralName sn) -> scope(
+                let("name3", sn.name()),
+                let("type3", sn.type()),
+                let("sn", sn), // format the whole StructuralName with toString
+                "Sample #type: #name3 #type3 #sn\n"
+            ))
+            // TODO: also auto capture hashtags!
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             "class $Q {\n",
             template2.asToken(),
             hook1.anchor(
@@ -1596,12 +1742,22 @@ public class TestTemplate {
               supertype: false, 0, {}
             ]
             Create name for myStructuralTypeA11, should be visible for the supertypes
-            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA11: v1_1
+            Sample StructuralA11: v1_1 StructuralA11
+            Sample StructuralA11: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: v1_1
+            Sample StructuralA1: v1_1 StructuralA11
+            Sample StructuralA1: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA: v1_1
+            Sample StructuralA: v1_1 StructuralA11
+            Sample StructuralA: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
             Create name for myStructuralTypeA, should never be visible for the subtypes
-            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
-            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA11: v1_1
+            Sample StructuralA11: v1_1 StructuralA11
+            Sample StructuralA11: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: v1_1
+            Sample StructuralA1: v1_1 StructuralA11
+            Sample StructuralA1: v1_1 StructuralA11 StructuralName[name=v1_1, type=StructuralA11, weight=1]
             StructuralNames:
             [StructuralA:
               exact: true, 1, {v2_1}
@@ -1662,7 +1818,7 @@ public class TestTemplate {
     public static void testStructuralNames2() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (StructuralName.Type type) -> body(
+        var template1 = Template.make("type", (StructuralName.Type type) -> scope(
             "[#type: ",
             structuralNames().exactOf(type).hasAny(),
             ", ",
@@ -1672,31 +1828,31 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> body(
+        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> scope(
             addStructuralName(name, type),
             "define #type #name\n"
         ));
 
-        var template3 = Template.make("type", (StructuralName.Type type) -> body(
+        var template3 = Template.make("type", (StructuralName.Type type) -> scope(
             "{ $access\n",
             hook1.insert(template2.asToken($("name"), type)),
             "$name = 5\n",
             "} $access\n"
         ));
 
-        var template4 = Template.make("type", (StructuralName.Type type) -> body(
-            let("v", structuralNames().exactOf(type).sample().name()),
+        var template4 = Template.make("type", (StructuralName.Type type) -> scope(
+            structuralNames().exactOf(type).sampleAndLetAs("v"),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
         ));
 
-        var template8 = Template.make(() -> body(
+        var template8 = Template.make(() -> scope(
             "class $X {\n",
             template1.asToken(myStructuralTypeA),
             template1.asToken(myStructuralTypeB),
             hook1.anchor(
-                "begin $body\n",
+                "begin $scope\n",
                 template1.asToken(myStructuralTypeA),
                 template1.asToken(myStructuralTypeB),
                 "start with A\n",
@@ -1725,7 +1881,7 @@ public class TestTemplate {
             [StructuralB: false, 0, names: {}]
             define StructuralA name_6
             define StructuralB name_11
-            begin body_1
+            begin scope_1
             [StructuralA: false, 0, names: {}]
             [StructuralB: false, 0, names: {}]
             start with A
@@ -1758,13 +1914,13 @@ public class TestTemplate {
     record MyItem(DataName.Type type, String op) {}
 
     public static void testListArgument() {
-        var template1 = Template.make("item", (MyItem item) -> body(
+        var template1 = Template.make("item", (MyItem item) -> scope(
             let("type", item.type()),
             let("op", item.op()),
             "#type apply #op\n"
         ));
 
-        var template2 = Template.make("list", (List<MyItem> list) -> body(
+        var template2 = Template.make("list", (List<MyItem> list) -> scope(
             "class $Z {\n",
             // Use template1 for every item in the list.
             list.stream().map(item -> template1.asToken(item)).toList(),
@@ -1798,11 +1954,11 @@ public class TestTemplate {
     }
 
     public static void testFailingNestedRendering() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "alpha\n"
         ));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "beta\n",
             // Nested "render" call not allowed!
             template1.render(),
@@ -1813,63 +1969,63 @@ public class TestTemplate {
     }
 
     public static void testFailingDollarName1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("x", $("")) // empty string not allowed
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName2() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("x", $("#abc")) // "#" character not allowed
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("x", $("abc#")) // "#" character not allowed
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("x", $(null)) // Null input to dollar
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName5() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "$" // empty dollar name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName6() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "asdf$" // empty dollar name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName7() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "asdf$1" // Bad pattern after dollar
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarName8() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "abc$$abc" // empty dollar name
         ));
         String code = template1.render();
     }
 
     public static void testFailingLetName1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let(null, $("abc")) // Null input for hashtag name
         ));
         String code = template1.render();
@@ -1877,20 +2033,20 @@ public class TestTemplate {
 
     public static void testFailingHashtagName1() {
         // Empty Template argument
-        var template1 = Template.make("", (String x) -> body(
+        var template1 = Template.make("", (String x) -> scope(
         ));
         String code = template1.render("abc");
     }
 
     public static void testFailingHashtagName2() {
         // "#" character not allowed in template argument
-        var template1 = Template.make("abc#abc", (String x) -> body(
+        var template1 = Template.make("abc#abc", (String x) -> scope(
         ));
         String code = template1.render("abc");
     }
 
     public static void testFailingHashtagName3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // Empty let hashtag name not allowed
             let("", "abc")
         ));
@@ -1898,7 +2054,7 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtagName4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // "#" character not allowed in let hashtag name
             let("xyz#xyz", "abc")
         ));
@@ -1906,56 +2062,56 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtagName5() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "#" // empty hashtag name
         ));
         String code = template1.render();
     }
 
     public static void testFailingHashtagName6() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "asdf#" // empty hashtag name
         ));
         String code = template1.render();
     }
 
     public static void testFailingHashtagName7() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "asdf#1" // Bad pattern after hashtag
         ));
         String code = template1.render();
     }
 
     public static void testFailingHashtagName8() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "abc##abc" // empty hashtag name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarHashtagName1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "#$" // empty hashtag name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarHashtagName2() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "$#" // empty dollar name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarHashtagName3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "#$name" // empty hashtag name
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarHashtagName4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "$#name" // empty dollar name
         ));
         String code = template1.render();
@@ -1964,11 +2120,11 @@ public class TestTemplate {
     public static void testFailingHook() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "alpha\n"
         ));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             "beta\n",
             // Use hook without hook1.anchor
             hook1.insert(template1.asToken()),
@@ -1978,20 +2134,40 @@ public class TestTemplate {
         String code = template2.render();
     }
 
-    public static void testFailingSample1() {
-        var template1 = Template.make(() -> body(
-            // No variable added yet.
-            let("v", dataNames(MUTABLE).exactOf(myInt).sample().name()),
+    public static void testFailingSample1a() {
+        var template1 = Template.make(() -> scope(
+            // No DataName added yet.
+            dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("v"),
             "v is #v\n"
         ));
 
         String code = template1.render();
     }
 
-    public static void testFailingSample2() {
-        var template1 = Template.make(() -> body(
+    public static void testFailingSample1b() {
+        var template1 = Template.make(() -> scope(
+            // No StructuralName added yet.
+            structuralNames().exactOf(myStructuralTypeA).sampleAndLetAs("v"),
+            "v is #v\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingSample2a() {
+        var template1 = Template.make(() -> scope(
             // no type restriction
-            let("v", dataNames(MUTABLE).sample().name()),
+            dataNames(MUTABLE).sampleAndLetAs("v"),
+            "v is #v\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingSample2b() {
+        var template1 = Template.make(() -> scope(
+            // no type restriction
+            structuralNames().sampleAndLetAs("v"),
             "v is #v\n"
         ));
 
@@ -2000,7 +2176,7 @@ public class TestTemplate {
 
     public static void testFailingHashtag1() {
         // Duplicate hashtag definition from arguments.
-        var template1 = Template.make("a", "a", (String _, String _) -> body(
+        var template1 = Template.make("a", "a", (String _, String _) -> scope(
             "nothing\n"
         ));
 
@@ -2008,7 +2184,7 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtag2() {
-        var template1 = Template.make("a", (String _) -> body(
+        var template1 = Template.make("a", (String _) -> scope(
             // Duplicate hashtag name
             let("a", "x"),
             "nothing\n"
@@ -2018,7 +2194,7 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtag3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             let("a", "x"),
             // Duplicate hashtag name
             let("a", "y"),
@@ -2029,7 +2205,7 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtag4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // Missing hashtag name definition
             "#a\n"
         ));
@@ -2037,9 +2213,20 @@ public class TestTemplate {
         String code = template1.render();
     }
 
+    public static void testFailingHashtag5() {
+        var template1 = Template.make(() -> scope(
+            "use before definition: #a\n",
+            // let is a token, and is only evaluated after
+            // the string above, and so the string above fails.
+            let("a", "x")
+        ));
+
+        String code = template1.render();
+    }
+
     public static void testFailingBinding1() {
         var binding = new TemplateBinding<Template.ZeroArgs>();
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "nothing\n"
         ));
         binding.bind(template1);
@@ -2049,7 +2236,7 @@ public class TestTemplate {
 
     public static void testFailingBinding2() {
         var binding = new TemplateBinding<Template.ZeroArgs>();
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             "nothing\n",
             // binding was never bound.
             binding.get()
@@ -2059,7 +2246,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddDataName1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // Must pick either MUTABLE or IMMUTABLE.
             addDataName("name", myInt, MUTABLE_OR_IMMUTABLE)
         ));
@@ -2067,7 +2254,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddDataName2() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, 0)
         ));
@@ -2075,7 +2262,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddDataName3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, -1)
         ));
@@ -2083,7 +2270,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddDataName4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, 1001)
         ));
@@ -2091,7 +2278,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddStructuralName1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, 0)
         ));
@@ -2099,7 +2286,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddStructuralName2() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, -1)
         ));
@@ -2107,7 +2294,7 @@ public class TestTemplate {
     }
 
     public static void testFailingAddStructuralName3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, 1001)
         ));
@@ -2116,7 +2303,7 @@ public class TestTemplate {
 
     // Duplicate name in the same scope, name identical -> expect RendererException.
     public static void testFailingAddNameDuplication1() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
             addDataName("name", myInt, MUTABLE)
         ));
@@ -2125,7 +2312,7 @@ public class TestTemplate {
 
     // Duplicate name in the same scope, names have different mutability -> expect RendererException.
     public static void testFailingAddNameDuplication2() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
             addDataName("name", myInt, IMMUTABLE)
         ));
@@ -2134,7 +2321,7 @@ public class TestTemplate {
 
     // Duplicate name in the same scope, names have different type -> expect RendererException.
     public static void testFailingAddNameDuplication3() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
             addDataName("name", myLong, MUTABLE)
         ));
@@ -2143,7 +2330,7 @@ public class TestTemplate {
 
     // Duplicate name in the same scope, name identical -> expect RendererException.
     public static void testFailingAddNameDuplication4() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addStructuralName("name", myStructuralTypeA),
             addStructuralName("name", myStructuralTypeA)
         ));
@@ -2152,7 +2339,7 @@ public class TestTemplate {
 
     // Duplicate name in the same scope, names have different type -> expect RendererException.
     public static void testFailingAddNameDuplication5() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addStructuralName("name", myStructuralTypeA),
             addStructuralName("name", myStructuralTypeB)
         ));
@@ -2161,10 +2348,10 @@ public class TestTemplate {
 
     // Duplicate name in inner Template, name identical -> expect RendererException.
     public static void testFailingAddNameDuplication6() {
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE)
         ));
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
             template1.asToken()
         ));
@@ -2175,7 +2362,7 @@ public class TestTemplate {
     public static void testFailingAddNameDuplication7() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
             hook1.anchor(
                 addDataName("name", myInt, MUTABLE)
@@ -2188,11 +2375,11 @@ public class TestTemplate {
     public static void testFailingAddNameDuplication8() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> body(
+        var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE)
         ));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             hook1.anchor(
                 addDataName("name", myInt, MUTABLE),
                 hook1.insert(template1.asToken())

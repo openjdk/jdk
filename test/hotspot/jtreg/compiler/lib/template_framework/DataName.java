@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * {@link DataName}s represent things like fields and local variables, and can be added to the local
@@ -114,18 +115,36 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             this(mutability, null, null);
         }
 
+        // Wrap the FilteredSet as a Predicate.
+        private static record DataNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+            public boolean check(Name type) {
+                return fs.check(type);
+            }
+            public String toString() {
+                return fs.toString();
+            }
+        }
+
         NameSet.Predicate predicate() {
             if (subtype == null && supertype == null) {
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
-            return (Name name) -> {
-                if (!(name instanceof DataName dataName)) { return false; }
-                if (mutability == Mutability.MUTABLE && !dataName.mutable()) { return false; }
-                if (mutability == Mutability.IMMUTABLE && dataName.mutable()) { return false; }
-                if (subtype != null && !dataName.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(dataName.type())) { return false; }
-                return true;
-            };
+            return new DataNamePredicate(this);
+        }
+
+        boolean check(Name name) {
+            if (!(name instanceof DataName dataName)) { return false; }
+            if (mutability == Mutability.MUTABLE && !dataName.mutable()) { return false; }
+            if (mutability == Mutability.IMMUTABLE && dataName.mutable()) { return false; }
+            if (subtype != null && !dataName.type().isSubtypeOf(subtype)) { return false; }
+            if (supertype != null && !supertype.isSubtypeOf(dataName.type())) { return false; }
+            return true;
+        }
+
+        public String toString() {
+            String msg1 = (subtype == null) ? "" : ", subtypeOf(" + subtype + ")";
+            String msg2 = (supertype == null) ? "" : ", supertypeOf(" + supertype + ")";
+            return "DataName.FilterdSet(" + mutability + msg1 + msg2 + ")";
         }
 
         /**
@@ -173,21 +192,48 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
 
         /**
          * Samples a random {@link DataName} from the filtered set, according to the weights
-         * of the contained {@link DataName}s.
+         * of the contained {@link DataName}s, making the sampled {@link DataName}
+         * available to an inner scope.
          *
-         * @return The sampled {@link DataName}.
+         * @param function The {@link Function} that creates the inner {@link TemplateScope} given
+         *                 the sampled {@link DataName}.
+         * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
-         * @throws RendererException If the set was empty.
          */
-        public DataName sample() {
-            DataName n = (DataName)Renderer.getCurrent().sampleName(predicate());
-            if (n == null) {
-                String msg1 = (subtype == null) ? "" : ", subtypeOf(" + subtype + ")";
-                String msg2 = (supertype == null) ? "" : ", supertypeOf(" + supertype + ")";
-                throw new RendererException("No variable: " + mutability + msg1 + msg2 + ".");
-            }
-            return n;
+        // TODO: make sure we have tests/examples for all!
+        // TODO: combo sample?
+        public NameSetQueryToken sample(Function<DataName, TemplateScope> function) {
+            return NameSetQueryToken.makeSample(predicate(), null, null, function);
+        }
+
+        /**
+         * Samples a random {@link DataName} from the filtered set, according to the weights
+         * of the contained {@link DataName}s, and making a hashtag replacement for both
+         * the name and type of the {@link DataName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link DataName} name.
+         * @param type the key of the hashtag replacement for the {@link DataName} type.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public NameSetQueryToken sampleAndLetAs(String name, String type) {
+            return NameSetQueryToken.makeSample(predicate(), name, type, null);
+        }
+
+        /**
+         * Samples a random {@link DataName} from the filtered set, according to the weights
+         * of the contained {@link DataName}s, and making a hashtag replacement for the
+         * name of the {@link DataName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link DataName} name.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public NameSetQueryToken sampleAndLetAs(String name) {
+            return NameSetQueryToken.makeSample(predicate(), name, null, null);
         }
 
         /**
@@ -197,6 +243,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
         }
@@ -208,6 +255,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify? - could do also a "ifHasAnyDo" or "ifHasNoneDo"
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
         }
@@ -219,6 +267,9 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify? -> what if we want to sample but without opening
+        //       an inner scope that would make new data names local?
+        //       We could also do a kind of "map".
         public List<DataName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (DataName)n).toList();

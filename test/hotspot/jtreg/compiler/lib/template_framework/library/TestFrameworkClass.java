@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 
 /**
@@ -51,7 +51,7 @@ public final class TestFrameworkClass {
     private TestFrameworkClass() {}
 
     /**
-     * This method renders a list of {@code testTemplateTokens} into the body of a class
+     * This method renders a list of {@code testTemplateTokens} into the scope of a class
      * and generates a {@code main} method which launches the {@link TestFramework}
      * to run the generated tests.
      *
@@ -81,7 +81,7 @@ public final class TestFrameworkClass {
                                 final Set<String> imports,
                                 final String classpath,
                                 final List<TemplateToken> testTemplateTokens) {
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             let("packageName", packageName),
             let("className", className),
             let("classpath", classpath),
