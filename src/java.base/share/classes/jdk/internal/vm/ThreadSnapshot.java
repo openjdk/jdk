@@ -26,13 +26,17 @@ package jdk.internal.vm;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Represents a snapshot of information about a Thread.
  */
 class ThreadSnapshot {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
     private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
+    private static final ThreadSnapshot NOT_ALIVE = new ThreadSnapshot();
 
     // filled by VM
     private String name;
@@ -52,15 +56,36 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
-     * Return null if a ThreadSnapshot is not created, for example if the
-     * thread has terminated.
+     * Return null if the thread is not alive.
      * @throws UnsupportedOperationException if not supported by VM
      */
     static ThreadSnapshot of(Thread thread) {
-        ThreadSnapshot snapshot = create(thread);
-        if (snapshot == null) {
-            return null; // thread terminated
+        ThreadSnapshot snapshot;
+        if (thread.isVirtual()) {
+            do {
+                // assume unmounted
+                snapshot = JLA.supplyIfUnmounted(thread,
+                        () -> create(thread, true),    // unmounted and alive
+                        () -> NOT_ALIVE);              // not alive
+                if (snapshot == NOT_ALIVE) {
+                    return null;
+                } else if (snapshot == null) {
+                    // not unmounted, retry assuming mounted
+                    snapshot = create(thread, false);
+                    if (snapshot == null) {
+                        // yield before retry
+                        Thread.yield();
+                    }
+                }
+            } while (snapshot == null);
+        } else {
+            // platform thread
+            snapshot = create(thread, false);
+            if (snapshot == null) {
+                return null;   // not alive
+            }
         }
+
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;
         }
@@ -219,5 +244,13 @@ class ThreadSnapshot {
         }
     }
 
-    private static native ThreadSnapshot create(Thread thread);
+    /**
+     * Return the snapshot of the given thread if alive. If the thread is a virtual
+     * thread this method returns the snapshot if the virtual thread is mounted. If
+     * the virtual thread is unmounted then it must be suspended.
+     * @param thread the target thread
+     * @param suspendedByCaller true if a suspended unmounted virtual thread
+     * @return the snapshot, null if not alive, null if unmounted virtual and not suspended
+     */
+    private static native ThreadSnapshot create(Thread thread, boolean suspendedByCaller);
 }
