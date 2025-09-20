@@ -56,6 +56,7 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
+    boolean upgrade;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -91,6 +92,7 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
+        this.upgrade = isUpgradeRequest(reqHdrs);
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
@@ -120,6 +122,13 @@ class ExchangeImpl {
 
     private boolean isHeadRequest() {
         return HEAD.equals(getRequestMethod());
+    }
+
+    // check if Upgrade connection
+    private static boolean isUpgradeRequest(Headers headers) {
+        var values = headers.get("Connection");
+        return values != null
+            && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
     public void close () {
@@ -155,7 +164,9 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (reqContentLen == -1L) {
+        if (upgrade) {
+            uis = ris;
+        } else if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream (this, ris);
             uis = uis_orig;
         } else {
@@ -214,12 +225,19 @@ class ExchangeImpl {
         boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
-        /* check for response type that is not allowed to send a body */
+        boolean informational = rCode >= 100 && rCode < 200 ;
 
-        if ((rCode>=100 && rCode <200) /* informational */
-            ||(rCode == 204)           /* no content */
-            ||(rCode == 304))          /* not modified */
-        {
+        /* informational codes */
+        if (informational) {
+
+            if (contentLen != 0) {
+                logger.log(
+                    Level.WARNING,
+                    () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
+            }
+            contentLen = 0;
+        /* check for response type that is not allowed to send a body */
+        } else if (rCode == 204 || rCode == 304) {
             if (contentLen != -1) {
                 String msg = "sendResponseHeaders: rCode = "+ rCode
                     + ": forcing contentLen = -1";
@@ -241,25 +259,29 @@ class ExchangeImpl {
             noContentToSend = true;
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
-        } else { /* not a HEAD request or 304 response */
-            if (contentLen == 0) {
-                if (http10) {
-                    o.setWrappedStream (new UndefLengthOutputStream (this, ros));
-                    close = true;
-                } else {
-                    rspHdrs.set ("Transfer-encoding", "chunked");
-                    o.setWrappedStream (new ChunkedOutputStream (this, ros));
-                }
+        } else if (contentLen == 0) {
+            if (upgrade) {
+                o.setWrappedStream(ros);
+                // auto-close the exchange when handler exits
+                close = true;
+            } else if (informational) {
+                // no body for informational responses
+            } else if (http10) {
+                o.setWrappedStream (new UndefLengthOutputStream (this, ros));
+                close = true;
             } else {
-                if (contentLen == -1) {
-                    noContentToSend = true;
-                    contentLen = 0;
-                }
-                if (!noContentLengthHeader) {
-                    rspHdrs.set("Content-length", Long.toString(contentLen));
-                }
-                o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
+                rspHdrs.set ("Transfer-encoding", "chunked");
+                o.setWrappedStream (new ChunkedOutputStream (this, ros));
             }
+        } else {
+            if (contentLen == -1) {
+                noContentToSend = true;
+                contentLen = 0;
+            }
+            if (!noContentLengthHeader) {
+                rspHdrs.set("Content-length", Long.toString(contentLen));
+            }
+            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         }
 
         // A custom handler can request that the connection be
@@ -279,11 +301,18 @@ class ExchangeImpl {
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;
         tmpout.writeTo(ros);
-        sentHeaders = true;
+        /**
+         * we don't want to set sentHeaders true if this is an
+         * informational response, as the real response is yet
+         * to be sent.
+         */
+        sentHeaders = !informational;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
             ros.flush();
             close();
+        } else if (informational) {
+            ros.flush();
         }
         server.logReply (rCode, req.requestLine(), null);
     }
