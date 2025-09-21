@@ -257,6 +257,9 @@ final class Renderer {
     }
 
     private void renderNameSetQueryToken(NameSetQueryToken nsqt) {
+        if (nsqt.operation() != NameSetQueryToken.Operation.SAMPLE) {
+            throw new RuntimeException("only sample implemented");
+        }
         Name n = currentCodeFrame.sampleName(nsqt.predicate());
         if (n == null) {
             throw new RendererException("No Name found for " + nsqt.predicate().toString());

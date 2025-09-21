@@ -40,6 +40,10 @@ record NameSetQueryToken<N>(
         return new NameSetQueryToken<N>(predicate, name, type, function, Operation.SAMPLE);
     }
 
+    static <N> NameSetQueryToken<N> makeForEach(NameSet.Predicate predicate, String name, String type, Function<N, TemplateScope> function) {
+        return new NameSetQueryToken<N>(predicate, name, type, function, Operation.FOR_EACH);
+    }
+
     TemplateScope getScope(Name n) {
         return function().apply((N)n);
     }

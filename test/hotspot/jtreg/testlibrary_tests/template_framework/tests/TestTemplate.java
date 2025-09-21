@@ -141,6 +141,7 @@ public class TestTemplate {
         testDataNames0a();
         testDataNames0b();
         testDataNames0c();
+        testDataNames0d();
         testDataNames1();
         testDataNames2();
         testDataNames3();
@@ -1104,6 +1105,38 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testDataNames0d() {
+        var template = Template.make(() -> scope(
+            addDataName("x", myInt, MUTABLE),
+            addDataName("y", myInt, MUTABLE),
+            addDataName("z", myInt, MUTABLE),
+            addDataName("a", myLong, MUTABLE),
+            addDataName("b", myLong, MUTABLE),
+            addDataName("c", myLong, MUTABLE),
+            dataNames(MUTABLE).exactOf(myInt).forEach((DataName dn) -> scope(
+                //let("name", dn.name()),
+                //let("type", dn.type()),
+                "listI: #name #type.\n"
+            )),
+            dataNames(MUTABLE).exactOf(myInt).forEach((DataName dn) -> scope(
+                let("name", dn.name()),
+                let("type", dn.type()),
+                "listL: #name #type.\n"
+            ))
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            listI: x int.
+            listI: y int.
+            listI: z int.
+            listL: a long.
+            listL: b long.
+            listL: c long.
+            """;
+        checkEQ(code, expected);
+    }
     public static void testDataNames1() {
         var hook1 = new Hook("Hook1");
 

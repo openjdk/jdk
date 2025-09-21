@@ -274,5 +274,9 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (DataName)n).toList();
         }
+
+        public NameSetQueryToken forEach(Function<DataName, TemplateScope> function) {
+            return NameSetQueryToken.makeForEach(predicate(), null, null, function);
+        }
     }
 }
