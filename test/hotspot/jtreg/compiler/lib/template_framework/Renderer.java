@@ -256,8 +256,41 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
-    private void renterNestingToken(NestingToken nt, Runnable preamble) {
-        throw new RuntimeException("not implemented");
+    private void renderNestingToken(NestingToken nt, Runnable preamble) {
+        // We need the CodeFrame for local names.
+        CodeFrame outerCodeFrame = currentCodeFrame;
+        if (nt.nestedNamesAreLocal()) {
+            currentCodeFrame = CodeFrame.make(currentCodeFrame);
+        }
+
+        // We need to be able to define local hashtag replacements, but still
+        // see the outer ones. We also need to have the same id for dollar
+        // replacement as the outer frame.
+        TemplateFrame innerTemplateFrame = null;
+        if (nt.nestedHashtagsAreLocal()) {
+            innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
+            currentTemplateFrame = innerTemplateFrame;
+        }
+
+        // Allow definition of hashtags and variables to be placed in the nested frames.
+        preamble.run();
+
+        // Now render the nested code.
+        renderTokenList(nt.tokens);
+
+        if (nt.nestedHashtagsAreLocal()) {
+            if (currentTemplateFrame != innerTemplateFrame) {
+                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            }
+            currentTemplateFrame = currentTemplateFrame.parent;
+        }
+
+        // Tear down CodeFrame nesting. If no nesting happened, the code is already
+        // in the currendCodeFrame.
+        if (nt.nestedNamesAreLocal()) {
+            outerCodeFrame.addCode(currentCodeFrame.getCode());
+            currentCodeFrame = outerCodeFrame;
+        }
     }
 
     // TODO: can we abstract the cases, so it is easier to implement other queries?
@@ -385,7 +418,8 @@ final class Renderer {
                 currentCodeFrame.addName(name);
             }
             case NestingToken nt -> {
-                renterNestingToken(nt, () -> {});
+                // TODO: test all variants!
+                renderNestingToken(nt, () -> {});
             }
             case NameSampleToken nst -> {
                 renderNameSampleToken(nst);
