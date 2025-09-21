@@ -54,11 +54,16 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
 
   // Check if load is lower than max.
   double recent_load;
-  if ((G1PeriodicGCSystemLoadThreshold > 0.0f) &&
-      (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
-    log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
-                            recent_load, G1PeriodicGCSystemLoadThreshold);
-    return false;
+  if (G1PeriodicGCSystemLoadThreshold > 0.0f) {
+    if (os::loadavg(&recent_load, 1) == -1) {
+      log_debug(gc, periodic)("System loadavg not supported. Skipping.");
+      return false;
+    }
+    if (recent_load > G1PeriodicGCSystemLoadThreshold) {
+      log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
+                              recent_load, G1PeriodicGCSystemLoadThreshold);
+      return false;
+    }
   }
 
   // Record counters with GC safepoints blocked, to get a consistent snapshot.
