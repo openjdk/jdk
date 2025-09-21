@@ -32,15 +32,40 @@ t* A Template generates a {@link NestingToken}, which is a list of {@link Token}
  *
  * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
  */
-public sealed interface NestingToken extends Token permits NestingToken.Scope,
-                                                           NestingToken.Flat,
-                                                           NestingToken.NameScope,
-                                                           NestingToken.HashtagScope {
+public sealed abstract class NestingToken implements Token permits NestingToken.Scope,
+                                                                   NestingToken.Flat,
+                                                                   NestingToken.NameScope,
+                                                                   NestingToken.HashtagScope {
 
-    List<Token> tokens();
+    List<Token> tokens;
+    abstract boolean nestedNamesAreLocal();
+    abstract boolean nestedHashtagsAreLocal();
 
-    public record Scope(List<Token> tokens) implements Token, NestingToken {}
-    record Flat(List<Token> tokens) implements Token, NestingToken {}
-    record NameScope(List<Token> tokens) implements Token, NestingToken {}
-    record HashtagScope(List<Token> tokens) implements Token, NestingToken {}
+    private NestingToken(List<Token> tokens) {
+        this.tokens = tokens;
+    }
+
+    public static final class Scope extends NestingToken implements Token {
+        Scope(List<Token> tokens) { super(tokens); }
+        boolean nestedNamesAreLocal() { return true; }
+        boolean nestedHashtagsAreLocal() { return true; }
+    }
+
+    static final class Flat extends NestingToken implements Token {
+        Flat(List<Token> tokens) { super(tokens); }
+        boolean nestedNamesAreLocal() { return false; }
+        boolean nestedHashtagsAreLocal() { return false; }
+    }
+
+    static final class NameScope extends NestingToken implements Token {
+        NameScope(List<Token> tokens) { super(tokens); }
+        boolean nestedNamesAreLocal() { return true; }
+        boolean nestedHashtagsAreLocal() { return false; }
+    }
+
+    static final class HashtagScope extends NestingToken implements Token {
+        HashtagScope(List<Token> tokens) { super(tokens); }
+        boolean nestedNamesAreLocal() { return false; }
+        boolean nestedHashtagsAreLocal() { return true; }
+    }
 }

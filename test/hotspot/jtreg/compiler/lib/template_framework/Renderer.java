@@ -248,12 +248,16 @@ final class Renderer {
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
         NestingToken.Scope scope = templateToken.instantiate();
-        renderTokenList(scope.tokens());
+        renderTokenList(scope.tokens);
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
+    }
+
+    private void renterNestingToken(NestingToken nt, Runnable preamble) {
+        throw new RuntimeException("not implemented");
     }
 
     // TODO: can we abstract the cases, so it is easier to implement other queries?
@@ -296,7 +300,7 @@ final class Renderer {
             }
 
             NestingToken nestingToken = nst.getNestingToken(n);
-            renderTokenList(nestingToken.tokens());
+            renderTokenList(nestingToken.tokens);
 
             if (currentTemplateFrame != templateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
@@ -381,7 +385,7 @@ final class Renderer {
                 currentCodeFrame.addName(name);
             }
             case NestingToken nt -> {
-                throw new RuntimeException("not implemented");
+                renterNestingToken(nt, () -> {});
             }
             case NameSampleToken nst -> {
                 renderNameSampleToken(nst);
