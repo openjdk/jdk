@@ -154,7 +154,8 @@ public class TestTemplate {
         testStructuralNames1();
         testStructuralNames2();
         testListArgument();
-        testNestedScopes();
+        testNestedScopes1();
+        testNestedScopes2();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -2000,7 +2001,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testNestedScopes() {
+    public static void testNestedScopes1() {
         var listDataNames = Template.make(() -> scope(
             "dataNames: {",
             dataNames(MUTABLE).exactOf(myInt).forEach("name", "type", (DataName dn) -> scope(
@@ -2010,6 +2011,7 @@ public class TestTemplate {
         ));
 
         var template = Template.make("x", (String x) -> scope(
+            "$start\n",
             addDataName("vx", myInt, MUTABLE),
             "x: #x.\n",
             listDataNames.asToken(),
@@ -2017,6 +2019,7 @@ public class TestTemplate {
             // a list of tokens. It passes through names and hashtags.
             "open flat:\n",
             flat(
+                "$flat\n",
                 let("y", "YYY"),
                 addDataName("vy", myInt, MUTABLE),
                 "x: #x.\n",
@@ -2031,6 +2034,7 @@ public class TestTemplate {
             // escape the nesting.
             "open hashtagScope:\n",
             hashtagScope(
+                "$hashtagScope\n",
                 let("z", "ZZZ1"),
                 "z: #z.\n",
                 addDataName("vz", myInt, MUTABLE),
@@ -2042,6 +2046,7 @@ public class TestTemplate {
             listDataNames.asToken(),
             // We can also use hashtagScopes for loops.
             List.of("a", "b", "c").stream().map(str -> hashtagScope(
+                "$hashtagScope\n",
                 let("str", str), // the hashtag is local to every element
                 "str: #str.\n",
                 addDataName("v_" + str, myInt, MUTABLE),
@@ -2053,6 +2058,7 @@ public class TestTemplate {
             // escape the nesting.
             "open nameScope:\n",
             nameScope(
+                "$nameScope\n",
                 let("p", "PPP"),
                 "p: #p.\n",
                 addDataName("vp", myInt, MUTABLE),
@@ -2064,6 +2070,7 @@ public class TestTemplate {
             // A "scope" nesting makes names and hashtags local
             "open scope:\n",
             scope(
+                "$scope\n",
                 let("q", "QQQ1"),
                 "q: #q.\n",
                 addDataName("vq", myInt, MUTABLE),
@@ -2078,9 +2085,11 @@ public class TestTemplate {
         String code = template.render("XXX");
         String expected =
             """
+            start_1
             x: XXX.
             dataNames: {vx int; }
             open flat:
+            flat_1
             x: XXX.
             y: YYY.
             dataNames: {vx int; vy int; }
@@ -2089,31 +2098,99 @@ public class TestTemplate {
             y: YYY.
             dataNames: {vx int; vy int; }
             open hashtagScope:
+            hashtagScope_1
             z: ZZZ1.
             dataNames: {vx int; vy int; vz int; }
             close hashtagScope.
             z: ZZZ2.
             dataNames: {vx int; vy int; vz int; }
+            hashtagScope_1
             str: a.
             dataNames: {vx int; vy int; vz int; v_a int; }
+            hashtagScope_1
             str: b.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; }
+            hashtagScope_1
             str: c.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
             finish str list.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
             open nameScope:
+            nameScope_1
             p: PPP.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vp int; }
             close hashtagScope.
             p: PPP.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
             open scope:
+            scope_1
             q: QQQ1.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vq int; }
             close scope.
             q: QQQ2.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNestedScopes2() {
+        var listDataNames = Template.make(() -> scope(
+            "dataNames: {",
+            dataNames(MUTABLE).exactOf(myInt).forEach("name", "type", (DataName dn) -> scope(
+                "#name #type; "
+            )),
+            "}\n"
+        ));
+
+        var template = Template.make(() -> scope(
+            // Define some global variables.
+            List.of("a", "b", "c").stream().map(str -> hashtagScope(
+                let("var", "g_" + str),
+                addDataName("g_" + str, myInt, MUTABLE),
+                "def global #var.\n"
+            )).toList(),
+            listDataNames.asToken(),
+            scope(
+                "open scope:\n",
+                // Define some variables.
+                List.of("i", "j", "k").stream().map(str -> hashtagScope(
+                    let("var", "v_" + str),
+                    addDataName("v_" + str, myInt, MUTABLE),
+                    "def #var.\n"
+                )).toList(),
+                listDataNames.asToken(),
+                scope(
+                    "open inner scope:\n",
+                    addDataName("v_local", myInt, MUTABLE),
+                    "def v_local.\n",
+                    listDataNames.asToken(),
+                    "close inner scope.\n"
+                ),
+                listDataNames.asToken(),
+                "close scope.\n"
+            ),
+            listDataNames.asToken()
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            def global g_a.
+            def global g_b.
+            def global g_c.
+            dataNames: {g_a int; g_b int; g_c int; }
+            open scope:
+            def v_i.
+            def v_j.
+            def v_k.
+            dataNames: {g_a int; g_b int; g_c int; v_i int; v_j int; v_k int; }
+            open inner scope:
+            def v_local.
+            dataNames: {g_a int; g_b int; g_c int; v_i int; v_j int; v_k int; v_local int; }
+            close inner scope.
+            dataNames: {g_a int; g_b int; g_c int; v_i int; v_j int; v_k int; }
+            close scope.
+            dataNames: {g_a int; g_b int; g_c int; }
             """;
         checkEQ(code, expected);
     }
