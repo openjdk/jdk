@@ -2048,13 +2048,72 @@ public class TestTemplate {
                 listDataNames.asToken()
             )).toList(),
             "finish str list.\n",
+            listDataNames.asToken(),
+            // A "nameScope" nesting makes names local, but hashtags
+            // escape the nesting.
+            "open nameScope:\n",
+            nameScope(
+                let("p", "PPP"),
+                "p: #p.\n",
+                addDataName("vp", myInt, MUTABLE),
+                listDataNames.asToken()
+            ),
+            "close hashtagScope.\n",
+            "p: #p.\n",
+            listDataNames.asToken(),
+            // A "scope" nesting makes names and hashtags local
+            "open scope:\n",
+            scope(
+                let("q", "QQQ1"),
+                "q: #q.\n",
+                addDataName("vq", myInt, MUTABLE),
+                listDataNames.asToken()
+            ),
+            "close scope.\n",
+            let("q", "QQQ2"),
+            "q: #q.\n",
             listDataNames.asToken()
-            // TODO: test scope and nameScope
         ));
 
         String code = template.render("XXX");
         String expected =
             """
+            x: XXX.
+            dataNames: {vx int; }
+            open flat:
+            x: XXX.
+            y: YYY.
+            dataNames: {vx int; vy int; }
+            close flat.
+            x: XXX.
+            y: YYY.
+            dataNames: {vx int; vy int; }
+            open hashtagScope:
+            z: ZZZ1.
+            dataNames: {vx int; vy int; vz int; }
+            close hashtagScope.
+            z: ZZZ2.
+            dataNames: {vx int; vy int; vz int; }
+            str: a.
+            dataNames: {vx int; vy int; vz int; v_a int; }
+            str: b.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; }
+            str: c.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
+            finish str list.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
+            open nameScope:
+            p: PPP.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vp int; }
+            close hashtagScope.
+            p: PPP.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
+            open scope:
+            q: QQQ1.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vq int; }
+            close scope.
+            q: QQQ2.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
             """;
         checkEQ(code, expected);
     }
