@@ -203,8 +203,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          */
         // TODO: make sure we have tests/examples for all!
         // TODO: combo sample?
-        public NameSetQueryToken sample(Function<DataName, TemplateScope> function) {
-            return NameSetQueryToken.makeSample(predicate(), null, null, function);
+        public Token sample(Function<DataName, TemplateScope> function) {
+            return new NameSampleToken<DataName>(predicate(), null, null, function);
         }
 
         /**
@@ -218,8 +218,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSetQueryToken sampleAndLetAs(String name, String type) {
-            return NameSetQueryToken.makeSample(predicate(), name, type, null);
+        public Token sampleAndLetAs(String name, String type) {
+            return new NameSampleToken<DataName>(predicate(), name, type, null);
         }
 
         /**
@@ -232,8 +232,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSetQueryToken sampleAndLetAs(String name) {
-            return NameSetQueryToken.makeSample(predicate(), name, null, null);
+        public Token sampleAndLetAs(String name) {
+            return new NameSampleToken<DataName>(predicate(), name, null, null);
         }
 
         /**
@@ -275,8 +275,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return list.stream().map(n -> (DataName)n).toList();
         }
 
-        public NameSetQueryToken forEach(Function<DataName, TemplateScope> function) {
-            return NameSetQueryToken.makeForEach(predicate(), null, null, function);
+        public Token forEach(Function<DataName, TemplateScope> function) {
+            return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
     }
 }

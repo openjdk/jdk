@@ -176,8 +176,8 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          */
         // TODO: make sure we have tests/examples for all!
         // TODO: combo sample?
-        public NameSetQueryToken sample(Function<StructuralName, TemplateScope> function) {
-            return NameSetQueryToken.makeSample(predicate(), null, null, function);
+        public Token sample(Function<StructuralName, TemplateScope> function) {
+            return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
 
         /**
@@ -191,8 +191,8 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSetQueryToken sampleAndLetAs(String name, String type) {
-            return NameSetQueryToken.makeSample(predicate(), name, type, null);
+        public Token sampleAndLetAs(String name, String type) {
+            return new NameSampleToken<StructuralName>(predicate(), name, type, null);
         }
 
         /**
@@ -205,8 +205,8 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public NameSetQueryToken sampleAndLetAs(String name) {
-            return NameSetQueryToken.makeSample(predicate(), name, null, null);
+        public Token sampleAndLetAs(String name) {
+            return new NameSampleToken<StructuralName>(predicate(), name, null, null);
         }
 
         /**

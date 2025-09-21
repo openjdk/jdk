@@ -23,20 +23,17 @@
 
 package compiler.lib.template_framework;
 
-/**
- * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
- * {@link Token}s or {@link String}s or some permitted boxed primitives.
- */
-public sealed interface Token permits StringToken,
-                                      TemplateToken,
-                                      TemplateToken.ZeroArgs,
-                                      TemplateToken.OneArg,
-                                      TemplateToken.TwoArgs,
-                                      TemplateToken.ThreeArgs,
-                                      HookAnchorToken,
-                                      HookInsertToken,
-                                      AddNameToken,
-                                      NameSampleToken,
-                                      NameForEachToken,
-                                      LetToken,
-                                      NothingToken {}
+import java.util.function.Function;
+
+// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
+// TODO: documentation about lambda and hashtag, maybe also an assert?
+record NameForEachToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, TemplateScope> function) implements Token {
+
+    TemplateScope getScope(Name n) {
+        return function().apply((N)n);
+    }
+}

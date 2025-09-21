@@ -27,22 +27,11 @@ import java.util.function.Function;
 
 // TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
 // TODO: documentation about lambda and hashtag, maybe also an assert?
-record NameSetQueryToken<N>(
+record NameSampleToken<N>(
         NameSet.Predicate predicate,
         String name,
         String type,
-        Function<N, TemplateScope> function,
-        Operation operation) implements Token {
-
-    static enum Operation { SAMPLE, FOR_EACH };
-
-    static <N> NameSetQueryToken<N> makeSample(NameSet.Predicate predicate, String name, String type, Function<N, TemplateScope> function) {
-        return new NameSetQueryToken<N>(predicate, name, type, function, Operation.SAMPLE);
-    }
-
-    static <N> NameSetQueryToken<N> makeForEach(NameSet.Predicate predicate, String name, String type, Function<N, TemplateScope> function) {
-        return new NameSetQueryToken<N>(predicate, name, type, function, Operation.FOR_EACH);
-    }
+        Function<N, TemplateScope> function) implements Token {
 
     TemplateScope getScope(Name n) {
         return function().apply((N)n);

@@ -256,15 +256,12 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
-    private void renderNameSetQueryToken(NameSetQueryToken nsqt) {
-        if (nsqt.operation() != NameSetQueryToken.Operation.SAMPLE) {
-            throw new RuntimeException("only sample implemented");
-        }
-        Name n = currentCodeFrame.sampleName(nsqt.predicate());
+    private void renderNameSampleToken(NameSampleToken nst) {
+        Name n = currentCodeFrame.sampleName(nst.predicate());
         if (n == null) {
-            throw new RendererException("No Name found for " + nsqt.predicate().toString());
+            throw new RendererException("No Name found for " + nst.predicate().toString());
         }
-        if (nsqt.function() != null) {
+        if (nst.function() != null) {
             // We have a nested "scope" that captures the Name.
             // Any hashtag and name definitions inside the scope are
             // local to the scope, and disappear after the scope.
@@ -279,14 +276,14 @@ final class Renderer {
             TemplateFrame templateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
             currentTemplateFrame = templateFrame;
 
-            if (nsqt.name() != null) {
+            if (nst.name() != null) {
                 throw new RuntimeException("not implemented");
             }
-            if (nsqt.type() != null) {
+            if (nst.type() != null) {
                 throw new RuntimeException("not implemented");
             }
 
-            TemplateScope scope = nsqt.getScope(n);
+            TemplateScope scope = nst.getScope(n);
             renderTokenList(scope.tokens());
 
             if (currentTemplateFrame != templateFrame) {
@@ -299,11 +296,11 @@ final class Renderer {
         } else {
             // No nested "scope", we use the Name for a local "let" style
             // hashtag replacement definition.
-            if (nsqt.name() != null) {
-                addHashtagReplacement(nsqt.name(), n.name());
+            if (nst.name() != null) {
+                addHashtagReplacement(nst.name(), n.name());
             }
-            if (nsqt.type() != null) {
-                addHashtagReplacement(nsqt.type(), n.type());
+            if (nst.type() != null) {
+                addHashtagReplacement(nst.type(), n.type());
             }
         }
     }
@@ -371,8 +368,11 @@ final class Renderer {
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
             }
-            case NameSetQueryToken nsqt -> {
-                renderNameSetQueryToken(nsqt);
+            case NameSampleToken nst -> {
+                renderNameSampleToken(nst);
+            }
+            case NameForEachToken nst -> {
+                throw new RuntimeException("not implemented");
             }
             case LetToken(String key, String value) -> {
                 addHashtagReplacement(key, value);
