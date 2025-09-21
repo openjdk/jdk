@@ -1682,26 +1682,35 @@ public class TestTemplate {
             // Using "scope", it does not escape.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> scope(
                 addDataName("a", dn.type(), MUTABLE),
-                "int a = x + 1;\n"
+                let("v1", "a"),
+                "int #v1 = x + 1;\n"
             )),
             // Using "flat", is is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> flat(
                 addDataName("b", dn.type(), MUTABLE),
-                "int b = x + 2;\n"
+                let("v2", "b"),
+                "int #v2 = x + 2;\n"
             )),
             // Using "nameScope", it does not escape.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> nameScope(
                 addDataName("c", dn.type(), MUTABLE),
-                "int c = x + 3;\n"
+                let("v3", "c"),
+                "int #v3 = x + 3;\n"
             )),
             // Using "hashtagScope", is is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> hashtagScope(
                 addDataName("d", dn.type(), MUTABLE),
-                "int d = x + 4;\n"
+                let("v4", "d"),
+                "int #v4 = x + 4;\n"
             )),
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).forEach("name", "type", dn -> scope(
                 "available: #name #type.\n"
-            ))
+            )),
+            // Check that hashtags escape correctly too.
+            "hashtag v2: #v2.\n",
+            "hashtag v3: #v3.\n",
+            let("v1", "aaa"),
+            let("v4", "ddd")
         ));
 
         String code = template.render();
@@ -1715,6 +1724,8 @@ public class TestTemplate {
             available: x int.
             available: b int.
             available: d int.
+            hashtag v2: b.
+            hashtag v3: c.
             """;
         checkEQ(code, expected);
     }
