@@ -61,12 +61,16 @@ public class DisplayModeChanger {
                 ex.printStackTrace();
             }
             EventQueue.invokeAndWait(() -> gd.setFullScreenWindow(null));
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (f != null) {
                     f.dispose();
                 }
-                gd.setDisplayMode(currentDM);
             });
         }
     }
