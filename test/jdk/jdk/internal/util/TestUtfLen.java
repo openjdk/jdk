@@ -75,7 +75,7 @@ public class TestUtfLen {
 
   private static final String THREE_BYTE = "\u2600";   // 3-byte UTF-8
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception{
     int count = Integer.MAX_VALUE / 3 + 1;
     long expected = 3L * count;
     String largeString = THREE_BYTE.repeat(count);
