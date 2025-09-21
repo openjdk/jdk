@@ -270,6 +270,7 @@ java/awt/Clipboard/ClipboardSecurity.java 8054809 macosx-all
 java/awt/Clipboard/GetAltContentsTest/SystemClipboardTest.java 8234140 macosx-all
 java/awt/Clipboard/ImageTransferTest.java 8030710 generic-all
 java/awt/Clipboard/NoDataConversionFailureTest.java 8234140 macosx-all
+java/awt/Dialog/ModalExcludedTest.java 7125054 macosx-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8266244 macosx-aarch64
 java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 7186009 macosx-all
