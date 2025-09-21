@@ -462,8 +462,16 @@ void VM_Version::c2_initialize() {
       warning("UseAESIntrinsics enabled, but UseAES not, enabling");
       UseAES = true;
     }
+
     if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+    }
+
+    if (UseAESCTRIntrinsics) {
+      if (!(UseZvbb && UseZbb)) {
+        warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvbb and UseZbb support.");
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
     }
   } else {
     if (UseAES) {
