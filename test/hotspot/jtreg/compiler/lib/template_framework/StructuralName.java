@@ -174,8 +174,6 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: make sure we have tests/examples for all!
-        // TODO: combo sample?
         public Token sample(Function<StructuralName, NestingToken> function) {
             return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
@@ -244,6 +242,14 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         public List<StructuralName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (StructuralName)n).toList();
+        }
+
+        public Token forEach(Function<StructuralName, NestingToken> function) {
+            return new NameForEachToken<StructuralName>(predicate(), null, null, function);
+        }
+
+        public Token forEach(String name, String type, Function<StructuralName, NestingToken> function) {
+            return new NameForEachToken<StructuralName>(predicate(), name, type, function);
         }
     }
 }

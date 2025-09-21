@@ -154,6 +154,7 @@ public class TestTemplate {
         testStructuralNames0();
         testStructuralNames1();
         testStructuralNames2();
+        testStructuralNames3();
         testListArgument();
         testNestedScopes1();
         testNestedScopes2();
@@ -2013,6 +2014,43 @@ public class TestTemplate {
             [StructuralA: false, 0, names: {}]
             [StructuralB: false, 0, names: {}]
             }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testStructuralNames3() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> scope(
+                let("name1", sn.name()),
+                "sn1: #name1.\n",
+                addStructuralName("scope_garbage1", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> nameScope(
+                let("name2", sn.name()),
+                "sn2: #name2.\n",
+                addStructuralName("scope_garbage2", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+                let("name3", sn.name()),
+                "sn3: #name3.\n",
+                addStructuralName("x", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> nameScope(
+                let("name4", sn.name()),
+                "sn4: #name4.\n",
+                addStructuralName("y", myStructuralTypeA)
+            )),
+            "sn3: #name3.\n", // hashtag escaped
+            "sn4: #name4.\n", // hashtag escaped
+            let("name1", "shouldBeOK1"), // hashtag did not escape
+            let("name2", "shouldBeOk2")  // hashtag did not escape
+        ));
+
+        String code = template.render();
+        String expected =
+            """
             """;
         checkEQ(code, expected);
     }

@@ -273,12 +273,10 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return list.stream().map(n -> (DataName)n).toList();
         }
 
-        // TODO: make it impossible with types to have flat hashtags.
         public Token forEach(Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
 
-        // TODO: make it impossible with types to have flat hashtags.
         public Token forEach(String name, String type, Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), name, type, function);
         }
