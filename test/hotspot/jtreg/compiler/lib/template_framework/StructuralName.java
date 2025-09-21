@@ -192,7 +192,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<StructuralName>(predicate(), name, type, null);
+            return new NameSampleToken<StructuralName>(predicate(), name, type, n -> Template.flat());
         }
 
         /**
@@ -206,7 +206,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name) {
-            return new NameSampleToken<StructuralName>(predicate(), name, null, null);
+            return new NameSampleToken<StructuralName>(predicate(), name, null, n -> Template.flat());
         }
 
         /**

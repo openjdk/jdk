@@ -422,7 +422,21 @@ final class Renderer {
                 renderNestingToken(nt, () -> {});
             }
             case NameSampleToken nst -> {
-                renderNameSampleToken(nst);
+                Name n = currentCodeFrame.sampleName(nst.predicate());
+                if (n == null) {
+                    throw new RendererException("No Name found for " + nst.predicate().toString());
+                }
+                NestingToken nt = nst.getNestingToken(n);
+                renderNestingToken(nt, () -> {
+                    if (nst.name() != null) {
+                        // TODO: assert that nestedHashtagsAreLocal
+                        addHashtagReplacement(nst.name(), n.name());
+                    }
+                    if (nst.type() != null) {
+                        // TODO: assert that nestedHashtagsAreLocal
+                        addHashtagReplacement(nst.type(), n.type());
+                    }
+                });
             }
             case NameForEachToken nfet -> {
                 List<Name> list = listNames(nfet.predicate());

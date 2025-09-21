@@ -219,7 +219,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<DataName>(predicate(), name, type, null);
+            return new NameSampleToken<DataName>(predicate(), name, type, n -> Template.flat());
         }
 
         /**
@@ -233,7 +233,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name) {
-            return new NameSampleToken<DataName>(predicate(), name, null, null);
+            return new NameSampleToken<DataName>(predicate(), name, null, n -> Template.flat());
         }
 
         /**

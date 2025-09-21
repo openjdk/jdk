@@ -618,6 +618,11 @@ public sealed interface Template permits Template.ZeroArgs,
         return new NestingToken.Scope(TokenParser.parse(tokens));
     }
 
+    // TODO: document
+    static NestingToken flat(Object... tokens) {
+        return new NestingToken.Flat(TokenParser.parse(tokens));
+    }
+
     /**
      * Retrieves the dollar replacement of the {@code 'name'} for the
      * current Template that is being instantiated. It returns the same
