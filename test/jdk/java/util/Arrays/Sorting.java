@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @compile/module=java.base java/util/SortingHelper.java
- * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297
+ * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297 8266431
  * @build Sorting
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition Sorting -shortrun
  * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=CompileThresholdScaling,java.util.DualPivotQuicksort::sort,0.0001 Sorting -shortrun
@@ -36,7 +36,7 @@
  */
 
 import java.io.PrintStream;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.SortingHelper;
 
@@ -45,29 +45,36 @@ public class Sorting {
     private static final PrintStream out = System.out;
     private static final PrintStream err = System.err;
 
-    // Array lengths used in a long run (default)
-    private static final int[] LONG_RUN_LENGTHS = {
-        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
+    // Lengths of arrays for [mixed] insertion sort
+    private static final int[] RUN_LENGTHS =
+        { 1, 2, 14, 100, 500, 1_000 };
 
-    // Array lengths used in a short run
-    private static final int[] SHORT_RUN_LENGTHS = {
-        1, 8, 55, 100, 10_000 };
+    // Lengths of arrays for short run
+    private static final int[] SHORT_LENGTHS =
+        { 1, 2, 14, 100, 500, 1_000, 11_000 };
 
-    // Random initial values used in a long run (default)
-    private static final TestRandom[] LONG_RUN_RANDOMS = {
-        TestRandom.BABA, TestRandom.DEDA, TestRandom.C0FFEE };
+    // Lengths of arrays for long run (default)
+    private static final int[] LONG_LENGTHS =
+        { 1, 2, 14, 100, 500, 1_000, 11_000, 50_000};
 
-    // Random initial values used in a short run
-    private static final TestRandom[] SHORT_RUN_RANDOMS = {
-        TestRandom.C0FFEE };
+    // Initial random values for short run
+    private static final TestRandom[] SHORT_RANDOMS =
+        {TestRandom.C0FFEE};
 
-    // Constants used in subarray sorting
+    // Initial random values for long run (default)
+    private static final TestRandom[] LONG_RANDOMS =
+        {TestRandom.DEDA, TestRandom.BABA, TestRandom.C0FFEE};
+
+    // Constant to fill the left part of array
     private static final int A380 = 0xA380;
+
+    // Constant to fill the right part of array
     private static final int B747 = 0xB747;
 
     private final SortingHelper sortingHelper;
     private final TestRandom[] randoms;
     private final int[] lengths;
+    private final boolean withMin;
     private Object[] gold;
     private Object[] test;
 
@@ -75,327 +82,138 @@ public class Sorting {
         long start = System.currentTimeMillis();
         boolean shortRun = args.length > 0 && args[0].equals("-shortrun");
 
-        int[] lengths = shortRun ? SHORT_RUN_LENGTHS : LONG_RUN_LENGTHS;
-        TestRandom[] randoms = shortRun ? SHORT_RUN_RANDOMS : LONG_RUN_RANDOMS;
+        int[] lengths = shortRun ? SHORT_LENGTHS : LONG_LENGTHS;
+        TestRandom[] randoms = shortRun ? SHORT_RANDOMS : LONG_RANDOMS;
+
+        new Sorting(SortingHelper.INSERTION_SORT, randoms, false).testBase();
+        new Sorting(SortingHelper.MIXED_INSERTION_SORT, randoms, true).testBase();
+        new Sorting(SortingHelper.MERGING_SORT, randoms, lengths).testStructured();
+
+        new Sorting(SortingHelper.RADIX_SORT, randoms, lengths).testBase();
+        new Sorting(SortingHelper.HEAP_SORT, randoms, lengths).testBase();
+        new Sorting(SortingHelper.COUNTING_SORT, randoms, lengths).testBase();
 
         new Sorting(SortingHelper.DUAL_PIVOT_QUICKSORT, randoms, lengths).testCore();
-        new Sorting(SortingHelper.PARALLEL_SORT, randoms, lengths).testCore();
-        new Sorting(SortingHelper.HEAP_SORT, randoms, lengths).testBasic();
+        new Sorting(SortingHelper.PARALLEL_QUICKSORT, randoms, lengths).testCore();
+
         new Sorting(SortingHelper.ARRAYS_SORT, randoms, lengths).testAll();
         new Sorting(SortingHelper.ARRAYS_PARALLEL_SORT, randoms, lengths).testAll();
 
         long end = System.currentTimeMillis();
-        out.format("PASSED in %d sec.\n", (end - start) / 1000);
+        out.format("PASSED in %d sec.\n", (end - start) / 1_000);
+    }
+
+    private Sorting(SortingHelper sortingHelper, TestRandom[] randoms, boolean withMin) {
+        this(sortingHelper, randoms, RUN_LENGTHS, withMin);
     }
 
     private Sorting(SortingHelper sortingHelper, TestRandom[] randoms, int[] lengths) {
+        this(sortingHelper, randoms, lengths, false);
+    }
+
+    private Sorting(SortingHelper sortingHelper, TestRandom[] randoms, int[] lengths, boolean withMin) {
         this.sortingHelper = sortingHelper;
         this.randoms = randoms;
         this.lengths = lengths;
+        this.withMin = withMin;
     }
 
-    private void testBasic() {
+    private void testBase() {
         testEmptyArray();
 
         for (int length : lengths) {
-            createData(length);
-            testBasic(length);
-        }
-    }
+            createArray(length);
+            testStructured(length);
 
-    private void testBasic(int length) {
-        for (TestRandom random : randoms) {
-            testWithInsertionSort(length, random);
-            testWithCheckSum(length, random);
-            testWithScrambling(length, random);
+            for (TestRandom random : randoms) {
+                testWithCheckSum(length, random);
+                testWithInsertionSort(length, random);
+                testWithScrambling(length, random);
+            }
         }
     }
 
     private void testCore() {
+        testBase();
+
         for (int length : lengths) {
-            createData(length);
-            testCore(length);
-        }
-    }
+            createArray(length);
 
-    private void testCore(int length) {
-        testBasic(length);
-
-        for (TestRandom random : randoms) {
-            testMergingSort(length, random);
-            testSubArray(length, random);
-            testNegativeZero(length, random);
-            testFloatingPointSorting(length, random);
+            for (TestRandom random : randoms) {
+                testNegativeZero(length, random);
+                testFloatingPointSorting(length, random);
+            }
         }
     }
 
     private void testAll() {
+        testCore();
+
         for (int length : lengths) {
-            createData(length);
-            testAll(length);
-        }
-    }
-
-    private void testAll(int length) {
-        testCore(length);
-
-        for (TestRandom random : randoms) {
-            testRange(length, random);
-            testStability(length, random);
+            createArray(length);
+            sortRange(length);
         }
     }
 
     private void testEmptyArray() {
-        testEmptyAndNullIntArray();
-        testEmptyAndNullLongArray();
-        testEmptyAndNullByteArray();
-        testEmptyAndNullCharArray();
-        testEmptyAndNullShortArray();
-        testEmptyAndNullFloatArray();
-        testEmptyAndNullDoubleArray();
+        sortingHelper.sort(new int[]{});
+        sortingHelper.sort(new int[]{}, 0, 0);
+
+        sortingHelper.sort(new long[]{});
+        sortingHelper.sort(new long[]{}, 0, 0);
+
+        sortingHelper.sort(new byte[]{});
+        sortingHelper.sort(new byte[]{}, 0, 0);
+
+        sortingHelper.sort(new char[]{});
+        sortingHelper.sort(new char[]{}, 0, 0);
+
+        sortingHelper.sort(new short[]{});
+        sortingHelper.sort(new short[]{}, 0, 0);
+
+        sortingHelper.sort(new float[]{});
+        sortingHelper.sort(new float[]{}, 0, 0);
+
+        sortingHelper.sort(new double[]{});
+        sortingHelper.sort(new double[]{}, 0, 0);
     }
 
-    private void testStability(int length, TestRandom random) {
-        printTestName("Test stability", random, length);
+    private void sortRange(int length) {
+        int[] a = (int[]) gold[0];
 
-        Pair[] a = build(length, random);
-        sortingHelper.sort(a);
-        checkSorted(a);
-        checkStable(a);
-
-        a = build(length, random);
-        sortingHelper.sort(a, pairComparator);
-        checkSorted(a);
-        checkStable(a);
-
-        out.println();
-    }
-
-    private void testEmptyAndNullIntArray() {
-        sortingHelper.sort(new int[] {});
-        sortingHelper.sort(new int[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(int[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(int[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullLongArray() {
-        sortingHelper.sort(new long[] {});
-        sortingHelper.sort(new long[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(long[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(long[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullByteArray() {
-        sortingHelper.sort(new byte[] {});
-        sortingHelper.sort(new byte[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(byte[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(byte[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullCharArray() {
-        sortingHelper.sort(new char[] {});
-        sortingHelper.sort(new char[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(char[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(char[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullShortArray() {
-        sortingHelper.sort(new short[] {});
-        sortingHelper.sort(new short[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(short[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(short[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullFloatArray() {
-        sortingHelper.sort(new float[] {});
-        sortingHelper.sort(new float[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(float[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(float[]) shouldn't catch null array");
-    }
-
-    private void testEmptyAndNullDoubleArray() {
-        sortingHelper.sort(new double[] {});
-        sortingHelper.sort(new double[] {}, 0, 0);
-
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(double[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(double[]) shouldn't catch null array");
-    }
-
-    private void testSubArray(int length, TestRandom random) {
-        if (length < 4) {
-            return;
-        }
-        for (int m = 1; m < length / 2; m <<= 1) {
-            int fromIndex = m;
-            int toIndex = length - m;
-
-            prepareSubArray((int[]) gold[0], fromIndex, toIndex);
-            convertData(length);
-
-            for (int i = 0; i < test.length; i++) {
-                printTestName("Test subarray", random, length,
-                    ", m = " + m + ", " + getType(i));
-                sortingHelper.sort(test[i], fromIndex, toIndex);
-                checkSubArray(test[i], fromIndex, toIndex);
-            }
-        }
-        out.println();
-    }
-
-    private void testRange(int length, TestRandom random) {
-        if (length < 2) {
-            return;
-        }
         for (int m = 1; m < length; m <<= 1) {
-            for (int i = 1; i <= length; i++) {
-                ((int[]) gold[0]) [i - 1] = i % m + m % i;
+            for (int i = 1; i <= length; ++i) {
+                a[i - 1] = i % m + m % i;
             }
-            convertData(length);
+            convertArray(m / 4);
 
-            for (int i = 0; i < test.length; i++) {
-                printTestName("Test range check", random, length,
-                    ", m = " + m + ", " + getType(i));
-                checkRange(test[i], m);
+            for (int i = 0; i < test.length; ++i) {
+                printTestName("Test range check", length,
+                        ", m = " + m + ", " + getType(i));
+                sortRange(test[i], m);
             }
         }
         out.println();
-    }
-
-    private void checkSorted(Pair[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
-            if (a[i].getKey() > a[i + 1].getKey()) {
-                fail("Array is not sorted at " + i + "-th position: " +
-                    a[i].getKey() + " and " + a[i + 1].getKey());
-            }
-        }
-    }
-
-    private void checkStable(Pair[] a) {
-        for (int i = 0; i < a.length / 4; ) {
-            int key1 = a[i].getKey();
-            int value1 = a[i++].getValue();
-            int key2 = a[i].getKey();
-            int value2 = a[i++].getValue();
-            int key3 = a[i].getKey();
-            int value3 = a[i++].getValue();
-            int key4 = a[i].getKey();
-            int value4 = a[i++].getValue();
-
-            if (!(key1 == key2 && key2 == key3 && key3 == key4)) {
-                fail("Keys are different " + key1 + ", " + key2 + ", " +
-                    key3 + ", " + key4 + " at position " + i);
-            }
-            if (!(value1 < value2 && value2 < value3 && value3 < value4)) {
-                fail("Sorting is not stable at position " + i +
-                    ". Second values have been changed: " + value1 + ", " +
-                    value2 + ", " + value3 + ", " + value4);
-            }
-        }
-    }
-
-    private Pair[] build(int length, Random random) {
-        Pair[] a = new Pair[length * 4];
-
-        for (int i = 0; i < a.length; ) {
-            int key = random.nextInt();
-            a[i++] = new Pair(key, 1);
-            a[i++] = new Pair(key, 2);
-            a[i++] = new Pair(key, 3);
-            a[i++] = new Pair(key, 4);
-        }
-        return a;
     }
 
     private void testWithInsertionSort(int length, TestRandom random) {
-        if (length > 1000) {
+        if (length > 1_000) {
             return;
         }
+        int[] a = (int[]) gold[0];
+
         for (int m = 1; m <= length; m <<= 1) {
             for (UnsortedBuilder builder : UnsortedBuilder.values()) {
-                builder.build((int[]) gold[0], m, random);
-                convertData(length);
+                builder.build(a, m, random);
+                int shift = m / 4;
+                convertArray(shift);
 
-                for (int i = 0; i < test.length; i++) {
+                for (int i = 0; i < test.length; ++i) {
                     printTestName("Test with insertion sort", random, length,
-                        ", m = " + m + ", " + getType(i) + " " + builder);
-                    sortingHelper.sort(test[i]);
-                    sortByInsertionSort(gold[i]);
+                            ", m = " + m + ", " + getType(i) + " " + builder);
+                    sortingHelper.sort(test[i], shift, length - shift);
+                    sortByInsertionSort(gold[i], shift, length - shift);
+                    checkSorted(gold[i], shift);
                     compare(test[i], gold[i]);
                 }
             }
@@ -403,22 +221,29 @@ public class Sorting {
         out.println();
     }
 
-    private void testMergingSort(int length, TestRandom random) {
-        if (length < (4 << 10)) { // DualPivotQuicksort.MIN_TRY_MERGE_SIZE
+    private void testStructured() {
+        for (int length : lengths) {
+            createArray(length);
+            testStructured(length);
+        }
+    }
+
+    private void testStructured(int length) {
+        if (length < 512) {
             return;
         }
-        final int PERIOD = 50;
+        int[] a = (int[]) gold[0];
 
-        for (int m = PERIOD - 2; m <= PERIOD + 2; m++) {
-            for (MergingBuilder builder : MergingBuilder.values()) {
-                builder.build((int[]) gold[0], m);
-                convertData(length);
+        for (int m = 1; m < 8; ++m) {
+            for (StructuredBuilder builder : StructuredBuilder.values()) {
+                builder.build(a, m);
+                convertArray(0);
 
-                for (int i = 0; i < test.length; i++) {
-                    printTestName("Test merging sort", random, length,
-                        ", m = " + m + ", " +  getType(i) + " " + builder);
-                    sortingHelper.sort(test[i]);
-                    checkSorted(test[i]);
+                for (int i = 0; i < test.length; ++i) {
+                    printTestName("Test structured", length,
+                            ", m = " + m + ", " + getType(i) + " " + builder);
+                    sortingHelper.sort(test[i]/*, shift, length - shift*/);
+                    checkSorted(test[i], 0);
                 }
             }
         }
@@ -426,16 +251,19 @@ public class Sorting {
     }
 
     private void testWithCheckSum(int length, TestRandom random) {
+        int[] a = (int[]) gold[0];
+
         for (int m = 1; m <= length; m <<= 1) {
             for (UnsortedBuilder builder : UnsortedBuilder.values()) {
-                builder.build((int[]) gold[0], m, random);
-                convertData(length);
+                builder.build(a, m, random);
+                int shift = m / 4;
+                convertArray(shift);
 
-                for (int i = 0; i < test.length; i++) {
+                for (int i = 0; i < test.length; ++i) {
                     printTestName("Test with check sum", random, length,
-                        ", m = " + m + ", " + getType(i) + " " + builder);
-                    sortingHelper.sort(test[i]);
-                    checkWithCheckSum(test[i], gold[i]);
+                            ", m = " + m + ", " + getType(i) + " " + builder);
+                    sortingHelper.sort(test[i], shift, length - shift);
+                    checkWithCheckSum(test[i], gold[i], shift);
                 }
             }
         }
@@ -443,14 +271,16 @@ public class Sorting {
     }
 
     private void testWithScrambling(int length, TestRandom random) {
+        int[] a = (int[]) gold[0];
+
         for (int m = 1; m <= length; m <<= 1) {
             for (SortedBuilder builder : SortedBuilder.values()) {
-                builder.build((int[]) gold[0], m);
-                convertData(length);
+                builder.build(a, m);
+                convertArray(0);
 
-                for (int i = 0; i < test.length; i++) {
+                for (int i = 0; i < test.length; ++i) {
                     printTestName("Test with scrambling", random, length,
-                        ", m = " + m + ", " + getType(i) + " " + builder);
+                            ", m = " + m + ", " + getType(i) + " " + builder);
                     scramble(test[i], random);
                     sortingHelper.sort(test[i]);
                     compare(test[i], gold[i]);
@@ -461,10 +291,10 @@ public class Sorting {
     }
 
     private void testNegativeZero(int length, TestRandom random) {
-        for (int i = 5; i < test.length; i++) {
+        for (int i = 5; i < test.length; ++i) {
             printTestName("Test negative zero -0.0", random, length, " " + getType(i));
 
-            NegativeZeroBuilder builder = NegativeZeroBuilder.values() [i - 5];
+            NegativeZeroBuilder builder = NegativeZeroBuilder.values()[i - 5];
             builder.build(test[i], random);
 
             sortingHelper.sort(test[i]);
@@ -474,29 +304,30 @@ public class Sorting {
     }
 
     private void testFloatingPointSorting(int length, TestRandom random) {
-        if (length < 2) {
+        if (length < 6) {
             return;
         }
-        final int MAX = 13;
+        final int MAX = 14;
+        int s = 4;
 
-        for (int a = 0; a < MAX; a++) {
-            for (int g = 0; g < MAX; g++) {
-                for (int z = 0; z < MAX; z++) {
-                    for (int n = 0; n < MAX; n++) {
-                        for (int p = 0; p < MAX; p++) {
-                            if (a + g + z + n + p != length) {
+        for (int k = 0; k < MAX; ++k) {
+            for (int g = 0; g < MAX; ++g) {
+                for (int z = 0; z < MAX; ++z) {
+                    for (int n = 0; n < MAX; ++n) {
+                        for (int p = 0; p < MAX; ++p) {
+                            if (k + g + z + n + p + s != length) {
                                 continue;
                             }
-                            for (int i = 5; i < test.length; i++) {
+                            for (int i = 5; i < test.length; ++i) {
                                 printTestName("Test float-pointing sorting", random, length,
-                                    ", a = " + a + ", g = " + g + ", z = " + z +
-                                    ", n = " + n + ", p = " + p + ", " + getType(i));
+                                        ", k = " + k + ", g = " + g + ", z = " + z +
+                                                ", n = " + n + ", p = " + p + ", " + getType(i));
                                 FloatingPointBuilder builder = FloatingPointBuilder.values()[i - 5];
-                                builder.build(gold[i], a, g, z, n, p, random);
+                                builder.build(gold[i], k, g, z, n, p, random);
                                 copy(test[i], gold[i]);
                                 scramble(test[i], random);
                                 sortingHelper.sort(test[i]);
-                                compare(test[i], gold[i], a, n, g);
+                                compare(test[i], gold[i], k, n + 2, g);
                             }
                         }
                     }
@@ -504,158 +335,179 @@ public class Sorting {
             }
         }
 
-        for (int m = 13; m > 4; m--) {
-            int t = length / m;
-            int g = t, z = t, n = t, p = t;
-            int a = length - g - z - n - p;
+        for (int m = MAX; m > 4; --m) {
+            int g = length / m;
+            int k = length - g - g - g - g - s;
 
-            for (int i = 5; i < test.length; i++) {
+            for (int i = 5; i < test.length; ++i) {
                 printTestName("Test float-pointing sorting", random, length,
-                    ", a = " + a + ", g = " + g + ", z = " + z +
-                    ", n = " + n + ", p = " + p + ", " + getType(i));
-                FloatingPointBuilder builder = FloatingPointBuilder.values() [i - 5];
-                builder.build(gold[i], a, g, z, n, p, random);
+                        ", k = " + k + ", g = " + g + ", z = " + g +
+                                ", n = " + g + ", p = " + g + ", " + getType(i));
+                FloatingPointBuilder builder = FloatingPointBuilder.values()[i - 5];
+                builder.build(gold[i], k, g, g, g, g, random);
                 copy(test[i], gold[i]);
                 scramble(test[i], random);
                 sortingHelper.sort(test[i]);
-                compare(test[i], gold[i], a, n, g);
+                compare(test[i], gold[i], k, g + 2, g);
             }
         }
         out.println();
     }
 
-    private void prepareSubArray(int[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            a[i] = A380;
-        }
-        int middle = (fromIndex + toIndex) >>> 1;
-        int k = 0;
-
-        for (int i = fromIndex; i < middle; i++) {
-            a[i] = k++;
-        }
-
-        for (int i = middle; i < toIndex; i++) {
-            a[i] = k--;
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            a[i] = B747;
-        }
-    }
-
     private void scramble(Object a, Random random) {
-        if (a instanceof int[]) {
-            scramble((int[]) a, random);
-        } else if (a instanceof long[]) {
-            scramble((long[]) a, random);
-        } else if (a instanceof byte[]) {
-            scramble((byte[]) a, random);
-        } else if (a instanceof char[]) {
-            scramble((char[]) a, random);
-        } else if (a instanceof short[]) {
-            scramble((short[]) a, random);
-        } else if (a instanceof float[]) {
-            scramble((float[]) a, random);
-        } else if (a instanceof double[]) {
-            scramble((double[]) a, random);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+        switch (a) {
+            case int[] ai -> scramble(ai, random);
+            case long[] al -> scramble(al, random);
+            case byte[] ab -> scramble(ab, random);
+            case char[] ac -> scramble(ac, random);
+            case short[] as -> scramble(as, random);
+            case float[] af -> scramble(af, random);
+            case double[] ad -> scramble(ad, random);
+            default -> fail(a);
         }
     }
 
     private void scramble(int[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 0; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(long[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(byte[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(char[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(short[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(float[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void scramble(double[] a, Random random) {
-        for (int i = 0; i < a.length * 7; i++) {
-            swap(a, random.nextInt(a.length), random.nextInt(a.length));
+        if (withMin) {
+            for (int i = 7; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length - 1) + 1, random.nextInt(a.length - 1) + 1);
+            }
+        } else {
+            for (int i = 1; i < a.length * 7; ++i) {
+                swap(a, random.nextInt(a.length), random.nextInt(a.length));
+            }
         }
     }
 
     private void swap(int[] a, int i, int j) {
-        int t = a[i]; a[i] = a[j]; a[j] = t;
+        int t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(long[] a, int i, int j) {
-        long t = a[i]; a[i] = a[j]; a[j] = t;
+        long t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(byte[] a, int i, int j) {
-        byte t = a[i]; a[i] = a[j]; a[j] = t;
+        byte t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(char[] a, int i, int j) {
-        char t = a[i]; a[i] = a[j]; a[j] = t;
+        char t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(short[] a, int i, int j) {
-        short t = a[i]; a[i] = a[j]; a[j] = t;
+        short t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(float[] a, int i, int j) {
-        float t = a[i]; a[i] = a[j]; a[j] = t;
+        float t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
     private void swap(double[] a, int i, int j) {
-        double t = a[i]; a[i] = a[j]; a[j] = t;
+        double t = a[i];
+        a[i] = a[j];
+        a[j] = t;
     }
 
-    private void checkWithCheckSum(Object test, Object gold) {
-        checkSorted(test);
+    private void checkWithCheckSum(Object test, Object gold, int m) {
+        checkSorted(test, m);
         checkCheckSum(test, gold);
     }
 
-    private void fail(String message) {
-        err.format("\n*** TEST FAILED ***\n\n%s\n\n", message);
-        throw new RuntimeException("Test failed");
-    }
-
     private void checkNegativeZero(Object a) {
-        if (a instanceof float[]) {
-            checkNegativeZero((float[]) a);
-        } else if (a instanceof double[]) {
-            checkNegativeZero((double[]) a);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+        switch (a) {
+            case float[] af -> checkNegativeZero(af);
+            case double[] ad -> checkNegativeZero(ad);
+            default -> fail(a);
         }
     }
 
     private void checkNegativeZero(float[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+        for (int i = 0; i < a.length - 1; ++i) {
             if (Float.floatToRawIntBits(a[i]) == 0 && Float.floatToRawIntBits(a[i + 1]) < 0) {
                 fail(a[i] + " before " + a[i + 1] + " at position " + i);
             }
@@ -663,7 +515,7 @@ public class Sorting {
     }
 
     private void checkNegativeZero(double[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+        for (int i = 0; i < a.length - 1; ++i) {
             if (Double.doubleToRawLongBits(a[i]) == 0 && Double.doubleToRawLongBits(a[i + 1]) < 0) {
                 fail(a[i] + " before " + a[i + 1] + " at position " + i);
             }
@@ -671,30 +523,28 @@ public class Sorting {
     }
 
     private void compare(Object a, Object b, int numNaN, int numNeg, int numNegZero) {
-        if (a instanceof float[]) {
-            compare((float[]) a, (float[]) b, numNaN, numNeg, numNegZero);
-        } else if (a instanceof double[]) {
-            compare((double[]) a, (double[]) b, numNaN, numNeg, numNegZero);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+        switch (a) {
+            case float[] af -> compare(af, (float[]) b, numNaN, numNeg, numNegZero);
+            case double[] ad -> compare(ad, (double[]) b, numNaN, numNeg, numNegZero);
+            default -> fail(a);
         }
     }
 
     private void compare(float[] a, float[] b, int numNaN, int numNeg, int numNegZero) {
-        for (int i = a.length - numNaN; i < a.length; i++) {
-            if (a[i] == a[i]) {
+        for (int i = a.length - numNaN; i < a.length; ++i) {
+            if (!Float.isNaN(a[i])) {
                 fail("There must be NaN instead of " + a[i] + " at position " + i);
             }
         }
         final int NEGATIVE_ZERO = Float.floatToIntBits(-0.0f);
 
-        for (int i = numNeg; i < numNeg + numNegZero; i++) {
-            if (NEGATIVE_ZERO != Float.floatToIntBits(a[i])) {
+        for (int i = numNeg; i < numNeg + numNegZero; ++i) {
+            if (Float.floatToIntBits(a[i]) != NEGATIVE_ZERO) {
                 fail("There must be -0.0 instead of " + a[i] + " at position " + i);
             }
         }
 
-        for (int i = 0; i < a.length - numNaN; i++) {
+        for (int i = 0; i < a.length - numNaN; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -702,20 +552,20 @@ public class Sorting {
     }
 
     private void compare(double[] a, double[] b, int numNaN, int numNeg, int numNegZero) {
-        for (int i = a.length - numNaN; i < a.length; i++) {
-            if (a[i] == a[i]) {
+        for (int i = a.length - numNaN; i < a.length; ++i) {
+            if (!Double.isNaN(a[i])) {
                 fail("There must be NaN instead of " + a[i] + " at position " + i);
             }
         }
         final long NEGATIVE_ZERO = Double.doubleToLongBits(-0.0d);
 
-        for (int i = numNeg; i < numNeg + numNegZero; i++) {
-            if (NEGATIVE_ZERO != Double.doubleToLongBits(a[i])) {
+        for (int i = numNeg; i < numNeg + numNegZero; ++i) {
+            if (Double.doubleToLongBits(a[i]) != NEGATIVE_ZERO) {
                 fail("There must be -0.0 instead of " + a[i] + " at position " + i);
             }
         }
 
-        for (int i = 0; i < a.length - numNaN; i++) {
+        for (int i = 0; i < a.length - numNaN; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -723,27 +573,20 @@ public class Sorting {
     }
 
     private void compare(Object a, Object b) {
-        if (a instanceof int[]) {
-            compare((int[]) a, (int[]) b);
-        } else if (a instanceof long[]) {
-            compare((long[]) a, (long[]) b);
-        } else if (a instanceof byte[]) {
-            compare((byte[]) a, (byte[]) b);
-        } else if (a instanceof char[]) {
-            compare((char[]) a, (char[]) b);
-        } else if (a instanceof short[]) {
-            compare((short[]) a, (short[]) b);
-        } else if (a instanceof float[]) {
-            compare((float[]) a, (float[]) b);
-        } else if (a instanceof double[]) {
-            compare((double[]) a, (double[]) b);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+        switch (a) {
+            case int[] ai -> compare(ai, (int[]) b);
+            case long[] al -> compare(al, (long[]) b);
+            case byte[] ab -> compare(ab, (byte[]) b);
+            case char[] ac -> compare(ac, (char[]) b);
+            case short[] as -> compare(as, (short[]) b);
+            case float[] af -> compare(af, (float[]) b);
+            case double[] ad -> compare(ad, (double[]) b);
+            default -> fail(a);
         }
     }
 
     private void compare(int[] a, int[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -751,7 +594,7 @@ public class Sorting {
     }
 
     private void compare(long[] a, long[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -759,7 +602,7 @@ public class Sorting {
     }
 
     private void compare(byte[] a, byte[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -767,7 +610,7 @@ public class Sorting {
     }
 
     private void compare(char[] a, char[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -775,7 +618,7 @@ public class Sorting {
     }
 
     private void compare(short[] a, short[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -783,7 +626,7 @@ public class Sorting {
     }
 
     private void compare(float[] a, float[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -791,7 +634,7 @@ public class Sorting {
     }
 
     private void compare(double[] a, double[] b) {
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
             }
@@ -801,103 +644,153 @@ public class Sorting {
     private String getType(int i) {
         Object a = test[i];
 
-        if (a instanceof int[]) {
-            return "INT   ";
-        }
-        if (a instanceof long[]) {
-            return "LONG  ";
-        }
-        if (a instanceof byte[]) {
-            return "BYTE  ";
-        }
-        if (a instanceof char[]) {
-            return "CHAR  ";
-        }
-        if (a instanceof short[]) {
-            return "SHORT ";
-        }
-        if (a instanceof float[]) {
-            return "FLOAT ";
-        }
-        if (a instanceof double[]) {
-            return "DOUBLE";
-        }
-        fail("Unknown type of array: " + a.getClass().getName());
-        return null;
+        return switch (a) {
+            case int[] _ -> "INT   ";
+            case long[] _ -> "LONG  ";
+            case byte[] _ -> "BYTE  ";
+            case char[] _ -> "CHAR  ";
+            case short[] _ -> "SHORT ";
+            case float[] _ -> "FLOAT ";
+            case double[] _ -> "DOUBLE";
+            default -> null;
+        };
     }
 
-    private void checkSorted(Object a) {
-        if (a instanceof int[]) {
-            checkSorted((int[]) a);
-        } else if (a instanceof long[]) {
-            checkSorted((long[]) a);
-        } else if (a instanceof byte[]) {
-            checkSorted((byte[]) a);
-        } else if (a instanceof char[]) {
-            checkSorted((char[]) a);
-        } else if (a instanceof short[]) {
-            checkSorted((short[]) a);
-        } else if (a instanceof float[]) {
-            checkSorted((float[]) a);
-        } else if (a instanceof double[]) {
-            checkSorted((double[]) a);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+    private void checkSorted(Object a, int m) {
+        switch (a) {
+            case int[] ai -> checkSorted(ai, m);
+            case long[] al -> checkSorted(al, m);
+            case byte[] ab -> checkSorted(ab, m);
+            case char[] ac -> checkSorted(ac, m);
+            case short[] as -> checkSorted(as, m);
+            case float[] af -> checkSorted(af, m);
+            case double[] ad -> checkSorted(ad, m);
+            default -> fail(a);
         }
     }
 
-    private void checkSorted(int[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+    private void checkSorted(int[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != A380) {
+                fail("Sort changes left element at position " + i + hex(a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
             if (a[i] > a[i + 1]) {
                 fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
             }
         }
-    }
-
-    private void checkSorted(long[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != B747) {
+                fail("Sort changes right element at position " + i + hex(a[i], B747));
             }
         }
     }
 
-    private void checkSorted(byte[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+    private void checkSorted(long[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != toLong(A380)) {
+                fail("Sort changes left element at position " + i + hex(a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
             if (a[i] > a[i + 1]) {
                 fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
             }
         }
-    }
-
-    private void checkSorted(char[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != toLong(B747)) {
+                fail("Sort changes right element at position " + i + hex(a[i], B747));
             }
         }
     }
 
-    private void checkSorted(short[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+    private void checkSorted(byte[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != (byte) A380) {
+                fail("Sort changes left element at position " + i + hex(a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
             if (a[i] > a[i + 1]) {
                 fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
             }
         }
-    }
-
-    private void checkSorted(float[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != (byte) B747) {
+                fail("Sort changes right element at position " + i + hex(a[i], B747));
             }
         }
     }
 
-    private void checkSorted(double[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
+    private void checkSorted(char[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != (char) A380) {
+                fail("Sort changes left element at position " + i + hex(a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
             if (a[i] > a[i + 1]) {
                 fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+            }
+        }
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != (char) B747) {
+                fail("Sort changes right element at position " + i + hex(a[i], B747));
+            }
+        }
+    }
+
+    private void checkSorted(short[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != (short) A380) {
+                fail("Sort changes left element at position " + i + hex(a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
+            if (a[i] > a[i + 1]) {
+                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+            }
+        }
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != (short) B747) {
+                fail("Sort changes right element at position " + i + hex(a[i], B747));
+            }
+        }
+    }
+
+    private void checkSorted(float[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != (float) A380) {
+                fail("Sort changes left element at position " + i + hex((long) a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
+            if (a[i] > a[i + 1]) {
+                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+            }
+        }
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != (float) B747) {
+                fail("Sort changes right element at position " + i + hex((long) a[i], B747));
+            }
+        }
+    }
+
+    private void checkSorted(double[] a, int m) {
+        for (int i = 0; i < m; ++i) {
+            if (a[i] != toDouble(A380)) {
+                fail("Sort changes left element at position " + i + hex((long) a[i], A380));
+            }
+        }
+        for (int i = m; i < a.length - m - 1; ++i) {
+            if (a[i] > a[i + 1]) {
+                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+            }
+        }
+        for (int i = a.length - m; i < a.length; ++i) {
+            if (a[i] != B747) {
+                fail("Sort changes right element at position " + i + hex((long) a[i], B747));
             }
         }
     }
@@ -912,29 +805,16 @@ public class Sorting {
     }
 
     private int checkSumXor(Object a) {
-        if (a instanceof int[]) {
-            return checkSumXor((int[]) a);
-        }
-        if (a instanceof long[]) {
-            return checkSumXor((long[]) a);
-        }
-        if (a instanceof byte[]) {
-            return checkSumXor((byte[]) a);
-        }
-        if (a instanceof char[]) {
-            return checkSumXor((char[]) a);
-        }
-        if (a instanceof short[]) {
-            return checkSumXor((short[]) a);
-        }
-        if (a instanceof float[]) {
-            return checkSumXor((float[]) a);
-        }
-        if (a instanceof double[]) {
-            return checkSumXor((double[]) a);
-        }
-        fail("Unknown type of array: " + a.getClass().getName());
-        return -1;
+        return switch (a) {
+            case int[] ai -> checkSumXor(ai);
+            case long[] al -> checkSumXor(al);
+            case byte[] ab -> checkSumXor(ab);
+            case char[] ac -> checkSumXor(ac);
+            case short[] as -> checkSumXor(as);
+            case float[] af -> checkSumXor(af);
+            case double[] ad -> checkSumXor(ad);
+            default -> -1;
+        };
     }
 
     private int checkSumXor(int[] a) {
@@ -961,7 +841,7 @@ public class Sorting {
         for (byte e : a) {
             checkSum ^= e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumXor(char[] a) {
@@ -970,7 +850,7 @@ public class Sorting {
         for (char e : a) {
             checkSum ^= e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumXor(short[] a) {
@@ -979,7 +859,7 @@ public class Sorting {
         for (short e : a) {
             checkSum ^= e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumXor(float[] a) {
@@ -1001,29 +881,16 @@ public class Sorting {
     }
 
     private int checkSumPlus(Object a) {
-        if (a instanceof int[]) {
-            return checkSumPlus((int[]) a);
-        }
-        if (a instanceof long[]) {
-            return checkSumPlus((long[]) a);
-        }
-        if (a instanceof byte[]) {
-            return checkSumPlus((byte[]) a);
-        }
-        if (a instanceof char[]) {
-            return checkSumPlus((char[]) a);
-        }
-        if (a instanceof short[]) {
-            return checkSumPlus((short[]) a);
-        }
-        if (a instanceof float[]) {
-            return checkSumPlus((float[]) a);
-        }
-        if (a instanceof double[]) {
-            return checkSumPlus((double[]) a);
-        }
-        fail("Unknown type of array: " + a.getClass().getName());
-        return -1;
+        return switch (a) {
+            case int[] ai -> checkSumPlus(ai);
+            case long[] al -> checkSumPlus(al);
+            case byte[] ab -> checkSumPlus(ab);
+            case char[] ac -> checkSumPlus(ac);
+            case short[] as -> checkSumPlus(as);
+            case float[] af -> checkSumPlus(af);
+            case double[] ad -> checkSumPlus(ad);
+            default -> -1;
+        };
     }
 
     private int checkSumPlus(int[] a) {
@@ -1050,7 +917,7 @@ public class Sorting {
         for (byte e : a) {
             checkSum += e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumPlus(char[] a) {
@@ -1059,7 +926,7 @@ public class Sorting {
         for (char e : a) {
             checkSum += e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumPlus(short[] a) {
@@ -1068,7 +935,7 @@ public class Sorting {
         for (short e : a) {
             checkSum += e;
         }
-        return (int) checkSum;
+        return checkSum;
     }
 
     private int checkSumPlus(float[] a) {
@@ -1089,467 +956,207 @@ public class Sorting {
         return checkSum;
     }
 
-    private void sortByInsertionSort(Object a) {
-        if (a instanceof int[]) {
-            sortByInsertionSort((int[]) a);
-        } else if (a instanceof long[]) {
-            sortByInsertionSort((long[]) a);
-        } else if (a instanceof byte[]) {
-            sortByInsertionSort((byte[]) a);
-        } else if (a instanceof char[]) {
-            sortByInsertionSort((char[]) a);
-        } else if (a instanceof short[]) {
-            sortByInsertionSort((short[]) a);
-        } else if (a instanceof float[]) {
-            sortByInsertionSort((float[]) a);
-        } else if (a instanceof double[]) {
-            sortByInsertionSort((double[]) a);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
+    private void sortByInsertionSort(Object a, int low, int high) {
+        SortingHelper.INSERTION_SORT.sort(a, low, high);
+    }
+
+    private void sortRange(Object a, int m) {
+        switch (a) {
+            case int[] ai -> sortRange(ai, m);
+            case long[] al -> sortRange(al, m);
+            case byte[] ab -> sortRange(ab, m);
+            case char[] ac -> sortRange(ac, m);
+            case short[] as -> sortRange(as, m);
+            case float[] af -> sortRange(af, m);
+            case double[] ad -> sortRange(ad, m);
+            default -> fail(a);
         }
     }
 
-    private void sortByInsertionSort(int[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            int ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(long[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            long ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(byte[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            byte ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(char[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            char ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(short[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            short ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(float[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            float ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void sortByInsertionSort(double[] a) {
-        for (int j, i = 1; i < a.length; i++) {
-            double ai = a[i];
-
-            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = ai;
-        }
-    }
-
-    private void checkSubArray(Object a, int fromIndex, int toIndex) {
-        if (a instanceof int[]) {
-            checkSubArray((int[]) a, fromIndex, toIndex);
-        } else if (a instanceof long[]) {
-            checkSubArray((long[]) a, fromIndex, toIndex);
-        } else if (a instanceof byte[]) {
-            checkSubArray((byte[]) a, fromIndex, toIndex);
-        } else if (a instanceof char[]) {
-            checkSubArray((char[]) a, fromIndex, toIndex);
-        } else if (a instanceof short[]) {
-            checkSubArray((short[]) a, fromIndex, toIndex);
-        } else if (a instanceof float[]) {
-            checkSubArray((float[]) a, fromIndex, toIndex);
-        } else if (a instanceof double[]) {
-            checkSubArray((double[]) a, fromIndex, toIndex);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
-        }
-    }
-
-    private void checkSubArray(int[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != A380) {
-                fail("Range sort changes left element at position " + i + hex(a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != B747) {
-                fail("Range sort changes right element at position " + i + hex(a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(long[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (long) A380) {
-                fail("Range sort changes left element at position " + i + hex(a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (long) B747) {
-                fail("Range sort changes right element at position " + i + hex(a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(byte[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (byte) A380) {
-                fail("Range sort changes left element at position " + i + hex(a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (byte) B747) {
-                fail("Range sort changes right element at position " + i + hex(a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(char[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (char) A380) {
-                fail("Range sort changes left element at position " + i + hex(a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (char) B747) {
-                fail("Range sort changes right element at position " + i + hex(a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(short[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (short) A380) {
-                fail("Range sort changes left element at position " + i + hex(a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (short) B747) {
-                fail("Range sort changes right element at position " + i + hex(a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(float[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (float) A380) {
-                fail("Range sort changes left element at position " + i + hex((long) a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (float) B747) {
-                fail("Range sort changes right element at position " + i + hex((long) a[i], B747));
-            }
-        }
-    }
-
-    private void checkSubArray(double[] a, int fromIndex, int toIndex) {
-        for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (double) A380) {
-                fail("Range sort changes left element at position " + i + hex((long) a[i], A380));
-            }
-        }
-
-        for (int i = fromIndex; i < toIndex - 1; i++) {
-            if (a[i] > a[i + 1]) {
-                fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
-            }
-        }
-
-        for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (double) B747) {
-                fail("Range sort changes right element at position " + i + hex((long) a[i], B747));
-            }
-        }
-    }
-
-    private void checkRange(Object a, int m) {
-        if (a instanceof int[]) {
-            checkRange((int[]) a, m);
-        } else if (a instanceof long[]) {
-            checkRange((long[]) a, m);
-        } else if (a instanceof byte[]) {
-            checkRange((byte[]) a, m);
-        } else if (a instanceof char[]) {
-            checkRange((char[]) a, m);
-        } else if (a instanceof short[]) {
-            checkRange((short[]) a, m);
-        } else if (a instanceof float[]) {
-            checkRange((float[]) a, m);
-        } else if (a instanceof double[]) {
-            checkRange((double[]) a, m);
-        } else {
-            fail("Unknown type of array: " + a.getClass().getName());
-        }
-    }
-
-    private void checkRange(int[] a, int m) {
+    private void sortRange(int[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(long[] a, int m) {
+    private void sortRange(long[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(byte[] a, int m) {
+    private void sortRange(byte[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(char[] a, int m) {
+    private void sortRange(char[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(short[] a, int m) {
+    private void sortRange(short[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(float[] a, int m) {
+    private void sortRange(float[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
-    private void checkRange(double[] a, int m) {
+    private void sortRange(double[] a, int m) {
         try {
             sortingHelper.sort(a, m + 1, m);
-            fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+            fail(sortingHelper + " must throw IllegalArgumentException: " +
+                    "fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
-                fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                    "as expected: fromIndex = " + (-m));
+                fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                        "fromIndex = " + (-m));
             } catch (ArrayIndexOutOfBoundsException aoe) {
                 try {
                     sortingHelper.sort(a, 0, a.length + m);
-                    fail(sortingHelper + " does not throw ArrayIndexOutOfBoundsException " +
-                        "as expected: toIndex = " + (a.length + m));
-                } catch (ArrayIndexOutOfBoundsException expected) {}
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "toIndex = " + (a.length + m));
+                } catch (ArrayIndexOutOfBoundsException expected) {
+                }
             }
         }
     }
 
     private void copy(Object dst, Object src) {
-        if (src instanceof float[]) {
-            copy((float[]) dst, (float[]) src);
-        } else if (src instanceof double[]) {
-            copy((double[]) dst, (double[]) src);
-        } else {
-            fail("Unknown type of array: " + src.getClass().getName());
+        switch (src) {
+            case float[] sf -> System.arraycopy(sf, 0, dst, 0, sf.length);
+            case double[] sd -> System.arraycopy(sd, 0, dst, 0, sd.length);
+            default -> fail(src);
         }
     }
 
-    private void copy(float[] dst, float[] src) {
-        System.arraycopy(src, 0, dst, 0, src.length);
-    }
-
-    private void copy(double[] dst, double[] src) {
-        System.arraycopy(src, 0, dst, 0, src.length);
-    }
-
-    private void printTestName(String test, TestRandom random, int length) {
-        printTestName(test, random, length, "");
-    }
-
-    private void createData(int length) {
-        gold = new Object[] {
-            new int[length], new long[length],
-            new byte[length], new char[length], new short[length],
-            new float[length], new double[length]
+    private void createArray(int length) {
+        gold = new Object[]{
+                new int[length], new long[length],
+                new byte[length], new char[length], new short[length],
+                new float[length], new double[length]
         };
 
-        test = new Object[] {
-            new int[length], new long[length],
-            new byte[length], new char[length], new short[length],
-            new float[length], new double[length]
+        test = new Object[]{
+                new int[length], new long[length],
+                new byte[length], new char[length], new short[length],
+                new float[length], new double[length]
         };
     }
 
-    private void convertData(int length) {
-        for (int i = 1; i < gold.length; i++) {
-            TypeConverter converter = TypeConverter.values()[i - 1];
-            converter.convert((int[])gold[0], gold[i]);
+    private void convertArray(int m) {
+        int[] a = (int[]) gold[0];
+
+        for (int i = 0; i < m; ++i) {
+            a[i] = A380;
         }
-
-        for (int i = 0; i < gold.length; i++) {
-            System.arraycopy(gold[i], 0, test[i], 0, length);
+        for (int i = a.length - m; i < a.length; ++i) {
+            a[i] = B747;
+        }
+        for (int i = 0; i < gold.length; ++i) {
+            TypeConverter converter = TypeConverter.values()[i];
+            converter.convert(a, gold[i], withMin, m);
+        }
+        for (int i = 0; i < gold.length; ++i) {
+            System.arraycopy(gold[i], 0, test[i], 0, a.length);
         }
     }
 
@@ -1557,83 +1164,144 @@ public class Sorting {
         return ": " + Long.toHexString(a) + ", must be " + Integer.toHexString(b);
     }
 
-    private void printTestName(String test, TestRandom random, int length, String message) {
-        out.println( "[" + sortingHelper + "] '" + test +
-            "' length = " + length + ", random = " + random + message);
+    private void printTestName(String test, int length, String message) {
+        out.println("[" + sortingHelper + "] '" + test + "' length = " + length + message);
     }
 
-    private static enum TypeConverter {
+    private void printTestName(String test, TestRandom random, int length, String message) {
+        out.println("[" + sortingHelper + "] '" + test +
+                "' length = " + length + ", random = " + random + message);
+    }
+
+    private void fail(Object a) {
+        fail("Unknown type: " + a.getClass().getName());
+    }
+
+    private void fail(String message) {
+        err.format("*** TEST FAILED ***\n\n%s\n\n", message);
+        throw new RuntimeException("Test failed");
+    }
+
+    private static long toLong(int i) {
+        return (((long) i) << 32) | i;
+    }
+
+    private static double toDouble(int i) {
+        long v = toLong(i);
+        v = (v > 0) ? ~v : v & ~(1L << 63);
+        double d = Double.longBitsToDouble(v);
+        return Double.isNaN(d) ? 0.0d : d;
+    }
+
+    private enum TypeConverter {
+        INT {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
+                if (withMin) {
+                    src[m] = Integer.MIN_VALUE;
+                }
+            }
+        },
+
         LONG {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 long[] b = (long[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
-                    b[i] = (long) src[i];
+                for (int i = 0; i < src.length; ++i) {
+                    b[i] = toLong(src[i]);
+                }
+                if (withMin) {
+                    b[m] = Long.MIN_VALUE;
                 }
             }
         },
 
         BYTE {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 byte[] b = (byte[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
+                for (int i = 0; i < src.length; ++i) {
                     b[i] = (byte) src[i];
+                }
+                if (withMin) {
+                    b[m] = Byte.MIN_VALUE;
                 }
             }
         },
 
         CHAR {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 char[] b = (char[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
+                for (int i = 0; i < src.length; ++i) {
                     b[i] = (char) src[i];
+                }
+                if (withMin) {
+                    b[m] = Character.MIN_VALUE;
                 }
             }
         },
 
         SHORT {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 short[] b = (short[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
+                for (int i = 0; i < src.length; ++i) {
                     b[i] = (short) src[i];
+                }
+                if (withMin) {
+                    b[m] = Short.MIN_VALUE;
                 }
             }
         },
 
         FLOAT {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 float[] b = (float[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
-                    b[i] = (float) src[i];
+                for (int i = 0; i < src.length; ++i) {
+                    b[i] = src[i];
+                }
+                if (withMin) {
+                    b[m] = Float.NEGATIVE_INFINITY;
                 }
             }
         },
 
         DOUBLE {
-            void convert(int[] src, Object dst) {
+            @Override
+            void convert(int[] src, Object dst, boolean withMin, int m) {
                 double[] b = (double[]) dst;
 
-                for (int i = 0; i < src.length; i++) {
-                    b[i] = (double) src[i];
+                for (int i = 0; i < src.length / 2; ++i) {
+                    b[i] = toDouble(src[i]);
+                }
+                for (int i = src.length / 2; i < src.length; ++i) {
+                    b[i] = src[i];
+                }
+                if (withMin) {
+                    b[m] = Double.NEGATIVE_INFINITY;
                 }
             }
         };
 
-        abstract void convert(int[] src, Object dst);
+        abstract void convert(int[] src, Object dst, boolean withMin, int m);
     }
 
-    private static enum SortedBuilder {
+    private enum SortedBuilder {
         STEPS {
+            @Override
             void build(int[] a, int m) {
-                for (int i = 0; i < m; i++) {
+                for (int i = 0; i < m; ++i) {
                     a[i] = 0;
                 }
 
-                for (int i = m; i < a.length; i++) {
+                for (int i = m; i < a.length; ++i) {
                     a[i] = 1;
                 }
             }
@@ -1642,40 +1310,73 @@ public class Sorting {
         abstract void build(int[] a, int m);
     }
 
-    private static enum UnsortedBuilder {
+    private enum UnsortedBuilder {
         RANDOM {
+            @Override
             void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
+                for (int i = 0; i < a.length; ++i) {
                     a[i] = random.nextInt();
                 }
             }
         },
 
-        ASCENDING {
+        PERMUTATION {
+            @Override
             void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = m + i;
+                int mask = ~(0x000000FF << (random.nextInt(4) * 2));
+
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = i & mask;
+                }
+                for (int i = a.length; i > 1; --i) {
+                    int k = random.nextInt(i);
+                    int t = a[i - 1];
+                    a[i - 1] = a[k];
+                    a[k] = t;
                 }
             }
         },
 
-        DESCENDING {
+        UNIFORM {
+            @Override
             void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = a.length - m - i;
+                int mask = (m << 15) - 1;
+
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = random.nextInt() & mask;
                 }
             }
         },
 
-        EQUAL {
+        STAGGER {
+            @Override
             void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = m;
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = (i * m + i) % a.length;
                 }
             }
         },
 
-        SAW {
+        REPEATED {
+            @Override
+            void build(int[] a, int m, Random random) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = i % m;
+                }
+            }
+        },
+
+        DUPLICATED {
+            @Override
+            void build(int[] a, int m, Random random) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = random.nextInt(m);
+                }
+            }
+        },
+
+        SAWTOOTH {
+            @Override
             void build(int[] a, int m, Random random) {
                 int incCount = 1;
                 int decCount = a.length;
@@ -1683,7 +1384,7 @@ public class Sorting {
                 int period = m--;
 
                 while (true) {
-                    for (int k = 1; k <= period; k++) {
+                    for (int k = 1; k <= period; ++k) {
                         if (i >= a.length) {
                             return;
                         }
@@ -1691,7 +1392,7 @@ public class Sorting {
                     }
                     period += m;
 
-                    for (int k = 1; k <= period; k++) {
+                    for (int k = 1; k <= period; ++k) {
                         if (i >= a.length) {
                             return;
                         }
@@ -1702,69 +1403,11 @@ public class Sorting {
             }
         },
 
-        REPEATED {
-            void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = i % m;
-                }
-            }
-        },
-
-        DUPLICATED {
-            void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = random.nextInt(m);
-                }
-            }
-        },
-
-        ORGAN_PIPES {
-            void build(int[] a, int m, Random random) {
-                int middle = a.length / (m + 1);
-
-                for (int i = 0; i < middle; i++) {
-                    a[i] = i;
-                }
-
-                for (int i = middle; i < a.length; i++) {
-                    a[i] = a.length - i - 1;
-                }
-            }
-        },
-
-        STAGGER {
-            void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = (i * m + i) % a.length;
-                }
-            }
-        },
-
-        PLATEAU {
-            void build(int[] a, int m, Random random) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = Math.min(i, m);
-                }
-            }
-        },
-
         SHUFFLE {
+            @Override
             void build(int[] a, int m, Random random) {
-                int x = 0, y = 0;
-
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = random.nextBoolean() ? (x += 2) : (y += 2);
-                }
-            }
-        },
-
-        LATCH {
-            void build(int[] a, int m, Random random) {
-                int max = a.length / m;
-                max = max < 2 ? 2 : max;
-
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = i % max;
+                for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
+                    a[i] = random.nextInt(m) > 0 ? (j += 2) : (k += 2);
                 }
             }
         };
@@ -1772,91 +1415,127 @@ public class Sorting {
         abstract void build(int[] a, int m, Random random);
     }
 
-    private static enum MergingBuilder {
+    private enum StructuredBuilder {
         ASCENDING {
+            @Override
             void build(int[] a, int m) {
-                int period = a.length / m;
-                int v = 1, i = 0;
-
-                for (int k = 0; k < m; k++) {
-                    v = 1;
-
-                    for (int p = 0; p < period; p++) {
-                        a[i++] = v++;
-                    }
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = m + i;
                 }
-
-                for (int j = i; j < a.length - 1; j++) {
-                    a[j] = v++;
-                }
-
-                a[a.length - 1] = 0;
             }
         },
 
         DESCENDING {
+            @Override
             void build(int[] a, int m) {
-                int period = a.length / m;
-                int v = -1, i = 0;
-
-                for (int k = 0; k < m; k++) {
-                    v = -1;
-
-                    for (int p = 0; p < period; p++) {
-                        a[i++] = v--;
-                    }
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = a.length - m - i;
                 }
+            }
+        },
 
-                for (int j = i; j < a.length - 1; j++) {
-                    a[j] = v--;
+        EQUAL {
+            @Override
+            void build(int[] a, int m) {
+                Arrays.fill(a, m);
+            }
+        },
+
+        SHIFTED {
+            @Override
+            void build(int[] a, int m) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = i << 10;
                 }
+            }
+        },
 
-                a[a.length - 1] = 0;
+        ORGAN_PIPES {
+            @Override
+            void build(int[] a, int m) {
+                int middle = a.length / (m + 1);
+
+                for (int i = 0; i < middle; ++i) {
+                    a[i] = i;
+                }
+                for (int i = middle; i < a.length; ++i) {
+                    a[i] = a.length - i - 1;
+                }
+            }
+        },
+
+        PLATEAU {
+            @Override
+            void build(int[] a, int m) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = Math.min(i, m);
+                }
+            }
+        },
+
+        LATCH {
+            @Override
+            void build(int[] a, int m) {
+                int max = Math.max(a.length / m, 2);
+
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = i % max;
+                }
             }
         },
 
         POINT {
+            @Override
             void build(int[] a, int m) {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = 0;
-                }
+                Arrays.fill(a, 0);
                 a[a.length / 2] = m;
             }
         },
 
         LINE {
+            @Override
             void build(int[] a, int m) {
-                for (int i = 0; i < a.length; i++) {
+                for (int i = 0; i < a.length; ++i) {
                     a[i] = i;
                 }
-                reverse(a, 0, a.length - 1);
+                reverse(a, Math.max(0, a.length - m), a.length);
             }
         },
 
         PEARL {
+            @Override
             void build(int[] a, int m) {
-                for (int i = 0; i < a.length; i++) {
+                for (int i = 0; i < a.length; ++i) {
                     a[i] = i;
                 }
-                reverse(a, 0, 2);
+                reverse(a, 0, Math.min(m, a.length));
+            }
+        },
+
+        TRAPEZIUM {
+            @Override
+            void build(int[] a, int m) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = i;
+                }
+                reverse(a, m, a.length - m);
             }
         },
 
         RING {
+            @Override
             void build(int[] a, int m) {
                 int k1 = a.length / 3;
                 int k2 = a.length / 3 * 2;
                 int level = a.length / 3;
 
-                for (int i = 0, k = level; i < k1; i++) {
+                for (int i = 0, k = level; i < k1; ++i) {
                     a[i] = k--;
                 }
-
-                for (int i = k1; i < k2; i++) {
+                for (int i = k1; i < k2; ++i) {
                     a[i] = 0;
                 }
-
-                for (int i = k2, k = level; i < a.length; i++) {
+                for (int i = k2, k = level; i < a.length; ++i) {
                     a[i] = k--;
                 }
             }
@@ -1873,22 +1552,24 @@ public class Sorting {
         }
     }
 
-    private static enum NegativeZeroBuilder {
+    private enum NegativeZeroBuilder {
         FLOAT {
+            @Override
             void build(Object o, Random random) {
                 float[] a = (float[]) o;
 
-                for (int i = 0; i < a.length; i++) {
+                for (int i = 0; i < a.length; ++i) {
                     a[i] = random.nextBoolean() ? -0.0f : 0.0f;
                 }
             }
         },
 
         DOUBLE {
+            @Override
             void build(Object o, Random random) {
                 double[] a = (double[]) o;
 
-                for (int i = 0; i < a.length; i++) {
+                for (int i = 0; i < a.length; ++i) {
                     a[i] = random.nextBoolean() ? -0.0d : 0.0d;
                 }
             }
@@ -1897,109 +1578,98 @@ public class Sorting {
         abstract void build(Object o, Random random);
     }
 
-    private static enum FloatingPointBuilder {
+    private enum FloatingPointBuilder {
         FLOAT {
-            void build(Object o, int a, int g, int z, int n, int p, Random random) {
+            @Override
+            void build(Object o, int k, int g, int z, int n, int p, Random random) {
                 float negativeValue = -random.nextFloat();
-                float positiveValue =  random.nextFloat();
-                float[] x = (float[]) o;
+                float positiveValue = random.nextFloat();
+                float[] a = (float[]) o;
                 int fromIndex = 0;
 
-                writeValue(x, negativeValue, fromIndex, n);
+                fillWithValue(a, Float.NEGATIVE_INFINITY, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, -Float.MAX_VALUE, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, negativeValue, fromIndex, n);
                 fromIndex += n;
 
-                writeValue(x, -0.0f, fromIndex, g);
+                fillWithValue(a, -0.0f, fromIndex, g);
                 fromIndex += g;
 
-                writeValue(x, 0.0f, fromIndex, z);
+                fillWithValue(a, 0.0f, fromIndex, z);
                 fromIndex += z;
 
-                writeValue(x, positiveValue, fromIndex, p);
+                fillWithValue(a, positiveValue, fromIndex, p);
                 fromIndex += p;
 
-                writeValue(x, Float.NaN, fromIndex, a);
+                fillWithValue(a, Float.MAX_VALUE, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, Float.POSITIVE_INFINITY, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, Float.NaN, fromIndex, k);
             }
         },
 
         DOUBLE {
-            void build(Object o, int a, int g, int z, int n, int p, Random random) {
+            @Override
+            void build(Object o, int k, int g, int z, int n, int p, Random random) {
                 double negativeValue = -random.nextFloat();
-                double positiveValue =  random.nextFloat();
-                double[] x = (double[]) o;
+                double positiveValue = random.nextFloat();
+                double[] a = (double[]) o;
                 int fromIndex = 0;
 
-                writeValue(x, negativeValue, fromIndex, n);
+                fillWithValue(a, Double.NEGATIVE_INFINITY, fromIndex, 1);
+                fromIndex++;
+
+                fillWithValue(a, -Double.MAX_VALUE, fromIndex, 1);
+                fromIndex++;
+
+                fillWithValue(a, negativeValue, fromIndex, n);
                 fromIndex += n;
 
-                writeValue(x, -0.0d, fromIndex, g);
+                fillWithValue(a, -0.0d, fromIndex, g);
                 fromIndex += g;
 
-                writeValue(x, 0.0d, fromIndex, z);
+                fillWithValue(a, 0.0d, fromIndex, z);
                 fromIndex += z;
 
-                writeValue(x, positiveValue, fromIndex, p);
+                fillWithValue(a, positiveValue, fromIndex, p);
                 fromIndex += p;
 
-                writeValue(x, Double.NaN, fromIndex, a);
+                fillWithValue(a, Double.MAX_VALUE, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, Double.POSITIVE_INFINITY, fromIndex, 1);
+                fromIndex += 1;
+
+                fillWithValue(a, Double.NaN, fromIndex, k);
             }
         };
 
-        abstract void build(Object o, int a, int g, int z, int n, int p, Random random);
+        abstract void build(Object o, int k, int g, int z, int n, int p, Random random);
 
-        private static void writeValue(float[] a, float value, int fromIndex, int count) {
-            for (int i = fromIndex; i < fromIndex + count; i++) {
+        private static void fillWithValue(float[] a, float value, int fromIndex, int count) {
+            for (int i = fromIndex; i < fromIndex + count; ++i) {
                 a[i] = value;
             }
         }
 
-        private static void writeValue(double[] a, double value, int fromIndex, int count) {
-            for (int i = fromIndex; i < fromIndex + count; i++) {
+        private static void fillWithValue(double[] a, double value, int fromIndex, int count) {
+            for (int i = fromIndex; i < fromIndex + count; ++i) {
                 a[i] = value;
             }
         }
-    }
-
-    private static Comparator<Pair> pairComparator = new Comparator<Pair>() {
-
-        @Override
-        public int compare(Pair p1, Pair p2) {
-            return p1.compareTo(p2);
-        }
-    };
-
-    private static class Pair implements Comparable<Pair> {
-
-        private Pair(int key, int value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        int getKey() {
-            return key;
-        }
-
-        int getValue() {
-            return value;
-        }
-
-        @Override
-        public int compareTo(Pair pair) {
-            return Integer.compare(key, pair.key);
-        }
-
-        @Override
-        public String toString() {
-            return "(" + key + ", " + value + ")";
-        }
-
-        private int key;
-        private int value;
     }
 
     private static class TestRandom extends Random {
 
-        private static final TestRandom BABA = new TestRandom(0xBABA);
         private static final TestRandom DEDA = new TestRandom(0xDEDA);
+        private static final TestRandom BABA = new TestRandom(0xBABA);
         private static final TestRandom C0FFEE = new TestRandom(0xC0FFEE);
 
         private TestRandom(long seed) {
@@ -2012,6 +1682,6 @@ public class Sorting {
             return seed;
         }
 
-        private String seed;
+        private final String seed;
     }
 }
