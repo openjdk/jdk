@@ -27,7 +27,7 @@
  * @summary Test for ModifiedUtf.utfLen() return type change from int to long to avoid overflow
  * @modules java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.util
- * @run main/othervm -Xmx4g --add-opens java.base/jdk.internal.classfile.impl=ALL-UNNAMED TestUtfLen
+ * @run main/othervm -Xmx4g --add-opens java.base/jdk.internal.classfile.impl=ALL-UNNAMED ModifiedUtfTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -48,7 +48,7 @@ import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.util.ModifiedUtf;
 
-public class TestUtfLen {
+public class ModifiedUtfTest {
 
   /**
    * Keep only a fixed-length output and stop writing further data
