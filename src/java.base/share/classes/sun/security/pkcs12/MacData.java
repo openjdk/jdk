@@ -52,9 +52,7 @@ class MacData {
     private final AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
     private byte[] macSalt;
-    private byte[] extraSalt;
     private int iterations;
-    private int extraIterations = -1;
     private String kdfHmac;
     private String Hmac;
     private int keyLength;
@@ -108,26 +106,18 @@ class MacData {
             }
 
             this.Hmac = this.kdfHmac;
-        }
-
-        // Get the old salt.
-        this.extraSalt = macData[1].getOctetString();
-
-        // Old iterations are optional. The default value is 1.
-        if (macData.length > 2) {
-            this.extraIterations = macData[2].getInteger();
         } else {
-            this.extraIterations = 1;
-        }
-        if (!this.digestAlgorithmName.equals("PBMAC1")) {
-            this.macSalt = this.extraSalt;
-            this.iterations = this.extraIterations;
+            this.macSalt = macData[1].getOctetString();
+            if (macData.length > 2) {
+                this.iterations = macData[2].getInteger();
+            } else {
+                this.iterations = 1;
+            }
         }
     }
 
     MacData(String algName, byte[] digest, AlgorithmParameterSpec params,
-            String kdfHmac, int keyLength, byte[] extraSalt,
-            int extraIterationCount) throws NoSuchAlgorithmException {
+            String kdfHmac, int keyLength) throws NoSuchAlgorithmException {
         AlgorithmId algid;
 
         if (algName == null) {
@@ -162,8 +152,6 @@ class MacData {
             this.kdfHmac = kdfHmac;
             this.Hmac = kdfHmac;
             this.keyLength = keyLength;
-            this.extraSalt = extraSalt;
-            this.extraIterations = extraIterationCount;
         } else {
             this.macSalt = p.getSalt();
             this.iterations = p.getIterationCount();
@@ -195,14 +183,6 @@ class MacData {
 
     String getKdfHmac() {
         return this.kdfHmac;
-    }
-
-    byte[] getExtraSalt() {
-        return this.extraSalt;
-    }
-
-    int getExtraIterations() {
-        return this.extraIterations;
     }
 
     /**
@@ -259,12 +239,8 @@ class MacData {
             tmp2.write(DerValue.tag_Sequence, tmp1);
             tmp2.putOctetString(this.digest);
             tmp0.write(DerValue.tag_Sequence, tmp2);
-            tmp0.putOctetString(Objects.requireNonNullElse(this.extraSalt, not_used));
-            if (this.extraIterations != -1) {
-                tmp0.putInteger(this.extraIterations);
-            } else {
-                tmp0.putInteger(1);
-            }
+            tmp0.putOctetString(not_used);
+            tmp0.putInteger(1);
             out.write(DerValue.tag_Sequence, tmp0);
             encoded = out.toByteArray();
 

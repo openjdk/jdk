@@ -176,8 +176,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String pbmac1Hmac = null;
     private int macIterationCount = -1;
     private int macSaltLength = -1;
-    private byte[] extraSalt = null;
-    private int extraIterationCount = -1;
 
     // the source of randomness
     private SecureRandom random;
@@ -1484,7 +1482,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         final String algName;
         final MacData macData;
         final String kdfHmac;
-        boolean writePBMAC1 = false;
         int writeIterationCount = macIterationCount;
 
         if (macAlgorithm.equals("PBMAC1") ||
@@ -1498,7 +1495,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 kdfHmac = pbmac1Hmac;
             }
             algName = "PBMAC1";
-            writePBMAC1 = true;
             // Override with value of security property.
             writeIterationCount = defaultMacIterationCount();
         } else {
@@ -1527,7 +1523,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             // encode as MacData
             macData = new MacData(algName, macResult, params,
-                    kdfHmac, keyLength, extraSalt, extraIterationCount);
+                    kdfHmac, keyLength);
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(macData.getEncoded());
             mData = bytes.toByteArray();
@@ -2206,8 +2202,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         macIterationCount = ic;
                         macAlgorithm = algName;
                         macSaltLength = salt.length;
-                        extraSalt = macData.getExtraSalt();
-                        extraIterationCount = macData.getExtraIterations();
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
@@ -2218,10 +2212,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         algName = algName.replace("-", "");
                         macAlgorithm = "HmacPBE" + algName;
                         macIterationCount = ic;
-
-                        // save in extra in case we write out as PBMAC1
-                        extraSalt = salt;
-                        extraIterationCount = ic;
 
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
