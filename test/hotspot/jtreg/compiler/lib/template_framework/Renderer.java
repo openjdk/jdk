@@ -425,7 +425,20 @@ final class Renderer {
                 renderNameSampleToken(nst);
             }
             case NameForEachToken nfet -> {
-                throw new RuntimeException("not implemented");
+                List<Name> list = listNames(nfet.predicate());
+                list.stream().forEach(n -> {
+                    NestingToken nt = nfet.getNestingToken(n);
+                    renderNestingToken(nt, () -> {
+                        if (nfet.name() != null) {
+                            // TODO: assert that nestedHashtagsAreLocal
+                            addHashtagReplacement(nfet.name(), n.name());
+                        }
+                        if (nfet.type() != null) {
+                            // TODO: assert that nestedHashtagsAreLocal
+                            addHashtagReplacement(nfet.type(), n.type());
+                        }
+                    });
+                });
             }
             case LetToken(String key, String value) -> {
                 addHashtagReplacement(key, value);

@@ -1114,11 +1114,11 @@ public class TestTemplate {
             addDataName("b", myLong, MUTABLE),
             addDataName("c", myLong, MUTABLE),
             dataNames(MUTABLE).exactOf(myInt).forEach((DataName dn) -> scope(
-                //let("name", dn.name()),
-                //let("type", dn.type()),
+                let("name", dn.name()),
+                let("type", dn.type()),
                 "listI: #name #type.\n"
             )),
-            dataNames(MUTABLE).exactOf(myInt).forEach((DataName dn) -> scope(
+            dataNames(MUTABLE).exactOf(myLong).forEach((DataName dn) -> scope(
                 let("name", dn.name()),
                 let("type", dn.type()),
                 "listL: #name #type.\n"
