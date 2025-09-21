@@ -227,7 +227,8 @@ public class TestTemplate {
         expectRendererException(() -> testFailingAddNameDuplication6(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication7(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
-        // TODO: test hashtag escaping flat/nameScope.
+        expectRendererException(() -> testFailingScope1(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
+        expectRendererException(() -> testFailingScope2(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
     }
 
     public static void testSingleLine() {
@@ -2628,6 +2629,26 @@ public class TestTemplate {
             )
         ));
         String code = template2.render();
+    }
+
+    public static void testFailingScope1() {
+        var template = Template.make(() -> scope(
+            flat(
+                let("x", "x1") // escapes
+            ),
+            let("x", "x2") // second definition
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope2() {
+        var template = Template.make(() -> scope(
+            nameScope(
+                let("x", "x1") // escapes
+            ),
+            let("x", "x2") // second definition
+        ));
+        String code = template.render();
     }
 
     public static void expectRendererException(FailingTest test, String errorPrefix) {
