@@ -30,25 +30,34 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates that the static initializer of this class or interface
-/// (its `<clinit>` method) is allowed to be _AOT-initialized_,
-/// because its author considers it safe to execute during the AOT
-/// assembly phase.
+/// Indicates that the annotated class or interface is allowed to be _AOT-initialized_,
+/// because its author considers it safe to execute the static initializer of
+/// the class or interface during the AOT assembly phase.
 ///
-/// This annotation directs the VM to expect that normal execution of Java code
-/// during the assembly phase could trigger initialization of this class,
-/// and if that happens, to store the resulting static field values in the
-/// AOT cache.  (These fields happen to be allocated in the `Class` mirror.)
+/// For a class or interface _X_ annotated with `@AOTSafeClassInitializer`, it will
+/// be initialized in the AOT assembly phase under two circumstances:
 ///
-/// During the production run, the static initializer (`<clinit>`) of
-/// this class or interface will not be executed, if it was already
-/// executed during the assembling of the AOT being used to start the
-/// production run.  In that case the resulting static field states
-/// (within the `Class` mirror) were already stored in the AOT cache.
+/// - If _X_ was initialized during the AOT training run, the JVM will proactively
+///   initialize _X_ in the assembly phase.
+/// - If _X_ was not initialized during the AOT training run, the initialization of
+///   _X_ can still be triggered by normal execution of Java code in the assembly phase.
+///   This is usually the result of performing AOT optimizations for the
+///   `java.lang.invoke` package.
 ///
-/// Currently, this annotation is used mainly for supporting AOT
-/// linking of APIs, including bootstrap methods, in the
-/// `java.lang.invoke` package.
+/// If _X_ is initialized during the AOT assembly phase, the VM will store
+/// the values of the static fields of _X_ in the AOT cache. Consequently,
+/// during the production run that uses this AOT cache, the static initializer
+/// (`<clinit>`) of _X_ will not be executed. _X_ will appear to be in the
+/// "initialized" state and all the cached values of the static field of _X_
+/// will be available immediately upon the start of the prodcution run.
+///
+/// Currently, this annotation is used mainly for two purposes:
+///
+/// - To AOT-initialize complex static fields whose values are always the same
+///   across JVM lifetimes. One example is the tables of constant values
+///   in the `jdk.internal.math.MathUtils` class.
+/// - To support AOT linking of APIs, including bootstrap methods, in the
+///   `java.lang.invoke` package.
 ///
 /// In more detail, the AOT assembly phase performs the following:
 ///
@@ -62,6 +71,8 @@ import java.lang.annotation.Target;
 ///    along with every relevant superclass and implemented interface, along
 ///    with classes for every object created during the course of static
 ///    initialization (running `<clinit>` for each such class or interface).
+/// 5. In addition, any class/interface annotated with `@AOTSafeClassInitializer`
+///    that was initialized during the training run is proactively initialized.
 ///
 /// Thus, in order to determine that a class or interface _X_ is safe to
 /// AOT-initialize requires evaluating every other class or interface _Y_ that
