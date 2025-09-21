@@ -293,67 +293,6 @@ final class Renderer {
         }
     }
 
-    // TODO: can we abstract the cases, so it is easier to implement other queries?
-    //       - no function: no scope. Probably only hashtag assignments.
-    //       - function: option for "scope"
-    //         - name scope
-    //         - hashtag scope
-    //         - we may want to have similar "scopes" without functions, maybe using "nest".
-    //          -> Or maybe also without "nest", to keep it more compact? - so should be tokens!
-    //         - How to call all the "scopes"?
-    //           -> scope -> name & hashtag -> needed for Template
-    //           -> flat  -> neither
-    //           -> nameScope -> only name
-    //           -> hashtagScope -> only hashtag
-    private void renderNameSampleToken(NameSampleToken nst) {
-        Name n = currentCodeFrame.sampleName(nst.predicate());
-        if (n == null) {
-            throw new RendererException("No Name found for " + nst.predicate().toString());
-        }
-        if (nst.function() != null) {
-            // We have a nested "scope" that captures the Name.
-            // Any hashtag and name definitions inside the scope are
-            // local to the scope, and disappear after the scope.
-
-            // We need the CodeFrame for local names.
-            CodeFrame outerCodeFrame = currentCodeFrame;
-            currentCodeFrame = CodeFrame.make(currentCodeFrame);
-
-            // We need to be able to define local hashtag replacements, but still
-            // see the outer ones. We also need to have the same id for dollar
-            // replacement as the outer frame.
-            TemplateFrame templateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
-            currentTemplateFrame = templateFrame;
-
-            if (nst.name() != null) {
-                throw new RuntimeException("not implemented");
-            }
-            if (nst.type() != null) {
-                throw new RuntimeException("not implemented");
-            }
-
-            NestingToken nestingToken = nst.getNestingToken(n);
-            renderTokenList(nestingToken.tokens);
-
-            if (currentTemplateFrame != templateFrame) {
-                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
-            }
-            currentTemplateFrame = currentTemplateFrame.parent;
-
-            outerCodeFrame.addCode(currentCodeFrame.getCode());
-            currentCodeFrame = outerCodeFrame;
-        } else {
-            // No nested "scope", we use the Name for a local "let" style
-            // hashtag replacement definition.
-            if (nst.name() != null) {
-                addHashtagReplacement(nst.name(), n.name());
-            }
-            if (nst.type() != null) {
-                addHashtagReplacement(nst.type(), n.type());
-            }
-        }
-    }
-
     private void renderToken(Token token) {
         switch (token) {
             case StringToken(String s) -> {
@@ -419,6 +358,7 @@ final class Renderer {
             }
             case NestingToken nt -> {
                 // TODO: test all variants!
+                // TODO: "nest"
                 renderNestingToken(nt, () -> {});
             }
             case NameSampleToken nst -> {
