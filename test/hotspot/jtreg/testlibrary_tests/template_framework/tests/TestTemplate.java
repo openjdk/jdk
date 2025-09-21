@@ -150,6 +150,7 @@ public class TestTemplate {
         testDataNames3();
         testDataNames4();
         testDataNames5();
+        testDataNames6();
         testStructuralNames0();
         testStructuralNames1();
         testStructuralNames2();
@@ -1488,7 +1489,6 @@ public class TestTemplate {
                 let("dn", dn), // format the whole DataName with toString
                 "Sample #type: #name3 #type3 #dn\n"
             ))
-            // TODO: also auto capture hashtags!
         ));
 
         var template4 = Template.make(() -> scope(
@@ -1672,6 +1672,53 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testDataNames6() {
+        var template = Template.make(() -> scope(
+            addDataName("x", myInt, IMMUTABLE),
+            "int x = 5;\n",
+            // A DataName can be captured, and used to define a new one with the same type.
+            // It is important that the new DataName can escape the hashtagScope, so we have
+            // access to it later.
+            // Using "scope", it does not escape.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> scope(
+                addDataName("a", dn.type(), MUTABLE),
+                "int a = x + 1;\n"
+            )),
+            // Using "flat", is is available.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> flat(
+                addDataName("b", dn.type(), MUTABLE),
+                "int b = x + 2;\n"
+            )),
+            // Using "nameScope", it does not escape.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> nameScope(
+                addDataName("c", dn.type(), MUTABLE),
+                "int c = x + 3;\n"
+            )),
+            // Using "hashtagScope", is is available.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> hashtagScope(
+                addDataName("d", dn.type(), MUTABLE),
+                "int d = x + 4;\n"
+            )),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).forEach("name", "type", dn -> scope(
+                "available: #name #type.\n"
+            ))
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            int x = 5;
+            int a = x + 1;
+            int b = x + 2;
+            int c = x + 3;
+            int d = x + 4;
+            available: x int.
+            available: b int.
+            available: d int.
+            """;
+        checkEQ(code, expected);
+    }
+
     public static void testStructuralNames0() {
         var template = Template.make(() -> scope(
             // When a StructuralName is added, it is immediately available afterwards.
@@ -1738,7 +1785,6 @@ public class TestTemplate {
                 let("sn", sn), // format the whole StructuralName with toString
                 "Sample #type: #name3 #type3 #sn\n"
             ))
-            // TODO: also auto capture hashtags!
         ));
 
         var template4 = Template.make(() -> scope(

@@ -201,8 +201,6 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: make sure we have tests/examples for all!
-        // TODO: combo sample?
         public Token sample(Function<DataName, NestingToken> function) {
             return new NameSampleToken<DataName>(predicate(), null, null, function);
         }
