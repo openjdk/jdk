@@ -168,7 +168,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * of the contained {@link StructuralName}s, making the sampled {@link StructuralName}
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link TemplateScope} given
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
          *                 the sampled {@link StructuralName}.
          * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
@@ -176,7 +176,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          */
         // TODO: make sure we have tests/examples for all!
         // TODO: combo sample?
-        public Token sample(Function<StructuralName, TemplateScope> function) {
+        public Token sample(Function<StructuralName, NestingToken> function) {
             return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
 

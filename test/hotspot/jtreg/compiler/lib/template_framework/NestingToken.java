@@ -26,9 +26,21 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * A Template generates a {@link TemplateScope}, which is a list of {@link Token}s,
+ * TODO: fix comment
+t* A Template generates a {@link NestingToken}, which is a list of {@link Token}s,
  * which are then later rendered to {@link String}s.
  *
  * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
  */
-public record TemplateScope(List<Token> tokens) {}
+public sealed interface NestingToken extends Token permits NestingToken.Scope,
+                                                           NestingToken.Flat,
+                                                           NestingToken.NameScope,
+                                                           NestingToken.HashtagScope {
+
+    List<Token> tokens();
+
+    public record Scope(List<Token> tokens) implements Token, NestingToken {}
+    record Flat(List<Token> tokens) implements Token, NestingToken {}
+    record NameScope(List<Token> tokens) implements Token, NestingToken {}
+    record HashtagScope(List<Token> tokens) implements Token, NestingToken {}
+}

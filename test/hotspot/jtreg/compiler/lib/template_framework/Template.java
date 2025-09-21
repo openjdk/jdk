@@ -281,10 +281,10 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with no arguments.
      *
-     * @param function The {@link Supplier} that creates the {@link TemplateScope}.
+     * @param function The {@link Supplier} that creates the {@link NestingToken.Scope}.
      */
-    record ZeroArgs(Supplier<TemplateScope> function) implements Template {
-        TemplateScope instantiate() {
+    record ZeroArgs(Supplier<NestingToken.Scope> function) implements Template {
+        NestingToken.Scope instantiate() {
             return function.get();
         }
 
@@ -324,10 +324,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param arg1Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the (first) argument.
-     * @param function The {@link Function} that creates the {@link TemplateScope} given the template argument.
+     * @param function The {@link Function} that creates the {@link NestingToken.Scope} given the template argument.
      */
-    record OneArg<T1>(String arg1Name, Function<T1, TemplateScope> function) implements Template {
-        TemplateScope instantiate(T1 arg1) {
+    record OneArg<T1>(String arg1Name, Function<T1, NestingToken.Scope> function) implements Template {
+        NestingToken.Scope instantiate(T1 arg1) {
             return function.apply(arg1);
         }
 
@@ -372,10 +372,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
-     * @param function The {@link BiFunction} that creates the {@link TemplateScope} given the template arguments.
+     * @param function The {@link BiFunction} that creates the {@link NestingToken.Scope} given the template arguments.
      */
-    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateScope> function) implements Template {
-        TemplateScope instantiate(T1 arg1, T2 arg2) {
+    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken.Scope> function) implements Template {
+        NestingToken.Scope instantiate(T1 arg1, T2 arg2) {
             return function.apply(arg1, arg2);
         }
 
@@ -447,10 +447,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
      * @param <T3> The type of the third argument.
-     * @param function The function with three arguments that creates the {@link TemplateScope} given the template arguments.
+     * @param function The function with three arguments that creates the {@link NestingToken.Scope} given the template arguments.
      */
-    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, TemplateScope> function) implements Template {
-        TemplateScope instantiate(T1 arg1, T2 arg2, T3 arg3) {
+    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, NestingToken.Scope> function) implements Template {
+        NestingToken.Scope instantiate(T1 arg1, T2 arg2, T3 arg3) {
             return function.apply(arg1, arg2, arg3);
         }
 
@@ -508,10 +508,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link TemplateScope} created by {@link Template#scope}.
+     * @param scope The {@link NestingToken.Scope} created by {@link Template#scope}.
      * @return A {@link Template} with zero arguments.
      */
-    static Template.ZeroArgs make(Supplier<TemplateScope> scope) {
+    static Template.ZeroArgs make(Supplier<NestingToken.Scope> scope) {
         return new Template.ZeroArgs(scope);
     }
 
@@ -534,12 +534,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link TemplateScope} created by {@link Template#scope}.
+     * @param scope The {@link NestingToken.Scope} created by {@link Template#scope}.
      * @param <T1> Type of the (first) argument.
      * @param arg1Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
-    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, TemplateScope> scope) {
+    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, NestingToken.Scope> scope) {
         return new Template.OneArg<>(arg1Name, scope);
     }
 
@@ -562,14 +562,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link TemplateScope} created by {@link Template#scope}.
+     * @param scope The {@link NestingToken.Scope} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
      * @param arg2Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
-    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateScope> scope) {
+    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken.Scope> scope) {
         return new Template.TwoArgs<>(arg1Name, arg2Name, scope);
     }
 
@@ -578,7 +578,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name}, {@code arg2Name}, and {@code arg3Name} should match the lambda argument names.
      *
-     * @param scope The {@link TemplateScope} created by {@link Template#scope}.
+     * @param scope The {@link NestingToken.Scope} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
@@ -587,12 +587,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg3Name The name of the third argument for hashtag replacement.
      * @return A {@link Template} with three arguments.
      */
-    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, TemplateScope> scope) {
+    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, NestingToken.Scope> scope) {
         return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, scope);
     }
 
     /**
-     * Creates a {@link TemplateScope} from a list of tokens, which can be {@link String}s,
+     * Creates a {@link NestingToken.Scope} from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}), any {@link Token},
      * or {@link List}s of any of these.
      *
@@ -611,11 +611,11 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link TemplateScope} which captures the list of validated {@link Token}s.
+     * @return The {@link NestingToken.Scope} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static TemplateScope scope(Object... tokens) {
-        return new TemplateScope(TokenParser.parse(tokens));
+    static NestingToken.Scope scope(Object... tokens) {
+        return new NestingToken.Scope(TokenParser.parse(tokens));
     }
 
     /**
@@ -682,11 +682,11 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code value}.
-     * @return A {@link TemplateScope}.
+     * @return A {@link NestingToken.Scope}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
     // TODO: refactor so we can use it inside the template?
-    static <T> TemplateScope let(String key, T value, Function<T, TemplateScope> function) {
+    static <T> NestingToken.Scope let(String key, T value, Function<T, NestingToken.Scope> function) {
         Renderer.getCurrent().addHashtagReplacement(key, value);
         return function.apply(value);
     }

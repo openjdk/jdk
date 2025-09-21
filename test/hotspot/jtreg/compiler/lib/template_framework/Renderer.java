@@ -247,7 +247,7 @@ final class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateScope scope = templateToken.instantiate();
+        NestingToken.Scope scope = templateToken.instantiate();
         renderTokenList(scope.tokens());
 
         if (currentTemplateFrame != templateFrame) {
@@ -256,6 +256,18 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
+    // TODO: can we abstract the cases, so it is easier to implement other queries?
+    //       - no function: no scope. Probably only hashtag assignments.
+    //       - function: option for "scope"
+    //         - name scope
+    //         - hashtag scope
+    //         - we may want to have similar "scopes" without functions, maybe using "nest".
+    //          -> Or maybe also without "nest", to keep it more compact? - so should be tokens!
+    //         - How to call all the "scopes"?
+    //           -> scope -> name & hashtag -> needed for Template
+    //           -> flat  -> neither
+    //           -> nameScope -> only name
+    //           -> hashtagScope -> only hashtag
     private void renderNameSampleToken(NameSampleToken nst) {
         Name n = currentCodeFrame.sampleName(nst.predicate());
         if (n == null) {
@@ -283,8 +295,8 @@ final class Renderer {
                 throw new RuntimeException("not implemented");
             }
 
-            TemplateScope scope = nst.getScope(n);
-            renderTokenList(scope.tokens());
+            NestingToken nestingToken = nst.getNestingToken(n);
+            renderTokenList(nestingToken.tokens());
 
             if (currentTemplateFrame != templateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
@@ -368,10 +380,13 @@ final class Renderer {
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
             }
+            case NestingToken nt -> {
+                throw new RuntimeException("not implemented");
+            }
             case NameSampleToken nst -> {
                 renderNameSampleToken(nst);
             }
-            case NameForEachToken nst -> {
+            case NameForEachToken nfet -> {
                 throw new RuntimeException("not implemented");
             }
             case LetToken(String key, String value) -> {

@@ -195,7 +195,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * of the contained {@link DataName}s, making the sampled {@link DataName}
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link TemplateScope} given
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
          *                 the sampled {@link DataName}.
          * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
@@ -203,7 +203,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          */
         // TODO: make sure we have tests/examples for all!
         // TODO: combo sample?
-        public Token sample(Function<DataName, TemplateScope> function) {
+        public Token sample(Function<DataName, NestingToken> function) {
             return new NameSampleToken<DataName>(predicate(), null, null, function);
         }
 
@@ -275,7 +275,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return list.stream().map(n -> (DataName)n).toList();
         }
 
-        public Token forEach(Function<DataName, TemplateScope> function) {
+        public Token forEach(Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
     }
