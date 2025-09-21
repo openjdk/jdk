@@ -45,6 +45,9 @@ import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
 import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.flat;
+import static compiler.lib.template_framework.Template.nameScope;
+import static compiler.lib.template_framework.Template.hashtagScope;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
@@ -121,11 +124,11 @@ public class TestTemplate {
         // The following tests all pass, i.e. have no errors during rendering.
         testSingleLine();
         testMultiLine();
-        testScopeTokens();
+        testBasicTokens();
         testWithOneArgument();
         testWithTwoArguments();
         testWithThreeArguments();
-        testNested();
+        testNestedTemplates();
         testHookSimple();
         testHookIsAnchored();
         testHookNested();
@@ -151,6 +154,7 @@ public class TestTemplate {
         testStructuralNames1();
         testStructuralNames2();
         testListArgument();
+        testNestedScopes();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -192,6 +196,15 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> scope(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> scope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> scope(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> flat(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> flat("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> flat(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> nameScope(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> nameScope("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> nameScope(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> hashtagScope(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> hashtagScope("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> hashtagScope(new Hook("Hook1")), "Unexpected token:");
         Hook hook1 = new Hook("Hook1");
         expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
@@ -213,6 +226,7 @@ public class TestTemplate {
         expectRendererException(() -> testFailingAddNameDuplication6(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication7(), "Duplicate name:");
         expectRendererException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
+        // TODO: test hashtag escaping flat/nameScope.
     }
 
     public static void testSingleLine() {
@@ -237,7 +251,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testScopeTokens() {
+    public static void testBasicTokens() {
         // We can fill the scope with Objects of different types, and they get concatenated.
         // Lists get flattened into the scope.
         var template = Template.make(() -> scope(
@@ -337,7 +351,7 @@ public class TestTemplate {
         checkEQ(template3.render(444, 555, 666), "start 444 555 666 end");
     }
 
-    public static void testNested() {
+    public static void testNestedTemplates() {
         var template1 = Template.make(() -> scope("proton"));
 
         var template2 = Template.make("a1", "a2", (String a1, String a2) -> scope(
@@ -1982,6 +1996,65 @@ public class TestTemplate {
             long apply *
             long apply /
             }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNestedScopes() {
+        var listDataNames = Template.make(() -> scope(
+            "dataNames: {",
+            dataNames(MUTABLE).exactOf(myInt).forEach("name", "type", (DataName dn) -> scope(
+                "#name #type; "
+            )),
+            "}\n"
+        ));
+
+        var template = Template.make("x", (String x) -> scope(
+            addDataName("vx", myInt, MUTABLE),
+            "x: #x.\n",
+            listDataNames.asToken(),
+            // A "flat" nesting essencially does nothing but create
+            // a list of tokens. It passes through names and hashtags.
+            "open flat:\n",
+            flat(
+                let("y", "YYY"),
+                addDataName("vy", myInt, MUTABLE),
+                "x: #x.\n",
+                "y: #y.\n",
+                listDataNames.asToken()
+            ),
+            "close flat.\n",
+            "x: #x.\n",
+            "y: #y.\n",
+            listDataNames.asToken(),
+            // A "hashtagScope" nesting makes hashtags local, but names
+            // escape the nesting.
+            "open hashtagScope:\n",
+            hashtagScope(
+                let("z", "ZZZ1"),
+                "z: #z.\n",
+                addDataName("vz", myInt, MUTABLE),
+                listDataNames.asToken()
+            ),
+            "close hashtagScope.\n",
+            let("z", "ZZZ2"), // we can define it again outside.
+            "z: #z.\n",
+            listDataNames.asToken(),
+            // We can also use hashtagScopes for loops.
+            List.of("a", "b", "c").stream().map(str -> hashtagScope(
+                let("str", str), // the hashtag is local to every element
+                "str: #str.\n",
+                addDataName("v_" + str, myInt, MUTABLE),
+                listDataNames.asToken()
+            )).toList(),
+            "finish str list.\n",
+            listDataNames.asToken()
+            // TODO: test scope and nameScope
+        ));
+
+        String code = template.render("XXX");
+        String expected =
+            """
             """;
         checkEQ(code, expected);
     }
