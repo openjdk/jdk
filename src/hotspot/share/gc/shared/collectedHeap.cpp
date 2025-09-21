@@ -615,15 +615,14 @@ bool CollectedHeap::is_shutting_down() const {
 
 void CollectedHeap::stall_for_vm_shutdown() {
   assert(is_shutting_down(), "Precondition");
-  // We use a timed wait (2 seconds) instead of an indefinite wait to avoid deadlock
+  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
   // if the VM shutdown triggers a GC.
-  // The 2-second timeout is:
+  // The 2-seconds sleep is:
   //   - long enough to keep daemon threads stalled, while the shutdown
   //     sequence completes in the common case.
   //   - short enough to avoid excessive stall time if the shutdown itself
   //     triggers a GC.
-  MonitorLocker ml(VMExit_lock);
-  ml.wait(2 * MILLIUNITS);
+  JavaThread::current()->sleep(2 * MILLIUNITS);
   log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
 }
 
