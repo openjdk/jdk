@@ -246,7 +246,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 #ifdef MACOS_W_XOR_X
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
-    if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr) && !CodeCache::contains(pc)) {
+    if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)
+        && !CodeCache::contains(pc)) {
       WXMode *entry_mode = thread->_cur_wx_mode;
       if (entry_mode != nullptr && *entry_mode == WXArmedForWrite) {
         if (TraceWXHealing) {
@@ -254,6 +255,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("Healing WXMode %s at %p to WXWrite",
                         mode_names[*entry_mode], entry_mode);
         }
+      assert(StressWXHealing,
+             "We should not reach here unless StressWXHealing");
         *(thread->_cur_wx_mode) = WXWrite;
         return thread->wx_enable_write();
       }
