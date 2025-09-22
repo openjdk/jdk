@@ -33,8 +33,6 @@
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 
-#include <bits/charconv.h>
-
 class CmpNode;
 class BaseCountedLoopEndNode;
 class CountedLoopNode;
