@@ -29,7 +29,6 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"

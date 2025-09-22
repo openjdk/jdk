@@ -89,7 +89,7 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
 #ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers && k->needs_narrow_id()) {
+  if (k != nullptr && UseCompressedClassPointers) {
     CompressedKlassPointers::check_encodable(k);
   }
 #endif
@@ -866,11 +866,6 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
     return false;
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
-
-    if (CDSConfig::is_dumping_dynamic_archive() && ik->in_aot_cache()) {
-      // ik is already part of the static archive, so it will never be considered as excluded.
-      return false;
-    }
 
     if (!SafepointSynchronize::is_at_safepoint()) {
       if (!ik->is_linked()) {
