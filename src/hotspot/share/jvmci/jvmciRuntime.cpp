@@ -47,7 +47,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -187,7 +187,7 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oop
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(type_mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(type_mirror);
 
   if (klass == nullptr) {
     ResourceMark rm(current);
@@ -1622,7 +1622,7 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   static volatile int report_error = 0;
-  if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {
+  if (!report_error && AtomicAccess::cmpxchg(&report_error, 0, 1) == 0) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != nullptr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,11 +81,11 @@ private:
   DEBUG_ONLY(uint calculate_length() const;)
 
 public:
-  const Segment* first_segment() const { return Atomic::load(&_first); }
+  const Segment* first_segment() const { return AtomicAccess::load(&_first); }
 
-  uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
+  uint num_total_slots() const { return AtomicAccess::load(&_num_total_slots); }
   uint num_allocated_slots() const {
-    uint allocated = Atomic::load(&_num_allocated_slots);
+    uint allocated = AtomicAccess::load(&_num_allocated_slots);
     assert(calculate_length() == allocated, "Must be");
     return allocated;
   }
@@ -176,11 +176,6 @@ public:
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
   static void delete_segment(Segment* segment);
 
-  // Copies the contents of this segment into the destination.
-  void copy_to(void* dest) const {
-    ::memcpy(dest, _bottom, length() * _slot_size);
-  }
-
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
@@ -214,8 +209,8 @@ public:
 
   void print_on(outputStream* out, const char* prefix = "");
 
-  size_t num_segments() const { return Atomic::load(&_num_segments); }
-  size_t mem_size() const { return Atomic::load(&_mem_size); }
+  size_t num_segments() const { return AtomicAccess::load(&_num_segments); }
+  size_t mem_size() const { return AtomicAccess::load(&_mem_size); }
 };
 
 // Configuration for G1MonotonicArena, e.g slot size, slot number of next Segment.

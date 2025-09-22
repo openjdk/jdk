@@ -57,7 +57,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/methodComparator.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -99,7 +99,7 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
 
 static inline InstanceKlass* get_ik(jclass def) {
   oop mirror = JNIHandles::resolve_non_null(def);
-  return InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  return java_lang_Class::as_InstanceKlass(mirror);
 }
 
 // If any of the classes are being redefined, wait
@@ -1310,12 +1310,12 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 class RedefineVerifyMark : public StackObj {
  private:
   JvmtiThreadState* _state;
-  Klass*            _scratch_class;
+  InstanceKlass*    _scratch_class;
   OopHandle         _scratch_mirror;
 
  public:
 
-  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
+  RedefineVerifyMark(InstanceKlass* the_class, InstanceKlass* scratch_class,
                      JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
@@ -4537,7 +4537,7 @@ u8 VM_RedefineClasses::next_id() {
   while (true) {
     u8 id = _id_counter;
     u8 next_id = id + 1;
-    u8 result = Atomic::cmpxchg(&_id_counter, id, next_id);
+    u8 result = AtomicAccess::cmpxchg(&_id_counter, id, next_id);
     if (result == id) {
       return next_id;
     }
