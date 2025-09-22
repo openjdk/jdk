@@ -1445,7 +1445,8 @@ public final class Double extends Number
      * whose sign bit is set, to be less than any finite or infinite
      * value and less than any "positive" NaN. In addition, the IEEE
      * order regards all positive NaN values as greater than positive
-     * infinity.
+     * infinity. See the IEEE 754 standard for full details of its
+     * total ordering.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
