@@ -244,7 +244,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             this.connection = connection;
         } else {
             InetSocketAddress addr = request.getAddress();
-            this.connection = HttpConnection.getConnection(addr, client, request, HTTP_1_1);
+            this.connection = HttpConnection.getConnection(addr, client, exchange, request, HTTP_1_1);
         }
         this.requestAction = new Http1Request(request, this);
         this.asyncReceiver = new Http1AsyncReceiver(executor, this);
