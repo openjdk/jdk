@@ -1817,7 +1817,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                                  (t = new InvokeAnyTask<T>(c, this, t)));
                 }
                 return timed ? get(nanos, TimeUnit.NANOSECONDS) : get();
-            } catch(CancellationException ce) {
+            } catch (CancellationException ce) {
                 throw new ExecutionException(ce);
             } finally {
                 for (; t != null; t = t.pred)
