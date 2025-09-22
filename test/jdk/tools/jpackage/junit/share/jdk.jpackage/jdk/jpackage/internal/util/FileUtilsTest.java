@@ -58,14 +58,14 @@ public class FileUtilsTest {
             case EXCLUDE_SUBDIR -> {
                 excludes.add(Path.of("foo"));
             }
-            case EXCLUDE_NONE -> {                
+            case EXCLUDE_NONE -> {
             }
         }
 
         FileUtils.copyRecursive(workdir.resolve("from"), workdir.resolve("to"), excludes);
 
         assertEquals("Hello", Files.readString(workdir.resolve("from/foo/bar/file.txt")));
-        
+
         switch (exclude) {
             case EXCLUDE_FILE -> {
                 assertFalse(Files.exists(workdir.resolve("to/foo/bar/file.txt")));
