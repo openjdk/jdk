@@ -33,7 +33,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
-
 struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
