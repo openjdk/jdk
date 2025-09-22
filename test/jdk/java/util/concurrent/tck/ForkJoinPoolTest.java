@@ -490,22 +490,18 @@ public class ForkJoinPoolTest extends JSR166TestCase {
         final ExecutorService e = new ForkJoinPool(1);
         try (var cleaner = cleaner(e)) {
             assertCancellationExceptionFrom(
-                e,
                 e::submit,
                 f -> () -> f.get(1000, TimeUnit.SECONDS)
             );
             assertCancellationExceptionFrom(
-                e,
                 e::submit,
                 f -> f::get
             );
             assertCancellationExceptionFrom(
-                e,
                 c -> e.submit(() -> { try { c.call(); } catch (Exception ex) { throw new RuntimeException(ex); } }),
                 f -> () -> f.get(1000, TimeUnit.SECONDS)
             );
             assertCancellationExceptionFrom(
-                e,
                 c -> e.submit(() -> { try { c.call(); } catch (Exception ex) { throw new RuntimeException(ex); } }),
                 f -> f::get
             );
@@ -513,11 +509,10 @@ public class ForkJoinPoolTest extends JSR166TestCase {
     }
 
     private void assertCancellationExceptionFrom(
-            ExecutorService e,
             Function<Callable<Void>, Future<?>> createTask,
             Function<Future<?>, Callable<?>> getResult) throws Exception {
         final var t = new AtomicReference<Thread>();
-        final var c = new CountDownLatch(1);
+        final var c = new CountDownLatch(1); // Only used to induce WAITING state (never counted down)
         final var task = createTask.apply(() -> {
             try {
                 t.set(Thread.currentThread());
