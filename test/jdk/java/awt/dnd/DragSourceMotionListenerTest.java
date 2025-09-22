@@ -131,7 +131,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
         frame.add(target);
 
         Toolkit.getDefaultToolkit()
-                .addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
+               .addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
         frame.pack();
         frame.setVisible(true);
     }
@@ -170,7 +170,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (; !srcPoint.equals(dstOutsidePoint);
                  srcPoint.translate(sign(dstOutsidePoint.x - srcPoint.x),
-                         sign(dstOutsidePoint.y - srcPoint.y))) {
+                                    sign(dstOutsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
             robot.waitForIdle();
@@ -182,7 +182,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
             for (;!srcPoint.equals(dstInsidePoint);
                  srcPoint.translate(sign(dstInsidePoint.x - srcPoint.x),
-                         sign(dstInsidePoint.y - srcPoint.y))) {
+                                    sign(dstInsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
 
