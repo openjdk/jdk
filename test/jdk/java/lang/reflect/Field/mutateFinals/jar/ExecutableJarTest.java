@@ -164,7 +164,7 @@ class ExecutableJarTest {
     }
 
     /**
-     *  Creates executable JAR named helper.jar with ExecutableJarTestHelper* classes.
+     * Creates executable JAR named helper.jar with ExecutableJarTestHelper* classes.
      */
     private String createExecutableJar(Map<String, String> map) throws Exception {
         Path jarFile = Path.of("helper.jar");

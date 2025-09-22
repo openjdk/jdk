@@ -25,13 +25,16 @@
  * @test
  * @bug 8353835
  * @summary Test JNI SetXXXField methods to set final instance and final static fields
+ * @key randomness
  * @modules java.management
  * @library /test/lib
  * @compile MutateFinals.java
- * @run junit/native/timeout=600 MutateFinalsTest
+ * @run junit/native/timeout=300 MutateFinalsTest
  */
 
 import java.lang.management.ManagementFactory;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,7 +55,10 @@ class MutateFinalsTest {
         javaLibraryPath = System.getProperty("java.library.path");
     }
 
-    static Stream<String> methodNames() {
+    /**
+     * The names of the methods that use JNI to set final instance fields.
+     */
+    static Stream<String> mutateInstanceFieldMethods() {
         return Stream.of(
                 "testJniSetObjectField",
                 "testJniSetBooleanField",
@@ -62,7 +68,15 @@ class MutateFinalsTest {
                 "testJniSetIntField",
                 "testJniSetLongField",
                 "testJniSetFloatField",
-                "testJniSetDoubleField",
+                "testJniSetDoubleField"
+        );
+    }
+
+    /**
+     * The names of the methods that use JNI to set final static fields.
+     */
+    static Stream<String> mutateStaticFieldMethods() {
+        return Stream.of(
                 "testJniSetStaticObjectField",
                 "testJniSetStaticBooleanField",
                 "testJniSetStaticByteField",
@@ -76,10 +90,30 @@ class MutateFinalsTest {
     }
 
     /**
+     * The names of all methods that use JNI to set final fields.
+     */
+    static Stream<String> allMutationMethods() {
+        return Stream.concat(mutateInstanceFieldMethods(), mutateStaticFieldMethods());
+    }
+
+    /**
+     * The names of two mutation methods. One uses JNI to set a final instance field.
+     * The other uses JNI to set a final static field.
+     */
+    static Stream<String> someMutationMethods() {
+        List<String> list1 = mutateInstanceFieldMethods().toList();
+        List<String> list2 = mutateStaticFieldMethods().toList();
+        var rand = new Random();
+        String instanceMethod = list1.get(rand.nextInt(list1.size()));
+        String staticMethod = list2.get(rand.nextInt(list2.size()));
+        return Stream.of(instanceMethod, staticMethod);
+    }
+
+    /**
      * Mutate final fields with JNI.
      */
     @ParameterizedTest
-    @MethodSource("methodNames")
+    @MethodSource("allMutationMethods")
     void testMutateFinal(String methodName) throws Exception {
         assumeFalse(ManagementFactory.getRuntimeMXBean()
                 .getInputArguments()
@@ -88,11 +122,14 @@ class MutateFinalsTest {
     }
 
     /**
-     * Launch child VM with -Xcheck:jni to attempt to mutate final fields with JNI. The
+     * Attemtpt to mutate final fields with JNI when running with -Xcheck:jni. The
      * child VM is expected to exit with a fatal error.
+     *
+     * This method uses someMutationMethods as the method source to avoid starting a
+     * child VM to test every mutation method.
      */
     @ParameterizedTest
-    @MethodSource("methodNames")
+    @MethodSource("someMutationMethods")
     void testMutateFinalWithXCheckJni(String methodName) throws Exception {
         test(methodName, "-Xcheck:jni")
                 .shouldContain("FATAL ERROR in native method")

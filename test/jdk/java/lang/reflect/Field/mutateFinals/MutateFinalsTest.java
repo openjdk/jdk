@@ -48,7 +48,6 @@ class MutateFinalsTest {
         assertNotNull(s);
         writeAccess = Boolean.valueOf(s);
     }
-
     @Test
     void testFieldSet() throws Exception {
         class C {

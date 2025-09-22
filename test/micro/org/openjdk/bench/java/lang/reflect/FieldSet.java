@@ -32,25 +32,29 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 public class FieldSet {
 
     static class FieldHolder {
         Object obj;
         int intValue;
-        FieldHolder(Object obj, int i) {
+        long longValue;
+        FieldHolder(Object obj, int i, long l) {
             this.obj = obj;
             this.intValue = i;
+            this.longValue = l;
         }
     }
 
     static class FinalFieldHolder {
         final Object obj;
         final int intValue;
-        FinalFieldHolder(Object obj, int i) {
+        final long longValue;
+        FinalFieldHolder(Object obj, int i, long l) {
             this.obj = obj;
             this.intValue = i;
+            this.longValue = l;
         }
     }
 
@@ -59,27 +63,33 @@ public class FieldSet {
 
     private Field objField1, objField2, objField3;
     private Field intField1, intField2, intField3;
+    private Field longField1, longField2, longField3;
 
     @Setup
     public void setup() throws Exception {
-        fieldHolder = new FieldHolder(new Object(), 1);
-        finalFieldHolder = new FinalFieldHolder(new Object(), 1);
+        fieldHolder = new FieldHolder(new Object(), 1, 1L);
+        finalFieldHolder = new FinalFieldHolder(new Object(), 1, 1L);
 
         // non-final && !override
         objField1 = FieldHolder.class.getDeclaredField("obj");
         intField1 = FieldHolder.class.getDeclaredField("intValue");
+        longField1 = FieldHolder.class.getDeclaredField("longValue");
 
         // non-final && override
         objField2 = FieldHolder.class.getDeclaredField("obj");
         objField2.setAccessible(true);
         intField2 = FieldHolder.class.getDeclaredField("intValue");
         intField2.setAccessible(true);
+        longField2 = FieldHolder.class.getDeclaredField("longValue");
+        longField2.setAccessible(true);
 
         // final && override
         objField3 = FinalFieldHolder.class.getDeclaredField("obj");
         objField3.setAccessible(true);
         intField3 = FinalFieldHolder.class.getDeclaredField("intValue");
         intField3.setAccessible(true);
+        longField3 = FinalFieldHolder.class.getDeclaredField("longValue");
+        longField3.setAccessible(true);
     }
 
     // non-final && !override
@@ -95,6 +105,12 @@ public class FieldSet {
         intField1.setInt(fieldHolder, newValue);
     }
 
+    @Benchmark
+    public void setNonFinalLongField() throws Exception {
+        long newValue = ThreadLocalRandom.current().nextLong();
+        longField1.setLong(fieldHolder, newValue);
+    }
+
     // non-final && override
 
     @Benchmark
@@ -108,6 +124,12 @@ public class FieldSet {
         intField2.setInt(fieldHolder, newValue);
     }
 
+    @Benchmark
+    public void setNonFinalLongFieldWithOverride() throws Exception {
+        long newValue = ThreadLocalRandom.current().nextLong();
+        longField2.setLong(fieldHolder, newValue);
+    }
+
     // final && override
 
     @Benchmark
@@ -119,5 +141,11 @@ public class FieldSet {
     public void setFinalIntField() throws Exception {
         int newValue = ThreadLocalRandom.current().nextInt();
         intField3.setInt(finalFieldHolder, newValue);
+    }
+
+    @Benchmark
+    public void setFinalLongField() throws Exception {
+        long newValue = ThreadLocalRandom.current().nextLong();
+        longField3.setLong(finalFieldHolder, newValue);
     }
 }
