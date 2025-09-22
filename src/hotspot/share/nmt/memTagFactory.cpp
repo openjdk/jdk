@@ -25,3 +25,83 @@
 #include <nmt/memTagFactory.hpp>
 
 DeferredStatic<MemTagFactory::Instance> MemTagFactory::_instance;
+int NameToTagTable::string_hash(const char* t) {
+  char c;
+  int k = 0;
+  int32_t sum = 0;
+  const char* s = (const char*)t;
+
+  while (((c = *s++) != '\0')) {
+    c = (c << 1) + 1;
+    sum += c + (c << (k++ % 6));
+  }
+  return abs((int)((sum + 261) >> 1));
+}
+void NameToTagTable::put_if_absent(MemTag tag, const char* name) {
+  int bucket = string_hash(name) % table_size;
+  EntryRef link = table[bucket];
+  while (link != Nil) {
+    Entry e = entries.at(link);
+    MemTagI ei = index(e.tag);
+    if (strcmp(names.at(ei), name) == 0) {
+      return;
+    }
+    link = e.next;
+  }
+  const char* name_copy = os::strdup(name, mtNMT);
+  MemTagI idx = index(tag);
+  names.at_grow(idx, name_copy);
+  Entry nentry(tag, table[bucket]);
+  entries.push(nentry);
+  table[bucket] = entries.length() - 1;
+  AtomicAccess::inc(&_number_of_tags);
+}
+MemTag NameToTagTable::tag_of(const char* name) {
+  int bucket = string_hash(name) % table_size;
+  EntryRef link = table[bucket];
+  while (link != Nil) {
+    Entry e = entries.at(link);
+    if (strcmp(names.at(index(e.tag)), name) == 0) {
+      return e.tag;
+    }
+    link = e.next;
+  }
+  return mtNone;
+}
+const char* NameToTagTable::name_of(MemTag tag) {
+  return names.at(index(tag));
+}
+const char* NameToTagTable::human_readable_name_of(MemTag tag) {
+  MemTagI i = index(tag);
+  if (i < human_readable_names.length()) {
+    return human_readable_names.at(index(tag));
+  }
+  return nullptr;
+}
+void NameToTagTable::set_human_readable_name_of(MemTag tag, const char* hrn) {
+  MemTagI i = index(tag);
+  const char* copy = os::strdup(hrn);
+  const char*& ref = human_readable_names.at_grow(i, nullptr);
+  ref = copy;
+}
+MemTag MemTagFactory::Instance::tag(const char* name, const char* human_name) {
+  MemTag found = table.tag_of(name);
+  if (found != mtNone) {
+    return found;
+  }
+  if (std::numeric_limits<MemTagI>::max() == static_cast<MemTagI>(current_index)) {
+    // Out of MemTags, revert to mtOther
+    return mtOther;
+  }
+
+  // No tag found, have to create a new one
+  MemTag i = static_cast<MemTag>(current_index);
+  table.put_if_absent(i, name);
+  current_index++;
+  if (human_name != nullptr) {
+    table.set_human_readable_name_of(i, human_name);
+  }
+  // Register type with JFR
+  NMTTypeConstant::register_single_type(i, name);
+  return i;
+}
