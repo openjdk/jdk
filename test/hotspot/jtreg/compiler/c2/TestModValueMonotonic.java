@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 8367967
- * @summary Ensure ModI/LNode::Value is monotonic with potential divison by 0
+ * @summary Ensure ModI/LNode::Value is monotonic with potential division by 0
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:CompileOnly=compiler.c2.TestModValueMonotonic::test*
  *                   -XX:+StressCCP -XX:RepeatCompilation=100 -Xcomp compiler.c2.TestModValueMonotonic
+ * @run main compiler.c2.TestModValueMonotonic
  */
 package compiler.c2;
 
