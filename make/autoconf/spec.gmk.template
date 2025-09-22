@@ -491,7 +491,6 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
-CC_OUT_OPTION := @CC_OUT_OPTION@
 AS_NON_ASM_EXTENSION_OPTION := @AS_NON_ASM_EXTENSION_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
