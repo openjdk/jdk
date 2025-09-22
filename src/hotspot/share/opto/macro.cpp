@@ -1620,7 +1620,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
 
       Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
 
-      // What we want is to prevent the compiler and the cpu from re-ordering the stores that initialize this object
+      // What we want is to prevent the compiler and the CPU from re-ordering the stores that initialize this object
       // with subsequent stores to any slice. As a consequence, this MemBar should capture the entire memory state at
       // this point in the IR and produce a new memory state that should cover all slices. However, the Initialize node
       // only captures/produces a partial memory state making it complicated to insert such a MemBar. Because
