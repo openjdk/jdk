@@ -70,9 +70,11 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("verbose", List.of("Ignore unsupported cipher suite:"));
         debugMessages.put("handshake-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"specifics\"   : \\[",
                         "\"message\".*: \"Produced ClientHello handshake message"));
         debugMessages.put("record-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"specifics\"   : \\[",
                         "\"message\".*: \"READ: TLSv1.2 application_data"));
         debugMessages.put("help",
                 List.of("print the help messages",
@@ -83,7 +85,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         // "ALL" shouldn't be seen as a valid Level
         debugMessages.put("javax.net.debug.logger.ALL", List.of("ALL:"));
         debugMessages.put("javax.net.debug.logger",
-                List.of("FINE: adding as trusted certificates",
+                List.of("FINE: adding as trusted certificates:"
+                            + System.lineSeparator() +
+                            "  \"certificate\" : \\{",
+                        "FINE: Produced ClientHello handshake message:" +
+                            System.lineSeparator() +
+                            "\"ClientHello\": \\{",
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
 
