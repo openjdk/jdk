@@ -147,7 +147,7 @@ public class FormatTests {
             }
         }
         if (tz != null) {
-            assertEquals(df.getTimeZone(), tz);
+            assertEquals(tz, df.getTimeZone());
         }
         String formatted = df.format(testDate);
         assertEquals(formatExpected, formatted);
