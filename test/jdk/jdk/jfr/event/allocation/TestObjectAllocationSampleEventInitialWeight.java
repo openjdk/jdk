@@ -43,9 +43,6 @@ public class TestObjectAllocationSampleEventInitialWeight {
     private static final int OBJECTS_TO_ALLOCATE = 16;
     private static final int OBJECTS_TO_ALLOCATE_BEFORE_RECORDING = 1024;
     private static final long BEFORE_RECORDING_SAMPLE_WEIGHT = OBJECT_SIZE * OBJECTS_TO_ALLOCATE_BEFORE_RECORDING;
-    private static final String BYTE_ARRAY_CLASS_NAME = new byte[0].getClass().getName();
-
-    private static AtomicBoolean onError = null;
 
     // Make sure allocation isn't dead code eliminated.
     public static byte[] tmp;
@@ -57,44 +54,28 @@ public class TestObjectAllocationSampleEventInitialWeight {
     }
 
     private static void test() throws Exception {
-        CountDownLatch delivered = new CountDownLatch(1);
-        onError = new AtomicBoolean();
-        Thread current = Thread.currentThread();
-        allocateBeforeRecording();
-        try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(EVENT_NAME);
-            rs.onEvent(EVENT_NAME, e -> {
-                if (verify(e, current)) {
-                    delivered.countDown();
-                }
-            });
-            rs.startAsync();
+        long currentThreadId = Thread.currentThread().threadId();
+        allocate(OBJECTS_TO_ALLOCATE_BEFORE_RECORDING);
+        try (Recording r = new Recording()) {
+            r.enable(EVENT_NAME);
+            r.start();
             allocate(OBJECTS_TO_ALLOCATE);
-            delivered.await();
-            if (onError.get()) {
-                throw new RuntimeException("Sample weight is not below " + BEFORE_RECORDING_SAMPLE_WEIGHT);
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
+            for (RecordedEvent event : events) {
+                if (currentThreadId == event.getThread().getJavaThreadId()) {
+                    if (event.getLong("weight") >= BEFORE_RECORDING_SAMPLE_WEIGHT) {
+                        throw new RuntimeException("Sample weight is not below " + BEFORE_RECORDING_SAMPLE_WEIGHT);
+                    }
+                }
             }
         }
-    }
-
-    private static void allocateBeforeRecording() throws Exception {
-        allocate(OBJECTS_TO_ALLOCATE_BEFORE_RECORDING);
     }
 
     private static void allocate(int number) throws Exception {
         for (int i = 0; i < number; ++i) {
             tmp = new byte[OBJECT_SIZE];
         }
-    }
-
-    private static boolean verify(RecordedEvent event, Thread thread) {
-        if (thread.getId() != event.getThread().getJavaThreadId()) {
-            return false;
-        }
-        System.out.println(event);
-        if (event.getLong("weight") >= BEFORE_RECORDING_SAMPLE_WEIGHT) {
-            onError.set(true);
-        }
-        return true;
     }
 }
