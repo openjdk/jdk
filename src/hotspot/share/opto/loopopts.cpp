@@ -4243,39 +4243,41 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       return false;
     }
 
-    LoopExitTest loop_exit = loop_exit_test(back_control, loop);
-    if (loop_exit.cmp == nullptr || loop_exit.cmp->Opcode() != Op_CmpI) {
+    LoopExitTest loop_exit(back_control, loop, this);
+    loop_exit.build();
+    if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;
     }
 
     // With an extra phi for the candidate iv?
     // Or the region node is the loop head
-    if (!loop_exit.incr->is_Phi() || loop_exit.incr->in(0) == head) {
+    if (!loop_exit.incr()->is_Phi() || loop_exit.incr()->in(0) == head) {
       return false;
     }
 
     PathFrequency pf(head, this);
-    region = loop_exit.incr->in(0);
+    region = loop_exit.incr()->in(0);
 
     // Go over all paths for the extra phi's region and see if that
     // path is frequent enough and would match the expected iv shape
     // if the extra phi is removed
     inner = 0;
-    for (uint i = 1; i < loop_exit.incr->req(); ++i) {
-      CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(loop_exit.incr->in(i), T_INT);
+    for (uint i = 1; i < loop_exit.incr()->req(); ++i) {
+      CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(loop_exit.incr()->in(i), T_INT);
       if (increment.incr == nullptr) {
         continue;
       }
       assert(increment.incr->Opcode() == Op_AddI, "wrong increment code");
-      LoopIvStride stride = loop_iv_stride(increment.incr);
 
-      if (stride.stride == nullptr) {
+      LoopIVStride stride(increment.incr);
+      stride.build();
+      if (!stride.is_valid()) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(stride.xphi, nullptr, head);
+      PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
-          (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr) ||
+          (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
           (increment.trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != increment.trunc1)) {
         return false;
       }

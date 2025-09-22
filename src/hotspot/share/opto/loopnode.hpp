@@ -33,6 +33,8 @@
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 
+#include <bits/charconv.h>
+
 class CmpNode;
 class BaseCountedLoopEndNode;
 class CountedLoopNode;
@@ -274,6 +276,7 @@ public:
   int   stride_con() const;
 
   // Match increment with optional truncation
+  // TODO: convert to class???
   struct TruncatedIncrement {
     Node* incr = nullptr;
     Node* trunc1 = nullptr;
@@ -1301,26 +1304,210 @@ public:
 
   Node* loop_exit_control(const Node* head, const IdealLoopTree* loop) const;
 
-  struct LoopExitTest {
-    CmpNode* cmp = nullptr;
-    Node* incr = nullptr;
-    Node* limit = nullptr;
-    const BoolTest::mask mask = BoolTest::illegal;
-    const float cl_prob = 0.0f;
-  };
-  LoopExitTest loop_exit_test(const Node* back_control, const IdealLoopTree* loop);
+  class LoopExitTest {
+    bool _is_valid = false;
 
-  struct LoopIVIncr {
-    Node* incr = nullptr;
-    Node* phi_incr = nullptr;
-  };
-  static LoopIVIncr loop_iv_incr(Node* old_incr, const Node* head, const IdealLoopTree* loop);
+    const Node* _back_control;
+    const IdealLoopTree* _loop;
+    PhaseIdealLoop* _phase;
 
-  struct LoopIvStride {
-    Node* stride = nullptr;
-    Node* xphi = nullptr;
+    Node* _cmp = nullptr;
+    Node* _incr = nullptr;
+    Node* _limit = nullptr;
+    BoolTest::mask _mask = BoolTest::illegal;
+    float _cl_prob = 0.0f;
+
+  public:
+    explicit LoopExitTest() = default;
+
+    LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
+      _back_control(back_control),
+      _loop(loop),
+      _phase(phase) {}
+
+    bool build() {
+      const Node* iftrue = _back_control;
+      uint iftrue_op = iftrue->Opcode();
+      Node* iff = iftrue->in(0);
+      BoolNode* test = iff->in(1)->as_Bool();
+      _mask = test->_test._test;
+      _cl_prob = iff->as_If()->_prob;
+      if (iftrue_op == Op_IfFalse) {
+        _mask = BoolTest(_mask).negate();
+        _cl_prob = 1.0f - _cl_prob;
+      }
+      // Get backedge compare
+      _cmp = test->in(1);
+      if (!_cmp->is_Cmp()) {
+        return false;
+      }
+
+      // Find the trip-counter increment & limit.  Limit must be loop invariant.
+      _incr  = _cmp->in(1);
+      _limit = _cmp->in(2);
+
+      // ---------
+      // need 'loop()' test to tell if limit is loop invariant
+      // ---------
+
+      if (!_phase->is_member(_loop, _phase->get_ctrl(_incr))) { // Swapped trip counter and limit?
+        swap(_incr, _limit);                // Then reverse order into the CmpI
+        _mask = BoolTest(_mask).commute(); // And commute the exit test
+      }
+      if (_phase->is_member(_loop, _phase->get_ctrl(_limit))) { // Limit must be loop-invariant
+        return false;
+      }
+      if (!_phase->is_member(_loop, _phase->get_ctrl(_incr))) { // Trip counter must be loop-variant
+        return false;
+      }
+
+      _is_valid = true;
+      return true;
+    }
+
+    bool is_valid_with_bt(BasicType bt) {
+      return _is_valid && _cmp != nullptr && _cmp->Opcode() == Op_Cmp(bt);
+    }
+
+    CmpNode* cmp() const { return _cmp->as_Cmp(); }
+    Node* incr() const { return _incr; }
+    Node* limit() const { return _limit; }
+    BoolTest::mask mask() const { return _mask; }
+    float cl_prob() const { return _cl_prob; }
+
+    // Canonicalize the loop condition if it is 'ne'.
+    bool canonicalize_mask(jlong stride_con) {
+      if (_mask != BoolTest::ne) {
+        return false;
+      }
+
+      assert(stride_con == 1 || stride_con == -1, "simple increment only - checked in CountedLoopConverter");
+
+      if (stride_con == 1) {
+        // 'ne' can be replaced with 'lt' only when init < limit.
+        // This is ensured by the inserted predicate in CountedLoopConverter.
+        // TODO: assert on inserted predicate?
+        _mask = BoolTest::lt;
+        return true;
+      }
+
+      if (stride_con == -1) {
+        // 'ne' can be replaced with 'gt' only when init > limit.
+        // This is ensured by the inserted predicate in CountedLoopConverter.
+        _mask = BoolTest::gt;
+        return true;
+      }
+
+      // Should not reach
+      return false;
+    }
   };
-  static LoopIvStride loop_iv_stride(const Node* incr);
+
+  class LoopIVIncr {
+    bool _is_valid = false;
+
+    Node* _old_incr;
+    const Node* _head;
+    const IdealLoopTree* _loop;
+
+    Node* _incr = nullptr;
+    Node* _phi_incr = nullptr;
+
+  public:
+    explicit LoopIVIncr() = default;
+
+    LoopIVIncr(Node* incr, const Node* head, const IdealLoopTree* loop) :
+      _old_incr(incr),
+      _head(head),
+      _loop(loop) {}
+
+    bool build() {
+      Node* incr = _old_incr;
+      if (incr->is_Phi() && incr->as_Phi()->region() == _head && incr->req() == 3) { // Requires simple trip counter expression
+        Node* phi_incr = incr;
+        Node* back_control = phi_incr->in(LoopNode::LoopBackControl); // Assume incr is on backedge of Phi
+        if (_loop->_phase->is_member(_loop, _loop->_phase->get_ctrl(back_control))) { // Trip counter must be loop-variant
+          _incr = back_control;
+          _phi_incr = phi_incr;
+
+          _is_valid = true;
+          return true;
+        }
+      }
+      _incr = incr;
+      _phi_incr = nullptr;
+
+      _is_valid = true;
+      return true;
+    }
+
+    bool is_valid_with_bt(const BasicType bt) const {
+      return _is_valid && _incr != nullptr && _incr->Opcode() == Op_Add(bt);
+    }
+
+    Node* incr() const { return _incr; }
+    Node* phi_incr() const { return _phi_incr; }
+  };
+
+  class LoopIVStride {
+    bool _is_valid = false;
+
+    const Node* _incr;
+
+    Node* _node = nullptr;
+    Node* _xphi = nullptr;
+
+  public:
+    explicit LoopIVStride() = default;
+
+    LoopIVStride(const Node* incr) : _incr(incr) {}
+
+    bool build() {
+      assert(_incr->Opcode() == Op_AddI || _incr->Opcode() == Op_AddL, "caller resp.");
+      // Get merge point
+      _xphi = _incr->in(1);
+      _node = _incr->in(2);
+      if (!_node->is_Con()) {     // Oops, swap these
+        if (!_xphi->is_Con()) {     // Is the other guy a constant?
+          return false;            // Nope, unknown stride, bail out
+        }
+
+        swap(_xphi, _node);        // 'incr' is commutative, so ok to swap
+      }
+
+      _is_valid = true;
+      return true;
+    }
+
+    bool is_valid() const { return _is_valid && _node != nullptr; }
+
+    Node* node() const { return _node; }
+    Node* xphi() const { return _xphi; }
+
+    jlong compute_non_zero_stride_con(const BoolTest::mask mask, const BasicType iv_bt) const {
+      jlong stride_con = node()->get_integer_as_long(iv_bt);
+      assert(stride_con != 0, "missed some peephole opt"); // stride constant can never be 0!
+
+      // If the condition is inverted and we will be rolling
+      // through MININT to MAXINT, then bail out.
+      if (mask == BoolTest::eq || // Bail out, but this loop trips at most twice!
+          // Odd stride
+          (mask == BoolTest::ne && stride_con != 1 && stride_con != -1) ||
+          // Count down loop rolls through MAXINT
+          ((mask == BoolTest::le || mask == BoolTest::lt) && stride_con < 0) ||
+          // Count up loop rolls through MININT
+          ((mask == BoolTest::ge || mask == BoolTest::gt) && stride_con > 0)) {
+        return 0; // Bail out with sentinel = 0
+      }
+
+      // Bail out if the stride is too big.
+      if (stride_con == min_signed_integer(iv_bt) || (ABS(stride_con) > max_signed_integer(iv_bt) / 2)) {
+        return 0;
+      }
+
+      return stride_con;
+    }
+  };
 
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head);
 
@@ -1940,40 +2127,98 @@ class CountedLoopConverter {
   // stats for PhaseIdealLoop::print_statistics()
   static volatile int _long_loop_counted_loops;
 
-  struct LoopStructure {
+  class LoopStructure {
     bool _is_valid = false;
 
-    Node* _back_control;
+    const Node* _head;
+    const IdealLoopTree* _loop;
+    PhaseIdealLoop* _phase;
+    BasicType _iv_bt;
 
-    CmpNode* _cmp;
-    Node* _incr;
-    Node* _limit;
-    BoolTest::mask _mask;
-    float _cl_prob;
+    Node* _back_control = nullptr;
+    PhaseIdealLoop::LoopExitTest _exit_test;
+    PhaseIdealLoop::LoopIVIncr _iv_incr;
+    CountedLoopNode::TruncatedIncrement _truncated_increment;
+    PhaseIdealLoop::LoopIVStride _stride;
+    PhiNode* _phi = nullptr;
+    SafePointNode* _sfpt = nullptr;
 
-    Node* _iv_incr;
-    Node* _phi_incr;
+  public:
+    explicit LoopStructure() = default;
 
-    Node* _trunc_incr;
-    Node* _trunc1;
-    Node* _trunc2;
-    const TypeInteger* _trunc_type;
-
-    Node* _stride;
-
-    PhiNode* _phi;
-
-    SafePointNode* _sfpt;
+    LoopStructure(const Node* head, const IdealLoopTree* loop, PhaseIdealLoop* phase, const BasicType iv_bt) :
+      _head(head),
+      _loop(loop),
+      _phase(phase),
+      _iv_bt(iv_bt) {}
 
     bool build() {
+      _back_control = _phase->loop_exit_control(_head, _loop);
+      if (_back_control == nullptr) {
+        return false;
+      }
 
+      _exit_test = PhaseIdealLoop::LoopExitTest(_back_control, _loop, _phase);
+      _exit_test.build();
+      if (!_exit_test.is_valid_with_bt(_iv_bt)) {
+        return false; // Avoid pointer & float & 64-bit compares
+      }
+
+      Node* incr = _exit_test.incr();
+      if (_exit_test.incr()->Opcode() == Op_Cast(_iv_bt)) {
+        incr = incr->in(1);
+      }
+
+      _iv_incr = PhaseIdealLoop::LoopIVIncr(incr, _head, _loop);
+      _iv_incr.build();
+      if (_iv_incr.incr() == nullptr) {
+        return false;
+      }
+
+      _truncated_increment = CountedLoopNode::match_incr_with_optional_truncation(_iv_incr.incr(), _iv_bt);
+      if (_truncated_increment.incr == nullptr) {
+        return false; // Funny increment opcode
+      }
+      assert(_truncated_increment.incr->Opcode() == Op_Add(_iv_bt), "wrong increment code");
+
+      _stride = PhaseIdealLoop::LoopIVStride(_truncated_increment.incr);
+      _stride.build();
+      if (!_stride.is_valid()) {
+        return false;
+      }
+
+      Node* xphi = _stride.xphi();
+      // Iteratively uncast the loop induction variable
+      // until no more CastII/CastLL nodes are found.
+      while (xphi->Opcode() == Op_Cast(_iv_bt)) {
+        xphi = xphi->in(1);
+      }
+
+      _phi = PhaseIdealLoop::loop_iv_phi(xphi, _iv_incr.phi_incr(), _head);
+      if (_phi == nullptr ||
+          (_truncated_increment.trunc1 == nullptr && _phi->in(LoopNode::LoopBackControl) != _truncated_increment.incr) ||
+          (_truncated_increment.trunc1 != nullptr && _phi->in(LoopNode::LoopBackControl) != _truncated_increment.trunc1)) {
+        return false;
+      }
+
+      _sfpt = _loop->_child == nullptr
+                              ? _phase->find_safepoint(_back_control, _head, _loop)
+                              : _back_control->in(0)->in(0)->isa_SafePoint();
+
+      _is_valid = true;
+      return true;
     }
 
-    bool is_invalid() const {
-      return !_is_valid;
-    }
+    bool is_valid() const { return _is_valid; }
+
+    Node* back_control() const { return _back_control; }
+    PhaseIdealLoop::LoopExitTest& exit_test() { return _exit_test; }
+    PhaseIdealLoop::LoopIVIncr& iv_incr() { return _iv_incr; }
+    CountedLoopNode::TruncatedIncrement& truncated_increment() { return _truncated_increment; }
+    PhaseIdealLoop::LoopIVStride& stride() { return _stride; }
+    PhiNode* phi() const { return _phi; }
+    SafePointNode* sfpt() const { return _sfpt; }
   };
-
   LoopStructure _structure;
 
   bool _includes_limit = false;
@@ -1994,8 +2239,6 @@ class CountedLoopConverter {
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
 
-  bool build_loop_structure(LoopStructure& structure);
-
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask);
   bool is_infinite_loop(const Node* increment_trunc1, const TypeInteger* limit_t, const Node* incr);
   bool has_truncation_wrap(Node* increment_trunc1,
@@ -2004,7 +2247,7 @@ class CountedLoopConverter {
                            Node* phi,
                            jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
-  bool is_safepoint_invalid(SafePointNode* sfpt, Node* iftrue);
+  bool is_safepoint_invalid(SafePointNode* sfpt);
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -2022,8 +2265,8 @@ class CountedLoopConverter {
   IdealLoopTree* convert();
 
 #ifdef ASSERT
-  bool should_stress_long_counted_loop() const;
-  bool stress_long_counted_loop() const;
+  bool should_stress_long_counted_loop();
+  bool stress_long_counted_loop();
 #endif
 };
 
