@@ -1790,7 +1790,10 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     const Node* if_false = loop->tail()->in(0)->as_BaseCountedLoopEnd()->proj_out(false);
     for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
       Node* store = if_false->out(j)->isa_Store();
-      // We don't make changes if the memory input is in the loop body as well
+      // We only make changes if the memory input of the store is outside the outer loop body,
+      // as this is when we would normally expect a Phi as input. If the memory input
+      // is in the loop body as well, then we can safely assume it is still correct as the entire
+      // body was cloned as a unit
       if (store && !outer_loop->is_member(get_loop(get_ctrl(store->in(MemNode::Memory))))) {
         Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
         Node* store_new = old_new[store->_idx];
