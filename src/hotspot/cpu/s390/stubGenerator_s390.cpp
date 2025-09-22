@@ -3110,7 +3110,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
+    assert(vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32), "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32_updateBytes {");
     Register       table   = Z_ARG4;  // crc32 table address.
@@ -3130,7 +3130,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
+    assert(vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32C), "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32C_updateBytes {");
     Register       table   = Z_ARG4;  // crc32c table address.
