@@ -62,8 +62,6 @@ inline void os::map_stack_shadow_pages(address sp) {
   state->set_shadow_zone_growth_watermark(original_sp);
 }
 
-inline bool os::numa_has_group_homing()     { return false;  }
-
 // Platform Mutex/Monitor implementation
 
 inline void PlatformMutex::lock() {

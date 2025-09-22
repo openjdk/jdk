@@ -535,10 +535,7 @@ static unsigned thread_native_entry(void* t) {
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
 
   if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
+    thread->update_lgrp_id();
   }
 
   // Diagnostic code to investigate JDK-6573254
@@ -599,10 +596,7 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   osthread->set_thread_id(thread_id);
 
   if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
+    thread->update_lgrp_id();
   }
 
   // Initial thread state is INITIALIZED, not SUSPENDED
