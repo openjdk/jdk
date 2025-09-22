@@ -126,7 +126,7 @@ public class LintMapper {
      */
     public Optional<Lint> lintAt(JavaFileObject sourceFile, DiagnosticPosition pos) {
         initializeIfNeeded();
-        return Optional.of(sourceFile)
+        return Optional.ofNullable(sourceFile)
           .map(fileInfoMap::get)
           .flatMap(fileInfo -> fileInfo.lintAt(pos));
     }
