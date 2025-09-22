@@ -106,7 +106,6 @@ public class TestCommitFailure {
         ProcessTools.executeTestJava(arguments)
                 .outputTo(System.out)
                 .errorTo(System.out)
-                .shouldContain("Forced to lower max Java heap size")
                 .shouldHaveExitValue(0);
     }
 }

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
@@ -70,7 +71,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/globals_extension.hpp"
@@ -848,6 +849,13 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     const char * to = to_class->external_name();
     log_debug(class, resolve)("%s %s (verification)", from_name, to);
   }
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_preserving_verification_constraints() && from_class->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(from_class);
+    SystemDictionaryShared::add_old_verification_constraint(THREAD, ik, h_name);
+  }
+#endif
 
   return result;
 JVM_END
@@ -3422,7 +3430,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
   InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
-  if (!caller_ik->is_shared()) {
+  if (!caller_ik->in_aot_cache()) {
     // there won't be a shared lambda class if the caller_ik is not in the shared archive.
     return nullptr;
   }
@@ -3503,7 +3511,7 @@ JVM_ENTRY(void, JVM_DumpClassListToFile(JNIEnv *env, jstring listFileName))
   ResourceMark rm(THREAD);
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(listFileName));
   char* file_name  = java_lang_String::as_utf8_string(file_handle());
-  MetaspaceShared::dump_loaded_classes(file_name, THREAD);
+  AOTMetaspace::dump_loaded_classes(file_name, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 

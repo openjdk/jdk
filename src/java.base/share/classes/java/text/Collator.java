@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public abstract class Collator
      * Collator strength value.  When set, only SECONDARY and above differences are
      * considered significant during comparison. The assignment of strengths
      * to language features is locale dependent. A common example is for
-     * different accented forms of the same base letter ("a" vs "ä" (U+00E9)) to be
+     * different accented forms of the same base letter ("a" vs "ä" (U+00E4)) to be
      * considered a SECONDARY difference.
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
@@ -161,8 +161,8 @@ public abstract class Collator
      * characters ("&#092;u0001" vs "&#092;u0002") to be considered equal at the
      * PRIMARY, SECONDARY, and TERTIARY levels but different at the IDENTICAL
      * level.  Additionally, differences between pre-composed accents such as
-     * "&#092;u00C0" (A-grave) and combining accents such as "A&#092;u0300"
-     * (A, combining-grave) will be considered significant at the IDENTICAL
+     * "&#092;u00E4" (a-diaeresis) and combining accents such as "a&#092;u0308"
+     * (a, combining-diaeresis) will be considered significant at the IDENTICAL
      * level if decomposition is set to NO_DECOMPOSITION.
      */
     public static final int IDENTICAL = 3;

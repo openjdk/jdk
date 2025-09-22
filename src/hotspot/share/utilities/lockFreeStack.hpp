@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_LOCKFREESTACK_HPP
 #define SHARE_UTILITIES_LOCKFREESTACK_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -65,7 +65,7 @@ class LockFreeStack {
     do {
       old = cur;
       set_next(*last, cur);
-      cur = Atomic::cmpxchg(&_top, cur, first);
+      cur = AtomicAccess::cmpxchg(&_top, cur, first);
     } while (old != cur);
   }
 
@@ -89,7 +89,7 @@ public:
         new_top = next(*result);
       }
       // CAS even on empty pop, for consistent membar behavior.
-      result = Atomic::cmpxchg(&_top, result, new_top);
+      result = AtomicAccess::cmpxchg(&_top, result, new_top);
     } while (result != old);
     if (result != nullptr) {
       set_next(*result, nullptr);
@@ -101,7 +101,7 @@ public:
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {
-    return Atomic::xchg(&_top, (T*)nullptr);
+    return AtomicAccess::xchg(&_top, (T*)nullptr);
   }
 
   // Atomically adds value to the top of this stack.  Acts as a full
@@ -145,7 +145,7 @@ public:
 
   // Return the most recently pushed element, or nullptr if the stack is empty.
   // The returned element is not removed from the stack.
-  T* top() const { return Atomic::load(&_top); }
+  T* top() const { return AtomicAccess::load(&_top); }
 
   // Return the number of objects in the stack.  There must be no concurrent
   // pops while the length is being determined.
@@ -160,7 +160,7 @@ public:
   // Return the entry following value in the list used by the
   // specialized LockFreeStack class.
   static T* next(const T& value) {
-    return Atomic::load(next_ptr(const_cast<T&>(value)));
+    return AtomicAccess::load(next_ptr(const_cast<T&>(value)));
   }
 
   // Set the entry following value to new_next in the list used by the
@@ -168,7 +168,7 @@ public:
   // if value is in an instance of this specialization of LockFreeStack,
   // there must be no concurrent push or pop operations on that stack.
   static void set_next(T& value, T* new_next) {
-    Atomic::store(next_ptr(value), new_next);
+    AtomicAccess::store(next_ptr(value), new_next);
   }
 };
 
