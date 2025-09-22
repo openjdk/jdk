@@ -27,8 +27,7 @@
 #include "cds/serializeClosure.hpp"
 #include "oops/array.hpp"
 
-AOTLinkedClassTable AOTLinkedClassTable::_for_static_archive;
-AOTLinkedClassTable AOTLinkedClassTable::_for_dynamic_archive;
+AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
   soc->do_ptr((void**)&_boot);
