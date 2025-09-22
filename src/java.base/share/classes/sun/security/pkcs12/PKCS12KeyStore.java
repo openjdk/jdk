@@ -175,7 +175,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String macAlgorithm = null;
     private String pbmac1Hmac = null;
     private int macIterationCount = -1;
-    private int macSaltLength = -1;
 
     // the source of randomness
     private SecureRandom random;
@@ -789,8 +788,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private byte[] getSalt()
     {
         // Generate a random salt.
-        int len = (this.macSaltLength == -1) ? SALT_LEN : this.macSaltLength;
-        byte[] salt = new byte[len];
+        byte[] salt = new byte[SALT_LEN];
         if (random == null) {
            random = new SecureRandom();
         }
@@ -1484,7 +1482,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         final String kdfHmac;
         int writeIterationCount = macIterationCount;
 
-        if (macAlgorithm.equals("PBMAC1") ||
+        if (macAlgorithm.startsWith("PBEWith") ||
                 defaultMacAlgorithm().startsWith("PBEWith")) {
             if (defaultMacAlgorithm().equals("PBEWithHmacSHA512")) {
                 kdfHmac = "HmacSHA512";
@@ -2200,8 +2198,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         String pbmac1KdfHmac = macData.getKdfHmac();
                         pbmac1Hmac = pbmac1KdfHmac;
                         macIterationCount = ic;
-                        macAlgorithm = algName;
-                        macSaltLength = salt.length;
+                        macAlgorithm = "PBEWith" + pbmac1KdfHmac;
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
