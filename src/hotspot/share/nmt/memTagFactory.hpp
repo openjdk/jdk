@@ -113,7 +113,7 @@ struct NameToTagTable {
     Entry nentry(tag, table[bucket]);
     entries.push(nentry);
     table[bucket] = entries.length() - 1;
-    AtomicAccess::inc(&_number_of_tags);)
+    AtomicAccess::inc(&_number_of_tags);
   }
 
   MemTag tag_of(const char* name) {
