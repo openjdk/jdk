@@ -758,7 +758,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
   if (!(which >= 0 && which < cpool->resolved_method_entries_length())) {
     // FIXME: should be an assert
-    log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
+    log_debug(class, resolve)("bad bsm %d in:", which); cpool->print();
     return nullptr;
   }
   return cpool->cache()->method_if_resolved(which);
@@ -1559,8 +1559,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
     bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_bootstrap_entry_to(i1, cp2, i2);
-    return (match_entry && match_operand);
+    bool match_bsm = compare_bootstrap_entry_to(i1, cp2, i2);
+    return (match_entry && match_bsm);
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
@@ -1570,8 +1570,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
     bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_bootstrap_entry_to(i1, cp2, i2);
-    return (match_entry && match_operand);
+    bool match_bsm = compare_bootstrap_entry_to(i1, cp2, i2);
+    return (match_entry && match_bsm);
   } break;
 
   case JVM_CONSTANT_String:
@@ -1605,7 +1605,7 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   return false;
 } // end compare_entry_to()
 
-// Extend the operands array with the length and size of the ext_cp operands.
+// Extend the BSMAttributeEntries with the length and size of the ext_cp BSMAttributeEntries.
 // Used in RedefineClasses for CP merge.
 BSMAttributeEntries::InsertionIterator
 ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
@@ -1781,7 +1781,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   {
     int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
     int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have operands
+    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have a BSM attribute
     to_cp->dynamic_constant_at_put(to_i, k1, k2);
   } break;
 
@@ -1789,7 +1789,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   {
     int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
     int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have operands
+    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have a BSM attribute
     to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
@@ -1865,7 +1865,7 @@ int ConstantPool::find_matching_bsm_entry(int pattern_i,
     }
   }
   return -1;  // bootstrap specifier data not found; return unused index (-1)
-} // end find_matching_operand()
+} // end find_matching_bsm_entry()
 
 
 #ifndef PRODUCT
@@ -2300,7 +2300,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (!bsm_entries().is_empty())  st->print("/operands[%d]", bsm_entries().bootstrap_methods()->length());
+  if (!bsm_entries().is_empty())  st->print("/bsms[%d]", bsm_entries().bootstrap_methods()->length());
   print_address_on(st);
   if (pool_holder() != nullptr) {
     st->print(" for ");
