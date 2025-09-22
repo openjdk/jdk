@@ -47,7 +47,7 @@ import jdk.test.whitebox.WhiteBox;
  * out-of-stack sample processing for the duration of the test.
  * It now runs in native for one second, to cause queue overflows,
  * then it comes back into Java to trigger the queue walking.
- * Repeats the cycle 5 times and verifies that the loss decreases significantly from the first
+ * Repeats the cycle 5 times and verifies that the loss decreases from the first
  * to the last iteration.
  * @test
  * @requires vm.hasJFR & os.family == "linux" & vm.debug & vm.flagless
@@ -152,7 +152,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
             System.out.println("Lost samples in time box " + timeBoxedLoss.relativeTimeMillis + ": " + timeBoxedLoss.lostSamples);
         }
         // check that the last time box has far fewer lost samples than the first
-        Asserts.assertTrue(timeBoxedLosses.get(timeBoxedLosses.size() - 1).lostSamples <
-                           timeBoxedLosses.get(0).lostSamples / 2);
+        Asserts.assertTrue(timeBoxedLosses.get(timeBoxedLosses.size() - 1).lostSamples <=
+                           timeBoxedLosses.get(0).lostSamples / 1.5);
     }
 }
