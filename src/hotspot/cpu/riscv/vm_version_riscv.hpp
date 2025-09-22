@@ -283,26 +283,26 @@ private:
     STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
     // Number of 8-byte elements in _features_bitmap.
-    constexpr static int features_bitmap_element_count() {
+    constexpr static int element_count() {
       return sizeof(_features_bitmap) / sizeof(uint64_t);
     }
 
-    constexpr static int features_bitmap_element_shift_count() {
+    constexpr static int element_shift_count() {
       return LogBitsPerLong;
     }
 
-    constexpr static uint64_t features_bitmap_element_mask() {
-      return (1ULL << features_bitmap_element_shift_count()) - 1;
+    constexpr static uint64_t element_mask() {
+      return (1ULL << element_shift_count()) - 1;
     }
 
     static int element_index(RVFeatureIndex feature) {
-      int idx = feature >> features_bitmap_element_shift_count();
-      assert(idx < features_bitmap_element_count(), "Features array index out of bounds");
+      int idx = feature >> element_shift_count();
+      assert(idx < element_count(), "Features array index out of bounds");
       return idx;
     }
 
     static uint64_t bit_mask(RVFeatureIndex feature) {
-      return (1ULL << (feature & features_bitmap_element_mask()));
+      return (1ULL << (feature & element_mask()));
     }
 
     static RVFeatureIndex convert(uint32_t index) {
@@ -316,7 +316,7 @@ private:
     }
 
     RVExtFeatures() {
-      for (int i = 0; i < features_bitmap_element_count(); i++) {
+      for (int i = 0; i < element_count(); i++) {
         _features_bitmap[i] = 0;
       }
     }
