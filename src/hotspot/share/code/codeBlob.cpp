@@ -449,12 +449,15 @@ void BufferBlob::free(BufferBlob *blob) {
 AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) :
   BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
   assert(entry_offset[I2C] == 0, "sanity check");
+#ifdef ASSERT
   for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
     // The entry is within the adapter blob or unset.
-    assert((entry_offset[i] > 0 && entry_offset[i] < cb->insts()->size()) ||
-           (entry_offset[i] == -1),
-           "invalid entry offset[%d] = 0x%x", i, entry_offset[i]);
+    int offset = entry_offset[i];
+    assert((offset > 0 && offset < cb->insts()->size()) ||
+           (i >= C2I_No_Clinit_Check && offset == -1),
+           "invalid entry offset[%d] = 0x%x", i, offset);
   }
+#endif // ASSERT
   _c2i_offset = entry_offset[C2I];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];

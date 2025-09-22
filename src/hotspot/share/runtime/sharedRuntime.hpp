@@ -733,10 +733,45 @@ class AdapterHandlerEntry : public MetaspaceObj {
     _linked = true;
   }
 
-  address get_i2c_entry()                  const { return _adapter_blob != nullptr ? _adapter_blob->i2c_entry() : nullptr; }
-  address get_c2i_entry()                  const { return _adapter_blob != nullptr ? _adapter_blob->c2i_entry() : nullptr; }
-  address get_c2i_unverified_entry()       const { return _adapter_blob != nullptr ? _adapter_blob->c2i_unverified_entry() : nullptr; }
-  address get_c2i_no_clinit_check_entry()  const { return _adapter_blob != nullptr ? _adapter_blob->c2i_no_clinit_check_entry() : nullptr; }
+  address get_i2c_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->i2c_entry();
+#else
+    ShouldNotReachHere();
+    return nullptr;
+#endif // ZERO
+  }
+
+  address get_c2i_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_entry();
+#else
+    ShouldNotReachHere();
+    return nullptr;
+#endif // ZERO
+  }
+
+  address get_c2i_unverified_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_unverified_entry();
+#else
+    ShouldNotReachHere();
+    return nullptr;
+#endif // ZERO
+  }
+
+  address get_c2i_no_clinit_check_entry()  const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_no_clinit_check_entry();
+#else
+    ShouldNotReachHere();
+    return nullptr;
+#endif // ZERO
+  }
 
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }

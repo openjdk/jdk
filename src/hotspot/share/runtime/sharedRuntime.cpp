@@ -3405,17 +3405,13 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 
 void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   st->print("AHE@" INTPTR_FORMAT ": %s", p2i(this), fingerprint()->as_string());
-  if (get_i2c_entry() != nullptr) {
+  if (adapter_blob() != nullptr) {
     st->print(" i2c: " INTPTR_FORMAT, p2i(get_i2c_entry()));
-  }
-  if (get_c2i_entry() != nullptr) {
     st->print(" c2i: " INTPTR_FORMAT, p2i(get_c2i_entry()));
-  }
-  if (get_c2i_unverified_entry() != nullptr) {
     st->print(" c2iUV: " INTPTR_FORMAT, p2i(get_c2i_unverified_entry()));
-  }
-  if (get_c2i_no_clinit_check_entry() != nullptr) {
-    st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
+    if (get_c2i_no_clinit_check_entry() != nullptr) {
+      st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
+    }
   }
   st->cr();
 }
