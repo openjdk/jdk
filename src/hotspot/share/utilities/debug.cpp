@@ -684,7 +684,7 @@ void help() {
 
   tty->print_cr("method metadata.");
   tty->print_cr("  blob(CodeBlob* p)      - print CodeBlob");
-  tty->print_cr("  dump_vtable(address p) - dumps vtable of the Klass");
+  tty->print_cr("  dump_vtable(address p) - dump vtable of the Klass");
   tty->print_cr("  nm(intptr_t p)         - find & print CodeBlob details");
   tty->print_cr("  disnm(intptr_t p)      - find & print disassembly of CodeBlob");
   tty->print_cr("  printnm(intptr_t p)    - print nmethod details");
