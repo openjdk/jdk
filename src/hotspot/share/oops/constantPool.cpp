@@ -2352,14 +2352,16 @@ void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) co
   }
 }
 
-BSMAttributeEntries::InsertionIterator BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
-  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(), loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+BSMAttributeEntries::InsertionIterator
+BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
+  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(), 
+                                            loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
   return iter;
 }
 
 BSMAttributeEntries::InsertionIterator
 BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
-                                   ClassLoaderData* loader_data, TRAPS) {
+                                     ClassLoaderData* loader_data, TRAPS) {
   InsertionIterator extension_iterator(this, this->number_of_entries(), this->array_length());
   int new_number_of_entries = this->number_of_entries() + number_of_entries;
   int new_array_length = this->array_length() + array_length;
@@ -2388,7 +2390,6 @@ void BSMAttributeEntries::append(const BSMAttributeEntries& other, ClassLoaderDa
   InsertionIterator iter = start_extension(other, loader_data, CHECK);
   other.copy_into(iter, other.number_of_entries());
   end_extension(iter, loader_data, THREAD);
-
 }
 
 void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS) {
@@ -2396,7 +2397,7 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
   assert(iter._cur_offset <= this->_offsets->length(), "must be");
   assert(iter._cur_array <= this->_bootstrap_methods->length(), "must be");
 
-  // Did we fill up all of the available space? If so, do nothing
+  // Did we fill up all of the available space? If so, do nothing.
   if (iter._cur_offset == this->_offsets->length() &&
       iter._cur_array == this->_bootstrap_methods->length()) {
     return;

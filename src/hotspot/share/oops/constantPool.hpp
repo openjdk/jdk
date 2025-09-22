@@ -662,10 +662,10 @@ class ConstantPool : public Metadata {
 
   bool compare_bootstrap_entry_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
                                   int bsms_attribute_index2);
-  // Find a BSM entry in search_cp that matches the BSM at bsm_attribute_index
+  // Find a BSM entry in search_cp that matches the BSM at bsm_attribute_index.
   // Return -1 if not found.
   int find_matching_bsm_entry(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int offset_limit);
+                              int offset_limit);
   // Extend the BSM attribute storage to fit both the current data and the BSM data in ext_cp.
   // Use the returned InsertionIterator to fill out the newly allocated space.
   BSMAttributeEntries::InsertionIterator start_extension(const constantPoolHandle& ext_cp, TRAPS);

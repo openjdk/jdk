@@ -710,7 +710,7 @@ int VM_RedefineClasses::find_or_append_operand(const constantPoolHandle& scratch
   if (!match) {
     // forward reference in *merge_cp_p or not a direct match
     int found_i = scratch_cp->find_matching_bsm_entry(old_bs_i, *merge_cp_p,
-                                                    max_offset_in_merge);
+                                                      max_offset_in_merge);
     if (found_i != -1) {
       guarantee(found_i != old_bs_i, "compare_bootstrap_entry_to() and find_matching_operand() disagree");
       // found a matching operand somewhere else in *merge_cp_p so just need a mapping
