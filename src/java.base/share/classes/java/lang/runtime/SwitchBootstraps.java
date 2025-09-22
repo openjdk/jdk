@@ -262,7 +262,7 @@ public final class SwitchBootstraps {
      * The value of the {@code restart} index must be between {@code 0} (inclusive) and
      * the length of the {@code labels} array (inclusive),
      * or an {@link IndexOutOfBoundsException} is thrown.
-     * 
+     *
      * @apiNote It is permissible for the {@code labels} array to contain {@code String}
      * values that do not represent any enum constants at runtime.
      *
