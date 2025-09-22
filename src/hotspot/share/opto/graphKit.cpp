@@ -3642,7 +3642,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
     int mark_idx = C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes()));
-    // Add an edge in the MergeMem for the header fields so an access to one of those has correct memory state
+    // Add an edge in the MergeMem for the header fields so an access to one of those has correct memory state.
     // Use one NarrowMemProjNode per slice to properly record the adr type of each slice. The Initialize node will have
     // multiple projection as a result.
     set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(mark_idx))), mark_idx);
