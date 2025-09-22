@@ -54,15 +54,15 @@ ifeq ($(call isCompiler, gcc), true)
   SetSharedLibraryName = \
       -Wl,-soname=$1
 else ifeq ($(call isCompiler, clang), true)
-   ifeq ($(call isTargetOs, macosx), true)
+  ifeq ($(call isTargetOs, macosx), true)
     SetSharedLibraryName = \
-      -Wl,-install_name,@rpath/$1
-   else ifeq ($(call isTargetOs, aix), true)
+        -Wl,-install_name,@rpath/$1
+  else ifeq ($(call isTargetOs, aix), true)
     SetSharedLibraryName =
-   else
+  else
     # Default works for linux, might work on other platforms as well.
     SetSharedLibraryName = \
-      -Wl,-soname=$1
+        -Wl,-soname=$1
   endif
 else ifeq ($(call isCompiler, microsoft), true)
   SetSharedLibraryName =
