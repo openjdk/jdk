@@ -216,7 +216,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
+    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
         return result;
@@ -324,8 +324,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
+  if (ShenandoahEvacTracking) {
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+  }
+
   // Copy the object:
-  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
@@ -346,8 +349,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     // safe to do this on the public copy (this is also done during concurrent mark).
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
-    // Record that the evacuation succeeded
-    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
+    if (ShenandoahEvacTracking) {
+      // Record that the evacuation succeeded
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    }
 
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());
@@ -357,7 +362,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       assert(target_gen == YOUNG_GENERATION, "Error");
       // We record this census only when simulating pre-adaptive tenuring behavior, or
       // when we have been asked to record the census at evacuation rather than at mark
-      if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+      if (!ShenandoahGenerationalAdaptiveTenuring) {
         evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
       }
     }

@@ -29,8 +29,8 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "oops/oop.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -543,7 +543,8 @@ void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoi
 }
 
 void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
+  if (!ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+    // Only shenandoah safepoint operations participate in the active/gc generation scheme
     return;
   }
 
@@ -554,7 +555,7 @@ void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line
     return;
   }
 
-  ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
+  ShenandoahMessageBuffer msg("Active(%s) & GC(%s) Generations aren't reconciled", agen->name(), ggen->name());
   report_vm_error(file, line, msg.buffer());
 }
 
@@ -567,11 +568,15 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   }
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) { // look in forwardee
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (!os::is_readable_pointer(fwd)) {
-        return false;
+      markWord mark = obj->mark();
+      if (mark.is_marked()) {
+        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+        if (!os::is_readable_pointer(fwd)) {
+          return false;
+        }
+        mark = fwd->mark();
       }
-      nk = fwd->mark().narrow_klass();
+      nk = mark.narrow_klass();
     } else {
       nk = obj->narrow_klass();
     }

@@ -30,7 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "jni.h"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -598,7 +598,7 @@ protected:
   // Termination indicator used by the signal handler.
   // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
+  bool has_terminated()                       { return AtomicAccess::load(&_ParkEvent) == nullptr; };
 
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state

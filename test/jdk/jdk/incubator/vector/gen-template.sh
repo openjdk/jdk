@@ -66,6 +66,8 @@ reduction_op="Reduction-op"
 reduction_op_func="Reduction-op-func"
 reduction_op_masked="Reduction-Masked-op"
 reduction_op_masked_func="Reduction-Masked-op-func"
+reduction_saturating_op="SaturatingReduction-op"
+reduction_saturating_op_masked="SaturatingReduction-Masked-op"
 unary_math_template="Unary-op-math"
 binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
@@ -377,6 +379,13 @@ function gen_bool_reduction_op {
   gen_op_tmpl $bool_reduction_scalar "$@"
   gen_op_tmpl $bool_reduction_template "$@"
 }
+function gen_saturating_reduction_op {
+  echo "Generating saturating reduction op $1 ($2)..."
+  gen_op_tmpl $reduction_scalar_func "$@"
+  gen_op_tmpl $reduction_saturating_op "$@"
+  gen_op_tmpl $reduction_scalar_masked_func "$@"
+  gen_op_tmpl $reduction_saturating_op_masked "$@"
+}
 
 function gen_with_op {
   echo "Generating with op $1 ($2)..."
@@ -512,6 +521,9 @@ gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
 gen_bool_reduction_op "allTrue" "\&" "BITWISE" "true"
+
+# Saturating reductions.
+gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "0"
 
 #Insert
 gen_with_op "withLane" "" "" ""

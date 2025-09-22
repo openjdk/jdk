@@ -56,7 +56,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
@@ -287,7 +287,7 @@ size_t ZGeneration::freed() const {
 }
 
 void ZGeneration::increase_freed(size_t size) {
-  Atomic::add(&_freed, size, memory_order_relaxed);
+  AtomicAccess::add(&_freed, size, memory_order_relaxed);
 }
 
 size_t ZGeneration::promoted() const {
@@ -295,7 +295,7 @@ size_t ZGeneration::promoted() const {
 }
 
 void ZGeneration::increase_promoted(size_t size) {
-  Atomic::add(&_promoted, size, memory_order_relaxed);
+  AtomicAccess::add(&_promoted, size, memory_order_relaxed);
 }
 
 size_t ZGeneration::compacted() const {
@@ -303,7 +303,7 @@ size_t ZGeneration::compacted() const {
 }
 
 void ZGeneration::increase_compacted(size_t size) {
-  Atomic::add(&_compacted, size, memory_order_relaxed);
+  AtomicAccess::add(&_compacted, size, memory_order_relaxed);
 }
 
 ConcurrentGCTimer* ZGeneration::gc_timer() const {
@@ -704,7 +704,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   uint last_populated_age = 0;
   size_t last_populated_live = 0;
 
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
       last_populated_age = untype(age);

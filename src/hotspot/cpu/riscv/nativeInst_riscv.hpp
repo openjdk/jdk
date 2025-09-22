@@ -93,7 +93,6 @@ class NativeInstruction {
   static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
 
  public:
-
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
@@ -121,8 +120,8 @@ class NativeCall: private NativeInstruction {
     // to overload and hide it.
     instruction_size = 3 * NativeInstruction::instruction_size // auipc + ld + jalr
   };
- public:
 
+ public:
   static int byte_size() {
     return NativeCall::instruction_size; // auipc + ld + jalr
   }
@@ -157,6 +156,10 @@ class NativeCall: private NativeInstruction {
   static void set_stub_address_destination_at(address dest, address value);
   // return target address at stub
   static address stub_address_destination_at(address src);
+  // We either have a jalr or jal depending on distance to old destination.
+  // This method emits a new jal if new destination is within jal reach.
+  // Otherwise restores the jalr which can reach any destination.
+  void optimize_call(address dest, bool mt_safe = true);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.

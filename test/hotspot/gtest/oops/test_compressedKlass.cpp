@@ -37,6 +37,7 @@ TEST_VM(CompressedKlass, basics) {
   ASSERT_LT(CompressedKlassPointers::klass_range_start(), CompressedKlassPointers::klass_range_end());
   ASSERT_LE(CompressedKlassPointers::klass_range_end(), CompressedKlassPointers::encoding_range_end());
 
+#ifdef _LP64
   switch (CompressedKlassPointers::shift()) {
   case 0:
     ASSERT_EQ(CompressedKlassPointers::encoding_range_end() - CompressedKlassPointers::base(), (ptrdiff_t)(4 * G));
@@ -48,6 +49,10 @@ TEST_VM(CompressedKlass, basics) {
     const size_t expected_size = nth_bit(CompressedKlassPointers::narrow_klass_pointer_bits() + CompressedKlassPointers::shift());
     ASSERT_EQ(CompressedKlassPointers::encoding_range_end() - CompressedKlassPointers::base(), (ptrdiff_t)expected_size);
   }
+#else
+  ASSERT_EQ(CompressedKlassPointers::base(), (address)0);
+  ASSERT_EQ(CompressedKlassPointers::encoding_range_end(), (address)(UINT_MAX));
+#endif // _LP64
 }
 
 TEST_VM(CompressedKlass, ccp_off) {

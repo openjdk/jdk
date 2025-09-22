@@ -2261,7 +2261,7 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
   }
 #endif
@@ -2319,7 +2319,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
     block_comment(buffer);
   }
 #endif
@@ -2432,7 +2432,7 @@ void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
 #ifndef PRODUCT
     {
       char buffer[64];
-      snprintf(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
+      os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
       block_comment(buffer);
     }
 #endif
@@ -2904,11 +2904,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode m
   {
     char buffer[48];
     if (mode == PushPopSVE) {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d SVE registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d SVE registers", count);
     } else if (mode == PushPopNeon) {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d Neon registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d Neon registers", count);
     } else {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d fp registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d fp registers", count);
     }
     block_comment(buffer);
   }
@@ -3016,11 +3016,11 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mo
   {
     char buffer[48];
     if (mode == PushPopSVE) {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d SVE registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d SVE registers", count);
     } else if (mode == PushPopNeon) {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d Neon registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d Neon registers", count);
     } else {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d fp registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d fp registers", count);
     }
     block_comment(buffer);
   }
@@ -5922,7 +5922,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   {
     const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "array_equals%c{", kind);
+    os::snprintf_checked(comment, sizeof comment, "array_equals%c{", kind);
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -6120,7 +6120,7 @@ void MacroAssembler::string_equals(Register a1, Register a2,
 #ifndef PRODUCT
   {
     char comment[64];
-    snprintf(comment, sizeof comment, "{string_equalsL");
+    os::snprintf_checked(comment, sizeof comment, "{string_equalsL");
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -6268,7 +6268,7 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
 #ifndef PRODUCT
     {
       char buf[64];
-      snprintf(buf, sizeof buf, "zero_words (count = %" PRIu64 ") {", cnt);
+      os::snprintf_checked(buf, sizeof buf, "zero_words (count = %" PRIu64 ") {", cnt);
       BLOCK_COMMENT(buf);
     }
 #endif
@@ -6423,10 +6423,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 
 // Intrinsic for
 //
-// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
-//     return the number of characters copied.
-// - java/lang/StringUTF16.compress
-//     return index of non-latin1 character if copy fails, otherwise 'len'.
+// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ASCII
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
@@ -7099,7 +7103,6 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - t1, t2, t3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, t1, t2, t3, rscratch1);
 
   Label push;
@@ -7159,7 +7162,6 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - t1, t2, t3: temporary registers
 // - slow: branched to if unlocking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   // cmpxchg clobbers rscratch1.
   assert_different_registers(obj, t1, t2, t3, rscratch1);
 

@@ -3451,6 +3451,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> ($type$) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> ($type$) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp(($type$)0, m, (i, a, b) -> ($type$) VectorMath.addSaturatingUnsigned(a, b)));
 #end[!FP]
 #if[BITWISE]
             case VECTOR_OP_AND: return (v, m) ->
