@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  */
 public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
-    static final String UNSET_LABEL = ".unset";
+    static final String UNSET_LABEL = ".uninitialized";
 
     // Unsafe allows `LazyConstant` instances to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -161,7 +161,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     private void preventReentry() {
         if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursive invocation of a LazyConstant's underlying supplier: " + computingFunction);
+            throw new IllegalStateException("Recursive invocation of a LazyConstant's computing function: " + computingFunction);
         }
     }
 

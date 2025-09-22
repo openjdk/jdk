@@ -46,11 +46,16 @@ import java.util.function.Supplier;
  * {@linkplain LazyConstant#of(Supplier)}. When created, the lazy constant is
  * <em>not initialized</em>, which means the constant is not yet set. The constant,
  * of type {@code T}, can then be <em>initialized</em> (and retrieved) by calling
- * {@linkplain #get()}. The firsts time {@linkplain #get()} is called, an underlying
+ * {@linkplain #get()}. The first time {@linkplain #get()} is called, an underlying
  * <em>computing function</em> will be invoked which would compute
  * the constant. The computing function is provided at construction. Once initialized,
  * the constant can <em>never change</em> and can be retrieved over and over again
  * by subsequent {@linkplain #get() get} invocations.
+ * <p>
+ * The term "shallowly immutable" means the reference to the constant will never change
+ * once it is initialized. However, the referenced object itself may or may not
+ * be mutable. Hence, immutability can only be guaranteed at the first initial, shallow
+ * level.
  * <p>
  * Consider the following example where a lazy constant field "{@code logger}" is a
  * shallowly immutable holder of a constant of type {@code Logger}:
@@ -73,17 +78,30 @@ import java.util.function.Supplier;
  * Initially, the lazy constant is <em>not initialized</em>, until {@code logger.get()}
  * evaluates the computing function, and initializes the constant to the result;
  * the result is then returned to the client. Hence, {@linkplain #get()} guarantees that
- * a lazy constant is <em>initialized</em> before it returns, baring any exceptions.
+ * a lazy constant is <em>initialized</em> before it returns, barring any exceptions.
  * <p>
- * Furthermore, {@linkplain #get()} guarantees that, out several threads trying to invoke
- * the computing function simultaneously, only one is ever evaluated. This property is
- * crucial as evaluation of the computing function may have side effects, for example,
- * the call above to {@code Logger.create()} may result in storage resources being
- * prepared.
- * <p>
+ * Furthermore, {@linkplain #get()} guarantees that, out of several threads trying to
+ * invoke the computing function simultaneously, only one is ever selected for
+ * computation. This property is crucial as evaluation of the computing function may have
+ * side effects, for example, the call above to {@code Logger.create()} may result in
+ * storage resources being prepared.
+ *
+ * <h2 id="exception-handling">Exception handling</h2>
  * If the computing function returns {@code null}, a {@linkplain NullPointerException}
  * is thrown. Hence, a lazy constant can never be {@code null}. Clients that want to
  * use a nullable constant can wrap the value into an {@linkplain Optional} holder.
+ * <p>
+ * If the computing function recursively invokes itself (directly or indirectly via
+ * the lazy constant), an {@linkplain IllegalStateException} is thrown and the lazy
+ * constant is not initialized.
+ * <p>
+ * If an invocation of the computing function is unsuccessful (i.e., the function throws),
+ * the throwable is relayed to the caller and the lazy constant is not initialized.
+ * If the computing function throws any unchecked exception or Error, that Throwable
+ * is propagated to the caller, and the lazy constant remains uninitialized.
+ * In other words, upon an unsuccessful invocation of the computing function,
+ * neither a constant, the exception, nor the fact that an exception was thrown are ever
+ * stored in the lazy constant.
  *
  * <h2 id="composition">Composing lazy constants</h2>
  * A lazy constant can depend on other computed constants, forming a dependency graph
@@ -126,18 +144,25 @@ import java.util.function.Supplier;
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A lazy constant is guaranteed to be initialized atomically and at most once. If
- * competing threads are racing to initialize a lazy constant, only one update computes,
- * while the other updates are blocked until the constant is initialized, whereafter
- * the other updates observes the lazy constant is initialized and leave the constant
- * unchanged and will never invoke any computation.
+ * competing threads are racing to initialize a lazy constant, only one updating
+ * thread runs the computing function, while the other threads are blocked until
+ * the constant is initialized, after which the other threads observe the lazy constant
+ * is initialized and leave the constant unchanged and will never invoke any computation.
  * <p>
- * Furthermore, there is a
+ * The invocation of the computing function and the resulting initialization of the constant
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * relation between any and all operations on a lazy constant with respect to the
- * lazy constant itself (but not with respect to actions on other objects).
+ * the initialized constant is read. Hence, the initialized constant, including any
+ * {@code final} fields of any newly created objects, are safely published.
  * <p>
- * Invocations of the computing function form a total order of zero or more exceptional
- * invocations followed by zero or one successful invocation of the computing function.
+ * The computing function runs on the caller’s thread.
+ * <p>
+ * If a thread that is blocked by another computing thread is interrupted, this is not
+ * acted upon by the lazy constant (e.g., the thread’s interrupted status is not
+ * cleared, and it does not throw InterruptedException; interruption does not cancel
+ * initialization).
+ * <p>
+ * If the computing function blocks indefinitely, other threads operating on this
+ * lazy constant may block indefinitely; no timeouts or cancellations are provided.
  *
  * <h2 id="performance">Performance</h2>
  * As a lazy constant can never change after it has been initialized. Therefore,
@@ -149,40 +174,48 @@ import java.util.function.Supplier;
  * one or more layers of a {@linkplain Record record} fields or final fields
  * in hidden classes.
  *
- * @implSpec Except for {@linkplain #equals(Object) equals(obj)} parameters; all
- *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
- *           will be thrown.
+ * @apiNote As a lazy constant can be initialized with an object but, it is not
+ *          possible to ever remove that object, this can be a source of an unintended
+ *          memory leak. In other words, a lazy constant
+ *          {@linkplain java.lang.ref##reachability strongly references} the object
+ *          it was initialized with. Hence, a lazy constant will hold the object it
+ *          was initialized with until the lazy constant itself is collected (if ever).
+ *          <p>
+ *          A {@code LazyConstant} that has a type parameter {@code T} that is an
+ *          array type (of arbitrary rank) will only allow the JVM to treat the
+ *          <em>array reference</em> as a constant but <em>not its components</em>.
+ *          Instead, a {@linkplain List#ofLazy(int, IntFunction) a computed list} of
+ *          arbitrary depth can be used, which provides constant components.
+ *          More generally, a lazy constant can hold other lazy constants of
+ *          arbitrary depth and still provide transitive constancy.
+ *          <p>
+ *          The {@code LazyConstant} type is not {@link Serializable}.
+ *          <p>
+ *          It is not recommended putting lazy constants into equality-based collections
+ *          (or similar constructs) prior to initialization if the underlying functions
+ *          have side effects or may fail.
+ *          <p>
+ *          Use in static initializers may interact with class initialization order;
+ *          cyclic initialization may result in initialization errors per JLS 12.4.
  *
- * @implNote As a lazy constant can be initialized with an object but, it is not
- *           possible to ever remove that object, this can be a source of an unintended
- *           memory leak. In other words, a lazy constant
- *           {@linkplain java.lang.ref##reachability strongly references} the object
- *           it was initialized with. Hence, a lazy constant will hold the object it
- *           was initialized with until the lazy constant itself is collected (if ever).
- *           <p>
- *           A {@code LazyConstant} that has a type parameter {@code T} that is an
- *           array type (of arbitrary rank) will only allow the JVM to treat the
- *           <em>array reference</em> as a constant but <em>not its components</em>.
- *           Instead, a {@linkplain List#ofLazy(int, IntFunction) a computed list} of
- *           arbitrary depth can be used, which provides constant components.
- *           More generally, a lazy constant can hold other lazy constants of
- *           arbitrary depth and still provide transitive constantness.
- *           <p>
- *           A {@code LazyConstant} is not {@link Serializable}.
- *           <p>
- *           Lazy constants strongly references its underlying computing function
- *           used to compute values so long as the lazy constant is not
- *           initialized, after which the computing function is no longer strongly
- *           referenced and may be collected.
- *           <p>
+ * @implSpec Except for {@linkplain #equals(Object) equals(obj)} and
+ *           {@linkplain #orElse(Object)} parameters; all method parameters must be
+ *           <em>non-null</em> or a {@link NullPointerException} will be thrown.
+ *
+ * @implNote
  *           A lazy constant is free to synchronize on itself. Hence, care must be
  *           taken when directly or indirectly synchronizing on a lazy constant.
  *
  * @param <T> type of the constant
  *
+ * @since 26
+ *
+ * @see Optional
+ * @see Supplier
  * @see List#ofLazy(int, IntFunction)
  * @see Map#ofLazy(Set, Function)
- * @since 26
+ * @jls 12.2 Initialization of Classes and Interfaces
+ * @jls 17.4.5 Happens-before Order
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
 public sealed interface LazyConstant<T>
@@ -191,8 +224,13 @@ public sealed interface LazyConstant<T>
 
     /**
      * {@return the constant if initialized, otherwise, returns {@code other}}
+     * <p>
+     * This method never triggers initialization of this lazy constant and will observe
+     * initialization by other threads atomically (i.e., it returns the initialized
+     * value if and only if the initialization has already completed).
      *
      * @param other value to return if the constant is not initialized
+     *              (can be {@code null})
      */
     T orElse(T other);
 
@@ -202,15 +240,18 @@ public sealed interface LazyConstant<T>
      * <p>
      * After this method returns successfully, the constant is guaranteed to be
      * initialized.
-     *
-     * @throws NullPointerException if the computing function returns {@code null}
-     * @throws RuntimeException if an exception is thrown while executing the
-     *         computing function
+     * <p>
+     * If the computing function throws, the throwable is relayed to the caller and
+     * the lazy constant remains uninitialized; a subsequent call to get() may then
+     * attempt the computation again.
      */
     T get();
 
     /**
      * {@return {@code true} if the constant is initialized, {@code false} otherwise}
+     * <p>
+     * This method never triggers initialization of this lazy constant and will observe
+     * changes in the initialization state made by other threads atomically.
      */
     boolean isInitialized();
 
@@ -219,36 +260,67 @@ public sealed interface LazyConstant<T>
 
     /**
      * Indicates whether some other object is "equal to" this lazy constant.
+     * <p>
      * The other object is considered equal if:
      * <ul>
-     * <li>it is also a {@code LazyConstant} and;
+     * <li>it is also an instance of {@code LazyConstant} and;
      * <li>the constant values obtained via {@linkplain #get()} are "equal to"
      * each other via {@code equals()}.
      * </ul>
+     * <p>
+     * In other words, equality is based solely on the initialized constants, not on
+     * computing functions or lazy constants' identities.
+     * <p>
+     * This method may trigger initialization of this lazy constant and/or the provided
+     * {@code obj}, if it is an instance of a {@linkplain LazyConstant}. Consequently,
+     * this method might block or throw.
      *
-     * @param obj an object to be tested for equality
-     * @throws NullPointerException if the computing function returns {@code null}
-     * @throws RuntimeException if an exception is thrown while executing the
-     *         computing function
+     * @implSpec The order of potential initialization triggering is specified as:
+     * <ol>
+     *     <li>{@code this} lazy constant</li>
+     *     <li>{@code obj} lazy constant</li>
+     * </ol>
+     *
+     * @param obj an object to be tested for equality (can be {@code null})
      * @return {@code true} if the other object is "equal to" this object
      *         otherwise {@code false}
      */
+    @Override
     boolean equals(Object obj);
 
     /**
      * {@return the hash code of this constant}
-     *
-     * @throws NullPointerException if the computing function returns {@code null}
-     * @throws RuntimeException if an exception is thrown while executing the
-     *         computing function
+     * <p>
+     * This method may trigger initialization of this lazy constant. Consequently,
+     * this method might block or throw.
      */
+    @Override
     int hashCode();
+
+    /**
+     * {@return a non-initializing string suitable for debugging}
+     * <p>
+     * This method never triggers initialization of this lazy constant and will observe
+     * initialization by other threads atomically (i.e., it observes the initialized
+     * value if and only if the initialization has already completed).
+     * <p>
+     * If this lazy constant is initialized, the {@linkplain Object#toString()} of the
+     * initialized constant will be returned, otherwise, an implementation dependent
+     * string is returned that indicates this lazy constant is not yet initialized.
+     */
+    @Override
+    String toString();
 
     // Factories
 
     /**
      * {@return a new lazy constant to be computed later via the provided
      *          {@code computingFunction}}
+     * <p>
+     * The returned lazy constant strongly references the provided
+     * {@code computingFunction} until initialization completes successfully; after
+     * which the computing function is no longer strongly referenced and becomes
+     * eligible for garbage collection.
      *
      * @param computingFunction in the form of a Supplier to be used to compute
      *                          the constant
