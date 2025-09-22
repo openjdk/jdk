@@ -970,8 +970,9 @@ public final class Float16
      * </ul>
      *
      * @apiNote
-     * Copy or cross-reference corresponding note in {@code Double}
-     * once that text is finalized.
+     * For a discussion of differences between the total order of this
+     * method compared to the total order defined by the IEEE 754
+     * standard, see the note in {@link Double#compareTo(Double)}.
      *
      * @param   anotherFloat16   the {@code Float16} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat16} is
