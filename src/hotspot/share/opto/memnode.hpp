@@ -167,7 +167,7 @@ public:
   bool is_unsafe_access() const { return _unsafe_access; }
 
 #ifndef PRODUCT
-  static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);
+  static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
@@ -1380,6 +1380,8 @@ public:
   // Does a NarrowMemProj with this adr_type and this node as input already exist?
   bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
 
+  // Used during matching: find the MachProj memory projection if there's one. Expectation is that there should be at
+  // most one.
   MachProjNode* mem_mach_proj() const;
 
 private:

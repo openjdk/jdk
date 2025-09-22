@@ -565,6 +565,8 @@ private:
                         // MemNode       - new memory input for this node
                         // CheckCastPP   - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
+                        // NarrowMem     - newly created projection (type includes instance_id) from projection created
+                        //                 before EA
 
   // manage entries in _node_map
 

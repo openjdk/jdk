@@ -25,10 +25,11 @@
  * @test
  * @bug 8327963
  * @summary C2: fix construction of memory graph around Initialize node to prevent incorrect execution if allocation is removed
- * @run main/othervm -XX:-BackgroundCompilation TestEarlyEliminationOfAllocationWithoutUse
- * @run main/othervm TestEarlyEliminationOfAllocationWithoutUse
+ * @run main/othervm -XX:-BackgroundCompilation compiler.macronodes.TestEarlyEliminationOfAllocationWithoutUse
+ * @run main/othervm compiler.macronodes.TestEarlyEliminationOfAllocationWithoutUse
  */
 
+package compiler.macronodes;
 import java.util.Arrays;
 
 public class TestEarlyEliminationOfAllocationWithoutUse {

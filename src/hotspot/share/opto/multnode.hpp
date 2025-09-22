@@ -224,7 +224,6 @@ public:
   virtual int Opcode() const;
 
 #ifndef PRODUCT
-  void dump_adr_type(outputStream* st) const;
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
