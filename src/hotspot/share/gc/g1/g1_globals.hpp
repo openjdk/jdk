@@ -163,7 +163,7 @@
           range(0, 100)                                                     \
                                                                             \
   product(size_t, G1PerThreadPendingCardThreshold, 256, DIAGNOSTIC,         \
-          "Amount of pending cards allowed on the card table per GC "       \
+          "Number of pending cards allowed on the card table per GC "       \
           "worker thread before considering starting refinement.")          \
           range(0, UINT_MAX)                                                \
                                                                             \
