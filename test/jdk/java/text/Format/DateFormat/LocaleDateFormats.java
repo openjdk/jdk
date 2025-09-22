@@ -25,30 +25,32 @@
  * @test
  * @bug 8080774 8174269
  * @modules jdk.localedata
- * @run testng LocaleDateFormats
+ * @run junit LocaleDateFormats
  * @summary This file contains tests for JRE locales date formats
  */
 
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LocaleDateFormats {
 
-    @Test(dataProvider = "dateFormats")
+    @ParameterizedTest
+    @MethodSource("dateFormats")
     public void testDateFormat(Locale loc, int style, int year, int month, int date, String expectedString) {
         Calendar cal = Calendar.getInstance(loc);
         cal.set(year, month-1, date);
         // Create date formatter based on requested style and test locale
         DateFormat df = DateFormat.getDateInstance(style, loc);
         // Test the date format
-        assertEquals(df.format(cal.getTime()), expectedString);
+        assertEquals(expectedString, df.format(cal.getTime()));
     }
 
-    @DataProvider(name = "dateFormats" )
     private Object[][] dateFormats() {
         return new Object[][] {
             //8080774

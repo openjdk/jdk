@@ -25,20 +25,20 @@
  * @test
  * @bug 8221431
  * @summary Tests decomposition of Japanese square era characters.
- * @run testng/othervm SquareEraCharacterTest
+ * @run junit/othervm SquareEraCharacterTest
  */
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.Normalizer;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SquareEraCharacterTest {
 
-    @DataProvider
     Object[][] squareEras() {
         return new Object[][] {
 
@@ -51,12 +51,11 @@ public class SquareEraCharacterTest {
         };
     }
 
-    @Test(dataProvider="squareEras")
+    @ParameterizedTest
+    @MethodSource("squareEras")
     public void test_normalize(char squareChar, String expected) {
 
-        assertEquals(
-            Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
-            expected,
+        assertEquals(            expected, Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
             "decomposing " + Character.getName(squareChar) + ".");
     }
 }

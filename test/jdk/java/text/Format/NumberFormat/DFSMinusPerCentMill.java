@@ -29,17 +29,20 @@
  *          This test assumes CLDR has numbering systems for "arab" and
  *          "arabext", and their minus/percent representations include
  *          BiDi formatting control characters.
- * @run testng/othervm DFSMinusPerCentMill
+ * @run junit/othervm DFSMinusPerCentMill
  */
 
 import java.io.*;
 import java.util.*;
 import java.text.*;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DFSMinusPerCentMill {
     private enum Type {
         NUMBER, PERCENT, CURRENCY, INTEGER, COMPACT, PERMILL
@@ -49,7 +52,6 @@ public class DFSMinusPerCentMill {
     private static final Locale US_ARABEXT = Locale.forLanguageTag("en-US-u-nu-arabext");
     private static final double SRC_NUM = -1234.56;
 
-    @DataProvider
     Object[][] formatData() {
         return new Object[][] {
             // Locale, FormatStyle, expected format, expected single char symbol
@@ -69,7 +71,6 @@ public class DFSMinusPerCentMill {
         };
     }
 
-    @DataProvider
     Object[][] charSymbols() {
         return new Object[][]{
             // Locale, percent, per mille, minus sign
@@ -78,7 +79,8 @@ public class DFSMinusPerCentMill {
         };
     }
 
-    @Test(dataProvider="formatData")
+    @ParameterizedTest
+    @MethodSource("formatData")
     public void testFormatData(Locale l, Type style, String expected) {
         NumberFormat nf = null;
         switch (style) {
@@ -102,15 +104,16 @@ public class DFSMinusPerCentMill {
                 break;
         }
 
-        assertEquals(nf.format(SRC_NUM), expected);
+        assertEquals(expected, nf.format(SRC_NUM));
     }
 
-    @Test(dataProvider="charSymbols")
+    @ParameterizedTest
+    @MethodSource("charSymbols")
     public void testCharSymbols(Locale l, char percent, char permill, char minus) {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-        assertEquals(dfs.getPercent(), percent);
-        assertEquals(dfs.getPerMill(), permill);
-        assertEquals(dfs.getMinusSign(), minus);
+        assertEquals(percent, dfs.getPercent());
+        assertEquals(permill, dfs.getPerMill());
+        assertEquals(minus, dfs.getMinusSign());
     }
 
     @Test
@@ -122,7 +125,7 @@ public class DFSMinusPerCentMill {
                 new ByteArrayInputStream(bos.toByteArray())
         ).readObject();
 
-        assertEquals(dfs, dfsSerialized);
+        assertEquals(dfsSerialized, dfs);
 
         // set minus/percent/permille
         dfs.setMinusSign('a');
@@ -134,6 +137,6 @@ public class DFSMinusPerCentMill {
                 new ByteArrayInputStream(bos.toByteArray())
         ).readObject();
 
-        assertEquals(dfs, dfsSerialized);
+        assertEquals(dfsSerialized, dfs);
     }
 }

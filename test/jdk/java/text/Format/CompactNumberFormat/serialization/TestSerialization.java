@@ -25,11 +25,9 @@
  * @bug 8177552 8327640
  * @modules jdk.localedata
  * @summary Checks the serialization feature of CompactNumberFormat
- * @run testng/othervm TestSerialization
+ * @run junit/othervm TestSerialization
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,8 +38,12 @@ import java.math.RoundingMode;
 import java.text.CompactNumberFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSerialization {
 
     private static final NumberFormat FORMAT_HI = NumberFormat.getCompactNumberInstance(
@@ -57,7 +59,7 @@ public class TestSerialization {
     private static final NumberFormat FORMAT_KO_KR = NumberFormat.getCompactNumberInstance(
             Locale.KOREA, NumberFormat.Style.SHORT);
 
-    @BeforeTest
+    @BeforeAll
     public void mutateInstances() {
         FORMAT_HI.setMinimumFractionDigits(2);
         FORMAT_HI.setMinimumIntegerDigits(5);
@@ -104,13 +106,13 @@ public class TestSerialization {
                 new FileInputStream(fileName))) {
             for (NumberFormat fmt : formats) {
                 NumberFormat obj = (NumberFormat) os.readObject();
-                assertEquals(fmt, obj, "Serialized and deserialized"
+                assertEquals(obj, fmt, "Serialized and deserialized"
                         + " objects do not match");
 
                 long number = 123456789789L;
                 String expected = fmt.format(number);
                 String actual = obj.format(number);
-                assertEquals(actual, expected, "Serialized and deserialized"
+                assertEquals(expected, actual, "Serialized and deserialized"
                         + " objects are expected to return same formatted"
                         + " output for number: " + number);
             }

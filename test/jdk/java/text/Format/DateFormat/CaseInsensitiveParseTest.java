@@ -25,7 +25,7 @@
  * @test
  * @bug 8248434
  * @modules jdk.localedata
- * @run testng/othervm CaseInsensitiveParseTest
+ * @run junit/othervm CaseInsensitiveParseTest
  * @summary Checks format/parse round trip in case-insensitive manner.
  */
 
@@ -37,16 +37,17 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CaseInsensitiveParseTest {
 
     private final static String PATTERN = "GGGG/yyyy/MMMM/dddd/hhhh/mmmm/ss/aaaa";
     private final static Date EPOCH = new Date(0L);
 
-    @DataProvider
     private Object[][] locales() {
         return (Object[][])Arrays.stream(DateFormat.getAvailableLocales())
             .map(Stream::of)
@@ -54,19 +55,21 @@ public class CaseInsensitiveParseTest {
             .toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "locales")
+    @ParameterizedTest
+    @MethodSource("locales")
     public void testUpperCase(Locale loc) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(PATTERN, loc);
         String formatted = sdf.format(EPOCH);
-        assertEquals(sdf.parse(formatted.toUpperCase(Locale.ROOT)), EPOCH,
+        assertEquals(EPOCH, sdf.parse(formatted.toUpperCase(Locale.ROOT)),
                 "roundtrip failed for string '" + formatted + "', locale: " + loc);
     }
 
-    @Test(dataProvider = "locales")
+    @ParameterizedTest
+    @MethodSource("locales")
     public void testLowerCase(Locale loc) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(PATTERN, loc);
         String formatted = sdf.format(EPOCH);
-        assertEquals(sdf.parse(formatted.toLowerCase(Locale.ROOT)), EPOCH,
+        assertEquals(EPOCH, sdf.parse(formatted.toLowerCase(Locale.ROOT)),
                 "roundtrip failed for string '" + formatted + "', locale: " + loc);
     }
 }

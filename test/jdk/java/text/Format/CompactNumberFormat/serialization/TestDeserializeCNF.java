@@ -28,11 +28,9 @@
  * @summary Checks deserialization of compact number format
  * @library /java/text/testlib
  * @build TestDeserializeCNF HexDumpReader
- * @run testng/othervm TestDeserializeCNF
+ * @run junit/othervm TestDeserializeCNF
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +39,12 @@ import java.math.RoundingMode;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDeserializeCNF {
 
     // This object is serialized in cnf1.ser.txt with HALF_UP
@@ -60,7 +62,7 @@ public class TestDeserializeCNF {
     private static final String FILE_COMPACT_FORMAT1 = "cnf1.ser.txt";
     private static final String FILE_COMPACT_FORMAT2 = "cnf2.ser.txt";
 
-    @BeforeTest
+    @BeforeAll
     public void mutateInstances() {
         COMPACT_FORMAT1.setRoundingMode(RoundingMode.HALF_UP);
         COMPACT_FORMAT1.setGroupingSize(3);
@@ -78,11 +80,11 @@ public class TestDeserializeCNF {
                 ObjectInputStream ois2 = new ObjectInputStream(istream2);) {
 
             CompactNumberFormat obj1 = (CompactNumberFormat) ois1.readObject();
-            assertEquals(obj1, COMPACT_FORMAT1, "Deserialized instance is not"
+            assertEquals(COMPACT_FORMAT1, obj1, "Deserialized instance is not"
                     + " equal to the instance serialized in " + FILE_COMPACT_FORMAT1);
 
             CompactNumberFormat obj2 = (CompactNumberFormat) ois2.readObject();
-            assertEquals(obj2, COMPACT_FORMAT2, "Deserialized instance is not"
+            assertEquals(COMPACT_FORMAT2, obj2, "Deserialized instance is not"
                     + " equal to the instance serialized in " + FILE_COMPACT_FORMAT2);
         }
     }

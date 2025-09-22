@@ -25,19 +25,21 @@
  * @bug 8177552 8306116 8319990
  * @summary Checks CNF.parse() when parseBigDecimal is set to true
  * @modules jdk.localedata
- * @run testng/othervm TestParseBigDecimal
+ * @run junit/othervm TestParseBigDecimal
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.text.CompactNumberFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestParseBigDecimal {
 
     private static final CompactNumberFormat FORMAT_DZ_LONG = (CompactNumberFormat) NumberFormat
@@ -64,7 +66,7 @@ public class TestParseBigDecimal {
     private static final CompactNumberFormat FORMAT_SE_SHORT = (CompactNumberFormat) NumberFormat
             .getCompactNumberInstance(Locale.of("se"), NumberFormat.Style.SHORT);
 
-    @BeforeTest
+    @BeforeAll
     public void mutateInstances() {
         FORMAT_DZ_LONG.setParseBigDecimal(true);
         FORMAT_EN_US_SHORT.setParseBigDecimal(true);
@@ -76,7 +78,6 @@ public class TestParseBigDecimal {
         FORMAT_SE_SHORT.setParseBigDecimal(true);
     }
 
-    @DataProvider(name = "parse")
     Object[][] compactParseData() {
         return new Object[][]{
             // compact number format instance, string to parse, parsed number
@@ -165,7 +166,8 @@ public class TestParseBigDecimal {
             {FORMAT_SE_SHORT, "\u221212345679,89\u00a0bn", new BigDecimal("-12345679890000000000.00")},};
     }
 
-    @Test(dataProvider = "parse")
+    @ParameterizedTest
+    @MethodSource("compactParseData")
     public void testParse(NumberFormat cnf, String parseString,
             Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, BigDecimal.class);

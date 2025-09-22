@@ -26,23 +26,24 @@
  * @summary Checks SimpleDateFormat.format/parse for the AIOOB exception when
  *          formatting/parsing dates through a pattern string that contains a
  *          sequence of 256 or more non-ASCII unicode characters.
- * @run testng/othervm Bug8193444
+ * @run junit/othervm Bug8193444
  */
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Bug8193444 {
 
     private static final String NON_ASCII_CHAR = "\u263A";
 
-    @DataProvider(name = "dateFormat")
     Object[][] dateFormatData() {
         return new Object[][]{
             // short_length (between 0 and 254)
@@ -53,7 +54,8 @@ public class Bug8193444 {
             {257},};
     }
 
-    @Test(dataProvider = "dateFormat")
+    @ParameterizedTest
+    @MethodSource("dateFormatData")
     public void testDateFormatAndParse(int length)
             throws ParseException {
 
@@ -66,7 +68,7 @@ public class Bug8193444 {
         // Since the tested format patterns do not contain any character
         // representing date/time field, those characters are not interpreted,
         // they are simply copied into the output string during formatting
-        assertEquals(result, pattern, "Failed to format the date using"
+        assertEquals(pattern, result, "Failed to format the date using"
                 + " pattern of length: " + length);
 
         // The format pattern used by this SimpleDateFormat

@@ -26,17 +26,18 @@
  * @summary Checks the behaviour of Unicode BCP 47 U Extension with
  *          compact number format
  * @modules jdk.localedata
- * @run testng/othervm TestUExtensionOverride
+ * @run junit/othervm TestUExtensionOverride
  */
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUExtensionOverride {
 
-    @DataProvider(name = "compactFormatData")
     Object[][] compactFormatData() {
         return new Object[][]{
             // locale, number, formatted string
@@ -61,7 +62,6 @@ public class TestUExtensionOverride {
                 "\u0967\u0968\u00a0k"},};
     }
 
-    @DataProvider(name = "compactParseData")
     Object[][] compactParseData() {
         return new Object[][]{
             // locale, parse string, parsed number
@@ -87,7 +87,8 @@ public class TestUExtensionOverride {
                 "\u0967\u0968\u00a0k", 12000L},};
     }
 
-    @Test(dataProvider = "compactFormatData")
+    @ParameterizedTest
+    @MethodSource("compactFormatData")
     public void testFormat(Locale locale, double num,
             String expected) {
         NumberFormat cnf = NumberFormat.getCompactNumberInstance(locale,
@@ -95,7 +96,8 @@ public class TestUExtensionOverride {
         CompactFormatAndParseHelper.testFormat(cnf, num, expected);
     }
 
-    @Test(dataProvider = "compactParseData")
+    @ParameterizedTest
+    @MethodSource("compactParseData")
     public void testParse(Locale locale, String parseString,
             Number expected) throws ParseException {
         NumberFormat cnf = NumberFormat.getCompactNumberInstance(locale,

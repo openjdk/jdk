@@ -26,19 +26,20 @@
  * @bug 8212749
  * @summary test whether input value check for
  *          DecimalFormat.setGroupingSize(int) works correctly.
- * @run testng/othervm SetGroupingSizeTest
+ * @run junit/othervm SetGroupingSizeTest
  */
 
 import java.text.DecimalFormat;
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SetGroupingSizeTest {
 
-    @DataProvider
     public static Object[][] validGroupingSizes() {
         return new Object[][] {
             { 0 },
@@ -46,7 +47,6 @@ public class SetGroupingSizeTest {
         };
     }
 
-    @DataProvider
     public static Object[][] invalidGroupingSizes() {
         return new Object[][] {
             { Byte.MIN_VALUE - 1 },
@@ -58,17 +58,20 @@ public class SetGroupingSizeTest {
         };
     }
 
-    @Test(dataProvider = "validGroupingSizes")
+    @ParameterizedTest
+    @MethodSource("validGroupingSizes")
     public void test_validGroupingSize(int newVal) {
         DecimalFormat df = new DecimalFormat();
         df.setGroupingSize(newVal);
-        assertEquals(df.getGroupingSize(), newVal);
+        assertEquals(newVal, df.getGroupingSize());
     }
 
-    @Test(dataProvider = "invalidGroupingSizes",
-        expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("invalidGroupingSizes")
     public void test_invalidGroupingSize(int newVal) {
-        DecimalFormat df = new DecimalFormat();
-        df.setGroupingSize(newVal);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            DecimalFormat df = new DecimalFormat();
+            df.setGroupingSize(newVal);
+        });
     }
 }

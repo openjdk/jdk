@@ -27,7 +27,7 @@
  *          formatting parameters. For example, min fraction digits, grouping
  *          size etc.
  * @modules jdk.localedata
- * @run testng/othervm TestMutatingInstance
+ * @run junit/othervm TestMutatingInstance
  */
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,10 +36,12 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMutatingInstance {
 
     private static final NumberFormat FORMAT_FRACTION = NumberFormat
@@ -61,7 +63,7 @@ public class TestMutatingInstance {
             "#,##0.0#", DecimalFormatSymbols.getInstance(Locale.US),
             new String[]{"", "", "", "", "00K", "", "", "", "", "", "", "", "", "", ""});
 
-    @BeforeTest
+    @BeforeAll
     public void mutateInstances() {
         FORMAT_FRACTION.setMinimumFractionDigits(2);
         FORMAT_GROUPING.setGroupingSize(3);
@@ -75,7 +77,6 @@ public class TestMutatingInstance {
         FORMAT_NO_PATTERNS.setMinimumFractionDigits(2);
     }
 
-    @DataProvider(name = "format")
     Object[][] compactFormatData() {
         return new Object[][]{
             {FORMAT_FRACTION, 1900, "1.90 thousand"},
@@ -95,7 +96,6 @@ public class TestMutatingInstance {
             {FORMAT_NO_PATTERNS, new BigDecimal(12346567890987654.32), "12,346,567,890,987,654"},};
     }
 
-    @DataProvider(name = "parse")
     Object[][] compactParseData() {
         return new Object[][]{
             {FORMAT_FRACTION, "190 thousand", 190000L},
@@ -106,13 +106,15 @@ public class TestMutatingInstance {
             {FORMAT_PARSEINTONLY, "12.345 thousand", 12000L},};
     }
 
-    @Test(dataProvider = "format")
+    @ParameterizedTest
+    @MethodSource("compactFormatData")
     public void formatCompactNumber(NumberFormat nf,
             Object number, String expected) {
         CompactFormatAndParseHelper.testFormat(nf, number, expected);
     }
 
-    @Test(dataProvider = "parse")
+    @ParameterizedTest
+    @MethodSource("compactParseData")
     public void parseCompactNumber(NumberFormat nf,
             String parseString, Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(nf, parseString, expected, null, null);

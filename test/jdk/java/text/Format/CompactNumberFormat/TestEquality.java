@@ -25,7 +25,7 @@
  * @bug 8177552 8222756 8327640
  * @summary Checks the equals and hashCode method of CompactNumberFormat
  * @modules jdk.localedata
- * @run testng/othervm TestEquality
+ * @run junit/othervm TestEquality
  *
  */
 
@@ -33,7 +33,7 @@ import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestEquality {
 
