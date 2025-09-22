@@ -216,20 +216,19 @@ public:
 };
 
 class PSThreadRootsTaskClosure : public ThreadClosure {
-  uint _worker_id;
+  PSPromotionManager* _pm;
 public:
-  PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  PSThreadRootsTaskClosure(PSPromotionManager* pm) : _pm(pm) {}
   virtual void do_thread(Thread* thread) {
     assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
-    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
-    PSScavengeRootsClosure roots_closure(pm);
+    PSScavengeRootsClosure roots_closure(_pm);
 
     // No need to visit nmethods, because they are handled by ScavengableNMethods.
     thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
-    pm->drain_stacks(false);
+    _pm->drain_stacks(false);
   }
 };
 
@@ -263,12 +262,12 @@ public:
   virtual void work(uint worker_id) {
     assert(worker_id < _active_workers, "Sanity");
     ResourceMark rm;
+    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
 
     if (!_is_old_gen_empty) {
       // There are only old-to-young pointers if there are objects
       // in the old gen.
       {
-        PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
         // The top of the old gen changes during scavenge when objects are promoted.
@@ -288,14 +287,14 @@ public:
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
 
-    PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
+    PSThreadRootsTaskClosure thread_closure(pm);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &thread_closure);
 
     // Scavenge OopStorages
     {
-      PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-      PSScavengeRootsClosure closure(pm);
-      _oop_storage_strong_par_state.oops_do(&closure);
+      PSScavengeRootsClosure root_closure(pm);
+      _oop_storage_strong_par_state.oops_do(&root_closure);
+
       // Do the real work
       pm->drain_stacks(false);
     }
