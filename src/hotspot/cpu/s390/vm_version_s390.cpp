@@ -1601,7 +1601,7 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_montgomerySquare:
       return true;
     default:
-      return true;
+      return false;
   }
   return false;
 }
