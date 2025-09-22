@@ -178,7 +178,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
 
       // No tag found, have to create a new one
       MemTag i = static_cast<MemTag>(current_index);
-      table.put(i, name);
+      table.put_if_absent((i, name);
       current_index++;
       if (human_name != nullptr) {
        table.set_human_readable_name_of(i, human_name);
