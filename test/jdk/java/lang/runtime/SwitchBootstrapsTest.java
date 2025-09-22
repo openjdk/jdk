@@ -448,19 +448,4 @@ public class SwitchBootstrapsTest {
                     });
     }
 
-//    public void defaultCase() throws Throwable {
-//        MethodHandle enumSwitch = 
-//            MethodHandles.lookup().findStatic(SwitchBootstraps.class, "enumSwitch",
-//                                              MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class));
-//        enum E {A, B, C }
-//        MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
-//        MethodHandle indy = ((CallSite) enumSwitch.invoke(MethodHandles.lookup(), "", switchType, "A", "B")).dynamicInvoker();
-//        assertEquals((int) indy.invoke(E.C, 0), 2);
-//        assertEquals((int) indy.invoke(E.C, 1), 2);
-//
-//        enum FooEnum {FOO, BAR, BAZ, BLE}
-//
-////        testEnum(FooEnum.class, Foo, 0, labels);
-////        assertEquals(4, invokeEnumSwitch(FooEnum.BAR, 4, "FOO", "BAR", "BAZ", "FOO", "BAR"));
-//    }
 }
