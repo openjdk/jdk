@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,50 +41,31 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow.Subscriber;
-import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.SkipException;
@@ -98,24 +79,28 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
 
 public class ISO_8859_1_Test implements HttpServerAdapters {
 
     SSLContext sslContext;
     DummyServer http1DummyServer;
-    HttpServerAdapters.HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
-    HttpServerAdapters.HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
-    HttpServerAdapters.HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpServerAdapters.HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
+    HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
+    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String http1Dummy;
     String http1URI;
     String https1URI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
@@ -216,6 +201,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
 
     private String[] uris() {
         return new String[] {
+                http3URI,
                 http1Dummy,
                 http1URI,
                 https1URI,
@@ -243,9 +229,12 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         return result;
     }
 
-    private HttpClient makeNewClient() {
+    private HttpClient makeNewClient(Version version) {
         clientCount.incrementAndGet();
-        HttpClient client =  HttpClient.newBuilder()
+        var builder = version == HTTP_3
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        HttpClient client = builder
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -253,14 +242,24 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         return TRACKER.track(client);
     }
 
-    HttpClient newHttpClient(boolean share) {
-        if (!share) return makeNewClient();
+    Version version(String uri) {
+        if (uri == null) return null;
+        if (uri.contains("/http1/")) return HTTP_1_1;
+        if (uri.contains("/https1/")) return HTTP_1_1;
+        if (uri.contains("/http2/")) return HTTP_2;
+        if (uri.contains("/https2/")) return HTTP_2;
+        if (uri.contains("/http3/")) return HTTP_3;
+        return null;
+    }
+
+    HttpClient newHttpClient(String uri, boolean share) {
+        if (!share) return makeNewClient(version(uri));
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
         synchronized (this) {
             shared = sharedClient;
             if (shared == null) {
-                shared = sharedClient = makeNewClient();
+                shared = sharedClient = makeNewClient(HTTP_3);
             }
             return shared;
         }
@@ -277,16 +276,25 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         return (Exception)c;
     }
 
+    private static HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) throws Exception {
         checkSkip();
         System.out.println("Request to " + uri);
 
-        HttpClient client = newHttpClient(sameClient);
+        HttpClient client = newHttpClient(uri, sameClient);
 
         List<CompletableFuture<HttpResponse<String>>> cfs = new ArrayList<>();
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "/" + i))
+            HttpRequest request = newRequestBuilder(URI.create(uri + "/" + i))
                     .build();
             cfs.add(client.sendAsync(request, BodyHandlers.ofString()));
         }
@@ -431,12 +439,17 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         https2TestServer.addHandler(handler, "/https2/server/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/server/x";
 
-        serverCount.addAndGet(5);
+        http3TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(handler, "/http3/server/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/server/x";
+
+        serverCount.addAndGet(6);
         http1TestServer.start();
         https1TestServer.start();
         http2TestServer.start();
         https2TestServer.start();
         http1DummyServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -452,6 +465,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
             http2TestServer.stop();
             https2TestServer.stop();
             http1DummyServer.close();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {

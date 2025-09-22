@@ -1219,12 +1219,19 @@ final class CertificateMessage {
                             certs.clone(),
                             authType,
                             engine);
-                    } else {
-                        SSLSocket socket = (SSLSocket)shc.conContext.transport;
+                    } else if (shc.conContext.transport instanceof SSLSocket socket){
                         ((X509ExtendedTrustManager)tm).checkClientTrusted(
                             certs.clone(),
                             authType,
                             socket);
+                    } else if (shc.conContext.transport
+                            instanceof QuicTLSEngineImpl qtlse) {
+                        if (tm instanceof X509TrustManagerImpl tmImpl) {
+                            tmImpl.checkClientTrusted(certs.clone(), authType, qtlse);
+                        } else {
+                            throw new CertificateException(
+                                    "QUIC only supports SunJSSE trust managers");
+                        }
                     }
                 } else {
                     // Unlikely to happen, because we have wrapped the old
@@ -1268,18 +1275,26 @@ final class CertificateMessage {
 
             try {
                 X509TrustManager tm = chc.sslContext.getX509TrustManager();
-                if (tm instanceof X509ExtendedTrustManager) {
+                if (tm instanceof X509ExtendedTrustManager x509ExtTm) {
                     if (chc.conContext.transport instanceof SSLEngine engine) {
-                        ((X509ExtendedTrustManager)tm).checkServerTrusted(
+                        x509ExtTm.checkServerTrusted(
                             certs.clone(),
                             authType,
                             engine);
-                    } else {
-                        SSLSocket socket = (SSLSocket)chc.conContext.transport;
-                        ((X509ExtendedTrustManager)tm).checkServerTrusted(
+                    } else if (chc.conContext.transport instanceof SSLSocket socket) {
+                        x509ExtTm.checkServerTrusted(
                             certs.clone(),
                             authType,
                             socket);
+                    } else if (chc.conContext.transport instanceof QuicTLSEngineImpl qtlse) {
+                        if (x509ExtTm instanceof X509TrustManagerImpl tmImpl) {
+                            tmImpl.checkServerTrusted(certs.clone(), authType, qtlse);
+                        } else {
+                            throw new CertificateException(
+                                    "QUIC only supports SunJSSE trust managers");
+                        }
+                    } else {
+                        throw new AssertionError("Unexpected transport type");
                     }
                 } else {
                     // Unlikely to happen, because we have wrapped the old

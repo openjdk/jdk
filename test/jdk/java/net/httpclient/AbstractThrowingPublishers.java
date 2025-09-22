@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -30,7 +31,6 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -70,9 +71,12 @@ import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import static java.lang.String.format;
+import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -84,6 +88,7 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI_fixed;
     String httpURI_chunk;
     String httpsURI_fixed;
@@ -92,6 +97,9 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     String http2URI_chunk;
     String https2URI_fixed;
     String https2URI_chunk;
+    String http3URI_fixed;
+    String http3URI_chunk;
+    String http3URI_head;
 
     static final int ITERATION_COUNT = 1;
     // a shared executor helps reduce the amount of threads created by the test
@@ -151,6 +159,41 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                 + (params == null ? "()" : Arrays.toString(result.getParameters()));
     }
 
+    static Version version(String uri) {
+        if (uri.contains("/http1/") || uri.contains("/https1/"))
+            return HTTP_1_1;
+        if (uri.contains("/http2/") || uri.contains("/https2/"))
+            return HTTP_2;
+        if (uri.contains("/http3/"))
+            return HTTP_3;
+        return null;
+    }
+
+    HttpRequest.Builder newRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (version(uri) == HTTP_3) {
+            builder.version(HTTP_3);
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        }
+        return builder;
+    }
+
+    HttpResponse<String> headRequest(HttpClient client)
+            throws IOException, InterruptedException
+    {
+        System.out.println("\n" + now() + "--- Sending HEAD request ----\n");
+        System.err.println("\n" + now() + "--- Sending HEAD request ----\n");
+
+        var request = newRequestBuilder(http3URI_head)
+                .HEAD().version(HTTP_2).build();
+        var response = client.send(request, BodyHandlers.ofString());
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.version(), HTTP_2);
+        System.out.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        System.err.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        return response;
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
@@ -189,6 +232,8 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
     private String[] uris() {
         return new String[] {
+                http3URI_fixed,
+                http3URI_chunk,
                 httpURI_fixed,
                 httpURI_chunk,
                 httpsURI_fixed,
@@ -326,7 +371,7 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -354,8 +399,12 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         HttpClient client = null;
         out.printf("%n%s testSanity(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
+            if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
+            }
 
             SubmissionPublisher<ByteBuffer> publisher
                     = new SubmissionPublisher<>(executor,10);
@@ -374,7 +423,7 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                             },
                     executor);
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = newRequestBuilder(uri)
                     .POST(bodyPublisher)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
@@ -445,18 +494,21 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         for (Where where : whereValues) {
             //if (where == Where.ON_SUBSCRIBE) continue;
             //if (where == Where.ON_ERROR) continue;
-            if (!sameClient || client == null)
+            if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
+            }
 
             ThrowingBodyPublisher bodyPublisher =
                     new ThrowingBodyPublisher(where.select(thrower), publishers.get());
-            HttpRequest req = HttpRequest.
-                    newBuilder(URI.create(uri))
+            HttpRequest req = newRequestBuilder(uri)
                     .header("X-expect-exception", "true")
                     .POST(bodyPublisher)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
-            System.out.println("try throwing in " + where);
+            System.out.println(now() + " try throwing in " + where);
             HttpResponse<String> response = null;
             if (async) {
                 try {
@@ -564,8 +616,12 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     static final class UncheckedCustomExceptionThrower implements Thrower {
         @Override
         public void accept(Where where) {
-            out.println(now() + "Throwing in " + where);
-            throw new UncheckedCustomException(where.name());
+            var thread = Thread.currentThread().getName();
+            var thrown = new UncheckedCustomException("[" + thread + "] " + where.name());
+            out.println(now() + "Throwing in " + where + ": " + thrown);
+            err.println(now() + "Throwing in " + where + ": " + thrown);
+            thrown.printStackTrace();
+            throw thrown;
         }
 
         @Override
@@ -591,8 +647,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     static final class UncheckedIOExceptionThrower implements Thrower {
         @Override
         public void accept(Where where) {
-            out.println(now() + "Throwing in " + where);
-            throw new UncheckedIOException(new CustomIOException(where.name()));
+            var thread = Thread.currentThread().getName();
+            var cause = new CustomIOException("[" + thread + "] " + where.name());
+            var thrown = new UncheckedIOException(cause);
+            out.println(now() + "Throwing in " + where + ": " + thrown);
+            err.println(now() + "Throwing in " + where + ": " + thrown);
+            cause.printStackTrace();
+            throw thrown;
         }
 
         @Override
@@ -719,6 +780,9 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        System.out.println(now() + "setup");
+        System.err.println(now() + "setup");
+
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -732,11 +796,15 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         httpURI_fixed = "http://" + httpTestServer.serverAuthority() + "/http1/fixed/x";
         httpURI_chunk = "http://" + httpTestServer.serverAuthority() + "/http1/chunk/x";
 
+        System.out.println(now() + "HTTP/1.1 server created");
+
         httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(h1_fixedLengthHandler, "/https1/fixed");
         httpsTestServer.addHandler(h1_chunkHandler, "/https1/chunk");
         httpsURI_fixed = "https://" + httpsTestServer.serverAuthority() + "/https1/fixed/x";
         httpsURI_chunk = "https://" + httpsTestServer.serverAuthority() + "/https1/chunk/x";
+
+        System.out.println(now() + "TLS HTTP/1.1 server created");
 
         // HTTP/2
         HttpTestHandler h2_fixedLengthHandler = new HTTP_FixedLengthHandler();
@@ -748,31 +816,67 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
+        System.out.println(now() + "HTTP/2 server created");
+
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
         https2URI_chunk = "https://" + https2TestServer.serverAuthority() + "/https2/chunk/x";
 
-        serverCount.addAndGet(4);
+        System.out.println(now() + "TLS HTTP/2 server created");
+
+        // HTTP/3
+        HttpTestHandler h3_fixedLengthHandler = new HTTP_FixedLengthHandler();
+        HttpTestHandler h3_chunkedHandler = new HTTP_ChunkedHandler();
+        http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/fixed");
+        http3TestServer.addHandler(h3_chunkedHandler, "/http3/chunk");
+        http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/head");
+        http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed/x";
+        http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/chunk/x";
+        http3URI_head = "https://" + http3TestServer.serverAuthority() + "/http3/head/x";
+
+        System.out.println(now() + "HTTP/3 server created");
+        System.err.println(now() + "Starting servers");
+
+        serverCount.addAndGet(5);
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
+
+        out.println("HTTP/1.1 server (http) listening at: " + httpTestServer.serverAuthority());
+        out.println("HTTP/1.1 server (TLS)  listening at: " + httpsTestServer.serverAuthority());
+        out.println("HTTP/2   server (h2c)  listening at: " + http2TestServer.serverAuthority());
+        out.println("HTTP/2   server (h2)   listening at: " + https2TestServer.serverAuthority());
+        out.println("HTTP/3   server (h2)   listening at: " + http3TestServer.serverAuthority());
+        out.println(" + alt endpoint (h3)   listening at: " + http3TestServer.getH3AltService()
+                .map(Http3TestServer::getAddress));
+
+        headRequest(newHttpClient(true));
+
+        System.out.println(now() + "setup done");
+        System.err.println(now() + "setup done");
     }
 
     @AfterTest
     public void teardown() throws Exception {
+        System.out.println(now() + "teardown");
+        System.err.println(now() + "teardown");
+
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(10000);
         try {
             httpTestServer.stop();
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {
@@ -781,6 +885,8 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                 throw fail;
             }
         }
+        System.out.println(now() + "teardown done");
+        System.err.println(now() + "teardown done");
     }
 
     static class HTTP_FixedLengthHandler implements HttpTestHandler {
