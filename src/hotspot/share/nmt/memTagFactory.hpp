@@ -69,12 +69,13 @@ struct NameToTagTable {
   EntryRef* table;
   GrowableArrayCHeap<const char*, mtNMT> names;
   GrowableArrayCHeap<const char*, mtNMT> human_readable_names;
+  volatile int _number_of_tags;
 
   NameToTagTable()
     : entries(),
       table_size(nr_of_buckets),
       table(nullptr),
-      names(), human_readable_names() {
+      names(), human_readable_names(), _number_of_tags(0) {
     table = NEW_C_HEAP_ARRAY(EntryRef, table_size, mtNMT);
     for (int i = 0; i < table_size; i++) {
       table[i] = Nil;
@@ -95,7 +96,7 @@ struct NameToTagTable {
     return abs((int)((sum + 261) >> 1));
   }
 
-  void put(MemTag tag, const char* name) {
+  void put_if_absent(MemTag tag, const char* name) {
     int bucket = string_hash(name) % table_size;
     EntryRef link = table[bucket];
     while (link != Nil) {
@@ -112,6 +113,7 @@ struct NameToTagTable {
     Entry nentry(tag, table[bucket]);
     entries.push(nentry);
     table[bucket] = entries.length() - 1;
+    AtomicAccess::inc(&_number_of_tags);)
   }
 
   MemTag tag_of(const char* name) {
@@ -147,7 +149,7 @@ struct NameToTagTable {
   }
 
   int number_of_tags() {
-    return entries.length();
+    return AtomicAccess::load(&_number_of_tags);
   }
 };
 
@@ -225,7 +227,6 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
   }
 
   static int number_of_tags() {
-    NmtMemTagLocker nvml;
     return _instance->number_of_tags();
   }
 
