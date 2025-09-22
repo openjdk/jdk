@@ -3311,11 +3311,11 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccess::create_table(4); // 4 for setMemory
     }
 
-    if (UseCRC32Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32)) {
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
-    if (UseCRC32CIntrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32C)) {
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 
@@ -3400,14 +3400,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 
 #ifdef COMPILER2
-    if (UseMultiplyToLenIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_multiplyToLen)) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
-    if (UseMontgomeryMultiplyIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_montgomeryMultiply)) {
       StubRoutines::_montgomeryMultiply
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_multiply);
     }
-    if (UseMontgomerySquareIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_montgomerySquare)) {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }

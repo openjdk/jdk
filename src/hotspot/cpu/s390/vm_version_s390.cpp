@@ -1594,6 +1594,12 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
         return true;
       }
       break;
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_multiplyToLen:
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare:
+      return true;
     default:
       return true;
   }
