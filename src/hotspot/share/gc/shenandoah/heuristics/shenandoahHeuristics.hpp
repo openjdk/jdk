@@ -239,11 +239,12 @@ public:
   virtual bool is_experimental() = 0;
   virtual void initialize();
 
-  virtual void recalibrate_alloc_rate_last_sample(size_t bytes_allocated) {
-    // do nothing
-  }
-
   double elapsed_cycle_time() const;
+
+  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
+    // do nothing
+    return 0;
+  }
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

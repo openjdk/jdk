@@ -355,25 +355,39 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
-  _previous_gc_allocated(0),
   _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
   _rate(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor),
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
-double ShenandoahAllocationRate::sample(size_t allocated) {
+double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
+  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
   double now = os::elapsedTime();
-  double rate = 0.0;
-  if (now - _last_sample_time > _interval_sec) {
-    // _previous_gc_allocated will be non-zero only on the first sample added since the start of the current GC.  In the
-    // event that no data was sampled during the preceding cycle, _previous_gc_allocated will represent the accumalation
-    // of multiple GCs.
-    rate = instantaneous_rate(now, _previous_gc_allocated + allocated);
+  double time_since_last_update = now -_last_sample_time;
+  if (time_since_last_update < MinSampleTime) {
+    unaccounted_bytes_allocated = allocated - _last_sample_value;
+    _last_sample_value = 0;
+    return 0.0;
+  } else {
+    double rate = instantaneous_rate(now, allocated);
     _rate.add(rate);
     _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
-    _previous_gc_allocated = 0;
+    unaccounted_bytes_allocated = 0;
+    return rate;
+  }
+}
+
+double ShenandoahAllocationRate::sample(size_t allocated, bool force_update) {
+  double now = os::elapsedTime();
+  double rate = 0.0;
+  if (now - _last_sample_time > _interval_sec) {
+    rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
+    _last_sample_time = now;
+    _last_sample_value = allocated;
   }
   return rate;
 }

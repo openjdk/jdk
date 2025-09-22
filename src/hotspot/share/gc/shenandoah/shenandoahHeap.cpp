@@ -2319,16 +2319,27 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
+  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
+  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
+  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
+  // allocation rate computations.  This effect is considered to be be negligible.
+
+  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+  // bytes are allocated after the start of subsequent gc.
+  size_t unaccounted_bytes;
   if (mode()->is_generational()) {
     size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
-    young_generation()->reset_bytes_allocated_since_gc_start();
-    old_generation()->reset_bytes_allocated_since_gc_start();
-    young_generation()->heuristics()->recalibrate_alloc_rate_last_sample(bytes_allocated);
+    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+    young_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+    unaccounted_bytes = 0;
+    old_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
   } else {
     size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
-    heuristics()->recalibrate_alloc_rate_last_sample(bytes_allocated);
+    // Single-gen Shenandoah uses global heuristics.
+    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
   }
-  global_generation()->reset_bytes_allocated_since_gc_start();
+  global_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
