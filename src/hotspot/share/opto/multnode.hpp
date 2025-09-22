@@ -87,7 +87,7 @@ protected:
       _i++;
     }
     Node* current() {
-      return _node->out(_i);;
+      return _node->out(_i);
     }
     UsesIterator(DUIterator& i, const Node* node)
       : _i(i), _node(node) {
