@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,16 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestKinds
+ * @run junit MethodReferenceTestKinds
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
  */
 
-@Test
 public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
 
     interface S0 { String get(); }
@@ -65,76 +63,86 @@ public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
     static String staticMethod0() { return "SM:0"; }
     static String staticMethod1(MethodReferenceTestKinds x) { return "SM:1-" + x; }
 
-    MethodReferenceTestKinds(String val) {
-        super(val);
-    }
-
     MethodReferenceTestKinds() {
         super("blank");
     }
 
     MethodReferenceTestKinds inst(String val) {
-        return new MethodReferenceTestKinds(val);
+        var inst = new MethodReferenceTestKinds();
+        inst.val = val; // simulate `MethodReferenceTestKinds(String val)` constructor
+        return inst;
     }
 
+    @Test
     public void testMRBound() {
         S0 var = this::instanceMethod0;
-        assertEquals(var.get(), "IM:0-MethodReferenceTestKinds(blank)");
+        assertEquals("IM:0-MethodReferenceTestKinds(blank)", var.get());
     }
 
+    @Test
     public void testMRBoundArg() {
         S1 var = this::instanceMethod1;
-        assertEquals(var.get(inst("arg")), "IM:1-MethodReferenceTestKinds(blank)MethodReferenceTestKinds(arg)");
+        assertEquals("IM:1-MethodReferenceTestKinds(blank)MethodReferenceTestKinds(arg)", var.get(inst("arg")));
     }
 
+    @Test
     public void testMRUnbound() {
         S1 var = MethodReferenceTestKinds::instanceMethod0;
-        assertEquals(var.get(inst("rcvr")), "IM:0-MethodReferenceTestKinds(rcvr)");
+        assertEquals("IM:0-MethodReferenceTestKinds(rcvr)", var.get(inst("rcvr")));
     }
 
+    @Test
     public void testMRUnboundArg() {
         S2 var = MethodReferenceTestKinds::instanceMethod1;
-        assertEquals(var.get(inst("rcvr"), inst("arg")), "IM:1-MethodReferenceTestKinds(rcvr)MethodReferenceTestKinds(arg)");
+        assertEquals("IM:1-MethodReferenceTestKinds(rcvr)MethodReferenceTestKinds(arg)", var.get(inst("rcvr"), inst("arg")));
     }
 
+    @Test
     public void testMRSuper() {
         S0 var = super::instanceMethod0;
-        assertEquals(var.get(), "SIM:0-MethodReferenceTestKinds(blank)");
+        assertEquals("SIM:0-MethodReferenceTestKinds(blank)", var.get());
     }
 
+    @Test
     public void testMRSuperArg() {
         S1 var = super::instanceMethod1;
-        assertEquals(var.get(inst("arg")), "SIM:1-MethodReferenceTestKinds(blank)MethodReferenceTestKinds(arg)");
+        assertEquals("SIM:1-MethodReferenceTestKinds(blank)MethodReferenceTestKinds(arg)", var.get(inst("arg")));
     }
 
+    @Test
     public void testMRStatic() {
         S0 var = MethodReferenceTestKinds::staticMethod0;
-        assertEquals(var.get(), "SM:0");
+        assertEquals("SM:0", var.get());
     }
 
+    @Test
     public void testMRStaticArg() {
         S1 var = MethodReferenceTestKinds::staticMethod1;
-        assertEquals(var.get(inst("arg")), "SM:1-MethodReferenceTestKinds(arg)");
+        assertEquals("SM:1-MethodReferenceTestKinds(arg)", var.get(inst("arg")));
     }
 
+    @Test
     public void testMRTopLevel() {
         SN0 var = MethodReferenceTestKindsBase::new;
-        assertEquals(var.make().toString(), "MethodReferenceTestKindsBase(blank)");
+        assertEquals("MethodReferenceTestKindsBase(blank)", var.make().toString());
     }
 
+    @Test
     public void testMRTopLevelArg() {
         SN1 var = MethodReferenceTestKindsBase::new;
-        assertEquals(var.make("name").toString(), "MethodReferenceTestKindsBase(name)");
+        assertEquals("MethodReferenceTestKindsBase(name)", var.make("name").toString());
     }
 
+    @Test
     public void testMRImplicitInner() {
         SN0 var = MethodReferenceTestKinds.In::new;
-        assertEquals(var.make().toString(), "In(blank)");
+        assertEquals("In(blank)", var.make().toString());
     }
 
+    @Test
     public void testMRImplicitInnerArg() {
         SN1 var = MethodReferenceTestKinds.In::new;
-        assertEquals(var.make("name").toString(), "In(name)");
+        assertEquals("In(name)", var.make("name").toString());
     }
 
 }
