@@ -169,7 +169,7 @@ public abstract class Process implements Closeable {
     private Charset inputCharset;
     private BufferedReader errorReader;
     private Charset errorCharset;
-    private volatile boolean closed;     // true if close() has been called
+    private boolean closed;     // true if close() has been called
 
     /**
      * Default constructor for Process.
