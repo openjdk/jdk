@@ -1579,6 +1579,21 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
         return true;
       }
       break;
+    case vmIntrinsics::_sha_implCompress:
+      if(has_Crypto_SHA1()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_sha2_implCompress:
+      if(has_Crypto_SHA256()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_sha5_implCompress:
+      if(has_Crypto_SHA512()) {
+        return true;
+      }
+      break;
     default:
       return true;
   }
