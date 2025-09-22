@@ -43,8 +43,6 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
-#include "gc/shared/bufferNode.hpp"
-#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "jfr/jfrEvents.hpp"
