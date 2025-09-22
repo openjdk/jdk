@@ -68,7 +68,7 @@ protected:
       _i++;
     }
     Node* current() {
-      return _node->fast_out(_i);;
+      return _node->fast_out(_i);
     }
     UsesIteratorFast(DUIterator_Fast& imax, DUIterator_Fast& i, const Node* node)
       : _imax(imax), _i(i), _node(node) {
