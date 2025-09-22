@@ -34,7 +34,6 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicButtonUI;
 
 import sun.swing.plaf.DesktopProperty;
@@ -65,16 +64,6 @@ public class DesktopPropertyResetPendingFlagTest extends JFrame {
         }
     }
 
-    private static void setLookAndFeel() {
-        try {
-            String lf = UIManager.getSystemLookAndFeelClassName();
-            UIManager.setLookAndFeel(lf);
-            System.out.println("Set look & feel to " + lf);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static void assertEquals(int expectedValue, int actualValue) {
         String msg = "expected " + expectedValue +
                 " observed " + actualValue;
@@ -99,9 +88,6 @@ public class DesktopPropertyResetPendingFlagTest extends JFrame {
             }
         };
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(newEventQueue);
-
-        SwingUtilities.invokeLater(
-                DesktopPropertyResetPendingFlagTest::setLookAndFeel);
 
         SwingUtilities.invokeLater(() -> {
             DesktopPropertyResetPendingFlagTest t =
