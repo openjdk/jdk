@@ -4068,6 +4068,13 @@ public:
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
 
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \
   void NAME(Register Xdn, unsigned imm4 = 1, int pattern = 0b11111) {                \
