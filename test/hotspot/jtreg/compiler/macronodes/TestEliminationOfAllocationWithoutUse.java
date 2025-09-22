@@ -27,7 +27,7 @@
  * @summary Revealed issue where hook_memory_on_init links some array slice to the rawptr slice.
  *          Now that array slice depends on the rawslice. And then when the Initialize MemBar gets
  *          removed in expand_allocate_common, the rawslice sees that it has now no effect, looks
- *          through the MergeMem and sees the initial stae. That way, also the linked array slice
+ *          through the MergeMem and sees the initial state. That way, also the linked array slice
  *          goes to the initial state, even if before the allocation there were stores on the array
  *          slice. This leads to a messed up memory graph, and missing stores in the generated code.
  *
