@@ -175,12 +175,12 @@ public final class SwitchBootstraps {
      * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a reference type,
-     *                                  second parameter of type {@code int} and with {@code int} as its return type,
+     *                                  second parameter of type {@code int} and with {@code int} as its return type
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
-     *                                  {@code Class} or {@code EnumDesc}.
+     *                                  {@code Class} or {@code EnumDesc}
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
-     *                                  when {@code target} is a {@code Boolean.class}.
+     *                                  when {@code target} is a {@code Boolean.class}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -282,9 +282,9 @@ public final class SwitchBootstraps {
      * @throws IllegalArgumentException if the invocation type is not a method type
      *                                  whose first parameter type is an enum type,
      *                                  second parameter of type {@code int} and
-     *                                  whose return type is {@code int},
+     *                                  whose return type is {@code int}
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String} or
-     *                                  {@code Class} equal to the target enum type.
+     *                                  {@code Class} equal to the target enum type
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
