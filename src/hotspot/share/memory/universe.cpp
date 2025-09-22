@@ -1346,6 +1346,8 @@ static void log_cpu_time() {
 
 void Universe::before_exit() {
   {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
     MutexLocker hl(Heap_lock);
     log_cpu_time();
     AtomicAccess::release_store(&_is_shutting_down, true);
