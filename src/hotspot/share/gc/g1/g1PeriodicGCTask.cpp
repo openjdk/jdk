@@ -56,7 +56,9 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   double recent_load;
   if (G1PeriodicGCSystemLoadThreshold > 0.0f) {
     if (os::loadavg(&recent_load, 1) == -1) {
-      log_debug(gc, periodic)("System loadavg not supported. Skipping.");
+      G1PeriodicGCInterval = 0;
+      log_warning(gc, periodic)("System loadavg not supported. Periodic GC is disabled "
+                                "by setting G1PeriodicGCInterval to 0.");
       return false;
     }
     if (recent_load > G1PeriodicGCSystemLoadThreshold) {
