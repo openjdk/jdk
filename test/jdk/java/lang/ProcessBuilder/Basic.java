@@ -28,7 +28,7 @@
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
- *      8352533
+ *      8352533 8368192
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -777,12 +777,12 @@ public class Basic {
         return Pattern.compile(regex).matcher(str).find();
     }
 
-    private static String matchAndExtract(String str, String regex) {
+    private static String matchAndReplace(String str, String regex, String replacement) {
         Matcher matcher = Pattern.compile(regex).matcher(str);
         if (matcher.find()) {
-            return matcher.group();
+            return matcher.replaceAll(replacement);
         } else {
-            return "";
+            return str;
         }
     }
 
@@ -794,13 +794,15 @@ public class Basic {
      */
     private static String removeMacExpectedVars(String vars) {
         // Check for __CF_USER_TEXT_ENCODING
-        String cleanedVars = vars.replace("__CF_USER_TEXT_ENCODING="
-                                            +cfUserTextEncoding+",","");
+        String cleanedVars = matchAndReplace(vars,
+                "__CF_USER_TEXT_ENCODING=" + cfUserTextEncoding + ",","");
         // Check for JAVA_MAIN_CLASS_<pid>
-        String javaMainClassStr
-                = matchAndExtract(cleanedVars,
-                                    "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
-        return cleanedVars.replace(javaMainClassStr,"");
+        cleanedVars = matchAndReplace(cleanedVars,
+                "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,", "");
+        // Check and remove TMPDIR
+        cleanedVars = matchAndReplace(cleanedVars,
+                "TMPDIR=[^,]*,", "");
+        return cleanedVars;
     }
 
     /* Only used for AIX --
