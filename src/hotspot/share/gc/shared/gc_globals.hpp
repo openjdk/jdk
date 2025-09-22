@@ -289,7 +289,7 @@
           "size on systems with small physical memory size")                \
           range(0.0, 100.0)                                                 \
                                                                             \
-  product(double, InitialRAMPercentage, 1.5625,                             \
+  product(double, InitialRAMPercentage, 0.2,                                \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
                                                                             \

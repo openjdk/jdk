@@ -176,11 +176,6 @@ public:
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
   static void delete_segment(Segment* segment);
 
-  // Copies the contents of this segment into the destination.
-  void copy_to(void* dest) const {
-    ::memcpy(dest, _bottom, length() * _slot_size);
-  }
-
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
