@@ -894,7 +894,10 @@ public final class CPrinterJob extends RasterPrinterJob {
                     Printable printable = pageable.getPrintable(pageIndex);
                     if (printable != null) {
                         BufferedImage bimg =
-                              new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB_PRE);
+                              new BufferedImage(
+                                  (int)Math.round(pageFormat.getWidth()),
+                                  (int)Math.round(pageFormat.getHeight()),
+                                  BufferedImage.TYPE_INT_ARGB_PRE);
                         PeekGraphics peekGraphics =
                          createPeekGraphics(bimg.createGraphics(), printerJob);
                         Rectangle2D pageFormatArea =
