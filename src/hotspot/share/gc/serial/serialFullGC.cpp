@@ -483,10 +483,6 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   ref_processor()->start_discovery(clear_all_softrefs);
 
   {
-    StrongRootsScope srs(0);
-
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure);
-
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
     // 1. CLD. This method internally takes care of whether class loading is
@@ -494,8 +490,13 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     // strong CLDs.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
 
-    // 2. Threads stack frames and active nmethods in them.
-    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    {
+      // 2. Threads stack frames and active nmethods in them.
+      NMethodMarkingScope nmethod_marking_scope;
+      MarkingNMethodClosure mark_code_closure(&follow_root_closure);
+
+      Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    }
 
     // 3. VM internal roots.
     OopStorageSet::strong_oops_do(&follow_root_closure);
