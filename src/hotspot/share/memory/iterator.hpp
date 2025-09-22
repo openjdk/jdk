@@ -255,13 +255,11 @@ class NMethodToOopClosure : public NMethodClosure {
   const static bool FixRelocations = true;
 };
 
-class MarkingNMethodClosure : public NMethodToOopClosure {
-  bool _keepalive_nmethods;
+class MarkingNMethodClosure : public NMethodClosure {
+  OopClosure* _cl;
 
  public:
-  MarkingNMethodClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
-      NMethodToOopClosure(cl, fix_relocations),
-      _keepalive_nmethods(keepalive_nmethods) {}
+  MarkingNMethodClosure(OopClosure* cl) : _cl(cl) {}
 
   // Called for each nmethod.
   virtual void do_nmethod(nmethod* nm);

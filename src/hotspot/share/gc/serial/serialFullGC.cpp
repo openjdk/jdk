@@ -485,9 +485,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(0);
 
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
-                                            !NMethodToOopClosure::FixRelocations,
-                                            true);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure);
 
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
