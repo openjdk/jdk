@@ -1785,20 +1785,18 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
   // right after the execution of the inner CountedLoop.
   // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
-  if (loop->tail()->in(0)->is_BaseCountedLoopEnd()) {
-    // The moved store node is always attached right after the inner loop exit, and just before the safepoint
-    const Node* if_false = loop->tail()->in(0)->as_BaseCountedLoopEnd()->proj_out(false);
-    for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
-      Node* store = if_false->out(j)->isa_Store();
-      // We only make changes if the memory input of the store is outside the outer loop body,
-      // as this is when we would normally expect a Phi as input. If the memory input
-      // is in the loop body as well, then we can safely assume it is still correct as the entire
-      // body was cloned as a unit
-      if (store && !outer_loop->is_member(get_loop(get_ctrl(store->in(MemNode::Memory))))) {
-        Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
-        Node* store_new = old_new[store->_idx];
-        store_new->set_req(MemNode::Memory, mem_out);
-      }
+  // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+  const Node* if_false = main_end->proj_out(false);
+  for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+    Node* store = if_false->out(j)->isa_Store();
+    // We only make changes if the memory input of the store is outside the outer loop body,
+    // as this is when we would normally expect a Phi as input. If the memory input
+    // is in the loop body as well, then we can safely assume it is still correct as the entire
+    // body was cloned as a unit
+    if (store && !outer_loop->is_member(get_loop(get_ctrl(store->in(MemNode::Memory))))) {
+      Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
+      Node* store_new = old_new[store->_idx];
+      store_new->set_req(MemNode::Memory, mem_out);
     }
   }
 
