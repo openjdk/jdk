@@ -504,8 +504,8 @@ public class Cipher {
      * transformation
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation is not found, or
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation is not found or
      *         is found but does not support the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
@@ -603,9 +603,9 @@ public class Cipher {
      *         is {@code null} or empty
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
+     *         is {@code null}, empty or in an invalid format;
      *         or if a {@code CipherSpi} implementation from the specified
-     *         {@code provider} is not found, or is found but does not support
+     *         {@code provider} is not found or is found but does not support
      *         the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
@@ -677,9 +677,9 @@ public class Cipher {
      *         is {@code null}
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
+     *         is {@code null}, empty or in an invalid format;
      *         or if a {@code CipherSpi} implementation from the specified
-     *         {@code provider} is not found, or is found but does not support
+     *         {@code provider} is not found or is found but does not support
      *         the mode
      *
      * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
