@@ -21,19 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8365820
- * @summary Apply certificate scope constraints to algorithms in
- *          "signature_algorithms" extension when
- *          "signature_algorithms_cert" extension is not being sent.
- * @modules java.base/sun.security.x509
- *          java.base/sun.security.util
- * @library /javax/net/ssl/templates
- *          /test/lib
- * @run main/othervm DisableCertSignAlgsExtForServerTLS13
- */
-
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Utils.runAndCheckException;
 
@@ -67,6 +54,20 @@ import sun.security.x509.SerialNumber;
 import sun.security.x509.X500Name;
 
 /*
+ * @test
+ * @bug 8365820
+ * @summary Apply certificate scope constraints to algorithms in
+ *          "signature_algorithms" extension when
+ *          "signature_algorithms_cert" extension is not being sent.
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
+ * @library /javax/net/ssl/templates
+ *          /test/lib
+ * @run main/othervm DisableCertSignAlgsExtForServerTLS13 true
+ * @run main/othervm DisableCertSignAlgsExtForServerTLS13 false
+ */
+
+/*
  * Test disabled signature_algorithms_cert extension on the server side.
  *
  * CertificateRequest's extensions are encrypted in TLSv1.3. So we can't verify
@@ -81,9 +82,10 @@ public class DisableCertSignAlgsExtForServerTLS13 extends SSLSocketTemplate {
 
     private static final String KEY_ALGORITHM = "RSA";
     private static final String SERVER_CERT_SIG_ALG = "RSASSA-PSS";
-    // SHA256withRSA signature algorithm is not allowed for certificate
-    // signatures per TLSv1.3 spec. This is regardless of
-    // jdk.tls.disabledAlgorithms configuration.
+    // SHA256withRSA signature algorithm is not allowed for handshake
+    // signatures in TLSv1.3, but it's allowed for certificate
+    // signatures. This is regardless of jdk.tls.disabledAlgorithms
+    // configuration. We use this difference to construct our test.
     private static final String CLIENT_CERT_SIG_ALG = "SHA256withRSA";
     private static final String TRUSTED_CERT_SIG_ALG = "RSASSA-PSS";
 
@@ -102,21 +104,32 @@ public class DisableCertSignAlgsExtForServerTLS13 extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        // Disable signature_algorithms_cert extension on the server side.
-        System.setProperty("jdk.tls.server.disableExtensions",
-                "signature_algorithms_cert");
+        if (args.length != 1) {
+            throw new RuntimeException("Wrong number of arguments");
+        }
 
-        // Should run fine on TLSv1.2 because SHA256withRSA signature algorithm
-        // is allowed for certificates in TLSv1.2.
+        boolean disabled = Boolean.parseBoolean(args[0]);
+
+        // Disable signature_algorithms_cert extension on the server side.
+        if (disabled) {
+            System.setProperty("jdk.tls.server.disableExtensions",
+                    "signature_algorithms_cert");
+        }
+
+        // Should always run fine on TLSv1.2 because SHA256withRSA signature
+        // algorithm is allowed for both handshake and certificates signatures
+        // in TLSv1.2.
         new DisableCertSignAlgsExtForServerTLS13("TLSv1.2").run();
 
-        // Should fail for "TLSv1.3" and "TLS". It fails for "TLS" because the
-        // protocol is already negotiated when server sends CertificateRequest
-        // message.
-        for (String protocol : new String[]{"TLS", "TLSv1.3"}) {
+        var tls13Test = new DisableCertSignAlgsExtForServerTLS13("TLSv1.3");
+
+        if (disabled) {
+            // Fails with "signature_algorithms_cert" extension disabled
+            // because in such case we use of an intersection of signature
+            // schemes allowed for handshake signatures and for the certificate
+            // signatures for "signature_algorithms" extension.
             runAndCheckException(
-                    () -> new DisableCertSignAlgsExtForServerTLS13(
-                            protocol).run(),
+                    tls13Test::run,
                     localEx -> {
                         Throwable remoteEx = localEx.getSuppressed()[0];
 
@@ -130,6 +143,9 @@ public class DisableCertSignAlgsExtForServerTLS13 extends SSLSocketTemplate {
                                     || ex instanceof SocketException));
                         }
                     });
+        } else {
+            // Runs fine with "signature_algorithms_cert" extension present.
+            tls13Test.run();
         }
     }
 
