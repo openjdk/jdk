@@ -232,7 +232,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
 
   static MemTag tag_maybe(const char* name) {
     NmtMemTagLocker ntml;
-    return _instance->tag_exists(name);
+    return _instance->tag_maybe(name);
   }
 };
 
