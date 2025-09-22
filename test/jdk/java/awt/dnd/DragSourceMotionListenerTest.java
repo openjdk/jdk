@@ -185,7 +185,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
                                     sign(dstInsidePoint.y - srcPoint.y))) {
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
-
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.waitForIdle();
