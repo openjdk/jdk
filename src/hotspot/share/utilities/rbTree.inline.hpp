@@ -695,21 +695,21 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NODE_VERIFIER v
 }
 
 template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_signed<T>::value)>
+          ENABLE_IF(std::is_integral_v<T>),
+          ENABLE_IF(std::is_signed_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(INT64_FORMAT, (int64_t)x);
 }
 
 template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_unsigned<T>::value)>
+          ENABLE_IF(std::is_integral_v<T>),
+          ENABLE_IF(std::is_unsigned_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(UINT64_FORMAT, (uint64_t)x);
 }
 
 template <typename T,
-          ENABLE_IF(std::is_pointer<T>::value)>
+          ENABLE_IF(std::is_pointer_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(PTR_FORMAT, p2i(x));
 }
