@@ -32,6 +32,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import jdk.internal.util.ArraysSupport;
@@ -252,12 +253,22 @@ class ZipCoder {
 
         @Override
         String toString(byte[] ba, int off, int length) {
-            return JLA.newStringUTF8NoRepl(ba, off, length);
+            try {
+                // Copy subrange for exclusive use by the string being created
+                byte[] bytes = Arrays.copyOfRange(ba, off, off + length);
+                return JLA.uncheckedNewStringOrThrow(bytes, StandardCharsets.UTF_8);
+            } catch (CharacterCodingException cce) {
+                throw new IllegalArgumentException(cce);
+            }
         }
 
         @Override
         byte[] getBytes(String s) {
-            return JLA.getBytesUTF8NoRepl(s);
+            try {
+                return JLA.getBytesUTF8OrThrow(s);
+            } catch (CharacterCodingException cce) {
+                throw new IllegalArgumentException(cce);
+            }
         }
 
         @Override
@@ -266,14 +277,12 @@ class ZipCoder {
                 return 0;
             }
             int end = off + len;
-            int asciiLen = JLA.uncheckedCountPositives(a, off, len);
+            int asciiLen = JLA.countPositives(a, off, len);
             if (asciiLen != len) {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
                 // shared and that decoder is not thread safe.
-                // We use the JLA.newStringUTF8NoRepl variant to throw
-                // exceptions eagerly when opening ZipFiles
-                return hash(JLA.newStringUTF8NoRepl(a, off, len));
+                return hash(toString(a, off, len));
             }
             int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
             if (a[end - 1] != '/') {
@@ -289,7 +298,7 @@ class ZipCoder {
         @Override
         byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.uncheckedGetBytesNoRepl(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.uncheckedGetBytesOrThrow(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return EXACT_MATCH;

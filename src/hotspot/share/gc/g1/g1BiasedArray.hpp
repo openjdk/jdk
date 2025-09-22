@@ -49,7 +49,7 @@ class G1BiasedMappedArrayBase : public CHeapObj<mtGC> {
     assert(shift_by < sizeof(uintptr_t) * 8, "Shifting by %u, larger than word size?", shift_by);
     _base = base;
     _length = length;
-    _biased_base = base - (bias * elem_size);
+    _biased_base = (uintptr_t)base - (bias * elem_size);
     _bias = bias;
     _shift_by = shift_by;
   }
@@ -60,7 +60,7 @@ public:
 protected:
   address _base;          // the real base address
   size_t _length;         // the length of the array
-  address _biased_base;   // base address biased by "bias" elements
+  uintptr_t _biased_base; // base address biased by "bias" elements
   size_t _bias;           // the bias, i.e. the offset biased_base is located to the right in elements
   uint _shift_by;         // the amount of bits to shift right when mapping to an index of the array.
 
@@ -102,10 +102,9 @@ public:
 template<class T>
 class G1BiasedMappedArray : public G1BiasedMappedArrayBase {
 protected:
-  T* base() const { return (T*)G1BiasedMappedArrayBase::_base; }
+  T* base() const { return (T*)this->_base; }
 
-  // The raw biased base pointer.
-  T* biased_base() const { return (T*)G1BiasedMappedArrayBase::_biased_base; }
+  T* biased_base_at(idx_t index) const { return (T*)(this->_biased_base + index * sizeof(T)); }
 
 public:
   typedef G1BiasedMappedArrayBase::idx_t idx_t;
@@ -131,7 +130,7 @@ public:
   T get_by_address(HeapWord* value) const {
     idx_t biased_index = ((uintptr_t)value) >> this->shift_by();
     this->verify_biased_index(biased_index);
-    return biased_base()[biased_index];
+    return *biased_base_at(biased_index);
   }
 
   T* get_ref_by_index(uintptr_t index) const {
@@ -151,7 +150,7 @@ public:
   void set_by_address(HeapWord * address, T value) {
     idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
     this->verify_biased_index(biased_index);
-    biased_base()[biased_index] = value;
+    *biased_base_at(biased_index) = value;
   }
 
 public:
@@ -180,7 +179,7 @@ public:
   // Allocate and initialize this array to cover the heap addresses in the given MemRegion.
   void initialize(MemRegion region, size_t mapping_granularity) {
     G1BiasedMappedArrayBase::initialize(region.start(), region.end(), sizeof(T), mapping_granularity);
-    this->clear();
+    clear();
   }
 };
 

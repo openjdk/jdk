@@ -121,7 +121,7 @@ public:
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
   size_t live_words(uint region_index) const {
-    assert(region_index < _heap->max_regions(), "sanity");
+    assert(region_index < _heap->max_num_regions(), "sanity");
     return _live_stats[region_index]._live_words;
   }
 

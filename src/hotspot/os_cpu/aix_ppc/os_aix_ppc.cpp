@@ -229,16 +229,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
       CodeBlob *cb = nullptr;
       int stop_type = -1;
-      // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-        goto run_stub;
-      }
-
-      else if ((sig == (USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV)) &&
+      if ((sig == (USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV)) &&
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&

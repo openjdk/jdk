@@ -31,18 +31,23 @@
 #ifdef __APPLE__
 // OS X doesn't support unnamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
 
-static const char* sem_init_strerror(kern_return_t value) {
+static const char* sem_strerror(kern_return_t value) {
   switch (value) {
-    case KERN_INVALID_ARGUMENT:  return "Invalid argument";
-    case KERN_RESOURCE_SHORTAGE: return "Resource shortage";
-    default:                     return "Unknown";
+    case KERN_INVALID_ARGUMENT:    return "Invalid argument";
+    case KERN_RESOURCE_SHORTAGE:   return "Resource shortage";
+    case KERN_TERMINATED:          return "Resource has been destroyed";
+    case KERN_ABORTED:             return "Operation was aborted";
+    case KERN_INVALID_VALUE:       return "Invalid time specified";
+    case KERN_OPERATION_TIMED_OUT: return "Operation timed-out";
+    default:                       return "Unknown";
   }
 }
 
 OSXSemaphore::OSXSemaphore(uint value) {
   kern_return_t ret = semaphore_create(mach_task_self(), &_semaphore, SYNC_POLICY_FIFO, value);
 
-  guarantee(ret == KERN_SUCCESS, "Failed to create semaphore: %s", sem_init_strerror(ret));
+  guarantee(ret == KERN_SUCCESS, "Failed to create semaphore: %s (0x%x)",
+            sem_strerror(ret), (uint)ret);
 }
 
 OSXSemaphore::~OSXSemaphore() {
@@ -53,7 +58,8 @@ void OSXSemaphore::signal(uint count) {
   for (uint i = 0; i < count; i++) {
     kern_return_t ret = semaphore_signal(_semaphore);
 
-    assert(ret == KERN_SUCCESS, "Failed to signal semaphore");
+    assert(ret == KERN_SUCCESS, "Failed to signal semaphore: %s (0x%x)",
+           sem_strerror(ret), (uint)ret);
   }
 }
 
@@ -62,7 +68,8 @@ void OSXSemaphore::wait() {
   while ((ret = semaphore_wait(_semaphore)) == KERN_ABORTED) {
     // Semaphore was interrupted. Retry.
   }
-  assert(ret == KERN_SUCCESS, "Failed to wait on semaphore");
+  assert(ret == KERN_SUCCESS, "Failed to wait on semaphore: %s (0x%x)",
+         sem_strerror(ret), (uint)ret);
 }
 
 bool OSXSemaphore::trywait() {
@@ -99,6 +106,10 @@ bool OSXSemaphore::timedwait(int64_t millis) {
 
     kr = semaphore_timedwait(_semaphore, waitspec);
   }
+
+  assert(kr == KERN_SUCCESS || kr == KERN_OPERATION_TIMED_OUT,
+         "Failed to timed-wait on semaphore: %s (0x%x)",
+         sem_strerror(kr), (uint)kr);
 
   return kr == KERN_SUCCESS;
 }

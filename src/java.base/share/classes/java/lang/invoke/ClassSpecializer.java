@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.loader.BootLoader;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeName;
 import sun.invoke.util.Wrapper;
@@ -64,11 +65,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @param <K> key which identifies individual specializations.
  * @param <S> species data type.
  */
+@AOTSafeClassInitializer
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
     private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_BoundMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final RuntimeVisibleAnnotationsAttribute AOT_SAFE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
+            Annotation.of(ConstantUtils.referenceClassDesc(AOTSafeClassInitializer.class))
+    );
     private static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
             Annotation.of(ConstantUtils.referenceClassDesc(Stable.class))
     );
@@ -233,6 +238,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * it would appear that a shorter species could serve as a supertype of a
      * longer one which extends it.
      */
+    @AOTSafeClassInitializer
     abstract class SpeciesData {
         // Bootstrapping requires circular relations Class -> SpeciesData -> Class
         // Therefore, we need non-final links in the chain.  Use @Stable fields.
@@ -469,6 +475,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * Code generation support for instances.
      * Subclasses can modify the behavior.
      */
+    @AOTSafeClassInitializer
     class Factory {
         /**
          * Constructs a factory.
@@ -624,6 +631,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     clb.withFlags(ACC_FINAL | ACC_SUPER)
                        .withSuperclass(superClassDesc)
                        .with(SourceFileAttribute.of(classDesc.displayName()))
+                       .with(AOT_SAFE_ANNOTATION)
 
                     // emit static types and BMH_SPECIES fields
                        .withField(sdFieldName, CD_SPECIES_DATA, new Consumer<>() {

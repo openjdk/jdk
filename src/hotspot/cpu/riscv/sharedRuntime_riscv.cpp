@@ -1637,7 +1637,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // We use the same pc/oopMap repeatedly when we call out.
 
   Label native_return;
-  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+  if (method->is_object_wait0()) {
     // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
     __ set_last_Java_frame(sp, noreg, native_return, t0);
   } else {
@@ -1679,8 +1679,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label lock_done;
 
   if (method->is_synchronized()) {
-    Label count;
-
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
     // Get the handle (the 2nd argument)
@@ -1693,42 +1691,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
-    if (LockingMode == LM_MONITOR) {
-      __ j(slow_path_lock);
-    } else if (LockingMode == LM_LEGACY) {
-      // Load (object->mark() | 1) into swap_reg % x10
-      __ ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ ori(swap_reg, t0, 1);
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
-
-      // src -> dest if dest == x10 else x10 <- dest
-      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, lock_tmp, count, /*fallthrough*/nullptr);
-
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 3) == 0, and
-      //  2) sp <= mark < mark + os::pagesize()
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - sp) & (3 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 2 bits clear.
-      // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
-
-      __ sub(swap_reg, swap_reg, sp);
-      __ mv(t0, 3 - (int)os::vm_page_size());
-      __ andr(swap_reg, swap_reg, t0);
-
-      // Save the test result, for recursive case, the result is zero
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
-      __ bnez(swap_reg, slow_path_lock);
-
-      __ bind(count);
-      __ inc_held_monitor_count(t0);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
-    }
+    __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1777,15 +1740,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word. We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-
-    __ safepoint_poll(safepoint_in_progress, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(safepoint_in_progress, true /* at_return */, false /* in_nmethod */);
     __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
     __ bnez(t0, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);
@@ -1797,7 +1752,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
-  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+  if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
     __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
     __ beqz(t1, native_return);
@@ -1826,48 +1781,18 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
-    Label done, not_recursive;
-
-    if (LockingMode == LM_LEGACY) {
-      // Simple recursive lock?
-      __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      __ bnez(t0, not_recursive);
-      __ dec_held_monitor_count(t0);
-      __ j(done);
-    }
-
-    __ bind(not_recursive);
-
     // Must save x10 if if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    if (LockingMode == LM_MONITOR) {
-      __ j(slow_path_unlock);
-    } else if (LockingMode == LM_LEGACY) {
-      // get address of the stack lock
-      __ la(x10, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      //  get old displaced header
-      __ ld(old_hdr, Address(x10, 0));
-
-      // Atomic swap old header if oop still contains the stack lock
-      Label count;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, lock_tmp, count, &slow_path_unlock);
-      __ bind(count);
-      __ dec_held_monitor_count(t0);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
-    }
+    __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       restore_native_result(masm, ret_type, stack_slots);
     }
-
-    __ bind(done);
   }
 
   Label dtrace_method_exit, dtrace_method_exit_done;
@@ -2108,7 +2033,7 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -2491,7 +2416,7 @@ VMReg SharedRuntime::thread_register() {
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(is_polling_page_id(id), "expected a polling page stub id");
 
   ResourceMark rm;
@@ -2508,8 +2433,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address start   = __ pc();
   address call_pc = nullptr;
   int frame_size_in_words = -1;
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
-  RegisterSaver reg_saver(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
+  RegisterSaver reg_saver(id == StubId::shared_polling_page_vectors_safepoint_handler_id /* save_vectors */);
 
   // Save Integer and Float registers.
   map = reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
@@ -2616,7 +2541,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -2713,7 +2638,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // otherwise assume that stack unwinding will be initiated, so
 // caller saved registers were assumed volatile in the compiler.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);
@@ -2824,7 +2749,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2863,7 +2788,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);

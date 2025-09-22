@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -967,6 +967,7 @@ public class Proxy implements java.io.Serializable {
      * @return  the invocation handler for the proxy instance
      * @throws  IllegalArgumentException if the argument is not a
      *          proxy instance
+     * @throws  NullPointerException if {@code proxy} is {@code null}
      */
     public static InvocationHandler getInvocationHandler(Object proxy)
         throws IllegalArgumentException

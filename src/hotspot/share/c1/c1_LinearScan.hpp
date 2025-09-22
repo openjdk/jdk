@@ -948,11 +948,7 @@ class LinearScanTimers : public StackObj {
 
  public:
   LinearScanTimers();
-
-  void begin_method();                     // called for each method when register allocation starts
-  void end_method(LinearScan* allocator);  // called for each method when register allocation completed
   void print(double total_time);           // called before termination of VM to print global summary
-
   elapsedTimer* timer(int idx) { return &(_timers[idx]); }
 };
 

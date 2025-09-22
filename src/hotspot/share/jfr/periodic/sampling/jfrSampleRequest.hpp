@@ -48,10 +48,11 @@ enum JfrSampleResult {
 };
 
 enum JfrSampleRequestType {
-  NO_SAMPLE = 0,
-  NATIVE_SAMPLE = 1,
-  JAVA_SAMPLE = 2,
-  NOF_SAMPLE_TYPES
+  NO_SAMPLE,
+  JAVA_SAMPLE,
+  NATIVE_SAMPLE,
+  WAITING_FOR_NATIVE_SAMPLE,
+  NOF_SAMPLE_STATES
 };
 
 struct JfrSampleRequest {
@@ -80,6 +81,11 @@ class JfrSampleRequestBuilder : AllStatic {
   static JfrSampleResult build_java_sample_request(const void* ucontext,
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt);
+  static void build_cpu_time_sample_request(JfrSampleRequest &request,
+                                            void* ucontext,
+                                            JavaThread* jt,
+                                            JfrThreadLocal* tl,
+                                            JfrTicks& now);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRSAMPLEREQUEST_HPP

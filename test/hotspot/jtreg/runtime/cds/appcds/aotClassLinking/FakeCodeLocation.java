@@ -26,8 +26,6 @@
  * @test Do not cache classes that are loaded from a fake location.
  * @bug 8352001
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build FakeCodeLocation
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar FakeCodeLocationApp

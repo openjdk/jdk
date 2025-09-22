@@ -32,7 +32,7 @@ package jdk.jpackage.internal.resources;
  * to call getResourceAsStream() to get those resources.
  */
 
-public class ResourceLocator {
-    public ResourceLocator() {
+public final class ResourceLocator {
+    private ResourceLocator() {
     }
 }

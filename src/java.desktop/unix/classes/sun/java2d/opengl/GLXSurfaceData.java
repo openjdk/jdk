@@ -52,6 +52,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         initOps(gc, peer, graphicsConfig.getAData());
     }
 
+    @Override
     public GraphicsConfiguration getDeviceConfiguration() {
         return graphicsConfig;
     }
@@ -112,7 +113,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         }
     }
 
-    public static class GLXWindowSurfaceData extends GLXSurfaceData {
+    public static final class GLXWindowSurfaceData extends GLXSurfaceData {
         protected final int scale;
 
         public GLXWindowSurfaceData(X11ComponentPeer peer,
@@ -122,10 +123,12 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
             scale = gc.getScale();
         }
 
+        @Override
         public SurfaceData getReplacement() {
             return peer.getSurfaceData();
         }
 
+        @Override
         public Rectangle getBounds() {
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
@@ -137,6 +140,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         /**
          * Returns destination Component associated with this SurfaceData.
          */
+        @Override
         public Object getDestination() {
             return peer.getTarget();
         }
@@ -161,7 +165,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
      * belongs to is showed, it is first copied to the real private
      * FLIP_BACKBUFFER, which is then flipped.
      */
-    public static class GLXVSyncOffScreenSurfaceData extends
+    public static final class GLXVSyncOffScreenSurfaceData extends
         GLXOffScreenSurfaceData
     {
         private GLXOffScreenSurfaceData flipSurface;
@@ -210,10 +214,12 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
             initSurface(this.width, this.height);
         }
 
+        @Override
         public SurfaceData getReplacement() {
             return restoreContents(offscreenImage);
         }
 
+        @Override
         public Rectangle getBounds() {
             if (type == FLIP_BACKBUFFER) {
                 Rectangle r = peer.getBounds();
@@ -229,6 +235,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         /**
          * Returns destination Image associated with this SurfaceData.
          */
+        @Override
         public Object getDestination() {
             return offscreenImage;
         }

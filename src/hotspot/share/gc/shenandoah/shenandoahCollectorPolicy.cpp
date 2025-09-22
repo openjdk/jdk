@@ -192,7 +192,7 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("Under allocation pressure, concurrent cycles may cancel, and either continue cycle");
   out->print_cr("under stop-the-world pause or result in stop-the-world Full GC. Increase heap size,");
-  out->print_cr("tune GC heuristics, set more aggressive pacing delay, or lower allocation rate");
+  out->print_cr("tune GC heuristics, or lower allocation rate");
   out->print_cr("to avoid Degenerated and Full GC cycles. Abbreviated cycles are those which found");
   out->print_cr("enough regions with no live objects to skip evacuation.");
   out->cr();

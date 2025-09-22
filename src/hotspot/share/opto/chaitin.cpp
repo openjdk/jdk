@@ -406,6 +406,8 @@ void PhaseChaitin::Register_Allocate() {
     _live = &live;                // Mark LIVE as being available
   }
 
+  C->print_method(PHASE_INITIAL_LIVENESS, 4);
+
   // Base pointers are currently "used" by instructions which define new
   // derived pointers.  This makes base pointers live up to the where the
   // derived pointer is made, but not beyond.  Really, they need to be live
@@ -422,12 +424,14 @@ void PhaseChaitin::Register_Allocate() {
     gather_lrg_masks(false);
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
+    C->print_method(PHASE_LIVE_RANGE_STRETCHING, 4);
   }
-
-  C->print_method(PHASE_INITIAL_LIVENESS, 4);
 
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time
+  if (C->failing()) {
+    return;
+  }
 
   // The IFG is/was triangular.  I am 'squaring it up' so Union can run
   // faster.  Union requires a 'for all' operation which is slow on the
@@ -471,6 +475,9 @@ void PhaseChaitin::Register_Allocate() {
   // Build physical interference graph
   uint must_spill = 0;
   must_spill = build_ifg_physical(&live_arena);
+  if (C->failing()) {
+    return;
+  }
   // If we have a guaranteed spill, might as well spill now
   if (must_spill) {
     if(!_lrg_map.max_lrg_id()) {
@@ -512,6 +519,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_INITIAL_SPILLING, 4);
 
     build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
     // Only do conservative coalescing if requested
@@ -595,6 +605,9 @@ void PhaseChaitin::Register_Allocate() {
     C->print_method(PHASE_ITERATIVE_SPILLING, 4);
 
     must_spill = build_ifg_physical(&live_arena);
+    if (C->failing()) {
+      return;
+    }
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
 
@@ -1564,8 +1577,8 @@ uint PhaseChaitin::Select( ) {
     // Re-insert into the IFG
     _ifg->re_insert(lidx);
     if( !lrg->alive() ) continue;
-    // capture allstackedness flag before mask is hacked
-    const int is_allstack = lrg->mask().is_AllStack();
+    // capture infinitestackedness flag before mask is hacked
+    const int is_infinite_stack = lrg->mask().is_infinite_stack();
 
     // Yeah, yeah, yeah, I know, I know.  I can refactor this
     // to avoid the GOTO, although the refactored code will not
@@ -1616,7 +1629,7 @@ uint PhaseChaitin::Select( ) {
         }
       }
     }
-    //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
+    //assert(is_infinite_stack == lrg->mask().is_infinite_stack(), "nbrs must not change InfiniteStackedness");
     // Aligned pairs need aligned masks
     assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
     if (lrg->num_regs() > 1 && !lrg->_fat_proj) {
@@ -1627,9 +1640,9 @@ uint PhaseChaitin::Select( ) {
     OptoReg::Name reg = choose_color( *lrg, chunk );
 
     //---------------
-    // If we fail to color and the AllStack flag is set, trigger
+    // If we fail to color and the infinite flag is set, trigger
     // a chunk-rollover event
-    if(!OptoReg::is_valid(OptoReg::add(reg,-chunk)) && is_allstack) {
+    if (!OptoReg::is_valid(OptoReg::add(reg, -chunk)) && is_infinite_stack) {
       // Bump register mask up to next stack chunk
       chunk += RegMask::CHUNK_SIZE;
       lrg->Set_All();
@@ -1638,7 +1651,7 @@ uint PhaseChaitin::Select( ) {
 
     //---------------
     // Did we get a color?
-    else if( OptoReg::is_valid(reg)) {
+    else if (OptoReg::is_valid(reg)) {
 #ifndef PRODUCT
       RegMask avail_rm = lrg->mask();
 #endif
@@ -1695,7 +1708,7 @@ uint PhaseChaitin::Select( ) {
       assert( lrg->alive(), "" );
       assert( !lrg->_fat_proj || lrg->is_multidef() ||
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
-      assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
+      assert( !orig_mask.is_infinite_stack(), "infinite stack does not spill" );
 
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));

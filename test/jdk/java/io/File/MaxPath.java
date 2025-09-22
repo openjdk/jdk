@@ -24,21 +24,14 @@
 /* @test
    @bug 6481955
    @summary Path length less than MAX_PATH (260) works on Windows
-   @library /test/lib
+   @requires (os.family == "windows")
  */
 
 import java.io.File;
 import java.io.IOException;
 
-import jtreg.SkippedException;
-
 public class MaxPath {
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            throw new SkippedException("This test is run only on Windows");
-        }
-
         int MAX_PATH = 260;
         String dir = new File(".").getAbsolutePath() + "\\";
         String padding = "1234567890123456789012345678901234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890012345678900123456789001234567890";

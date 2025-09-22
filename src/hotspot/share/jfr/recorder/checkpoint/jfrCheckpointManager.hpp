@@ -96,8 +96,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void clear_type_set();
   void write_type_set();
 
-  void begin_epoch_shift();
-  void end_epoch_shift();
+  void shift_epoch();
 
   static void on_unloading_classes();
   void on_rotation();

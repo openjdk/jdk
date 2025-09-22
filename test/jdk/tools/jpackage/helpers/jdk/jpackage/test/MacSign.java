@@ -1037,7 +1037,7 @@ public final class MacSign {
         return !missingKeychain && !missingCertificates && !invalidCertificates;
     }
 
-    public final static class ResolvedKeychain {
+    public static final class ResolvedKeychain {
         public ResolvedKeychain(KeychainWithCertsSpec spec) {
             this.spec = Objects.requireNonNull(spec);
         }

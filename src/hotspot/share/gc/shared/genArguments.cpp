@@ -42,17 +42,15 @@ size_t MaxOldSize = 0;
 // See more in JDK-8346005
 size_t OldSize = ScaleForWordSize(4*M);
 
-size_t GenAlignment = 0;
-
 size_t GenArguments::conservative_max_heap_alignment() { return (size_t)Generation::GenGrain; }
 
 static size_t young_gen_size_lower_bound() {
   // The young generation must be aligned and have room for eden + two survivors
-  return align_up(3 * SpaceAlignment, GenAlignment);
+  return 3 * SpaceAlignment;
 }
 
 static size_t old_gen_size_lower_bound() {
-  return align_up(SpaceAlignment, GenAlignment);
+  return SpaceAlignment;
 }
 
 size_t GenArguments::scale_by_NewRatio_aligned(size_t base_size, size_t alignment) {
@@ -69,23 +67,20 @@ static size_t bound_minus_alignment(size_t desired_size,
 void GenArguments::initialize_alignments() {
   // Initialize card size before initializing alignments
   CardTable::initialize_card_size();
-  SpaceAlignment = GenAlignment = (size_t)Generation::GenGrain;
+  SpaceAlignment = (size_t)Generation::GenGrain;
   HeapAlignment = compute_heap_alignment();
 }
 
 void GenArguments::initialize_heap_flags_and_sizes() {
   GCArguments::initialize_heap_flags_and_sizes();
 
-  assert(GenAlignment != 0, "Generation alignment not set up properly");
-  assert(HeapAlignment >= GenAlignment,
-         "HeapAlignment: %zu less than GenAlignment: %zu",
-         HeapAlignment, GenAlignment);
-  assert(GenAlignment % SpaceAlignment == 0,
-         "GenAlignment: %zu not aligned by SpaceAlignment: %zu",
-         GenAlignment, SpaceAlignment);
-  assert(HeapAlignment % GenAlignment == 0,
-         "HeapAlignment: %zu not aligned by GenAlignment: %zu",
-         HeapAlignment, GenAlignment);
+  assert(SpaceAlignment != 0, "Generation alignment not set up properly");
+  assert(HeapAlignment >= SpaceAlignment,
+         "HeapAlignment: %zu less than SpaceAlignment: %zu",
+         HeapAlignment, SpaceAlignment);
+  assert(HeapAlignment % SpaceAlignment == 0,
+         "HeapAlignment: %zu not aligned by SpaceAlignment: %zu",
+         HeapAlignment, SpaceAlignment);
 
   // All generational heaps have a young gen; handle those flags here
 
@@ -106,7 +101,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= InitialHeapSize) {
-    size_t revised_new_size = bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment);
+    size_t revised_new_size = bound_minus_alignment(NewSize, InitialHeapSize, SpaceAlignment);
     log_warning(gc, ergo)("NewSize (%zuk) is equal to or greater than initial heap size (%zuk).  A new "
                           "NewSize of %zuk will be used to accomodate an old generation.",
                           NewSize/K, InitialHeapSize/K, revised_new_size/K);
@@ -115,8 +110,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   // Now take the actual NewSize into account. We will silently increase NewSize
   // if the user specified a smaller or unaligned value.
-  size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize, GenAlignment);
-  bounded_new_size = MAX2(smallest_new_size, align_down(bounded_new_size, GenAlignment));
+  size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize, SpaceAlignment);
+  bounded_new_size = MAX2(smallest_new_size, align_down(bounded_new_size, SpaceAlignment));
   if (bounded_new_size != NewSize) {
     FLAG_SET_ERGO(NewSize, bounded_new_size);
   }
@@ -125,7 +120,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
   if (!FLAG_IS_DEFAULT(MaxNewSize)) {
     if (MaxNewSize >= MaxHeapSize) {
       // Make sure there is room for an old generation
-      size_t smaller_max_new_size = MaxHeapSize - GenAlignment;
+      size_t smaller_max_new_size = MaxHeapSize - SpaceAlignment;
       if (FLAG_IS_CMDLINE(MaxNewSize)) {
         log_warning(gc, ergo)("MaxNewSize (%zuk) is equal to or greater than the entire "
                               "heap (%zuk).  A new max generation size of %zuk will be used.",
@@ -137,8 +132,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       }
     } else if (MaxNewSize < NewSize) {
       FLAG_SET_ERGO(MaxNewSize, NewSize);
-    } else if (!is_aligned(MaxNewSize, GenAlignment)) {
-      FLAG_SET_ERGO(MaxNewSize, align_down(MaxNewSize, GenAlignment));
+    } else if (!is_aligned(MaxNewSize, SpaceAlignment)) {
+      FLAG_SET_ERGO(MaxNewSize, align_down(MaxNewSize, SpaceAlignment));
     }
   }
 
@@ -166,13 +161,13 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       // exceed it. Adjust New/OldSize as necessary.
       size_t calculated_size = NewSize + OldSize;
       double shrink_factor = (double) MaxHeapSize / calculated_size;
-      size_t smaller_new_size = align_down((size_t)(NewSize * shrink_factor), GenAlignment);
+      size_t smaller_new_size = align_down((size_t)(NewSize * shrink_factor), SpaceAlignment);
       FLAG_SET_ERGO(NewSize, MAX2(young_gen_size_lower_bound(), smaller_new_size));
 
       // OldSize is already aligned because above we aligned MaxHeapSize to
       // HeapAlignment, and we just made sure that NewSize is aligned to
-      // GenAlignment. In initialize_flags() we verified that HeapAlignment
-      // is a multiple of GenAlignment.
+      // SpaceAlignment. In initialize_flags() we verified that HeapAlignment
+      // is a multiple of SpaceAlignment.
       OldSize = MaxHeapSize - NewSize;
     } else {
       FLAG_SET_ERGO(MaxHeapSize, align_up(NewSize + OldSize, HeapAlignment));
@@ -200,7 +195,7 @@ void GenArguments::initialize_size_info() {
   // Determine maximum size of the young generation.
 
   if (FLAG_IS_DEFAULT(MaxNewSize)) {
-    max_young_size = scale_by_NewRatio_aligned(MaxHeapSize, GenAlignment);
+    max_young_size = scale_by_NewRatio_aligned(MaxHeapSize, SpaceAlignment);
     // Bound the maximum size by NewSize below (since it historically
     // would have been NewSize and because the NewRatio calculation could
     // yield a size that is too small) and bound it by MaxNewSize above.
@@ -229,18 +224,18 @@ void GenArguments::initialize_size_info() {
       // If NewSize is set on the command line, we should use it as
       // the initial size, but make sure it is within the heap bounds.
       initial_young_size =
-        MIN2(max_young_size, bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment));
-      MinNewSize = bound_minus_alignment(initial_young_size, MinHeapSize, GenAlignment);
+        MIN2(max_young_size, bound_minus_alignment(NewSize, InitialHeapSize, SpaceAlignment));
+      MinNewSize = bound_minus_alignment(initial_young_size, MinHeapSize, SpaceAlignment);
     } else {
       // For the case where NewSize is not set on the command line, use
       // NewRatio to size the initial generation size. Use the current
       // NewSize as the floor, because if NewRatio is overly large, the resulting
       // size can be too small.
       initial_young_size =
-        clamp(scale_by_NewRatio_aligned(InitialHeapSize, GenAlignment), NewSize, max_young_size);
+        clamp(scale_by_NewRatio_aligned(InitialHeapSize, SpaceAlignment), NewSize, max_young_size);
 
       // Derive MinNewSize from MinHeapSize
-      MinNewSize = MIN2(scale_by_NewRatio_aligned(MinHeapSize, GenAlignment), initial_young_size);
+      MinNewSize = MIN2(scale_by_NewRatio_aligned(MinHeapSize, SpaceAlignment), initial_young_size);
     }
   }
 
@@ -252,7 +247,7 @@ void GenArguments::initialize_size_info() {
   // The maximum old size can be determined from the maximum young
   // and maximum heap size since no explicit flags exist
   // for setting the old generation maximum.
-  MaxOldSize = MAX2(MaxHeapSize - max_young_size, GenAlignment);
+  MaxOldSize = MAX2(MaxHeapSize - max_young_size, SpaceAlignment);
   MinOldSize = MIN3(MaxOldSize,
                     InitialHeapSize - initial_young_size,
                     MinHeapSize - MinNewSize);
@@ -315,10 +310,10 @@ void GenArguments::assert_flags() {
   assert(NewSize >= MinNewSize, "Ergonomics decided on a too small young gen size");
   assert(NewSize <= MaxNewSize, "Ergonomics decided on incompatible initial and maximum young gen sizes");
   assert(FLAG_IS_DEFAULT(MaxNewSize) || MaxNewSize < MaxHeapSize, "Ergonomics decided on incompatible maximum young gen and heap sizes");
-  assert(NewSize % GenAlignment == 0, "NewSize alignment");
-  assert(FLAG_IS_DEFAULT(MaxNewSize) || MaxNewSize % GenAlignment == 0, "MaxNewSize alignment");
+  assert(NewSize % SpaceAlignment == 0, "NewSize alignment");
+  assert(FLAG_IS_DEFAULT(MaxNewSize) || MaxNewSize % SpaceAlignment == 0, "MaxNewSize alignment");
   assert(OldSize + NewSize <= MaxHeapSize, "Ergonomics decided on incompatible generation and heap sizes");
-  assert(OldSize % GenAlignment == 0, "OldSize alignment");
+  assert(OldSize % SpaceAlignment == 0, "OldSize alignment");
 }
 
 void GenArguments::assert_size_info() {
@@ -327,19 +322,19 @@ void GenArguments::assert_size_info() {
   assert(MaxNewSize < MaxHeapSize, "Ergonomics decided on incompatible maximum young and heap sizes");
   assert(MinNewSize <= NewSize, "Ergonomics decided on incompatible minimum and initial young gen sizes");
   assert(NewSize <= MaxNewSize, "Ergonomics decided on incompatible initial and maximum young gen sizes");
-  assert(MinNewSize % GenAlignment == 0, "_min_young_size alignment");
-  assert(NewSize % GenAlignment == 0, "_initial_young_size alignment");
-  assert(MaxNewSize % GenAlignment == 0, "MaxNewSize alignment");
-  assert(MinNewSize <= bound_minus_alignment(MinNewSize, MinHeapSize, GenAlignment),
+  assert(MinNewSize % SpaceAlignment == 0, "_min_young_size alignment");
+  assert(NewSize % SpaceAlignment == 0, "_initial_young_size alignment");
+  assert(MaxNewSize % SpaceAlignment == 0, "MaxNewSize alignment");
+  assert(MinNewSize <= bound_minus_alignment(MinNewSize, MinHeapSize, SpaceAlignment),
       "Ergonomics made minimum young generation larger than minimum heap");
-  assert(NewSize <=  bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment),
+  assert(NewSize <=  bound_minus_alignment(NewSize, InitialHeapSize, SpaceAlignment),
       "Ergonomics made initial young generation larger than initial heap");
-  assert(MaxNewSize <= bound_minus_alignment(MaxNewSize, MaxHeapSize, GenAlignment),
+  assert(MaxNewSize <= bound_minus_alignment(MaxNewSize, MaxHeapSize, SpaceAlignment),
       "Ergonomics made maximum young generation lager than maximum heap");
   assert(MinOldSize <= OldSize, "Ergonomics decided on incompatible minimum and initial old gen sizes");
   assert(OldSize <= MaxOldSize, "Ergonomics decided on incompatible initial and maximum old gen sizes");
-  assert(MaxOldSize % GenAlignment == 0, "MaxOldSize alignment");
-  assert(OldSize % GenAlignment == 0, "OldSize alignment");
+  assert(MaxOldSize % SpaceAlignment == 0, "MaxOldSize alignment");
+  assert(OldSize % SpaceAlignment == 0, "OldSize alignment");
   assert(MaxHeapSize <= (MaxNewSize + MaxOldSize), "Total maximum heap sizes must be sum of generation maximum sizes");
   assert(MinNewSize + MinOldSize <= MinHeapSize, "Minimum generation sizes exceed minimum heap size");
   assert(NewSize + OldSize == InitialHeapSize, "Initial generation sizes should match initial heap size");

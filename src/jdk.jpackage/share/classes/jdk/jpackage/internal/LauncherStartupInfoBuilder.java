@@ -43,8 +43,7 @@ final class LauncherStartupInfoBuilder {
 
     LauncherStartupInfoBuilder launcherData(LauncherData launcherData) {
         if (launcherData.isModular()) {
-            decorator = new ModuleStartupInfo(launcherData.moduleName(),
-                    launcherData.modulePath());
+            decorator = new ModuleStartupInfo(launcherData.moduleName());
         } else {
             decorator = new JarStartupInfo(launcherData.mainJarName(),
                     launcherData.isClassNameFromMainJar());
@@ -64,14 +63,12 @@ final class LauncherStartupInfoBuilder {
         return this;
     }
 
-    private static record ModuleStartupInfo(String moduleName,
-            List<Path> modulePath) implements UnaryOperator<LauncherStartupInfo> {
+    private static record ModuleStartupInfo(String moduleName) implements UnaryOperator<LauncherStartupInfo> {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
             return LauncherModularStartupInfo.create(base,
-                    new LauncherModularStartupInfoMixin.Stub(moduleName,
-                            modulePath));
+                    new LauncherModularStartupInfoMixin.Stub(moduleName));
         }
     }
 

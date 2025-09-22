@@ -209,8 +209,16 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
-  Unimplemented();
-  return nullptr;
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+#if (FP_REG_NUM == 11)
+  assert(Rbcp == R7, "expected FP=R11, Rbcp=R7");
+  return (intptr_t*)uc->uc_mcontext.arm_r7;
+#else
+  assert(Rbcp == R11, "expected FP=R7, Rbcp=R11");
+  return (intptr_t*)uc->uc_mcontext.arm_fp; // r11
+#endif
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -359,11 +367,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::continuation_for_implicit_exception(
               thread, pc, SharedRuntime::IMPLICIT_NULL);
         }
-      } else if (sig == SIGILL &&
-                 *(int*)pc ==
-                     NativeInstruction::not_entrant_illegal_instruction) {
-        // Not entrant
-        stub = SharedRuntime::get_handle_wrong_method_stub();
       }
     } else if ((thread->thread_state() == _thread_in_vm ||
                 thread->thread_state() == _thread_in_native) &&

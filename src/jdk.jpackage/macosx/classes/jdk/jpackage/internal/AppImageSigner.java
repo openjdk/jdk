@@ -25,6 +25,8 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.joining;
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
@@ -44,13 +46,14 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 final class AppImageSigner {
 
-    static Consumer<Path> createSigner(MacApplication app, CodesignConfig signingCfg) {
+    static Consumer<MacBundle> createSigner(MacApplication app, CodesignConfig signingCfg) {
         return toConsumer(appImage -> {
             try {
                 new AppImageSigner(Codesigners.create(signingCfg)).sign(app, appImage);
@@ -67,12 +70,12 @@ final class AppImageSigner {
 
     private static final class SignFilter implements Predicate<Path> {
 
-        SignFilter(Application app, Path appImage) {
+        SignFilter(Application app, MacBundle appImage) {
             Objects.requireNonNull(appImage);
 
             // Don't explicitly sign main launcher. It will be implicitly signed when the bundle is signed.
             otherExcludePaths = app.asApplicationLayout().map(appLayout -> {
-                return appLayout.resolveAt(appImage);
+                return appLayout.resolveAt(appImage.root());
             }).map(ApplicationLayout::launchersDirectory).flatMap(launchersDir -> {
                 return app.mainLauncher().map(Launcher::executableNameWithSuffix).map(launchersDir::resolve);
             }).map(Set::of).orElseGet(Set::of);
@@ -98,11 +101,16 @@ final class AppImageSigner {
         private final Set<Path> otherExcludePaths;
     }
 
-    private void sign(MacApplication app, Path appImage) throws CodesignException, IOException {
+    private void sign(MacApplication app, MacBundle appImage) throws CodesignException, IOException {
+        if (!appImage.isValid()) {
+            throw new IllegalArgumentException();
+        }
+
+        app = normalizeAppImageLayout(app);
 
         final var fileFilter = new SignFilter(app, appImage);
 
-        try (var content = Files.walk(appImage)) {
+        try (var content = Files.walk(appImage.root())) {
             content.filter(fileFilter).forEach(toConsumer(path -> {
                 final var origPerms = ensureCanWrite(path);
                 try {
@@ -118,10 +126,10 @@ final class AppImageSigner {
 
         // Sign runtime root directory if present
         app.asApplicationLayout().map(appLayout -> {
-            return appLayout.resolveAt(appImage);
+            return appLayout.resolveAt(appImage.root());
         }).map(MacApplicationLayout.class::cast).map(MacApplicationLayout::runtimeRootDirectory).ifPresent(codesigners);
 
-        final var frameworkPath = appImage.resolve("Contents/Frameworks");
+        final var frameworkPath = appImage.contentsDir().resolve("Frameworks");
         if (Files.isDirectory(frameworkPath)) {
             try (var content = Files.list(frameworkPath)) {
                 content.forEach(toConsumer(path -> {
@@ -131,7 +139,7 @@ final class AppImageSigner {
         }
 
         // Sign the app image itself
-        codesigners.accept(appImage);
+        codesigners.accept(appImage.root());
     }
 
     private static Set<PosixFilePermission> ensureCanWrite(Path path) {
@@ -232,6 +240,20 @@ final class AppImageSigner {
             final var codesignDir = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).force(true).create().asConsumer();
 
             return new Codesigners(codesignFile, codesignExecutableFile, codesignDir);
+        }
+    }
+
+    private static MacApplication normalizeAppImageLayout(MacApplication app) {
+        switch (app.imageLayout()) {
+            case MacApplicationLayout macLayout -> {
+                return MacApplicationBuilder.overrideAppImageLayout(app, APPLICATION_LAYOUT);
+            }
+            case RuntimeLayout macLayout -> {
+                return MacApplicationBuilder.overrideAppImageLayout(app, RUNTIME_BUNDLE_LAYOUT);
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
     }
 

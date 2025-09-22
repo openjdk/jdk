@@ -41,7 +41,7 @@ import javax.swing.filechooser.FileSystemView;
 
 /*
  * @test id=system
- * @bug 8139228
+ * @bug 8139228 8358532
  * @summary JFileChooser should not render Directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -52,24 +52,35 @@ public class HTMLFileName {
     private static final String INSTRUCTIONS = """
             <html>
             <ol>
-            <li>FileChooser shows up a virtual directory and file with name
-               <html><h1 color=#ff00ff><font face="Comic Sans MS">Swing Rocks!.
-            <li>On "HTML disabled" frame :
+            <li><code>JFileChooser</code> shows a virtual directory.
+                The first file in the list has the following name:
+                <code>&lt;html&gt;&lt;h1 color=#ff00ff&gt;&lt;font
+                face="Serif"&gt;Swing Rocks!</code>
+                <br>
+                <br>
+            <li>In <b>HTML disabled</b> frame:
                 <ol>
-                  <li>Verify that the folder and file name must be plain text.
-                  <li>If the name in file pane window and also in directory
-                     ComboBox remains in plain text, then press <b>Pass</b>.
-                     If it appears to be in HTML format with Pink color as
-                     shown, then press <b>Fail</b>.
+                  <li>Verify that the first file name displays
+                      as <em>plain text</em>,
+                      that is you see the HTML tags in the file name.
+                  <li>If the file name in the file pane and
+                      in the navigation combo box above is displayed
+                      as HTML, that is in large font and magenta color,
+                      then press <b>Fail</b>.
                 </ol>
 
-            <li>On "HTML enabled" frame :
+            <li>In <b>HTML enabled</b> frame:
                 <ol>
-                  <li>Verify that the folder and file name remains in HTML
-                     format with name "Swing Rocks!" pink in color as shown.
-                  <li>If the name in file pane window and also in directory
-                     ComboBox remains in HTML format string, then press <b>Pass</b>.
-                     If it appears to be in plain text, then press <b>Fail</b>.
+                  <li>Verify that the first file name displays as <em>HTML</em>,
+                      that is <code><font face="Serif"
+                      color=#ff00ff>Swing Rocks!</code> in large font
+                      and magenta color.<br>
+                      <b>Note:</b> On macOS in Aqua L&amp;F, the file name with
+                      HTML displays as an empty file name. It is not an error.
+                  <li>If the file name in the file pane and
+                      in the navigation combo box above is displayed
+                      as HTML, then press <b>Pass</b>.<br>
+                      If it is in plain text, then press <b>Fail</b>.
                 </ol>
             </ol>
             </html>
@@ -99,6 +110,7 @@ public class HTMLFileName {
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(45)
+                .rows(20)
                 .testUI(HTMLFileName::initialize)
                 .positionTestUIBottomRowCentered()
                 .build()
@@ -110,18 +122,25 @@ public class HTMLFileName {
         return List.of(createFileChooser(true), createFileChooser(false));
     }
 
-    private static JFrame createFileChooser(boolean htmlEnabled) {
+    private static JFrame createFileChooser(boolean htmlDisabled) {
         JFileChooser jfc = new JFileChooser(new VirtualFileSystemView());
-        jfc.putClientProperty("html.disable", htmlEnabled);
+        jfc.putClientProperty("html.disable", htmlDisabled);
         jfc.setControlButtonsAreShown(false);
 
-        JFrame frame = new JFrame((htmlEnabled) ? "HTML enabled" : "HTML disabled");
+        JFrame frame = new JFrame(htmlDisabled ? "HTML disabled" : "HTML enabled");
         frame.add(jfc);
         frame.pack();
         return frame;
     }
 
     private static class VirtualFileSystemView extends FileSystemView {
+        private final File[] files = {
+                new File("/", "<html><h1 color=#ff00ff><font " +
+                         "face=\"Serif\">Swing Rocks!"),
+                new File("/", "virtualFile1.txt"),
+                new File("/", "virtualFile2.log")
+        };
+
         @Override
         public File createNewFolder(File containingDir) {
             return null;
@@ -129,12 +148,7 @@ public class HTMLFileName {
 
         @Override
         public File[] getRoots() {
-            return new File[]{
-                    new File("/", "<html><h1 color=#ff00ff><font " +
-                            "face=\"Comic Sans MS\">Swing Rocks!"),
-                    new File("/", "virtualFile2.txt"),
-                    new File("/", "virtualFolder")
-            };
+            return files;
         }
 
         @Override
@@ -150,12 +164,7 @@ public class HTMLFileName {
         @Override
         public File[] getFiles(File dir, boolean useFileHiding) {
             // Simulate a virtual folder structure
-            return new File[]{
-                    new File("/", "<html><h1 color=#ff00ff><font " +
-                            "face=\"Comic Sans MS\">Swing Rocks!"),
-                    new File(dir, "virtualFile2.txt"),
-                    new File(dir, "virtualFolder")
-            };
+            return files;
         }
 
         @Override

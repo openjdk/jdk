@@ -32,7 +32,7 @@ import sun.awt.FontConfiguration;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-class CFontConfiguration extends FontConfiguration {
+final class CFontConfiguration extends FontConfiguration {
 
     private static CompositeFontDescriptor[] emptyDescriptors =
         new CompositeFontDescriptor[0];

@@ -54,6 +54,7 @@ class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
 class CallLeafNoFPNode;
+class CallLeafPureNode;
 class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
@@ -221,7 +222,7 @@ typedef Node** DUIterator_Fast;
 typedef Node** DUIterator_Last;
 #endif
 
-typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
+typedef ResizeableHashTable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
 
 // Node Sentinel
 #define NodeSentinel (Node*)-1
@@ -673,6 +674,7 @@ public:
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
               DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
+              DEFINE_CLASS_ID(CallLeafPure,     CallLeaf, 1)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
@@ -907,6 +909,7 @@ public:
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
   DEFINE_CLASS_QUERY(CallLeafNoFP)
+  DEFINE_CLASS_QUERY(CallLeafPure)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
@@ -1289,8 +1292,6 @@ public:
 
   bool is_div_or_mod(BasicType bt) const;
 
-  bool is_pure_function() const;
-
   bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
@@ -1633,6 +1634,7 @@ protected:
 
   // Grow array to required capacity
   void maybe_grow(uint i) {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
     if (i >= _max) {
       grow(i);
     }
@@ -1884,7 +1886,15 @@ protected:
   INode *_inodes;    // Array storage for the stack
   Arena *_a;         // Arena to allocate in
   ReallocMark _nesting; // Safety checks for arena reallocation
+
+  void maybe_grow() {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
+    if (_inode_top >= _inode_max) {
+      grow();
+    }
+  }
   void grow();
+
 public:
   Node_Stack(int size) {
     size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
@@ -1907,7 +1917,7 @@ public:
   }
   void push(Node *n, uint i) {
     ++_inode_top;
-    grow();
+    maybe_grow();
     INode *top = _inode_top; // optimization
     top->node = n;
     top->indx = i;

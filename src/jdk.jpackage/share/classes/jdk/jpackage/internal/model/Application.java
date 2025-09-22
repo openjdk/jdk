@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  *
  * @see Package
  */
-public interface Application {
+public interface Application extends BundleSpec {
 
     /**
      * Gets the name of this application.
@@ -222,10 +222,10 @@ public interface Application {
 
     /**
      * Gets the additional properties of this application for the application entry
-     * in the app image (".jpackage") file.
+     * in the app image (".jpackage.xml") file.
      *
      * @return the additional properties of this application for the application
-     *         entry in ".jpackage" file
+     *         entry in ".jpackage.xml" file
      */
     Map<String, String> extraAppImageFileData();
 

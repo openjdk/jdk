@@ -34,9 +34,7 @@
 
 class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderData;
-  friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
-  friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class VMStructs;
  private:
   class ClassLoaderDataGraphIterator;

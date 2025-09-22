@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,6 @@ import java.util.function.Consumer;
  * redirect standard output streams, wait for process terminates
  * or kill the process, and so on.
  * <p>
- * This is an abstract class that declares abstract methods to control
- * debugee VM process.
- * Derived classes should implement these methods corresponding to the mode
- * that the process should be started in (locally, remotely or manually).
- * <p>
  * Particular derived classes <code>nsk.share.jdi.Debugee</code> and
  * <code>nsk.share.jdwp.Debugee</code> provides additional abilities
  * to control debugee VM using JDI or JDWP specific features.
@@ -52,7 +47,7 @@ import java.util.function.Consumer;
  * @see nsk.share.jdi.Debugee
  * @see nsk.share.jdwp.Debugee
  */
-abstract public class DebugeeProcess {
+public class DebugeeProcess {
 
     /** Default prefix for log messages. */
     public static final String LOG_PREFIX = "binder> ";

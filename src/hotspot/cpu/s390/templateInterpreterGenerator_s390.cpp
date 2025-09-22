@@ -1217,7 +1217,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Various method entries
 
-// Math function, frame manager must set up an interpreter state, etc.
+// Math function, template interpreter must set up an interpreter state, etc.
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
@@ -1239,7 +1239,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_sinh : /* run interpreted */ break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;

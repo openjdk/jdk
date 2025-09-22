@@ -34,12 +34,7 @@ public:
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full description in macroAssembler_x86.cpp.
-  void fast_lock(Register obj, Register box, Register tmp,
-                 Register scr, Register cx1, Register cx2, Register thread,
-                 Metadata* method_data);
-  void fast_unlock(Register obj, Register box, Register tmp);
-
+  // See full description in c2_MacroAssembler_x86.cpp.
   void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
@@ -71,6 +66,9 @@ public:
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                  XMMRegister src1, XMMRegister src2, int vlen_enc);
 
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
@@ -492,15 +490,14 @@ public:
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
-                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register mask,
+                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                        Register midx, Register length, int vector_len, int vlen_enc);
 
-  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
-
-  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                              Register offset, Register rtmp, int vlen_enc);
+  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                        Register mask, Register midx, Register rtmp, int vlen_enc);
+  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                 Register rtmp, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 
