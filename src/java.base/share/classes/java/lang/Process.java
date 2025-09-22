@@ -182,18 +182,18 @@ public abstract class Process implements Closeable {
      * This method is idempotent, if the process has already been closed
      * invoking this method has no effect.
      * <p>
-     * Before calling {@code close} the caller should read the streams for any
+     * Before calling this method the caller should read the streams for any
      * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
      * The contents of streams that have not been read fully are lost,
      * they are discarded or ignored.
      * Streams should be {@code closed} when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is
-     * re-thrown after the process is destroyed. Additional {@code IOExceptions}
+     * re-thrown after the process is terminated. Additional {@code IOExceptions}
      * thrown by closing the remaining streams, if any, are added to the first
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
-     * The process may already have exited or be in the process of exiting;
+     * The process may already have terminated or be in the process of terminating;
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
      * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
      * is not available and the process is forcibly terminated.
@@ -208,7 +208,7 @@ public abstract class Process implements Closeable {
      * The {@code outputWriter} and {@code outputStream} to the process are closed.
      * The {@code inputReader} and {@code inputStream} from the process are closed.
      * The {@code errorReader} and {@code errorStream} from the process are closed.
-     * The process is destroyed.
+     * The process is terminated.
      * @throws IOException if closing any of the streams throws an exception
      * @since 26
      */
