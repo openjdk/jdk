@@ -68,7 +68,7 @@ markCloseOnExec(int fd)
 }
 
 #if !defined(_AIX)
-  /* The /proc file System in AIX does not contain open system files
+  /* The /proc file System on AIX does not contain open system files
    * like /dev/random. Therefore we use a different approach and do
    * not need isAsciiDigit() or FD_DIR */
 static int
@@ -91,10 +91,12 @@ markDescriptorsCloseOnExec(void)
     /* We rely on the current childProcess() functions semantic.
      * When the parent childProcess() function reaches the call of this function
      * only the FDs 0,1,2 and 3 are further used until the exec() or the exit(-1).
-     * So we can close all FDs beginning with 4. FD 3 is only used if the exec fails
-     * to report the reason to the JVM. It should not survive a passing exec().
-     * So we can set the close_on_exec flag for FD 3. FDs 0,1 and 2 should survive
-     * the exec(), so we do not change them. */
+     * So we can close all FDs beginning with 4 (with fcntl(x, F_CLOSEM, 0); AIX
+     * provides a special fcntl call to close all open FDs greater equal x in one call).
+     * FD 3 is only used if the exec fails to report the reason to the JVM.
+     * It should not survive a passing exec(). So we can set the close_on_exec
+     * flag for FD 3. FDs 0,1 and 2 should survive the exec(), we do not change them.
+     */
     if (fcntl(STDERR_FILENO + 2, F_CLOSEM, 0) == -1 ||
         (markCloseOnExec(STDERR_FILENO + 1) == -1 && errno != EBADF)) {
         return -1;
