@@ -153,9 +153,11 @@ public class IsSameFile {
         deleteFiles();
         Files.createFile(a);
         zipStringToFile("quote.txt", "To be determined", b);
-        FileSystem zipfs = FileSystems.newFileSystem(b);
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(false, a, zipfs.getPath(b.toString())));
+        List<Arguments> list;
+        try (FileSystem zipfs = FileSystems.newFileSystem(b)) {
+            list = new ArrayList<Arguments>();
+            list.add(Arguments.of(false, a, zipfs.getPath(b.toString())));
+        }
         return list.stream();
     }
 
