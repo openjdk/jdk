@@ -154,6 +154,8 @@ endif
 
 ################################################################################
 ## Build libsyslookup
+## The LIBDL dependency on Linux is needed to dynamically access libdl symbols,
+## which may be needed as part of resolving some standard symbols
 ################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSYSLOOKUP, \
