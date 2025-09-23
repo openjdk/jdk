@@ -738,7 +738,6 @@ class AdapterHandlerEntry : public MetaspaceObj {
     assert(_adapter_blob != nullptr, "must be");
     return _adapter_blob->i2c_entry();
 #else
-    ShouldNotReachHere();
     return nullptr;
 #endif // ZERO
   }
@@ -748,7 +747,6 @@ class AdapterHandlerEntry : public MetaspaceObj {
     assert(_adapter_blob != nullptr, "must be");
     return _adapter_blob->c2i_entry();
 #else
-    ShouldNotReachHere();
     return nullptr;
 #endif // ZERO
   }
@@ -758,7 +756,6 @@ class AdapterHandlerEntry : public MetaspaceObj {
     assert(_adapter_blob != nullptr, "must be");
     return _adapter_blob->c2i_unverified_entry();
 #else
-    ShouldNotReachHere();
     return nullptr;
 #endif // ZERO
   }
@@ -768,7 +765,6 @@ class AdapterHandlerEntry : public MetaspaceObj {
     assert(_adapter_blob != nullptr, "must be");
     return _adapter_blob->c2i_no_clinit_check_entry();
 #else
-    ShouldNotReachHere();
     return nullptr;
 #endif // ZERO
   }
