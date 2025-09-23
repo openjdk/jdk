@@ -302,7 +302,7 @@ static bool is_young_small(const ZDirectorStats& stats) {
 
   // If the freeable memory isn't even 5% of the heap, we can't expect to free up
   // all that much memory, so let's not even try - it will likely be a wasted effort
-  // that takes away CPU power to the hopefullt more profitable major colelction.
+  // that takes away CPU power to the hopefully more profitable major collection.
   return young_used_percent <= 5.0;
 }
 
