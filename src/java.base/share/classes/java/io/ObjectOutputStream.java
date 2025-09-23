@@ -1906,7 +1906,7 @@ public class ObjectOutputStream
                 if(writeHeader) {
                     writeByte(TC_STRING);
                 }
-                writeShort((int)utflen);
+                writeShort((short)utflen);
             } else {
                 if(writeHeader) {
                     writeByte(TC_LONGSTRING);
