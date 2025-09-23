@@ -92,28 +92,13 @@ void ShenandoahEvacuationTracker::print_global_on(outputStream* st) {
 void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
                                                        ShenandoahEvacuationStats* workers,
                                                        ShenandoahEvacuationStats* mutators) {
-  if (ShenandoahEvacTracking) {
-    st->print_cr("Workers: ");
-    workers->print_on(st);
-    st->cr();
-    st->print_cr("Mutators: ");
-    mutators->print_on(st);
-    st->cr();
-  }
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational()) {
-    AgeTable young_region_ages(false);
-    for (uint i = 0; i < heap->num_regions(); ++i) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
-      }
-    }
-    st->print("Young regions: ");
-    young_region_ages.print_on(st);
-    st->cr();
-  }
+  assert(ShenandoahEvacTracking, "Only when evac tracking is enabled");
+  st->print_cr("Workers: ");
+  workers->print_on(st);
+  st->cr();
+  st->print_cr("Mutators: ");
+  mutators->print_on(st);
+  st->cr();
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
