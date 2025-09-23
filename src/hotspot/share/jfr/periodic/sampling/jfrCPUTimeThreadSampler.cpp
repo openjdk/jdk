@@ -855,7 +855,7 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
 #ifdef ASSERT
-static bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   warn();
   return false;
 }
