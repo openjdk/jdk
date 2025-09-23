@@ -147,6 +147,8 @@ class CallSiteBindingContext {
     int bci;
     methodHandle caller;
     bool reexecute;
+
+    CallSiteBindingContext() : bci(0), caller(), reexecute(false) {}
 };
 
 // Converts a HotSpotCompiledCode to a CodeBlob or an nmethod.
