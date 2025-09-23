@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552 8306116 8319990
@@ -28,16 +29,16 @@
  * @run junit/othervm TestParseBigDecimal
  */
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.text.CompactNumberFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestParseBigDecimal {
@@ -67,7 +68,7 @@ public class TestParseBigDecimal {
             .getCompactNumberInstance(Locale.of("se"), NumberFormat.Style.SHORT);
 
     @BeforeAll
-    public void mutateInstances() {
+    void mutateInstances() {
         FORMAT_DZ_LONG.setParseBigDecimal(true);
         FORMAT_EN_US_SHORT.setParseBigDecimal(true);
         FORMAT_EN_LONG.setParseBigDecimal(true);
@@ -168,7 +169,7 @@ public class TestParseBigDecimal {
 
     @ParameterizedTest
     @MethodSource("compactParseData")
-    public void testParse(NumberFormat cnf, String parseString,
+    void testParse(NumberFormat cnf, String parseString,
             Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, BigDecimal.class);
     }

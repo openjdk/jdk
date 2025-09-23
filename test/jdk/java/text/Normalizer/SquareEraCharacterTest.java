@@ -28,13 +28,13 @@
  * @run junit/othervm SquareEraCharacterTest
  */
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.text.Normalizer;
-
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.text.Normalizer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SquareEraCharacterTest {
@@ -53,9 +53,8 @@ public class SquareEraCharacterTest {
 
     @ParameterizedTest
     @MethodSource("squareEras")
-    public void test_normalize(char squareChar, String expected) {
-
-        assertEquals(            expected, Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
+    void test_normalize(char squareChar, String expected) {
+        assertEquals(expected, Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
             "decomposing " + Character.getName(squareChar) + ".");
     }
 }

@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
@@ -27,12 +28,14 @@
  * @modules jdk.localedata
  * @run junit/othervm TestSpecialValues
  */
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Locale;
+
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSpecialValues {
@@ -67,13 +70,13 @@ public class TestSpecialValues {
 
     @ParameterizedTest
     @MethodSource("formatSpecialValues")
-    public void testFormatSpecialValues(Object number, String expected) {
+    void testFormatSpecialValues(Object number, String expected) {
         CompactFormatAndParseHelper.testFormat(FORMAT, number, expected);
     }
 
     @ParameterizedTest
     @MethodSource("parseSpecialValues")
-    public void testParseSpecialValues(String parseString, Number expected)
+    void testParseSpecialValues(String parseString, Number expected)
             throws ParseException {
         CompactFormatAndParseHelper.testParse(FORMAT, parseString, expected, null, null);
     }

@@ -21,22 +21,23 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4326988 6990146 8231213
  * @summary test SimpleDateFormat, check its pattern in the constructor
  * @run junit/othervm SimpleDateFormatPatternTest
  */
-import java.lang.IllegalArgumentException;
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SimpleDateFormatPatternTest {
@@ -154,9 +155,9 @@ public class SimpleDateFormatPatternTest {
     //check Constructors for invalid pattern
     @ParameterizedTest
     @MethodSource("invalidPatternObj")
-    public void testIllegalArgumentException1(String pattern, Locale loc)
+    void testIllegalArgumentException1(String pattern, Locale loc)
             throws IllegalArgumentException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(pattern);
         });
@@ -164,9 +165,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("invalidPatternObj")
-    public void testIllegalArgumentException2(String pattern, Locale loc)
+    void testIllegalArgumentException2(String pattern, Locale loc)
             throws IllegalArgumentException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(pattern, new DateFormatSymbols());
         });
@@ -174,9 +175,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("invalidPatternObj")
-    public void testIllegalArgumentException3 (String pattern, Locale loc)
+    void testIllegalArgumentException3 (String pattern, Locale loc)
             throws IllegalArgumentException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(pattern, Locale.getDefault());
         });
@@ -184,9 +185,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("invalidPatternObj")
-    public void testIllegalArgumentException4(String pattern, Locale loc)
+    void testIllegalArgumentException4(String pattern, Locale loc)
             throws IllegalArgumentException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat().applyPattern(pattern);
         });
@@ -195,9 +196,9 @@ public class SimpleDateFormatPatternTest {
     //check Constructors for null pattern
     @ParameterizedTest
     @MethodSource("dfAllLocalesObj")
-    public void testNullPointerException1(Locale loc)
+    void testNullPointerException1(Locale loc)
             throws NullPointerException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(null);
         });
@@ -205,9 +206,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("dfAllLocalesObj")
-    public void testNullPointerException2(Locale loc)
+    void testNullPointerException2(Locale loc)
             throws NullPointerException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(null, new DateFormatSymbols());
         });
@@ -215,9 +216,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("dfAllLocalesObj")
-    public void testNullPointerException3(Locale loc)
+    void testNullPointerException3(Locale loc)
             throws NullPointerException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat(null, Locale.getDefault());
         });
@@ -225,9 +226,9 @@ public class SimpleDateFormatPatternTest {
 
     @ParameterizedTest
     @MethodSource("dfAllLocalesObj")
-    public void testNullPointerException4(Locale loc)
+    void testNullPointerException4(Locale loc)
             throws NullPointerException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             Locale.setDefault(loc);
             new SimpleDateFormat().applyPattern(null);
         });
@@ -236,7 +237,7 @@ public class SimpleDateFormatPatternTest {
     @ParameterizedTest
     //check Constructors for valid pattern
     @MethodSource("validPatternObj")
-    public void testValidPattern(String pattern, Locale loc) {
+    void testValidPattern(String pattern, Locale loc) {
         Locale.setDefault(loc);
         new SimpleDateFormat(pattern);
         new SimpleDateFormat(pattern, new DateFormatSymbols());

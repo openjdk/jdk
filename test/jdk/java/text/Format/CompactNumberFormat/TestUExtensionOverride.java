@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552 8221432
@@ -28,12 +29,14 @@
  * @modules jdk.localedata
  * @run junit/othervm TestUExtensionOverride
  */
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Locale;
+
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUExtensionOverride {
@@ -89,7 +92,7 @@ public class TestUExtensionOverride {
 
     @ParameterizedTest
     @MethodSource("compactFormatData")
-    public void testFormat(Locale locale, double num,
+    void testFormat(Locale locale, double num,
             String expected) {
         NumberFormat cnf = NumberFormat.getCompactNumberInstance(locale,
                 NumberFormat.Style.SHORT);
@@ -98,7 +101,7 @@ public class TestUExtensionOverride {
 
     @ParameterizedTest
     @MethodSource("compactParseData")
-    public void testParse(Locale locale, String parseString,
+    void testParse(Locale locale, String parseString,
             Number expected) throws ParseException {
         NumberFormat cnf = NumberFormat.getCompactNumberInstance(locale,
                 NumberFormat.Style.SHORT);

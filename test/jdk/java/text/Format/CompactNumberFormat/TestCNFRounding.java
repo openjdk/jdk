@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
@@ -27,16 +28,18 @@
  * @run junit/othervm TestCNFRounding
  */
 
-import java.math.RoundingMode;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCNFRounding {
@@ -120,8 +123,8 @@ public class TestCNFRounding {
     }
 
     @Test
-    public void testNullMode() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+    void testNullMode() {
+        assertThrows(NullPointerException.class, () -> {
             NumberFormat fmt = NumberFormat
                     .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
             fmt.setRoundingMode(null);
@@ -129,7 +132,7 @@ public class TestCNFRounding {
     }
 
     @Test
-    public void testDefaultRoundingMode() {
+    void testDefaultRoundingMode() {
         NumberFormat fmt = NumberFormat
                 .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
         assertEquals(RoundingMode.HALF_EVEN, fmt.getRoundingMode(),
@@ -138,7 +141,7 @@ public class TestCNFRounding {
 
     @ParameterizedTest
     @MethodSource("roundingData")
-    public void testRounding(Object number, String[] expected) {
+    void testRounding(Object number, String[] expected) {
         for (int index = 0; index < MODES.size(); index++) {
             testRoundingMode(number, expected[index], 0, MODES.get(index));
         }
@@ -146,7 +149,7 @@ public class TestCNFRounding {
 
     @ParameterizedTest
     @MethodSource("roundingFract")
-    public void testRoundingFract(Object number, String[] expected) {
+    void testRoundingFract(Object number, String[] expected) {
         for (int index = 0; index < MODES.size(); index++) {
             testRoundingMode(number, expected[index], 1, MODES.get(index));
         }
@@ -154,7 +157,7 @@ public class TestCNFRounding {
 
     @ParameterizedTest
     @MethodSource("rounding2Fract")
-    public void testRounding2Fract(Object number, String[] expected) {
+    void testRounding2Fract(Object number, String[] expected) {
         List<RoundingMode> rModes = List.of(RoundingMode.HALF_EVEN,
                 RoundingMode.HALF_UP, RoundingMode.HALF_DOWN);
         for (int index = 0; index < rModes.size(); index++) {

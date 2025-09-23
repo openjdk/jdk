@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552 8327640
@@ -28,6 +29,9 @@
  * @run junit/othervm TestSerialization
  */
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -38,10 +42,8 @@ import java.math.RoundingMode;
 import java.text.CompactNumberFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSerialization {
@@ -60,7 +62,7 @@ public class TestSerialization {
             Locale.KOREA, NumberFormat.Style.SHORT);
 
     @BeforeAll
-    public void mutateInstances() {
+    void mutateInstances() {
         FORMAT_HI.setMinimumFractionDigits(2);
         FORMAT_HI.setMinimumIntegerDigits(5);
 
@@ -83,7 +85,7 @@ public class TestSerialization {
     }
 
     @Test
-    public void testSerialization() throws IOException, ClassNotFoundException {
+    void testSerialization() throws IOException, ClassNotFoundException {
         // Serialize
         serialize("cdf.ser", FORMAT_HI, FORMAT_EN_US, FORMAT_JA_JP, FORMAT_FR_FR, FORMAT_DE_DE, FORMAT_KO_KR);
         // Deserialize

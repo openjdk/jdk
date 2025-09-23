@@ -29,33 +29,37 @@
  * @run junit/othervm RuleBasedCollatorTest
  */
 
-import java.text.CollationElementIterator;
-import java.text.CollationKey;
-import java.text.RuleBasedCollator;
-import java.text.Collator;
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Locale;
-
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.text.CollationElementIterator;
+import java.text.CollationKey;
+import java.text.Collator;
+import java.text.ParseException;
+import java.text.RuleBasedCollator;
+import java.util.Arrays;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RuleBasedCollatorTest {
 
-    static RuleBasedCollator USC;
-    static String US_RULES;
+    private static RuleBasedCollator USC;
+    private static String US_RULES;
 
     @BeforeAll
-    public void setup() {
+    void setup() {
         Collator c = Collator.getInstance(Locale.US);
-        Assumptions.assumeFalse(!(c instanceof RuleBasedCollator), "skip tests.");
+        assumeFalse(!(c instanceof RuleBasedCollator), "skip tests.");
         USC = (RuleBasedCollator) c;
         US_RULES = USC.getRules();
     }
@@ -94,7 +98,7 @@ public class RuleBasedCollatorTest {
 
     @ParameterizedTest
     @MethodSource("rulesData")
-    public void testRules(String rules, String[] testData, String[] expected)
+    void testRules(String rules, String[] testData, String[] expected)
             throws ParseException {
         Arrays.sort(testData, new RuleBasedCollator(rules));
         assertArrayEquals(expected, testData);
@@ -114,7 +118,7 @@ public class RuleBasedCollatorTest {
 
     @ParameterizedTest
     @MethodSource("FrenchSecondarySort")
-    public void testFrenchSecondarySort(String sData, String tData,
+    void testFrenchSecondarySort(String sData, String tData,
             int expected) throws ParseException {
         String french_rule = "@";
         String rules = US_RULES + french_rule;
@@ -132,7 +136,7 @@ public class RuleBasedCollatorTest {
 
     @ParameterizedTest
     @MethodSource("ThaiLaoVowelConsonantSwapping")
-    public void testThaiLaoVowelConsonantSwapping(String sData, String tData,
+    void testThaiLaoVowelConsonantSwapping(String sData, String tData,
             int expected) throws ParseException {
         String thai_rule = "& Z < \u0e01 < \u0e2e <\u0e40 < \u0e44!";
         String rules = US_RULES + thai_rule;
@@ -142,7 +146,7 @@ public class RuleBasedCollatorTest {
     }
 
     @Test
-    public void testIgnorableCharacter() throws ParseException {
+    void testIgnorableCharacter() throws ParseException {
         String rule = "=f<a<c";
         RuleBasedCollator rc = new RuleBasedCollator(rule);
         CollationElementIterator iter = rc.getCollationElementIterator("f");
@@ -165,7 +169,7 @@ public class RuleBasedCollatorTest {
 
     @ParameterizedTest
     @MethodSource("Normalization")
-    public void testNormalization(String sData, String tData, int decomp,
+    void testNormalization(String sData, String tData, int decomp,
             int result) {
         RuleBasedCollator rc = (RuleBasedCollator)USC.clone();
         rc.setDecomposition(decomp);
@@ -173,7 +177,7 @@ public class RuleBasedCollatorTest {
     }
 
     @Test
-    public void testEquality() throws ParseException {
+    void testEquality() throws ParseException {
         String rule1 = "<a=b";
         RuleBasedCollator rc1= new RuleBasedCollator(rule1);
         //test equals()
@@ -193,7 +197,7 @@ public class RuleBasedCollatorTest {
     }
 
     @Test
-    public void testBasicParsingOrder() throws ParseException {
+    void testBasicParsingOrder() throws ParseException {
         String rule1 = "< a < b & a < c";
         String rule2 = "< a < c & a < b";
         String rule3 = "< a < b < c";
@@ -205,10 +209,10 @@ public class RuleBasedCollatorTest {
         CollationKey k2 = c2.getCollationKey(s);
         CollationKey k3 = c3.getCollationKey(s);
         //rule1 should not equals to rule2
-        assertEquals(false, k1.compareTo(k2) == 0);
+        assertNotEquals(0, k1.compareTo(k2));
 
         //rule2 should equals to rule3
-        assertEquals(true, k2.compareTo(k3) == 0);
+        assertEquals(0, k2.compareTo(k3));
     }
 
     Object[][] ParseData() {
@@ -223,16 +227,12 @@ public class RuleBasedCollatorTest {
 
     @ParameterizedTest
     @MethodSource("ParseData")
-    public void testParseException(String rule) throws ParseException{
-        Assertions.assertThrows(ParseException.class, () -> {
-            new RuleBasedCollator(rule);
-        });
+    void testParseException(String rule) {
+        assertThrows(ParseException.class, () -> new RuleBasedCollator(rule));
     }
 
     @Test
-    public void testNullParseException() throws ParseException{
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            new RuleBasedCollator(null);
-        });
+    void testNullParseException() {
+        assertThrows(NullPointerException.class, () -> new RuleBasedCollator(null));
     }
 }

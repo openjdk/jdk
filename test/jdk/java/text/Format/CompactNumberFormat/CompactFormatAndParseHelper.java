@@ -24,6 +24,7 @@
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CompactFormatAndParseHelper {

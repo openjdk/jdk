@@ -29,25 +29,24 @@
  * @run junit/othervm SetGroupingSizeTest
  */
 
-import java.text.DecimalFormat;
-
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+import java.text.DecimalFormat;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class SetGroupingSizeTest {
 
-    public static Object[][] validGroupingSizes() {
+    static Object[][] validGroupingSizes() {
         return new Object[][] {
             { 0 },
             { Byte.MAX_VALUE },
         };
     }
 
-    public static Object[][] invalidGroupingSizes() {
+    static Object[][] invalidGroupingSizes() {
         return new Object[][] {
             { Byte.MIN_VALUE - 1 },
             { Byte.MIN_VALUE },
@@ -60,7 +59,7 @@ public class SetGroupingSizeTest {
 
     @ParameterizedTest
     @MethodSource("validGroupingSizes")
-    public void test_validGroupingSize(int newVal) {
+    void test_validGroupingSize(int newVal) {
         DecimalFormat df = new DecimalFormat();
         df.setGroupingSize(newVal);
         assertEquals(newVal, df.getGroupingSize());
@@ -68,8 +67,8 @@ public class SetGroupingSizeTest {
 
     @ParameterizedTest
     @MethodSource("invalidGroupingSizes")
-    public void test_invalidGroupingSize(int newVal) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    void test_invalidGroupingSize(int newVal) {
+        assertThrows(IllegalArgumentException.class, () -> {
             DecimalFormat df = new DecimalFormat();
             df.setGroupingSize(newVal);
         });

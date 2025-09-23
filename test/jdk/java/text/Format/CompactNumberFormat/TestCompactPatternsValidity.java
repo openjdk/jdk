@@ -28,6 +28,10 @@
  * @run junit/othervm TestCompactPatternsValidity
  */
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.CompactNumberFormat;
@@ -35,10 +39,8 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Locale;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCompactPatternsValidity {
@@ -152,8 +154,8 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("invalidCompactPatterns")
-    public void testInvalidCompactPatterns(String[] compactPatterns) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    void testInvalidCompactPatterns(String[] compactPatterns) {
+        assertThrows(IllegalArgumentException.class, () -> {
             new CompactNumberFormat("#,##0.0#", DecimalFormatSymbols
                     .getInstance(Locale.US), compactPatterns);
         });
@@ -161,7 +163,7 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("validPatternsFormat")
-    public void testValidPatternsFormat(String[] compactPatterns,
+    void testValidPatternsFormat(String[] compactPatterns,
             List<Object> numbers, List<String> expected) {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                 DecimalFormatSymbols.getInstance(Locale.US), compactPatterns);
@@ -173,7 +175,7 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("validPatternsParse")
-    public void testValidPatternsParse(String[] compactPatterns,
+    void testValidPatternsParse(String[] compactPatterns,
             List<String> parseString, List<Number> numbers) throws ParseException {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                     DecimalFormatSymbols.getInstance(Locale.US), compactPatterns);
@@ -185,7 +187,7 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("validPatternsFormatWithPluralRules")
-    public void testValidPatternsFormatWithPluralRules(String[] compactPatterns, String pluralRules,
+    void testValidPatternsFormatWithPluralRules(String[] compactPatterns, String pluralRules,
             List<Object> numbers, List<String> expected) {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                         DecimalFormatSymbols.getInstance(Locale.US), compactPatterns, pluralRules);
@@ -197,7 +199,7 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("validPatternsParseWithPluralRules")
-    public void testValidPatternsParsewithPluralRules(String[] compactPatterns, String pluralRules,
+    void testValidPatternsParsewithPluralRules(String[] compactPatterns, String pluralRules,
             List<String> parseString, List<Number> numbers) throws ParseException {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                         DecimalFormatSymbols.getInstance(Locale.US), compactPatterns, pluralRules);

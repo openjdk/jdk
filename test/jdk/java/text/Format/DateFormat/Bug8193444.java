@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8193444
@@ -29,15 +30,16 @@
  * @run junit/othervm Bug8193444
  */
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Bug8193444 {
@@ -56,7 +58,7 @@ public class Bug8193444 {
 
     @ParameterizedTest
     @MethodSource("dateFormatData")
-    public void testDateFormatAndParse(int length)
+    void testDateFormatAndParse(int length)
             throws ParseException {
 
         String pattern = NON_ASCII_CHAR.repeat(length);

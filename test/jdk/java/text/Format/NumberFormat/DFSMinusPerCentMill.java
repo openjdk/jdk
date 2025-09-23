@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8220309 8230284
  * @library /java/text/testlib
@@ -32,15 +32,21 @@
  * @run junit/othervm DFSMinusPerCentMill
  */
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DFSMinusPerCentMill {
@@ -81,7 +87,7 @@ public class DFSMinusPerCentMill {
 
     @ParameterizedTest
     @MethodSource("formatData")
-    public void testFormatData(Locale l, Type style, String expected) {
+    void testFormatData(Locale l, Type style, String expected) {
         NumberFormat nf = null;
         switch (style) {
             case NUMBER:
@@ -109,7 +115,7 @@ public class DFSMinusPerCentMill {
 
     @ParameterizedTest
     @MethodSource("charSymbols")
-    public void testCharSymbols(Locale l, char percent, char permill, char minus) {
+    void testCharSymbols(Locale l, char percent, char permill, char minus) {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
         assertEquals(percent, dfs.getPercent());
         assertEquals(permill, dfs.getPerMill());
@@ -117,7 +123,7 @@ public class DFSMinusPerCentMill {
     }
 
     @Test
-    public void testSerialization() throws Exception {
+    void testSerialization() throws Exception {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         new ObjectOutputStream(bos).writeObject(dfs);

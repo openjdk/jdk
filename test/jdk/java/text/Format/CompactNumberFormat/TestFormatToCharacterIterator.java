@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
@@ -28,6 +29,11 @@
  * @modules jdk.localedata
  * @run junit/othervm TestFormatToCharacterIterator
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.AttributedCharacterIterator;
@@ -36,10 +42,8 @@ import java.text.Format;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestFormatToCharacterIterator {
@@ -152,7 +156,7 @@ public class TestFormatToCharacterIterator {
 
     @ParameterizedTest
     @MethodSource("compactFieldPositionData")
-    public void testFormatToCharacterIterator(NumberFormat fmt, Object number,
+    void testFormatToCharacterIterator(NumberFormat fmt, Object number,
             String expected, Format.Field[] expectedFields, int[] positions) {
         AttributedCharacterIterator iterator = fmt.formatToCharacterIterator(number);
         assertEquals(expected, getText(iterator), "Incorrect formatting of the number '"

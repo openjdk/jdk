@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
@@ -29,6 +30,12 @@
  * @modules jdk.localedata
  * @run junit/othervm TestMutatingInstance
  */
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.CompactNumberFormat;
@@ -36,10 +43,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMutatingInstance {
@@ -64,7 +67,7 @@ public class TestMutatingInstance {
             new String[]{"", "", "", "", "00K", "", "", "", "", "", "", "", "", "", ""});
 
     @BeforeAll
-    public void mutateInstances() {
+    void mutateInstances() {
         FORMAT_FRACTION.setMinimumFractionDigits(2);
         FORMAT_GROUPING.setGroupingSize(3);
         FORMAT_GROUPING.setGroupingUsed(true);
@@ -108,14 +111,14 @@ public class TestMutatingInstance {
 
     @ParameterizedTest
     @MethodSource("compactFormatData")
-    public void formatCompactNumber(NumberFormat nf,
+    void formatCompactNumber(NumberFormat nf,
             Object number, String expected) {
         CompactFormatAndParseHelper.testFormat(nf, number, expected);
     }
 
     @ParameterizedTest
     @MethodSource("compactParseData")
-    public void parseCompactNumber(NumberFormat nf,
+    void parseCompactNumber(NumberFormat nf,
             String parseString, Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(nf, parseString, expected, null, null);
     }

@@ -21,13 +21,17 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8248434
  * @modules jdk.localedata
- * @run junit/othervm CaseInsensitiveParseTest
  * @summary Checks format/parse round trip in case-insensitive manner.
+ * @run junit/othervm CaseInsensitiveParseTest
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -38,9 +42,6 @@ import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CaseInsensitiveParseTest {
@@ -48,7 +49,7 @@ public class CaseInsensitiveParseTest {
     private final static String PATTERN = "GGGG/yyyy/MMMM/dddd/hhhh/mmmm/ss/aaaa";
     private final static Date EPOCH = new Date(0L);
 
-    private Object[][] locales() {
+    Object[][] locales() {
         return (Object[][])Arrays.stream(DateFormat.getAvailableLocales())
             .map(Stream::of)
             .map(Stream::toArray)
@@ -57,7 +58,7 @@ public class CaseInsensitiveParseTest {
 
     @ParameterizedTest
     @MethodSource("locales")
-    public void testUpperCase(Locale loc) throws ParseException {
+    void testUpperCase(Locale loc) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(PATTERN, loc);
         String formatted = sdf.format(EPOCH);
         assertEquals(EPOCH, sdf.parse(formatted.toUpperCase(Locale.ROOT)),
@@ -66,7 +67,7 @@ public class CaseInsensitiveParseTest {
 
     @ParameterizedTest
     @MethodSource("locales")
-    public void testLowerCase(Locale loc) throws ParseException {
+    void testLowerCase(Locale loc) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(PATTERN, loc);
         String formatted = sdf.format(EPOCH);
         assertEquals(EPOCH, sdf.parse(formatted.toLowerCase(Locale.ROOT)),

@@ -31,6 +31,9 @@
  * @run junit/othervm TestDeserializeCNF
  */
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,10 +42,8 @@ import java.math.RoundingMode;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDeserializeCNF {
@@ -63,7 +64,7 @@ public class TestDeserializeCNF {
     private static final String FILE_COMPACT_FORMAT2 = "cnf2.ser.txt";
 
     @BeforeAll
-    public void mutateInstances() {
+    void mutateInstances() {
         COMPACT_FORMAT1.setRoundingMode(RoundingMode.HALF_UP);
         COMPACT_FORMAT1.setGroupingSize(3);
         COMPACT_FORMAT1.setParseBigDecimal(true);
@@ -73,7 +74,7 @@ public class TestDeserializeCNF {
     }
 
     @Test
-    public void testDeserialization() throws IOException, ClassNotFoundException {
+    void testDeserialization() throws IOException, ClassNotFoundException {
         try (InputStream istream1 = HexDumpReader.getStreamFromHexDump(FILE_COMPACT_FORMAT1);
                 ObjectInputStream ois1 = new ObjectInputStream(istream1);
                 InputStream istream2 = HexDumpReader.getStreamFromHexDump(FILE_COMPACT_FORMAT2);

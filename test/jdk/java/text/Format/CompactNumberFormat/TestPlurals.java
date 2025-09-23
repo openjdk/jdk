@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8222756
@@ -27,16 +28,17 @@
  * @run junit/othervm TestPlurals
  */
 
-import java.text.CompactNumberFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
-
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.text.CompactNumberFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestPlurals {
@@ -95,8 +97,8 @@ public class TestPlurals {
     }
 
     @Test
-    public void testNullPluralRules() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+    void testNullPluralRules() {
+        assertThrows(NullPointerException.class, () -> {
             String[] pattern = {""};
             new CompactNumberFormat("#", DFS, PATTERN, null);
         });
@@ -104,22 +106,21 @@ public class TestPlurals {
 
     @ParameterizedTest
     @MethodSource("pluralRules")
-    public void testPluralRules(String rules, Number n, String expected) {
+    void testPluralRules(String rules, Number n, String expected) {
         var cnp = new CompactNumberFormat("#", DFS, PATTERN, rules);
         assertEquals(expected, cnp.format(n));
     }
 
     @ParameterizedTest
     @MethodSource("invalidRules")
-    public void testInvalidRules(String rules) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new CompactNumberFormat("#", DFS, PATTERN, rules);
-        });
+    void testInvalidRules(String rules) {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CompactNumberFormat("#", DFS, PATTERN, rules));
     }
 
     @Test
-    public void testLimitExceedingRules() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    void testLimitExceedingRules() {
+        assertThrows(IllegalArgumentException.class, () -> {
             String andCond = " and n = 1";
             String invalid = "one: n = 1" + andCond.repeat(2_048 / andCond.length());
             new CompactNumberFormat("#", DFS, PATTERN, invalid);

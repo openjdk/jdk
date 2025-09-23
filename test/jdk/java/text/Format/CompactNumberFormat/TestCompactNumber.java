@@ -27,6 +27,12 @@
  * @modules jdk.localedata
  * @run junit/othervm TestCompactNumber
  */
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.FieldPosition;
@@ -36,12 +42,9 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.Locale;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCompactNumber {
@@ -614,7 +617,7 @@ public class TestCompactNumber {
     }
 
     @Test
-    public void testInstanceCreation() {
+    void testInstanceCreation() {
         Stream.of(NumberFormat.getAvailableLocales()).forEach(l -> NumberFormat
                 .getCompactNumberInstance(l, NumberFormat.Style.SHORT).format(10000));
         Stream.of(NumberFormat.getAvailableLocales()).forEach(l -> NumberFormat
@@ -622,29 +625,29 @@ public class TestCompactNumber {
     }
 
     @Test
-    public void testFormatWithNullParam() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    void testFormatWithNullParam() {
+        assertThrows(IllegalArgumentException.class, () -> {
             FORMAT_EN_US_SHORT.format(null);
         });
     }
 
     @ParameterizedTest
     @MethodSource("compactFormatData")
-    public void testFormat(NumberFormat cnf, Object number,
+    void testFormat(NumberFormat cnf, Object number,
             String expected) {
         CompactFormatAndParseHelper.testFormat(cnf, number, expected);
     }
 
     @ParameterizedTest
     @MethodSource("compactParseData")
-    public void testParse(NumberFormat cnf, String parseString,
+    void testParse(NumberFormat cnf, String parseString,
             Number expected, Class<? extends Number> returnType) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, returnType);
     }
 
     @ParameterizedTest
     @MethodSource("compactParseData")
-    public void testParsePosition(NumberFormat cnf, String parseString,
+    void testParsePosition(NumberFormat cnf, String parseString,
             Number expected, Class<? extends Number> returnType) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, pos, returnType);
@@ -654,7 +657,7 @@ public class TestCompactNumber {
 
     @ParameterizedTest
     @MethodSource("varParsePosition")
-    public void testVarParsePosition(NumberFormat cnf, String parseString,
+    void testVarParsePosition(NumberFormat cnf, String parseString,
             Number expected, int startPosition, int indexPosition,
             int errPosition) throws ParseException {
         ParsePosition pos = new ParsePosition(startPosition);
@@ -665,23 +668,21 @@ public class TestCompactNumber {
 
     @ParameterizedTest
     @MethodSource("exceptionParseData")
-    public void throwsParseException(NumberFormat cnf, String parseString,
-            Number expected) throws ParseException {
-        Assertions.assertThrows(ParseException.class, () -> {
-            CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null);
-        });
+    void throwsParseException(NumberFormat cnf, String parseString,
+            Number expected) {
+        assertThrows(ParseException.class, () -> CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null));
     }
 
     @ParameterizedTest
     @MethodSource("invalidParseData")
-    public void testInvalidParse(NumberFormat cnf, String parseString,
+    void testInvalidParse(NumberFormat cnf, String parseString,
             Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null);
     }
 
     @ParameterizedTest
     @MethodSource("formatFieldPositionData")
-    public void testFormatWithFieldPosition(NumberFormat nf,
+    void testFormatWithFieldPosition(NumberFormat nf,
             Object number, Format.Field field, int posStartExpected,
             int posEndExpected, String expected) {
         FieldPosition pos = new FieldPosition(field);

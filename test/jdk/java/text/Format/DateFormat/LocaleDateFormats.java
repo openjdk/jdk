@@ -21,28 +21,30 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8080774 8174269
  * @modules jdk.localedata
- * @run junit LocaleDateFormats
  * @summary This file contains tests for JRE locales date formats
+ * @run junit LocaleDateFormats
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LocaleDateFormats {
 
     @ParameterizedTest
     @MethodSource("dateFormats")
-    public void testDateFormat(Locale loc, int style, int year, int month, int date, String expectedString) {
+    void testDateFormat(Locale loc, int style, int year, int month, int date, String expectedString) {
         Calendar cal = Calendar.getInstance(loc);
         cal.set(year, month-1, date);
         // Create date formatter based on requested style and test locale
