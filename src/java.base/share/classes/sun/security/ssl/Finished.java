@@ -935,6 +935,11 @@ final class Finished {
                         "Consuming server Finished handshake message", fm);
             }
 
+            if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
+            }
+
             // Save client verify data for secure renegotiation.
             if (chc.conContext.secureRenegotiation) {
                 chc.conContext.serverVerifyData = fm.verifyData;
@@ -1076,6 +1081,11 @@ final class Finished {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
+            }
+
+            if (shc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
             }
 
             if (shc.conContext.secureRenegotiation) {

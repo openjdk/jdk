@@ -59,6 +59,9 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     // Cache for incomplete handshake messages.
     private ByteBuffer handshakeBuffer = null;
 
+    // mark for possible TLS13 RFC violation, if messages preceding key change do not align with record bounds
+    private boolean t13keyChangeHsExceedsRecordBoundary = false;
+
     SSLSocketInputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLReadCipher.nullTlsReadCipher());
     }
@@ -191,6 +194,11 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             }
         }
         return plaintext;
+    }
+
+    @Override
+    public boolean t13keyChangeHsExceedsRecordBoundary() {
+        return t13keyChangeHsExceedsRecordBoundary;
     }
 
     @Override
@@ -372,12 +380,11 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                     // ClientHello, EndOfEarlyData, ServerHello, Finished, and KeyUpdate
                     // messages can immediately precede a key change, implementations
                     // MUST send these messages in alignment with a record boundary."
-                    if (helloVersion.useTLS13PlusSpec() &&
-                            nextPos < fragLim && SSLHandshake.precedesKeyChange(handshakeType)) {
-                        throw new SSLProtocolException(
-                                "The handshake message of type " + SSLHandshake.nameOf(handshakeType) +
-                                        " must end on a Record boundary."
-                        );
+                    //
+                    // this check must be done here, as the handshakeBuffer is not accessible to the outer scope,
+                    // therefore there is no way to check whether the handshake message was aligned with the boundary
+                    if (nextPos < fragLim && SSLHandshake.precedesKeyChange(handshakeType)) {
+                        t13keyChangeHsExceedsRecordBoundary = true;
                     }
 
                     handshakeFrag.position(nextPos);

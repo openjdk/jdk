@@ -150,6 +150,8 @@ abstract class InputRecord implements Record, Closeable {
         throw new UnsupportedOperationException();
     }
 
+    public abstract boolean t13keyChangeHsExceedsRecordBoundary();
+
     // apply to SSLSocket only
     void setReceiverStream(InputStream inputStream) {
         throw new UnsupportedOperationException();

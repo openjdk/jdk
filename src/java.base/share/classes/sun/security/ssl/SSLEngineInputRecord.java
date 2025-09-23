@@ -44,6 +44,9 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
     // Cache for incomplete handshake messages.
     private ByteBuffer handshakeBuffer = null;
 
+    // mark for possible TLS13 RFC violation, if messages preceding key change do not align with record bounds
+    private boolean t13keyChangeHsExceedsRecordBoundary = false;
+
     SSLEngineInputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLReadCipher.nullTlsReadCipher());
     }
@@ -62,6 +65,11 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         ByteBuffer[] srcs, int srcsOffset, int srcsLength) throws IOException {
 
         return bytesInCompletePacket(srcs[srcsOffset]);
+    }
+
+    @Override
+    public boolean t13keyChangeHsExceedsRecordBoundary() {
+        return t13keyChangeHsExceedsRecordBoundary;
     }
 
     private int bytesInCompletePacket(ByteBuffer packet) throws SSLException {
@@ -336,6 +344,20 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
 
                     if (handshakeHash.isHashable(handshakeType)) {
                         handshakeHash.receive(handshakeFrag);
+                    }
+
+                    // From RFC 8446:
+                    // "Implementations MUST verify that all messages immediately preceding a key change
+                    // align with a record boundary; if not, then they MUST terminate the
+                    // connection with an "unexpected_message" alert. Because the
+                    // ClientHello, EndOfEarlyData, ServerHello, Finished, and KeyUpdate
+                    // messages can immediately precede a key change, implementations
+                    // MUST send these messages in alignment with a record boundary."
+                    //
+                    // this check must be done here, as the handshakeBuffer is not accessible to the outer scope,
+                    // therefore there is no way to check whether the handshake message was aligned with the boundary
+                    if (nextPos < fragLim && SSLHandshake.precedesKeyChange(handshakeType)) {
+                        t13keyChangeHsExceedsRecordBoundary = true;
                     }
 
                     plaintexts.add(

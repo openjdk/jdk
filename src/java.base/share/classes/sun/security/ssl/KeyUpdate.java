@@ -196,6 +196,11 @@ final class KeyUpdate {
                         "Consuming KeyUpdate post-handshake message", km);
             }
 
+            if (hc.negotiatedProtocol.useTLS13PlusSpec() && hc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "KEYUPDATE messages must align with a record boundary");
+            }
+
             // Update read key and IV.
             SSLTrafficKeyDerivation kdg =
                 SSLTrafficKeyDerivation.valueOf(hc.conContext.protocolVersion);
