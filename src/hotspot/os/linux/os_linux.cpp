@@ -4865,8 +4865,7 @@ void os::set_native_thread_name(const char *name) {
   StringUtils::truncate_middle(name, buf, sizeof(buf));
   // set name in kernel
   int rc = prctl(PR_SET_NAME, buf);
-  //assert(rc == 0, "prctl(PR_SET_NAME) failed");
-  //int rc;
+  assert(rc == 0, "prctl(PR_SET_NAME) failed");
   if (Linux::_pthread_setname_np) {
     // set name in pthread lib
     rc = Linux::_pthread_setname_np(pthread_self(), buf);
