@@ -79,7 +79,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/threadSMR.hpp"
@@ -990,7 +990,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
 }
 
-void java_lang_Class::initialize_mirror_fields(Klass* k,
+void java_lang_Class::initialize_mirror_fields(InstanceKlass* ik,
                                                Handle mirror,
                                                Handle protection_domain,
                                                Handle classData,
@@ -1005,7 +1005,7 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
   set_protection_domain(mirror(), protection_domain());
 
   // Initialize static fields
-  InstanceKlass::cast(k)->do_local_static_fields(&initialize_static_field, mirror, CHECK);
+  ik->do_local_static_fields(&initialize_static_field, mirror, CHECK);
 
  // Set classData
   set_class_data(mirror(), classData());
@@ -1111,8 +1111,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
-
-    initialize_mirror_fields(k, mirror, protection_domain, classData, THREAD);
+    initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
       // from the mirror so GC doesn't follow it after the klass has been deallocated.
@@ -2590,7 +2589,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   ResourceMark rm;
   stringStream ss;
 
-  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+  InstanceKlass* holder = java_lang_Class::as_InstanceKlass(mirror());
   const char* klass_name  = holder->external_name();
   char* method_name = name->as_C_string();
   ss.print("\tat %s.%s(", klass_name, method_name);
@@ -2969,7 +2968,7 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
       THROW(vmSymbols::java_lang_NullPointerException());
     }
 
-    InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));
+    InstanceKlass* holder = java_lang_Class::as_InstanceKlass(bte._mirror());
     methodHandle method (THREAD, holder->method_with_orig_idnum(bte._method_id, bte._version));
 
     java_lang_StackTraceElement::fill_in(stack_trace_element, holder,
@@ -3055,7 +3054,7 @@ bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method,
   // Get first backtrace element.
   BacktraceElement bte = iter.next(current);
 
-  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));
+  InstanceKlass* holder = java_lang_Class::as_InstanceKlass(bte._mirror());
   assert(holder != nullptr, "first element should be non-null");
   Method* m = holder->method_with_orig_idnum(bte._method_id, bte._version);
 
@@ -3441,11 +3440,11 @@ void java_lang_reflect_Method::serialize_offsets(SerializeClosure* f) {
 
 Handle java_lang_reflect_Method::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  Klass* klass = vmClasses::reflect_Method_klass();
+  InstanceKlass* klass = vmClasses::reflect_Method_klass();
   // This class is eagerly initialized during VM initialization, since we keep a reference
   // to one of the methods
-  assert(InstanceKlass::cast(klass)->is_initialized(), "must be initialized");
-  return InstanceKlass::cast(klass)->allocate_instance_handle(THREAD);
+  assert(klass->is_initialized(), "must be initialized");
+  return klass->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Method::clazz(oop reflect) {
@@ -3742,20 +3741,17 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   return element();
 }
 
-int reflect_ConstantPool::_oop_offset;
-
-#define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "constantPoolOop", object_signature, false)
+int reflect_ConstantPool::_vmholder_offset;
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
-  // The field is called ConstantPool* in the sun.reflect.ConstantPool class.
-  CONSTANTPOOL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  // The field is injected and called Object vmholder in the jdk.internal.reflect.ConstantPool class.
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
-  CONSTANTPOOL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -3908,23 +3904,23 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
-  reflect->obj_field_put(_oop_offset, mirror);
+  reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-
-  oop mirror = reflect->obj_field(_oop_offset);
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  assert(k->is_instance_klass(), "Must be");
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
+  oop mirror = reflect->obj_field(_vmholder_offset);
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror);
 
   // Get the constant pool back from the klass.  Since class redefinition
   // merges the new constant pool into the old, this is essentially the
   // same constant pool as the original.  If constant pool merging is
   // no longer done in the future, this will have to change to save
   // the original.
-  return InstanceKlass::cast(k)->constants();
+  return ik->constants();
 }
 
 
@@ -5531,7 +5527,7 @@ void JavaClasses::check_offsets() {
 #endif // PRODUCT
 
 int InjectedField::compute_offset() {
-  InstanceKlass* ik = InstanceKlass::cast(klass());
+  InstanceKlass* ik = klass();
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     if (!may_be_java && !fs.field_flags().is_injected()) {
       // Only look at injected fields
@@ -5557,5 +5553,4 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }

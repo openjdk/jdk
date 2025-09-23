@@ -418,65 +418,178 @@ class WindowsFileSystemProvider
         }
     }
 
+    /**
+     * Contains the attributes of a given file system entry and the open
+     * handle from which they were obtained. The handle must remain open
+     * until the volume serial number and file index of the attributes
+     * are no longer needed for comparison with other attributes.
+     *
+     * @param attrs  the file system entry attributes
+     * @param handle the open Windows file handle
+     */
+    private record EntryAttributes(WindowsFileAttributes attrs, long handle) {
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+            if (obj instanceof EntryAttributes other) {
+                WindowsFileAttributes oattrs = other.attrs();
+                return oattrs.volSerialNumber() == attrs.volSerialNumber() &&
+                       oattrs.fileIndexHigh()   == attrs.fileIndexHigh() &&
+                       oattrs.fileIndexLow()    == attrs.fileIndexLow();
+            }
+            return false;
+        }
+
+        public int hashCode() {
+            return attrs.volSerialNumber() +
+                   attrs.fileIndexHigh() + attrs.fileIndexLow();
+        }
+    }
+
+    /**
+     * Returns the attributes of the file located by the given path if it is a
+     * symbolic link. The handle contained in the returned value must be closed
+     * once the attributes are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if no link is found
+     */
+    private EntryAttributes linkAttributes(WindowsPath path)
+        throws WindowsException
+    {
+        long h = INVALID_HANDLE_VALUE;
+        try {
+            h = path.openForReadAttributeAccess(false);
+        } catch (WindowsException x) {
+            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                x.lastError() != ERROR_PATH_NOT_FOUND)
+                throw x;
+            return null;
+        }
+
+        WindowsFileAttributes attrs = null;
+        try {
+            attrs = WindowsFileAttributes.readAttributes(h);
+        } finally {
+            if (attrs == null || !attrs.isSymbolicLink()) {
+                CloseHandle(h);
+                return null;
+            }
+        }
+
+        return new EntryAttributes(attrs, h);
+    }
+
+    /**
+     * Returns the attributes of the last symbolic link encountered in the
+     * specified path. Links are not resolved in the path taken as a whole,
+     * but rather the first link is followed, then its target, and so on,
+     * until no more links are encountered.  The handle contained in the
+     * returned value must be closed once the attributes are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if no links are found
+     * @throws FileSystemLoopException if a symbolic link cycle is encountered
+     */
+    private EntryAttributes lastLinkAttributes(WindowsPath path)
+        throws IOException, WindowsException
+    {
+        var linkAttrs = new LinkedHashSet<EntryAttributes>();
+        try {
+            while (path != null) {
+                EntryAttributes linkAttr = linkAttributes(path);
+                if (linkAttr == null)
+                    break;
+
+                if (!linkAttrs.add(linkAttr)) {
+                    // the element was not added to the set so close its handle
+                    // here as it would not be closed in the finally block
+                    CloseHandle(linkAttr.handle());
+                    throw new FileSystemLoopException(path.toString());
+                }
+
+                String target = WindowsLinkSupport.readLink(path, linkAttr.handle());
+                path = WindowsPath.parse(path.getFileSystem(), target);
+            }
+
+            if (!linkAttrs.isEmpty())
+                return linkAttrs.removeLast();
+        } finally {
+            linkAttrs.stream().forEach(la -> CloseHandle(la.handle()));
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the attributes of the file located by the supplied parameter
+     * with all symbolic links in its path resolved. If the file located by
+     * the resolved path does not exist, then null is returned. The handle
+     * contained in the returned value must be closed once the attributes
+     * are no longer needed.
+     *
+     * @param path the file system path to examine
+     * @return the attributes and handle or null if the real path does not exist
+     */
+    private EntryAttributes realPathAttributes(WindowsPath path)
+        throws WindowsException
+    {
+        long h;
+        try {
+            h = path.openForReadAttributeAccess(true);
+        } catch (WindowsException x) {
+            if (x.lastError() == ERROR_FILE_NOT_FOUND ||
+                x.lastError() == ERROR_PATH_NOT_FOUND ||
+                x.lastError() == ERROR_CANT_RESOLVE_FILENAME)
+                return null;
+
+            throw x;
+        }
+
+        WindowsFileAttributes attrs = null;
+        try {
+            attrs = WindowsFileAttributes.readAttributes(h);
+        } catch (WindowsException x) {
+            CloseHandle(h);
+            throw x;
+        }
+
+        return new EntryAttributes(attrs, h);
+    }
+
     @Override
     public boolean isSameFile(Path obj1, Path obj2) throws IOException {
+        // toWindowsPath verifies its argument is a non-null WindowsPath
         WindowsPath file1 = WindowsPath.toWindowsPath(obj1);
         if (file1.equals(obj2))
             return true;
         if (obj2 == null)
             throw new NullPointerException();
-        if (!(obj2 instanceof WindowsPath))
+        if (!(obj2 instanceof WindowsPath file2))
             return false;
-        WindowsPath file2 = (WindowsPath)obj2;
 
-        // open both files and see if they are the same
-        long h1 = 0L;
+        EntryAttributes attrs1 = null;
+        EntryAttributes attrs2 = null;
+        WindowsPath pathForException = file1;
         try {
-            h1 = file1.openForReadAttributeAccess(true);
+            if ((attrs1 = realPathAttributes(file1)) != null ||
+                (attrs1 = lastLinkAttributes(file1)) != null) {
+                pathForException = file2;
+                if ((attrs2 = realPathAttributes(file2)) != null ||
+                    (attrs2 = lastLinkAttributes(file2)) != null)
+                    return attrs1.equals(attrs2);
+            }
         } catch (WindowsException x) {
-            if (x.lastError() != ERROR_FILE_NOT_FOUND &&
-                x.lastError() != ERROR_PATH_NOT_FOUND)
-                x.rethrowAsIOException(file1);
-        }
-
-        // if file1 does not exist, it cannot equal file2
-        if (h1 == 0L)
-            return false;
-
-        try {
-            WindowsFileAttributes attrs1 = null;
-            try {
-                attrs1 = WindowsFileAttributes.readAttributes(h1);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(file1);
-            }
-            long h2 = 0L;
-            try {
-                h2 = file2.openForReadAttributeAccess(true);
-            } catch (WindowsException x) {
-                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
-                    x.lastError() != ERROR_PATH_NOT_FOUND)
-                    x.rethrowAsIOException(file2);
-            }
-
-            // if file2 does not exist, it cannot equal file1, which does
-            if (h2 == 0L)
-                return false;
-
-            try {
-                WindowsFileAttributes attrs2 = null;
-                try {
-                    attrs2 = WindowsFileAttributes.readAttributes(h2);
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(file2);
-                }
-                return WindowsFileAttributes.isSameFile(attrs1, attrs2);
-            } finally {
-                CloseHandle(h2);
-            }
+            x.rethrowAsIOException(pathForException);
         } finally {
-            CloseHandle(h1);
+            if (attrs1 != null) {
+                CloseHandle(attrs1.handle());
+                if (attrs2 != null)
+                    CloseHandle(attrs2.handle());
+            }
         }
+
+        return false;
     }
 
     @Override
