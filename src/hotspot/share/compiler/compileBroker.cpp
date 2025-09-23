@@ -53,7 +53,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -224,12 +224,15 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
-  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
@@ -1587,14 +1590,14 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
+    return AtomicAccess::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
-    id = Atomic::add(&_osr_compilation_id, 1);
+    id = AtomicAccess::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = Atomic::add(&_compilation_id, 1);
+    id = AtomicAccess::add(&_compilation_id, 1);
     if (CIStart <= id && id < CIStop) {
       return id;
     }
@@ -1606,7 +1609,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #else
   // CICountOSR is a develop flag and set to 'false' by default. In a product built,
   // only _compilation_id is incremented.
-  return Atomic::add(&_compilation_id, 1);
+  return AtomicAccess::add(&_compilation_id, 1);
 #endif
 }
 
@@ -2346,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }

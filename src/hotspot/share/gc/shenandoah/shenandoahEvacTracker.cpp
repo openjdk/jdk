@@ -45,7 +45,7 @@ ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get
 }
 
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
-  : _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring),
+  : _use_age_table(!ShenandoahGenerationalAdaptiveTenuring),
     _age_table(nullptr) {
   if (_use_age_table) {
     _age_table = new AgeTable(false);
@@ -108,8 +108,10 @@ void ShenandoahEvacuationStats::ShenandoahEvacuations::print_on(outputStream* st
 
 void ShenandoahEvacuationStats::print_on(outputStream* st) const {
   st->print("Young: "); _young.print_on(st);
-  st->print("Promotion: "); _promotion.print_on(st);
-  st->print("Old: "); _old.print_on(st);
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    st->print("Promotion: "); _promotion.print_on(st);
+    st->print("Old: "); _old.print_on(st);
+  }
 
   if (_use_age_table) {
     _age_table->print_on(st);
@@ -123,25 +125,28 @@ void ShenandoahEvacuationTracker::print_global_on(outputStream* st) {
 void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
                                                        ShenandoahEvacuationStats* workers,
                                                        ShenandoahEvacuationStats* mutators) {
-  st->print_cr("Workers: ");
-  workers->print_on(st);
-  st->cr();
-  st->print_cr("Mutators: ");
-  mutators->print_on(st);
-  st->cr();
+  if (ShenandoahEvacTracking) {
+    st->print_cr("Workers: ");
+    workers->print_on(st);
+    st->cr();
+    st->print_cr("Mutators: ");
+    mutators->print_on(st);
+    st->cr();
+  }
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  AgeTable young_region_ages(false);
-  for (uint i = 0; i < heap->num_regions(); ++i) {
-    ShenandoahHeapRegion* r = heap->get_region(i);
-    if (r->is_young()) {
-      young_region_ages.add(r->age(), r->get_live_data_words());
+  if (heap->mode()->is_generational()) {
+    AgeTable young_region_ages(false);
+    for (uint i = 0; i < heap->num_regions(); ++i) {
+      ShenandoahHeapRegion* r = heap->get_region(i);
+      if (r->is_young()) {
+        young_region_ages.add(r->age(), r->get_live_data_words());
+      }
     }
+    st->print("Young regions: ");
+    young_region_ages.print_on(st);
+    st->cr();
   }
-  st->print("Young regions: ");
-  young_region_ages.print_on(st);
-  st->cr();
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
@@ -168,7 +173,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);
 
-  if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+  if (!ShenandoahGenerationalAdaptiveTenuring) {
     // Ingest mutator & worker collected population vectors into the heap's
     // global census data, and use it to compute an appropriate tenuring threshold
     // for use in the next cycle.

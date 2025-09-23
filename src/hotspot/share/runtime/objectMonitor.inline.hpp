@@ -31,7 +31,7 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
@@ -60,11 +60,11 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
 }
 
 inline uintptr_t ObjectMonitor::metadata() const {
-  return Atomic::load(&_metadata);
+  return AtomicAccess::load(&_metadata);
 }
 
 inline void ObjectMonitor::set_metadata(uintptr_t value) {
-  Atomic::store(&_metadata, value);
+  AtomicAccess::store(&_metadata, value);
 }
 
 inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
@@ -109,7 +109,7 @@ inline int64_t ObjectMonitor::owner() const {
 }
 
 inline int64_t ObjectMonitor::owner_raw() const {
-  return Atomic::load(&_owner);
+  return AtomicAccess::load(&_owner);
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
@@ -124,12 +124,12 @@ inline bool ObjectMonitor::is_being_async_deflated() {
 
 // Return number of threads contending for this monitor.
 inline int ObjectMonitor::contentions() const {
-  return Atomic::load(&_contentions);
+  return AtomicAccess::load(&_contentions);
 }
 
 // Add value to the contentions field.
 inline void ObjectMonitor::add_to_contentions(int value) {
-  Atomic::add(&_contentions, value);
+  AtomicAccess::add(&_contentions, value);
 }
 
 inline void ObjectMonitor::set_recursions(size_t recursions) {
@@ -147,11 +147,11 @@ inline void ObjectMonitor::increment_recursions(JavaThread* current) {
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
   int64_t old_value = owner_id_from(old_owner);
 #ifdef ASSERT
-  int64_t prev = Atomic::load(&_owner);
+  int64_t prev = AtomicAccess::load(&_owner);
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
          ", expected=" INT64_FORMAT, prev, old_value);
 #endif
-  Atomic::release_store(&_owner, NO_OWNER);
+  AtomicAccess::release_store(&_owner, NO_OWNER);
   log_trace(monitorinflation, owner)("release_clear_owner(): mid="
                                      INTPTR_FORMAT ", old_value=" INT64_FORMAT,
                                      p2i(this), old_value);
@@ -161,12 +161,12 @@ inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
 // (Simple means no memory sync needed.)
 inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_value) {
 #ifdef ASSERT
-  int64_t prev = Atomic::load(&_owner);
+  int64_t prev = AtomicAccess::load(&_owner);
   assert((int64_t)prev < ThreadIdentifier::current(), "must be reasonable");
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
          ", expected=" INT64_FORMAT, prev, old_value);
 #endif
-  Atomic::store(&_owner, new_value);
+  AtomicAccess::store(&_owner, new_value);
   log_trace(monitorinflation, owner)("set_owner_from(): mid="
                                      INTPTR_FORMAT ", old_value=" INT64_FORMAT
                                      ", new_value=" INT64_FORMAT, p2i(this),
@@ -182,7 +182,7 @@ inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current
 // the prior value of the _owner field.
 inline int64_t ObjectMonitor::try_set_owner_from_raw(int64_t old_value, int64_t new_value) {
   assert((int64_t)new_value < ThreadIdentifier::current(), "must be reasonable");
-  int64_t prev = Atomic::cmpxchg(&_owner, old_value, new_value);
+  int64_t prev = AtomicAccess::cmpxchg(&_owner, old_value, new_value);
   if (prev == old_value) {
     log_trace(monitorinflation, owner)("try_set_owner_from(): mid="
                                        INTPTR_FORMAT ", prev=" INT64_FORMAT
@@ -197,27 +197,27 @@ inline int64_t ObjectMonitor::try_set_owner_from(int64_t old_value, JavaThread* 
 }
 
 inline bool ObjectMonitor::has_successor() const {
-  return Atomic::load(&_succ) != NO_OWNER;
+  return AtomicAccess::load(&_succ) != NO_OWNER;
 }
 
 inline bool ObjectMonitor::has_successor(JavaThread* thread) const {
-  return owner_id_from(thread) == Atomic::load(&_succ);
+  return owner_id_from(thread) == AtomicAccess::load(&_succ);
 }
 
 inline void ObjectMonitor::set_successor(JavaThread* thread) {
-  Atomic::store(&_succ, owner_id_from(thread));
+  AtomicAccess::store(&_succ, owner_id_from(thread));
 }
 
 inline void ObjectMonitor::set_successor(oop vthread) {
-  Atomic::store(&_succ, java_lang_Thread::thread_id(vthread));
+  AtomicAccess::store(&_succ, java_lang_Thread::thread_id(vthread));
 }
 
 inline void ObjectMonitor::clear_successor() {
-  Atomic::store(&_succ, NO_OWNER);
+  AtomicAccess::store(&_succ, NO_OWNER);
 }
 
 inline int64_t ObjectMonitor::successor() const {
-  return Atomic::load(&_succ);
+  return AtomicAccess::load(&_succ);
 }
 
 // The _next_om field can be concurrently read and modified so we
@@ -226,12 +226,12 @@ inline int64_t ObjectMonitor::successor() const {
 
 // Simply get _next_om field.
 inline ObjectMonitor* ObjectMonitor::next_om() const {
-  return Atomic::load(&_next_om);
+  return AtomicAccess::load(&_next_om);
 }
 
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
-  Atomic::store(&_next_om, new_value);
+  AtomicAccess::store(&_next_om, new_value);
 }
 
 // Block out deflation.
