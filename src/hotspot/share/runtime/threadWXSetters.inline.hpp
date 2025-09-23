@@ -35,7 +35,7 @@
 #include "runtime/thread.inline.hpp"
 
 class ThreadWXEnable  {
-  Thread *_thread;
+  Thread* _thread;
   WXMode _old_mode;
   WXMode *_this_wx_mode;
   ThreadWXEnable *_prev;
@@ -43,7 +43,7 @@ public:
   ThreadWXEnable(WXMode* new_mode, Thread* thread) :
     _thread(thread), _this_wx_mode(new_mode) {
     NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
-    JavaThread *javaThread
+    JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
                 ? JavaThread::cast(_thread) : nullptr;
     _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
@@ -57,7 +57,7 @@ public:
     _thread(thread), _this_wx_mode(nullptr) {
     NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     guarantee(new_mode != WXArmedForWrite, "need a pointer to heal");
-    JavaThread *javaThread
+    JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
         ? JavaThread::cast(_thread) : nullptr;
     _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
@@ -72,7 +72,7 @@ public:
     NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     if (_thread) {
       _thread->enable_wx(_old_mode);
-      JavaThread *javaThread
+      JavaThread* javaThread
         = _thread && _thread->is_Java_thread()
           ? JavaThread::cast(_thread) : nullptr;
       if (javaThread) {

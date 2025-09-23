@@ -53,8 +53,11 @@
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/events.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/vmError.hpp"
+#include "compiler/disassembler.hpp"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -246,17 +249,34 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 #ifdef MACOS_W_XOR_X
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
-    if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)
-        && !CodeCache::contains(pc)) {
+    if (sig == SIGBUS
+        && pc != info->si_addr
+        && CodeCache::contains(info->si_addr)
+        && os::address_is_in_vm(pc)) {
       WXMode *entry_mode = thread->_cur_wx_mode;
       if (entry_mode != nullptr && *entry_mode == WXArmedForWrite) {
         if (TraceWXHealing) {
           static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
-          tty->print_cr("Healing WXMode %s at %p to WXWrite",
+          tty->print("Healing WXMode %s at %p to WXWrite",
                         mode_names[*entry_mode], entry_mode);
+          char name[128];
+          int offset = 0;
+          if (os::dll_address_to_function_name(pc, name, sizeof name, &offset)) {
+            tty->print_cr("  (%s+0x%x)", name, offset);
+          } else {
+            tty->cr();
+          }
+          if (Verbose) {
+            char buf[O_BUFLEN];
+            NativeStackPrinter nsp(thread);
+            nsp.print_stack(tty, buf, sizeof(buf), pc,
+                            true /* print_source_info */, -1 /* max stack */);
+          }
         }
-      assert(StressWXHealing,
-             "We should not reach here unless StressWXHealing");
+#ifndef PRODUCT
+        guarantee(StressWXHealing,
+                  "We should not reach here unless StressWXHealing");
+#endif
         *(thread->_cur_wx_mode) = WXWrite;
         return thread->wx_enable_write();
       }
