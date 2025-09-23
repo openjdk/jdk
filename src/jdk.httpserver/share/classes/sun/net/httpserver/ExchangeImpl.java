@@ -67,6 +67,7 @@ class ExchangeImpl {
     }
 
     private static final String HEAD = "HEAD";
+    private static final String GET = "GET";
 
     /* streams which take care of the HTTP protocol framing
      * and are passed up to higher layers
@@ -125,9 +126,11 @@ class ExchangeImpl {
     }
 
     // check if Upgrade connection
-    private static boolean isUpgradeRequest(Headers headers) {
+    private boolean isUpgradeRequest(Headers headers) {
         var values = headers.get("Connection");
         return values != null
+            && headers.get("Upgrade") != null
+            && GET.equals(getRequestMethod())
             && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
@@ -166,6 +169,7 @@ class ExchangeImpl {
         }
         if (upgrade) {
             uis = ris;
+            uis_orig = new FixedLengthInputStream (this, ris, 0);
         } else if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream (this, ris);
             uis = uis_orig;
@@ -260,15 +264,11 @@ class ExchangeImpl {
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else if (contentLen == 0) {
-            if (upgrade) {
-                o.setWrappedStream(ros);
-                // auto-close the exchange when handler exits
+            if (http10 || upgrade && rCode == 101) {
+                o.setWrappedStream(new UndefLengthOutputStream (this, ros));
                 close = true;
             } else if (informational) {
                 // no body for informational responses
-            } else if (http10) {
-                o.setWrappedStream (new UndefLengthOutputStream (this, ros));
-                close = true;
             } else {
                 rspHdrs.set ("Transfer-encoding", "chunked");
                 o.setWrappedStream (new ChunkedOutputStream (this, ros));

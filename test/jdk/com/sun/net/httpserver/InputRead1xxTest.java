@@ -212,6 +212,7 @@ public class InputRead1xxTest {
             writer.print("Connection: keep-alive" + CRLF);
             if (code == 101) {
                 writer.print("Connection: Upgrade" + CRLF);
+                writer.print("Upgrade: custom" + CRLF);
             } else if (code == 100) {
                 writer.print("Expect: 100-continue" + CRLF);
             }
