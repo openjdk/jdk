@@ -35,7 +35,7 @@
 template <
   typename K,
   typename V,
-  V (*DECODE)(address base_address, u4 offset),
+  V (*DECODE)(address base_address, u4 encoded_value),
   bool (*EQUALS)(V value, K key, int len)
   >
 class CompactHashtable;
@@ -250,14 +250,14 @@ public:
 template <
   typename K,
   typename V,
-  V (*DECODE)(address base_address, u4 value),
+  V (*DECODE)(address base_address, u4 encoded_value),
   bool (*EQUALS)(V value, K key, int len)
   >
 class CompactHashtable : public SimpleCompactHashtable {
   friend class VMStructs;
 
-  V decode(u4 value) const {
-    return DECODE(_base_address, value);
+  V decode(u4 encoded_value) const {
+    return DECODE(_base_address, encoded_value);
   }
 
 public:
