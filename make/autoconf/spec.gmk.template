@@ -491,7 +491,6 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
-CC_OUT_OPTION := @CC_OUT_OPTION@
 AS_NON_ASM_EXTENSION_OPTION := @AS_NON_ASM_EXTENSION_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
@@ -624,16 +623,7 @@ ASFLAGS_DEBUG_SYMBOLS := @ASFLAGS_DEBUG_SYMBOLS@
 # Compress (or not) jars
 COMPRESS_JARS := @COMPRESS_JARS@
 
-# Options to linker to specify the library name.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_NAME = @SET_SHARED_LIBRARY_NAME@
-
 SHARED_LIBRARY_FLAGS := @SHARED_LIBRARY_FLAGS@
-
-# Set origin using the linker, ie use the relative path to the dependent library to find the dependencies.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_ORIGIN = @SET_SHARED_LIBRARY_ORIGIN@
-SET_EXECUTABLE_ORIGIN = @SET_EXECUTABLE_ORIGIN@
 
 LIBRARY_PREFIX := @LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX := @SHARED_LIBRARY_SUFFIX@
