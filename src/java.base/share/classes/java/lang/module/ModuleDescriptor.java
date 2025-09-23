@@ -54,6 +54,8 @@ import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 
 /**
@@ -91,6 +93,7 @@ import jdk.internal.module.ModuleInfo;
  * @since 9
  */
 
+@AOTSafeClassInitializer
 public final class ModuleDescriptor
     implements Comparable<ModuleDescriptor>
 {
@@ -2665,6 +2668,11 @@ public final class ModuleDescriptor
     }
 
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         /**
          * Setup the shared secret to allow code in other packages access
          * private package methods in java.lang.module.

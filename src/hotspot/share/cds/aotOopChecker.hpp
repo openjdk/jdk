@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,19 @@
  *
  */
 
-#include "cds/aotLinkedClassTable.hpp"
-#include "cds/cdsConfig.hpp"
-#include "cds/serializeClosure.hpp"
-#include "oops/array.hpp"
+#ifndef SHARE_CDS_AOTOOPCHECKER_HPP
+#define SHARE_CDS_AOTOOPCHECKER_HPP
 
-AOTLinkedClassTable AOTLinkedClassTable::_instance;
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_boot1);
-  soc->do_ptr((void**)&_boot2);
-  soc->do_ptr((void**)&_platform);
-  soc->do_ptr((void**)&_app);
-}
+class AOTOopChecker : AllStatic {
+  static oop get_oop_field(oop obj, const char* name, const char* sig);
 
+public:
+  // obj is an object that's about to be stored into the AOT cache. Check if it
+  // can be safely cached.
+  static void check(oop obj);
+};
+
+#endif // SHARE_CDS_AOTOOPCHECKER_HPP

@@ -343,6 +343,7 @@ private:
   static void prepare_resolved_references();
   static void archive_strings();
   static void archive_subgraphs();
+  static void copy_java_mirror(oop orig_mirror, oop scratch_m);
 
   // PendingOop and PendingOopStack are used for recursively discovering all cacheable
   // heap objects. The recursion is done using PendingOopStack so we won't overflow the

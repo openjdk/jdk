@@ -72,15 +72,15 @@ class AOTMetaspace : AllStatic {
     n_regions = 5              // total number of regions
   };
 
-  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
+  static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
   static void exercise_runtime_cds_code(TRAPS) NOT_CDS_RETURN;
-  static void preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
-  static void preload_classes(TRAPS) NOT_CDS_RETURN;
+  static void dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
+  static void load_classes(TRAPS) NOT_CDS_RETURN;
 
 public:
   static Symbol* symbol_rs_base() {
