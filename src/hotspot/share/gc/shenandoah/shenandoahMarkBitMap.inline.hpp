@@ -135,7 +135,7 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
     // Get the word containing l_index, and shift out low bits.
     idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
-    if ((cword & 1) != 0) {
+    if ((cword & 0x03) != 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
       // the first bit is set), going straight to the next clause compares
