@@ -32,6 +32,8 @@ final class LazyConstantTestUtil {
 
     private LazyConstantTestUtil() { }
 
+    public static final String UNINITIALIZED_TAG = ".uninitialized";
+
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>
             implements Supplier<T> {

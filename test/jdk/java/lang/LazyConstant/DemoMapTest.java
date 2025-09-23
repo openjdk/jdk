@@ -39,6 +39,32 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class DemoMapTest {
 
+    static class OrderController{}
+
+    // NEW:
+    static final Map<String, OrderController> ORDERS
+            = Map.ofLazy(
+                    Set.of("Customers", "Internal", "Testing"),
+                    _ -> new OrderController()
+    );
+
+    public static OrderController orders() {
+        String groupName = Thread.currentThread().getThreadGroup().getName();
+        return ORDERS.get(groupName);
+    }
+
+    @Test
+    void orderController() throws InterruptedException {
+        Thread t = Thread.ofPlatform()
+                .group(new ThreadGroup("Customers"))
+                .start(() -> {
+                    String groupName = Thread.currentThread().getThreadGroup().getName();
+                    OrderController orderController = ORDERS.get(groupName);
+                    assertNotNull(orderController);
+                });
+        t.join();
+    }
+
     private static final Map<Integer, String> SERVER_ERROR_PAGES = Map.ofLazy(
             Set.of(500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511),
             e -> {

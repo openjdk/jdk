@@ -156,9 +156,9 @@ final class LazyListTest {
     void toStringTest() {
         assertEquals("[]", newEmptyLazyList().toString());
         var lazy = List.ofLazy(2, IDENTITY);
-        assertEquals("[.unset, .unset]", lazy.toString());
+        assertEquals("[" + LazyConstantTestUtil.UNINITIALIZED_TAG + ", " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
         lazy.get(0);
-        assertEquals("[0, .unset]", lazy.toString());
+        assertEquals("[0, " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
         lazy.get(1);
         assertEquals("[0, 1]", lazy.toString());
     }
@@ -182,7 +182,7 @@ final class LazyListTest {
     void equalsPartialEvaluationTest() {
         var lazy = List.ofLazy(2, IDENTITY);
         assertFalse(lazy.equals(List.of(0)));
-        assertEquals("[0, .unset]", lazy.toString());
+        assertEquals("[0, " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
         assertTrue(lazy.equals(List.of(0, 1)));
         assertEquals("[0, 1]", lazy.toString());
     }
@@ -239,7 +239,7 @@ final class LazyListTest {
     }
 
     void assertUnevaluated(List<Integer> subList) {
-        assertEquals(asString(".unset", subList), subList.toString());
+        assertEquals(asString(LazyConstantTestUtil.UNINITIALIZED_TAG, subList), subList.toString());
     }
 
     @Test
@@ -272,7 +272,7 @@ final class LazyListTest {
         actual.getLast();
 
         var actualToString = actual.toString();
-        var expectedToString = expected.toString().replace("2", ".unset");
+        var expectedToString = expected.toString().replace("2", LazyConstantTestUtil.UNINITIALIZED_TAG);
         assertEquals(expectedToString, actualToString);
     }
 
@@ -512,7 +512,7 @@ final class LazyListTest {
     }
 
     static String asString(String first, List<Integer> list) {
-        return "[" + first + ", " + Stream.generate(() -> ".unset")
+        return "[" + first + ", " + Stream.generate(() -> LazyConstantTestUtil.UNINITIALIZED_TAG)
                 .limit(list.size() - 1)
                 .collect(Collectors.joining(", ")) + "]";
     }

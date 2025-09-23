@@ -144,8 +144,8 @@ final class LazyMapTest {
         var toString = lazy.toString();
         assertTrue(toString.startsWith("{"));
         // Key order is unspecified
-        assertTrue(toString.contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(toString.contains(Value.FORTY_TWO + "=.unset"));
+        assertTrue(toString.contains(Value.THIRTEEN + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
+        assertTrue(toString.contains(Value.FORTY_TWO + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
         assertTrue(toString.endsWith("}"));
     }
 
@@ -199,7 +199,7 @@ final class LazyMapTest {
         // Key order is unspecified
         for (Value key : set) {
             toString = lazy.toString();
-            assertTrue(toString.contains(key + "=.unset"), toString + " did not contain " + key + "=.unset");
+            assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG), toString + " did not contain " + key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG);
             lazy.get(key);
             toString = lazy.toString();
             assertTrue(toString.contains(key + "=" + MAPPER.apply(key)), toString);
@@ -267,7 +267,7 @@ final class LazyMapTest {
         var lazyEntrySet = lazy.entrySet();
         var toString = lazyEntrySet.toString();
         for (var key : set) {
-            assertTrue(toString.contains(key + "=.unset"));
+            assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
         }
         assertTrue(toString.startsWith("["));
         assertTrue(toString.endsWith("]"));
@@ -277,7 +277,7 @@ final class LazyMapTest {
             if (key.equals(KEY)) {
                 continue;
             }
-            assertTrue(lazyEntrySet.toString().contains(key + "=.unset"));
+            assertTrue(lazyEntrySet.toString().contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
         }
         assertTrue(lazyEntrySet.toString().contains(KEY + "=" + VALUE));
     }
@@ -295,7 +295,7 @@ final class LazyMapTest {
             if (v.equals(val)) {
                 assertTrue(toString.contains(key + "=" + v));
             } else {
-                assertTrue(toString.contains(key + "=.unset"));
+                assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
             }
         }
 
@@ -314,9 +314,8 @@ final class LazyMapTest {
         var lazy = newLazyMap(set);
         var lazyValues = lazy.values();
         var expected = set.stream()
-                .map(_ -> ".unset")
+                .map(_ -> LazyConstantTestUtil.UNINITIALIZED_TAG)
                 .collect(joining(", ", "[", "]"));
-        //var expected = "[" + ".unset, ".repeat(set.size() - 1) + ".unset]";
         assertEquals(expected, lazyValues.toString());
         lazy.get(KEY);
         var afterGet = lazyValues.toString();
@@ -360,10 +359,10 @@ final class LazyMapTest {
                 .findAny()
                 .orElseThrow();
 
-        assertEquals(KEY + "=.unset", entry.toString());
+        assertEquals(KEY + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG, entry.toString());
         var otherDifferent = Map.entry(Value.ZERO, -1);
         assertNotEquals(entry, otherDifferent);
-        assertEquals(KEY + "=.unset", entry.toString());
+        assertEquals(KEY + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG, entry.toString());
         var otherEqual = Map.entry(entry.getKey(), entry.getValue());
         assertEquals(entry, otherEqual);
         assertEquals(KEY + "=" + VALUE, entry.toString());
@@ -377,11 +376,11 @@ final class LazyMapTest {
         // Only touch the key.
         lazy.entrySet().iterator().forEachRemaining(Map.Entry::getKey);
         lazy.entrySet().iterator()
-                .forEachRemaining(e -> assertTrue(e.toString().contains(".unset")));
+                .forEachRemaining(e -> assertTrue(e.toString().contains(LazyConstantTestUtil.UNINITIALIZED_TAG)));
         // Only touch the value.
         lazy.entrySet().iterator().forEachRemaining(Map.Entry::getValue);
         lazy.entrySet().iterator()
-                .forEachRemaining(e -> assertFalse(e.toString().contains(".unset")));
+                .forEachRemaining(e -> assertFalse(e.toString().contains(LazyConstantTestUtil.UNINITIALIZED_TAG)));
     }
 
     // Immutability

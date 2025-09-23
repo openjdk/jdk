@@ -57,7 +57,7 @@ final class LazyConstantTest {
     void basic(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
         LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var lazy = factory.apply(cs);
-        assertEquals(".unset", lazy.toString());
+        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, lazy.toString());
         assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
         assertEquals(SUPPLIER.get(), lazy.get());
@@ -76,7 +76,7 @@ final class LazyConstantTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, lazy::get);
         assertEquals(2, cs.cnt());
-        assertEquals(".unset", lazy.toString());
+        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, lazy.toString());
     }
 
     @ParameterizedTest
@@ -136,7 +136,7 @@ final class LazyConstantTest {
     @ParameterizedTest
     @MethodSource("lazyConstants")
     void toStringUnset(LazyConstant<Integer> constant) {
-        assertEquals(".unset", constant.toString());
+        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, constant.toString());
         constant.get();
         assertEquals(Integer.toString(VALUE), constant.toString());
     }
