@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static helpers.ClassRecord.assertEqualsDeep;
 import static java.lang.constant.ConstantDescs.*;
 import java.util.function.Consumer;
@@ -63,7 +66,7 @@ class SignaturesTest {
                 ClassSignature.of(
                         ClassTypeSig.of(
                                 ClassTypeSig.of(ClassDesc.of("java.util.LinkedHashMap"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V"))),
-                                ClassDesc.of("LinkedHashIterator")),
+                                "LinkedHashIterator"),
                         ClassTypeSig.of(ClassDesc.of("java.util.Iterator"),
                                 TypeArg.of(ClassTypeSig.of(ClassDesc.of("java.util.Map$Entry"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V")))))),
                 ClassSignature.parseFrom("Ljava/util/LinkedHashMap<TK;TV;>.LinkedHashIterator;Ljava/util/Iterator<Ljava/util/Map$Entry<TK;TV;>;>;"));
@@ -117,6 +120,67 @@ class SignaturesTest {
         assertEqualsDeep(
                 ArrayTypeSig.of(2, TypeVarSig.of("E")),
                 Signature.parseFrom("[[TE;"));
+    }
+
+    @Test
+    void testGenericCreationChecks() {
+        var weirdNameClass = ClassDesc.of("<Unsupported>");
+        var voidSig = BaseTypeSig.of('V');
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Signature.of(weirdNameClass));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_Object));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_int.arrayType()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_int));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_Object.arrayType()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(weirdNameClass));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(255, voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(voidSig, voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(List.of(), List.of(), voidSig, voidSig));
+    }
+
+    static Stream<String> goodIdentifiers() {
+        return Stream.of("T", "Hello", "Mock", "(Weird)", " Huh? ");
+    }
+
+    static Stream<String> badIdentifiers() {
+        return Stream.of("", ";", ".", "/", "<", ">", "[", ":",
+                "<Unsupported>", "has.chars", "/Outer", "test/", "test//Outer");
+    }
+
+    static Stream<String> slashedIdentifiers() {
+        return Stream.of("test/Outer", "java/lang/Integer");
+    }
+
+    @ParameterizedTest
+    @MethodSource({"badIdentifiers", "slashedIdentifiers"})
+    void testBadSimpleIdentifier(String st) {
+        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(outer, st));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeVarSig.of(st));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, (RefTypeSig) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, Optional.empty()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("goodIdentifiers")
+    void testGoodSimpleIdentifier(String st) {
+        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
+        ClassTypeSig.of(outer, st);
+        TypeVarSig.of(st);
+        TypeParam.of(st, (RefTypeSig) null);
+        TypeParam.of(st, Optional.empty());
+    }
+
+    @ParameterizedTest
+    @MethodSource("badIdentifiers")
+    void testBadSlashedIdentifier(String st) {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(st));
+    }
+
+    @ParameterizedTest
+    @MethodSource({"goodIdentifiers", "slashedIdentifiers"})
+    void testGoodSlashedIdentifier(String st) {
+        ClassTypeSig.of(st);
     }
 
     @Test
@@ -231,6 +295,7 @@ class SignaturesTest {
         Lcom/example/Outer<Ljava/lang/String;>
         Lcom/example/Outer<Ljava/lang/String;>.
         Lcom/example/Outer<Ljava/lang/String;>.Inner<[I>
+        [V
         """.lines().forEach(assertThrows(Signature::parseFrom));
     }
 
@@ -297,6 +362,7 @@ class SignaturesTest {
         (LSet<?Kind<*>;>;)V
         <T::LA>()V
         (TT;I)VI
+        (V)V
         """.lines().forEach(assertThrows(MethodSignature::parseFrom));
     }
 
