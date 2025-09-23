@@ -26,6 +26,11 @@
  * @bug 8349670
  * @summary Test 100 continue response handling
  * @run testng/othervm InputRead100Test
+ */
+/**
+ * @test
+ * @bug 8349670
+ * @summary Test 100 continue response handling ipv6
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
  */
 import java.io.BufferedReader;
@@ -47,7 +52,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.*;
 
