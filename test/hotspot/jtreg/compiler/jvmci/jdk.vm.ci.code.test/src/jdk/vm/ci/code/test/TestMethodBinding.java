@@ -53,6 +53,10 @@ import jdk.vm.ci.meta.JavaType;
 
 import java.lang.reflect.Method;
 
+/**
+ * Tests that call site resolution in {@code SharedRuntime::find_callee_info_helper} correctly handles a side effect-free call
+ * where the bytecode index does not point to an invoke instruction, and the re-execute flag is set to false.
+ */
 public class TestMethodBinding extends CodeInstallationTest {
 
 
@@ -62,6 +66,7 @@ public class TestMethodBinding extends CodeInstallationTest {
 
     public static int delegateMethod() {
         // instead of the addition we will do a call to calculateSum here
+        // so 1 + 2 will be compiled to calculateSum();
         return 1 + 2;
     }
 
