@@ -4945,7 +4945,7 @@ public final class Collections {
 
         @Override
         public List<E> reversed() {
-          return this;
+            return this;
         }
 
         @Override
@@ -5316,15 +5316,15 @@ public final class Collections {
         }
         @Override
         public List<E> reversed() {
-          return this;
+            return this;
         }
         @Override
         public E getFirst() {
-          return element;
+            return element;
         }
         @Override
         public E getLast() {
-          return element;
+            return element;
         }
         @Override
         public Spliterator<E> spliterator() {
@@ -5571,7 +5571,7 @@ public final class Collections {
 
         @Override
         public List<E> reversed() {
-          return this;
+            return this;
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
