@@ -52,7 +52,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/referencePolicy.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -1884,7 +1883,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // nothing, but this situation should be extremely rare (a full gc after shutdown
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
-  if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
+  if (!cm_thread()->in_progress() && !_g1h->is_shutting_down()) {
     return false;
   }
 

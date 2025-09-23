@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
+#ifndef SHARE_CDS_AOTOOPCHECKER_HPP
+#define SHARE_CDS_AOTOOPCHECKER_HPP
 
-#include <sys/syscall.h>
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-//
-// Support for building on older Linux systems
-//
+class AOTOopChecker : AllStatic {
+  static oop get_oop_field(oop obj, const char* name, const char* sig);
 
-#ifndef SYS_memfd_create
-#define SYS_memfd_create     360
-#endif
-#ifndef SYS_fallocate
-#define SYS_fallocate        309
-#endif
+public:
+  // obj is an object that's about to be stored into the AOT cache. Check if it
+  // can be safely cached.
+  static void check(oop obj);
+};
 
-#endif // OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
+#endif // SHARE_CDS_AOTOOPCHECKER_HPP

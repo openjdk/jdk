@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +21,24 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
+import java.security.SecureRandom;
+import java.util.Arrays;
 
-#include <sys/syscall.h>
+/*
+ * @test
+ * @bug 8364657
+ * @summary verify the behavior of SecureRandom instance returned by
+ *          SecureRandom.getInstanceStrong()
+ * @run main TestStrong
+ */
+public class TestStrong {
 
-//
-// Support for building on older Linux systems
-//
+    public static void main(String[] args) throws Exception {
 
-#ifndef SYS_memfd_create
-#define SYS_memfd_create     360
-#endif
-#ifndef SYS_fallocate
-#define SYS_fallocate        309
-#endif
-
-#endif // OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
+        final SecureRandom random = SecureRandom.getInstanceStrong();
+        System.out.println("going to generate random seed using " + random);
+        final byte[] seed = random.generateSeed(0);
+        System.out.println("random seed generated");
+        System.out.println("seed: " + Arrays.toString(seed));
+    }
+}
