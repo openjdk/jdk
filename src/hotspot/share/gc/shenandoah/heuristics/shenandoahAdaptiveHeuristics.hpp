@@ -76,15 +76,15 @@ public:
                                                      size_t actual_free) override;
 
   virtual void record_cycle_start() override;
-  void record_success_concurrent();
-  void record_success_degenerated();
-  void record_success_full();
+  virtual void record_success_concurrent() override;
+  virtual void record_success_degenerated() override;
+  virtual void record_success_full() override;
 
-  virtual bool should_start_gc();
+  virtual bool should_start_gc() override;
 
-  virtual const char* name()     { return "Adaptive"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
+  virtual const char* name() override     { return "Adaptive"; }
+  virtual bool is_diagnostic() override   { return false; }
+  virtual bool is_experimental() override { return false; }
 
  private:
   // These are used to adjust the margin of error and the spike threshold
