@@ -77,7 +77,6 @@ address NativeCall::destination() const {
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
 void NativeCall::set_destination_mt_safe(address dest) {
-  // MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
@@ -134,7 +133,6 @@ void NativeMovConstReg::verify() {
 
 
 intptr_t NativeMovConstReg::data() const {
-  // das(uint64_t(instruction_address()),2);
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
     return *(intptr_t*)addr;
