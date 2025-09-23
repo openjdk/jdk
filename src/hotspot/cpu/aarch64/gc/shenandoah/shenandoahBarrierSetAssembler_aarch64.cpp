@@ -471,53 +471,79 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
 // recently fetched from addr rather than a boolean success indicator.
 //
 // Clobbers rscratch1, rscratch2
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(const MachNode* node,
-                                                MacroAssembler* masm,
-                                                Register addr,
-                                                Register expected,
-                                                Register new_val,
-                                                bool acquire, bool release,
-                                                bool is_cae,
-                                                Register result) {
+// void ShenandoahBarrierSetAssembler::cmpxchg_oop(const MachNode* node,
+//                                                 MacroAssembler* masm,
+//                                                 Register addr,
+//                                                 Register expected,
+//                                                 Register new_val,
+//                                                 bool acquire, bool release,
+//                                                 bool is_cae,
+//                                                 Register result) {
+//
+//   Register tmp1 = rscratch1;
+//   Register tmp2 = rscratch2;
+//   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2);
+//
+//   ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, is_cae);
+//   ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1, is_cae);
+//   bool is_narrow = UseCompressedOops;
+//   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
+//
+//   __ cmpxchg(addr, expected, new_val, size, acquire, release, false, result);
+//   if (!is_cae) {
+//     __ cset(result, Assembler::EQ);
+//   }
+//
+//   // If CAS failed, we need to check in the mid-path whether or not we need to deal with
+//   // false negatives.
+//   __ br(Assembler::NE, *mid_stub->entry());
+//
+//   __ bind(*slow_stub->continuation());
+//   __ bind(*mid_stub->continuation());
+// }
 
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
-  assert_different_registers(addr, expected, new_val, result, tmp1, tmp2);
+void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
+                                                   MacroAssembler* masm,
+                                                   Register addr,
+                                                   Register expected,
+                                                   Register new_val,
+                                                   Register result,
+                                                   bool acquire, bool release, bool weak,
+                                                   bool is_cae) {
+  Register tmp = rscratch2;
+  Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
 
-  ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, is_cae);
-  ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1, is_cae);
-  bool is_narrow = UseCompressedOops;
-  Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
+  assert_different_registers(addr, expected, result, tmp);
+  assert_different_registers(addr, new_val,  result, tmp);
 
-  __ cmpxchg(addr, expected, new_val, size, acquire, release, false, result);
+  ShenandoahCASBarrierSlowStubC2* const slow_stub = ShenandoahCASBarrierSlowStubC2::create(node, addr, expected, new_val, result, tmp, is_cae);
+
+  // Try to CAS with given arguments.  If successful, then we are done.
+  __ cmpxchg(addr, expected, new_val, size, acquire, release, weak, result);
+  // EQ flag set iff success. result holds value fetched.
+
   if (!is_cae) {
     __ cset(result, Assembler::EQ);
   }
 
-  // If CAS failed, we need to check in the mid-path whether or not we need to deal with
-  // false negatives.
-  __ br(Assembler::NE, *mid_stub->entry());
+  __ br(Assembler::NE, *slow_stub->entry());
 
   __ bind(*slow_stub->continuation());
-  __ bind(*mid_stub->continuation());
 }
 
 #undef __
 #define __ masm.
 
-void ShenandoahCASBarrierMidStub::emit_code(MacroAssembler& masm) {
+void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
 
+  Label runtime;
   Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ ldrb(_tmp, gc_state);
-  __ tstw(_tmp, ShenandoahHeap::HAS_FORWARDED);
-  __ br(Assembler::NE, *_slow_stub->entry());
-
+  __ tbnz(_tmp, ShenandoahHeap::HAS_FORWARDED_BITPOS, runtime);
   __ b(*continuation());
-}
 
-void ShenandoahCASBarrierSlowStub::emit_code(MacroAssembler& masm) {
-  __ bind(*entry());
+  __ bind(runtime);
   {
     SaveLiveRegisters save_live_registers(&masm, this);
     // Setup c_rarg0 to hold addr.
