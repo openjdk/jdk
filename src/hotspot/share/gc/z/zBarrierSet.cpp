@@ -117,7 +117,7 @@ static void deoptimize_allocation(JavaThread* thread) {
   const nmethod* const nm = caller_frame.cb()->as_nmethod();
   if ((nm->is_compiled_by_c2() || nm->is_compiled_by_jvmci()) && !caller_frame.is_deoptimized_frame()) {
     // The JIT might have elided barriers on this object so deoptimize the frame and let the
-    // intepreter deal with it.
+    // interpreter deal with it.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
