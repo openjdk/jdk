@@ -59,7 +59,6 @@ public class TestZNMT {
         }
     }
 
-
     private static void testValue(int zForceDiscontiguousHeapReservations) throws Exception  {
         /**
          *  Xmx is picked so that it is divisible by 'ZForceDiscontiguousHeapReservations * ZGranuleSize'
