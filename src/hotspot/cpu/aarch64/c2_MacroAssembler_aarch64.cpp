@@ -2218,13 +2218,13 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   // Expected result: dst   = 00 00 00 hh ee dd bb aa
 
   // Extend lowest half to type INT.
-  // dst   = 00dd 00cc 00bb 00aa
+  // dst   =  00dd  00cc  00bb  00aa
   sve_uunpklo(dst, S, src);
-  // pgtmp = 0001 0000 0001 0001
+  // pgtmp =  0001  0000  0001  0001
   sve_punpklo(pgtmp, mask);
   // Pack the active elements in size of type INT to the right,
   // and fill the remainings with zero.
-  // dst   = 0000 00dd 00bb 00aa
+  // dst   =  0000  00dd  00bb  00aa
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
   // dst   = 00 00 00 00 00 dd bb aa
@@ -2241,21 +2241,21 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   sve_cntp(rscratch1, S, ptrue, pgtmp);
 
   // Repeat to the highest half.
-  // pgtmp = 0001 0000 0000 0001
+  // pgtmp =  0001  0000  0000  0001
   sve_punpkhi(pgtmp, mask);
-  // vtmp  = 00hh 00gg 00ff 00ee
+  // vtmp  =  00hh  00gg  00ff  00ee
   sve_uunpkhi(vtmp, S, src);
-  // vtmp  = 0000 0000 00hh 00ee
+  // vtmp  =  0000  0000  00hh  00ee
   sve_compact(vtmp, S, vtmp, pgtmp);
   // vtmp  = 00 00 00 00 00 00 hh ee
   sve_uzp1(vtmp, H, vtmp, vtmp_zr);
 
   // pgtmp = 00 00 00 00 00 01 01 01
   sve_whilelt(pgtmp, H, zr, rscratch1);
-  // Compressed low:   dst  = 00 00 00 00 00 dd bb aa
-  // Compressed high:  vtmp = 00 00 00 00 00 00 hh ee
-  // Combine the compressed low with the compressed high.
-  // dst   = 00 00 00 hh ee dd bb aa
+  // Compressed low:  dst  = 00 00 00 00 00 dd bb aa
+  // Compressed high: vtmp = 00 00 00 00 00 00 hh ee
+  // Combine the compressed low with the compressed high:
+  //                  dst  = 00 00 00 hh ee dd bb aa
   sve_splice(dst, H, pgtmp, vtmp);
 }
 
@@ -2274,13 +2274,13 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   sve_dup(vtmp3, B, 0);
 
   // Extend lowest half to type SHORT.
-  // vtmp1 = 0h 0g 0f 0e 0d 0c 0b 0a
+  // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
   sve_uunpklo(vtmp1, H, src);
-  // ptmp  = 00 01 00 00 00 01 00 01
+  // ptmp  =  00  01  00  00  00  01  00  01
   sve_punpklo(ptmp, mask);
   // Pack the active elements in size of type SHORT to the right,
   // and fill the remainings with zero.
-  // dst   = 00 00 00 00 00 0g 0c 0a
+  // dst   =  00  00  00  00  00  0g  0c  0a
   unsigned extended_size = vector_length_in_bytes << 1;
   sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
   // Narrow the result back to type BYTE.
@@ -2297,21 +2297,21 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   sve_cntp(rscratch2, H, ptrue, ptmp);
 
   // Repeat to the highest half.
-  // ptmp  = 00 01 00 00 00 00 00 01
+  // ptmp  =  00  01  00  00  00  00  00  01
   sve_punpkhi(ptmp, mask);
-  // vtmp2 = 0q 0p 0n 0m 0l 0k 0j 0i
+  // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
-  // vtmp1 = 00 00 00 00 00 00 0p 0i
+  // vtmp1 =  00  00  00  00  00  00  0p  0i
   sve_compress_short(vtmp1, vtmp2, ptmp, vtmp2, vtmp3, pgtmp, extended_size - MaxVectorSize);
   // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
   sve_uzp1(vtmp1, B, vtmp1, vtmp3);
 
   // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
   sve_whilelt(ptmp, B, zr, rscratch2);
-  // Compressed low:   dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
-  // Compressed high:  vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
-  // Combine the compressed low with the compressed high.
-  // dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  // Compressed low:  dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  // Compressed high: vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  // Combine the compressed low with the compressed high:
+  //                  dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
   sve_splice(dst, B, ptmp, vtmp1);
 }
 
