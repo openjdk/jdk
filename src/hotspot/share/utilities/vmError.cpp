@@ -963,6 +963,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     address stack_bottom = stack_top - stack_size;
     st->print("[" PTR_FORMAT "," PTR_FORMAT "]", p2i(stack_bottom), p2i(stack_top));
+
     frame fr = _context ? os::fetch_frame_from_context(_context)
                         : os::current_frame();
 
