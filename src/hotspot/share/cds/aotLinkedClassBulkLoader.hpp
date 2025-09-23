@@ -39,23 +39,21 @@ template <typename T> class Array;
 enum class AOTLinkedClassCategory : int;
 
 // During a Production Run, the AOTLinkedClassBulkLoader loads all classes from
-// a AOTLinkedClassTable into their respective ClassLoaders. This happens very early
-// in the JVM bootstrap stage, before any application code is executed.
+// the AOTLinkedClassTable into their respective ClassLoaders. This happens very early
+// in the JVM bootstrap stage, before any Java bytecode is executed.
 //
-// The classes are loaded in two steps:
-//
-// [1] preload_classes():
-//     This happens before any Java bytecode is executed, to load aot-linked classes in the static archive,
-//     placing them into the "loaded" state.
-//
-// [2] load_javabase_classes() and load_non_javabase_classes():
-//     This happens after some Java code is executed, to load aot-linked classes in the dynamic archive.
-//     This steps also puts all aot-linked classes into at least the "linked" state.
+// IMPLEMENTATION NOTES:
+// We also proactively link all the classes in the AOTLinkedClassTable, and move
+// the AOT-initialized classes to the "initialized" state. Due to limitations
+// of the current JVM bootstrap sequence, link_or_init_javabase_classes() and
+// link_or_init_non_javabase_classes() need to be called after some Java bytecodes are
+// executed. Future RFEs will move these calls to earlier stages.
 class AOTLinkedClassBulkLoader :  AllStatic {
   static void preload_classes_impl(TRAPS);
   static void preload_classes_in_table(Array<InstanceKlass*>* classes,
                                        const char* category_name, Handle loader, TRAPS);
-  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
+  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader,
+                               Array<InstanceKlass*>* classes);
   static void link_or_init_non_javabase_classes_impl(TRAPS);
   static void link_or_init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
   static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;

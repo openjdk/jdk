@@ -27,7 +27,6 @@
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -53,12 +52,7 @@ void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
 // We populate the boot/platform/app class loaders with classes from the AOT cache. This is a fundamental
 // step in restoring the JVM's state from the snapshot recorded in the AOT cache: other AOT optimizations
 // such as AOT compiled methods can make direct references to the preloaded classes, knowing that
-// these classes are guaranteed to be in at least the loaded state.
-//
-// Preloading requires that the Java heap objects of java.lang.Class, java.lang.Package and
-// java.security.ProtectionDomain already exist for the preloaded classes. Therefore, we support preloading
-// only for the classes in the static CDS archive. Classes in the dynamic archive are not supported because
-// the dynamic archive does not include Java heap objects.
+// these classes are guaranteed to be in at least the "loaded" state.
 void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
   preload_classes_impl(current);
   if (current->has_pending_exception()) {
@@ -94,7 +88,6 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
     return;
   }
 
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(loader());
   for (int i = 0; i < classes->length(); i++) {
     InstanceKlass* ik = classes->at(i);
     if (log_is_enabled(Info, aot, load)) {
@@ -180,6 +173,8 @@ void AOTLinkedClassBulkLoader::validate_module(Klass* k, const char* category_na
 }
 #endif
 
+// Link all java.base classes in the AOTLinkedClassTable. Of those classes,
+// move the ones that have been AOT-initialized to the "initialized" state.
 void AOTLinkedClassBulkLoader::link_or_init_javabase_classes(JavaThread* current) {
   link_or_init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), current);
   if (current->has_pending_exception()) {
@@ -187,6 +182,8 @@ void AOTLinkedClassBulkLoader::link_or_init_javabase_classes(JavaThread* current
   }
 }
 
+// Do the same thing as link_or_init_javabase_classes(), but for the classes that are not
+// in the java.base module.
 void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes(JavaThread* current) {
   link_or_init_non_javabase_classes_impl(current);
   if (current->has_pending_exception()) {

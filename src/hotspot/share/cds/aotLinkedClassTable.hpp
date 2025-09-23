@@ -42,7 +42,8 @@ class AOTLinkedClassTable {
   static AOTLinkedClassTable _instance;
 
   Array<InstanceKlass*>* _boot1; // boot classes in java.base module
-  Array<InstanceKlass*>* _boot2; // boot classes in all other (named and unnamed) modules
+  Array<InstanceKlass*>* _boot2; // boot classes in all other (named and unnamed) modules,
+                                 // including classes from -Xbootclasspath/a
   Array<InstanceKlass*>* _platform;
   Array<InstanceKlass*>* _app;
 
