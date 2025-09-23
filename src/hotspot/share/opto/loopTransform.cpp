@@ -1668,9 +1668,13 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
-Node* PhaseIdealLoop::find_mem_out_outer_strip_mined(Node* store, IdealLoopTree* outer_loop) {
+Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, IdealLoopTree* outer_loop) {
   Node* out = store;
-  // Follow the memory uses until we get out of the loop
+  // Follow the memory uses until we get out of the loop.
+  // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
+  // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
+  // except for the phi node associated with the loop head), we have the guarantee of a
+  // linear memory subgraph within the outer loop body.
   while (true) {
     Node* unique_next = nullptr;
     for (DUIterator_Fast imax, l = out->fast_outs(imax); l < imax; l++) {
@@ -1795,7 +1799,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     // body was cloned as a unit
     IdealLoopTree* input_loop = get_loop(get_ctrl(store->in(MemNode::Memory)));
     if (store != nullptr && !outer_loop->is_member(input_loop)) {
-      Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
+      Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
       Node* store_new = old_new[store->_idx];
       store_new->set_req(MemNode::Memory, mem_out);
     }
