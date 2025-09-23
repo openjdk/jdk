@@ -1674,12 +1674,12 @@ Node* PhaseIdealLoop::find_mem_out_outer_strip_mined(Node* store, IdealLoopTree*
   while (true) {
     Node* unique_next = nullptr;
     for (DUIterator_Fast imax, l = out->fast_outs(imax); l < imax; l++) {
-      Node* next = out->fast_out(l);
-      if (next->is_Mem() && next->in(MemNode::Memory) == out) {
-        IdealLoopTree* output_loop = get_loop(get_ctrl(next));
-        if (outer_loop->is_member(output_loop)) {
+      Node* use = out->fast_out(l);
+      if (use->is_Mem() && use->in(MemNode::Memory) == out) {
+        IdealLoopTree* use_loop = get_loop(get_ctrl(use));
+        if (outer_loop->is_member(use_loop)) {
           assert(unique_next == nullptr, "memory node should only have one usage in the loop body");
-          unique_next = next;
+          unique_next = use;
         }
       }
     }
