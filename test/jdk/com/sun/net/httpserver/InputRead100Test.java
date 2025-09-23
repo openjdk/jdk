@@ -24,9 +24,9 @@
 /**
  * @test
  * @bug 8349670
- * @summary Test 1xx response handling
- * @run testng/othervm InputRead1xxTest
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead1xxTest
+ * @summary Test 100 continue response handling
+ * @run testng/othervm InputRead100Test
+ * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
  */
 import java.io.BufferedReader;
 import java.io.IOException;
