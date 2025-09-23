@@ -292,7 +292,7 @@ void AOTClassInitializer::check_aot_annotations(InstanceKlass* ik) {
       return supertype->has_aot_safe_initializer();
     });
   } else {
-    // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
+    // @AOTRuntimeSetup only meaningful in @AOTSafeClassInitializer
     if (ik->is_runtime_setup_required()) {
       ResourceMark rm;
       log_error(aot, init)("@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",

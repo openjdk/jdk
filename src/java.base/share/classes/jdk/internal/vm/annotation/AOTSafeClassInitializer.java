@@ -37,12 +37,12 @@ import java.lang.annotation.Target;
 /// For a class or interface _X_ annotated with `@AOTSafeClassInitializer`, it will
 /// be initialized in the AOT assembly phase under two circumstances:
 ///
-/// - If _X_ was initialized during the AOT training run, the JVM will proactively
-///   initialize _X_ in the assembly phase.
-/// - If _X_ was not initialized during the AOT training run, the initialization of
-///   _X_ can still be triggered by normal execution of Java code in the assembly phase.
-///   This is usually the result of performing AOT optimizations for the
-///   `java.lang.invoke` package.
+/// 1. If _X_ was initialized during the AOT training run, the JVM will proactively
+///    initialize _X_ in the assembly phase.
+/// 2. If _X_ was not initialized during the AOT training run, the initialization of
+///    _X_ can still be triggered by normal execution of Java code in the assembly
+///    phase. At present this is usually the result of performing AOT optimizations for
+///    the `java.lang.invoke` package but it may include other cases as well.
 ///
 /// If _X_ is initialized during the AOT assembly phase, the VM will store
 /// the values of the static fields of _X_ in the AOT cache. Consequently,

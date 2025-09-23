@@ -812,7 +812,7 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     //   constant pool entries that were resolved during the training run.
     FinalImageRecipes::apply_recipes(CHECK);
 
-    // Because the AOT assembly phase does not run the exact code as in the
+    // Because the AOT assembly phase does not run the same exact code as in the
     // training run (e.g., we use different lambda form invoker classes;
     // generated lambda form classes are not recorded in FinalImageRecipes),
     // the recipes do not cover all classes that have been loaded so far. As
