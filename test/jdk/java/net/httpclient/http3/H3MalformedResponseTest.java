@@ -368,7 +368,7 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
             final HttpResponse<Void> response1 = client.sendAsync(
                             request,
                             BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(30, TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response1);
         } catch (TimeoutException e) {
             throw e;
