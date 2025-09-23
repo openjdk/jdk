@@ -1515,7 +1515,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private final transient DigitList digitList = new DigitList();
+    private transient DigitList digitList = new DigitList();
     private static final int STATUS_INFINITE = 0;
     private static final int STATUS_POSITIVE = 1;
     private static final int STATUS_LENGTH   = 2;
@@ -2508,6 +2508,9 @@ public final class CompactNumberFormat extends NumberFormat {
         CompactNumberFormat other = (CompactNumberFormat) super.clone();
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
+        other.decimalFormat = (DecimalFormat) decimalFormat.clone();
+        other.defaultDecimalFormat = (DecimalFormat) defaultDecimalFormat.clone();
+        other.digitList = (DigitList) digitList.clone();
         return other;
     }
 
