@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.net.ssl.*;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
 
@@ -162,6 +164,33 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 withDefaultCertPathConstraints);
     }
 
+    /**
+     * Returns an {@link AlgorithmConstraints} instance that uses the
+     * constraints configured for the given {@code engine} in addition
+     * to the platform configured constraints.
+     * <p>
+     * If the given {@code allowedAlgorithms} is non-null then the returned
+     * {@code AlgorithmConstraints} will only permit those allowed algorithms.
+     *
+     * @param engine QuicTLSEngine used to determine the constraints
+     * @param mode SIGNATURE_CONSTRAINTS_MODE
+     * @param withDefaultCertPathConstraints whether or not to apply the default certpath
+     *                                       algorithm constraints too
+     * @return a AlgorithmConstraints instance
+     */
+    static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
+                                        SIGNATURE_CONSTRAINTS_MODE mode,
+                                        boolean withDefaultCertPathConstraints) {
+        if (engine == null) {
+            return wrap(null, withDefaultCertPathConstraints);
+        }
+
+        return new SSLAlgorithmConstraints(
+                nullIfDefault(getUserSpecifiedConstraints(engine)),
+                new SupportedSignatureAlgorithmConstraints(engine.getHandshakeSession(), mode),
+                withDefaultCertPathConstraints);
+    }
+
     private static AlgorithmConstraints nullIfDefault(
             AlgorithmConstraints constraints) {
         return constraints == DEFAULT ? null : constraints;
@@ -204,6 +233,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return socket.getSSLParameters().getAlgorithmConstraints();
         }
 
+        return null;
+    }
+
+    private static AlgorithmConstraints getUserSpecifiedConstraints(
+            QuicTLSEngine quicEngine) {
+        if (quicEngine != null) {
+            if (quicEngine instanceof QuicTLSEngineImpl engineImpl) {
+                return engineImpl.getAlgorithmConstraints();
+            }
+            return quicEngine.getSSLParameters().getAlgorithmConstraints();
+        }
         return null;
     }
 
