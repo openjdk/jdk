@@ -49,7 +49,7 @@ public class TestGCHeapMemoryUsageEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             System.out.println(events);
             assertFalse(events.isEmpty());
-            RecordedEvent event = events.getFirst();
+            RecordedEvent event = events.getLast();
             Events.assertField(event, "used").above(0L);
             Events.assertField(event, "committed").above(0L);
             Events.assertField(event, "max").above(0L);
