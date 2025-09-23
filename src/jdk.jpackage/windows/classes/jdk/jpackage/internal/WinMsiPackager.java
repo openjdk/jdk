@@ -53,7 +53,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import org.w3c.dom.Document;
@@ -172,7 +171,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
                         .add();
     }
 
-    private void prepareConfigFiles() throws PackagerException, IOException {
+    private void prepareConfigFiles() throws IOException {
 
         pkg.licenseFile().ifPresent(licenseFile -> {
             // need to copy license file to the working directory
@@ -314,7 +313,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         wixPipeline = wixPipelineBuilder.create(wixToolset);
     }
 
-    private void buildPackage() throws PackagerException, IOException {
+    private void buildPackage() throws IOException {
         final var msiOut = outputDir.resolve(pkg.packageFileNameWithSuffix());
         Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
         wixPipeline.buildMsi(msiOut.toAbsolutePath());

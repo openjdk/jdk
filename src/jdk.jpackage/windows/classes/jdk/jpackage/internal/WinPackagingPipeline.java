@@ -40,7 +40,6 @@ import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.LauncherShortcut;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
@@ -88,7 +87,7 @@ final class WinPackagingPipeline {
     }
 
     private static void rebrandLaunchers(AppImageBuildEnv<WinApplication, ApplicationLayout> env)
-            throws IOException, PackagerException {
+            throws IOException {
         for (var launcher : env.app().launchers()) {
             final var iconTarget = createLauncherIconResource(launcher, env.env()::createResource).map(iconResource -> {
                 var iconDir = env.env().buildRoot().resolve("icons");
