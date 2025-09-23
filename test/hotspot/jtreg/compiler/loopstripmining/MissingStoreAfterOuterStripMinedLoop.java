@@ -49,7 +49,7 @@ public class MissingStoreAfterOuterStripMinedLoop {
     // The store node in the loop body is moved to the OuterStripLoop.
     // When making the post loop the new store node
     // should have the moved store node as memory input, and not the
-    // initial x = 0 store
+    // initial x = 0 store.
     //
     // store (x = 0)
     //  |
@@ -79,11 +79,13 @@ public class MissingStoreAfterOuterStripMinedLoop {
         y = 0;
     }
 
-    // Chain of stores with potential aliasing
+    // Chain of stores with potential aliasing.
+    // The entire chain is moved to the OuterStripLoop, between the
+    // inner loop exit and the safepoint.
     // The chain should be preserved when cloning the main loop body
-    // to create the post loop. Only the first stored of the post loop
-    // should be rewired to receive the last store of the main loop
-    // as memory input
+    // to create the post loop. Only the first store of the post loop
+    // should be rewired to have the last store of the main loop
+    // as memory input.
     //
     // ...
     //  |
