@@ -661,7 +661,6 @@ public:
   }
 };
 
-
 bool ZGenerationYoung::pause_mark_end() {
   return VM_ZMarkEndYoung().pause();
 }
@@ -1319,7 +1318,6 @@ class ZRendezvousGCThreads: public VM_Operation {
     SuspendibleThreadSet::desynchronize();
   };
 };
-
 
 void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences

@@ -1051,7 +1051,6 @@ void ZPartition::copy_physical_segments_from_partition(const ZVirtualMemory& at,
 
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
-
   // Copy segments
   manager.copy_physical_segments(to, at);
 }

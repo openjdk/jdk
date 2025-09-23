@@ -388,7 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
