@@ -178,8 +178,6 @@ class G1CollectionSet {
   // Index into the _groups indicating the start of the current collection set increment.
   uint _groups_inc_part_start;
 
-  uint groups_increment_length() const;
-
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
@@ -265,6 +263,8 @@ public:
 
   template <class CardOrRangeVisitor>
   inline void merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
+
+  uint groups_increment_length() const;
 
   // Reset the contents of the collection set.
   void clear();
