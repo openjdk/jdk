@@ -35,12 +35,13 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
-import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
@@ -55,11 +56,9 @@ final class ApplicationBuilder {
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
 
-        final var launcherCount = launchersAsList.size();
-
-        if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw buildConfigException("ERR_NoUniqueName").create();
-        }
+        launchersAsList.stream().collect(Collectors.toMap(Launcher::name, x -> x, (a, b) -> {
+            throw new JPackageException(I18N.format("error.launcher-duplicate-name", a.name()));
+        }));
 
         final String effectiveName;
         if (name != null) {
@@ -85,28 +84,6 @@ final class ApplicationBuilder {
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
         runtimeBuilder = v;
-        return this;
-    }
-
-    ApplicationBuilder initFromExternalApplication(ExternalApplication app,
-            Function<LauncherInfo, Launcher> mapper) {
-
-        externalApp = Objects.requireNonNull(app);
-
-        if (version == null) {
-            version = app.getAppVersion();
-        }
-        if (name == null) {
-            name = app.getAppName();
-        }
-        runtimeBuilder = null;
-
-        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false);
-
-        launchers = new ApplicationLaunchers(
-                mapper.apply(mainLauncherInfo),
-                app.getAddLaunchers().stream().map(mapper).toList());
-
         return this;
     }
 
