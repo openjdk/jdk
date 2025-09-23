@@ -342,9 +342,9 @@ public class LocaleMatchingTest {
         LanguageRange lr3 = new LanguageRange("ja", 0.1);
         LanguageRange lr4 = new LanguageRange("en", 1.0);
 
-        assertEquals(lr1, lr2, "    LR(ja, 1.0).equals(LR(ja)) should return true.");
-        assertNotEquals(lr1, lr3, "    LR(ja, 1.0).equals(LR(ja, 0.1)) should return false.");
-        assertNotEquals(lr1, lr4, "    LR(ja, 1.0).equals(LR(en, 1.0)) should return false.");
+        assertEquals(lr2, lr1, "    LR(ja, 1.0).equals(LR(ja)) should return true.");
+        assertNotEquals(lr3, lr1, "    LR(ja, 1.0).equals(LR(ja, 0.1)) should return false.");
+        assertNotEquals(lr4, lr1, "    LR(ja, 1.0).equals(LR(en, 1.0)) should return false.");
         assertNotNull(lr1, "    LR(ja, 1.0).equals(null) should return false.");
         assertNotEquals("", lr1, "    LR(ja, 1.0).equals(\"\") should return false.");
     }
