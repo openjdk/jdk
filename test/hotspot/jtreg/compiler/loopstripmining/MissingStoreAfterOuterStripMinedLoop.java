@@ -46,6 +46,18 @@ public class MissingStoreAfterOuterStripMinedLoop {
         int field;
     }
 
+    // The store node in the loop body is moved to the OuterStripLoop.
+    // When making the post loop the new store node
+    // should have the moved store node as memory input, and not the
+    // initial x = 0 store
+    //
+    // store (x = 0)
+    //  |
+    // store (x += 1, exit of CountedLoop main)
+    //  | <-- additional rewiring due to absence of phi node
+    // store (x += 1, exit of CountedLoop post)
+    //  |
+    // store (x = 0)
     static public void test1() {
         x = 0;
         for (int i = 0; i < 20000; i++) {
@@ -54,6 +66,8 @@ public class MissingStoreAfterOuterStripMinedLoop {
         x = 0;
     }
 
+    // Two independent stores
+    // They should be wired independently in the post loop, no aliasing
     static public void test2() {
         x = 0;
         y = 0;
@@ -65,20 +79,42 @@ public class MissingStoreAfterOuterStripMinedLoop {
         y = 0;
     }
 
-    static public void test3(A a1, A a2) {
+    // Chain of stores with potential aliasing
+    // The chain should be preserved when cloning the main loop body
+    // to create the post loop. Only the first stored of the post loop
+    // should be rewired to receive the last store of the main loop
+    // as memory input
+    //
+    // ...
+    //  |
+    // store (a1.field = v, exit of CountedLoop main)
+    //  |
+    // store (a2.field = v, exit of CountedLoop main)
+    //  |
+    // store (a3.field = v, exit of CountedLoop main)
+    //  | <-- only additional rewiring needed
+    // store (a1.field = v, exit of CountedLoop post)
+    //  |
+    // store (a2.field = v, exit of CountedLoop post)
+    //  |
+    // store (a3.field = v, exit of CountedLoop post)
+    static public void test3(A a1, A a2, A a3) {
         a1.field = 0;
         a2.field = 0;
+        a3.field = 0;
+        int v = 0;
         for (int i = 0; i < 20000; i++) {
-            a1.field += i;
-            a2.field += i;
+            v++;
+            a1.field = v;
+            a2.field = v;
+            a3.field = v;
         }
-        a1.field = 0;
-        a2.field = 0;
     }
 
     public static void main(String[] strArr) {
         A a1 = new A();
         A a2 = new A();
+        A a3 = new A();
 
         test1();
         if (x != 0) {
@@ -90,9 +126,9 @@ public class MissingStoreAfterOuterStripMinedLoop {
             throw new RuntimeException("unexpected value: " + x + " " + y);
         }
 
-        test3(a1, a1);
-        if (a1.field != 0 || a2.field != 0) {
-            throw new RuntimeException("unexpected value: " + a1.field + " " + a2.field);
+        test3(a1, a2, a3);
+        if (a1.field != 20000 || a2.field != 20000 || a3.field != 20000) {
+            throw new RuntimeException("unexpected value: " + a1.field + " " + a2.field + " " + a3.field);
         }
     }
 }
