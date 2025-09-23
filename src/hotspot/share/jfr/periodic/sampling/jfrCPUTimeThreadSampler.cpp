@@ -230,7 +230,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
-  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled;)
+  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -581,9 +581,12 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
 }
 
 #ifdef ASSERT
-void JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
     _instance->_sampler->set_out_of_stack_walking_enabled(runnable);
+    return true;
+  } else {
+    return false;
   }
 }
 #endif
@@ -852,8 +855,9 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
 #ifdef ASSERT
-static void set_out_of_stack_walking_enabled(bool runnable) {
+static bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   warn();
+  return false;
 }
 #endif
 

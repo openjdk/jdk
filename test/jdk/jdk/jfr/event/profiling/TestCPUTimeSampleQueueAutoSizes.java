@@ -67,6 +67,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
     /** A data collection from the CPUTimeSampleLost events for the burst thread */
     static class LossEventCollection {
         private final List<LossEvent> events = new ArrayList<>();
+        private final List<Long> sampleEventsInTimeBox = new ArrayList<>();
         private final List<Long> timeBoxEnds = new ArrayList<>();
 
         public synchronized void addEvent(LossEvent event) {
@@ -84,7 +85,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
             AtomicLong previousEnd = new AtomicLong(0);
             for (Long timeBoxEnd : timeBoxEnds) {
                 long lostSamples = events.stream()
-                                          .filter(e -> e.relativeTimeMillis >= previousEnd.get() && e.relativeTimeMillis < timeBoxEnd)
+                                          .filter(e -> e.relativeTimeMillis >= previousEnd.get() && e.relativeTimeMillis <= timeBoxEnd)
                                           .mapToLong(e -> e.lostSamples)
                                           .sum();
                 ret.add(new LossEvent(previousEnd.get(), lostSamples));
@@ -93,8 +94,22 @@ public class TestCPUTimeSampleQueueAutoSizes {
             return ret;
         }
 
-        public synchronized void addTimeBoxEnd(long timeBoxEnd) {
+        public synchronized void addTimeBoxEnd(long timeBoxEnd, long sampleEvents) {
             timeBoxEnds.add(timeBoxEnd);
+            sampleEventsInTimeBox.add(sampleEvents);
+        }
+
+        public synchronized void print() {
+            System.out.println("Loss event information:");
+            for (int i = 0; i < timeBoxEnds.size(); i++) {
+                System.out.println("  Time box end: " + timeBoxEnds.get(i) + ", sample events: " + sampleEventsInTimeBox.get(i));
+            }
+            for (LossEvent e : events) {
+                System.out.println("  Lost samples event: " + e.lostSamples + " at " + e.relativeTimeMillis);
+            }
+            for (LossEvent e : getEventsPerTimeBox()) {
+                System.out.println("  Lost samples in time box ending at " + e.relativeTimeMillis + ": " + e.lostSamples);
+            }
         }
     }
 
@@ -104,6 +119,7 @@ public class TestCPUTimeSampleQueueAutoSizes {
             long burstThreadId = Thread.currentThread().threadId();
             final long startTimeMillis = Instant.now().toEpochMilli();
             LossEventCollection lossEvents = new LossEventCollection();
+            AtomicLong sampleEventCountInTimeBox = new AtomicLong(0);
             rs.enable(EventNames.CPUTimeSample).with("throttle", "1ms");
             rs.enable(EventNames.CPUTimeSamplesLost);
             rs.onEvent(EventNames.CPUTimeSamplesLost, e -> {
@@ -114,10 +130,15 @@ public class TestCPUTimeSampleQueueAutoSizes {
                     lossEvents.addEvent(new LossEvent(relativeTime, e.getLong("lostSamples")));
                 }
             });
+            rs.onEvent(EventNames.CPUTimeSample, e -> {
+                if (e.getThread("eventThread").getJavaThreadId() == burstThreadId) {
+                    sampleEventCountInTimeBox.incrementAndGet();
+                }
+            });
+            rs.startAsync();
             // we disable the out-of-stack walking so that the queue fills up and overflows
             // while we are in native code
             disableOutOfStackWalking();
-            rs.startAsync();
 
 
             for (int i = 0; i < 5; i++) {
@@ -126,7 +147,9 @@ public class TestCPUTimeSampleQueueAutoSizes {
                 // going out-of-native at the end of the previous call should have triggered
                 // the safepoint handler, thereby also triggering the stack walking and creation
                 // of the loss event
-                lossEvents.addTimeBoxEnd(Instant.now().toEpochMilli() - startTimeMillis);
+                WHITE_BOX.forceSafepoint(); // just to be sure
+                lossEvents.addTimeBoxEnd(Instant.now().toEpochMilli() - startTimeMillis, sampleEventCountInTimeBox.get());
+                sampleEventCountInTimeBox.set(0);
             }
 
             rs.stop();
@@ -147,12 +170,10 @@ public class TestCPUTimeSampleQueueAutoSizes {
     }
 
     static void checkThatLossDecreased(LossEventCollection lossEvents) {
+        lossEvents.print();
         List<LossEvent> timeBoxedLosses = lossEvents.getEventsPerTimeBox();
-        for (LossEvent timeBoxedLoss : timeBoxedLosses) {
-            System.out.println("Lost samples in time box " + timeBoxedLoss.relativeTimeMillis + ": " + timeBoxedLoss.lostSamples);
-        }
         // check that the last time box has far fewer lost samples than the first
         Asserts.assertTrue(timeBoxedLosses.get(timeBoxedLosses.size() - 1).lostSamples <=
-                           timeBoxedLosses.get(0).lostSamples / 1.5);
+                           timeBoxedLosses.get(0).lostSamples / 2);
     }
 }
