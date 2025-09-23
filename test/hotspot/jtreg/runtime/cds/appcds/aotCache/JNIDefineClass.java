@@ -113,7 +113,7 @@ class JNIDefineClassApp {
             System.out.println("@@name = " + c.getName());
         }
 
-        try (InputStream in = JNIDefineClassApp.class.getClassLoader().getResourceAsStream("ExcludedDummy2.class")) {
+        try (InputStream in = appLoader.getResourceAsStream("ExcludedDummy2.class")) {
             byte[] b = in.readAllBytes();
             System.out.println(b.length);
             Class<?> c = nativeDefineClass("ExcludedDummy2", appLoader, b);
@@ -131,7 +131,7 @@ class ExcludedDummy {
 
 }
 
-// This class is loaded into the bootstrap loader using JNI DefineClass() with a null code source,
+// This class is loaded into the app loader using JNI DefineClass() with a null code source,
 // so it should be excluded from the AOT configuration (and hence excluded from AOT cache)
 class ExcludedDummy2 {
 
