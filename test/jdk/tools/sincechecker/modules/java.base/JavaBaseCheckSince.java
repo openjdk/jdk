@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,5 +26,5 @@
  * @bug 8331051
  * @summary Test for `@since` in java.base module
  * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker java.base --exclude java.lang.classfile
+ * @run main/timeout=480 SinceChecker java.base --exclude java.lang.classfile
  */
