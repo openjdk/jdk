@@ -62,7 +62,6 @@ void Asan::initialize() {
   } else {
     log_info(asan)("*** Failed to install JVM callback for ASAN. ASAN errors will not generate hs-err files. ***");
   }
-  //__asan_set_error_report_callback(asan_error_callback);
 }
 
 #endif // ADDRESS_SANITIZER
