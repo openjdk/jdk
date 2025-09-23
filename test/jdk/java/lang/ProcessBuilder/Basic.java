@@ -777,31 +777,28 @@ public class Basic {
         return Pattern.compile(regex).matcher(str).find();
     }
 
-    private static String matchAndReplace(String str, String regex, String replacement) {
-        Matcher matcher = Pattern.compile(regex).matcher(str);
-        if (matcher.find()) {
-            return matcher.replaceAll(replacement);
-        } else {
-            return str;
-        }
+    // Return the string with the matching regex removed
+    private static String matchAndRemove(String str, String regex) {
+        return Pattern.compile(regex)
+                .matcher(str)
+                .replaceAll("");
     }
 
     /* Only used for Mac OS X --
-     * Mac OS X (may) add the variable __CF_USER_TEXT_ENCODING to an empty
-     * environment. The environment variable JAVA_MAIN_CLASS_<pid> may also
-     * be set in Mac OS X.
-     * Remove them both from the list of env variables
+     * Mac OS X (may) add the variables: __CF_USER_TEXT_ENCODING, JAVA_MAIN_CLASS_<pid>,
+     * and TMPDIR.
+     * Remove them from the list of env variables
      */
     private static String removeMacExpectedVars(String vars) {
         // Check for __CF_USER_TEXT_ENCODING
-        String cleanedVars = matchAndReplace(vars,
-                "__CF_USER_TEXT_ENCODING=" + cfUserTextEncoding + ",","");
+        String cleanedVars = matchAndRemove(vars,
+                "__CF_USER_TEXT_ENCODING=" + cfUserTextEncoding + ",");
         // Check for JAVA_MAIN_CLASS_<pid>
-        cleanedVars = matchAndReplace(cleanedVars,
-                "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,", "");
+        cleanedVars = matchAndRemove(cleanedVars,
+                "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
         // Check and remove TMPDIR
-        cleanedVars = matchAndReplace(cleanedVars,
-                "TMPDIR=[^,]*,", "");
+        cleanedVars = matchAndRemove(cleanedVars,
+                "TMPDIR=[^,]*,");
         return cleanedVars;
     }
 
