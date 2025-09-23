@@ -1556,10 +1556,8 @@ class StructuredTaskScopeTest {
             var subtask2 = scope.fork(() -> { throw new FooException(); });
 
             var subtasks = scope.join().toList();
-            assertEquals(2, subtasks.size());
+            assertEquals(List.of(subtask1, subtask2), subtasks);
 
-            assertSame(subtask1, subtasks.get(0));
-            assertSame(subtask2, subtasks.get(1));
             assertEquals("foo", subtask1.get());
             assertTrue(subtask2.exception() instanceof FooException);
         }
@@ -1581,10 +1579,8 @@ class StructuredTaskScopeTest {
             });
 
             var subtasks = scope.join().toList();
+            assertEquals(List.of(subtask1, subtask2), subtasks);
 
-            assertEquals(2, subtasks.size());
-            assertSame(subtask1, subtasks.get(0));
-            assertSame(subtask2, subtasks.get(1));
             assertEquals("foo", subtask1.get());
             assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
         }
@@ -1664,9 +1660,7 @@ class StructuredTaskScopeTest {
             var subtasks = scope.join().toList();
 
             // stream should have two elements, subtask1 may or may not have completed
-            assertEquals(2, subtasks.size());
-            assertSame(subtask1, subtasks.get(0));
-            assertSame(subtask2, subtasks.get(1));
+            assertEquals(List.of(subtask1, subtask2), subtasks);
             assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
 
             // retry after join throws TimeoutException

@@ -199,21 +199,21 @@ import jdk.internal.javac.PreviewFeature;
  * <h2>Configuration</h2>
  *
  * A {@code StructuredTaskScope} is opened with {@linkplain Configuration configuration}
- * that consists of a {@link ThreadFactory} to create threads, an optional name for
- * monitoring and management purposes, and an optional timeout.
+ * that consists of a {@link ThreadFactory} to create threads, an optional name for the
+ * scope, and an optional timeout. The name is intended for monitoring and management
+ * purposes.
  *
  * <p> The {@link #open()} and {@link #open(Joiner)} methods create a {@code StructuredTaskScope}
  * with the <a id="DefaultConfiguration"> <em>default configuration</em></a>. The default
  * configuration has a {@code ThreadFactory} that creates unnamed {@linkplain
- * Thread##virtual-threads virtual threads}, is unnamed for monitoring and management
- * purposes, and has no timeout.
+ * Thread##virtual-threads virtual threads}, does not name the scope, and has no timeout.
  *
  * <p> The 2-arg {@link #open(Joiner, UnaryOperator) open} method can be used to create a
- * {@code StructuredTaskScope} that uses a different {@code ThreadFactory}, has a name for
- * the purposes of monitoring and management, or has a timeout that cancels the scope if
- * the timeout expires before or while waiting for subtasks to complete. The {@code open}
- * method is called with a {@linkplain UnaryOperator operator} that is applied to the default
- * configuration and returns a {@link Configuration Configuration} for the
+ * {@code StructuredTaskScope} that uses a different {@code ThreadFactory}, is named for
+ * monitoring and management purposes, or has a timeout that cancels the scope if the
+ * timeout expires before or while waiting for subtasks to complete. The {@code open}
+ * method is called with a {@linkplain UnaryOperator operator} that is applied to the
+ * default configuration and returns a {@link Configuration Configuration} for the
  * {@code StructuredTaskScope} under construction.
  *
  * <p> The following example opens a new {@code StructuredTaskScope} with a {@code
@@ -237,9 +237,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p> A second example sets a timeout, represented by a {@link Duration}. The timeout
  * starts when the new scope is opened. If the timeout expires before the {@code join}
  * method has completed then the scope is {@linkplain ##Cancallation cancelled} (this
- * interrupts the threads executing the two subtasks) and the {@code Joiner}'s {@link
- * Joiner#onTimeout() onTimeout} method is invoked to throw {@link TimeoutException
- * TimeoutException}.
+ * interrupts the threads executing the two subtasks), and the {@code join} method
+ * throws {@link TimeoutException TimeoutException}.
  * {@snippet lang=java :
  *    Duration timeout = Duration.ofSeconds(10);
  *
@@ -788,14 +787,8 @@ public sealed interface StructuredTaskScope<T, R>
      * Represents the configuration for a {@code StructuredTaskScope}.
      *
      * <p> The configuration for a {@code StructuredTaskScope} consists of a {@link
-     * ThreadFactory} to create threads, an optional name for the purposes of monitoring
-     * and management, and an optional timeout.
-     *
-     * <p> Creating a {@code StructuredTaskScope} with {@link #open()} or {@link #open(Joiner)}
-     * uses the {@linkplain StructuredTaskScope##DefaultConfiguration default configuration}.
-     * The default configuration consists of a thread factory that creates unnamed
-     * {@linkplain Thread##virtual-threads virtual threads}, no name for monitoring and
-     * management purposes, and no timeout.
+     * ThreadFactory} to create threads, an optional name for the scope, and an optional
+     * timeout. The name is intended for monitoring and management purposes.
      *
      * <p> Creating a {@code StructuredTaskScope} with its 2-arg {@link #open(Joiner, UnaryOperator)
      * open} method allows a different configuration to be used. The operator specified
@@ -827,7 +820,7 @@ public sealed interface StructuredTaskScope<T, R>
         Configuration withThreadFactory(ThreadFactory threadFactory);
 
         /**
-         * {@return a new {@code Configuration} object with the given name}
+         * {@return a new {@code Configuration} object with the given scope name}
          * The other components are the same as this object. A scope is optionally
          * named for the purposes of monitoring and management.
          * @param name the name
@@ -936,8 +929,8 @@ public sealed interface StructuredTaskScope<T, R>
      * Opens a new {@code StructuredTaskScope}to use the given {@code Joiner} object. The
      * scope is created with the {@linkplain ##DefaultConfiguration default configuration}.
      * The default configuration has a {@code ThreadFactory} that creates unnamed
-     * {@linkplain Thread##irtual-threads virtual threads}, is unnamed for monitoring and
-     * management purposes, and has no timeout.
+     * {@linkplain Thread##irtual-threads virtual threads}, does not name the scope, and
+     * has no timeout.
      *
      * @implSpec
      * This factory method is equivalent to invoking the 2-arg open method with the given
@@ -964,8 +957,8 @@ public sealed interface StructuredTaskScope<T, R>
      *
      * <p> The scope is created with the {@linkplain ##DefaultConfiguration default
      * configuration}. The default configuration has a {@code ThreadFactory} that creates
-     * unnamed {@linkplain Thread##virtual-threads virtual threads}, is unnamed for
-     * monitoring and management purposes, and has no timeout.
+     * unnamed {@linkplain Thread##virtual-threads virtual threads}, does not name the
+     * scope, and has no timeout.
      *
      * @implSpec
      * This factory method is equivalent to invoking the 2-arg open method with a joiner
@@ -1061,15 +1054,19 @@ public sealed interface StructuredTaskScope<T, R>
      * the scope to be {@linkplain ##Cancallation cancelled}.
      *
      * <p> This method waits for all subtasks started in this scope to complete or the
-     * scope to be cancelled. If a {@linkplain Configuration#withTimeout(Duration) timeout}
-     * is configured, and the timeout expires before or while waiting, then the scope is
-     * cancelled and the {@code Joiner}'s {@link Joiner#onTimeout() onTimeout} method is
-     * invoked to optionally throw {@link TimeoutException TimeoutException}. If the
-     * {@code onTimeout} method throws another exception or error then it is propagated
-     * by this method. Once finished waiting, and {@code onTimeout} does not throw, the
-     * {@code Joiner}'s {@link Joiner#result() result()} method is invoked to get the result
-     * or throw an exception. If the {@code result()} method throws then this method throws
+     * scope to be cancelled. Once finished waiting, the {@code Joiner}'s {@link
+     * Joiner#result() result()} method is invoked to get the result or throw an exception.
+     * If the {@code result()} method throws then {@code join()} throws
      * {@code FailedException} with the exception from the {@code Joiner} as the cause.
+     *
+     * <p> If a {@linkplain Configuration#withTimeout(Duration) timeout} is configured,
+     * and the timeout expires before or while waiting, then the scope is cancelled and
+     * the {@code Joiner}'s {@link Joiner#onTimeout() onTimeout()} method is invoked
+     * before calling the {@code Joiner}'s {@code result()} method. If the {@code onTimeout()}
+     * method throws {@link TimeoutException TimeoutException} (or throws any exception
+     * or error), then it is propagated by this method. If the {@code onTimeout()} method
+     * does not throw then the {@code Joiner}'s {@code result()} method is invoked to
+     * get the result or throw.
      *
      * <p> This method may only be invoked by the scope owner. Once the result or
      * exception outcome is obtained, this method may not be invoked again. The only
